@@ -1,0 +1,38 @@
+from_latest_tag = false
+ignore_merge_commits = true
+generate_mono_repository_global_tag = true
+branch_whitelist = ["main", "release/**"]
+tag_prefix = ""
+
+pre_bump_hooks = [
+    "cargo build --release",
+    "cargo set-version --workspace {{version}}",
+]
+post_bump_hooks = [
+    "git push --no-verify",
+    "git push origin {{version}} --no-verify",
+]
+
+[git_hooks]
+
+[git_hooks.commit-msg]
+script = """#!/bin/sh
+set -e
+cog verify --file $1
+cog check
+cargo +nightly fmt -v --all --check
+cargo +nightly clippy
+"""
+
+
+[commit_types]
+chore = { changelog_title = "Misc", omit_from_changelog = true }
+release = { changelog_title = "Releases" }
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+owner = "EKGF"
+repository = "grapharch"
+authors = [{ signature = "Jacobus Geluk", username = "jgeluk" }]
