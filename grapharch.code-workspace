@@ -1,17 +1,18 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"git.enableCommitSigning": true,
-		"git-graph.repository.commits.fetchAvatars": true,
-		"git-graph.repository.commits.showSignatureStatus": true,
-		"git-graph.repository.sign.commits": true,
-		"git.autofetch": "all",
-		"git.pullBeforeCheckout": true,
-		"evenBetterToml.taplo.bundled": true,
-		"editor.formatOnSave": true
-	}
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "git.enableCommitSigning": true,
+    "git-graph.repository.commits.fetchAvatars": true,
+    "git-graph.repository.commits.showSignatureStatus": true,
+    "git-graph.repository.sign.commits": true,
+    "git.autofetch": "all",
+    "git.pullBeforeCheckout": true,
+    "evenBetterToml.taplo.bundled": true,
+    "editor.formatOnSave": true,
+    "github.gitProtocol": "ssh"
+  }
 }

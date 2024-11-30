@@ -40,9 +40,10 @@ GraphArch serves two primary use cases:
    It analyzes the data structures, provides
    profiling, and creates reports based on the
    detected entities.
-   This could include a breakdown of the classes, distribution of instances,
-   identification of PII, and a summary of data models used, generating outputs like
-   dashboards or reports.
+   This could include a breakdown of the classes,
+   distribution of instances, identification of PII,
+   and a summary of data models used,
+   generating outputs like dashboards or reports.
 
 ## Key Features
 
@@ -62,46 +63,15 @@ GraphArch serves two primary use cases:
   a graph database that can be used to generate data for further documentation,
   integrating both input options seamlessly.
 
-  [!NOTE]
-  It may be necessary, as a feature, to support other graph databases
-  as well for this intermediate processing.
-  [RDFox](https://www.oxfordsemantic.tech) would be particularly useful
-  since it can be baked into the Rust program that we intend to build and
-  has ultimate speed, OWL reasoning and rule capabilities (SHACL, Datalog).
+For all features see [docs/feature/README.md](docs/feature/README.md).
 
 ## Getting Started
 
 This repository will serve as the foundation for GraphArch's ongoing development.
 Contributions are welcome to help grow this initiative!
 
-### Prerequisites
-
-- **Rust**:
-  Ensure you have Rust (Cargo) installed.
-- **Graph Database**:
-  If you wish to connect GraphArch to an existing
-  graph database, ensure you have the relevant endpoint and credentials available.
-
-### Installation
-
-To get started with GraphArch, clone this repository and install the necessary dependencies:
-
-```bash
-# Clone the repository
-git clone https://github.com/ekgf/grapharch.git
-
-# Navigate into the directory
-cd grapharch
-
-# Install Rust and Cargo
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-### Run
-
-```bash
-cargo run
-```
+- Get started as contributor on [MacOS](docs/contribute/macos.md)
+- TODO: Linux, Windows
 
 ### Usage
 

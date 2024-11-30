@@ -1,5 +1,17 @@
 # MacOS notes
 
+In order to contribute please install a developer environment
+
+1. [Install rust](#install-rust-with-brew)
+2. Install utilities
+   - [cocogitto](#cocogitto)
+   - [yamlfmt](#yamlfmt)
+3. Install an IDE
+   - [Visual Studio Code](https://code.visualstudio.com/docs/setup/mac)
+   - [RustRover](https://www.jetbrains.com/rust/)
+   - Or any other IDE you prefer.
+4. [Setup Git](git-setup.md)
+
 ## install rust with brew
 
 On the Rust website, they recommend to [install rust](https://www.rust-lang.org/tools/install)
