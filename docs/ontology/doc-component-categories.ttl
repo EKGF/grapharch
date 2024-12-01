@@ -1,0 +1,32 @@
+@prefix doccats: <https://ekgf.org/taxonomy/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+doccats:DocComponentCategories a skos:ConceptScheme ;
+    rdfs:label "Documentation Component Categories" ;
+    rdfs:comment "A concept scheme for categorizing documentation components" .
+
+doccats:DocComponentCategory a skos:Concept ;
+    rdfs:label "Documentation Component Category" ;
+    rdfs:comment "A category for a documentation component" ;
+    skos:inScheme doccats:DocComponentCategories .
+
+doccats:Document a skos:Concept ;
+    rdfs:label "Document" ;
+    skos::broader doccats:DocComponentCategory ;
+    skos:inScheme doccats:DocComponentCategories .
+
+doccats:Section a skos:Concept ;
+    rdfs:label "Section" ;
+    skos::broader doccats:DocComponentCategory ;
+    skos:inScheme doccats:DocComponentCategories .
+
+doccats:SubSection a skos:Concept ;
+    rdfs:label "Subsection" ;
+    skos::broader doccats:DocComponentCategory ;
+    skos:inScheme doccats:DocComponentCategories .
+
+doccats:Paragraph a skos:Concept ;
+    rdfs:label "Paragraph" ;
+    skos::broader doccats:DocComponentCategory ;
+    skos:inScheme doccats:DocComponentCategories .

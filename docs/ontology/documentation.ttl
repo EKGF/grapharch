@@ -1,0 +1,31 @@
+@prefix doc: <https://ekgf.org/ontology/grapharch/documentation#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+doc:DocumentableEntity a owl:Class ;
+    rdfs:label "Documentable Entity" ;
+    rdfs:comment "Any entity that can be documented" .
+
+doc:hasDescription a owl:DatatypeProperty ;
+    rdfs:domain doc:DocumentableEntity ;
+    rdfs:range rdfs:Literal .
+
+doc:hasExample a owl:DatatypeProperty ;
+    rdfs:domain doc:DocumentableEntity ;
+    rdfs:range rdfs:Literal .
+
+doc:relatedTo a owl:ObjectProperty ;
+    rdfs:domain doc:DocumentableEntity ;
+    rdfs:range doc:DocumentableEntity .
+
+doc:Class a owl:Class ;
+    rdfs:subClassOf doc:DocumentableEntity .
+
+doc:Property a owl:Class ;
+    rdfs:subClassOf doc:DocumentableEntity .
+
+doc:hasSourceLocation a owl:DatatypeProperty ;
+    rdfs:domain doc:DocumentableEntity ;
+    rdfs:range rdfs:Literal .
+
