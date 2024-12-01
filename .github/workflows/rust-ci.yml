@@ -1,0 +1,35 @@
+name: Rust CI
+on:
+  push:
+    branches:
+      - "main"
+      - "feature/**"
+  pull_request:
+    branches:
+      - "main"
+jobs:
+  rust-ci:
+    name: Format, Lint, Test, and Build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: '${{ matrix.os }}'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Run rustfmt
+        uses: actions-rs/rustfmt@v1
+      - name: Run Clippy linter
+        uses: actions-rs/clippy@v1
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+      - name: Build project
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
