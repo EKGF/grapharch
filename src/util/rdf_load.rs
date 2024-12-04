@@ -11,18 +11,18 @@ use {
     url::Url,
 };
 
-pub async fn rdf_load<'a>(
+pub async fn rdf_load(
     mut store: Store,
     file_path: &String,
-    base_iri: &String,
-    graph: GraphNameRef<'a>,
+    base_iri: String,
+    graph: GraphNameRef<'_>,
 ) -> anyhow::Result<Store> {
     info!(
         "{}",
         style("Loading ontology from source...").green().bold()
     );
 
-    if let Ok(url) = Url::parse(&file_path) {
+    if let Ok(url) = Url::parse(file_path) {
         // Handle URL
         let client = Client::new();
         let response = client.get(url).send().await.map_err(|e| {

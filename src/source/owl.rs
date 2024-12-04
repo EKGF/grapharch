@@ -38,7 +38,7 @@ impl OWLSource {
         self.store = rdf_load(
             std::mem::replace(&mut self.store, new_store),
             &self.file_path,
-            &self.base_iri,
+            self.base_iri.to_string(),
             self.graph.as_ref(),
         )
         .await?;
