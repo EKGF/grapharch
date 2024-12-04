@@ -1,13 +1,12 @@
+name: "Check Commits"
 on: [push]
-
 jobs:
-  cog_check_job:
+  check-commits:
     runs-on: ubuntu-latest
     name: check conventional commit compliance
     steps:
       - uses: actions/checkout@main
         with:
           fetch-depth: 0
-
       - name: Conventional commits check
         uses: cocogitto/cocogitto-action@v3
