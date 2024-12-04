@@ -1,5 +1,7 @@
 # GraphArch
 
+[![.github/workflows/rust-ci.yml](https://github.com/EKGF/grapharch/actions/workflows/rust-ci.yml/badge.svg?branch=main)](https://github.com/EKGF/grapharch/actions/workflows/rust-ci.yml)
+
 **GraphArch** is an open-source tool developed
 by the Enterprise Knowledge Graph Forum ([EKGF](ekgf.org)),
 a Managed Community of the
