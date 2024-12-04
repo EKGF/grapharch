@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - "main"
+permissions:
+  checks: write
 jobs:
   rust-ci:
     name: Format, Lint, Test, and Build
@@ -16,19 +18,17 @@ jobs:
     runs-on: '${{ matrix.os }}'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Run rustfmt
-        uses: actions-rs/rustfmt@v1
+        uses: actions-rust-lang/rustfmt@v1
       - name: Run Clippy linter
-        uses: actions-rs/clippy@v1
-      - name: Run tests
-        uses: actions-rs/cargo@v1
+        uses: auguwu/clippy-action@1.4.0
         with:
-          command: test
+          token: ${{secrets.GITHUB_TOKEN}}
+      - name: Run tests
+        uses: cargo test --all-features
       - name: Build project
         uses: actions-rs/cargo@v1
         with:
