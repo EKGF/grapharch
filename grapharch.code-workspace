@@ -13,6 +13,7 @@
     "git.pullBeforeCheckout": true,
     "evenBetterToml.taplo.bundled": true,
     "editor.formatOnSave": true,
-    "github.gitProtocol": "ssh"
+    "github.gitProtocol": "ssh",
+    "testExplorer.showOnRun": true
   }
 }
