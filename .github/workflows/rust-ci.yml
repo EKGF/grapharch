@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - "main"
+  # Run manually
+  workflow_dispatch:
 permissions:
   checks: write
 jobs:
