@@ -6,6 +6,8 @@ professional documentation from it either as a document or a static website.
 Primary focus is to document ontologies and knowledge graphs but ultimately
 to document "knowledge" in the broadest sense of the word.
 
+- First milestone: Replace the current code that generates the DPROD webpage (<https://ekgf.github.io/dprod/>)
+
 > [!NOTE]
 >
 > An additional angle that will be explored is how to use the tool to generate
@@ -64,7 +66,7 @@ to document "knowledge" in the broadest sense of the word.
 - [ ] Most of the logic of the program will be published as a library, so that
       it can be reused in other projects.
 
-# Configurability
+## Configurability
 
 - [ ] The program should be configurable through configuration files.
 - [ ] The program should be configurable through environment variables.
@@ -79,3 +81,10 @@ to document "knowledge" in the broadest sense of the word.
         they need custom logic.
   - [ ] People can understand what is the output of the program and how to
         use it.
+- [ ] Editors should be able to run GraphArch on their own machine and see the
+  updated documentation straight away, ideally as a preview option in their
+  favorite editor (Microsoft Visual Studio Code for instance).
+  - [ ] Easily download and install GraphArch on Windows, MacOS and Linux.
+  - [ ] Generate the various types of output in seconds.
+  - [ ] VS Code preview.
+  - [ ] IntelliJ preview.
