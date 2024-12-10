@@ -1,4 +1,4 @@
-# Documentation
+# GraphArch Documentation
 
 - [Features](./feature/README.md)
 - [Design Goals](./design-goals/README.md)

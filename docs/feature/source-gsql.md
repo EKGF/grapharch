@@ -1,7 +1,3 @@
-# Source &mdash; Cypher endpoint
+# Source &mdash; GSQL endpoint
 
-[!NOTE] Status
-Idea
-
-Scan a given graph database (like Neo4j) pointed to with a
-given Cypher endpoint URL.
+Scan a given GSQL endpoint (TigerGraph) for documentable items.

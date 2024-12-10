@@ -14,10 +14,11 @@ TODO: Just a few examples of features, there's so much more
 Things to document can come from:
 
 - [git](./source-git-repo.md)
-- [SPARQL](./source-sparql-endpoint.md)
+- [SPARQL](./source-sparql.md)
 - [Cypher](./source-cypher.md)
 - [GSQL](./source-gsql.md)
 - [GraphQL](./source-graphql.md)
+- [SQL](./source-sql.md)
 - ...
 
 ## Targets
@@ -30,3 +31,7 @@ Things to document can come from:
 ### PDF
 
 - [typst](./target-typst.md)
+
+### Other
+
+- Any other documentation system, for instance Confluence could be updated etc

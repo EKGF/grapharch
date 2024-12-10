@@ -1,8 +1,5 @@
 # Target &mdash; typst
 
-> [!NOTE] Status
-> Idea
-
 Generate [typst](https://typst.app) files and a resulting PDF.
 
 > [!IMPORTANT]

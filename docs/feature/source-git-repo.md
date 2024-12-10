@@ -1,8 +1,5 @@
 # Source &mdash; git repository
 
-[!NOTE] Status
-Idea
-
 Allow users to specify a particular git repository to be their source
 of input for any information about ontologies, schema's and the like.
 
@@ -31,4 +28,3 @@ Find the license and ownership info.
 Derive documentation from the git-log.
 Contributors, change frequency, percentage contributed,
 and so forth.
-
