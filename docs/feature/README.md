@@ -24,8 +24,8 @@ Things to document can come from:
 
 ### HTML
 
-- [markdown for mkdocs](./target-markdown-for-mkdocs)
-- [markdown for sphinx](./target-markdown-for-sphinx)
+- [markdown (.md) files for MkDocs](./target-markdown-for-mkdocs)
+- [reStructuredText (.rst) files for sphinx](./target-rst-for-sphinx)
 
 ### PDF
 
