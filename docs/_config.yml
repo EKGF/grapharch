@@ -68,6 +68,7 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
   - jekyll-default-layout
+  - jekyll-gfm-admonitions
 
 # Conversion
 markdown: kramdown
