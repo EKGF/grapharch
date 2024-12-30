@@ -5,10 +5,14 @@ on:
     branches:
       - "main"
       - "feature/**"
+    paths:
+      - "docs/**"
   pull_request:
     branches:
       - "main"
-  # Run manually
+    paths:
+      - "docs/**"
+    # Run manually
   workflow_dispatch:
 
 jobs:

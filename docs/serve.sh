@@ -34,6 +34,12 @@ bundle update --gemfile="${SCRIPT_DIR}/Gemfile"
 
 rm -rf "${SCRIPT_DIR}/_site"
 
+# echo "Checking GitHub Pages Health..."
+# bundle exec github-pages health-check
+# exit 1
+
+export DISABLE_WHITELIST=true
+
 bundle exec jekyll serve \
   --trace \
   --host localhost \
