@@ -23,3 +23,8 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+.ssl/
+_site
+Gemfile.lock
+.bundles_cache
