@@ -1,3 +1,9 @@
+---
+title: "Git Setup"
+layout: default
+permalink: /contribute/git-setup
+---
+
 # Git setup
 
 ## Set the right email address before committing

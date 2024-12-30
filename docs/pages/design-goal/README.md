@@ -1,3 +1,9 @@
+---
+title: "Design Goals"
+layout: default
+permalink: /design-goal
+---
+
 # Design Goals
 
 Create a tool that can extract information from any source and generate
@@ -82,8 +88,8 @@ to document "knowledge" in the broadest sense of the word.
   - [ ] People can understand what is the output of the program and how to
         use it.
 - [ ] Editors should be able to run GraphArch on their own machine and see the
-  updated documentation straight away, ideally as a preview option in their
-  favorite editor (Microsoft Visual Studio Code for instance).
+      updated documentation straight away, ideally as a preview option in their
+      favorite editor (Microsoft Visual Studio Code for instance).
   - [ ] Easily download and install GraphArch on Windows, MacOS and Linux.
   - [ ] Generate the various types of output in seconds.
   - [ ] VS Code preview.

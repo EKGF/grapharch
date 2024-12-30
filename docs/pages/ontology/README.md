@@ -1,3 +1,9 @@
+---
+title: "Ontology"
+layout: default
+permalink: /ontology
+---
+
 # Ontology
 
 > [!NOTE]

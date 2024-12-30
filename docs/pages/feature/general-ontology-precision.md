@@ -1,3 +1,9 @@
+---
+title: "Feature &mdash; Ontology Precision"
+layout: default
+permalink: /feature/ontology-precision
+---
+
 # Feature &mdash; Ontology Precision
 
 GraphArch emphasizes governance and precision in documenting ontologies,
