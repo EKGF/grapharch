@@ -1,3 +1,10 @@
+---
+title: GraphQL Endpoint
+layout: default
+parent: Source
+nav_order: 999
+---
+
 # Source &mdash; GraphQL endpoint
 
 Scan a given data source given a GraphQL endpoint.

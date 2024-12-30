@@ -1,10 +1,10 @@
 ---
-title: "Git Setup"
+title: "Git Setup Notes"
 layout: default
-permalink: /contribute/git-setup
+parent: Contribute
 ---
 
-# Git setup
+# Git Setup Notes
 
 ## Set the right email address before committing
 

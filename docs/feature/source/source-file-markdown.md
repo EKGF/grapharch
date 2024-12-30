@@ -1,3 +1,10 @@
+---
+title: Markdown File
+layout: default
+parent: Source
+nav_order: 2
+---
+
 # Source &mdash; Markdown File
 
 Process a given Markdown file.

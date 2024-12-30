@@ -1,15 +1,22 @@
+---
+title: Onboard Graph Engine
+layout: default
+parent: General
+nav_order: 1
+---
+
 # Onboard Graph Engine
 
 GraphArch includes [OxiGraph](https://github.com/oxigraph/oxigraph),
 a graph database that can be used to generate data for further documentation,
 integrating both input options seamlessly.
 
->[!NOTE]
->It may be necessary, as a feature, to support other graph databases
->as well for this intermediate processing.
->[RDFox](https://www.oxfordsemantic.tech) would be particularly useful
->since it can be baked into the Rust program that we intend to build and
->has ultimate speed, OWL reasoning and rule capabilities (SHACL, Datalog).
+> [!NOTE]
+> It may be necessary, as a feature, to support other graph databases
+> as well for this intermediate processing.
+> [RDFox](https://www.oxfordsemantic.tech) would be particularly useful
+> since it can be baked into the Rust program that we intend to build and
+> has ultimate speed, OWL reasoning and rule capabilities (SHACL, Datalog).
 
 PS: This is not really a feature but more like a technical design decision.
 

@@ -5,7 +5,7 @@ repository: EKGF/grapharch
 source: .
 destination: ./_site
 collections_dir: .
-url: "https://ekgf.github.com/grapharch"
+url: https://ekgf.github.com/grapharch
 # remote_theme: mmistakes/minimal-mistakes@4.26.2
 # remote_theme: pages-themes/midnight@v0.2.0
 locale: "en-US"
@@ -14,13 +14,6 @@ gist:
   noscript: false
 livereload: true
 open_url: true
-nav:
-  - title: "Design Goals"
-    url: "/design-goals"
-  - title: "Features"
-    url: "/feature"
-  - title: "Contributing"
-    url: "/contribute"
 
 # Site Author
 author:
@@ -40,39 +33,23 @@ author:
 safe                : false
 strict_front_matter : false
 include:
-  - .htaccess
-  - pages
+  - contribute
+  - design-goal
+  - feature
+  - ontology
 exclude:
-  - "*.sublime-project"
-  - "*.sublime-workspace"
-  - "*.code-workspace"
-  - "src/**"
-  - "target/**"
-  - vendor
   - .asset-cache
   - .bundle
   - .jekyll-assets-cache
   - .sass-cache
-  - assets/js/plugins
-  - assets/js/_main.js
-  - assets/js/vendor
+  - .gems
   - Capfile
-  - CHANGELOG
-  - config
   - Gemfile
   - Gemfile.lock
-  - Gruntfile.js
-  - gulpfile.js
-  - LICENSE
-  - log
-  - node_modules
-  - package.json
   - Rakefile
-  - README
+  - README.md
   - tmp
   - serve.sh
-keep_files:
-  - .git
 encoding: UTF-8
 markdown_ext: "md"
 
@@ -82,16 +59,6 @@ limit_posts: 0
 future: false
 unpublished: false
 
-# Plugins
-# mimic GitHub Pages with --safe
-whitelist:
-  - jekyll-feed
-  - jekyll-gist
-  - jekyll-github-metadata
-  - jekyll-include-cache
-  # - jekyll-paginate
-  - jekyll-seo-tag
-  - jekyll-sitemap
 plugins:
   - jekyll-feed
   - jekyll-gist
@@ -100,6 +67,7 @@ plugins:
   # - jekyll-paginate
   - jekyll-seo-tag
   - jekyll-sitemap
+  - jekyll-default-layout
 
 # Conversion
 markdown: kramdown
@@ -112,7 +80,7 @@ incremental: false
 detach: false
 port: 4000
 host: 127.0.0.1
-baseurl: / # does not include hostname
+baseurl: "" # does not include hostname
 show_dir_listing: false
 
 # Outputting
@@ -144,7 +112,22 @@ sass:
 
 defaults:
   - scope:
-      path: "pages" # an empty string here means all files in the project
+      path: contribute
+      type: "pages"
+    values:
+      layout: default
+  - scope:
+      path: "design-goal"
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "feature"
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "ontology"
       type: "pages"
     values:
       layout: "default"
@@ -205,7 +188,7 @@ aux_links:
     - "https://github.com/EKGF/grapharch"
 
 # Makes Aux links open in a new tab. Default is false
-aux_links_new_tab: false
+aux_links_new_tab: true
 
 # Enable or disable the side/mobile menu globally
 # Nav menu can also be selectively enabled or disabled using page variables or the minimal layout
@@ -214,11 +197,6 @@ nav_enabled: true
 # Sort order for navigation links
 # nav_sort: case_insensitive # default, equivalent to nil
 nav_sort: case_sensitive # Capital letters sorted before lowercase
-
-# External navigation links
-nav_external_links:
-  - title: Just the Docs on GitHub
-    url: https://github.com/just-the-docs/just-the-docs
 
 # Show navigation error report
 nav_error_report: true # default is false/nil.

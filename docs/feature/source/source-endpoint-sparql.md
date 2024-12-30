@@ -1,3 +1,10 @@
+---
+title: SPARQL Endpoint
+layout: default
+parent: Source
+nav_order: 4
+---
+
 # Source &mdash; SPARQL endpoint
 
 Scan a given database, pointed to with a given SPARQL endpoint URL,

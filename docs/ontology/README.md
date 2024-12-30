@@ -1,7 +1,7 @@
 ---
 title: "Ontology"
 layout: default
-permalink: /ontology
+nav_order: 3
 ---
 
 # Ontology

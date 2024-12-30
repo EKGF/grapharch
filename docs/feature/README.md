@@ -1,7 +1,7 @@
 ---
-title: "GraphArch Features"
+title: Features
 layout: default
-permalink: /feature/README.md
+nav_order: 2
 ---
 
 # GraphArch Features

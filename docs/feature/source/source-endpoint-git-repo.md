@@ -1,3 +1,10 @@
+---
+title: Git Repository
+layout: default
+parent: Source
+nav_order: 3
+---
+
 # Source &mdash; git repository
 
 Allow users to specify a particular git repository to be their source

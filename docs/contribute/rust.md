@@ -1,10 +1,10 @@
 ---
-title: "Rust"
+title: "Rust Notes"
 layout: default
-permalink: /contribute/rust
+parent: Contribute
 ---
 
-# Rust
+# Rust Notes
 
 ## Installation
 

@@ -1,7 +1,7 @@
 ---
 title: "Design Goals"
 layout: default
-permalink: /design-goal
+nav_order: 1
 ---
 
 # Design Goals

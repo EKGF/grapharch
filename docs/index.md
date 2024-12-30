@@ -1,8 +1,7 @@
 ---
-title: Home
+title: "GraphArch Documentation"
 layout: home
+nav_exclude: true
 ---
 
-# Home
-
-This is the home page.
+# GraphArch Documentation

@@ -1,3 +1,9 @@
+---
+title: "Rust Installation Notes"
+layout: default
+parent: Contribute
+---
+
 # Rust Installation
 
 See the [Rust installation instructions](https://www.rust-lang.org/tools/install).

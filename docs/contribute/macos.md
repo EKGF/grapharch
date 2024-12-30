@@ -1,7 +1,7 @@
 ---
 title: "MacOS Notes"
 layout: default
-permalink: /contribute/macos
+parent: Contribute
 ---
 
 # MacOS Notes
