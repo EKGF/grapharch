@@ -41,14 +41,11 @@ pub trait DocumentorCreator: Sized {
     /// * `file_source` - The optional file source that contains the
     ///   data that this documentor will document.
     /// * `file_name` - The most relevant file name of the file that
-    ///   this
-    /// documentor will document, if any.
+    ///   this documentor will document, if any.
     /// * `loader_store` - The loader store that contains the data
-    ///   that this
-    /// documentor will document.
+    ///   that this documentor will document.
     /// * `doc_model` - The documentation model that contains the data
-    ///   that this
-    /// documentor will document.
+    ///   that this documentor will document.
     fn new(
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,

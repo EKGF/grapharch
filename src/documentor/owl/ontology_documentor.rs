@@ -4,7 +4,7 @@ use {
             Documentor,
             DocumentorCreator,
             DocumentorImplementor,
-            documentor::DocumentorVariant,
+            this::DocumentorVariant,
         },
         model::DocumentationModel,
         source::FileSourceImplementor,
@@ -73,9 +73,7 @@ impl Documentor for OWLOntologyDocumentorImpl {
 
     async fn generate(&self) -> anyhow::Result<()> { todo!() }
 
-    fn file_name(&self) -> Option<&Path> {
-        self.file_name.as_ref().map(|f| f.as_path())
-    }
+    fn file_name(&self) -> Option<&Path> { self.file_name.as_deref() }
 }
 
 impl OWLOntologyDocumentorImpl {

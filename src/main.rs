@@ -16,7 +16,7 @@ async fn run() -> anyhow::Result<()> {
 
     let file_source = FileSourceImplementor::new(
         FileSourceVariant::FileSystem,
-        Some(&Path::new(".")),
+        Some(Path::new(".")),
         None,
     )?;
 

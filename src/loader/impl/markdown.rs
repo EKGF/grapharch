@@ -25,12 +25,12 @@ impl Loader for MarkdownLoader {
     async fn load_files(
         &self,
         file_source: &FileSourceImplementor,
-        file_names: &Vec<&PathBuf>,
+        file_names: &[&PathBuf],
         loader_store: LoaderStore,
         doc_model: DocumentationModel,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         let documentors = futures::future::try_join_all(
-            file_names.into_iter().map(|file_name| {
+            file_names.iter().map(|file_name| {
                 self.load_file(
                     file_source,
                     file_name.as_path(),

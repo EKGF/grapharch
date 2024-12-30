@@ -1,7 +1,7 @@
 mod r#impl;
-mod loader;
+mod this;
 
 pub use {
     r#impl::{MarkdownLoader, RDFLoader},
-    loader::{Loader, LoaderImplementor},
+    this::{Loader, LoaderImplementor},
 };

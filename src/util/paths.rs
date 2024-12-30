@@ -2,11 +2,9 @@ use std::path::{Path, PathBuf};
 
 /// Derive the top-level but most specific directory from the
 /// given set of file names.
-pub fn derive_root_directory<P: AsRef<Path>>(
-    files: &[P],
-) -> Option<PathBuf> {
+pub fn derive_root_directory<P: AsRef<Path>>(files: &[P]) -> Option<PathBuf> {
     // If no files, return None.
-    let first = files.get(0)?;
+    let first = files.first()?;
 
     // Start with the components of the first file’s parent directory.
     let mut common_components: Vec<_> =

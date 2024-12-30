@@ -63,8 +63,8 @@ impl FileSource for FileSystemSourceImpl {
 }
 
 impl FileSystemSourceImpl {
-    pub async fn scan_files<'a>(
-        types: FileTypeSlice<'a>,
+    pub async fn scan_files(
+        types: FileTypeSlice<'_>,
         root_directory: PathBuf,
     ) -> anyhow::Result<Vec<PathBuf>> {
         let types_vec = FileType::from_slice_to_cloned_vec(types);

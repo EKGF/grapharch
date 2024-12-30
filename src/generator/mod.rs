@@ -1,3 +1,3 @@
-mod generator;
+mod this;
 
-pub use generator::DocumentationGenerator;
+pub use this::DocumentationGenerator;

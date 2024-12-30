@@ -1,17 +1,17 @@
-mod documentor;
 mod markdown;
 mod owl;
+mod this;
 
 pub use {
-    documentor::{
-        Documentor,
-        DocumentorCreator,
-        DocumentorImplementor,
-        DocumentorVariant,
-    },
     markdown::{
         JekyllMarkdownDocumentorImpl,
         MarkdownDocumentorImpl,
     },
     owl::{OWLClassDocumentorImpl, OWLOntologyDocumentorImpl},
+    this::{
+        Documentor,
+        DocumentorCreator,
+        DocumentorImplementor,
+        DocumentorVariant,
+    },
 };

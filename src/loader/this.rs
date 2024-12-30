@@ -26,12 +26,12 @@ pub trait Loader: std::fmt::Debug + std::fmt::Display {
 
     fn applicable_files<'a>(
         &self,
-        file_names: &'a Vec<&'a PathBuf>,
+        file_names: &'a [&'a PathBuf],
     ) -> Vec<&'a PathBuf> {
         file_names
             .iter()
             .filter(|file_name| self.is_applicable(file_name))
-            .map(|file_name| *file_name)
+            .copied()
             .collect()
     }
 
@@ -44,7 +44,7 @@ pub trait Loader: std::fmt::Debug + std::fmt::Display {
     async fn load_files(
         &self,
         file_source: &FileSourceImplementor,
-        file_names: &Vec<&PathBuf>,
+        file_names: &[&PathBuf],
         loader_store: LoaderStore,
         doc_model: DocumentationModel,
     ) -> anyhow::Result<Vec<DocumentorImplementor>>;
@@ -72,7 +72,7 @@ impl Loader for LoaderImplementor {
     async fn load_files(
         &self,
         file_source: &FileSourceImplementor,
-        file_names: &Vec<&PathBuf>,
+        file_names: &[&PathBuf],
         loader_store: LoaderStore,
         doc_model: DocumentationModel,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {

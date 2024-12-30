@@ -1,17 +1,12 @@
 use {
     oxrdfio::RdfFormat,
-    std::{
-        collections::HashMap,
-        ffi::OsStr,
-        path::Path,
-        sync::LazyLock,
-    },
+    std::{collections::HashMap, ffi::OsStr, path::Path, sync::LazyLock},
 };
 
 pub type FileTypeSlice<'a> = &'a [&'a FileType];
 pub type FileTypeSliceStatic = FileTypeSlice<'static>;
 
-const JEKYLL_CONFIG_FILE_NAME: &'static str = "_config.yml";
+const JEKYLL_CONFIG_FILE_NAME: &str = "_config.yml";
 
 /// Enum representing various file types.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -75,9 +70,7 @@ impl FileType {
     }
 
     /// Returns the file type associated with the given extension.
-    pub fn from_extension(
-        extension: &OsStr,
-    ) -> Option<&'static FileType> {
+    pub fn from_extension(extension: &OsStr) -> Option<&'static FileType> {
         FILE_TYPE_MAP.get(extension).map(|f| &**f)
     }
 
@@ -136,9 +129,7 @@ impl FileType {
     /// Returns the specific file name if applicable.
     pub fn file_name(&self) -> Option<&'static OsStr> {
         match self {
-            FileType::JekyllConfig => {
-                Some(OsStr::new(JEKYLL_CONFIG_FILE_NAME))
-            },
+            FileType::JekyllConfig => Some(OsStr::new(JEKYLL_CONFIG_FILE_NAME)),
             _ => None,
         }
     }
@@ -147,9 +138,7 @@ impl FileType {
     pub fn is_file_name(&self) -> bool { self.file_name().is_some() }
 
     /// Returns the specific file path if applicable.
-    pub fn file_path(&self) -> Option<&Path> {
-        self.file_name().map(|name| Path::new(name))
-    }
+    pub fn file_path(&self) -> Option<&Path> { self.file_name().map(Path::new) }
 
     /// Returns the file type associated with the given file name,
     /// if known.
@@ -162,18 +151,13 @@ impl FileType {
         // First check if the file name is a specific file type like
         // `_config.yml` before checking the extension.
         if let Some(stem) = path.file_stem() {
-            match stem.to_string_lossy().as_ref() {
-                JEKYLL_CONFIG_FILE_NAME => {
-                    return Some(&FileType::JekyllConfig);
-                },
-                _ => (),
+            if stem.to_string_lossy().as_ref() == JEKYLL_CONFIG_FILE_NAME {
+                return Some(&FileType::JekyllConfig);
             }
         }
         // Then check the extension.
         if let Some(extension) = path.extension() {
-            if let Some(file_type) =
-                FileType::from_extension(extension)
-            {
+            if let Some(file_type) = FileType::from_extension(extension) {
                 return Some(file_type);
             }
         }
@@ -182,9 +166,9 @@ impl FileType {
 
     /// Helper function to check if a file matches the given file
     /// types.
-    pub fn is_matching_file_type<'a>(
+    pub fn is_matching_file_type(
         path: &Path,
-        types: FileTypeSlice<'a>,
+        types: FileTypeSlice<'_>,
     ) -> bool {
         if types.is_empty() {
             return false;
@@ -200,13 +184,11 @@ impl FileType {
     pub fn from_slice_to_cloned_vec<'a>(
         types: &'a [&'a FileType],
     ) -> Vec<FileType> {
-        types.iter().map(|&t| t.clone()).collect()
+        types.iter().map(|&t| *t).collect()
     }
 
-    pub fn create_vec_of_references<'a>(
-        types_vec: &'a Vec<FileType>,
-    ) -> Vec<&'a FileType> {
-        types_vec.into_iter().collect()
+    pub fn create_vec_of_references(types_vec: &[FileType]) -> Vec<&FileType> {
+        types_vec.iter().collect()
     }
 
     pub fn ignore_crate_type_name(&self) -> String {
@@ -220,19 +202,19 @@ impl FileType {
 
     pub fn to_ignore_crate_type_globs(&self) -> Option<String> {
         if let Some(file_name) = self.file_name() {
-            return Some(format!(
+            Some(format!(
                 "{:}:{:}",
                 self.ignore_crate_type_name(),
                 file_name.to_string_lossy()
-            ));
-        } else if let Some(ext) = self.extension() {
-            Some(format!(
-                "{:}:*.{:}",
-                self.ignore_crate_type_name(),
-                ext.to_string_lossy()
             ))
         } else {
-            None
+            self.extension().map(|ext| {
+                format!(
+                    "{:}:*.{:}",
+                    self.ignore_crate_type_name(),
+                    ext.to_string_lossy()
+                )
+            })
         }
     }
 
@@ -251,10 +233,7 @@ impl FileType {
 }
 
 impl std::fmt::Display for FileType {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:}", self.name())?;
         if self.is_file_name() {
             write!(f, " ({:?})", self.file_name().unwrap())?;
@@ -262,9 +241,7 @@ impl std::fmt::Display for FileType {
             write!(
                 f,
                 " (*.{:})",
-                self.extension()
-                    .unwrap_or_default()
-                    .to_string_lossy()
+                self.extension().unwrap_or_default().to_string_lossy()
             )?;
         };
         let globs = self.to_ignore_crate_type_globs();
@@ -280,26 +257,23 @@ impl AsRef<str> for FileType {
 }
 
 impl From<&Path> for &'static FileType {
-    fn from(path: &Path) -> Self {
-        FileType::from_path(path).unwrap()
-    }
+    fn from(path: &Path) -> Self { FileType::from_path(path).unwrap() }
 }
 
-static FILE_TYPE_MAP: LazyLock<
-    HashMap<&'static OsStr, &'static FileType>,
-> = LazyLock::new(|| {
-    let mut map = HashMap::new();
-    map.insert(OsStr::new("md"), &FileType::Markdown);
-    map.insert(OsStr::new("toml"), &FileType::TOML);
-    map.insert(OsStr::new("yml"), &FileType::YAML);
-    map.insert(OsStr::new("json"), &FileType::JSON);
-    map.insert(OsStr::new("jsonld"), &FileType::JSONLD);
-    map.insert(OsStr::new("n3"), &FileType::N3);
-    map.insert(OsStr::new("nquads"), &FileType::NQuads);
-    map.insert(OsStr::new("ntriples"), &FileType::NTriples);
-    map.insert(OsStr::new("rdfxml"), &FileType::RdfXml);
-    map.insert(OsStr::new("trig"), &FileType::TriG);
-    map.insert(OsStr::new("turtle"), &FileType::Turtle);
-    map.insert(OsStr::new("yml"), &FileType::JekyllConfig);
-    map
-});
+static FILE_TYPE_MAP: LazyLock<HashMap<&'static OsStr, &'static FileType>> =
+    LazyLock::new(|| {
+        let mut map = HashMap::new();
+        map.insert(OsStr::new("md"), &FileType::Markdown);
+        map.insert(OsStr::new("toml"), &FileType::TOML);
+        map.insert(OsStr::new("yml"), &FileType::YAML);
+        map.insert(OsStr::new("json"), &FileType::JSON);
+        map.insert(OsStr::new("jsonld"), &FileType::JSONLD);
+        map.insert(OsStr::new("n3"), &FileType::N3);
+        map.insert(OsStr::new("nquads"), &FileType::NQuads);
+        map.insert(OsStr::new("ntriples"), &FileType::NTriples);
+        map.insert(OsStr::new("rdfxml"), &FileType::RdfXml);
+        map.insert(OsStr::new("trig"), &FileType::TriG);
+        map.insert(OsStr::new("turtle"), &FileType::Turtle);
+        map.insert(OsStr::new("yml"), &FileType::JekyllConfig);
+        map
+    });

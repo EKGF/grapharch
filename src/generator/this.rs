@@ -37,7 +37,7 @@ impl DocumentationGenerator {
             .loaders
             .iter()
             .flat_map(|loader_impl| loader_impl.file_types())
-            .map(|file_type| *file_type)
+            .copied()
             .collect();
         let file_types: Vec<&'static FileType> =
             file_types_set.into_iter().collect();
@@ -65,7 +65,7 @@ impl DocumentationGenerator {
             futures::future::try_join_all(self.loaders.iter().map(
                 |loader| {
                     loader.load_files(
-                        &source,
+                        source,
                         file_names,
                         self.loader_store.clone(),
                         self.doc_model.clone(),

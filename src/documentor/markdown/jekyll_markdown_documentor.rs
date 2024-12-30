@@ -74,9 +74,7 @@ impl Documentor for JekyllMarkdownDocumentorImpl {
         *JEKYLL_MARKDOWN_DOCUMENTOR_FILE_TYPES
     }
 
-    fn file_name(&self) -> Option<&Path> {
-        self.file_name.as_ref().map(|f| f.as_path())
-    }
+    fn file_name(&self) -> Option<&Path> { self.file_name.as_deref() }
 
     async fn generate(&self) -> anyhow::Result<()> {
         // Get the content of the _config.yml file that's expected to
