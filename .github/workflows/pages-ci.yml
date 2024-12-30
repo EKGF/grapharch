@@ -1,4 +1,4 @@
-name: CI
+name: Docs Site CI
 
 on:
   push:
@@ -20,6 +20,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           sparse-checkout: docs
+      - name: Move & Show
+        run: |
+          shopt -s dotglob  # So that .* files inside docs/ also get moved
+          mv docs/* .
+          rm -rf docs
+          ls -R
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:

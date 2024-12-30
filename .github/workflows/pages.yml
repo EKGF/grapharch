@@ -4,7 +4,7 @@
 # documentation.
 
 # Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy Jekyll site to Pages
+name: Docs Site
 
 on:
   push:
@@ -34,8 +34,12 @@ jobs:
         with:
           sparse-checkout: docs
 
-      - name: Show files
-        run: ls -la
+      - name: Move & Show
+        run: |
+          shopt -s dotglob  # So that .* files inside docs/ also get moved
+          mv docs/* .
+          rm -rf docs
+          ls -R
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
