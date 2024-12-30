@@ -22,7 +22,7 @@ jobs:
           sparse-checkout: docs
       - name: Move & Show
         run: |
-          rm Cargo.toml Cargo.lock cog.toml *.code* *.sh rust*
+          rm Cargo.toml Cargo.lock cog.toml *.code* *.sh rust* 2>/dev/null || true
           shopt -s dotglob ; mv docs/* .
           rm -rf docs
           rm *.sh
