@@ -1,5 +1,10 @@
 {
     "editor.trimAutoWhitespace": true,
     "files.autoSaveWorkspaceFilesOnly": true,
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    "git.enableCommitSigning": true,
+    "git.autofetch": "all",
+    "git.pullBeforeCheckout": true,
+    "evenBetterToml.taplo.bundled": true,
+    "editor.formatOnSave": true,
 }
