@@ -1,7 +1,7 @@
 ---
 title: "Contributing to GraphArch"
 layout: default
-permalink: /contribute
+permalink: /contribute/
 ---
 
 # Contributing to GraphArch

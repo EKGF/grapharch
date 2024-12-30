@@ -3,3 +3,4 @@ Gemfile.lock
 .bundles_cache
 .sass-cache
 .ssl
+.gems
