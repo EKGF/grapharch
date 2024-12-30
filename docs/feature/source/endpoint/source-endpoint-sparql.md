@@ -1,7 +1,7 @@
 ---
 title: SPARQL Endpoint
 layout: default
-parent: Source
+parent: Endpoint
 nav_order: 4
 ---
 

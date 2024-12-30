@@ -1,7 +1,7 @@
 ---
 title: Cypher Endpoint
 layout: default
-parent: Source
+parent: Endpoint
 nav_order: 5
 ---
 

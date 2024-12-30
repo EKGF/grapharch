@@ -4,10 +4,15 @@ on:
     branches:
       - "main"
       - "feature/**"
+    paths-ignore:
+      - "docs/**"
   pull_request:
     branches:
       - "main"
-  # Run manually
+      - "feature/**"
+    paths-ignore:
+      - "docs/**"
+    # Run manually
   workflow_dispatch:
 permissions:
   checks: write

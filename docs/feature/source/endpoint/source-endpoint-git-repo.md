@@ -1,7 +1,7 @@
 ---
 title: Git Repository
 layout: default
-parent: Source
+parent: Endpoint
 nav_order: 3
 ---
 

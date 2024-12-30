@@ -1,7 +1,7 @@
 ---
 title: RDF File
 layout: default
-parent: Source
+parent: File
 nav_order: 1
 ---
 
