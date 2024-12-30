@@ -22,5 +22,6 @@ group :jekyll_plugins do
   gem "jekyll-sitemap"
   gem "jekyll-default-layout"
   gem "jekyll-gfm-admonitions"
+  gem "jekyll-optional-front-matter"
 end
 

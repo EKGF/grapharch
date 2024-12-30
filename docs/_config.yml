@@ -1,5 +1,7 @@
 theme: just-the-docs
 title: "GraphArch Documentation"
+description: >-
+  GraphArch, a tool for generating documentation from Graph databases, including OWL Ontologies and SHACL shapes.
 title_separator: "-"
 repository: EKGF/grapharch
 source: .
@@ -30,8 +32,8 @@ author:
       url: "https://github.com/ekgf/grapharch"
 
 # Handling Reading
-safe                : false
-strict_front_matter : false
+safe: false
+strict_front_matter: false
 include:
   - contribute
   - design-goal
@@ -40,8 +42,10 @@ include:
 exclude:
   - .asset-cache
   - .bundle
-  - .jekyll-assets-cache
-  - .sass-cache
+  - .jekyll-cache/
+  - .jekyll-assets-cache/
+  - .sass-cache/
+  - vendor/
   - .gems
   - Capfile
   - Gemfile
@@ -49,7 +53,8 @@ exclude:
   - Rakefile
   - README.md
   - tmp
-  - serve.sh
+  - "**/*.sh"
+  - _config_dev.yml
 encoding: UTF-8
 markdown_ext: "md"
 
@@ -69,6 +74,7 @@ plugins:
   - jekyll-sitemap
   - jekyll-default-layout
   - jekyll-gfm-admonitions
+  - jekyll-optional-front-matter
 
 # Conversion
 markdown: kramdown
@@ -76,6 +82,8 @@ highlighter: rouge
 lsi: false
 excerpt_separator: "\n\n"
 incremental: false
+optional_front_matter:
+  remove_originals: true
 
 # Serving
 detach: false
@@ -85,12 +93,8 @@ baseurl: "" # does not include hostname
 show_dir_listing: false
 
 # Outputting
-# permalink: :path/:basename
 permalink: pretty
-# paginate: 5 # amount of posts to show
-# paginate_path: /page:num/
 timezone: "Europe/London" # http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-
 
 # Markdown Processing
 kramdown:
@@ -110,28 +114,27 @@ sass:
   sass_dir: _sass
   style: compressed # http://sass-lang.com/documentation/file.SASS_REFERENCE.html#output_style
 
-
 defaults:
   - scope:
       path: contribute
-      type: "pages"
+      type: pages
     values:
       layout: default
   - scope:
-      path: "design-goal"
-      type: "pages"
+      path: design-goal
+      type: pages
     values:
-      layout: "default"
+      layout: default
   - scope:
-      path: "feature"
-      type: "pages"
+      path: feature
+      type: pages
     values:
-      layout: "default"
+      layout: default
   - scope:
-      path: "ontology"
-      type: "pages"
+      path: ontology
+      type: pages
     values:
-      layout: "default"
+      layout: default
 
 # Search
 # Enable or disable the site search

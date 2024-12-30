@@ -4,3 +4,8 @@ Gemfile.lock
 .sass-cache
 .ssl
 .gems
+.jekyll-cache/
+.jekyll-assets-cache/
+.sass-cache/
+vendor/
+.jekyll-metadata
