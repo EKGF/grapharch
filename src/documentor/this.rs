@@ -38,14 +38,14 @@ pub trait DocumentorCreator: Sized {
     ///
     /// # Arguments
     ///
-    /// * `file_source` - The optional file source that contains the
-    ///   data that this documentor will document.
-    /// * `file_name` - The most relevant file name of the file that
-    ///   this documentor will document, if any.
-    /// * `loader_store` - The loader store that contains the data
-    ///   that this documentor will document.
-    /// * `doc_model` - The documentation model that contains the data
-    ///   that this documentor will document.
+    /// * `file_source` - The optional file source that contains the data that
+    ///   this documentor will document.
+    /// * `file_name` - The most relevant file name of the file that this
+    ///   documentor will document, if any.
+    /// * `loader_store` - The loader store that contains the data that this
+    ///   documentor will document.
+    /// * `doc_model` - The documentation model that contains the data that this
+    ///   documentor will document.
     fn new(
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,
@@ -86,14 +86,12 @@ impl DocumentorImplementor {
     ) -> Self {
         match variant {
             DocumentorVariant::OWLOntology => {
-                Self::OWLOntologyDocumentor(
-                    OWLOntologyDocumentorImpl::new(
-                        file_source,
-                        file_name,
-                        loader_store,
-                        doc_model,
-                    ),
-                )
+                Self::OWLOntologyDocumentor(OWLOntologyDocumentorImpl::new(
+                    file_source,
+                    file_name,
+                    loader_store,
+                    doc_model,
+                ))
             },
             DocumentorVariant::OWLClass => {
                 Self::OWLClassDocumentor(OWLClassDocumentorImpl::new(
@@ -129,35 +127,35 @@ impl DocumentorImplementor {
 impl Documentor for DocumentorImplementor {
     async fn generate(&self) -> anyhow::Result<()> {
         match self {
-            DocumentorImplementor::OWLOntologyDocumentor(
-                documentor,
-            ) => documentor.generate().await,
+            DocumentorImplementor::OWLOntologyDocumentor(documentor) => {
+                documentor.generate().await
+            },
             DocumentorImplementor::OWLClassDocumentor(documentor) => {
                 documentor.generate().await
             },
             DocumentorImplementor::MarkdownDocumentor(documentor) => {
                 documentor.generate().await
             },
-            DocumentorImplementor::JekyllMarkdownDocumentor(
-                documentor,
-            ) => documentor.generate().await,
+            DocumentorImplementor::JekyllMarkdownDocumentor(documentor) => {
+                documentor.generate().await
+            },
         }
     }
 
     fn file_name(&self) -> Option<&Path> {
         match self {
-            DocumentorImplementor::OWLOntologyDocumentor(
-                documentor,
-            ) => documentor.file_name(),
+            DocumentorImplementor::OWLOntologyDocumentor(documentor) => {
+                documentor.file_name()
+            },
             DocumentorImplementor::OWLClassDocumentor(documentor) => {
                 documentor.file_name()
             },
             DocumentorImplementor::MarkdownDocumentor(documentor) => {
                 documentor.file_name()
             },
-            DocumentorImplementor::JekyllMarkdownDocumentor(
-                documentor,
-            ) => documentor.file_name(),
+            DocumentorImplementor::JekyllMarkdownDocumentor(documentor) => {
+                documentor.file_name()
+            },
         }
     }
 }

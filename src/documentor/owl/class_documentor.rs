@@ -13,20 +13,19 @@ use {
     },
 };
 
-static OWL_CLASS_DOCUMENTOR_FILE_TYPES: LazyLock<
-    &'static [&'static FileType],
-> = LazyLock::new(|| {
-    let file_types = vec![
-        &FileType::RdfXml,
-        &FileType::NTriples,
-        &FileType::JSONLD,
-        &FileType::Turtle,
-        &FileType::NQuads,
-        &FileType::N3,
-        &FileType::TriG,
-    ];
-    Box::leak(Box::new(file_types))
-});
+static OWL_CLASS_DOCUMENTOR_FILE_TYPES: LazyLock<&'static [&'static FileType]> =
+    LazyLock::new(|| {
+        let file_types = vec![
+            &FileType::RdfXml,
+            &FileType::NTriples,
+            &FileType::JSONLD,
+            &FileType::Turtle,
+            &FileType::NQuads,
+            &FileType::N3,
+            &FileType::TriG,
+        ];
+        Box::leak(Box::new(file_types))
+    });
 
 /// A documentor for OWL classes.
 #[derive(Debug, Clone)]

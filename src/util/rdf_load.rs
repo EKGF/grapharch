@@ -41,18 +41,19 @@ async fn rdf_load_from_url(
     );
 
     let client = Client::new();
-    let response = client.get(url).send().await.map_err(|e| {
-        anyhow::Error::new(e).context("Failed to send request")
-    })?;
+    let response =
+        client.get(url).send().await.map_err(|e| {
+            anyhow::Error::new(e).context("Failed to send request")
+        })?;
     if !response.status().is_success() {
         return Err(anyhow::Error::msg(format!(
             "Failed to fetch URL: {}",
             response.status()
         )));
     }
-    let mut stream = response.bytes_stream().map_err(|e| {
-        std::io::Error::new(std::io::ErrorKind::Other, e)
-    });
+    let mut stream = response
+        .bytes_stream()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e));
     let mut buffer = Vec::new();
     while let Some(chunk) = stream.try_next().await? {
         buffer.extend_from_slice(&chunk);

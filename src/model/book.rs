@@ -79,8 +79,7 @@ impl BookBuilder {
     /// provided Store.
     pub fn build(self, store: &Store) -> Result<Book> {
         let book_uuid = Uuid::new_v4();
-        let book_node =
-            NamedNode::new(format!("urn:uuid:{}", book_uuid))?;
+        let book_node = NamedNode::new(format!("urn:uuid:{}", book_uuid))?;
         let graph_name = GraphName::DefaultGraph;
 
         let title_quad = Quad::new(
@@ -105,9 +104,7 @@ impl BookBuilder {
         if let Some(separator) = &self.title_separator {
             let separator_quad = Quad::new(
                 book_node.clone(),
-                NamedNode::new(
-                    "http://example.com/schema/titleSeparator",
-                )?,
+                NamedNode::new("http://example.com/schema/titleSeparator")?,
                 Literal::new_simple_literal(separator),
                 graph_name.clone(),
             );
@@ -117,9 +114,7 @@ impl BookBuilder {
         if let Some(repository) = &self.repository {
             let repository_quad = Quad::new(
                 book_node.clone(),
-                NamedNode::new(
-                    "http://example.com/schema/repository",
-                )?,
+                NamedNode::new("http://example.com/schema/repository")?,
                 Literal::new_simple_literal(repository),
                 graph_name.clone(),
             );

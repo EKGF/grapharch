@@ -25,10 +25,7 @@ impl DocumentationModel {
     /// Add an interesting quad to the doc model that needs to be
     /// documented. Usually this is about quads whose predicate is
     /// rdf:type so it's primarily the subject that's interesting.
-    pub async fn add_quad(
-        &mut self,
-        quad: QuadRef<'_>,
-    ) -> anyhow::Result<()> {
+    pub async fn add_quad(&mut self, quad: QuadRef<'_>) -> anyhow::Result<()> {
         self.store.insert(quad)?;
         trace!("Added quad to docmodel: {:?}", quad);
         Ok(())
@@ -50,8 +47,7 @@ impl DocumentationModel {
         let author_quads = book.authors.iter().map(|author| {
             Quad::new(
                 book_node.clone(),
-                NamedNode::new("http://purl.org/dc/terms/creator")
-                    .unwrap(),
+                NamedNode::new("http://purl.org/dc/terms/creator").unwrap(),
                 Literal::new_simple_literal(author),
                 graph_name.clone(),
             )
@@ -68,10 +64,7 @@ impl DocumentationModel {
 }
 
 impl std::fmt::Debug for DocumentationModel {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "DocumentationModel")
     }
 }

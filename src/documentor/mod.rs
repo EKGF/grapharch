@@ -3,10 +3,7 @@ mod owl;
 mod this;
 
 pub use {
-    markdown::{
-        JekyllMarkdownDocumentorImpl,
-        MarkdownDocumentorImpl,
-    },
+    markdown::{JekyllMarkdownDocumentorImpl, MarkdownDocumentorImpl},
     owl::{OWLClassDocumentorImpl, OWLOntologyDocumentorImpl},
     this::{
         Documentor,

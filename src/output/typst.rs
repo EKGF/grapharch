@@ -8,10 +8,7 @@ pub struct TypstGenerator {
 impl TypstGenerator {
     pub fn new<P: AsRef<Path>>(output_dir: P) -> Self {
         Self {
-            output_dir: output_dir
-                .as_ref()
-                .to_string_lossy()
-                .into_owned(),
+            output_dir: output_dir.as_ref().to_string_lossy().into_owned(),
         }
     }
 

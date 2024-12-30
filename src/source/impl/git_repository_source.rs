@@ -1,9 +1,5 @@
 use {
-    super::super::{
-        FileSource,
-        FileSourceCreator,
-        FileSourceVariant,
-    },
+    super::super::{FileSource, FileSourceCreator, FileSourceVariant},
     crate::{
         source::FileSystemSourceImpl,
         util::{FileTypeSlice, contents_of_local_file},
@@ -62,11 +58,9 @@ impl FileSource for GitRepositorySourceImpl {
         })
         .await??;
 
-        let files = FileSystemSourceImpl::scan_files(
-            types,
-            self.temp_dir.clone(),
-        )
-        .await?;
+        let files =
+            FileSystemSourceImpl::scan_files(types, self.temp_dir.clone())
+                .await?;
 
         tracing::info!(
             "Found {} files in git repository {}",
@@ -81,14 +75,9 @@ impl FileSource for GitRepositorySourceImpl {
 
     fn url(&self) -> Option<&str> { Some(&self.repo_url) }
 
-    fn variant(&self) -> FileSourceVariant {
-        FileSourceVariant::GitRepository
-    }
+    fn variant(&self) -> FileSourceVariant { FileSourceVariant::GitRepository }
 
-    async fn content_of(
-        &self,
-        file_path: &Path,
-    ) -> anyhow::Result<String> {
+    async fn content_of(&self, file_path: &Path) -> anyhow::Result<String> {
         contents_of_local_file(file_path).await
     }
 }
@@ -96,11 +85,7 @@ impl FileSource for GitRepositorySourceImpl {
 #[cfg(test)]
 mod tests {
     use crate::{
-        source::{
-            FileSource,
-            FileSourceImplementor,
-            FileSourceVariant,
-        },
+        source::{FileSource, FileSourceImplementor, FileSourceVariant},
         util::{FileType, derive_root_directory},
     };
 
@@ -111,8 +96,7 @@ mod tests {
             None,
             Some("https://github.com/EKGF/grapharch.git"),
         )?;
-        let files =
-            source.scan(&[&FileType::Markdown]).await.unwrap();
+        let files = source.scan(&[&FileType::Markdown]).await.unwrap();
         assert!(files.len() > 0);
         for file in &files {
             println!("{}", file.display());
@@ -122,9 +106,7 @@ mod tests {
         assert!(&root_dir.is_some());
         if let Some(root_dir) = &root_dir {
             assert!(files.contains(&root_dir.join("README.md")));
-            assert!(
-                files.contains(&root_dir.join("CONTRIBUTING.md"))
-            );
+            assert!(files.contains(&root_dir.join("CONTRIBUTING.md")));
         }
 
         Ok(())

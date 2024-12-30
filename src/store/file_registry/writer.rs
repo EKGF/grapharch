@@ -62,11 +62,7 @@ impl<'a> FileRegistryWriter<'a> {
         node_type: NamedNode,
     ) -> anyhow::Result<()> {
         self.store
-            .insert_node_of_type(
-                node,
-                node_type,
-                self.graph_name.clone(),
-            )
+            .insert_node_of_type(node, node_type, self.graph_name.clone())
             .await
     }
 
@@ -86,9 +82,7 @@ impl<'a> FileRegistryWriter<'a> {
             .await
     }
 
-    pub async fn register(
-        &self,
-    ) -> anyhow::Result<(String, NamedNode)> {
+    pub async fn register(&self) -> anyhow::Result<(String, NamedNode)> {
         // Open the file asynchronously
         let mut file = fs::File::open(&self.file_name).await?;
 
@@ -126,9 +120,7 @@ impl<'a> FileRegistryWriter<'a> {
         self.insert_quad2(
             file_name_node.clone(),
             OXI_RDFS_LABEL.clone(),
-            Literal::new_simple_literal(
-                &*self.file_name.to_string_lossy(),
-            ),
+            Literal::new_simple_literal(&*self.file_name.to_string_lossy()),
         )
         .await?;
 

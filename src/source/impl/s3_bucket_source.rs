@@ -44,14 +44,9 @@ impl FileSource for S3BucketSourceImpl {
 
     fn url(&self) -> Option<&str> { Some(&self.bucket_url) }
 
-    fn variant(&self) -> FileSourceVariant {
-        FileSourceVariant::S3Bucket
-    }
+    fn variant(&self) -> FileSourceVariant { FileSourceVariant::S3Bucket }
 
-    async fn content_of(
-        &self,
-        _file_path: &Path,
-    ) -> anyhow::Result<String> {
+    async fn content_of(&self, _file_path: &Path) -> anyhow::Result<String> {
         todo!()
     }
 }

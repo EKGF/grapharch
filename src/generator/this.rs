@@ -62,16 +62,14 @@ impl DocumentationGenerator {
         file_names: &Vec<&PathBuf>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         let documentors: Vec<DocumentorImplementor> =
-            futures::future::try_join_all(self.loaders.iter().map(
-                |loader| {
-                    loader.load_files(
-                        source,
-                        file_names,
-                        self.loader_store.clone(),
-                        self.doc_model.clone(),
-                    )
-                },
-            ))
+            futures::future::try_join_all(self.loaders.iter().map(|loader| {
+                loader.load_files(
+                    source,
+                    file_names,
+                    self.loader_store.clone(),
+                    self.doc_model.clone(),
+                )
+            }))
             .await?
             .into_iter()
             .flatten()
@@ -83,11 +81,8 @@ impl DocumentationGenerator {
             if let Some(file_name) = documentor.file_name() {
                 tracing::info!(
                     "Documentor file name: {:}",
-                    relative_path(
-                        file_name,
-                        source.root_path().unwrap()
-                    )
-                    .display()
+                    relative_path(file_name, source.root_path().unwrap())
+                        .display()
                 );
             }
         }
@@ -101,23 +96,19 @@ impl DocumentationGenerator {
         // First, we need to get the file names that the loaders can
         // handle
         let file_names = self.file_names(source).await?;
-        let file_names_by_ref: Vec<&PathBuf> =
-            file_names.iter().collect();
+        let file_names_by_ref: Vec<&PathBuf> = file_names.iter().collect();
 
         // Next, we need to load the files into the loader store and
         // collect, from the loaders, the documentors that can handle
         // the given file types.
-        let documentors =
-            self.documentors(source, &file_names_by_ref).await?;
+        let documentors = self.documentors(source, &file_names_by_ref).await?;
 
         // Finally, we need to generate the documentatable items into
         // the doc_model, using the documentors. This is the
         // only step where a Documentor is allowed
         // to mutate the doc_model.
         futures::future::try_join_all(
-            documentors
-                .iter()
-                .map(|documentor| documentor.generate()),
+            documentors.iter().map(|documentor| documentor.generate()),
         )
         .await?;
 

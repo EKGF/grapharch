@@ -60,12 +60,8 @@ pub enum LoaderImplementor {
 impl Loader for LoaderImplementor {
     fn file_types(&self) -> FileTypeSliceStatic {
         match self {
-            LoaderImplementor::MarkdownLoader(loader) => {
-                loader.file_types()
-            },
-            LoaderImplementor::RDFLoader(loader) => {
-                loader.file_types()
-            },
+            LoaderImplementor::MarkdownLoader(loader) => loader.file_types(),
+            LoaderImplementor::RDFLoader(loader) => loader.file_types(),
         }
     }
 
@@ -78,8 +74,7 @@ impl Loader for LoaderImplementor {
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         let applicable_file_names = self.applicable_files(file_names);
         tracing::info!(
-            "The {:} will load {} applicable files into the \
-             loader-store",
+            "The {:} will load {} applicable files into the loader-store",
             self,
             applicable_file_names.len()
         );
@@ -109,14 +104,9 @@ impl Loader for LoaderImplementor {
 }
 
 impl std::fmt::Display for LoaderImplementor {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoaderImplementor::MarkdownLoader(loader) => {
-                loader.fmt(f)
-            },
+            LoaderImplementor::MarkdownLoader(loader) => loader.fmt(f),
             LoaderImplementor::RDFLoader(loader) => loader.fmt(f),
         }
     }

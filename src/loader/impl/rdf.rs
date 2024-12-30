@@ -44,30 +44,26 @@ impl Loader for RDFLoader {
         loader_store: LoaderStore,
         doc_model: DocumentationModel,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
-        let documentors = futures::future::try_join_all(
-            file_names.iter().map(|file_name| {
+        let documentors =
+            futures::future::try_join_all(file_names.iter().map(|file_name| {
                 self.load_file(
                     file_source,
                     file_name.as_path(),
                     loader_store.clone(),
                     doc_model.clone(),
                 )
-            }),
-        )
-        .await?
-        .into_iter()
-        .flatten()
-        .collect();
+            }))
+            .await?
+            .into_iter()
+            .flatten()
+            .collect();
 
         Ok(documentors)
     }
 }
 
 impl std::fmt::Display for RDFLoader {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "RDF-loader")
     }
 }
@@ -82,11 +78,8 @@ impl RDFLoader {
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         tracing::info!(
             "Loading RDF file {:}",
-            relative_path(
-                file_name,
-                file_source.root_path().unwrap()
-            )
-            .display()
+            relative_path(file_name, file_source.root_path().unwrap())
+                .display()
         );
         let file_name_clone = file_name.to_path_buf().clone();
         let parser = self.get_parser(file_name_clone.as_path())?;
@@ -122,9 +115,7 @@ impl RDFLoader {
                 doc_model,
             );
             documentors.push(documentor);
-            Ok::<Vec<DocumentorImplementor>, anyhow::Error>(
-                documentors,
-            )
+            Ok::<Vec<DocumentorImplementor>, anyhow::Error>(documentors)
         })
         .await?;
 
@@ -140,15 +131,11 @@ impl RDFLoader {
     }
 
     #[allow(unused)]
-    fn get_parser(
-        &self,
-        file_name: &Path,
-    ) -> anyhow::Result<RdfParser> {
+    fn get_parser(&self, file_name: &Path) -> anyhow::Result<RdfParser> {
         let graph_name = NamedNodeRef::new("http://example.com/g2")?;
         let base_iri = "http://example.com";
 
-        let extension =
-            file_name.extension().unwrap().to_str().unwrap();
+        let extension = file_name.extension().unwrap().to_str().unwrap();
 
         if let Some(format) = RdfFormat::from_extension(extension) {
             Ok(RdfParser::from_format(format)

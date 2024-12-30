@@ -18,8 +18,7 @@ use {
 static JEKYLL_MARKDOWN_DOCUMENTOR_FILE_TYPES: LazyLock<
     &'static [&'static FileType],
 > = LazyLock::new(|| {
-    let file_types =
-        vec![&FileType::JekyllConfig, &FileType::Markdown];
+    let file_types = vec![&FileType::JekyllConfig, &FileType::Markdown];
     Box::leak(Box::new(file_types))
 });
 
@@ -87,13 +86,11 @@ impl Documentor for JekyllMarkdownDocumentorImpl {
         let mut book_builder =
             BookBuilder::new("Markdown Documentation".to_string());
 
-        let config: JekyllConfig =
-            serde_yaml::from_str(&config_file)?;
+        let config: JekyllConfig = serde_yaml::from_str(&config_file)?;
 
         // Set the BookBuilder attributes based on the config
         if let Some(title_separator) = config.title_separator {
-            book_builder =
-                book_builder.title_separator(title_separator);
+            book_builder = book_builder.title_separator(title_separator);
         }
         if let Some(repository) = config.repository {
             book_builder = book_builder.repository(repository);
@@ -123,8 +120,7 @@ impl JekyllMarkdownDocumentorImpl {
             self.file_source.scan(&[&FileType::Markdown]).await?;
 
         for file_path in markdown_files {
-            let content =
-                self.file_source.content_of(&file_path).await?;
+            let content = self.file_source.content_of(&file_path).await?;
             self.process_markdown(&content).await?;
         }
         Ok(())
@@ -132,10 +128,7 @@ impl JekyllMarkdownDocumentorImpl {
 
     /// Processes the content of a markdown file and adds it to the
     /// documentation model.
-    async fn process_markdown(
-        &self,
-        content: &str,
-    ) -> anyhow::Result<()> {
+    async fn process_markdown(&self, content: &str) -> anyhow::Result<()> {
         // Log the length of the markdown content being processed
         info!(
             "Processing markdown content of length: {}",

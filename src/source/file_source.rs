@@ -33,10 +33,7 @@ pub trait FileSource: Sync {
     fn variant(&self) -> FileSourceVariant;
 
     /// Returns the content of the file at the given path.
-    async fn content_of(
-        &self,
-        file_path: &Path,
-    ) -> anyhow::Result<String>;
+    async fn content_of(&self, file_path: &Path) -> anyhow::Result<String>;
 }
 
 pub trait FileSourceCreator: Sized {
@@ -45,8 +42,8 @@ pub trait FileSourceCreator: Sized {
     /// # Arguments
     ///
     /// * `root_path` - The root path of the file source if relevant.
-    /// * `endpoint_url` - The URL of the Git repository or S3 bucket
-    ///   if relevant.
+    /// * `endpoint_url` - The URL of the Git repository or S3 bucket if
+    ///   relevant.
     fn new(
         root_path: Option<&Path>,
         endpoint_url: Option<&str>,
@@ -83,9 +80,7 @@ impl FileSourceImplementor {
             },
             FileSourceVariant::GitRepository => {
                 Ok(FileSourceImplementor::GitRepositorySource(
-                    GitRepositorySourceImpl::new(
-                        root_path, repo_url,
-                    )?,
+                    GitRepositorySourceImpl::new(root_path, repo_url)?,
                 ))
             },
             FileSourceVariant::S3Bucket => {
@@ -142,20 +137,14 @@ impl FileSource for FileSourceImplementor {
             FileSourceImplementor::GitRepositorySource(source) => {
                 source.root_path()
             },
-            FileSourceImplementor::S3BucketSource(source) => {
-                source.root_path()
-            },
+            FileSourceImplementor::S3BucketSource(source) => source.root_path(),
         }
     }
 
     fn url(&self) -> Option<&str> {
         match self {
-            FileSourceImplementor::GitRepositorySource(source) => {
-                source.url()
-            },
-            FileSourceImplementor::S3BucketSource(source) => {
-                source.url()
-            },
+            FileSourceImplementor::GitRepositorySource(source) => source.url(),
+            FileSourceImplementor::S3BucketSource(source) => source.url(),
             _ => None,
         }
     }
@@ -174,10 +163,7 @@ impl FileSource for FileSourceImplementor {
         }
     }
 
-    async fn content_of(
-        &self,
-        file_path: &Path,
-    ) -> anyhow::Result<String> {
+    async fn content_of(&self, file_path: &Path) -> anyhow::Result<String> {
         match self {
             FileSourceImplementor::LocalDirectorySource(source) => {
                 source.content_of(file_path).await
@@ -197,11 +183,7 @@ mod tests {
     use {
         super::*,
         crate::{
-            source::{
-                FileSource,
-                FileSourceImplementor,
-                FileSourceVariant,
-            },
+            source::{FileSource, FileSourceImplementor, FileSourceVariant},
             util::FileType,
         },
         std::env::current_dir,

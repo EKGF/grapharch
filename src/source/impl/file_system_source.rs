@@ -50,14 +50,9 @@ impl FileSource for FileSystemSourceImpl {
 
     fn url(&self) -> Option<&str> { None }
 
-    fn variant(&self) -> FileSourceVariant {
-        FileSourceVariant::FileSystem
-    }
+    fn variant(&self) -> FileSourceVariant { FileSourceVariant::FileSystem }
 
-    async fn content_of(
-        &self,
-        file_path: &Path,
-    ) -> anyhow::Result<String> {
+    async fn content_of(&self, file_path: &Path) -> anyhow::Result<String> {
         contents_of_local_file(file_path).await
     }
 }
@@ -85,8 +80,7 @@ impl FileSystemSourceImpl {
                     .git_exclude(true)
                     .types(ignore_types)
                     .build();
-                let types_ref =
-                    FileType::create_vec_of_references(&types_vec);
+                let types_ref = FileType::create_vec_of_references(&types_vec);
                 let mut files = Vec::new();
                 for result in walker {
                     let entry = result.map_err(|e| {
@@ -96,10 +90,7 @@ impl FileSystemSourceImpl {
                         )
                     })?;
                     let path = entry.path();
-                    if FileType::is_matching_file_type(
-                        path,
-                        &types_ref[..],
-                    ) {
+                    if FileType::is_matching_file_type(path, &types_ref[..]) {
                         files.push(path.to_path_buf());
                     }
                 }
@@ -128,11 +119,7 @@ impl FileSystemSourceImpl {
 mod tests {
     use {
         super::*,
-        crate::source::{
-            FileSource,
-            FileSourceImplementor,
-            FileSourceVariant,
-        },
+        crate::source::{FileSource, FileSourceImplementor, FileSourceVariant},
     };
 
     #[tokio::test]
@@ -142,10 +129,7 @@ mod tests {
             Some(&Path::new(".")),
             None,
         )?;
-        let files = source
-            .scan(&[&FileType::Markdown].to_vec())
-            .await
-            .unwrap();
+        let files = source.scan(&[&FileType::Markdown].to_vec()).await.unwrap();
         println!("{:?}", files);
         Ok(())
     }

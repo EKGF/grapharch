@@ -27,15 +27,11 @@ lazy_static! {
     pub static ref OXI_RDFS_LABEL: NamedNode =
         NamedNode::new_unchecked(PREDICATE_RDFS_LABEL);
     pub static ref OXI_FILE_REGISTRY_IS_CONTENT_FOR_FILE: NamedNode =
-        NamedNode::new_unchecked(
-            PREDICATE_FILE_REGISTRY_IS_CONTENT_FOR_FILE
-        );
+        NamedNode::new_unchecked(PREDICATE_FILE_REGISTRY_IS_CONTENT_FOR_FILE);
     pub static ref OXI_FILE_REGISTRY_FILE_SIZE: NamedNode =
         NamedNode::new_unchecked(PREDICATE_FILE_REGISTRY_FILE_SIZE);
     pub static ref OXI_FILE_REGISTRY_LAST_MODIFIED: NamedNode =
-        NamedNode::new_unchecked(
-            PREDICATE_FILE_REGISTRY_LAST_MODIFIED
-        );
+        NamedNode::new_unchecked(PREDICATE_FILE_REGISTRY_LAST_MODIFIED);
     pub static ref OXI_FILE_REGISTRY_CREATED_AT: NamedNode =
         NamedNode::new_unchecked(PREDICATE_FILE_REGISTRY_CREATED_AT);
 }

@@ -29,30 +29,26 @@ impl Loader for MarkdownLoader {
         loader_store: LoaderStore,
         doc_model: DocumentationModel,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
-        let documentors = futures::future::try_join_all(
-            file_names.iter().map(|file_name| {
+        let documentors =
+            futures::future::try_join_all(file_names.iter().map(|file_name| {
                 self.load_file(
                     file_source,
                     file_name.as_path(),
                     loader_store.clone(),
                     doc_model.clone(),
                 )
-            }),
-        )
-        .await?
-        .into_iter()
-        .flatten()
-        .collect();
+            }))
+            .await?
+            .into_iter()
+            .flatten()
+            .collect();
 
         Ok(documentors)
     }
 }
 
 impl std::fmt::Display for MarkdownLoader {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Markdown-loader")
     }
 }
@@ -71,11 +67,8 @@ impl MarkdownLoader {
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         tracing::info!(
             "Loading Markdown file {:}",
-            relative_path(
-                file_name,
-                file_source.root_path().unwrap()
-            )
-            .display()
+            relative_path(file_name, file_source.root_path().unwrap())
+                .display()
         );
         let mut documentors = Vec::new();
 

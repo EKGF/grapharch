@@ -21,20 +21,19 @@ use {
     },
 };
 
-static OWL_ONTOLOGY_DOCUMENTOR_FILE_TYPES: LazyLock<
-    FileTypeSliceStatic,
-> = LazyLock::new(|| {
-    let file_types = vec![
-        &FileType::RdfXml,
-        &FileType::NTriples,
-        &FileType::JSONLD,
-        &FileType::Turtle,
-        &FileType::NQuads,
-        &FileType::N3,
-        &FileType::TriG,
-    ];
-    Box::leak(Box::new(file_types))
-});
+static OWL_ONTOLOGY_DOCUMENTOR_FILE_TYPES: LazyLock<FileTypeSliceStatic> =
+    LazyLock::new(|| {
+        let file_types = vec![
+            &FileType::RdfXml,
+            &FileType::NTriples,
+            &FileType::JSONLD,
+            &FileType::Turtle,
+            &FileType::NQuads,
+            &FileType::N3,
+            &FileType::TriG,
+        ];
+        Box::leak(Box::new(file_types))
+    });
 
 /// A documentor for OWL ontologies.
 #[derive(Debug, Clone)]
@@ -114,17 +113,14 @@ impl OWLOntologyDocumentorImpl {
         {
             for solution in solutions {
                 if let Some(class_iri) = solution?.get("resource") {
-                    if let TermRef::NamedNode(_class_iri) =
-                        class_iri.as_ref()
-                    {
-                        let documentor_enum_type =
-                            DocumentorImplementor::new(
-                                DocumentorVariant::OWLOntology,
-                                None,
-                                None,
-                                self.loader_store.clone(), /* class_iri.into_owned(), */
-                                self.doc_model.clone(),
-                            );
+                    if let TermRef::NamedNode(_class_iri) = class_iri.as_ref() {
+                        let documentor_enum_type = DocumentorImplementor::new(
+                            DocumentorVariant::OWLOntology,
+                            None,
+                            None,
+                            self.loader_store.clone(), /* class_iri.into_owned(), */
+                            self.doc_model.clone(),
+                        );
 
                         if let DocumentorImplementor::OWLOntologyDocumentor(
                             owl_ontology_documentor,

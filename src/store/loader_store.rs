@@ -58,15 +58,11 @@ impl LoaderStore {
         file_name: PathBuf,
     ) -> anyhow::Result<(String, NamedNode)> {
         let graph_name = self.graph_name_file_registry();
-        let write =
-            FileRegistryWriter::new(self, &graph_name, &file_name);
+        let write = FileRegistryWriter::new(self, &graph_name, &file_name);
         write.register().await
     }
 
-    pub async fn insert_quad(
-        &self,
-        quad: &Quad,
-    ) -> anyhow::Result<()> {
+    pub async fn insert_quad(&self, quad: &Quad) -> anyhow::Result<()> {
         self.store.insert(quad)?;
         Ok(())
     }
@@ -78,10 +74,8 @@ impl LoaderStore {
         object: impl Into<Term>,
         graph_name: impl Into<GraphName>,
     ) -> anyhow::Result<()> {
-        self.insert_quad(&Quad::new(
-            subject, predicate, object, graph_name,
-        ))
-        .await
+        self.insert_quad(&Quad::new(subject, predicate, object, graph_name))
+            .await
     }
 
     pub async fn insert_node_of_type(
@@ -102,10 +96,7 @@ impl LoaderStore {
 }
 
 impl std::fmt::Debug for LoaderStore {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "LoaderStore")
     }
 }
