@@ -13,7 +13,7 @@ on:
 
 jobs:
   # Build job
-  build:
+  pages-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,9 +22,10 @@ jobs:
           sparse-checkout: docs
       - name: Move & Show
         run: |
-          shopt -s dotglob  # So that .* files inside docs/ also get moved
-          mv docs/* .
+          rm Cargo.toml Cargo.lock cog.toml *.code* *.sh rust*
+          shopt -s dotglob ; mv docs/* .
           rm -rf docs
+          rm *.sh
           ls -R
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
