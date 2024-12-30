@@ -1,10 +1,9 @@
-mod model;
-mod output;
-mod source;
-mod util;
-pub use {
-    model::doc_model::DocumentationModel,
-    output::typst::TypstGenerator,
-    source::owl::OWLSource,
-    util::{rdf_load, setup_tracing},
-};
+pub mod documentor;
+pub mod generator;
+pub mod loader;
+pub mod model;
+pub mod output;
+pub mod rdf_const;
+pub mod source;
+pub mod store;
+pub mod util;

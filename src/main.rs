@@ -1,37 +1,34 @@
 use {
-    console::style,
     grapharch::{
-        DocumentationModel,
-        OWLSource,
-        TypstGenerator,
-        setup_tracing,
+        generator::DocumentationGenerator,
+        loader::{LoaderImplementor, MarkdownLoader, RDFLoader},
+        model::DocumentationModel,
+        source::{FileSourceImplementor, FileSourceVariant},
+        store::LoaderStore,
+        util::setup_tracing,
     },
+    std::path::Path,
     tracing::{error, info},
 };
 
 async fn run() -> anyhow::Result<()> {
     setup_tracing()?;
 
-    // Read the OWL file
-    let owl_url = "https://ekgf.github.io/dprod/dprod.ttl";
-    let mut owl_source = OWLSource::new(owl_url).map_err(|e| {
-        error!(
-            "{}: {}. URL: {}",
-            style("Failed to initialize OWLSource").red(),
-            e,
-            owl_url
-        );
+    let file_source = FileSourceImplementor::new(
+        FileSourceVariant::FileSystem,
+        Some(&Path::new(".")),
+        None,
+    )?;
 
-        anyhow::Error::msg(format!("{}: URL: {}", e, owl_url))
-    })?;
-
-    // Process the OWL file
-    let mut doc_model = DocumentationModel::new()?;
-    owl_source.analyze(&mut doc_model).await?;
-
-    // Generate output
-    let typst_gen = TypstGenerator::new("output");
-    typst_gen.generate(doc_model.get_store())?;
+    let generator = DocumentationGenerator::new(
+        vec![
+            LoaderImplementor::MarkdownLoader(MarkdownLoader {}),
+            LoaderImplementor::RDFLoader(RDFLoader {}),
+        ],
+        LoaderStore::new_in_memory()?,
+        DocumentationModel::new()?,
+    );
+    generator.generate_from_file_source(&file_source).await?;
 
     info!("Documentation generation completed successfully.");
     Ok(())
