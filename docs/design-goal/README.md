@@ -2,7 +2,7 @@
 title: "Design Goals"
 layout: default
 nav_order: 2
-permalink: /features/design-goals/
+permalink: /design-goals/
 ---
 
 # Design Goals
