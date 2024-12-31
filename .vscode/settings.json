@@ -7,4 +7,17 @@
     "git.pullBeforeCheckout": true,
     "evenBetterToml.taplo.bundled": true,
     "editor.formatOnSave": true,
+    "rust-analyzer.server.path": null,
+    "[rust]": {
+        "editor.formatOnSave": true,
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/.vscode": true,
+        "**/.idea": true,
+        "target/**": true,
+        "docs/.gems/**": true,
+        "docs/.sass-cache/**": true,
+    }
 }
