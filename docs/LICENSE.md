@@ -1,4 +1,11 @@
-MIT License
+---
+title: "License"
+layout: default
+nav_order: 1
+permalink: /LICENSE
+---
+
+# MIT License
 
 Copyright (c) 2024-2025 Enterprise Knowledge Graph Forum, Object Management Group Inc.
 

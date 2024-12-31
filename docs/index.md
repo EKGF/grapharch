@@ -121,7 +121,7 @@ See [How to Contribute](contribute/README.md) for more details.
 
 ## License
 
-GraphArch is released under the [MIT License](../LICENSE).
+GraphArch is released under the [MIT License](./LICENSE.md).
 
 ## Contact
 
