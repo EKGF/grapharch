@@ -3,6 +3,7 @@ title: Formats
 layout: default
 parent: Features
 nav_order: 4
+permalink: /features/formats/
 ---
 
 # Formats

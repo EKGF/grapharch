@@ -3,9 +3,10 @@ title: Source
 layout: default
 parent: Features
 nav_order: 2
+permalink: /features/sources/
 ---
 
-# Sources
+# Input Sources
 
 GraphArch supports multiple sources that can be scanned for "documentable items" such as
 OWL ontologies, SHACL shapes or anything else.

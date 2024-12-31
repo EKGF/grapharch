@@ -1,7 +1,8 @@
 ---
 title: "Design Goals"
 layout: default
-nav_order: 1
+nav_order: 2
+permalink: /features/design-goals/
 ---
 
 # Design Goals
@@ -61,13 +62,13 @@ to document "knowledge" in the broadest sense of the word.
       be exported to a set of markdown files, to a set of html files, to a
       set of json files, etc.
 
-  - [ ] [typst files that are used to generate professional PDFs](../feature/target-typst.md)
+  - [ ] [typst files that are used to generate professional PDFs](../features/targets/typst.md)
   - [ ] json files that can be used for further processing or
         feeding into a search engine.
   - [ ] [markdown files that can be used for further processing by tools
-        like MkDocs](../feature/target-markdown-for-mkdocs.md)
+        like MkDocs](../features/targets/markdown-for-mkdocs.md)
   - [ ] [reStructuredText files that can be used for further processing by tools
-        like Sphinx](../feature/target-rst-for-sphinx.md)
+        like Sphinx](../features/targets/rst-for-sphinx.md)
 
 - [ ] Most of the logic of the program will be published as a library, so that
       it can be reused in other projects.

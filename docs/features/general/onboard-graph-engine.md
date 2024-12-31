@@ -22,7 +22,7 @@ PS: This is not really a feature but more like a technical design decision.
 
 ## Derived features
 
-- Support other databases as the intermediate store, not just embedded
+- [ ]Support other databases as the intermediate store, not just embedded
   databases like OxiGraph or RDFox but external databases, probably
   most realistic to narrow that down to SPARQL databases.
   Note that this intermediate store is NOT necessarily the source of

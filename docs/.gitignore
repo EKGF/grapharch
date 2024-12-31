@@ -9,4 +9,8 @@ Gemfile.lock
 .sass-cache/
 vendor/
 .jekyll-metadata
-!target/
+!targets/
+!features/
+!design-goals/
+!contribute/
+!ontology/

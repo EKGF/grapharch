@@ -10,4 +10,4 @@ nav_order: 3
 Documentation can be generated as user-friendly websites or professionally
 formatted PDF reports.
 
-See [Targets](../target/README.md) for more information.
+See [Targets](../targets/README.md) for more information.

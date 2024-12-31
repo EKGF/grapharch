@@ -36,8 +36,8 @@ safe: false
 strict_front_matter: false
 include:
   - contribute
-  - design-goal
-  - feature
+  - design-goals
+  - features
   - ontology
 exclude:
   - .asset-cache
@@ -121,12 +121,12 @@ defaults:
     values:
       layout: default
   - scope:
-      path: design-goal
+      path: design-goals
       type: pages
     values:
       layout: default
   - scope:
-      path: feature
+      path: features
       type: pages
     values:
       layout: default

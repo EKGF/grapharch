@@ -3,6 +3,7 @@ title: Endpoint
 layout: default
 parent: Source
 nav_order: 999
+permalink: /features/sources/endpoints/
 ---
 
 # Endpoint-based Source
