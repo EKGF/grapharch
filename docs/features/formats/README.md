@@ -10,16 +10,21 @@ permalink: /features/formats/
 
 Formats are the types of data that GraphArch can process.
 Things to document can come from any number of sources providing
-data in a variety of formats and structures.
+data in a variety of formats, structures, and protocols.
 
-1. [RDF File](../source/file/source-file-rdf.md)
-1. [Markdown File](../source/file/source-file-markdown.md)
-1. [git](../source/endpoint/source-endpoint-git-repo.md)
-1. [SPARQL](../source/endpoint/source-endpoint-gsql.md)
-1. [Cypher](../source/endpoint/source-endpoint-cypher.md)
-1. [GSQL](../source/endpoint/source-endpoint-gsql.md)
-1. [GraphQL](../source/endpoint/source-endpoint-graphql.md)
-1. [SQL](../source/endpoint/source-endpoint-sql.md)
+1. [RDF File](../sources/files/rdf.md)
+1. [Markdown File](../sources/files/markdown.md)
+1. [JSON File](../sources/files/json.md)
+1. [CSV File](../sources/files/csv.md)
+1. [XML File](../sources/files/xml.md)
+1. [YAML File](../sources/files/yaml.md)
+1. [TOML File](../sources/files/toml.md)
+1. [git](../sources/endpoints/git-repo.md)
+1. [SPARQL](../sources/endpoints/sparql.md)
+1. [Cypher](../sources/endpoints/cypher.md)
+1. [GSQL](../sources/endpoints/gsql.md)
+1. [GraphQL](../sources/endpoints/graphql.md)
+1. [SQL](../sources/endpoints/sql.md)
 1. ...
 
 Obviously, the primary focus is on RDF data, either retrieved

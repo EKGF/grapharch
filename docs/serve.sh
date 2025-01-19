@@ -8,7 +8,7 @@
 # This script will serve the docs site locally using Jekyll.
 # It will use the configuration file _config_dev.yml for the local environment.
 #
-# The script assumes that the Jekyll and Bundler are installed and available in the PATH.
+# The script assumes that the Jekyll and Gem Bundle are installed and available in the PATH.
 #
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 export GEM_HOME="${SCRIPT_DIR}/.gems"
