@@ -28,3 +28,6 @@ Cargo.lock
 _site
 Gemfile.lock
 .bundles_cache
+
+.codegpt
+.gems
