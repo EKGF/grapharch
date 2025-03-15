@@ -1,6 +1,7 @@
 ---
 title: "Ontology"
 layout: default
+parent: Other
 nav_order: 4
 permalink: /ontology/
 ---

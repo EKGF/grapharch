@@ -1,7 +1,9 @@
 ---
 title: Status
 layout: default
-nav_order: 1
+parent: Other
+nav_order: 98
+permalink: /status
 ---
 
 # Status

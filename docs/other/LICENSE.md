@@ -1,7 +1,8 @@
 ---
 title: "License"
 layout: default
-nav_order: 1
+parent: Other
+nav_order: 99
 permalink: /LICENSE
 ---
 

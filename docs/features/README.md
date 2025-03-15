@@ -7,14 +7,24 @@ permalink: /features/
 
 # GraphArch Features
 
-TODO: Just a few examples of features, there's so much more
+## General Features
 
-## General
+- [**Ontology Precision**](./general/ontology-precision.md):
+  GraphArch emphasizes governance and precision in documenting ontologies,
+  schemas, and their relationships. It aims to deliver librarian-level
+  accuracy of definitions, domain ownership, and control for enterprise data management.
+- [**Business-Oriented Profiling**](./general/business-oriented-profiling.md):
+  GraphArch offers capabilities for graph database endpoint analysis that
+  can be particularly useful for business users to understand and describe
+  their data in their own terms.
+- [**Flexible Output Formats**](./general/flexible-output-formats.md):
+  Documentation can be generated as user-friendly websites or professionally
+  formatted PDF reports.
+- [**Onboard Graph Engine**](./general/onboard-graph-engine.md):
+  The tool includes [OxiGraph](https://github.com/oxigraph/oxigraph),
+  a graph database that can be used to generate data for further documentation,
+  integrating both input options seamlessly.
 
-- [Ontology Precision](./general/ontology-precision.md)
-- [Business Oriented Profiling](./general/business-oriented-profiling.md)
-- [Flexible Output Formats](./general/flexible-output-formats.md)
-- [Onboard Graph Engine](./general/onboard-graph-engine.md)
 
 ## Sources & Formats
 
