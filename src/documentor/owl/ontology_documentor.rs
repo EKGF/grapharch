@@ -98,7 +98,7 @@ impl Documentor for OWLOntologyDocumentorImpl {
 
         // Create a section for OWL classes
         info!("Creating section for OWL classes");
-        let section = Section::builder_in_model::<Section>(&self.doc_model)?
+        let _section = Section::builder_in_model::<Section>(&self.doc_model)?
             .title(Some("OWL Classes".to_string()))
             .description(Some(
                 "This section contains documentation for all OWL classes in \
