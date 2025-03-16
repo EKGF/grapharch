@@ -1,4 +1,4 @@
-@prefix doccats: <https://ekgf.org/taxonomy/grapharch#> .
+@prefix doccats: <https://ekgf.org/taxonomy/GraphArch#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 

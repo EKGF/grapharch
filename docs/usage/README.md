@@ -11,14 +11,14 @@ GraphArch can be used in two primary modes:
    To generate documentation for ontologies or schemas, use the following command:
 
    ```bash
-   cargo run grapharch --mode ontology --input <file|url>
+   cargo run GraphArch --mode ontology --input <file|url>
    ```
 
 2. **Graph Endpoint Discovery Mode**:
    To connect to a graph database endpoint and generate reports:
 
    ```bash
-   cargo run grapharch --mode graph --url <endpoint>
+   cargo run GraphArch --mode graph --url <endpoint>
    ```
 
 > [!NOTE]

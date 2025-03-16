@@ -18,7 +18,7 @@ git commit -m "feat: add new feature"
 Closes #<issue-number>
 ```
 
-See [Contribute](https://ekgf.github.io/grapharch/contribute/README/)
+See [Contribute](https://ekgf.github.io/GraphArch/contribute/README/)
 
 ## Conventional Commits
 

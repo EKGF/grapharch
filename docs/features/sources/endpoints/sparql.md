@@ -18,4 +18,4 @@ for things to document such as:
 - OMG Use Cases (see EKGF Use Case Tree Workgroup)
 
 Or, find "annotations" that people left behind in the graph,
-that instruct grapharch how to generate documentation.
+that instruct GraphArch how to generate documentation.

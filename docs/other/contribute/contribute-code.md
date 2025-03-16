@@ -37,7 +37,7 @@ local machine.
 
 ```shell
 git clone https://github.com/ekgf/grapharg.git
-cd grapharch
+cd GraphArch
 ```
 
 ### Create a Branch

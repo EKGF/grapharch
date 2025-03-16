@@ -10,7 +10,7 @@ GraphArch is a tool that generates documentation from various types of sources.
 It's primary focus is on generating documentation from graph databases, in particular
 OWL ontologies and SHACL shapes.
 
-[![.github/workflows/rust-ci.yml](https://github.com/EKGF/grapharch/actions/workflows/rust-ci.yml/badge.svg?branch=main)](https://github.com/EKGF/grapharch/actions/workflows/rust-ci.yml) [![CLA assistant](https://cla-assistant.io/readme/badge/EKGF/grapharch)](https://cla-assistant.io/EKGF/grapharch)
+[![.github/workflows/rust-ci.yml](https://github.com/EKGF/GraphArch/actions/workflows/rust-ci.yml/badge.svg?branch=main)](https://github.com/EKGF/GraphArch/actions/workflows/rust-ci.yml) [![CLA assistant](https://cla-assistant.io/readme/badge/EKGF/GraphArch)](https://cla-assistant.io/EKGF/GraphArch)
 
 **GraphArch** is an open-source tool developed
 by the Enterprise Knowledge Graph Forum ([EKGF](https://ekgf.org)),

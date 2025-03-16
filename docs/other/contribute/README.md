@@ -24,13 +24,13 @@ There are several ways you can contribute to GraphArch:
 
    If you come across a bug, please create an
    issue describing the problem and how to
-   reproduce it using [GitHub Issues](https://github.com/ekgf/grapharch/issues).
+   reproduce it using [GitHub Issues](https://github.com/ekgf/GraphArch/issues).
 
 2. **Suggest New Features**:
 
    If you have an idea for a new feature or an
    enhancement, feel free to open an issue to
-   discuss it using [GitHub Issues](https://github.com/ekgf/grapharch/issues).
+   discuss it using [GitHub Issues](https://github.com/ekgf/GraphArch/issues).
 
 3. **Code Contributions**:
 
@@ -56,7 +56,7 @@ We use [CLA assistant](https://cla-assistant.io/) to streamline this process.
 You will be prompted to sign the CLA when you
 make your first contribution.
 
-[![CLA assistant](https://cla-assistant.io/readme/badge/EKGF/grapharch)](https://cla-assistant.io/EKGF/grapharch)
+[![CLA assistant](https://cla-assistant.io/readme/badge/EKGF/GraphArch)](https://cla-assistant.io/EKGF/GraphArch)
 
 
 

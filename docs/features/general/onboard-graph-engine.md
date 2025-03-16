@@ -23,7 +23,7 @@ PS: This is not really a feature but more like a technical design decision.
 ## Derived features
 
 - [ ]Support other databases as the intermediate store, not just embedded
-  databases like OxiGraph or RDFox but external databases, probably
+  databases like [[OxiGraph](https://github.com/oxigraph/oxigraph)](https://github.com/oxigraph/oxigraph) or RDFox but external databases, probably
   most realistic to narrow that down to SPARQL databases.
   Note that this intermediate store is NOT necessarily the source of
   the documentation elements but in case the source is a SPARQL database
