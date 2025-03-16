@@ -31,3 +31,6 @@ Gemfile.lock
 
 .codegpt
 .gems
+
+rustc-ice-*.txt
+/output.pdf

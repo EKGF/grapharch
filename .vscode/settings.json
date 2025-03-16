@@ -1,23 +1,26 @@
 {
-    "editor.trimAutoWhitespace": true,
-    "files.autoSaveWorkspaceFilesOnly": true,
-    "files.trimTrailingWhitespace": true,
-    "git.enableCommitSigning": true,
-    "git.autofetch": "all",
-    "git.pullBeforeCheckout": true,
-    "evenBetterToml.taplo.bundled": true,
-    "editor.formatOnSave": true,
-    "rust-analyzer.server.path": null,
-    "[rust]": {
-        "editor.formatOnSave": true,
-    },
-    "files.exclude": {
-        "**/.git": true,
-        "**/.DS_Store": true,
-        "**/.vscode": true,
-        "**/.idea": true,
-        "target/**": true,
-        "docs/.gems/**": true,
-        "docs/.sass-cache/**": true,
-    }
+  "editor.trimAutoWhitespace": true,
+  "files.autoSaveWorkspaceFilesOnly": true,
+  "files.trimTrailingWhitespace": true,
+  "git.enableCommitSigning": true,
+  "git.autofetch": "all",
+  "git.pullBeforeCheckout": true,
+  "evenBetterToml.taplo.bundled": true,
+  "editor.formatOnSave": true,
+  "[rust]": {
+    "editor.formatOnSave": true
+  },
+  "rust-analyzer.imports.granularity.group": "module",
+  "rust-analyzer.imports.prefix": "self",
+  "rust-analyzer.imports.style": "absolute",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/.vscode": true,
+    "**/.idea": true,
+    "target/**": true,
+    "docs/.gems/**": true,
+    "docs/.sass-cache/**": true
+  },
+  "rust-analyzer.server.path": null
 }

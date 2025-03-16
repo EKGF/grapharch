@@ -26,14 +26,33 @@ info:
   @echo "repo_root: {{repo_root}}"
   @echo "user_docs_dir: {{user_docs_dir}}"
 
-build-grapharch:
+GraphArch-build:
   cargo +nightly build
 
 # notify update in keybase
 notify m="":
 	keybase chat send --topic-type "chat" --channel <channel> <team> "upd(<repo>): {{m}}"
 
-build: build-grapharch user-docs-build
+docs: user-docs-build user-docs-serve-no-ssl
 
-run:
-  cargo +nightly run
+build: GraphArch-build user-docs-build
+
+rebuild:
+  cargo clean
+  just build
+
+check:
+  cargo +nightly check --all-features --verbose
+  cargo +nightly clippy --all-features --message-format=json
+  cargo +nightly fmt -- --check
+
+test:
+  cargo +nightly test --all-features
+  # cargo +nightly test --all-features -- --nocapture
+
+run *args:
+  cargo +nightly run -- {{args}}
+
+lint:
+  cargo +nightly clippy --all-features --message-format=json
+  cargo +nightly fmt -- --check

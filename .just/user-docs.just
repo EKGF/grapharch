@@ -13,7 +13,7 @@ export SSL_CERT_FILE := join(SSL_DIR, "localhost.crt")
 user-docs-build: _user_docs_install_gem_file
   #!/usr/bin/env bash
   cd {{user_docs_dir}}
-  jekyll build
+  bundle exec jekyll build
 
 user-docs-clean:
   #!/usr/bin/env bash -x

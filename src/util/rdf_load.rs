@@ -51,9 +51,7 @@ async fn rdf_load_from_url(
             response.status()
         )));
     }
-    let mut stream = response
-        .bytes_stream()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e));
+    let mut stream = response.bytes_stream().map_err(std::io::Error::other);
     let mut buffer = Vec::new();
     while let Some(chunk) = stream.try_next().await? {
         buffer.extend_from_slice(&chunk);

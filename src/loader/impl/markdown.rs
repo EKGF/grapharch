@@ -2,13 +2,16 @@ use {
     super::super::Loader,
     crate::{
         documentor::{DocumentorImplementor, DocumentorVariant},
-        model::DocumentationModel,
+        model::Model,
         source::{FileSource, FileSourceImplementor},
         store::LoaderStore,
         util::{FileType, FileTypeSliceStatic, relative_path},
     },
     async_trait::async_trait,
-    std::path::{Path, PathBuf},
+    std::{
+        path::{Path, PathBuf},
+        sync::Arc,
+    },
 };
 
 #[derive(Debug)]
@@ -27,7 +30,7 @@ impl Loader for MarkdownLoader {
         file_source: &FileSourceImplementor,
         file_names: &[&PathBuf],
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         let documentors =
             futures::future::try_join_all(file_names.iter().map(|file_name| {
@@ -63,7 +66,7 @@ impl MarkdownLoader {
         file_source: &FileSourceImplementor,
         file_name: &Path,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         tracing::info!(
             "Loading Markdown file {:}",

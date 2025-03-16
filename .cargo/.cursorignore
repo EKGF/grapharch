@@ -1,0 +1,6 @@
+.gems/
+.ssl/
+.codegpt/
+Cargo.lock
+Gemfile.lock
+.idea/

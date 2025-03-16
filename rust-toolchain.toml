@@ -1,6 +1,6 @@
 [toolchain]
 # At this phase of the project we may just as well use nightly
 channel = "nightly"
-components = [ "rustfmt", "clippy" ]
-# We may want run grapharch in the browser
-targets = [ "wasm32-unknown-unknown" ]
+components = ["rustfmt", "clippy"]
+# We may want run GraphArch in the browser
+targets = ["wasm32-unknown-unknown"]

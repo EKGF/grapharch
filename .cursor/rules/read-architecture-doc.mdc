@@ -1,0 +1,10 @@
+---
+description: Always read docs/other/architecture/README.md first
+globs: **/*.rs
+alwaysApply: false
+---
+
+# Your rule content
+
+- Read and follow the content of docs/other/architecture/README.md
+

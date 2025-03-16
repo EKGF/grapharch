@@ -1,0 +1,24 @@
+---
+description: Rust Rules
+globs: **/*.rs
+alwaysApply: false
+---
+
+# Rust Rules
+
+- When a rust module is stored in a directory and not in a file, then
+  this directory must have a mod.rs file as usual. But when there's a
+  class in that module that has the same name as the module (in
+  lower-kebab-case) then we always define that class in a file called `this.rs`
+  next to `mod.rs`.
+- Don't ask whether to proceed, just do it.
+- Every class and trait should have rustdoc compliant documentation.
+- Always update the documentation of a class or trait when important changes
+  are made to the class or trait.
+- Treat the documentation of a class or trait as if it were an instruction.
+
+
+
+
+
+

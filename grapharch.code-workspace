@@ -5,30 +5,34 @@
     }
   ],
   "settings": {
-    "CodeGPT.apiKey": "CodeGPT Plus Beta",
-    "editor.formatOnSave": true,
+    "editor.trimAutoWhitespace": true,
+    "files.autoSaveWorkspaceFilesOnly": true,
+    "files.trimTrailingWhitespace": true,
+    "git.enableCommitSigning": true,
+    "git.autofetch": "all",
+    "git.pullBeforeCheckout": true,
     "evenBetterToml.taplo.bundled": true,
+    "editor.formatOnSave": true,
+    "[rust]": {
+      "editor.formatOnSave": true
+    },
+    "rust-analyzer.imports.granularity": "module",
+    "rust-analyzer.imports.prefix": "self",
+    "rust-analyzer.imports.style": "absolute",
+    "CodeGPT.apiKey": "CodeGPT Plus",
     "git-graph.repository.commits.fetchAvatars": true,
     "git-graph.repository.commits.showSignatureStatus": true,
     "git-graph.repository.sign.commits": true,
-    "git.autofetch": "all",
-    "git.enableCommitSigning": true,
-    "git.pullBeforeCheckout": true,
     "github.gitProtocol": "ssh",
-    "rust-analyzer.assist.emitMustUse": true,
     "rust-analyzer.check.command": "clippy",
-    "rust-analyzer.diagnostics.styleLints.enable": true,
-    "rust-analyzer.hover.actions.references.enable": true,
-    "rust-analyzer.imports.granularity.enforce": true,
-    "rust-analyzer.inlayHints.closureStyle": "impl_fn",
-    "rust-analyzer.lens.references.adt.enable": true,
-    "rust-analyzer.lens.references.enumVariant.enable": true,
-    "rust-analyzer.lens.references.method.enable": true,
-    "rust-analyzer.lens.references.trait.enable": true,
-    "rust-analyzer.restartServerOnConfigChange": true,
-    "rust-analyzer.testExplorer": true,
-    "[rust]": {
-      "editor.formatOnSave": true
-    }
+    "rust-analyzer.check.extraArgs": [
+      "--all-features"
+    ],
+    "rust-analyzer.checkOnSave": true,
+    "rust-analyzer.rustc.source": "discover",
+    "rust-analyzer.diagnostics.enable": true,
+    "rust-analyzer.diagnostics.disabled": [],
+    "rust-analyzer.diagnostics.warningsAsInfo": [],
+    "rust-analyzer.diagnostics.warningsAsHint": []
   }
 }

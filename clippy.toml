@@ -1,0 +1,6 @@
+# Configure clippy lints
+warn-on-all-wildcard-imports = true
+cognitive-complexity-threshold = 25
+too-many-arguments-threshold = 7
+too-many-lines-threshold = 100
+type-complexity-threshold = 250

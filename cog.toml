@@ -34,5 +34,5 @@ path = "CHANGELOG.md"
 template = "remote"
 remote = "github.com"
 owner = "EKGF"
-repository = "grapharch"
+repository = "GraphArch"
 authors = [{ signature = "Jacobus Geluk", username = "jgeluk" }]
