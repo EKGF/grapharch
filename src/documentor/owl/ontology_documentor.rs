@@ -67,6 +67,18 @@ impl Documentor for OWLOntologyDocumentorImpl {
     async fn generate(&self) -> anyhow::Result<()> {
         info!("Starting OWL ontology documentation generation");
 
+        // Debug: Print all triples in the store to help diagnose issues
+        info!("Debugging: Printing sample triples from the store");
+        if let Err(e) = self.loader_store.debug_print_all_triples() {
+            info!("Error printing triples: {}", e);
+        }
+
+        // Debug: Check for any classes in the ontology
+        info!("Debugging: Checking for any classes in the ontology");
+        if let Err(e) = self.loader_store.debug_check_for_any_classes() {
+            info!("Error checking for classes: {}", e);
+        }
+
         // Create a book for the ontology
         let title = self
             .file_name
@@ -84,14 +96,9 @@ impl Documentor for OWLOntologyDocumentorImpl {
 
         info!("Book created successfully");
 
-        // Find all OWL classes in the loader store
-        info!("Finding OWL classes in loader store");
-        let classes = self.loader_store.find_owl_classes()?;
-        info!("Found {} OWL classes", classes.len());
-
         // Create a section for OWL classes
         info!("Creating section for OWL classes");
-        Section::builder_in_model::<Section>(&self.doc_model)?
+        let section = Section::builder_in_model::<Section>(&self.doc_model)?
             .title(Some("OWL Classes".to_string()))
             .description(Some(
                 "This section contains documentation for all OWL classes in \
@@ -103,18 +110,47 @@ impl Documentor for OWLOntologyDocumentorImpl {
 
         // Create chapters for each OWL class
         info!("Creating chapters for OWL classes");
-        for class in classes {
+        let classes = self.loader_store.find_owl_classes()?;
+
+        if classes.is_empty() {
+            // If no classes were found, create a default chapter with
+            // information about the ontology
+            info!(
+                "No OWL classes found, creating a default chapter with \
+                 ontology information"
+            );
+
+            // Try to get ontology information
+            let ontology_info = self.get_ontology_info()?;
+
+            let content = if !ontology_info.is_empty() {
+                format!("# Ontology Information\n\n{}", ontology_info)
+            } else {
+                "No classes were found in this ontology. The file may not \
+                 contain OWL class definitions, or they may be defined using a \
+                 different vocabulary."
+                    .to_string()
+            };
+
             Chapter::builder_in_model::<Chapter>(&self.doc_model)?
-                .title(Some(
-                    class.label.unwrap_or_else(|| class.iri.clone()),
-                ))
-                .content(Some(
-                    class
-                        .comment
-                        .as_deref()
-                        .unwrap_or("No description available."),
-                ))
+                .title(Some("Ontology Overview".to_string()))
+                .content(Some(content.as_str()))
                 .build()?;
+        } else {
+            // Create chapters for each OWL class
+            for class in classes {
+                Chapter::builder_in_model::<Chapter>(&self.doc_model)?
+                    .title(Some(
+                        class.label.unwrap_or_else(|| class.iri.clone()),
+                    ))
+                    .content(Some(
+                        class
+                            .comment
+                            .as_deref()
+                            .unwrap_or("No description available."),
+                    ))
+                    .build()?;
+            }
         }
         info!("Chapters created successfully");
 
@@ -125,6 +161,125 @@ impl Documentor for OWLOntologyDocumentorImpl {
 }
 
 impl OWLOntologyDocumentorImpl {
+    /// Get information about the ontology itself
+    fn get_ontology_info(&self) -> anyhow::Result<String> {
+        let query = r#"
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX dc: <http://purl.org/dc/elements/1.1/>
+            PREFIX dcterms: <http://purl.org/dc/terms/>
+
+            SELECT ?ontology ?title ?label ?comment ?description ?creator ?date ?version
+            WHERE {
+                GRAPH ?g {
+                    ?ontology a owl:Ontology .
+                    OPTIONAL { ?ontology dc:title ?title }
+                    OPTIONAL { ?ontology dcterms:title ?title }
+                    OPTIONAL { ?ontology rdfs:label ?label }
+                    OPTIONAL { ?ontology rdfs:comment ?comment }
+                    OPTIONAL { ?ontology dc:description ?description }
+                    OPTIONAL { ?ontology dcterms:description ?description }
+                    OPTIONAL { ?ontology dc:creator ?creator }
+                    OPTIONAL { ?ontology dcterms:creator ?creator }
+                    OPTIONAL { ?ontology dc:date ?date }
+                    OPTIONAL { ?ontology dcterms:date ?date }
+                    OPTIONAL { ?ontology owl:versionInfo ?version }
+                }
+            }
+            LIMIT 1
+        "#;
+
+        let results = self.loader_store.store().query(query)?;
+        let mut info = String::new();
+
+        if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
+            let solutions: Vec<_> = solutions.collect::<Result<_, _>>()?;
+            if !solutions.is_empty() {
+                let solution = &solutions[0];
+
+                if let Some(ontology) = solution.get("ontology") {
+                    info.push_str(&format!(
+                        "## Ontology IRI\n\n{}\n\n",
+                        ontology
+                    ));
+                }
+
+                // Try to get title from various properties
+                if let Some(title) =
+                    solution.get("title").or(solution.get("label"))
+                {
+                    info.push_str(&format!("## Title\n\n{}\n\n", title));
+                }
+
+                // Try to get description from various properties
+                if let Some(desc) =
+                    solution.get("comment").or(solution.get("description"))
+                {
+                    info.push_str(&format!("## Description\n\n{}\n\n", desc));
+                }
+
+                // Add creator if available
+                if let Some(creator) = solution.get("creator") {
+                    info.push_str(&format!("## Creator\n\n{}\n\n", creator));
+                }
+
+                // Add date if available
+                if let Some(date) = solution.get("date") {
+                    info.push_str(&format!("## Date\n\n{}\n\n", date));
+                }
+
+                // Add version if available
+                if let Some(version) = solution.get("version") {
+                    info.push_str(&format!("## Version\n\n{}\n\n", version));
+                }
+            }
+        }
+
+        if info.is_empty() {
+            // If we couldn't find ontology info, try to get any triples
+            info.push_str(
+                "No detailed ontology information found. Here are some sample \
+                 triples from the file:\n\n",
+            );
+
+            let query = r#"
+                SELECT ?s ?p ?o
+                WHERE {
+                    GRAPH ?g {
+                        ?s ?p ?o .
+                    }
+                }
+                LIMIT 10
+            "#;
+
+            let results = self.loader_store.store().query(query)?;
+
+            if let oxigraph::sparql::QueryResults::Solutions(solutions) =
+                results
+            {
+                let solutions: Vec<_> = solutions.collect::<Result<_, _>>()?;
+                if !solutions.is_empty() {
+                    for solution in solutions {
+                        if let (Some(s), Some(p), Some(o)) = (
+                            solution.get("s"),
+                            solution.get("p"),
+                            solution.get("o"),
+                        ) {
+                            info.push_str(&format!(
+                                "- Subject: {}\n  Predicate: {}\n  Object: \
+                                 {}\n\n",
+                                s, p, o
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(info)
+    }
+
     /// Iterate over all OWL classes in the model and call the
     /// given closure or function with an OWLOntologyDocumentor for
     /// each class.

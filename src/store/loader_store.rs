@@ -58,6 +58,39 @@ impl LoaderStore {
 
     pub fn store(&self) -> Arc<Store> { self.store.clone() }
 
+    /// Debug function to print all triples in the store
+    pub fn debug_print_all_triples(&self) -> anyhow::Result<()> {
+        let query = r#"
+            SELECT ?s ?p ?o ?g
+            WHERE {
+                GRAPH ?g {
+                    ?s ?p ?o .
+                }
+            }
+            LIMIT 100
+        "#;
+
+        let results = self.store.query(query)?;
+
+        if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
+            println!("First 100 triples in the store:");
+            for solution in solutions {
+                let solution = solution?;
+                if let (Some(s), Some(p), Some(o), Some(g)) = (
+                    solution.get("s"),
+                    solution.get("p"),
+                    solution.get("o"),
+                    solution.get("g"),
+                ) {
+                    println!("Graph: {}", g);
+                    println!("  {} {} {}", s, p, o);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Returns the graph name for the file registry.
     fn graph_name_file_registry(&self) -> GraphName {
         OXI_GRAPH_FILE_REGISTRY.clone()
@@ -129,9 +162,20 @@ impl LoaderStore {
 
             SELECT DISTINCT ?class ?label ?comment
             WHERE {
-                ?class a owl:Class .
-                OPTIONAL { ?class rdfs:label ?label }
-                OPTIONAL { ?class rdfs:comment ?comment }
+                GRAPH ?g {
+                    {
+                        ?class a owl:Class .
+                    } UNION {
+                        ?class a rdfs:Class .
+                    } UNION {
+                        # Some ontologies use rdf:type directly
+                        ?class rdf:type owl:Class .
+                    } UNION {
+                        ?class rdf:type rdfs:Class .
+                    }
+                    OPTIONAL { ?class rdfs:label ?label }
+                    OPTIONAL { ?class rdfs:comment ?comment }
+                }
             }
             ORDER BY ?class
         "#;
@@ -181,6 +225,58 @@ impl LoaderStore {
         }
 
         Ok(classes)
+    }
+
+    /// Debug function to check if there are any classes in the ontology
+    pub fn debug_check_for_any_classes(&self) -> anyhow::Result<()> {
+        // Try different class patterns
+        let patterns = [
+            "?class a ?type . FILTER(CONTAINS(STR(?type), 'Class'))",
+            "?class <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type . \
+             FILTER(CONTAINS(STR(?type), 'Class'))",
+            "?class a ?type . FILTER(CONTAINS(STR(?type), 'class'))",
+            "?class <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type . \
+             FILTER(CONTAINS(STR(?type), 'class'))",
+            "?class a ?type .",
+            "?class <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .",
+        ];
+
+        for pattern in patterns {
+            let query = format!(
+                r#"
+                SELECT DISTINCT ?class ?type
+                WHERE {{
+                    GRAPH ?g {{
+                        {}
+                    }}
+                }}
+                LIMIT 10
+            "#,
+                pattern
+            );
+
+            let results = self.store.query(&query)?;
+
+            if let oxigraph::sparql::QueryResults::Solutions(solutions) =
+                results
+            {
+                let solutions: Vec<_> = solutions.collect::<Result<_, _>>()?;
+                if !solutions.is_empty() {
+                    println!("Found classes using pattern: {}", pattern);
+                    for solution in solutions {
+                        if let (Some(class), Some(type_)) =
+                            (solution.get("class"), solution.get("type"))
+                        {
+                            println!("  Class: {}, Type: {}", class, type_);
+                        }
+                    }
+                } else {
+                    println!("No classes found using pattern: {}", pattern);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
