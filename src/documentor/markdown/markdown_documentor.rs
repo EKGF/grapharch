@@ -1,7 +1,7 @@
 use {
     crate::{
         documentor::{Documentor, DocumentorCreator},
-        model::DocumentationModel,
+        model::Model,
         source::FileSourceImplementor,
         store::LoaderStore,
         util::{FileType, FileTypeSliceStatic},
@@ -9,7 +9,7 @@ use {
     async_trait::async_trait,
     std::{
         path::{Path, PathBuf},
-        sync::LazyLock,
+        sync::{Arc, LazyLock},
     },
 };
 
@@ -31,7 +31,7 @@ pub struct MarkdownDocumentorImpl {
     /// The given target documentation model that the
     /// MarkdownDocumentor will add its documentation to.
     #[allow(unused)]
-    doc_model:    DocumentationModel,
+    doc_model:    Arc<Model>,
 }
 
 #[async_trait]
@@ -42,7 +42,11 @@ impl Documentor for MarkdownDocumentorImpl {
 
     fn file_name(&self) -> Option<&Path> { self.file_name.as_deref() }
 
-    async fn generate(&self) -> anyhow::Result<()> { todo!() }
+    async fn generate(&self) -> anyhow::Result<()> {
+        Err(anyhow::anyhow!(
+            "Markdown documentation generation not yet implemented"
+        ))
+    }
 }
 
 impl DocumentorCreator for MarkdownDocumentorImpl {
@@ -50,7 +54,7 @@ impl DocumentorCreator for MarkdownDocumentorImpl {
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> Self {
         Self {
             file_source: file_source.unwrap(),

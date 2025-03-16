@@ -6,13 +6,13 @@ use {
         OWLOntologyDocumentorImpl,
     },
     crate::{
-        model::DocumentationModel,
+        model::Model,
         source::FileSourceImplementor,
         store::LoaderStore,
         util::FileTypeSliceStatic,
     },
     async_trait::async_trait,
-    std::{fmt::Debug, path::Path},
+    std::{fmt::Debug, path::Path, sync::Arc},
 };
 
 /// A trait for documentors that can document asynchronously.
@@ -50,7 +50,7 @@ pub trait DocumentorCreator: Sized {
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> Self
     where
         Self: Sized;
@@ -82,7 +82,7 @@ impl DocumentorImplementor {
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> Self {
         match variant {
             DocumentorVariant::OWLOntology => {

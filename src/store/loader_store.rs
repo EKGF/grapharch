@@ -8,19 +8,45 @@ use {
         model::{GraphName, NamedNode, Quad},
         store::Store,
     },
-    oxrdf::{Subject, Term},
+    oxrdf::{Subject, Term, TermRef},
     std::{path::PathBuf, sync::Arc},
 };
 
+/// Represents an OWL class from the source data
+#[derive(Debug, Clone)]
+pub struct OWLClass {
+    /// The IRI of the OWL class
+    pub iri:     String,
+    /// The human-readable label of the class
+    pub label:   Option<String>,
+    /// A description or comment about the class
+    pub comment: Option<String>,
+}
+
 // Define the named graph URI
 #[allow(unused)]
-const FILE_REGISTRY_GRAPH: &str = "urn:grapharch:file-registry";
+const FILE_REGISTRY_GRAPH: &str = "urn:GraphArch:file-registry";
 
 #[derive(Clone)]
 pub struct LoaderStore {
-    pub store: Arc<Store>,
+    store: Arc<Store>,
 }
 
+/// A store for loading and storing data.
+///
+/// The `LoaderStore` is a wrapper around an `Arc<Store>`, which
+/// is a reference-counted pointer to a `Store`. The `Store` is
+/// an in-memory graph database that is used to store the data
+/// that is loaded from the file system.
+///
+/// The `LoaderStore` is used to load and store data from the file
+/// system or any other supported `FileSource` implementation.
+/// It loads all the data from the given `FileSource` for further
+/// processing by the `Documentor`s who have been registered to
+/// cherry-pick the "documentable things" from the loaded data
+/// and transform those into a documentation model in another
+/// store called `DocumentationModel` (or actually that's a wrapper
+/// around a `Store`).
 impl LoaderStore {
     /// Creates a new [`LoaderStore`] with the given store.
     pub fn new(store: Arc<Store>) -> Self { Self { store } }
@@ -92,6 +118,69 @@ impl LoaderStore {
         ))?;
 
         Ok(())
+    }
+
+    /// Find all OWL classes in the store and return them as OWLClass structs.
+    pub fn find_owl_classes(&self) -> anyhow::Result<Vec<OWLClass>> {
+        let query = r#"
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+            SELECT DISTINCT ?class ?label ?comment
+            WHERE {
+                ?class a owl:Class .
+                OPTIONAL { ?class rdfs:label ?label }
+                OPTIONAL { ?class rdfs:comment ?comment }
+            }
+            ORDER BY ?class
+        "#;
+
+        let results = self.store.query(query)?;
+        let mut classes = Vec::new();
+
+        match results {
+            oxigraph::sparql::QueryResults::Solutions(solutions) => {
+                for solution in solutions {
+                    let solution = solution?;
+
+                    let class = solution
+                        .get("class")
+                        .and_then(|t| {
+                            match t.as_ref() {
+                                TermRef::NamedNode(n) => Some(n.clone()),
+                                _ => None,
+                            }
+                        })
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("Expected named node for class")
+                        })?;
+
+                    let label = solution.get("label").and_then(|t| {
+                        match t.as_ref() {
+                            TermRef::Literal(l) => Some(l.value().to_string()),
+                            _ => None,
+                        }
+                    });
+
+                    let comment = solution.get("comment").and_then(|t| {
+                        match t.as_ref() {
+                            TermRef::Literal(l) => Some(l.value().to_string()),
+                            _ => None,
+                        }
+                    });
+
+                    classes.push(OWLClass {
+                        iri: class.to_string(),
+                        label,
+                        comment,
+                    });
+                }
+            },
+            _ => return Err(anyhow::anyhow!("Unexpected query results type")),
+        }
+
+        Ok(classes)
     }
 }
 

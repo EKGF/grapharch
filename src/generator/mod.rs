@@ -1,3 +1,9 @@
+mod console;
 mod this;
+mod typst;
 
-pub use this::DocumentationGenerator;
+pub use {
+    console::ConsoleGenerator,
+    this::{DocumentationGenerator, Generator},
+    typst::TypstGenerator,
+};

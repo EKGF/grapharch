@@ -1,7 +1,7 @@
 use {
     crate::{
         documentor::{Documentor, DocumentorCreator},
-        model::DocumentationModel,
+        model::Model,
         source::FileSourceImplementor,
         store::LoaderStore,
         util::{FileType, FileTypeSliceStatic},
@@ -9,7 +9,7 @@ use {
     async_trait::async_trait,
     std::{
         path::{Path, PathBuf},
-        sync::LazyLock,
+        sync::{Arc, LazyLock},
     },
 };
 
@@ -39,7 +39,7 @@ pub struct OWLClassDocumentorImpl {
     /// The given target documentation model that the
     /// OWLClassDocumentor will add its documentation to.
     #[allow(unused)]
-    doc_model:    DocumentationModel,
+    doc_model:    Arc<Model>,
 }
 
 impl DocumentorCreator for OWLClassDocumentorImpl {
@@ -47,7 +47,7 @@ impl DocumentorCreator for OWLClassDocumentorImpl {
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> Self {
         Self {
             file_source,
@@ -64,7 +64,11 @@ impl Documentor for OWLClassDocumentorImpl {
         *OWL_CLASS_DOCUMENTOR_FILE_TYPES
     }
 
-    async fn generate(&self) -> anyhow::Result<()> { todo!() }
+    async fn generate(&self) -> anyhow::Result<()> {
+        Err(anyhow::anyhow!(
+            "OWL class documentation generation not yet implemented"
+        ))
+    }
 
     fn file_name(&self) -> Option<&Path> { self.file_name.as_deref() }
 }

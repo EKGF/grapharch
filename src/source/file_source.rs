@@ -193,11 +193,11 @@ mod tests {
     async fn test_scan() -> anyhow::Result<()> {
         let source = FileSourceImplementor::new(
             FileSourceVariant::FileSystem,
-            Some(&Path::new(".")),
+            Some(Path::new(".")),
             None,
         )?;
         let files = source.scan(&[&FileType::Markdown]).await?;
-        assert!(files.len() > 0);
+        assert!(!files.is_empty());
         for file in &files {
             println!("{}", file.display());
         }

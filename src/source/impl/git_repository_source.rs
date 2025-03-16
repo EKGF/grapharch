@@ -94,10 +94,10 @@ mod tests {
         let source = FileSourceImplementor::new(
             FileSourceVariant::GitRepository,
             None,
-            Some("https://github.com/EKGF/grapharch.git"),
+            Some("https://github.com/EKGF/GraphArch.git"),
         )?;
         let files = source.scan(&[&FileType::Markdown]).await.unwrap();
-        assert!(files.len() > 0);
+        assert!(!files.is_empty());
         for file in &files {
             println!("{}", file.display());
         }

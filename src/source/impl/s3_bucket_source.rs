@@ -47,6 +47,8 @@ impl FileSource for S3BucketSourceImpl {
     fn variant(&self) -> FileSourceVariant { FileSourceVariant::S3Bucket }
 
     async fn content_of(&self, _file_path: &Path) -> anyhow::Result<String> {
-        todo!()
+        Err(anyhow::anyhow!(
+            "S3 bucket source not yet implemented"
+        ))
     }
 }

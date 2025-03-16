@@ -4,7 +4,7 @@ use {
 };
 
 // Define the named graph URI
-pub const RDF_GRAPH_FILE_REGISTRY: &str = "urn:grapharch:file-registry";
+pub const RDF_GRAPH_FILE_REGISTRY: &str = "urn:GraphArch:file-registry";
 
 lazy_static! {
     pub static ref OXI_GRAPH_FILE_REGISTRY: GraphName =

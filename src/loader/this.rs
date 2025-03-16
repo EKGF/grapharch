@@ -2,13 +2,13 @@ use {
     super::{MarkdownLoader, RDFLoader},
     crate::{
         documentor::DocumentorImplementor,
-        model::DocumentationModel,
+        model::Model,
         source::FileSourceImplementor,
         store::LoaderStore,
         util::FileTypeSliceStatic,
     },
     async_trait::async_trait,
-    std::path::PathBuf,
+    std::{path::PathBuf, sync::Arc},
 };
 
 /// A trait for documentors that can load information from
@@ -46,7 +46,7 @@ pub trait Loader: std::fmt::Debug + std::fmt::Display {
         file_source: &FileSourceImplementor,
         file_names: &[&PathBuf],
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>>;
 }
 
@@ -70,7 +70,7 @@ impl Loader for LoaderImplementor {
         file_source: &FileSourceImplementor,
         file_names: &[&PathBuf],
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         let applicable_file_names = self.applicable_files(file_names);
         tracing::info!(

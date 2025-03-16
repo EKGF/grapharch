@@ -2,9 +2,8 @@ use {
     super::super::Loader,
     crate::{
         documentor::{DocumentorImplementor, DocumentorVariant},
-        model::DocumentationModel,
-        source::FileSource,
-        source::FileSourceImplementor,
+        model::Model,
+        source::{FileSource, FileSourceImplementor},
         store::LoaderStore,
         util::{FileType, FileTypeSliceStatic, relative_path},
     },
@@ -13,7 +12,11 @@ use {
     // oxigraph::store::BulkLoader,
     oxrdf::NamedNodeRef,
     oxrdfio::{RdfFormat, RdfParser},
-    std::path::{Path, PathBuf},
+    std::{
+        path::{Path, PathBuf},
+        sync::Arc,
+    },
+    tracing::{error, info},
 };
 
 /// This loader is used to load RDF files into the loader store.
@@ -42,7 +45,7 @@ impl Loader for RDFLoader {
         file_source: &FileSourceImplementor,
         file_names: &[&PathBuf],
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
         let documentors =
             futures::future::try_join_all(file_names.iter().map(|file_name| {
@@ -74,9 +77,9 @@ impl RDFLoader {
         file_source: &FileSourceImplementor,
         file_name: &Path,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> anyhow::Result<Vec<DocumentorImplementor>> {
-        tracing::info!(
+        info!(
             "Loading RDF file {:}",
             relative_path(file_name, file_source.root_path().unwrap())
                 .display()
@@ -86,26 +89,42 @@ impl RDFLoader {
         let file_source_clone = file_source.clone();
 
         let documentors_result = tokio::spawn(async move {
-            let bulk_loader = loader_store.store.bulk_loader();
+            let store = loader_store.store();
+            let bulk_loader = store.bulk_loader();
             let file_name_x = file_name_clone.as_path();
             let reader = std::fs::File::open(file_name_x)?;
             if let Err(loader_error) =
                 bulk_loader.load_from_reader(parser, reader)
             {
-                tracing::error!(
+                error!(
                     "Error loading RDF data from {}: {}",
                     file_name_x.display(),
                     loader_error
                 );
+            } else {
+                info!(
+                    "Successfully loaded RDF data from {}",
+                    file_name_x.display()
+                );
             }
-            // Now check the RDF file that was just loaded by issuing
-            // some SPARQL queries and see if certain
-            // triples are present, for instance if we find a triple
-            // like `<subject> rdf:type owl:Ontology` then we know
-            // that the file that we just loaded is an OWL
-            // ontology and that we therefore should create an
-            // OWLOntologyDocumentor for it that will
-            // further look into the just loaded RDF data.
+
+            // Check if this is an OWL ontology
+            let query = r#"
+                PREFIX owl: <http://www.w3.org/2002/07/owl#>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                ASK WHERE {
+                    GRAPH ?g {
+                        ?s rdf:type owl:Ontology .
+                    }
+                }
+            "#;
+
+            let is_ontology = match store.query(query)? {
+                oxigraph::sparql::QueryResults::Boolean(b) => b,
+                _ => false,
+            };
+            info!("Is OWL ontology: {}", is_ontology);
+
             let mut documentors: Vec<DocumentorImplementor> = vec![];
             let documentor = DocumentorImplementor::new(
                 DocumentorVariant::OWLOntology,
@@ -115,19 +134,12 @@ impl RDFLoader {
                 doc_model,
             );
             documentors.push(documentor);
+
             Ok::<Vec<DocumentorImplementor>, anyhow::Error>(documentors)
         })
-        .await?;
+        .await??;
 
-        if let Ok(documentors) = documentors_result {
-            Ok(documentors)
-        } else {
-            Err(anyhow::anyhow!(
-                "Error loading RDF data from {}: {}",
-                file_name.display(),
-                documentors_result.unwrap_err()
-            ))
-        }
+        Ok(documentors_result)
     }
 
     #[allow(unused)]

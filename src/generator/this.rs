@@ -2,25 +2,25 @@ use {
     crate::{
         documentor::{Documentor, DocumentorImplementor},
         loader::{Loader, LoaderImplementor},
-        model::DocumentationModel,
+        model::Model,
         source::{FileSource, FileSourceImplementor},
         store::LoaderStore,
         util::{FileType, relative_path},
     },
-    std::{collections::HashSet, path::PathBuf},
+    std::{collections::HashSet, path::PathBuf, sync::Arc},
 };
 
 pub struct DocumentationGenerator {
     loaders:      Vec<LoaderImplementor>,
     loader_store: LoaderStore,
-    doc_model:    DocumentationModel,
+    doc_model:    Arc<Model>,
 }
 
 impl DocumentationGenerator {
     pub fn new(
         loaders: Vec<LoaderImplementor>,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> Self {
         Self { loaders, loader_store, doc_model }
     }
@@ -107,11 +107,46 @@ impl DocumentationGenerator {
         // the doc_model, using the documentors. This is the
         // only step where a Documentor is allowed
         // to mutate the doc_model.
-        futures::future::try_join_all(
-            documentors.iter().map(|documentor| documentor.generate()),
-        )
-        .await?;
+        let results =
+            futures::future::join_all(documentors.iter().map(|documentor| {
+                async move {
+                    let result = documentor.generate().await;
+                    (documentor, result)
+                }
+            }))
+            .await;
+
+        // Process results, ignoring "not yet implemented" errors
+        for (documentor, result) in results {
+            match result {
+                Ok(_) => {
+                    tracing::info!(
+                        "Successfully generated documentation using {:?}",
+                        documentor
+                    );
+                },
+                Err(e) => {
+                    let error_msg = e.to_string();
+                    if error_msg.contains("not yet implemented") {
+                        tracing::info!(
+                            "Skipping unimplemented documentor: {:?}",
+                            documentor
+                        );
+                    } else {
+                        // Return other errors
+                        return Err(e);
+                    }
+                },
+            }
+        }
 
         Ok(())
     }
+}
+
+/// A trait for generators that can generate documentation from a
+/// DocumentationModel
+pub trait Generator {
+    /// Generate documentation from the given DocumentationModel
+    fn generate(&mut self, doc_model: Arc<Model>) -> anyhow::Result<()>;
 }

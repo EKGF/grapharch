@@ -11,7 +11,8 @@ use {
 /// A local directory source for scanning files.
 #[derive(Debug, Clone)]
 pub struct FileSystemSourceImpl {
-    root_path: PathBuf,
+    root_path:      PathBuf,
+    is_single_file: bool,
 }
 
 impl FileSourceCreator for FileSystemSourceImpl {
@@ -22,11 +23,12 @@ impl FileSourceCreator for FileSystemSourceImpl {
         if let Some(ref rp) = root_path.map(|p| p.to_path_buf()) {
             if !rp.exists() {
                 return Err(anyhow::anyhow!(
-                    "Directory does not exist: {}",
+                    "Path does not exist: {}",
                     rp.display()
                 ));
             }
-            Ok(Self { root_path: rp.canonicalize()? })
+            let is_single_file = rp.is_file();
+            Ok(Self { root_path: rp.canonicalize()?, is_single_file })
         } else {
             Err(anyhow::anyhow!("Root path is required"))
         }
@@ -43,7 +45,20 @@ impl FileSource for FileSystemSourceImpl {
         &self,
         types: FileTypeSlice<'a>,
     ) -> anyhow::Result<Vec<PathBuf>> {
-        Self::scan_files(types, self.root_path.clone()).await
+        if self.is_single_file {
+            // For single files, just return the file if it matches the type
+            let types_vec = FileType::from_slice_to_cloned_vec(types);
+            let types_ref = FileType::create_vec_of_references(&types_vec);
+            if FileType::is_matching_file_type(&self.root_path, &types_ref[..])
+            {
+                Ok(vec![self.root_path.clone()])
+            } else {
+                Ok(vec![])
+            }
+        } else {
+            // For directories, use the existing scanning logic
+            Self::scan_files(types, self.root_path.clone()).await
+        }
     }
 
     fn root_path(&self) -> Option<&Path> { Some(&self.root_path) }
@@ -126,10 +141,10 @@ mod tests {
     async fn test_scan() -> anyhow::Result<()> {
         let source = FileSourceImplementor::new(
             FileSourceVariant::FileSystem,
-            Some(&Path::new(".")),
+            Some(Path::new(".")),
             None,
         )?;
-        let files = source.scan(&[&FileType::Markdown].to_vec()).await.unwrap();
+        let files = source.scan([&FileType::Markdown].as_ref()).await.unwrap();
         println!("{:?}", files);
         Ok(())
     }

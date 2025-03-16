@@ -1,7 +1,7 @@
 use {
     crate::{
         documentor::{Documentor, DocumentorCreator},
-        model::{BookBuilder, DocumentationModel},
+        model::{Book, Buildable, Element, Model},
         source::{FileSource, FileSourceImplementor},
         store::LoaderStore,
         util::{FileType, FileTypeSliceStatic},
@@ -10,7 +10,7 @@ use {
     serde::Deserialize,
     std::{
         path::{Path, PathBuf},
-        sync::LazyLock,
+        sync::{Arc, LazyLock},
     },
     tracing::info,
 };
@@ -23,7 +23,7 @@ static JEKYLL_MARKDOWN_DOCUMENTOR_FILE_TYPES: LazyLock<
 });
 
 /// Struct to deserialize the Jekyll _config.yml file.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct JekyllConfig {
     #[allow(unused)]
     title_separator: Option<String>,
@@ -32,7 +32,30 @@ struct JekyllConfig {
     #[allow(unused)]
     url:             Option<String>,
     #[allow(unused)]
-    author:          Option<String>,
+    #[serde(default)]
+    author:          AuthorField,
+}
+
+/// Author field can be either a string or a map with a name field
+#[derive(Deserialize, Debug, Default)]
+#[serde(untagged)]
+enum AuthorField {
+    #[default]
+    None,
+    String(String),
+    Map {
+        name: String,
+    },
+}
+
+impl AuthorField {
+    fn as_string(&self) -> Option<String> {
+        match self {
+            AuthorField::None => None,
+            AuthorField::String(s) => Some(s.clone()),
+            AuthorField::Map { name } => Some(name.clone()),
+        }
+    }
 }
 
 /// A documentor for Markdown files in a directory that is managed by
@@ -48,7 +71,7 @@ pub struct JekyllMarkdownDocumentorImpl {
     /// The given target documentation model that the
     /// MarkdownDocumentor will add its documentation to.
     #[allow(unused)]
-    doc_model:    DocumentationModel,
+    doc_model:    Arc<Model>,
 }
 
 impl DocumentorCreator for JekyllMarkdownDocumentorImpl {
@@ -56,7 +79,7 @@ impl DocumentorCreator for JekyllMarkdownDocumentorImpl {
         file_source: Option<FileSourceImplementor>,
         file_name: Option<&Path>,
         loader_store: LoaderStore,
-        doc_model: DocumentationModel,
+        doc_model: Arc<Model>,
     ) -> Self {
         Self {
             file_source: file_source.unwrap(),
@@ -78,32 +101,15 @@ impl Documentor for JekyllMarkdownDocumentorImpl {
     async fn generate(&self) -> anyhow::Result<()> {
         // Get the content of the _config.yml file that's expected to
         // be in the root.
-        let config_file = self
-            .file_source
-            .content_of(self.file_name.as_ref().unwrap())
-            .await?;
-
-        let mut book_builder =
-            BookBuilder::new("Markdown Documentation".to_string());
-
-        let config: JekyllConfig = serde_yaml::from_str(&config_file)?;
+        let config: JekyllConfig = self.get_config().await?;
 
         // Set the BookBuilder attributes based on the config
-        if let Some(title_separator) = config.title_separator {
-            book_builder = book_builder.title_separator(title_separator);
-        }
-        if let Some(repository) = config.repository {
-            book_builder = book_builder.repository(repository);
-        }
-        if let Some(url) = config.url {
-            book_builder = book_builder.url(url);
-        }
-        if let Some(author) = config.author {
-            book_builder = book_builder.author(author);
-        }
-
-        // Build the Book and add it to the documentation model
-        book_builder.build(&self.doc_model.store)?;
+        Book::builder_in_model::<Book>(&self.doc_model)?
+            .title(Some("Markdown Documentation".to_string()))
+            .repository(config.repository)
+            .url(config.url)
+            .author(config.author.as_string())
+            .build()?;
 
         // Process the rest
         self.process().await?;
@@ -113,6 +119,14 @@ impl Documentor for JekyllMarkdownDocumentorImpl {
 }
 
 impl JekyllMarkdownDocumentorImpl {
+    async fn get_config(&self) -> anyhow::Result<JekyllConfig> {
+        let config_file = self
+            .file_source
+            .content_of(self.file_name.as_ref().unwrap())
+            .await?;
+        Ok(serde_yaml::from_str(&config_file)?)
+    }
+
     /// Processes the provided markdown files.
     pub async fn process(&self) -> anyhow::Result<()> {
         // Scan again for only the markdown files.
