@@ -148,7 +148,7 @@ impl LoaderStore {
                         .get("class")
                         .and_then(|t| {
                             match t.as_ref() {
-                                TermRef::NamedNode(n) => Some(n.clone()),
+                                TermRef::NamedNode(n) => Some(n),
                                 _ => None,
                             }
                         })

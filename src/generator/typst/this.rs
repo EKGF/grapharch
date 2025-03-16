@@ -95,10 +95,8 @@ impl TypstGenerator {
         // List files in the output directory to verify they exist
         if let Ok(entries) = fs::read_dir(&self.output_dir) {
             info!("Files in output directory:");
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    info!("  {}", entry.path().display());
-                }
+            for entry in entries.flatten() {
+                info!("  {}", entry.path().display());
             }
         }
 

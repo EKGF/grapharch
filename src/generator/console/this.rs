@@ -22,6 +22,10 @@ impl std::fmt::Debug for ConsoleGenerator {
     }
 }
 
+impl Default for ConsoleGenerator {
+    fn default() -> Self { Self::new() }
+}
+
 impl ConsoleGenerator {
     pub fn new() -> Self { Self { writer: Box::new(io::stdout()) } }
 

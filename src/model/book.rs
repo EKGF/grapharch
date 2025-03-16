@@ -154,7 +154,7 @@ impl Book {
                 }}
             }}
             "#,
-            self.get_named_node().to_string(),
+            self.get_named_node(),
         );
 
         let results = self.get_model().get_store().query(&query)?;
@@ -165,7 +165,7 @@ impl Book {
                 let solution = solution?;
                 let section = Section {
                     element_ref: ElementRef::from_solution(
-                        &self.get_model(),
+                        self.get_model(),
                         &solution,
                     )?,
                     title:       solution.get("title").map(|s| s.to_string()),
