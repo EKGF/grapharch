@@ -3,7 +3,7 @@ title: "License"
 layout: default
 parent: Other
 nav_order: 99
-permalink: /LICENSE
+permalink: /license
 ---
 
 # MIT License
