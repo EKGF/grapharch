@@ -3,29 +3,46 @@ name = "grapharch"
 version = "0.0.1"
 edition = "2024"
 rust-version = "1.85"
+description = "A tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as website or PDF"
+authors = ["Jacobus Geluk <jacobus.geluk@ekgf.org>"]
+license = "MIT"
+repository = "https://github.com/ekgf/grapharch"
+homepage = "https://ekgf.github.io/grapharch/"
 
 [dependencies]
-oxigraph = "0.4.4"
-oxrdf = "0.2.3"
-oxrdfio = { version = "0.1.3", features = ["async-tokio"] }
-oxttl = { version = "0.1.3", features = ["async-tokio"] }
-anyhow = "1.0.41"
+oxigraph = "0.4.9"
+oxrdf = "0.2.4"
+oxrdfio = { version = "0.1.7", features = ["async-tokio"] }
+oxttl = { version = "0.1.7", features = ["async-tokio"] }
+anyhow = "1.0.97"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 console = "0.15"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
-url = "2.4.0"
-tokio-util = "0.7.12"
+url = "2.5.4"
+tokio-util = "0.7.14"
 futures = "0.3"
-aws-sdk-s3 = "1.20.0"
+aws-sdk-s3 = "1.79.0"
 async-trait = "0.1"
-git2 = "0.19.0"
-tempfile = "3.8.0"
+git2 = "0.20.0"
+tempfile = "3.19.0"
 ignore = "0.4.23"
-uuid = { version = "1.3", features = ["v4"] }
+uuid = { version = "1.16", features = ["v4"] }
 serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.9.1"
-sha2 = "0.10.0"
-lazy_static = "1.4.0"
-const_format = "0.2.4"
+serde_yaml = "0.9.34"
+sha2 = "0.10.8"
+lazy_static = "1.5.0"
+const_format = "0.2.34"
+clap = { version = "4.5.32", features = ["derive"] }
+clap-verbosity-flag = { version = "3.0.2", features = ["tracing"] }
+typst = "0.13.1"
+typst-pdf = "0.13.1"
+printpdf = "0.7.0"
+chrono = "0.4"
+ecow = "0.2.3"
+quick-error = "2.0.1"
+typst-kit = "0.13.1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "=0.9.3"

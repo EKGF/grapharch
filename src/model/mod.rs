@@ -1,7 +1,13 @@
-pub mod book;
-pub mod doc_model;
+mod book;
+mod chapter;
+mod element;
+mod section;
+mod this;
 
 pub use {
     book::{Book, BookBuilder},
-    doc_model::DocumentationModel,
+    chapter::Chapter,
+    element::{Buildable, Element, ElementRef},
+    section::Section,
+    this::Model,
 };
