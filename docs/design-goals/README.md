@@ -13,7 +13,11 @@ professional documentation from it either as a document or a static website.
 Primary focus is to document ontologies and knowledge graphs but ultimately
 to document "knowledge" in the broadest sense of the word.
 
-- First milestone: Replace the current code that generates the DPROD webpage (<https://ekgf.github.io/dprod/>)
+- First usable release: generate DPROD specification HTML, reader HTML, and
+  Typst/PDF from one validated graph revision, following the
+  [delivery specification](../other/architecture/deliverables.md).
+- Shared fragments retain identity across target-specific website and document
+  arrangements; ingestion never assumes one ontology equals one book.
 
 > [!NOTE]
 >
@@ -24,13 +28,18 @@ to document "knowledge" in the broadest sense of the word.
 
 **Robustness** is the number one priority:
 
-- [ ] The program should never panic.
-- [ ] The program should never enter an inconsistent state.
-- [ ] The program should never crash.
+- Invalid input and failed operations return actionable errors immediately.
+- Incomplete contributions never become publishable revisions.
+- Failed updates preserve the last valid revision without reporting success.
 
 ## Performance
 
-**Performance** is a close second, the program should be fast, so that:
+**Performance** includes throughput and measured edit-to-preview latency.
+Use small specialized collectors, bounded parallel execution, streaming with
+backpressure, and backend-controlled writes. Incremental execution reuses
+independent work and prevents superseded renders from replacing current output.
+
+The program should be fast, so that:
 
 - [ ] It can scan large knowledge graphs or other large amounts of data
       within a reasonable amount of time (for instance within the duration

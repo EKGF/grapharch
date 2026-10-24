@@ -2,6 +2,11 @@ use {clap::Subcommand, std::path::PathBuf};
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Operate on the shared RDF documentation dataset.
+    Publication {
+        #[command(subcommand)]
+        command: crate::publication::cli::PublicationCommand,
+    },
     /// does testing things
     Test {
         /// lists test values

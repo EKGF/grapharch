@@ -1,0 +1,135 @@
+use {
+    super::markup::{Markdown, quote},
+    anyhow::{Result, bail},
+    pulldown_cmark::{CodeBlockKind, Event, Tag, TagEnd},
+};
+
+pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
+    let mut output = String::new();
+    let mut code = None;
+    let mut heading = None;
+    for event in &markdown.events {
+        match event {
+            Event::Start(tag) => {
+                match tag {
+                    Tag::Paragraph => {
+                        output.push_str("#block(breakable: true)[")
+                    },
+                    Tag::Heading { level, id, .. } => {
+                        heading = id.as_ref().map(ToString::to_string);
+                        output.push_str(&format!(
+                            "#heading(level: {})[",
+                            markdown.depth(*level) + 1
+                        ));
+                    },
+                    Tag::BlockQuote(_) => {
+                        output.push_str("#quote(block: true)[")
+                    },
+                    Tag::CodeBlock(kind) => {
+                        let lang = match kind {
+                            CodeBlockKind::Fenced(language) => {
+                                language.split_whitespace().next().unwrap_or("")
+                            },
+                            CodeBlockKind::Indented => "",
+                        };
+                        code = Some(String::new());
+                        output.push_str(&format!(
+                            "#raw(block: true, lang: {}, ",
+                            quote(lang)
+                        ));
+                    },
+                    Tag::List(None) => output.push_str("#list("),
+                    Tag::List(Some(start)) => {
+                        output.push_str(&format!("#enum(start: {start}, "))
+                    },
+                    Tag::Item => output.push('['),
+                    Tag::Emphasis => output.push_str("#emph["),
+                    Tag::Strong => output.push_str("#strong["),
+                    Tag::Strikethrough => output.push_str("#strike["),
+                    Tag::Link { dest_url, .. } => {
+                        let destination =
+                            if let Some(label) = dest_url.strip_prefix('#') {
+                                format!("label({})", quote(label))
+                            } else {
+                                quote(dest_url)
+                            };
+                        output.push_str(&format!("#link({destination})["));
+                    },
+                    Tag::Table(columns) => {
+                        output.push_str(&format!(
+                            "#table(columns: {}, inset: 6pt, stroke: 0.4pt + \
+                             rgb(\"#cbd5e1\"), ",
+                            columns.len()
+                        ))
+                    },
+                    Tag::TableHead => output.push_str("table.header("),
+                    Tag::TableRow => {},
+                    Tag::TableCell => output.push('['),
+                    other => {
+                        bail!(
+                            "unsupported Markdown construct in Typst: \
+                             {other:?}"
+                        )
+                    },
+                }
+            },
+            Event::End(tag) => {
+                match tag {
+                    TagEnd::Paragraph | TagEnd::BlockQuote(_) => {
+                        output.push_str("]\n")
+                    },
+                    TagEnd::Heading(_) => {
+                        output.push(']');
+                        if let Some(id) = heading.take() {
+                            output.push_str(&format!("#label({})", quote(&id)));
+                        }
+                        output.push('\n');
+                    },
+                    TagEnd::CodeBlock => {
+                        output.push_str(&quote(&code.take().ok_or_else(
+                            || anyhow::anyhow!("unbalanced code block"),
+                        )?));
+                        output.push_str(")\n");
+                    },
+                    TagEnd::List(_) | TagEnd::Table => output.push_str(")\n"),
+                    TagEnd::Item | TagEnd::TableCell => output.push_str("],"),
+                    TagEnd::TableHead => output.push_str("),"),
+                    TagEnd::TableRow => {},
+                    TagEnd::Emphasis |
+                    TagEnd::Strong |
+                    TagEnd::Strikethrough |
+                    TagEnd::Link => output.push(']'),
+                    other => {
+                        bail!("unsupported Markdown ending in Typst: {other:?}")
+                    },
+                }
+            },
+            Event::Text(text) => {
+                if let Some(code) = &mut code {
+                    code.push_str(text);
+                } else {
+                    output.push_str(&format!("#text({})", quote(text)));
+                }
+            },
+            Event::Code(text) => {
+                output.push_str(&format!("#raw({})", quote(text)))
+            },
+            Event::SoftBreak => output.push(' '),
+            Event::HardBreak => output.push_str("#linebreak()\n"),
+            Event::Rule => {
+                output.push_str("#line(length: 100%, stroke: 0.5pt)\n")
+            },
+            Event::TaskListMarker(checked) => {
+                output.push_str(
+                    if *checked {
+                        "#text(\"[x] \")"
+                    } else {
+                        "#text(\"[ ] \")"
+                    },
+                )
+            },
+            other => bail!("unsupported Markdown event in Typst: {other:?}"),
+        }
+    }
+    Ok(output)
+}

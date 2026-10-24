@@ -71,24 +71,38 @@ impl SectionBuilder {
         self.description = description;
         self
     }
+
+    pub fn belongs_to(
+        self,
+        book_node: &oxrdf::NamedNode,
+    ) -> anyhow::Result<Self> {
+        self.insert_object_node(
+            oxrdf::NamedNode::new("http://example.org/schema/belongsTo")?,
+            book_node.clone(),
+        )?;
+        Ok(self)
+    }
 }
 
 impl Section {
+    /// Get all chapters for this section
     pub fn get_chapters(&self) -> anyhow::Result<Vec<Chapter>> {
         let query = format!(
             r#"
             PREFIX dc: <http://purl.org/dc/terms/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             SELECT DISTINCT ?graph ?iri ?title ?content WHERE {{
+                # Look in named graphs
                 GRAPH ?graph {{
                     ?iri rdf:type <http://example.org/Chapter> ;
                          dc:title ?title ;
                          <http://example.org/schema/belongsTo> {} .
-                    OPTIONAL {{ ?iri <http://example.org/schema/content> ?content }}
+                    OPTIONAL {{ ?iri dc:description ?content }}
                 }}
             }}
+            ORDER BY ?iri
             "#,
-            self.get_named_node(),
+            self.get_named_node()
         );
 
         let results = self.get_model().get_store().query(&query)?;

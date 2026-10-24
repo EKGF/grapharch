@@ -7,3 +7,5 @@ pub mod rdf_const;
 pub mod source;
 pub mod store;
 pub mod util;
+
+pub mod publication;

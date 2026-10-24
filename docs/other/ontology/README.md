@@ -8,21 +8,22 @@ permalink: /ontology/
 
 # Ontology
 
-> [!NOTE]
->
-> This is a work in progress.
-> At the moment this is all extremely basic and not yet used, just a placeholder.
+The publication vocabulary separates documentable subjects and shared fragments
+from target-specific placements. Its contract is defined in
+[the delivery specification](../architecture/deliverables.md).
 
-The idea is to have source handling components that scan a given data source
-for documentable items, such as a component that understands OWL Ontologies,
-where that source handling component generates documentation objects such as
-"chapter", "section" etc, according to an "documentation ontology", into a
-temporary triple-store. From there, output-handling components like a PDF
-generator or a website generator will create the most appropriate output.
+- [Publication vocabulary](publication.ttl)
+- [Publication SHACL constraints](publication.shacl.ttl)
+- Executable project fixtures: `tests/fixtures/publication/projects.ttl`
+- Rust validation and domain interfaces: `src/publication`
 
-This would allow for being able to generate consistent documentation as both
-a website and a document, even though those two things are usually completely
-different in structure.
+The fixtures cover an ontology family with two HTML targets and one PDF target,
+a cyclic use-case tree with bounded traversal, and a fund portfolio with an
+exclusion. The same introduction component has different placements in three
+profiles. External references are explicit and do not imply scope membership.
+Scope resolution is a later deliverable; these are input definitions, not a
+claim that those scopes are already executable.
 
-- [documentation.ttl](./documentation.ttl)
-- [doc-component-categories.ttl](./doc-component-categories.ttl)
+The previous [documentation vocabulary](documentation.ttl) and
+[component categories](doc-component-categories.ttl) are prototype artifacts;
+they do not define the new publication pipeline.

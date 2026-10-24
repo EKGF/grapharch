@@ -33,4 +33,12 @@ Gemfile.lock
 .gems
 
 rustc-ice-*.txt
-/output.pdf
+output.pdf
+
+# Generated publication and visual verification artifacts
+/output/
+/tmp/pdfs/
+/.playwright-cli/
+
+# Local design references and canvas state
+/.superdesign/

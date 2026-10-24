@@ -15,45 +15,36 @@ use {
         util::setup_tracing,
     },
     std::{path::Path, sync::Arc},
-    tracing::{error, info},
+    tracing::info,
 };
 
 async fn run() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    // Show help and exit if no command is provided
-    if cli.command.is_none() {
-        Cli::command().print_help()?;
-        std::process::exit(0);
-    }
-
     setup_tracing(cli.verbose)?;
 
-    // You can check the value provided by positional arguments, or option
-    // arguments
-    if let Some(file) = cli.file.as_deref() {
-        println!("Value for file: {}", file.display());
+    cli.log_info();
+
+    cli.check_for_help();
+
+    if let Some(Commands::Publication { command }) = &cli.command {
+        anyhow::ensure!(
+            cli.file.is_none() && cli.config.is_none(),
+            "publication commands use their own explicit input arguments"
+        );
+        let mode = if cli.keep_going {
+            grapharch::publication::diagnostics::FailureMode::KeepGoing
+        } else {
+            grapharch::publication::diagnostics::FailureMode::FailFast
+        };
+        return grapharch::publication::cli::run(command, mode).await;
     }
 
-    if let Some(config_path) = cli.config.as_deref() {
-        println!("Value for config: {}", config_path.display());
-    }
-
-    // You can see how many times a particular flag or argument occurred
-    // Note, only flags can have multiple occurrences
-    match cli.debug {
-        0 => println!("Debug mode is off"),
-        1 => println!("Debug mode is kind of on"),
-        2 => println!("Debug mode is on"),
-        _ => println!("Don't be crazy"),
-    }
-
-    let file_source = FileSourceImplementor::new(
-        FileSourceVariant::FileSystem,
-        cli.file.as_deref().or(Some(Path::new("."))),
-        None,
-    )?;
-
+    anyhow::ensure!(
+        !cli.keep_going,
+        "--keep-going is supported by the publication pipeline, not the \
+         legacy generation prototype"
+    );
     let doc_model = Arc::new(Model::new()?);
     let loader_store = LoaderStore::new_in_memory()?;
 
@@ -67,6 +58,11 @@ async fn run() -> anyhow::Result<()> {
     );
 
     // Process the input files
+    let file_source = FileSourceImplementor::new(
+        FileSourceVariant::FileSystem,
+        cli.file.as_deref().or(Some(Path::new("."))),
+        None,
+    )?;
     generator.generate_from_file_source(&file_source).await?;
 
     // Handle output generation based on command
@@ -117,9 +113,14 @@ async fn run() -> anyhow::Result<()> {
                 let pdf_path = pdf
                     .as_ref()
                     .and_then(|p| p.as_ref())
-                    .or(Some(&default_pdf_path));
+                    .cloned()
+                    .unwrap_or_else(|| default_pdf_path.clone());
 
-                let mut typst_gen = TypstGenerator::new(typst_dir, pdf_path)?;
+                let mut typst_gen = if let Some(dir) = typst_dir {
+                    TypstGenerator::new(dir.clone(), pdf_path)
+                } else {
+                    TypstGenerator::with_temp_dir(pdf_path)?
+                };
                 typst_gen.generate(doc_model.clone())?;
             }
 
@@ -138,6 +139,9 @@ async fn run() -> anyhow::Result<()> {
                 );
             }
         },
+        Some(Commands::Publication { .. }) => {
+            anyhow::bail!("publication command was not dispatched")
+        },
         None => {},
     }
 
@@ -148,7 +152,7 @@ async fn run() -> anyhow::Result<()> {
 #[tokio::main]
 async fn main() {
     if let Err(e) = run().await {
-        error!("Application error: {}", e);
+        eprintln!("error: {e:#}");
         std::process::exit(1);
     }
 }

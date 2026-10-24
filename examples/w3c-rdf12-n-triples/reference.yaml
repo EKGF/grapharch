@@ -1,0 +1,12 @@
+title: RDF 1.2 N-Triples
+source: https://www.w3.org/TR/2026/WD-rdf12-n-triples-20261023/
+publication_date: '2026-10-23'
+retrieved: '2026-10-24'
+source_sha256: c452af6d6373576a6b867fe0dd3eb69f33b41374988bc8d23c30621638d5aec5
+logo_source: https://www.w3.org/StyleSheets/TR/2021/logos/W3C
+logo_source_sha256: a96241190c29d5014a2ffcb26c0a75060e20dc85b921776f813d3d5a3adcf64e
+logo_sha256: fc28a39cc868c12a85717b4b276df4015dae1ad5dad697ef9e64ca2d093de412
+known_source_defects:
+  - unresolved-native-reference: '#must-signal-errors'
+semantic_round_trip: tested
+exact_visual_parity: not_yet_verified

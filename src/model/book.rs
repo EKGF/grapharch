@@ -137,24 +137,23 @@ impl BookBuilder {
 }
 
 impl Book {
-    /// Get all sections for a given book
-    /// TODO: Move this to the Book class, it should just be called
-    /// "Book::get_sections" returning a vector of Sections
+    /// Get all sections for this book
     pub fn get_sections(&self) -> anyhow::Result<Vec<Section>> {
         let query = format!(
             r#"
             PREFIX dc: <http://purl.org/dc/terms/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             SELECT DISTINCT ?graph ?iri ?title ?description WHERE {{
+                # Look in named graphs
                 GRAPH ?graph {{
                     ?iri rdf:type <http://example.org/Section> ;
-                            dc:title ?title ;
-                            <http://example.org/schema/belongsTo> {} .
+                         dc:title ?title ;
+                         <http://example.org/schema/belongsTo> {} .
                     OPTIONAL {{ ?iri dc:description ?description }}
                 }}
             }}
             "#,
-            self.get_named_node(),
+            self.get_named_node()
         );
 
         let results = self.get_model().get_store().query(&query)?;
@@ -197,11 +196,12 @@ impl Book {
             PREFIX dc: <http://purl.org/dc/terms/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             SELECT DISTINCT ?graph ?iri ?title ?subtitle ?author WHERE {
+                # Look in named graphs
                 GRAPH ?graph {
-                    ?book rdf:type <http://example.org/Book> ;
-                          dc:title ?title ;
-                          dc:creator ?author .
-                    OPTIONAL { ?book dc:subtitle ?subtitle }
+                    ?iri rdf:type <http://example.org/Book> ;
+                         dc:title ?title .
+                    OPTIONAL { ?iri dc:subtitle ?subtitle }
+                    OPTIONAL { ?iri dc:creator ?author }
                 }
             }
         "#;
@@ -218,9 +218,10 @@ impl Book {
                     subtitle:    solution
                         .get("subtitle")
                         .map(|s| s.to_string()),
-                    authors:     vec![
-                        solution.get("author").unwrap().to_string(),
-                    ],
+                    authors:     match solution.get("author") {
+                        Some(author) => vec![author.to_string()],
+                        None => vec!["GraphArch".to_string()],
+                    },
                     repository:  None,
                     url:         None,
                     sections:    Vec::new(),

@@ -53,6 +53,9 @@ test:
 run *args:
   cargo +nightly run -- {{args}}
 
+debug-run *args:
+  RUST_BACKTRACE=1 cargo +nightly run -- {{args}}
+
 lint:
   cargo +nightly clippy --all-features --message-format=json
   cargo +nightly fmt -- --check

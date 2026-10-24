@@ -52,7 +52,7 @@ impl Buildable<Chapter> for ChapterBuilder {
 
         if let Some(content) = &self.content {
             self.insert_object_literal(
-                oxrdf::NamedNode::new("http://example.org/schema/content")?,
+                oxrdf::NamedNode::new("http://purl.org/dc/terms/description")?,
                 Literal::new_simple_literal(content),
             )?;
         }
@@ -70,5 +70,16 @@ impl ChapterBuilder {
     pub fn content(mut self, content: Option<&str>) -> Self {
         self.content = content.map(|s| s.to_string());
         self
+    }
+
+    pub fn belongs_to(
+        self,
+        section_node: &oxrdf::NamedNode,
+    ) -> anyhow::Result<Self> {
+        self.insert_object_node(
+            oxrdf::NamedNode::new("http://example.org/schema/belongsTo")?,
+            section_node.clone(),
+        )?;
+        Ok(self)
     }
 }

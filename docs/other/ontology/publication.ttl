@@ -1,0 +1,130 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://ekgf.org/ontology/grapharch> a owl:Ontology ;
+    rdfs:label "Grapharch documentation and publication ontology" .
+
+ga:Project a owl:Class ; rdfs:label "Project" .
+ga:Collector a owl:Class ; rdfs:label "Collector" .
+ga:Scope a owl:Class ; rdfs:label "Scope" .
+ga:Target a owl:Class ; rdfs:label "Target" .
+ga:Profile a owl:Class ; rdfs:label "Profile" .
+ga:Placement a owl:Class ; rdfs:label "Placement" .
+ga:Component a owl:Class ; rdfs:label "Component" .
+ga:Fragment a owl:Class ; rdfs:label "Fragment" .
+ga:Contribution a owl:Class ; rdfs:label "Contribution" .
+ga:ExternalReference a owl:Class ; rdfs:label "ExternalReference" .
+ga:Revision a owl:Class ; rdfs:label "Revision" .
+ga:Plan a owl:Class ; rdfs:label "Plan" .
+ga:PublicationJob a owl:Class ; rdfs:label "PublicationJob" .
+
+ga:scope a owl:ObjectProperty ; rdfs:label "scope" .
+ga:target a owl:ObjectProperty ; rdfs:label "target" .
+ga:collector a owl:ObjectProperty ; rdfs:label "collector" .
+ga:kind a owl:DatatypeProperty ; rdfs:label "kind" .
+ga:source a owl:DatatypeProperty ; rdfs:label "source" .
+ga:include a owl:ObjectProperty ; rdfs:label "include" .
+ga:exclude a owl:ObjectProperty ; rdfs:label "exclude" .
+ga:compose a owl:ObjectProperty ; rdfs:label "compose" .
+ga:traverse a owl:ObjectProperty ; rdfs:label "traverse" .
+ga:maxDepth a owl:DatatypeProperty ; rdfs:label "maxDepth" .
+ga:profile a owl:ObjectProperty ; rdfs:label "profile" .
+ga:renderer a owl:DatatypeProperty ; rdfs:label "renderer" .
+ga:destination a owl:DatatypeProperty ; rdfs:label "destination" .
+ga:placement a owl:ObjectProperty ; rdfs:label "placement" .
+ga:component a owl:ObjectProperty ; rdfs:label "component" .
+ga:order a owl:DatatypeProperty ; rdfs:label "order" .
+ga:fragment a owl:ObjectProperty ; rdfs:label "fragment" .
+ga:subject a owl:ObjectProperty ; rdfs:label "subject" .
+ga:body a owl:DatatypeProperty ; rdfs:label "body" .
+ga:format a owl:DatatypeProperty ; rdfs:label "format" .
+ga:contribution a owl:ObjectProperty ; rdfs:label "contribution" .
+ga:project a owl:ObjectProperty ; rdfs:label "project" .
+ga:revision a owl:DatatypeProperty ; rdfs:label "revision" .
+ga:reference a owl:ObjectProperty ; rdfs:label "reference" .
+
+ga:Processor a owl:Class ; rdfs:label "Contribution processor" .
+ga:Documentor a owl:Class ; rdfs:subClassOf ga:Processor ; rdfs:label "Specialized RDF fragment generator" .
+ga:Collector rdfs:subClassOf ga:Processor .
+ga:processor a owl:ObjectProperty ; rdfs:label "Owning processor" .
+ga:member a owl:ObjectProperty ; rdfs:label "Resolved scope member" .
+ga:inputRevision a owl:ObjectProperty ; rdfs:label "Pinned input revision" .
+
+ga:ScopePlan a owl:Class ; rdfs:label "Resolved scope membership" .
+ga:Entry a owl:Class ; rdfs:label "Target-specific fragment placement" .
+ga:entry a owl:ObjectProperty ; rdfs:label "Publication plan entry" .
+ga:scopePlan a owl:ObjectProperty ; rdfs:label "Resolved scope plan" .
+ga:fragmentOrder a owl:DatatypeProperty ; rdfs:label "Fragment position within a placement" .
+ga:stage a owl:DatatypeProperty ; rdfs:label "Contribution lifecycle stage" .
+ga:currentRevision a owl:ObjectProperty ; rdfs:label "Current validated project revision" .
+ga:validatedFor a owl:ObjectProperty ; rdfs:label "Project for which a revision was validated" .
+
+# Publication presentation hints and job provenance.
+ga:style a owl:DatatypeProperty ; rdfs:label "HTML presentation style" .
+ga:sectionKind a owl:DatatypeProperty ; rdfs:label "Publication section kind" .
+ga:url a owl:DatatypeProperty ; rdfs:label "External reference URL" .
+ga:plan a owl:ObjectProperty ; rdfs:label "Rendered publication plan" .
+ga:planSnapshot a owl:ObjectProperty ; rdfs:label "Pinned plan snapshot" .
+ga:artifactDirectory a owl:ObjectProperty ; rdfs:label "Published artifact directory" .
+ga:status a owl:DatatypeProperty ; rdfs:label "Publication job status" .
+
+# Publisher-neutral specification front matter.
+ga:publisher a owl:ObjectProperty ; rdfs:label "Specification publisher" .
+ga:publicationStatus a owl:DatatypeProperty ; rdfs:label "Declared publication status" .
+ga:publicationDate a owl:DatatypeProperty ; rdfs:label "Publication date" .
+ga:thisVersion a owl:ObjectProperty ; rdfs:label "This published document version" .
+ga:latestVersion a owl:ObjectProperty ; rdfs:label "Latest published document version" .
+ga:previousVersion a owl:ObjectProperty ; rdfs:label "Previous document version" .
+ga:editorDraft a owl:ObjectProperty ; rdfs:label "Latest editor draft" .
+ga:editor a owl:ObjectProperty ; rdfs:label "Document editor" .
+ga:affiliation a owl:DatatypeProperty ; rdfs:label "Editor affiliation" .
+ga:license a owl:ObjectProperty ; rdfs:label "Document license" .
+ga:copyright a owl:DatatypeProperty ; rdfs:label "Document copyright statement" .
+
+# Authority branding is reusable across targets and rendering styles.
+ga:Authority a owl:Class ; rdfs:label "Publishing authority" .
+ga:shortName a owl:DatatypeProperty ; rdfs:label "Authority abbreviation" .
+ga:accentColor a owl:DatatypeProperty ; rdfs:label "Authority accent color" .
+ga:logo a owl:DatatypeProperty ; rdfs:label "Embedded authority logo" .
+ga:subtitle a owl:DatatypeProperty ; rdfs:label "Publication subtitle" .
+ga:implementationReport a owl:ObjectProperty ; rdfs:label "Implementation report" .
+ga:testSuite a owl:ObjectProperty ; rdfs:label "Publication test suite" .
+
+# Identified constructs collected from published specification documents.
+ga:Section a owl:Class ; rdfs:label "Specification section" .
+ga:DefinedTerm a owl:Class ; rdfs:label "Defined term" .
+ga:Example a owl:Class ; rdfs:label "Specification example" .
+ga:BibliographicEntry a owl:Class ; rdfs:label "Bibliographic entry" .
+ga:partOf a owl:ObjectProperty ; rdfs:label "Containing source document" .
+ga:nativeAnchor a owl:DatatypeProperty ; rdfs:label "Original section anchor" .
+ga:headingAnchor a owl:DatatypeProperty ; rdfs:label "Original section heading anchor" .
+ga:sourceMarkup a owl:DatatypeProperty ; rdfs:label "Retained source DOM markup" .
+
+ga:author a owl:ObjectProperty ; rdfs:label "Document author" .
+ga:formerEditor a owl:ObjectProperty ; rdfs:label "Former document editor" .
+
+# Diagnostics are derived output, never source contribution heads.
+ga:Diagnostic a owl:Class ; rdfs:label "Build diagnostic" .
+ga:Operation a owl:Class ; rdfs:label "Pipeline operation" .
+ga:diagnostic a owl:ObjectProperty ; rdfs:label "Operation diagnostic" .
+ga:about a owl:ObjectProperty ; rdfs:label "Diagnosed artifact" .
+ga:sourceFragment a owl:ObjectProperty ; rdfs:label "Affected source fragment" .
+ga:severity a owl:DatatypeProperty ; rdfs:label "Diagnostic severity" .
+ga:code a owl:DatatypeProperty ; rdfs:label "Stable diagnostic code" .
+ga:message a owl:DatatypeProperty ; rdfs:label "Diagnostic message" .
+ga:unresolvedReference a owl:DatatypeProperty ; rdfs:label "Reported reference" .
+ga:diagnosticCount a owl:DatatypeProperty ; rdfs:label "Diagnostic count" .
+ga:executionPolicy a owl:DatatypeProperty ; rdfs:label "Execution failure policy" .
+
+# Ordered metadata retained from published specifications.
+ga:MetadataRow a owl:Class ; rdfs:label "Publication metadata row" .
+ga:metadataRow a owl:ObjectProperty ; rdfs:label "Metadata row" .
+ga:field a owl:DatatypeProperty ; rdfs:label "Metadata field" .
+ga:linkLabel a owl:DatatypeProperty ; rdfs:label "Metadata link label" .
+ga:latestRecommendation a owl:ObjectProperty ; rdfs:label "Latest recommendation" .
+ga:statusUrl a owl:ObjectProperty ; rdfs:label "Publication status URL" .
+ga:metadataDisclosure a owl:DatatypeProperty ; rdfs:label "Collapsible publication metadata" .
+ga:tocFrontMatter a owl:DatatypeProperty ; rdfs:label "Include front matter in contents" .
+ga:personNote a owl:DatatypeProperty ; rdfs:label "Contributor note" .
+ga:orcid a owl:ObjectProperty ; rdfs:label "Contributor ORCID" .

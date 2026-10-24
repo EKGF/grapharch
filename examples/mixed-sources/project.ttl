@@ -1,0 +1,24 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix ex: <urn:mixed:> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+ex:project a ga:Project ; dct:title "Mixed-source ontology documentation" ;
+    ga:collector ex:definitions, ex:markdown, ex:ontology, ex:sparql ;
+    ga:scope ex:scope ; ga:target ex:website, ex:pdf .
+ex:definitions a ga:Collector ; ga:kind "rdf-file" ; ga:source "project.ttl" .
+ex:markdown a ga:Collector ; ga:kind "markdown-file" ; ga:source "introduction.md" .
+ex:ontology a ga:Collector ; ga:kind "rdf-file" ; ga:source "ontology.ttl" .
+ex:sparql a ga:Collector ; ga:kind "sparql-file" ; ga:source "query.rq" .
+ex:scope a ga:Scope ; ga:include ex:introduction, ex:DataProduct, ex:query .
+ex:website a ga:Target ; dct:title "Data products: a source-driven guide" ;
+    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer "html" ; ga:destination "website" .
+ex:pdf a ga:Target ; dct:title "Data products: review document" ;
+    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer "typst" ; ga:destination "review" .
+ex:profile a ga:Profile ; ga:style "reader" ;
+    ga:placement ex:introduction-placement, ex:class-placement, ex:query-placement .
+ex:introduction-placement a ga:Placement ; ga:component ex:introduction-component ; ga:order 1 .
+ex:class-placement a ga:Placement ; ga:component ex:class-component ; ga:order 2 .
+ex:query-placement a ga:Placement ; ga:component ex:query-component ; ga:order 3 .
+ex:introduction-component a ga:Component ; dct:title "Introduction" .
+ex:class-component a ga:Component ; dct:title "Data product" .
+ex:query-component a ga:Component ; dct:title "Example query" .

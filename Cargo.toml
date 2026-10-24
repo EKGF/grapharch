@@ -3,7 +3,7 @@ name = "grapharch"
 version = "0.0.1"
 edition = "2024"
 rust-version = "1.85"
-description = "A tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as website or PDF"
+description = "GraphArch is a tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as either a website or a PDF"
 authors = ["Jacobus Geluk <jacobus.geluk@ekgf.org>"]
 license = "MIT"
 repository = "https://github.com/ekgf/grapharch"
@@ -42,7 +42,13 @@ printpdf = "0.7.0"
 chrono = "0.4"
 ecow = "0.2.3"
 quick-error = "2.0.1"
-typst-kit = "0.13.1"
+typst-kit = { version = "0.13.1", features = ["embed-fonts"] }
+regex = "1.11.1"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+fs2 = "0.4"
+base64 = "0.22"
+image = { version = "=0.25.5", default-features = false, features = ["png"] }
+scraper = "0.23"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "=0.9.3"

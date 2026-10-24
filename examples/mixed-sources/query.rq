@@ -1,0 +1,5 @@
+# grapharch:subject urn:mixed:query
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+SELECT ?product WHERE {
+    ?product a owl:Class .
+}

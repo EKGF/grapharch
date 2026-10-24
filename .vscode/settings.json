@@ -22,5 +22,8 @@
     "docs/.gems/**": true,
     "docs/.sass-cache/**": true
   },
-  "rust-analyzer.server.path": null
+  "rust-analyzer.server.path": null,
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  }
 }

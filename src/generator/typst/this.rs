@@ -1,6 +1,6 @@
 use {
     crate::{
-        generator::Generator,
+        generator::{Generator, typst::markdown::MarkdownToTypstConverter},
         model::{Book, Buildable, Element, Model},
     },
     chrono::{DateTime, Datelike, FixedOffset, Local, Utc},
@@ -35,42 +35,43 @@ enum Now {
 }
 
 pub struct TypstGenerator {
-    output_dir: PathBuf,
-    pdf_output: PathBuf,
+    output_dir:         PathBuf,
+    pdf_output:         PathBuf,
     /// Metadata about discovered fonts.
-    font_book:  LazyHash<FontBook>,
+    font_book:          LazyHash<FontBook>,
     /// Locations of and storage for lazily loaded fonts.
-    fonts:      Vec<FontSlot>,
-    library:    LazyHash<Library>,
+    fonts:              Vec<FontSlot>,
+    library:            LazyHash<Library>,
     /// The temp directory for storing the Typst source files
     #[allow(dead_code)]
-    temp_dir:   Option<tempfile::TempDir>,
+    temp_dir:           Option<tempfile::TempDir>,
     /// The current date and time
     #[allow(dead_code)]
-    now:        Now,
+    now:                Now,
+    markdown_converter: MarkdownToTypstConverter,
 }
 
 impl TypstGenerator {
-    /// Creates a new Typst generator that will generate Typst source files
-    /// in the given directory (or a temporary directory if none is specified)
-    /// and compile them to PDF at the specified location (or ./output.pdf if
-    /// none specified).
-    pub fn new<P1: AsRef<Path>, P2: AsRef<Path>>(
-        output_dir: Option<P1>,
-        pdf_output: Option<P2>,
-    ) -> anyhow::Result<Self> {
-        let (output_dir, temp_dir) = match output_dir {
-            Some(p) => (p.as_ref().to_path_buf(), None),
-            None => {
-                let temp_dir = tempfile::tempdir()?;
-                (temp_dir.path().to_path_buf(), Some(temp_dir))
-            },
-        };
+    /// Create a new generator with the given output directory
+    pub fn new(output_dir: PathBuf, pdf_output: PathBuf) -> Self {
+        let fonts = Fonts::searcher().include_system_fonts(true).search();
 
-        let pdf_output = pdf_output
-            .map(|p| p.as_ref().to_path_buf())
-            .unwrap_or_else(|| PathBuf::from("output.pdf"));
+        Self {
+            output_dir,
+            pdf_output,
+            font_book: LazyHash::new(fonts.book),
+            fonts: fonts.fonts,
+            library: LazyHash::new(Library::default()),
+            temp_dir: None,
+            now: Now::System(OnceLock::new()),
+            markdown_converter: MarkdownToTypstConverter::new(),
+        }
+    }
 
+    /// Create a new generator with a temporary output directory
+    pub fn with_temp_dir(pdf_output: PathBuf) -> anyhow::Result<Self> {
+        let temp_dir = tempfile::tempdir()?;
+        let output_dir = temp_dir.path().to_path_buf();
         let fonts = Fonts::searcher().include_system_fonts(true).search();
 
         Ok(Self {
@@ -79,8 +80,9 @@ impl TypstGenerator {
             font_book: LazyHash::new(fonts.book),
             fonts: fonts.fonts,
             library: LazyHash::new(Library::default()),
-            temp_dir,
+            temp_dir: Some(temp_dir),
             now: Now::System(OnceLock::new()),
+            markdown_converter: MarkdownToTypstConverter::new(),
         })
     }
 
@@ -241,6 +243,10 @@ impl TypstGenerator {
         // Create output directory if it doesn't exist
         fs::create_dir_all(&self.output_dir)?;
 
+        // Also create a debug directory in the current working directory
+        let debug_dir = std::path::Path::new("typst_debug");
+        fs::create_dir_all(debug_dir)?;
+
         // Get all books from the documentation model
         let mut books = Book::get_books(doc_model.clone())?;
 
@@ -263,121 +269,260 @@ impl TypstGenerator {
             books.push(default_book);
         }
 
-        // Create a template file
-        let template_content = r#"#let project(
-          title: "",
-          subtitle: "",
-          authors: "",
-          body,
-        ) = {
-          set document(title: title, author: authors)
-          set page(numbering: "1", number-align: center)
-          set text(font: "New Computer Modern")
-          set heading(numbering: "1.")
-
-          align(center)[
-            #block(text(weight: "bold", size: 24pt)[#title])
-            #if subtitle != "" [
-              #block(text(style: "italic", size: 14pt)[#subtitle])
-            ]
-            #block(text(size: 12pt)[#authors])
-          ]
-
-          body
-        }"#;
+        // Create a template file - simplified for debugging
+        let template_content = self.generate_template_content();
         fs::write(
             self.output_dir.join("template.typ"),
-            template_content,
+            &template_content,
         )?;
+        // Also write to debug directory
+        fs::write(debug_dir.join("template.typ"), template_content)?;
 
         // Process each book and create book files
         for book in &books {
             // Create a file for this book
-            let book_file = self.output_dir.join(format!(
-                "{}.typ",
-                book.title.as_deref().unwrap_or("Untitled")
-            ));
-            let mut book_content = String::new();
-            book_content.push_str("#import \"template.typ\": project\n\n");
+            let book_title = book.title.as_deref().unwrap_or("Untitled");
+            let sanitized_filename = self.sanitize_filename(book_title);
 
-            // Start the project function
-            book_content.push_str(&format!(
-                "#project(\n  title: \"{}\",\n",
-                book.title.as_deref().unwrap_or("Untitled")
-            ));
-
-            if let Some(ref subtitle) = book.subtitle {
-                book_content
-                    .push_str(&format!("  subtitle: \"{}\",\n", subtitle));
-            } else {
-                book_content.push_str("  subtitle: \"\",\n");
-            }
-
-            book_content.push_str(&format!(
-                "  authors: \"{}\",\n)[",
-                book.authors.join(", ")
-            ));
-
-            // Get sections for this book
-            let sections = book.get_sections().unwrap_or_default();
-
-            if sections.is_empty() {
-                // Add a default content if no sections are found
-                book_content.push_str("\n  = Default Content\n\n");
-                book_content.push_str(
-                    "  This is a default document generated by GraphArch.\n\n",
-                );
-                book_content
-                    .push_str("  No content was found in the input file.\n\n");
-            } else {
-                // Process sections normally
-                for section in sections {
-                    book_content.push_str(&format!(
-                        "\n  = {}\n\n",
-                        section.title.as_deref().unwrap_or("Untitled")
-                    ));
-
-                    if let Some(ref description) = section.description {
-                        book_content
-                            .push_str(&format!("  {}\n\n", description));
-                    }
-
-                    // Get chapters for this section
-                    for chapter in section.get_chapters().unwrap_or_default() {
-                        book_content.push_str(&format!(
-                            "  == {}\n\n",
-                            chapter.title.as_deref().unwrap_or("Untitled")
-                        ));
-                        book_content.push_str(&format!(
-                            "  {}\n\n",
-                            chapter.content.as_deref().unwrap_or("")
-                        ));
-                    }
-                }
-            }
-
-            // Close the project function
-            book_content.push_str("]\n");
-
-            // Write the book file
-            fs::write(&book_file, &book_content)?;
+            // Generate files for each component of the book
+            self.generate_book_files(book, &sanitized_filename, debug_dir)?;
         }
 
-        // Write the main file
-        let mut main_content = String::new();
+        // Write the main file - simplified for debugging
+        let book_title = books[0].title.as_deref().unwrap_or("Untitled");
+        let sanitized_filename = self.sanitize_filename(book_title);
 
-        // Include each book file
-        for book in &books {
-            let book_filename = format!(
-                "{}.typ",
-                book.title.as_deref().unwrap_or("Untitled")
-            );
-            main_content.push_str(&format!("#include \"{}\"\n", book_filename));
-        }
+        let main_content = self.generate_main_content(&sanitized_filename);
 
         fs::write(self.output_dir.join("main.typ"), &main_content)?;
+        // Also write to debug directory
+        fs::write(debug_dir.join("main.typ"), &main_content)?;
 
         Ok(())
+    }
+
+    /// Sanitize a string to be used as a filename
+    fn sanitize_filename(&self, name: &str) -> String {
+        name.to_lowercase()
+            .replace(' ', "-")
+            .replace(|c: char| !c.is_alphanumeric() && c != '-', "")
+    }
+
+    /// Generate files for each component of a book
+    fn generate_book_files(
+        &self,
+        book: &Book,
+        book_filename: &str,
+        debug_dir: &Path,
+    ) -> anyhow::Result<()> {
+        // Create book directory
+        let book_dir = self.output_dir.join(book_filename);
+        let debug_book_dir = debug_dir.join(book_filename);
+        fs::create_dir_all(&book_dir)?;
+        fs::create_dir_all(&debug_book_dir)?;
+
+        // Create book index file
+        // Sanitize title and authors
+        let sanitized_title = book
+            .title
+            .as_deref()
+            .unwrap_or("Untitled")
+            .replace("\"", "");
+
+        let sanitized_subtitle =
+            book.subtitle.as_deref().unwrap_or("").replace("\"", "");
+
+        let sanitized_authors = if book.authors.is_empty() {
+            String::new()
+        } else {
+            book.authors.join(", ")
+        }
+        .replace("\"", "");
+
+        let book_index_content = format!(
+            "#import \"../template.typ\": *\n\n#show: project(\"{}\", \"{}\", \
+             \"{}\")\n\n",
+            sanitized_title, sanitized_subtitle, sanitized_authors
+        );
+
+        // Get sections for this book
+        let sections = book.get_sections().unwrap_or_default();
+
+        if sections.is_empty() {
+            // Add a default content file if no sections are found
+            let default_content = "= Default Content\n\nThis is a default \
+                                   document generated by GraphArch.\n\nNo \
+                                   content was found in the input file.\n\n";
+            let default_file = "default.typ";
+
+            fs::write(book_dir.join(default_file), default_content)?;
+            fs::write(debug_book_dir.join(default_file), default_content)?;
+
+            // Include default content in book index
+            let mut updated_index = book_index_content.clone();
+            updated_index.push_str(&format!("#include \"{}\"", default_file));
+
+            fs::write(book_dir.join("index.typ"), &updated_index)?;
+            fs::write(debug_book_dir.join("index.typ"), &updated_index)?;
+        } else {
+            // Process each section
+            let mut section_includes = String::new();
+
+            for (section_idx, section) in sections.iter().enumerate() {
+                let section_title = section
+                    .title
+                    .as_deref()
+                    .unwrap_or("Untitled")
+                    .trim_matches('"');
+                let section_dirname = format!("section-{}", section_idx + 1);
+
+                // Create section directory
+                let section_dir = book_dir.join(&section_dirname);
+                let debug_section_dir = debug_book_dir.join(&section_dirname);
+                fs::create_dir_all(&section_dir)?;
+                fs::create_dir_all(&debug_section_dir)?;
+
+                // Create section index file with its heading and description
+                let mut section_content = format!("= {}\n\n", section_title);
+
+                if let Some(ref description) = section.description {
+                    section_content.push_str(&format!(
+                        "{}\n\n",
+                        description.trim_matches('"')
+                    ));
+                }
+
+                // Get chapters for this section
+                let chapters = section.get_chapters().unwrap_or_default();
+
+                // Create chapter includes for section index
+                let mut chapter_includes = String::new();
+
+                // Process each chapter
+                for (chapter_idx, chapter) in chapters.iter().enumerate() {
+                    let chapter_title = chapter
+                        .title
+                        .as_deref()
+                        .unwrap_or("Untitled")
+                        .trim_matches('"');
+                    let chapter_dirname =
+                        format!("chapter-{}", chapter_idx + 1);
+
+                    // Create chapter directory
+                    let chapter_dir = section_dir.join(&chapter_dirname);
+                    let debug_chapter_dir =
+                        debug_section_dir.join(&chapter_dirname);
+                    fs::create_dir_all(&chapter_dir)?;
+                    fs::create_dir_all(&debug_chapter_dir)?;
+
+                    if let Some(ref chapter_content) = chapter.content {
+                        // Process the content using the
+                        // MarkdownToTypstConverter
+                        let raw_content = chapter_content
+                            .trim_matches('"')
+                            .replace("\\n", "\n");
+
+                        // Use the markdown converter to process the content
+                        let processed_content =
+                            self.markdown_converter.convert(&raw_content);
+
+                        // Create chapter index file
+                        let chapter_index_content = format!(
+                            "== {}\n\n{}",
+                            chapter_title, processed_content
+                        );
+
+                        fs::write(
+                            chapter_dir.join("index.typ"),
+                            &chapter_index_content,
+                        )?;
+                        fs::write(
+                            debug_chapter_dir.join("index.typ"),
+                            &chapter_index_content,
+                        )?;
+                    } else {
+                        // Empty chapter
+                        let chapter_index_content = format!(
+                            "== {}\n\nNo content available.\n\n",
+                            chapter_title
+                        );
+
+                        fs::write(
+                            chapter_dir.join("index.typ"),
+                            &chapter_index_content,
+                        )?;
+                        fs::write(
+                            debug_chapter_dir.join("index.typ"),
+                            &chapter_index_content,
+                        )?;
+                    }
+
+                    // Add chapter include to section index
+                    chapter_includes.push_str(&format!(
+                        "#include \"{}/index.typ\"\n\n",
+                        chapter_dirname
+                    ));
+                }
+
+                // Write section index with chapter includes
+                let full_section_content =
+                    format!("{}\n{}", section_content, chapter_includes);
+                fs::write(
+                    section_dir.join("index.typ"),
+                    &full_section_content,
+                )?;
+                fs::write(
+                    debug_section_dir.join("index.typ"),
+                    &full_section_content,
+                )?;
+
+                // Add section include to book index
+                section_includes.push_str(&format!(
+                    "#include \"{}/index.typ\"\n\n",
+                    section_dirname
+                ));
+            }
+
+            // Write book index with section includes
+            let full_book_content =
+                format!("{}\n{}", book_index_content, section_includes);
+            fs::write(book_dir.join("index.typ"), &full_book_content)?;
+            fs::write(
+                debug_book_dir.join("index.typ"),
+                &full_book_content,
+            )?;
+        }
+
+        Ok(())
+    }
+
+    /// Generate the main content file
+    fn generate_main_content(&self, book_name: &str) -> String {
+        format!(
+            "#import \"template.typ\": *\n\n#show: project(\"{}\", \"\", \
+             \"GraphArch\")\n\n#include \"{}/index.typ\"",
+            book_name, book_name
+        )
+    }
+
+    fn generate_template_content(&self) -> String {
+        r#"#let project(title, subtitle, authors) = doc => {
+  set document(title: title, author: authors)
+  set page(numbering: "1", number-align: center)
+  set text(font: "New Computer Modern")
+  set heading(numbering: "1.")
+
+  align(center)[
+    #text(weight: "bold", size: 24pt)[#title]
+    #if subtitle != "" [
+      #text(style: "italic", size: 14pt)[#subtitle]
+    ]
+    #text(size: 12pt)[#authors]
+  ]
+
+  doc
+}"#
+        .to_string()
     }
 }
 

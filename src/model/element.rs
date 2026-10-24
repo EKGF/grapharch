@@ -45,8 +45,12 @@ impl ElementRef {
             .ok_or_else(|| anyhow::anyhow!("Missing 'graph' in solution"))?
             .to_string();
 
-        let named_node = NamedNode::new(iri)?;
-        let graph_name = GraphName::NamedNode(NamedNode::new(graph)?);
+        // Remove angle brackets if present in the strings
+        let clean_iri = iri.trim_start_matches('<').trim_end_matches('>');
+        let clean_graph = graph.trim_start_matches('<').trim_end_matches('>');
+
+        let named_node = NamedNode::new(clean_iri)?;
+        let graph_name = GraphName::NamedNode(NamedNode::new(clean_graph)?);
 
         Ok(Self { named_node, graph_name, model: model.clone() })
     }
@@ -98,6 +102,20 @@ pub trait Buildable<T> {
         );
         self.insert(&quad)
     }
+
+    fn insert_object_node(
+        &self,
+        predicate: NamedNode,
+        object: NamedNode,
+    ) -> Result<()> {
+        let quad = Quad::new(
+            self.get_named_node().clone(),
+            predicate,
+            object,
+            self.get_graph_name().clone(),
+        );
+        self.insert(&quad)
+    }
 }
 
 pub trait Element: Sized {
@@ -132,11 +150,18 @@ pub trait Element: Sized {
         model: &Arc<Model>,
     ) -> anyhow::Result<E::Builder> {
         let named_node = Self::new_named_node()?;
-        E::builder(ElementRef {
-            named_node,
-            graph_name: GraphName::DefaultGraph,
-            model: model.clone(),
-        })
+        let graph_name = GraphName::NamedNode(NamedNode::new(
+            "urn:graph:documentation-model",
+        )?);
+        E::builder(ElementRef { named_node, graph_name, model: model.clone() })
+    }
+
+    fn builder_in_model_with_graph<E: Element>(
+        model: &Arc<Model>,
+        graph_name: GraphName,
+    ) -> anyhow::Result<E::Builder> {
+        let named_node = Self::new_named_node()?;
+        E::builder(ElementRef { named_node, graph_name, model: model.clone() })
     }
 
     fn new_named_node() -> Result<NamedNode> {

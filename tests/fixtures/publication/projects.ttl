@@ -1,0 +1,46 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix ex: <urn:example:> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+ex:ontology-project a ga:Project ; ga:scope ex:family ;
+    ga:target ex:spec, ex:reader, ex:pdf ; ga:collector ex:markdown .
+ex:markdown a ga:Collector ; ga:kind "markdown-file" ; ga:source "narrative.md" .
+ex:family a ga:Scope ; ga:include ex:ontology-a, ex:ontology-b ;
+    ga:exclude ex:internal ; ga:compose ex:shared ;
+    ga:traverse ex:defines ; ga:maxDepth 2 .
+ex:shared a ga:Scope ; ga:include ex:shared-term .
+ex:spec a ga:Target ; ga:scope ex:family ; ga:profile ex:spec-profile ;
+    ga:renderer "html" ; ga:destination "build/spec" .
+ex:reader a ga:Target ; ga:scope ex:shared ; ga:profile ex:reader-profile ;
+    ga:renderer "html" ; ga:destination "build/reader" .
+ex:pdf a ga:Target ; ga:scope ex:family ; ga:profile ex:pdf-profile ;
+    ga:renderer "typst" ; ga:destination "build/pdf" .
+ex:spec-profile a ga:Profile ; ga:placement ex:spec-intro .
+ex:reader-profile a ga:Profile ; ga:placement ex:reader-intro .
+ex:pdf-profile a ga:Profile ; ga:placement ex:pdf-intro .
+ex:spec-intro a ga:Placement ; ga:component ex:introduction ; ga:order 1 .
+ex:reader-intro a ga:Placement ; ga:component ex:introduction ; ga:order 3 .
+ex:pdf-intro a ga:Placement ; ga:component ex:introduction ; ga:order 2 .
+ex:introduction a ga:Component ; ga:fragment ex:intro-fragment .
+ex:intro-fragment a ga:Fragment ; ga:subject ex:ontology-a ;
+    ga:body "Shared introduction." ; ga:format "text/markdown" ;
+    ga:contribution ex:authored .
+ex:authored a ga:Contribution ; ga:processor ex:markdown ;
+    ga:project ex:ontology-project ; ga:source "narrative.md" ; ga:revision "fixture-1" .
+ex:ontology-a ex:defines ex:class-a, ex:internal .
+ex:ontology-b ex:defines ex:class-b .
+ex:class-a ex:defines ex:shared-term ; ga:reference ex:external-standard .
+ex:external-standard a ga:ExternalReference ; dct:title "External standard" .
+
+ex:use-case-project a ga:Project ; ga:scope ex:use-cases ; ga:target ex:use-case-web .
+ex:use-cases a ga:Scope ; ga:include ex:root-use-case ; ga:traverse ex:child ; ga:maxDepth 3 .
+ex:root-use-case ex:child ex:child-use-case .
+ex:child-use-case ex:child ex:root-use-case .
+ex:use-case-web a ga:Target ; ga:scope ex:use-cases ; ga:profile ex:empty-profile ;
+    ga:renderer "html" ; ga:destination "build/use-cases" .
+ex:empty-profile a ga:Profile .
+
+ex:portfolio-project a ga:Project ; ga:scope ex:portfolio ; ga:target ex:portfolio-pdf .
+ex:portfolio a ga:Scope ; ga:include ex:fund-a, ex:fund-b ; ga:exclude ex:fund-b .
+ex:portfolio-pdf a ga:Target ; ga:scope ex:portfolio ; ga:profile ex:empty-profile ;
+    ga:renderer "typst" ; ga:destination "build/portfolio" .
