@@ -1,6 +1,8 @@
 //! Specialized RDF-to-fragment documentors sharing a bounded streaming engine.
 
+mod annotated_term;
 mod resource;
+pub use annotated_term::AnnotatedTermDocumentor;
 use {
     super::{dataset::Dataset, writer::GraphWriter},
     anyhow::Result,

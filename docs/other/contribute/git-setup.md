@@ -2,6 +2,9 @@
 title: "Git Setup Notes"
 layout: default
 parent: Contribute
+grapharch:
+  subject: urn:grapharch:docs:topic:other:contribute:git-setup
+permalink: /other/contribute/git-setup/
 ---
 
 # Git Setup Notes

@@ -1,3 +1,12 @@
+---
+title: Architecture and deliverables
+parent: Architecture
+nav_order: 1
+grapharch:
+  subject: urn:grapharch:docs:topic:other:architecture:deliverables
+permalink: /other/architecture/deliverables/
+---
+
 # Grapharch: documentation graph and publication architecture
 
 **Status:** Implementation in progress. The acceptance criteria below remain the delivery contract.
@@ -40,6 +49,13 @@ Define these concepts in the documentation ontology:
 | Publication target | A named output of a project, binding a scope, publication profile, renderer, and destination or base URL. Several targets may use the same renderer. |
 | Graph revision | An identifiable, validated state of the documentation dataset available for publication. |
 | Publication job | A run of a target against a specified graph revision that produces artifacts and a provenance manifest. |
+
+A specification site, a companion website of stories and guides, and an approval
+PDF are distinct publication targets. Their scopes and profiles may differ;
+sharing one graph does not require publishing identical content. Resolve a
+publication family against one assembled revision, preserving separate plans,
+placements, and job provenance. Authority and publication status are explicit
+metadata, not consequences of selecting a visual style.
 
 Use five explicit stages:
 

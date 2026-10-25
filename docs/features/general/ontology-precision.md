@@ -3,6 +3,9 @@ title: "Ontology Precision"
 layout: default
 parent: General
 nav_order: 1
+grapharch:
+  subject: urn:grapharch:docs:topic:features:general:ontology-precision
+permalink: /features/general/ontology-precision/
 ---
 
 # Ontology Precision

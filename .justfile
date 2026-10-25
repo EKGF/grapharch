@@ -33,9 +33,9 @@ GraphArch-build:
 notify m="":
 	keybase chat send --topic-type "chat" --channel <channel> <team> "upd(<repo>): {{m}}"
 
-docs: user-docs-build user-docs-serve-no-ssl
+docs: docs-build docs-serve
 
-build: GraphArch-build user-docs-build
+build: GraphArch-build docs-build
 
 rebuild:
   cargo clean
@@ -59,3 +59,10 @@ debug-run *args:
 lint:
   cargo +nightly clippy --all-features --message-format=json
   cargo +nightly fmt -- --check
+
+# Generate documentation through Grapharch's own KG pipeline.
+docs-build:
+  cargo run -- publication build-site --source docs --definitions docs/grapharch.ttl --project urn:grapharch:docs --target urn:grapharch:docs:website --output-root output/docs
+
+docs-serve:
+  python3 -m http.server 8770 --directory output/docs/site

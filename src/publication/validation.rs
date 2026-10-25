@@ -166,10 +166,8 @@ pub fn validate(store: &Store) -> Result<()> {
                         unreachable!()
                     };
                     ensure!(
-                        matches!(
-                            renderer.value(),
-                            "html" | "specification" | "typst"
-                        ),
+                        crate::publication::Renderer::parse(renderer.value())
+                            .is_ok(),
                         "{subject} unsupported renderer {renderer}"
                     );
                 }

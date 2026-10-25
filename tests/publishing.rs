@@ -301,3 +301,42 @@ async fn skipped_heading_levels_are_rejected_instead_of_publishing_zero_numbered
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn shared_html_and_pdf_render_gfm_callouts_without_literal_markers()
+-> anyhow::Result<()> {
+    let temp = tempfile::tempdir()?;
+    let (dataset, html, pdf) = plans(
+        "> [!NOTE]\n> Keep **this guidance**.\n\n- [x] Completed task\n- [ ] \
+         Pending task",
+        &temp.path().join("source.ttl"),
+    )
+    .await?;
+    let publisher = Publisher::new(dataset);
+    let PublishOutcome::Published(html) =
+        publisher.render(&html, temp.path()).await?
+    else {
+        panic!("expected HTML")
+    };
+    let output =
+        tokio::fs::read_to_string(html.directory.join("index.html")).await?;
+    assert!(output.contains("markdown-alert-note"));
+    assert!(output.contains("callout-title"));
+    assert!(output.contains("task-list-item"));
+    assert!(!output.contains("[!NOTE]"));
+    let PublishOutcome::Published(pdf) =
+        publisher.render(&pdf, temp.path()).await?
+    else {
+        panic!("expected PDF")
+    };
+    let typst =
+        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    assert!(typst.contains("Note"));
+    assert!(!typst.contains("[!NOTE]"));
+    assert!(
+        tokio::fs::read(pdf.directory.join("document.pdf"))
+            .await?
+            .starts_with(b"%PDF-")
+    );
+    Ok(())
+}

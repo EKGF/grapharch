@@ -1,0 +1,430 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix lifecycle: <https://ekgf.org/ontology/lifecycle#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-lifecycle: <https://ekgf.org/ontology/lifecycle#> .
+@base <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#>
+    rdf:type owl:Ontology ;
+    sh:declare [
+        sh:prefix "ekg-lifecycle" ;
+        sh:namespace "https://ekgf.org/ontology/lifecycle#"^^xsd:anyURI
+    ] ;
+    rdfs:label "EKGF Lifecycle Ontology"@en ;
+    rdfs:comment """Everything has a lifecycle: use cases, stories, concepts, personas, outcomes, data products and datasets. This ontology says what a lifecycle is, which lifecycle a thing follows and which state the thing is in. It depends on none of the ontologies that describe those things.
+
+A lifecycle has a name, states and permitted transitions, optionally grouped into phases. Its states and transitions form a directed graph; it does not require a separate RDF named graph. Multiple lifecycles can share an RDF graph, with inLifecycle expressing membership independently of graph placement. State order controls presentation, not which moves are permitted. There can be any number of lifecycles. This ontology defines none: the well-known lifecycles are a dataset (dataset/well-known-lifecycles.ttl), and anyone can define more. The registry uses a separate namespace for each lifecycle to distinguish shared state names such as Draft and Deprecated. This is an IRI naming convention, not a graph-storage requirement; custom lifecycles can use another IRI naming convention.
+
+Which lifecycles a thing follows is decided in this order:
+
+1. The complete set of lifecycles the thing names itself, with followsLifecycle.
+2. Otherwise, the union of lifecycles that apply to its classes (including superclasses), with appliesTo.
+
+A thing has one inState history head per effective lifecycle. Each head is a StateTransition occurrence whose currentState belongs to that lifecycle. priorStateTransition links earlier occurrences; the lifecycle is derived from each state, and optional provenance is recorded on the occurrence."""@en .
+
+#################################################################
+#    Classes
+#################################################################
+
+lifecycle:Lifecycle rdf:type owl:Class ;
+    rdfs:label "Lifecycle"@en ;
+    rdfs:comment "A lifecycle with a name, states and permitted transitions, optionally grouped into phases. Membership is expressed with inLifecycle and does not require a separate RDF named graph."@en .
+
+lifecycle:Phase rdf:type owl:Class ;
+    rdfs:label "Phase"@en ;
+    rdfs:comment "A high-level part of a lifecycle that groups states."@en .
+
+lifecycle:Transition rdf:type owl:Class ;
+    rdfs:label "Transition"@en ;
+    rdfs:comment "A permitted directed move between two states of one lifecycle. This describes a possible move, not an occurrence of a state change. Multiple transitions may have the same endpoints and different triggers; loops and branches are explicit."@en .
+
+lifecycle:StateTransition rdf:type owl:Class ;
+    owl:disjointWith lifecycle:Transition ;
+    rdfs:label "State transition"@en ;
+    rdfs:comment "An actual state-entry occurrence for one thing in one lifecycle, distinct from a permitted Transition definition. It records exactly one currentState and optionally one priorStateTransition. The first occurrence records an initial state without a predecessor. Occurrences can carry optional PROV-O properties and can be identified by IRIs or blank nodes."@en .
+
+lifecycle:State rdf:type owl:Class ;
+    rdfs:label "State"@en ;
+    rdfs:comment "One state of a lifecycle."@en .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+lifecycle:inState rdf:type owl:ObjectProperty ;
+    rdfs:range lifecycle:StateTransition ;
+    rdfs:label "in state"@en ;
+    rdfs:comment "Links a thing to its current state-entry occurrence, one per effective lifecycle. Earlier occurrences are reached through priorStateTransition. It has no domain because anything can follow lifecycles."@en .
+
+lifecycle:currentState rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain lifecycle:StateTransition ;
+    rdfs:range lifecycle:State ;
+    rdfs:label "current state"@en ;
+    rdfs:comment "The state entered by this occurrence. Its inLifecycle identifies the lifecycle; the occurrence does not duplicate that assignment."@en .
+
+lifecycle:priorStateTransition rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain lifecycle:StateTransition ;
+    rdfs:range lifecycle:StateTransition ;
+    rdfs:label "prior state transition"@en ;
+    rdfs:comment "The immediately preceding occurrence for the same thing and lifecycle. Absent for an initial recorded state. History chains must be acyclic even when permitted state routes contain loops."@en .
+
+lifecycle:followsLifecycle rdf:type owl:ObjectProperty ;
+    rdfs:range lifecycle:Lifecycle ;
+    rdfs:label "follows lifecycle"@en ;
+    rdfs:comment "A lifecycle this thing follows. When explicit assignments exist, their complete set replaces the class defaults from appliesTo. A thing can follow several lifecycles."@en .
+
+lifecycle:appliesTo rdf:type owl:AnnotationProperty ;
+    rdfs:domain lifecycle:Lifecycle ;
+    rdfs:range rdfs:Class ;
+    rdfs:label "applies to"@en ;
+    rdfs:comment "A class whose members follow this lifecycle unless they name another one. This is policy rather than vocabulary: an organization states it in its own data, and can state it differently. It is an annotation property because its values are classes, which are not individuals."@en .
+
+lifecycle:inLifecycle rdf:type owl:ObjectProperty ;
+    rdfs:domain [ rdf:type owl:Class ;
+                  owl:unionOf ( lifecycle:Phase
+                                lifecycle:State
+                                lifecycle:Transition
+                              )
+                ] ;
+    rdfs:range lifecycle:Lifecycle ;
+    rdfs:label "in lifecycle"@en ;
+    rdfs:comment "The lifecycle that a phase, state or transition belongs to."@en .
+
+lifecycle:fromState rdf:type owl:ObjectProperty ,
+                             owl:FunctionalProperty ;
+    rdfs:domain lifecycle:Transition ;
+    rdfs:range lifecycle:State ;
+    rdfs:label "from state"@en ;
+    rdfs:comment "The source state of a permitted transition."@en .
+
+lifecycle:toState rdf:type owl:ObjectProperty ,
+                           owl:FunctionalProperty ;
+    rdfs:domain lifecycle:Transition ;
+    rdfs:range lifecycle:State ;
+    rdfs:label "to state"@en ;
+    rdfs:comment "The target state of a permitted transition."@en .
+
+lifecycle:phase rdf:type owl:ObjectProperty ,
+                         owl:FunctionalProperty ;
+    rdfs:domain lifecycle:State ;
+    rdfs:range lifecycle:Phase ;
+    rdfs:label "phase"@en ;
+    rdfs:comment "The phase that a state belongs to."@en .
+
+#################################################################
+#    Data Properties
+#################################################################
+
+lifecycle:order rdf:type owl:DatatypeProperty ,
+                         owl:FunctionalProperty ;
+    rdfs:domain lifecycle:State ;
+    rdfs:range xsd:integer ;
+    rdfs:label "order"@en ;
+    rdfs:comment "Display position of a state within its lifecycle. Order does not imply a permitted transition."@en .
+
+lifecycle:isTerminal rdf:type owl:DatatypeProperty ,
+                              owl:FunctionalProperty ;
+    rdfs:domain lifecycle:State ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is terminal"@en ;
+    rdfs:comment "True for a state that nothing follows. A lifecycle can end in several ways, such as done, failed or cancelled; each of those is a terminal state, and their order is only the order in which they are listed."@en .
+
+lifecycle:trigger rdf:type owl:DatatypeProperty ;
+    rdfs:domain lifecycle:Transition ;
+    rdfs:range rdf:langString ;
+    rdfs:label "trigger"@en ;
+    rdfs:comment "An optional human-readable description of the event that enables a transition. It is not an executable guard or an authorization rule. Omitting it leaves the trigger unspecified."@en .
+
+#################################################################
+#    Transition validation
+#################################################################
+
+lifecycle:TransitionShape rdf:type sh:NodeShape ;
+    sh:targetClass lifecycle:Transition ;
+    sh:targetSubjectsOf lifecycle:fromState , lifecycle:toState , lifecycle:trigger ;
+    sh:class lifecycle:Transition ;
+    sh:property [
+        sh:path lifecycle:inLifecycle ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class lifecycle:Lifecycle
+    ] ;
+    sh:property [
+        sh:path lifecycle:fromState ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class lifecycle:State
+    ] ;
+    sh:property [
+        sh:path lifecycle:toState ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class lifecycle:State
+    ] ;
+    sh:property [
+        sh:path lifecycle:trigger ;
+        sh:datatype rdf:langString
+    ] ;
+    sh:sparql [
+        sh:message "Both endpoint states must belong only to the transition's lifecycle."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            SELECT $this WHERE {
+                $this lifecycle:inLifecycle ?lifecycle ;
+                      (lifecycle:fromState|lifecycle:toState) ?state .
+                FILTER (
+                    NOT EXISTS { ?state lifecycle:inLifecycle ?lifecycle }
+                    || EXISTS {
+                        ?state lifecycle:inLifecycle ?other .
+                        FILTER (?other != ?lifecycle)
+                    }
+                )
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "A terminal state cannot be the source of a transition."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            SELECT $this WHERE {
+                $this lifecycle:fromState ?state .
+                ?state lifecycle:isTerminal true .
+            }
+        """
+    ] .
+
+#################################################################
+#    State history validation
+#################################################################
+
+lifecycle:HistoryStateShape rdf:type sh:NodeShape ;
+    sh:targetObjectsOf lifecycle:currentState ;
+    sh:class lifecycle:State ;
+    sh:property [
+        sh:path lifecycle:inLifecycle ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class lifecycle:Lifecycle
+    ] .
+
+lifecycle:StateTransitionShape rdf:type sh:NodeShape ;
+    sh:targetClass lifecycle:StateTransition ;
+    sh:targetSubjectsOf lifecycle:currentState , lifecycle:priorStateTransition ;
+    sh:targetObjectsOf lifecycle:inState , lifecycle:priorStateTransition ;
+    sh:class lifecycle:StateTransition ;
+    sh:not [ sh:class lifecycle:Transition ] ;
+    sh:property [
+        sh:path lifecycle:currentState ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class lifecycle:State
+    ] ;
+    sh:property [
+        sh:path lifecycle:priorStateTransition ;
+        sh:maxCount 1 ; sh:class lifecycle:StateTransition
+    ] ;
+    sh:sparql [
+        sh:message "State history must not contain predecessor cycles."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            SELECT $this WHERE {
+                $this lifecycle:priorStateTransition+ $this .
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "Successive occurrences must follow a permitted transition within the same lifecycle."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            SELECT $this WHERE {
+                $this lifecycle:currentState ?to ;
+                      lifecycle:priorStateTransition/lifecycle:currentState ?from .
+                FILTER NOT EXISTS {
+                    ?from lifecycle:inLifecycle ?lc .
+                    ?to lifecycle:inLifecycle ?lc .
+                    ?route rdf:type lifecycle:Transition ;
+                           lifecycle:inLifecycle ?lc ;
+                           lifecycle:fromState ?from ;
+                           lifecycle:toState ?to .
+                }
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "A state-entry occurrence cannot belong to histories of different objects."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            SELECT $this WHERE {
+                ?object lifecycle:inState/lifecycle:priorStateTransition* $this .
+                ?other lifecycle:inState/lifecycle:priorStateTransition* $this .
+                FILTER (?object != ?other)
+            }
+        """
+    ] .
+
+lifecycle:CurrentStateShape rdf:type sh:NodeShape ;
+    sh:targetSubjectsOf lifecycle:inState , lifecycle:followsLifecycle , rdf:type ;
+    sh:property [
+        sh:path lifecycle:inState ;
+        sh:class lifecycle:StateTransition
+    ] ;
+    sh:property [
+        sh:path lifecycle:followsLifecycle ;
+        sh:class lifecycle:Lifecycle
+    ] ;
+    sh:sparql [
+        sh:message "Each effective lifecycle requires a current history head."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT $this WHERE {
+                {
+                    $this lifecycle:followsLifecycle ?lc .
+                } UNION {
+                    FILTER NOT EXISTS { $this lifecycle:followsLifecycle ?explicit }
+                    $this rdf:type/rdfs:subClassOf* ?class .
+                    ?lc lifecycle:appliesTo ?class .
+                }
+                FILTER NOT EXISTS {
+                    $this lifecycle:inState/lifecycle:currentState/lifecycle:inLifecycle ?lc .
+                }
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "A current history head must belong to an effective lifecycle."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT $this WHERE {
+                $this lifecycle:inState/lifecycle:currentState/lifecycle:inLifecycle ?lc .
+                FILTER NOT EXISTS { $this lifecycle:followsLifecycle ?lc }
+                FILTER (
+                    EXISTS { $this lifecycle:followsLifecycle ?explicit }
+                    || NOT EXISTS {
+                        $this rdf:type/rdfs:subClassOf* ?class .
+                        ?lc lifecycle:appliesTo ?class .
+                    }
+                )
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "An object must have only one current history head per lifecycle."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            SELECT $this WHERE {
+                $this lifecycle:inState ?head , ?other .
+                ?head lifecycle:currentState/lifecycle:inLifecycle ?lc .
+                ?other lifecycle:currentState/lifecycle:inLifecycle ?lc .
+                FILTER (?head != ?other)
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "A current history head cannot have a recorded successor."@en ;
+        sh:select """
+            PREFIX lifecycle: <https://ekgf.org/ontology/lifecycle#>
+            SELECT $this WHERE {
+                $this lifecycle:inState ?head .
+                ?successor lifecycle:priorStateTransition ?head .
+            }
+        """
+    ] .
+
+# Reject the removed direct-state predicate instead of silently ignoring it.
+lifecycle:LegacyStateShape rdf:type sh:NodeShape ;
+    sh:targetSubjectsOf lifecycle:hasState ;
+    sh:property [
+        sh:path lifecycle:hasState ;
+        sh:maxCount 0 ;
+        sh:message "hasState was removed. Use inState with a StateTransition occurrence."@en
+    ] .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/lifecycle#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/lifecycle#CurrentStateShape>
+    rdfs:label "Current State Shape"@en ;
+    rdfs:comment "Validates effective lifecycle selection and current history-head assignments, including explicitly selected lifecycles and class defaults."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#HistoryStateShape>
+    rdfs:label "History State Shape"@en ;
+    rdfs:comment "Validates the State resources referenced by history occurrences, requiring each state to identify exactly one lifecycle."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#LegacyStateShape>
+    rdfs:label "Legacy State Shape"@en ;
+    rdfs:comment "Rejects use of the removed hasState predicate. Current assignments use inState with StateTransition occurrences instead."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#Lifecycle>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#Phase>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#State>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#StateTransition>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#StateTransitionShape>
+    rdfs:label "State Transition Shape"@en ;
+    rdfs:comment "Validates a recorded state-transition event, including its current state and predecessor transition where supplied."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#Transition>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#TransitionShape>
+    rdfs:label "Transition Shape"@en ;
+    rdfs:comment "Validates a lifecycle transition's lifecycle, source state, destination state, and trigger."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#appliesTo>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#currentState>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#followsLifecycle>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#fromState>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#inLifecycle>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#inState>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#isTerminal>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#order>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#phase>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#priorStateTransition>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#toState>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .
+
+<https://ekgf.org/ontology/lifecycle#trigger>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/lifecycle#> .

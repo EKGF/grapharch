@@ -1,0 +1,38 @@
+@prefix story: <https://ekgf.org/ontology/story#> .
+@prefix concept: <https://ekgf.org/ontology/concept#> .
+@prefix outcome: <https://ekgf.org/ontology/outcome#> .
+@prefix persona: <https://ekgf.org/ontology/persona#> .
+@prefix use-case: <https://ekgf.org/ontology/use-case#> .
+@prefix lifecycle: <https://ekgf.org/ontology/lifecycle#> .
+@prefix artdep: <https://ekgf.org/ontology/artifact-dependency#> .
+@prefix artpub: <https://ekgf.org/ontology/artifact-publication#> .
+
+#
+# Which lifecycles the members of a class follow.
+#
+# This is policy, not vocabulary. These are the defaults; an
+# organization that wants its stories, say, to follow a lifecycle of its
+# own replaces the binding in its own data. One thing can also depart
+# from its class with lifecycle:followsLifecycle. Explicit assignments
+# replace the entire set of class defaults. Without explicit assignments,
+# defaults from all its classes and superclasses are combined.
+#
+# The lifecycles are defined in well-known-lifecycles.ttl.
+#
+
+<https://ekgf.org/lifecycle/continuous-improvement>
+    lifecycle:appliesTo use-case:UseCase ,
+                        story:Story ,
+                        concept:DataElementConcept ,
+                        concept:ConceptSet ,
+                        persona:Persona .
+
+<https://ekgf.org/lifecycle/achievement>
+    lifecycle:appliesTo outcome:Outcome .
+
+<https://ekgf.org/lifecycle/publication>
+    lifecycle:appliesTo artpub:StandardsRelease .
+
+<https://ekgf.org/lifecycle/execution>
+    lifecycle:appliesTo artpub:PublicationRun ,
+                        artdep:OntologyLoadRequest .

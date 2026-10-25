@@ -1,0 +1,50 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix annotation: <https://ekgf.org/ontology/annotation#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ekg-annotation: <https://ekgf.org/ontology/annotation#> .
+@base <https://ekgf.org/ontology/annotation#> .
+
+<https://ekgf.org/ontology/annotation#>
+    rdf:type owl:Ontology ;
+    sh:declare [
+        sh:prefix "ekg-annotation" ;
+        sh:namespace "https://ekgf.org/ontology/annotation#"^^xsd:anyURI
+    ] ;
+    rdfs:label "EKGF Annotation Ontology"@en ;
+    rdfs:comment "Descriptive text that any resource can carry: a description in Markdown, a subtitle and a summary. These are annotation properties, so they apply to classes and properties as well as to individuals."@en .
+
+#################################################################
+#    Annotation properties
+#################################################################
+
+annotation:markdownDescription rdf:type owl:AnnotationProperty ;
+    rdfs:label "Markdown description"@en ;
+    rdfs:comment "A description of the resource, written in Markdown. Where it is absent, rdfs:comment is the description."@en .
+
+annotation:subtitle rdf:type owl:AnnotationProperty ;
+    rdfs:label "subtitle"@en ;
+    rdfs:comment "One line shown under the label of the resource."@en .
+
+annotation:summary rdf:type owl:AnnotationProperty ;
+    rdfs:label "summary"@en ;
+    rdfs:comment "A short summary of the resource, in plain text."@en .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/annotation#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/annotation#markdownDescription>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/annotation#> .
+
+<https://ekgf.org/ontology/annotation#subtitle>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/annotation#> .
+
+<https://ekgf.org/ontology/annotation#summary>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/annotation#> .

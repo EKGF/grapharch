@@ -117,10 +117,10 @@ impl FileType {
         if path.is_file() {
             if let Some(file_name) = self.file_name() {
                 return file_name == path.file_name().unwrap();
-            } else if let Some(extension) = self.extension() {
-                if let Some(path_extension) = path.extension() {
-                    return extension == path_extension;
-                }
+            } else if let Some(extension) = self.extension() &&
+                let Some(path_extension) = path.extension()
+            {
+                return extension == path_extension;
             }
         }
         false
@@ -150,16 +150,16 @@ impl FileType {
 
         // First check if the file name is a specific file type like
         // `_config.yml` before checking the extension.
-        if let Some(stem) = path.file_stem() {
-            if stem.to_string_lossy().as_ref() == JEKYLL_CONFIG_FILE_NAME {
-                return Some(&FileType::JekyllConfig);
-            }
+        if let Some(stem) = path.file_stem() &&
+            stem.to_string_lossy().as_ref() == JEKYLL_CONFIG_FILE_NAME
+        {
+            return Some(&FileType::JekyllConfig);
         }
         // Then check the extension.
-        if let Some(extension) = path.extension() {
-            if let Some(file_type) = FileType::from_extension(extension) {
-                return Some(file_type);
-            }
+        if let Some(extension) = path.extension() &&
+            let Some(file_type) = FileType::from_extension(extension)
+        {
+            return Some(file_type);
         }
         None
     }

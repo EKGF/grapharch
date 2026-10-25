@@ -2,27 +2,24 @@
 title: Usage
 layout: default
 nav_order: 1
+grapharch:
+  subject: urn:grapharch:docs:topic:usage
+permalink: /usage/
 ---
-# Usage
 
-GraphArch can be used in two primary modes:
+# Using Grapharch
 
-1. **Ontology Documentation Mode**:
-   To generate documentation for ontologies or schemas, use the following command:
+Grapharch is one Rust CLI with specialized collectors and renderers. The
+`publication` commands operate on the shared documentation dataset.
 
-   ```bash
-   cargo run GraphArch --mode ontology --input <file|url>
-   ```
+Begin with [Getting started](getting-started.md), then run one of these workflows:
 
-2. **Graph Endpoint Discovery Mode**:
-   To connect to a graph database endpoint and generate reports:
+| Task | Guide |
+|---|---|
+| Collect sources and publish from a pinned KG | [Publication pipeline](publication-pipeline.md) |
+| Generate this documentation website | [Self-hosted documentation](self-hosting.md) |
+| Publish a standards-style specification and PDF | [Specification renderer](specification-renderer.md) |
 
-   ```bash
-   cargo run GraphArch --mode graph --url <endpoint>
-   ```
-
-> [!NOTE]
-> The GraphArch tool is currently under active development and may undergo
-> significant changes. The plan is to create a downloadable binary app that
-> people can easily install and run. The commands above are needlessly verbose,
-> used for development purposes only.
+The older `generate` command is a prototype. New work uses the graph-backed
+publication pipeline. Distributed release binaries and a complete project
+configuration system remain delivery work; build from source for now.

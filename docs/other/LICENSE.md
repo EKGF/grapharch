@@ -4,6 +4,8 @@ layout: default
 parent: Other
 nav_order: 99
 permalink: /license
+grapharch:
+  subject: urn:grapharch:docs:topic:other:LICENSE
 ---
 
 # MIT License

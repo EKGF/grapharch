@@ -11,17 +11,17 @@ use {
 struct Arguments {
     /// Collect Markdown, SPARQL, and OWL rather than the authored RDF
     /// showcase.
-    #[arg(long, conflicts_with_all = ["specification", "w3c", "legacy_w3c"])]
+    #[arg(long, conflicts_with_all = ["specification", "w3c", "dprod"])]
     mixed:         bool,
     /// Publish the standards-style specification showcase.
-    #[arg(long, conflicts_with_all = ["w3c", "legacy_w3c"])]
+    #[arg(long, conflicts_with_all = ["w3c", "dprod"])]
     specification: bool,
     /// Collect and render the pinned W3C RDF 1.2 N-Triples publication.
-    #[arg(long, conflicts_with = "legacy_w3c")]
+    #[arg(long, conflicts_with = "dprod")]
     w3c:           bool,
-    /// Run the retained RDF 1.1 regression showcase.
+    /// Generate a reference from the pinned native DPROD ontology and shapes.
     #[arg(long)]
-    legacy_w3c:    bool,
+    dprod:         bool,
     /// Continue with explicit diagnostic previews; exit nonzero on errors.
     #[arg(long, conflicts_with = "fail_fast")]
     keep_going:    bool,
@@ -37,8 +37,8 @@ async fn main() -> anyhow::Result<()> {
     let arguments = Arguments::parse();
     let (dataset, plans) = if arguments.w3c {
         support::w3c(Path::new("examples/w3c-rdf12-n-triples")).await?
-    } else if arguments.legacy_w3c {
-        support::w3c(Path::new("examples/w3c-n-triples")).await?
+    } else if arguments.dprod {
+        support::dprod(Path::new("examples/dprod")).await?
     } else if arguments.specification {
         support::specification(Path::new("examples/specification/project.ttl"))
             .await?
@@ -76,8 +76,8 @@ impl Arguments {
             PathBuf::from(
                 if self.w3c {
                     "output/pdf/grapharch-w3c-rdf12-n-triples"
-                } else if self.legacy_w3c {
-                    "output/pdf/grapharch-w3c-n-triples"
+                } else if self.dprod {
+                    "output/pdf/grapharch-dprod"
                 } else if self.specification {
                     "output/pdf/grapharch-specification"
                 } else if self.mixed {

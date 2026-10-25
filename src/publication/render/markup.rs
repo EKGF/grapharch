@@ -1,7 +1,7 @@
 use {
     super::model::Plan,
     anyhow::{Result, bail, ensure},
-    pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd},
+    pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd},
     std::collections::{HashMap, HashSet},
 };
 
@@ -21,9 +21,7 @@ impl<'a> Markdown<'a> {
             body.len() <= 1024 * 1024,
             "fragment exceeds Markdown rendering limit"
         );
-        let options = Options::ENABLE_TABLES |
-            Options::ENABLE_STRIKETHROUGH |
-            Options::ENABLE_TASKLISTS;
+        let options = crate::publication::markdown::options();
         // bounded: maps and events refer only to this capped fragment.
         let mut events: Vec<_> = Parser::new_ext(body, options).collect();
         let base_level = events
@@ -150,7 +148,10 @@ impl<'a> Markdown<'a> {
             }
         });
         let mut output = String::new();
-        pulldown_cmark::html::push_html(&mut output, events);
+        pulldown_cmark::html::push_html(
+            &mut output,
+            super::markdown_html::events(events),
+        );
         output
     }
 }

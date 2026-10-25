@@ -1,0 +1,6 @@
+# Native reference fixtures are verified by content hash. Preserve upstream
+# bytes, including line endings and whitespace, on every checkout platform.
+examples/dprod/sources/** -text -whitespace
+examples/ekg-ontologies/sources/** -text -whitespace
+examples/w3c-rdf12-n-triples/source.html -text
+examples/w3c-rdf12-n-triples/w3c-logo.png -text

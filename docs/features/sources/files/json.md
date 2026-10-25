@@ -3,6 +3,9 @@ title: JSON File
 layout: default
 parent: File
 nav_order: 999
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:files:json
+permalink: /features/sources/files/json/
 ---
 
 # Source &mdash; JSON File

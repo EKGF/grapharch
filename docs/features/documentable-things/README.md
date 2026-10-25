@@ -4,6 +4,8 @@ layout: default
 parent: Features
 nav_order: 5
 permalink: /features/documentable-things/
+grapharch:
+  subject: urn:grapharch:docs:topic:features:documentable-things
 ---
 
 # Documentable Things

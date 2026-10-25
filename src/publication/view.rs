@@ -110,6 +110,12 @@ impl RevisionView {
                 term("Collector"),
                 term("Documentor")
             )
+        } else if class == "Authority" {
+            format!(
+                "VALUES ?class {{ {} <{}> }}",
+                term(class),
+                super::governance::AUTHORITY
+            )
         } else {
             format!("VALUES ?class {{ {} }}", term(class))
         };
@@ -177,10 +183,10 @@ impl RevisionView {
                 }
                 if class == "Target" {
                     ensure!(
-                        matches!(
-                            self.text(subject, "renderer").await?.as_str(),
-                            "html" | "specification" | "typst"
-                        ),
+                        crate::publication::Renderer::parse(
+                            &self.text(subject, "renderer").await?
+                        )
+                        .is_ok(),
                         "{subject} unsupported renderer"
                     );
                     ensure!(

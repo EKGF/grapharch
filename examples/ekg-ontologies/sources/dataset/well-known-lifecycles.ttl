@@ -1,0 +1,577 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix api: <https://ekgf.org/ontology/api#> .
+@prefix ux: <https://ekgf.org/ontology/user-experience#> .
+@prefix lifecycle: <https://ekgf.org/ontology/lifecycle#> .
+@prefix continuous-improvement: <https://ekgf.org/lifecycle/continuous-improvement#> .
+@prefix achievement: <https://ekgf.org/lifecycle/achievement#> .
+@prefix software-delivery: <https://ekgf.org/lifecycle/software-delivery#> .
+@prefix publication: <https://ekgf.org/lifecycle/publication#> .
+@prefix execution: <https://ekgf.org/lifecycle/execution#> .
+
+#
+# The well-known lifecycles.
+#
+# Use one of these as it is, or define your own the same way. A lifecycle
+# has a namespace of its own, https://ekgf.org/lifecycle/<slug>#, because
+# lifecycles share state names: two of the lifecycles below have a state
+# named Deprecated. The lifecycle itself is the namespace without the hash.
+#
+# Which things follow which lifecycle is not said here. That is policy,
+# see lifecycle-bindings.ttl.
+#
+
+#################################################################
+#    Continuous improvement
+#################################################################
+
+<https://ekgf.org/lifecycle/continuous-improvement>
+    rdf:type owl:NamedIndividual ,
+        lifecycle:Lifecycle ;
+    api:slug "continuous-improvement" ;
+    rdfs:label "Continuous improvement"@en ;
+    rdfs:comment "Plan, build, run and evolve. For anything that is conceived, built, put to use and eventually retired, such as a use case, a story, a data product or a dataset."@en .
+
+continuous-improvement:Plan rdf:type owl:NamedIndividual ,
+        lifecycle:Phase ;
+    api:slug "plan" ;
+    rdfs:label "Plan"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    ux:hexColor "#3b82f6" .
+
+continuous-improvement:Build rdf:type owl:NamedIndividual ,
+        lifecycle:Phase ;
+    api:slug "build" ;
+    rdfs:label "Build"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    ux:hexColor "#d97706" .
+
+continuous-improvement:Run rdf:type owl:NamedIndividual ,
+        lifecycle:Phase ;
+    api:slug "run" ;
+    rdfs:label "Run"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    ux:hexColor "#16a34a" .
+
+continuous-improvement:Evolve rdf:type owl:NamedIndividual ,
+        lifecycle:Phase ;
+    api:slug "evolve" ;
+    rdfs:label "Evolve"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    ux:hexColor "#9333ea" .
+
+continuous-improvement:Identified rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "identified" ;
+    rdfs:label "Identified"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Plan ;
+    lifecycle:order 1 .
+
+continuous-improvement:Defined rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "defined" ;
+    rdfs:label "Defined"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Plan ;
+    lifecycle:order 2 .
+
+continuous-improvement:Proposed rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "proposed" ;
+    rdfs:label "Proposed"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Plan ;
+    lifecycle:order 3 .
+
+continuous-improvement:Planned rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "planned" ;
+    rdfs:label "Planned"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Plan ;
+    lifecycle:order 4 .
+
+continuous-improvement:InProgress rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "in-progress" ;
+    rdfs:label "In Progress"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Build ;
+    lifecycle:order 5 .
+
+continuous-improvement:Delivered rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "delivered" ;
+    rdfs:label "Delivered"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Build ;
+    lifecycle:order 6 .
+
+continuous-improvement:Deployed rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "deployed" ;
+    rdfs:label "Deployed"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Run ;
+    lifecycle:order 7 .
+
+continuous-improvement:Deprecated rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "deprecated" ;
+    rdfs:label "Deprecated"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Evolve ;
+    lifecycle:order 8 .
+
+continuous-improvement:Decommissioned rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "decommissioned" ;
+    rdfs:label "Decommissioned"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:phase continuous-improvement:Evolve ;
+    lifecycle:order 9 ;
+    lifecycle:isTerminal true .
+
+#################################################################
+#    Achievement
+#################################################################
+
+<https://ekgf.org/lifecycle/achievement>
+    rdf:type owl:NamedIndividual ,
+        lifecycle:Lifecycle ;
+    api:slug "achievement" ;
+    rdfs:label "Achievement"@en ;
+    rdfs:comment "Draft, active, achieved, deprecated. For anything that is pursued until it is reached, such as an outcome, a goal or an objective."@en .
+
+achievement:Draft rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "draft" ;
+    rdfs:label "Draft"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:order 1 .
+
+achievement:Active rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "active" ;
+    rdfs:label "Active"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:order 2 .
+
+achievement:Achieved rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "achieved" ;
+    rdfs:label "Achieved"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:order 3 ;
+    lifecycle:isTerminal true .
+
+achievement:Deprecated rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "deprecated" ;
+    rdfs:label "Deprecated"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:order 4 ;
+    lifecycle:isTerminal true .
+
+#################################################################
+#    Software delivery
+#################################################################
+
+<https://ekgf.org/lifecycle/software-delivery>
+    rdf:type owl:NamedIndividual ,
+        lifecycle:Lifecycle ;
+    api:slug "software-delivery" ;
+    rdfs:label "Software delivery"@en ;
+    rdfs:comment "Development, test, user acceptance test, production. For anything that is promoted through environments on its way to production."@en .
+
+software-delivery:Development rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "development" ;
+    rdfs:label "Development"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:order 1 .
+
+software-delivery:Test rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "test" ;
+    rdfs:label "Test"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:order 2 .
+
+software-delivery:UserAcceptanceTest rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "user-acceptance-test" ;
+    rdfs:label "User Acceptance Test"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:order 3 .
+
+software-delivery:Production rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "production" ;
+    rdfs:label "Production"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:order 4 .
+
+#################################################################
+#    Publication
+#################################################################
+
+<https://ekgf.org/lifecycle/publication>
+    rdf:type owl:NamedIndividual ,
+        lifecycle:Lifecycle ;
+    api:slug "publication" ;
+    rdfs:label "Publication"@en ;
+    rdfs:comment "From working draft to published, and on to superseded or withdrawn. For anything that is released to the public in versions, such as a standard, an ontology or a specification."@en .
+
+publication:WorkingDraft rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "working-draft" ;
+    rdfs:label "Working Draft"@en ;
+    rdfs:comment "Being worked on by its editors and reviewers, not yet public."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 1 .
+
+publication:PublicConsultation rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "public-consultation" ;
+    rdfs:label "Public Consultation"@en ;
+    rdfs:comment "Published as a draft so that the public can comment."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 2 .
+
+publication:ReleaseCandidate rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "release-candidate" ;
+    rdfs:label "Release Candidate"@en ;
+    rdfs:comment "Complete and awaiting approval; published as it will be released unless a defect is found."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 3 .
+
+publication:Published rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "published" ;
+    rdfs:label "Published"@en ;
+    rdfs:comment "Released. The latest published release is the current one."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 4 .
+
+publication:Maintenance rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "maintenance" ;
+    rdfs:label "Maintenance"@en ;
+    rdfs:comment "An older release that still receives corrections."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 5 .
+
+publication:Superseded rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "superseded" ;
+    rdfs:label "Superseded"@en ;
+    rdfs:comment "Replaced by a later release."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 6 ;
+    lifecycle:isTerminal true .
+
+publication:Withdrawn rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "withdrawn" ;
+    rdfs:label "Withdrawn"@en ;
+    rdfs:comment "Taken back, and not to be used."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:order 7 ;
+    lifecycle:isTerminal true .
+
+#################################################################
+#    Execution
+#################################################################
+
+<https://ekgf.org/lifecycle/execution>
+    rdf:type owl:NamedIndividual ,
+        lifecycle:Lifecycle ;
+    api:slug "execution" ;
+    rdfs:label "Execution"@en ;
+    rdfs:comment "From admitted to done, failed or cancelled. For anything that is executed once, such as a task, a job or a run."@en .
+
+execution:Admitted rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "admitted" ;
+    rdfs:label "Admitted"@en ;
+    rdfs:comment "Accepted, but not yet queued or started."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:order 1 .
+
+execution:Queued rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "queued" ;
+    rdfs:label "Queued"@en ;
+    rdfs:comment "Waiting to be started."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:order 2 .
+
+execution:Running rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "running" ;
+    rdfs:label "Running"@en ;
+    rdfs:comment "Executing."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:order 3 .
+
+execution:Done rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "done" ;
+    rdfs:label "Done"@en ;
+    rdfs:comment "Completed successfully."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:order 4 ;
+    lifecycle:isTerminal true .
+
+execution:Failed rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "failed" ;
+    rdfs:label "Failed"@en ;
+    rdfs:comment "Ended with an error."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:order 5 ;
+    lifecycle:isTerminal true .
+
+execution:Cancelled rdf:type owl:NamedIndividual ,
+        lifecycle:State ;
+    api:slug "cancelled" ;
+    rdfs:label "Cancelled"@en ;
+    rdfs:comment "Stopped before completion."@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:order 6 ;
+    lifecycle:isTerminal true .
+
+#################################################################
+#    Permitted transitions
+#################################################################
+
+# These routes are explicit policy, never inferred from lifecycle:order.
+# Organizations can replace them with their own lifecycle definitions.
+
+# continuous-improvement
+
+continuous-improvement:IdentifiedToDefined
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Identified to Defined"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Identified ;
+    lifecycle:toState continuous-improvement:Defined .
+
+continuous-improvement:DefinedToProposed
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Defined to Proposed"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Defined ;
+    lifecycle:toState continuous-improvement:Proposed .
+
+continuous-improvement:ProposedToPlanned
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Proposed to Planned"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Proposed ;
+    lifecycle:toState continuous-improvement:Planned .
+
+continuous-improvement:PlannedToInProgress
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Planned to InProgress"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Planned ;
+    lifecycle:toState continuous-improvement:InProgress .
+
+continuous-improvement:InProgressToDelivered
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "InProgress to Delivered"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:InProgress ;
+    lifecycle:toState continuous-improvement:Delivered .
+
+continuous-improvement:DeliveredToDeployed
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Delivered to Deployed"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Delivered ;
+    lifecycle:toState continuous-improvement:Deployed .
+
+continuous-improvement:DeployedToDeprecated
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Deployed to Deprecated"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Deployed ;
+    lifecycle:toState continuous-improvement:Deprecated .
+
+continuous-improvement:DeprecatedToDecommissioned
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Deprecated to Decommissioned"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Deprecated ;
+    lifecycle:toState continuous-improvement:Decommissioned .
+
+continuous-improvement:DeprecatedToInProgress
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Deprecated to InProgress"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/continuous-improvement> ;
+    lifecycle:fromState continuous-improvement:Deprecated ;
+    lifecycle:toState continuous-improvement:InProgress .
+
+
+# achievement
+
+achievement:DraftToActive
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Draft to Active"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:fromState achievement:Draft ;
+    lifecycle:toState achievement:Active .
+
+achievement:ActiveToAchieved
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Active to Achieved"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:fromState achievement:Active ;
+    lifecycle:toState achievement:Achieved .
+
+achievement:ActiveToDeprecated
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Active to Deprecated"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/achievement> ;
+    lifecycle:fromState achievement:Active ;
+    lifecycle:toState achievement:Deprecated .
+
+
+# software-delivery
+
+software-delivery:DevelopmentToTest
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Development to Test"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:fromState software-delivery:Development ;
+    lifecycle:toState software-delivery:Test .
+
+software-delivery:TestToUserAcceptanceTest
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Test to UserAcceptanceTest"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:fromState software-delivery:Test ;
+    lifecycle:toState software-delivery:UserAcceptanceTest .
+
+software-delivery:UserAcceptanceTestToProduction
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "UserAcceptanceTest to Production"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/software-delivery> ;
+    lifecycle:fromState software-delivery:UserAcceptanceTest ;
+    lifecycle:toState software-delivery:Production .
+
+
+# publication
+
+publication:WorkingDraftToPublicConsultation
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "WorkingDraft to PublicConsultation"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:WorkingDraft ;
+    lifecycle:toState publication:PublicConsultation .
+
+publication:PublicConsultationToReleaseCandidate
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "PublicConsultation to ReleaseCandidate"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:PublicConsultation ;
+    lifecycle:toState publication:ReleaseCandidate .
+
+publication:ReleaseCandidateToPublished
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "ReleaseCandidate to Published"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:ReleaseCandidate ;
+    lifecycle:toState publication:Published .
+
+publication:PublishedToMaintenance
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Published to Maintenance"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:Published ;
+    lifecycle:toState publication:Maintenance .
+
+publication:PublishedToSuperseded
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Published to Superseded"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:Published ;
+    lifecycle:toState publication:Superseded .
+
+publication:PublishedToWithdrawn
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Published to Withdrawn"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:Published ;
+    lifecycle:toState publication:Withdrawn .
+
+publication:MaintenanceToSuperseded
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Maintenance to Superseded"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:Maintenance ;
+    lifecycle:toState publication:Superseded .
+
+publication:MaintenanceToWithdrawn
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Maintenance to Withdrawn"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/publication> ;
+    lifecycle:fromState publication:Maintenance ;
+    lifecycle:toState publication:Withdrawn .
+
+
+# execution
+
+execution:AdmittedToQueued
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Admitted to Queued"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Admitted ;
+    lifecycle:toState execution:Queued .
+
+execution:QueuedToRunning
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Queued to Running"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Queued ;
+    lifecycle:toState execution:Running .
+
+execution:RunningToDone
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Running to Done"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Running ;
+    lifecycle:toState execution:Done .
+
+execution:RunningToFailed
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Running to Failed"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Running ;
+    lifecycle:toState execution:Failed .
+
+execution:RunningToCancelled
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Running to Cancelled"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Running ;
+    lifecycle:toState execution:Cancelled .
+
+execution:AdmittedToCancelled
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Admitted to Cancelled"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Admitted ;
+    lifecycle:toState execution:Cancelled .
+
+execution:QueuedToCancelled
+    rdf:type owl:NamedIndividual , lifecycle:Transition ;
+    rdfs:label "Queued to Cancelled"@en ;
+    lifecycle:inLifecycle <https://ekgf.org/lifecycle/execution> ;
+    lifecycle:fromState execution:Queued ;
+    lifecycle:toState execution:Cancelled .

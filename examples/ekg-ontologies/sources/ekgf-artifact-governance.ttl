@@ -1,0 +1,463 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix cmns-cls: <https://www.omg.org/spec/Commons/Classifiers/> .
+@prefix cmns-dsg: <https://www.omg.org/spec/Commons/Designators/> .
+@prefix cmns-org: <https://www.omg.org/spec/Commons/Organizations/> .
+@prefix cmns-pts: <https://www.omg.org/spec/Commons/PartiesAndSituations/> .
+@prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
+@prefix api: <https://ekgf.org/ontology/api#> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-artgov: <https://ekgf.org/ontology/artifact-governance#> .
+@base <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#>
+    rdf:type owl:Ontology ;
+    sh:declare [
+        sh:prefix "ekg-artgov" ;
+        sh:namespace "https://ekgf.org/ontology/artifact-governance#"^^xsd:anyURI
+    ] ;
+    rdfs:label "The EKG Artifact Governance Ontology"@en ;
+    rdfs:comment "Who governs a semantic artifact and which family it belongs to. One vocabulary for OWL ontologies, SHACL shapesets, SKOS taxonomies and concept sets. Replaces the Ontology Ontology (https://ekgf.org/ontology/ontology#)."@en ;
+    owl:imports cmns-cls: ,
+                cmns-dsg: ,
+                cmns-org: ,
+                cmns-pts: ,
+                cmns-rlcmp: ,
+                api: .
+
+#################################################################
+#    Classes
+#################################################################
+
+artgov:Authority rdf:type owl:Class ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    rdfs:label "Authority"@en ;
+    rdfs:comment "A role responsible for governing semantic artifacts or their publication namespaces. The party playing the role is linked with cmns-rlcmp:isPlayedBy and has its own identity. An authority and an organization playing it are distinct individuals, following the Commons separation of agents and roles. An authority is assigned a random UUIDv4 URN once in the authority registry. Its identity persists when names, hosts, URLs or the party playing the role change. Hosts and URLs are metadata and may have multiple values; they do not determine identity."@en .
+
+artgov:Family rdf:type owl:Class ;
+    rdfs:label "Family"@en ;
+    rdfs:comment "An optional, enduring collection of related artifacts governed by one or more authorities, such as FIBO. A family spans artifact types: its ontologies, shapesets and taxonomies are members of the same family. Authorities can govern artifacts directly without organizing them into families. When used for publication, the family groups the artifacts across releases; each version and its approvals belong to a distinct standards release."@en .
+
+artgov:Reference rdf:type owl:Class ;
+    rdfs:label "Reference"@en ;
+    rdfs:comment "Stands for one artifact. It gives the artifact a stable identity and slug even when the artifact itself is not loaded, or is known under several IRIs that differ only in a trailing hash or slash."@en .
+
+artgov:AuthorityPublishingRole rdf:type owl:Class ;
+    rdfs:label "Authority publishing role"@en ;
+    rdfs:comment "Controlled role values describing how an authority participates in publishing a family."@en .
+
+artgov:StandardsCommunityRole rdf:type owl:Class ;
+    rdfs:label "Standards community role"@en ;
+    rdfs:comment "Controlled role values for people participating in the standards community behind an authority."@en .
+
+artgov:OrganizationCategory rdf:type owl:Class ;
+    rdfs:subClassOf cmns-cls:Classifier ;
+    owl:disjointWith artgov:AuthorityPublishingRole ,
+                     artgov:StandardsCommunityRole ;
+    rdfs:label "Organization category"@en ;
+    rdfs:comment "A classifier describing the kind of organization involved in artifact governance, such as a standards body, consortium, project or community. An organization may have several categories. Categories are distinct from publishing responsibilities, community participation roles and legal or organizational structure."@en .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+artgov:governedBy rdf:type owl:ObjectProperty ;
+    rdfs:range artgov:Authority ;
+    rdfs:label "Governed by"@en ;
+    rdfs:comment "Relates an artifact, a reference or a family to an authority that governs it. It has no domain because it applies to every artifact type."@en .
+
+artgov:inFamily rdf:type owl:ObjectProperty ;
+    rdfs:range artgov:Family ;
+    rdfs:label "In family"@en ;
+    rdfs:comment "Explicitly assigns an artifact or a reference to a family. It has no domain because it applies to every artifact type. Collect the asserted memberships on the artifact, its references and their known IRI aliases before attempting recognition. These assignments take precedence over all prefix rules, and several explicit memberships are permitted. Recognition applies only when no membership is asserted; its result is derived metadata and must not silently be stored as an explicit inFamily assertion. Without an assertion or a matching rule, the artifact remains without a family."@en .
+
+artgov:refersTo rdf:type owl:ObjectProperty ;
+    rdfs:domain artgov:Reference ;
+    rdfs:label "Refers to"@en ;
+    rdfs:comment "Relates a reference to the IRI of the artifact it stands for. A reference carries several values when the artifact is known under several IRIs."@en .
+
+artgov:communityOrganization rdf:type owl:ObjectProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range cmns-org:Organization ;
+    rdfs:label "Community organization"@en ;
+    rdfs:comment "Links an authority to the organization that hosts its standards community. The party exercising the authority is stated separately with cmns-rlcmp:isPlayedBy."@en .
+
+artgov:legalOwner rdf:type owl:ObjectProperty ;
+    rdfs:range cmns-org:Organization ;
+    rdfs:label "Legal owner"@en ;
+    rdfs:comment "Links an authority or an organization to the organization that legally owns or administers it. This relationship is separate from the party exercising an authority role, stated with cmns-rlcmp:isPlayedBy. This is governance metadata, not access inheritance."@en .
+
+artgov:predecessorAuthority rdf:type owl:ObjectProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range artgov:Authority ;
+    rdfs:label "Predecessor authority"@en ;
+    rdfs:comment "Links an authority to a former authority identity that preceded it."@en .
+
+artgov:successorAuthority rdf:type owl:ObjectProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range artgov:Authority ;
+    rdfs:label "Successor authority"@en ;
+    rdfs:comment "Links an authority to a later authority identity that supersedes it."@en .
+
+artgov:publishingRole rdf:type owl:ObjectProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range artgov:AuthorityPublishingRole ;
+    rdfs:label "Publishing role"@en ;
+    rdfs:comment "Describes how an authority participates in publishing, owning, maintaining or endorsing artifacts."@en .
+
+artgov:communityRole rdf:type owl:ObjectProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range artgov:StandardsCommunityRole ;
+    rdfs:label "Community role"@en ;
+    rdfs:comment "Declares a role used by the standards community behind an authority."@en .
+
+artgov:organizationCategory rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf cmns-cls:isClassifiedBy ;
+    rdfs:domain cmns-org:Organization ;
+    rdfs:range artgov:OrganizationCategory ;
+    rdfs:label "Organization category"@en ;
+    rdfs:comment "Classifies an organization by one or more organization categories. Set on the organization playing an authority role or hosting its community. An authority's player can be reached with cmns-rlcmp:isPlayedBy. Categories are asserted independently of legal type, organizational hierarchy and the roles that an organization plays; they are not inherited from a parent organization."@en .
+
+#################################################################
+#    Data Properties: authority
+#################################################################
+
+artgov:authorityAcronym rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range xsd:string ;
+    rdfs:label "Authority acronym"@en ;
+    rdfs:comment "Uppercase acronym identifying the authority, such as W3C, OMG, EDMA or EKGF."@en .
+
+artgov:authorityHost rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range xsd:string ;
+    rdfs:label "Authority host"@en ;
+    rdfs:comment "A host name used in the IRIs of the authority's artifacts, without protocol, such as www.w3.org or spec.edmcouncil.org. An authority may have multiple hosts, including historical hosts whose artifact IRIs remain in use. Adding, removing or changing a host does not change the authority's identity. A shared host does not imply shared governance; hosts are metadata, not identity keys."@en .
+
+artgov:baseIri rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Base IRI"@en ;
+    rdfs:comment "A base IRI of artifacts published by an authority. An authority may carry multiple base IRIs, including different hosts, schemes and historical locations. These values do not determine the authority's identity."@en .
+
+artgov:autoLoad rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Authority ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "Auto-load"@en ;
+    rdfs:comment "When false, a loader does not fetch the families of this authority when their artifacts appear as unresolved owl:imports targets."@en .
+
+artgov:historicalName rdf:type owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "Historical name"@en ;
+    rdfs:comment "A former public name of an authority or organization."@en .
+
+#################################################################
+#    Data Properties: family
+#################################################################
+
+artgov:familyAcronym rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:string ;
+    rdfs:label "Family acronym"@en ;
+    rdfs:comment "Uppercase acronym identifying the family, such as FIBO or CDMC."@en .
+
+artgov:namespaceIriPrefix rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Namespace IRI prefix"@en ;
+    rdfs:comment "A case-sensitive literal prefix of an artifact's IRI, such as https://spec.edmcouncil.org/fibo/ontology/. It is an absolute IRI prefix, typed xsd:anyURI, and a family may have several. The longest matching namespace prefix wins within this recognition method. Equally long best matches for different families are an error. Lengths are not compared with filePathPrefix or graphIriPrefix; if their winning families disagree, recognition fails. Explicit inFamily assignments take precedence over all recognition methods."@en .
+
+artgov:filePathPrefix rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:string ;
+    rdfs:label "File path prefix"@en ;
+    rdfs:comment "A portable, case-sensitive literal prefix matched at the beginning of any segment of the actual source file path. For example, fibo/ matches a directory and ekgf- matches a filename prefix. Values use forward slashes, are relative and nonempty, and contain no scheme, drive, empty segment or dot segment. A family may have several. Matching normalizes source path separators to forward slashes and removes current-directory and empty segments; callers must resolve parent-directory segments first. The actual path is supplied independently of the named-graph IRI. The longest matching file path prefix wins within this method; ties across families or disagreement with other methods are errors unless explicit inFamily assignments take precedence."@en .
+
+artgov:graphIriPrefix rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Graph IRI prefix"@en ;
+    rdfs:comment "A case-sensitive literal prefix of the complete named-graph IRI, such as s3://standards/fibo/. It is an absolute IRI prefix typed xsd:anyURI. A family may have several. Relative file path prefixes belong in filePathPrefix; a graph name need not reveal its source file path. The longest matching graph IRI prefix wins within this method; ties across families or disagreement with other methods are errors unless explicit inFamily assignments take precedence."@en .
+
+artgov:gitRepositoryUrl rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Git repository URL"@en ;
+    rdfs:comment "HTTPS URL of the git repository that holds the source files of the family. A loader clones it and loads the RDF files it finds."@en .
+
+artgov:sourceGraphRepositoryUrl rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Source graph repository URL"@en ;
+    rdfs:comment "Canonical repository URL used to build stable, commit-pinned named graph IRIs for the source files when the loader clones from a mirror or a local checkout."@en .
+
+artgov:gitBranch rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:string ;
+    rdfs:label "Git branch"@en ;
+    rdfs:comment "The git branch or tag to clone."@en .
+
+artgov:gitPath rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:string ;
+    rdfs:label "Git path"@en ;
+    rdfs:comment "Directory inside the git repository to scan for RDF files. The repository root when absent."@en .
+
+artgov:rdfFileExtension rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:string ;
+    rdfs:label "RDF file extension"@en ;
+    rdfs:comment "Restricts file discovery to files with this extension, such as .rdf or .ttl. Every supported RDF extension when absent."@en .
+
+artgov:maxSourceQuads rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:unsignedLong ;
+    rdfs:label "Maximum source quads"@en ;
+    rdfs:comment "Hard ceiling on the number of quads accepted from one source file of the family."@en .
+
+artgov:maxFamilyLoadQuads rdf:type owl:DatatypeProperty ;
+    rdfs:domain artgov:Family ;
+    rdfs:range xsd:unsignedLong ;
+    rdfs:label "Maximum family load quads"@en ;
+    rdfs:comment "Hard ceiling on the total number of quads accepted while loading the family."@en .
+
+#################################################################
+#    Individuals
+#################################################################
+
+artgov:OrganizationCategoryScheme rdf:type owl:NamedIndividual ,
+        cmns-cls:ClassificationScheme ;
+    rdfs:label "Organization categories for artifact governance"@en ;
+    cmns-cls:isExclusive false ;
+    rdfs:comment "An extensible classification scheme for organizations involved in artifact governance. Categories may overlap: an organization may be both a standards body and a consortium. A missing category means that no classification has been asserted."@en .
+
+artgov:StandardsBodyCategory rdf:type owl:NamedIndividual ,
+        artgov:OrganizationCategory ;
+    cmns-dsg:isDefinedIn artgov:OrganizationCategoryScheme ;
+    api:slug "standards-body" ;
+    rdfs:label "Standards body"@en ;
+    rdfs:comment "An organization whose purpose includes developing, maintaining and publishing standards through an established governance process."@en .
+
+artgov:ConsortiumCategory rdf:type owl:NamedIndividual ,
+        artgov:OrganizationCategory ;
+    cmns-dsg:isDefinedIn artgov:OrganizationCategoryScheme ;
+    api:slug "consortium" ;
+    rdfs:label "Consortium"@en ;
+    rdfs:comment "An organization through which independent organizations cooperate toward shared objectives."@en .
+
+artgov:ProjectCategory rdf:type owl:NamedIndividual ,
+        artgov:OrganizationCategory ;
+    cmns-dsg:isDefinedIn artgov:OrganizationCategoryScheme ;
+    api:slug "project" ;
+    rdfs:label "Project"@en ;
+    rdfs:comment "An organized group carrying out a defined initiative and producing its work products."@en .
+
+artgov:CommunityCategory rdf:type owl:NamedIndividual ,
+        artgov:OrganizationCategory ;
+    cmns-dsg:isDefinedIn artgov:OrganizationCategoryScheme ;
+    api:slug "community" ;
+    rdfs:label "Community"@en ;
+    rdfs:comment "An organized community whose participants collaborate around a shared topic or practice."@en .
+
+artgov:AuthorityOwnerRole rdf:type owl:NamedIndividual ,
+        artgov:AuthorityPublishingRole ;
+    api:slug "owner" ;
+    rdfs:label "owner"@en ;
+    rdfs:comment "The authority is the primary owning body of the published artifacts."@en .
+
+artgov:AuthorityCoOwnerRole rdf:type owl:NamedIndividual ,
+        artgov:AuthorityPublishingRole ;
+    api:slug "co-owner" ;
+    rdfs:label "co-owner"@en ;
+    rdfs:comment "The authority co-owns the published artifacts with one or more other authorities."@en .
+
+artgov:AuthorityPublisherRole rdf:type owl:NamedIndividual ,
+        artgov:AuthorityPublishingRole ;
+    api:slug "publisher" ;
+    rdfs:label "publisher"@en ;
+    rdfs:comment "The authority publishes the artifacts or their specification site."@en .
+
+artgov:AuthorityMaintainerRole rdf:type owl:NamedIndividual ,
+        artgov:AuthorityPublishingRole ;
+    api:slug "maintainer" ;
+    rdfs:label "maintainer"@en ;
+    rdfs:comment "The authority maintains the artifacts between publication releases."@en .
+
+artgov:StandardsEditorRole rdf:type owl:NamedIndividual ,
+        artgov:StandardsCommunityRole ;
+    api:slug "standards-editor" ;
+    rdfs:label "standards editor"@en .
+
+artgov:StandardsReviewerRole rdf:type owl:NamedIndividual ,
+        artgov:StandardsCommunityRole ;
+    api:slug "standards-reviewer" ;
+    rdfs:label "standards reviewer"@en .
+
+artgov:WorkingGroupChairRole rdf:type owl:NamedIndividual ,
+        artgov:StandardsCommunityRole ;
+    api:slug "working-group-chair" ;
+    rdfs:label "working-group chair"@en .
+
+artgov:StandardsPublisherRole rdf:type owl:NamedIndividual ,
+        artgov:StandardsCommunityRole ;
+    api:slug "standards-publisher" ;
+    rdfs:label "standards publisher"@en .
+
+artgov:StandardsStaffRole rdf:type owl:NamedIndividual ,
+        artgov:StandardsCommunityRole ;
+    api:slug "standards-staff" ;
+    rdfs:label "standards staff"@en .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/artifact-governance#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/artifact-governance#Authority>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#AuthorityCoOwnerRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#AuthorityMaintainerRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#AuthorityOwnerRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#AuthorityPublisherRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#AuthorityPublishingRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#CommunityCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#ConsortiumCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#Family>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#OrganizationCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#OrganizationCategoryScheme>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#ProjectCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#Reference>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#StandardsBodyCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#StandardsCommunityRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#StandardsEditorRole>
+    rdfs:comment "A standards-community participation role for editing the content of standards and their supporting artifacts."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#StandardsPublisherRole>
+    rdfs:comment "A standards-community participation role for publishing standards artifacts and releases."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#StandardsReviewerRole>
+    rdfs:comment "A standards-community participation role for reviewing standards content and proposed changes."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#StandardsStaffRole>
+    rdfs:comment "A standards-community participation role for staff supporting the operation of the standards community."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#WorkingGroupChairRole>
+    rdfs:comment "A standards-community participation role for chairing a working group and coordinating its work."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#authorityAcronym>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#authorityHost>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#autoLoad>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#baseIri>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#communityOrganization>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#communityRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#familyAcronym>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#filePathPrefix>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#gitBranch>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#gitPath>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#gitRepositoryUrl>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#governedBy>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#graphIriPrefix>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#historicalName>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#inFamily>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#legalOwner>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#maxFamilyLoadQuads>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#maxSourceQuads>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#namespaceIriPrefix>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#organizationCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#predecessorAuthority>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#publishingRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#rdfFileExtension>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#refersTo>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#sourceGraphRepositoryUrl>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .
+
+<https://ekgf.org/ontology/artifact-governance#successorAuthority>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-governance#> .

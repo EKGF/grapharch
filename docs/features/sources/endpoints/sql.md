@@ -3,6 +3,9 @@ title: SQL Endpoint
 layout: default
 parent: Endpoint
 nav_order: 999
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:endpoints:sql
+permalink: /features/sources/endpoints/sql/
 ---
 
 # Source &mdash; SQL endpoint

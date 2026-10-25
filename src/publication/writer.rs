@@ -5,7 +5,7 @@ mod stream;
 use {
     super::dataset::{Attempt, Dataset, MAX_CHUNK_BYTES, Stage},
     anyhow::{Result, ensure},
-    oxrdf::Quad,
+    oxrdf::{NamedNode, Quad},
     std::sync::Arc,
     tokio::{
         sync::{OwnedSemaphorePermit, Semaphore, mpsc, oneshot},
@@ -23,13 +23,14 @@ pub struct GraphWriter {
 
 enum Command {
     Diagnostic {
-        project:    String,
-        processor:  String,
-        source:     String,
-        stage:      String,
-        diagnostic: super::diagnostics::Diagnostic,
-        _permit:    OwnedSemaphorePermit,
-        reply:      oneshot::Sender<Result<()>>,
+        project:        String,
+        processor:      String,
+        source:         String,
+        stage:          String,
+        diagnostic:     super::diagnostics::Diagnostic,
+        input_revision: Option<NamedNode>,
+        _permit:        OwnedSemaphorePermit,
+        reply:          oneshot::Sender<Result<()>>,
     },
     Refine {
         attempt:  Attempt,
@@ -108,11 +109,19 @@ impl GraphWriter {
                         source,
                         stage,
                         diagnostic,
+                        input_revision,
                         _permit,
                         reply,
                     } => {
                         let result = super::diagnostics::record(
-                            &dataset, &project, &processor, &source, &stage,
+                            &dataset,
+                            &super::diagnostics::SourceContext {
+                                project:        &project,
+                                processor:      &processor,
+                                source:         &source,
+                                stage:          &stage,
+                                input_revision: input_revision.as_ref(),
+                            },
                             diagnostic,
                         )
                         .await;
@@ -178,6 +187,33 @@ impl GraphWriter {
         stage: &str,
         diagnostic: super::diagnostics::Diagnostic,
     ) -> Result<()> {
+        self.record_diagnostic_at(
+            super::diagnostics::SourceContext {
+                project,
+                processor,
+                source,
+                stage,
+                input_revision: None,
+            },
+            diagnostic,
+        )
+        .await
+    }
+
+    /// Record a diagnostic against its observed input, without recapturing all
+    /// partially generated project heads for each annotation warning.
+    pub async fn record_diagnostic_at(
+        &self,
+        context: super::diagnostics::SourceContext<'_>,
+        diagnostic: super::diagnostics::Diagnostic,
+    ) -> Result<()> {
+        let super::diagnostics::SourceContext {
+            project,
+            processor,
+            source,
+            stage,
+            input_revision,
+        } = context;
         let size = (project.len() +
             processor.len() +
             source.len() +
@@ -185,7 +221,8 @@ impl GraphWriter {
             diagnostic.message.len() +
             diagnostic.reference.len() +
             diagnostic.code.len() +
-            diagnostic.source_fragment.as_ref().map_or(0, String::len)) *
+            diagnostic.source_fragment.as_ref().map_or(0, String::len) +
+            input_revision.map_or(0, |revision| revision.as_str().len())) *
             4 +
             2048;
         ensure!(
@@ -201,6 +238,7 @@ impl GraphWriter {
                 source: source.into(),
                 stage: stage.into(),
                 diagnostic,
+                input_revision: input_revision.cloned(),
                 _permit: permit,
                 reply,
             })

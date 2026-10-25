@@ -1,0 +1,74 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+
+#
+# The well-known families.
+#
+# A family spans artifact types: the ontologies, shapesets and
+# taxonomies of FIBO are members of the one FIBO family. An artifact
+# joins a family with artgov:inFamily on the artifact itself or on its
+# artgov:Reference.
+#
+# Optional recognition rules supplement explicit membership:
+#
+#   artgov:namespaceIriPrefix  what the namespace IRIs of its artifacts start with
+#   artgov:filePathPrefix      directory or filename prefix of the actual source path
+#   artgov:graphIriPrefix      absolute IRI prefix of the named graph
+#
+# Each method chooses its longest matching prefix independently. Ties
+# across families or disagreement between methods are errors. Prefix
+# lengths from different methods are not comparable.
+#
+# Membership stated on an artifact or its reference with artgov:inFamily
+# takes precedence over every recognition rule. An artifact with no
+# assignment and no matching rule remains without a family.
+#
+
+# ── FIBO ─────────────────────────────────────────────────────
+
+<urn:uuid:a883a9e0-bc2d-4bff-a541-b31f87117e00>
+    rdf:type artgov:Family ;
+    rdfs:label "Financial Industry Business Ontology (FIBO)"@en ;
+    rdfs:comment "FIBO is a formal ontology providing a common vocabulary for financial contracts and related concepts, developed in OWL by the EDM Association and standardized by the OMG."@en ;
+    artgov:familyAcronym "FIBO" ;
+    artgov:governedBy <urn:uuid:5cf1cc40-7f75-4749-b690-0546ddb50ed5> ,
+                      <urn:uuid:c4c86ff8-f93e-4463-aef2-ab5f9511a7eb> ;
+    artgov:namespaceIriPrefix "https://spec.edmcouncil.org/fibo/ontology/"^^xsd:anyURI ;
+    artgov:gitRepositoryUrl "https://github.com/edmcouncil/fibo.git"^^xsd:anyURI ;
+    artgov:sourceGraphRepositoryUrl "https://github.com/edmcouncil/fibo.git"^^xsd:anyURI ;
+    artgov:gitBranch "master" ;
+    artgov:rdfFileExtension ".rdf" ;
+    artgov:maxSourceQuads "100000"^^xsd:unsignedLong ;
+    artgov:maxFamilyLoadQuads "2000000"^^xsd:unsignedLong .
+
+# ── EKGF ─────────────────────────────────────────────────────
+
+<urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb>
+    rdf:type artgov:Family ;
+    rdfs:label "EKGF Ontologies"@en ;
+    artgov:familyAcronym "EKGF" ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ;
+    artgov:namespaceIriPrefix "https://ekgf.org/ontology/"^^xsd:anyURI ;
+    artgov:filePathPrefix "ekgf-" .
+
+# ── CDMC ─────────────────────────────────────────────────────
+
+<urn:uuid:cc08d976-d892-43aa-ac8f-5fcb3ddff634>
+    rdf:type artgov:Family ;
+    rdfs:label "CDMC Ontologies"@en ;
+    artgov:familyAcronym "CDMC" ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ;
+    artgov:namespaceIriPrefix "https://ekgf.org/ontology/cdmc-"^^xsd:anyURI ;
+    artgov:filePathPrefix "cdmc-" .
+
+# ── DASH ─────────────────────────────────────────────────────
+
+<urn:uuid:89384eba-df36-4e6a-9d50-3fa8e96b32a1>
+    rdf:type artgov:Family ;
+    rdfs:label "DASH Data Shapes Vocabulary"@en ;
+    rdfs:comment "DASH is a SHACL library for frequently needed features and design patterns."@en ;
+    artgov:familyAcronym "DASH" ;
+    artgov:governedBy <urn:uuid:66210c44-f1ed-47c3-b139-af6cce242eb5> ;
+    artgov:namespaceIriPrefix "http://datashapes.org/dash"^^xsd:anyURI .

@@ -32,6 +32,53 @@ use {
 /// dataset.
 #[derive(Subcommand)]
 pub enum PublicationCommand {
+    /// Collect a documentation tree and publish its logical topics as a
+    /// website.
+    BuildSite {
+        #[arg(long)]
+        source:      PathBuf,
+        #[arg(long)]
+        definitions: PathBuf,
+        #[arg(long)]
+        project:     String,
+        #[arg(long)]
+        target:      String,
+        #[arg(long)]
+        output_root: PathBuf,
+        #[arg(long, default_value_t = 4)]
+        concurrency: usize,
+    },
+    /// Collect an explicitly registered family of RDF ontologies and publish
+    /// its reference.
+    BuildFamily {
+        #[arg(long, required_unless_present_any = ["local_repository", "github", "git_repository"], conflicts_with_all = ["local_repository", "github", "git_repository"])]
+        source:           Option<PathBuf>,
+        /// Read a local Git clone's working tree directly.
+        #[arg(long, conflicts_with_all = ["github", "git_repository"])]
+        local_repository: Option<PathBuf>,
+        /// Read OWNER/REPO on GitHub through a bare Git cache.
+        #[arg(long, conflicts_with = "git_repository")]
+        github:           Option<String>,
+        /// Read any remote Git URL through a bare Git cache.
+        #[arg(long)]
+        git_repository:   Option<String>,
+        /// Branch, full tag ref, HEAD, or commit ID for a remote source.
+        #[arg(long)]
+        git_ref:          Option<String>,
+        /// Bare-cache parent directory (defaults to the system temp cache).
+        #[arg(long)]
+        git_cache:        Option<PathBuf>,
+        #[arg(long)]
+        definitions:      PathBuf,
+        #[arg(long)]
+        project:          String,
+        #[arg(long)]
+        target:           String,
+        #[arg(long)]
+        output_root:      PathBuf,
+        #[arg(long, default_value_t = 4)]
+        concurrency:      usize,
+    },
     /// Render a pinned target plan without rereading its original sources.
     Render {
         #[arg(long)]
@@ -140,6 +187,144 @@ pub async fn run(
     mode: FailureMode,
 ) -> Result<()> {
     match command {
+        PublicationCommand::BuildFamily {
+            source,
+            local_repository,
+            github,
+            git_repository,
+            git_ref,
+            git_cache,
+            definitions,
+            project,
+            target,
+            output_root,
+            concurrency,
+        } => {
+            ensure!(*concurrency > 0, "concurrency must be positive");
+            let built = if let Some(source) = source {
+                ensure!(
+                    git_ref.is_none() && git_cache.is_none(),
+                    "Git options require a remote repository"
+                );
+                super::ontology_family::collect(
+                    source,
+                    definitions,
+                    project,
+                    target,
+                    *concurrency,
+                )
+                .await?
+            } else if let Some(source) = local_repository {
+                ensure!(
+                    git_ref.is_none() && git_cache.is_none(),
+                    "working-tree mode does not accept remote Git options"
+                );
+                super::ontology_family::collect_repository(
+                    source,
+                    definitions,
+                    project,
+                    target,
+                    *concurrency,
+                )
+                .await?
+            } else {
+                let url = if let Some(repository) = github {
+                    let parts: Vec<_> = repository.split('/').collect();
+                    ensure!(
+                        parts.len() == 2 &&
+                            parts.iter().all(|p| {
+                                !p.is_empty() &&
+                                    p.chars().all(|c| {
+                                        c.is_ascii_alphanumeric() ||
+                                            matches!(c, '-' | '_' | '.')
+                                    })
+                            }) &&
+                            parts.iter().all(|p| !matches!(*p, "." | "..")),
+                        "GitHub repository must be OWNER/REPO"
+                    );
+                    format!("https://github.com/{repository}.git")
+                } else {
+                    git_repository
+                        .as_ref()
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("repository source required")
+                        })?
+                        .clone()
+                };
+                let reference = git_ref.as_deref().ok_or_else(|| {
+                    anyhow::anyhow!("remote repository requires --git-ref")
+                })?;
+                let cache = git_cache.clone().unwrap_or_else(|| {
+                    std::env::temp_dir().join("grapharch-git-cache")
+                });
+                super::ontology_family::collect_remote(
+                    &url,
+                    reference,
+                    &cache,
+                    definitions,
+                    project,
+                    target,
+                    *concurrency,
+                )
+                .await?
+            };
+            let outcome = Publisher::new(built.dataset.clone())
+                .with_failure_mode(mode)
+                .render(&built.plan, output_root)
+                .await?;
+            let PublishOutcome::Published(publication) = outcome else {
+                anyhow::bail!("family publication was superseded")
+            };
+            built
+                .dataset
+                .export(output_root.join("documentation.nq"))
+                .await?;
+            println!(
+                "{}\nontologies={}\nresources={}\nplan={}\nsnapshot={}",
+                publication.directory.display(),
+                built.ontology_count,
+                built.term_count,
+                built.plan.id,
+                built.plan.snapshot
+            );
+        },
+        PublicationCommand::BuildSite {
+            source,
+            definitions,
+            project,
+            target,
+            output_root,
+            concurrency,
+        } => {
+            let built = super::website::collect(
+                source,
+                definitions,
+                project,
+                target,
+                *concurrency,
+            )
+            .await?;
+            match Publisher::new(built.dataset.clone())
+                .with_failure_mode(mode)
+                .render(&built.plan, output_root)
+                .await?
+            {
+                PublishOutcome::Published(publication) => {
+                    println!("{}", publication.directory.display())
+                },
+                PublishOutcome::Superseded => {
+                    anyhow::bail!("website publication superseded")
+                },
+            }
+            built
+                .dataset
+                .export(output_root.join("documentation.nq"))
+                .await?;
+            println!(
+                "plan={}\nsnapshot={}",
+                built.plan.id, built.plan.snapshot
+            );
+        },
         PublicationCommand::Render { store, plan, snapshot, output_root } => {
             let dataset = Dataset::open(store.clone()).await?;
             let plan = ResolvedPlan {

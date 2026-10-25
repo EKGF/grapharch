@@ -3,6 +3,9 @@ title: Publication pipeline foundation
 layout: default
 parent: Usage
 nav_order: 2
+grapharch:
+  subject: urn:grapharch:docs:topic:usage:publication-pipeline
+permalink: /usage/publication-pipeline/
 ---
 
 # Publication pipeline foundation
@@ -103,7 +106,7 @@ cross references, tables, code, a glossary, references, and an appendix.
 Run the mixed-source showcase with `cargo run --example publish_showcase -- --mixed`.
 It collects separate Markdown, SPARQL, and OWL files, generates an OWL class
 description, and publishes HTML and PDF. Both showcases share their execution
-code with `tests/showcases.rs`. See the [showcase catalog](../../examples/README.md)
+code with `tests/showcases.rs`. See the [showcase catalog](examples.md)
 for assertions, explicit fixture wiring, and current limits.
 
 Profiles support `ga:style "specification"` or `"reader"` for HTML. Components use

@@ -201,10 +201,10 @@ fn person(dd: ElementRef<'_>, base: &Url) -> Result<Person> {
     for child in dd.children() {
         if let Some(text) = child.value().as_text() {
             note.push_str(text);
-        } else if let Some(element) = ElementRef::wrap(child) {
-            if element.value().classes().any(|class| class == "former") {
-                note.push_str(&native_html::title(element));
-            }
+        } else if let Some(element) = ElementRef::wrap(child) &&
+            element.value().classes().any(|class| class == "former")
+        {
+            note.push_str(&native_html::title(element));
         }
     }
     let note = note.split_whitespace().collect::<Vec<_>>().join(" ");

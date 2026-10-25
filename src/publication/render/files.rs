@@ -222,33 +222,111 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
             manifest.target == target,
         "another publication owns this output directory"
     );
-    // bounded: only the renderer's fixed file set is accepted, never arbitrary
-    // paths.
-    ensure!(
-        manifest.files.len() <= 4 &&
-            manifest.files.iter().all(|name| {
-                matches!(
-                    name.as_str(),
-                    "index.html" | "style.css" | "main.typ" | "document.pdf"
-                )
-            }),
-        "invalid publication artifact ownership"
-    );
-    for entry in fs::read_dir(destination)? {
-        let entry = entry?;
-        let name = entry.file_name();
-        let name = name
-            .to_str()
-            .ok_or_else(|| anyhow::anyhow!("unowned non-UTF-8 output path"))?;
+    if manifest.renderer == "website" {
         ensure!(
-            entry.file_type()?.is_file() &&
-                (name == "manifest.yaml" ||
-                    manifest.files.iter().any(|owned| owned == name)),
-            "output contains an unowned artifact: {}",
-            entry.path().display()
+            manifest.files.len() <= 512,
+            "website artifact ownership exceeds budget"
         );
+        let mut names = std::collections::HashSet::new();
+        for name in &manifest.files {
+            validate_artifact_path(name)?;
+            ensure!(
+                name != "manifest.yaml" && names.insert(name.as_str()),
+                "invalid website artifact ownership"
+            );
+        }
+        verify_tree(destination, destination, &names, &mut 0)?;
+    } else {
+        ensure!(
+            manifest.files.len() <= 4 &&
+                manifest.files.iter().all(|name| {
+                    matches!(
+                        name.as_str(),
+                        "index.html" |
+                            "style.css" |
+                            "main.typ" |
+                            "document.pdf"
+                    )
+                }),
+            "invalid publication artifact ownership"
+        );
+        for entry in fs::read_dir(destination)? {
+            let entry = entry?;
+            let name = entry.file_name();
+            let name = name.to_str().ok_or_else(|| {
+                anyhow::anyhow!("unowned non-UTF-8 output path")
+            })?;
+            ensure!(
+                entry.file_type()?.is_file() &&
+                    (name == "manifest.yaml" ||
+                        manifest.files.iter().any(|owned| owned == name)),
+                "output contains an unowned artifact: {}",
+                entry.path().display()
+            );
+        }
     }
     Ok(true)
+}
+
+pub(super) fn validate_artifact_path(value: &str) -> Result<()> {
+    ensure!(
+        !value.is_empty() &&
+            value.len() <= 1024 &&
+            !value.contains('\\') &&
+            value.split('/').count() <= 16 &&
+            value.split('/').all(|part| {
+                !part.is_empty() &&
+                    part != "." &&
+                    part != ".." &&
+                    part.chars().all(|c| {
+                        c.is_ascii_alphanumeric() ||
+                            matches!(c, '.' | '-' | '_')
+                    })
+            }),
+        "invalid website artifact path {value}"
+    );
+    Ok(())
+}
+
+fn verify_tree(
+    root: &Path,
+    directory: &Path,
+    owned: &std::collections::HashSet<&str>,
+    visited: &mut usize,
+) -> Result<()> {
+    for entry in fs::read_dir(directory)? {
+        *visited += 1;
+        ensure!(
+            *visited <= 4096,
+            "website output exceeds filesystem-entry budget"
+        );
+        let entry = entry?;
+        let path = entry.path();
+        let name = path
+            .strip_prefix(root)?
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("non-UTF-8 website artifact"))?
+            .replace('\\', "/");
+        let kind = entry.file_type()?;
+        if kind.is_dir() {
+            validate_artifact_path(&name)?;
+            ensure!(
+                owned
+                    .iter()
+                    .any(|file| file.starts_with(&format!("{name}/"))),
+                "output contains an unowned directory: {name}"
+            );
+            verify_tree(root, &path, owned, visited)?;
+        } else {
+            ensure!(
+                kind.is_file() &&
+                    (name == "manifest.yaml" ||
+                        owned.contains(name.as_str())),
+                "output contains an unowned artifact: {name}"
+            );
+        }
+    }
+    Ok(())
 }
 
 fn read_optional<T: serde::de::DeserializeOwned>(
@@ -325,14 +403,13 @@ impl Drop for Staging {
         let path = self.path.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
-                if let Err(error) = tokio::fs::remove_dir_all(&path).await {
-                    if error.kind() != std::io::ErrorKind::NotFound {
-                        tracing::error!(
-                            "cannot remove abandoned staging directory {}: \
-                             {error}",
-                            path.display()
-                        );
-                    }
+                if let Err(error) = tokio::fs::remove_dir_all(&path).await &&
+                    error.kind() != std::io::ErrorKind::NotFound
+                {
+                    tracing::error!(
+                        "cannot remove abandoned staging directory {}: {error}",
+                        path.display()
+                    );
                 }
             });
         }

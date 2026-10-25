@@ -1,0 +1,988 @@
+@prefix fs:      <https://ekgf.org/ontology/file-system#> .
+@prefix dct:     <http://purl.org/dc/terms/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-file-system: <https://ekgf.org/ontology/file-system#> .
+@base <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#>
+  a            owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-file-system" ;
+      sh:namespace "https://ekgf.org/ontology/file-system#"^^xsd:anyURI
+  ] ;
+  rdfs:label   "File System ontology"@en ;
+  rdfs:comment """A provider-neutral filesystem vocabulary: rooted views,
+directories, named directory entries, stable file series, immutable file
+versions whose content is a MIME-typed literal, symbolic links and
+service-style shortcuts, external provider objects, tombstones, declared
+capability profiles, and attachment assertions with explicit tracking
+modes. Names and parents belong to directory entries, never to files, so
+hard links, multiple parents, aliases, and provider shortcuts are
+representable without copying the target. Provider-specific API fields and
+credentials do not enter this ontology."""@en ;
+  dct:issued   "2026-08-31"^^xsd:date .
+
+#################################################################
+# Core classes
+#################################################################
+
+fs:FileSystemView
+  a            owl:Class ;
+  rdfs:label   "file system view"@en ;
+  rdfs:comment "A branch/commit-scoped rooted projection consumed by Drive or another filesystem client. Paths are presentation addresses within one view and never resource identity."@en .
+
+fs:Directory
+  a            owl:Class ;
+  rdfs:label   "directory"@en ;
+  rdfs:comment "A container resource. A directory may also attach to a business object; membership is asserted by directory entries, never by direct containment edges."@en .
+
+fs:DirectoryEntry
+  a            owl:Class ;
+  rdfs:label   "directory entry"@en ;
+  rdfs:comment "One named parent/target assertion in a rooted view. The same target may appear through many entries and names without copying content."@en .
+
+fs:FileSeries
+  a            owl:Class ;
+  rdfs:label   "file series"@en ;
+  rdfs:comment "The stable logical document users browse and edit. A series is not content-addressed: it survives byte changes, renames, moves, and provider version updates while its current version changes."@en .
+
+fs:FileVersion
+  a            owl:Class ;
+  rdfs:label   "file version"@en ;
+  rdfs:comment "One immutable observed file state: a MIME-typed content literal plus source, size, time, and observation provenance. Correcting metadata creates a new revision or superseding version; historical facts are never mutated in place."@en .
+
+fs:SymbolicLink
+  a            owl:Class ;
+  rdfs:label   "symbolic link"@en ;
+  rdfs:comment "An entry target that names a path to resolve within the same view, POSIX-style. Resolution is bounded and loop-checked before projection."@en .
+
+fs:ServiceShortcut
+  a            owl:Class ;
+  rdfs:label   "service shortcut"@en ;
+  rdfs:comment "An entry target that refers to an external provider object (a Google Drive or OneDrive shortcut) rather than to content in the workspace."@en .
+
+fs:ExternalObject
+  a            owl:Class ;
+  rdfs:label   "external object"@en ;
+  rdfs:comment "A provider-stable file object identity (not its bytes). Connector workers map provider revisions of an external object onto new file versions."@en .
+
+fs:Tombstone
+  a            owl:Class ;
+  rdfs:label   "tombstone"@en ;
+  rdfs:comment "A recorded deletion: the target it retires and when. Trash/restore flows read tombstones; content survives while retention or references keep it alive."@en .
+
+fs:CapabilityProfile
+  a            owl:Class ;
+  rdfs:label   "capability profile"@en ;
+  rdfs:comment "Declared behavior of a filesystem namespace: case sensitivity, Unicode normalization, legal names, roots, versioning, links, trash, atomic move, server-side copy, range reads. Adapters map providers onto these semantics; unsupported operations fail explicitly."@en .
+
+#################################################################
+# Attachments and tracking rules
+#################################################################
+
+fs:Attachment
+  a            owl:Class ;
+  rdfs:label   "attachment"@en ;
+  rdfs:comment "An assertion relating a graph resource to a file target, with its own author, time, mode, label, role, provenance, and lifecycle. Deleting an attachment deletes the assertion, never the file."@en .
+
+fs:AttachmentMode
+  a            owl:Class ;
+  rdfs:label   "attachment mode"@en ;
+  rdfs:comment "How an attachment resolves its target. The mode is mandatory and is one of the five declared individuals."@en .
+
+fs:AttachmentRole
+  a            owl:Class ;
+  rdfs:label   "attachment role"@en ;
+  rdfs:comment "The business role a file plays on the resource it is attached to (proposal, contract, invoice, evidence). Workspaces declare their own role individuals."@en .
+
+fs:PathRule
+  a            owl:Class ;
+  rdfs:label   "path rule"@en ;
+  rdfs:comment "A path-tracking target: the file series currently occupying a path in a selected view. Zero or multiple matches fail resolution hard."@en .
+
+fs:NameFamilyRule
+  a            owl:Class ;
+  rdfs:label   "name family rule"@en ;
+  rdfs:comment "An explicit rule declaring that a family of copied file names is one logical document stream. Ambiguous matches never resolve silently; they create a review task."@en .
+
+fs:SuffixPattern
+  a            owl:Class ;
+  rdfs:label   "suffix pattern"@en ;
+  rdfs:comment "A frozen family of copy-suffix conventions a name family rule may allow."@en .
+
+fs:SourceKind
+  a            owl:Class ;
+  rdfs:label   "source kind"@en ;
+  rdfs:comment "How a file version was observed."@en .
+
+#################################################################
+# Attachment mode individuals
+#################################################################
+
+fs:ExactVersion
+  a            fs:AttachmentMode ;
+  rdfs:label   "exact version"@en ;
+  rdfs:comment "Always resolves to one immutable file version. The default for evidence: compliance, contracts, audit, decisions, invoices, signed documents."@en .
+
+fs:TrackSeries
+  a            fs:AttachmentMode ;
+  rdfs:label   "track series"@en ;
+  rdfs:comment "Resolves the series' current version as of the branch/commit being viewed — the living document."@en .
+
+fs:TrackExternalId
+  a            fs:AttachmentMode ;
+  rdfs:label   "track external id"@en ;
+  rdfs:comment "Follows a provider-stable file ID; every fetched provider revision still becomes a new file version in one series."@en .
+
+fs:TrackPath
+  a            fs:AttachmentMode ;
+  rdfs:label   "track path"@en ;
+  rdfs:comment "Follows whatever series currently occupies a path in a selected view. A view address, not identity; broken or ambiguous resolution fails hard."@en .
+
+fs:TrackNameFamily
+  a            fs:AttachmentMode ;
+  rdfs:label   "track name family"@en ;
+  rdfs:comment "Follows an explicit name-family rule treating copied names as one document stream."@en .
+
+#################################################################
+# Other individuals
+#################################################################
+
+fs:NativeUpload
+  a            fs:SourceKind ;
+  rdfs:label   "native upload"@en ;
+  rdfs:comment "The bytes arrived through a direct upload into the workspace."@en .
+
+fs:ProviderSync
+  a            fs:SourceKind ;
+  rdfs:label   "provider sync"@en ;
+  rdfs:comment "The bytes were fetched from an external provider by a connector worker."@en .
+
+fs:WindowsCopySuffix
+  a            fs:SuffixPattern ;
+  rdfs:label   "windows copy suffix"@en ;
+  rdfs:comment "The \" (2)\", \" (3)\" copy suffixes Windows appends to duplicated names."@en .
+
+#################################################################
+# Object properties
+#################################################################
+
+fs:root
+  a            owl:ObjectProperty ;
+  rdfs:label   "root"@en ;
+  rdfs:comment "The view's root directory."@en ;
+  rdfs:domain  fs:FileSystemView ;
+  rdfs:range   fs:Directory .
+
+fs:capabilityProfile
+  a            owl:ObjectProperty ;
+  rdfs:label   "capability profile"@en ;
+  rdfs:comment "The declared capabilities of the namespace a view projects."@en ;
+  rdfs:domain  fs:FileSystemView ;
+  rdfs:range   fs:CapabilityProfile .
+
+fs:parent
+  a            owl:ObjectProperty ;
+  rdfs:label   "parent"@en ;
+  rdfs:comment "The directory an entry places its target in. Parents belong to entries, so a target may have many parents."@en ;
+  rdfs:domain  fs:DirectoryEntry ;
+  rdfs:range   fs:Directory .
+
+fs:target
+  a            owl:ObjectProperty ;
+  rdfs:label   "target"@en ;
+  rdfs:comment "What the entry names: a directory, file series, symbolic link, or service shortcut."@en ;
+  rdfs:domain  fs:DirectoryEntry .
+
+fs:currentVersion
+  a            owl:ObjectProperty ;
+  rdfs:label   "current version"@en ;
+  rdfs:comment "The series' current version on the branch being viewed. Time-travel reads resolve this pointer as of the commit."@en ;
+  rdfs:domain  fs:FileSeries ;
+  rdfs:range   fs:FileVersion .
+
+fs:hasVersion
+  a            owl:ObjectProperty ;
+  rdfs:label   "has version"@en ;
+  rdfs:comment "Every observed version of the series."@en ;
+  rdfs:domain  fs:FileSeries ;
+  rdfs:range   fs:FileVersion .
+
+fs:sourceKind
+  a            owl:ObjectProperty ;
+  rdfs:label   "source kind"@en ;
+  rdfs:domain  fs:FileVersion ;
+  rdfs:range   fs:SourceKind .
+
+fs:externalObject
+  a            owl:ObjectProperty ;
+  rdfs:label   "external object"@en ;
+  rdfs:comment "The provider object a shortcut or sync relationship refers to."@en ;
+  rdfs:range   fs:ExternalObject .
+
+fs:tombstoneOf
+  a            owl:ObjectProperty ;
+  rdfs:label   "tombstone of"@en ;
+  rdfs:comment "The entry, series, or directory the tombstone retires."@en ;
+  rdfs:domain  fs:Tombstone .
+
+fs:hasAttachment
+  a            owl:ObjectProperty ;
+  rdfs:label   "has attachment"@en ;
+  rdfs:comment "The resource's attachment assertions."@en ;
+  rdfs:range   fs:Attachment .
+
+fs:attachedTo
+  a            owl:ObjectProperty ;
+  rdfs:label   "attached to"@en ;
+  rdfs:comment "The resource the attachment is asserted on."@en ;
+  rdfs:domain  fs:Attachment .
+
+fs:attachmentMode
+  a            owl:ObjectProperty ;
+  rdfs:label   "attachment mode"@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:AttachmentMode .
+
+fs:attachmentRole
+  a            owl:ObjectProperty ;
+  rdfs:label   "attachment role"@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:AttachmentRole .
+
+fs:targetVersion
+  a            owl:ObjectProperty ;
+  rdfs:label   "target version"@en ;
+  rdfs:comment "The immutable version an exact-version attachment resolves to."@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:FileVersion .
+
+fs:targetSeries
+  a            owl:ObjectProperty ;
+  rdfs:label   "target series"@en ;
+  rdfs:comment "The series a track-series attachment follows."@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:FileSeries .
+
+fs:targetExternalObject
+  a            owl:ObjectProperty ;
+  rdfs:label   "target external object"@en ;
+  rdfs:comment "The provider-stable object a track-external-id attachment follows."@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:ExternalObject .
+
+fs:targetPathRule
+  a            owl:ObjectProperty ;
+  rdfs:label   "target path rule"@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:PathRule .
+
+fs:targetNameFamilyRule
+  a            owl:ObjectProperty ;
+  rdfs:label   "target name family rule"@en ;
+  rdfs:domain  fs:Attachment ;
+  rdfs:range   fs:NameFamilyRule .
+
+fs:inView
+  a            owl:ObjectProperty ;
+  rdfs:label   "in view"@en ;
+  rdfs:comment "The view a path rule resolves its path in."@en ;
+  rdfs:domain  fs:PathRule ;
+  rdfs:range   fs:FileSystemView .
+
+fs:allowedSuffixPattern
+  a            owl:ObjectProperty ;
+  rdfs:label   "allowed suffix pattern"@en ;
+  rdfs:domain  fs:NameFamilyRule ;
+  rdfs:range   fs:SuffixPattern .
+
+#################################################################
+# Datatype properties
+#################################################################
+
+fs:content
+  a            owl:DatatypeProperty ;
+  rdfs:label   "content"@en ;
+  rdfs:comment "The version's complete value: a MIME-typed literal whose datatype is the mime: form of its media type. Large values are external in storage behind their literal manifest; many versions may reference the same literal term and share its chunks without sharing identity."@en ;
+  rdfs:domain  fs:FileVersion .
+
+fs:name
+  a            owl:DatatypeProperty ;
+  rdfs:label   "name"@en ;
+  rdfs:comment "The entry's name in its parent. Names belong to entries, never to files."@en ;
+  rdfs:domain  fs:DirectoryEntry ;
+  rdfs:range   xsd:string .
+
+fs:normalizedName
+  a            owl:DatatypeProperty ;
+  rdfs:label   "normalized name"@en ;
+  rdfs:comment "The entry name after the view's declared normalization, for duplicate detection."@en ;
+  rdfs:domain  fs:DirectoryEntry ;
+  rdfs:range   xsd:string .
+
+fs:sourceFileName
+  a            owl:DatatypeProperty ;
+  rdfs:label   "source file name"@en ;
+  rdfs:domain  fs:FileVersion ;
+  rdfs:range   xsd:string .
+
+fs:normalizedSourceFileName
+  a            owl:DatatypeProperty ;
+  rdfs:label   "normalized source file name"@en ;
+  rdfs:domain  fs:FileVersion ;
+  rdfs:range   xsd:string .
+
+fs:byteSize
+  a            owl:DatatypeProperty ;
+  rdfs:label   "byte size"@en ;
+  rdfs:comment "The stored value's length in bytes."@en ;
+  rdfs:domain  fs:FileVersion ;
+  rdfs:range   xsd:integer .
+
+fs:observedAt
+  a            owl:DatatypeProperty ;
+  rdfs:label   "observed at"@en ;
+  rdfs:domain  fs:FileVersion ;
+  rdfs:range   xsd:dateTime .
+
+fs:deletedAt
+  a            owl:DatatypeProperty ;
+  rdfs:label   "deleted at"@en ;
+  rdfs:domain  fs:Tombstone ;
+  rdfs:range   xsd:dateTime .
+
+fs:symbolicTargetPath
+  a            owl:DatatypeProperty ;
+  rdfs:label   "symbolic target path"@en ;
+  rdfs:domain  fs:SymbolicLink ;
+  rdfs:range   xsd:string .
+
+fs:viewPath
+  a            owl:DatatypeProperty ;
+  rdfs:label   "view path"@en ;
+  rdfs:domain  fs:PathRule ;
+  rdfs:range   xsd:string .
+
+fs:provider
+  a            owl:DatatypeProperty ;
+  rdfs:label   "provider"@en ;
+  rdfs:comment "The provider a connector profile resolves; vendor API fields and credentials stay in DRC connector profiles, never here."@en ;
+  rdfs:domain  fs:ExternalObject ;
+  rdfs:range   xsd:string .
+
+fs:externalId
+  a            owl:DatatypeProperty ;
+  rdfs:label   "external id"@en ;
+  rdfs:comment "The provider-stable object identifier. It identifies the external object, not its bytes."@en ;
+  rdfs:domain  fs:ExternalObject ;
+  rdfs:range   xsd:string .
+
+fs:externalRevisionId
+  a            owl:DatatypeProperty ;
+  rdfs:label   "external revision id"@en ;
+  rdfs:comment "The provider revision a file version was fetched from, when the provider has stable revision IDs."@en ;
+  rdfs:range   xsd:string .
+
+fs:folder
+  a            owl:DatatypeProperty ;
+  rdfs:label   "folder"@en ;
+  rdfs:domain  fs:NameFamilyRule ;
+  rdfs:range   xsd:string .
+
+fs:baseName
+  a            owl:DatatypeProperty ;
+  rdfs:label   "base name"@en ;
+  rdfs:domain  fs:NameFamilyRule ;
+  rdfs:range   xsd:string .
+
+fs:extension
+  a            owl:DatatypeProperty ;
+  rdfs:label   "extension"@en ;
+  rdfs:domain  fs:NameFamilyRule ;
+  rdfs:range   xsd:string .
+
+fs:alsoAllowFinalDraftSuffix
+  a            owl:DatatypeProperty ;
+  rdfs:label   "also allow final/draft suffix"@en ;
+  rdfs:domain  fs:NameFamilyRule ;
+  rdfs:range   xsd:boolean .
+
+fs:caseSensitiveNames
+  a            owl:DatatypeProperty ;
+  rdfs:label   "case sensitive names"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:unicodeNormalization
+  a            owl:DatatypeProperty ;
+  rdfs:label   "unicode normalization"@en ;
+  rdfs:comment "The normalization form the namespace applies to names (NFC, NFD, none)."@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:string .
+
+fs:legalNamePattern
+  a            owl:DatatypeProperty ;
+  rdfs:label   "legal name pattern"@en ;
+  rdfs:comment "A regular expression names must match to be legal in the namespace."@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:string .
+
+fs:supportsMultipleRoots
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports multiple roots"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsVersioning
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports versioning"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsStableRevisionIds
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports stable revision ids"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsLinks
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports links"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsShortcuts
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports shortcuts"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsTrash
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports trash"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsAtomicMove
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports atomic move"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsServerSideCopy
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports server-side copy"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+fs:supportsRangeReads
+  a            owl:DatatypeProperty ;
+  rdfs:label   "supports range reads"@en ;
+  rdfs:domain  fs:CapabilityProfile ;
+  rdfs:range   xsd:boolean .
+
+#################################################################
+# Archive versions (recursive decomposed containers, DM-14)
+#################################################################
+
+fs:ArchiveVersion
+  a            owl:Class ;
+  rdfs:label   "archive version"@en ;
+  rdfs:comment "One immutable decomposed container state: a ZIP, TAR, wrapped archive, or Office package represented as an ordered member tree whose regular members are ordinary file versions. The upload quad points at this node, never at a compound literal; download reconstructs the container through the deterministic canonical writer. Distinct from workspace directories: archive members are not flattened into the containing directory unless explicitly extracted."@en .
+
+fs:ArchiveMember
+  a            owl:Class ;
+  rdfs:label   "archive member"@en ;
+  rdfs:comment "One entry of a decomposed container in container order: a regular file (targeting its member file version), a nested container (targeting its own archive version), a directory, a link, or a metadata-only entry. Duplicate paths keep distinct ordinals; records preserve the metadata deterministic reconstruction needs."@en .
+
+fs:ArchiveFormat
+  a            owl:Class ;
+  rdfs:label   "archive format"@en ;
+  rdfs:comment "The closed set of container formats the archive adapter decomposes."@en .
+
+fs:ArchiveEntryKind
+  a            owl:Class ;
+  rdfs:label   "archive entry kind"@en ;
+  rdfs:comment "The closed set of member entry kinds a decomposed container records."@en .
+
+fs:Zip
+  a            fs:ArchiveFormat ;
+  rdfs:label   "zip"@en ;
+  rdfs:comment "A ZIP archive, including Office Open XML packages."@en .
+
+fs:Tar
+  a            fs:ArchiveFormat ;
+  rdfs:label   "tar"@en ;
+  rdfs:comment "A TAR archive."@en .
+
+fs:TarGzip
+  a            fs:ArchiveFormat ;
+  rdfs:label   "tar+gzip"@en ;
+  rdfs:comment "A gzip stream wrapping a TAR archive."@en .
+
+fs:Gzip
+  a            fs:ArchiveFormat ;
+  rdfs:label   "gzip"@en ;
+  rdfs:comment "A gzip stream wrapping a single non-archive member."@en .
+
+fs:RegularFile
+  a            fs:ArchiveEntryKind ;
+  rdfs:label   "regular file"@en ;
+  rdfs:comment "A regular member whose decompressed bytes are an ordinary member file version."@en .
+
+fs:NestedArchive
+  a            fs:ArchiveEntryKind ;
+  rdfs:label   "nested archive"@en ;
+  rdfs:comment "A member that is itself a recognized container, decomposed recursively into its own archive version."@en .
+
+fs:ArchiveDirectoryEntry
+  a            fs:ArchiveEntryKind ;
+  rdfs:label   "archive directory entry"@en ;
+  rdfs:comment "An explicit directory entry inside the container's own tree — never a workspace directory."@en .
+
+fs:SymlinkEntry
+  a            fs:ArchiveEntryKind ;
+  rdfs:label   "symlink entry"@en ;
+  rdfs:comment "A symbolic-link entry; its verbatim target is preserved for reconstruction."@en .
+
+fs:HardlinkEntry
+  a            fs:ArchiveEntryKind ;
+  rdfs:label   "hardlink entry"@en ;
+  rdfs:comment "A hard-link entry; its verbatim target is preserved for reconstruction."@en .
+
+fs:OtherEntry
+  a            fs:ArchiveEntryKind ;
+  rdfs:label   "other entry"@en ;
+  rdfs:comment "A recognized entry carried as metadata only (device nodes, FIFOs), preserved by its format-specific tag."@en .
+
+fs:archiveFormat
+  a            owl:ObjectProperty ;
+  rdfs:label   "archive format"@en ;
+  rdfs:comment "The decomposed container's format."@en ;
+  rdfs:domain  fs:ArchiveVersion ;
+  rdfs:range   fs:ArchiveFormat .
+
+fs:archiveVersion
+  a            owl:ObjectProperty ;
+  rdfs:label   "archive version"@en ;
+  rdfs:comment "The decomposed container this member belongs to."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   fs:ArchiveVersion .
+
+fs:entryKind
+  a            owl:ObjectProperty ;
+  rdfs:label   "entry kind"@en ;
+  rdfs:comment "What this member entry is."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   fs:ArchiveEntryKind .
+
+fs:memberPath
+  a            owl:DatatypeProperty ;
+  rdfs:label   "member path"@en ;
+  rdfs:comment "The member's safe relative path inside the container, verbatim: never absolute, never containing a parent traversal (such containers stay opaque)."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   xsd:string .
+
+fs:memberOrdinal
+  a            owl:DatatypeProperty ;
+  rdfs:label   "member ordinal"@en ;
+  rdfs:comment "The member's zero-based position in container order. Duplicate paths keep distinct ordinals; reconstruction replays this order."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   xsd:integer .
+
+fs:linkTarget
+  a            owl:DatatypeProperty ;
+  rdfs:label   "link target"@en ;
+  rdfs:comment "A link entry's verbatim target."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   xsd:string .
+
+fs:memberMode
+  a            owl:DatatypeProperty ;
+  rdfs:label   "member mode"@en ;
+  rdfs:comment "POSIX-style mode bits, when the format carries them — reconstruction metadata."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   xsd:integer .
+
+fs:memberMtime
+  a            owl:DatatypeProperty ;
+  rdfs:label   "member mtime"@en ;
+  rdfs:comment "Modification time in seconds since the epoch, when the format carries it — reconstruction metadata."@en ;
+  rdfs:domain  fs:ArchiveMember ;
+  rdfs:range   xsd:long .
+
+fs:memberCount
+  a            owl:DatatypeProperty ;
+  rdfs:label   "member count"@en ;
+  rdfs:comment "Regular members walked in this container."@en ;
+  rdfs:domain  fs:ArchiveVersion ;
+  rdfs:range   xsd:integer .
+
+fs:entryCount
+  a            owl:DatatypeProperty ;
+  rdfs:label   "entry count"@en ;
+  rdfs:comment "Non-member entries walked in this container."@en ;
+  rdfs:domain  fs:ArchiveVersion ;
+  rdfs:range   xsd:integer .
+
+fs:officePackageKind
+  a            owl:DatatypeProperty ;
+  rdfs:label   "office package kind"@en ;
+  rdfs:comment "The Office Open XML package kind (word, excel, powerpoint) when the container is a recognized Office package."@en ;
+  rdfs:domain  fs:ArchiveVersion ;
+  rdfs:range   xsd:string .
+
+fs:opaqueReason
+  a            owl:DatatypeProperty ;
+  rdfs:label   "opaque reason"@en ;
+  rdfs:comment "Why a recognized container could not be decomposed (encryption without a key, unsupported compression, malformed metadata, parser limits). Present only on an opaque archive's file version: its exact source bytes are stored, no member tree is published, and a later explicit reprocessing may retry decomposition."@en ;
+  rdfs:domain  fs:FileVersion ;
+  rdfs:range   xsd:string .
+
+fs:memberTarget
+  a            owl:ObjectProperty ;
+  rdfs:label   "member target"@en ;
+  rdfs:comment "What a member resolves to: a regular member's file version, or a nested container's own archive version. Directory, link, and metadata-only entries have no target."@en ;
+  rdfs:domain  fs:ArchiveMember .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/file-system#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/file-system#ArchiveDirectoryEntry>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ArchiveEntryKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ArchiveFormat>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ArchiveMember>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ArchiveVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#Attachment>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#AttachmentMode>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#AttachmentRole>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#CapabilityProfile>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#Directory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#DirectoryEntry>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ExactVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ExternalObject>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#FileSeries>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#FileSystemView>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#FileVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#Gzip>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#HardlinkEntry>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#NameFamilyRule>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#NativeUpload>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#NestedArchive>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#OtherEntry>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#PathRule>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ProviderSync>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#RegularFile>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#ServiceShortcut>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#SourceKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#SuffixPattern>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#SymbolicLink>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#SymlinkEntry>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#Tar>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#TarGzip>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#Tombstone>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#TrackExternalId>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#TrackNameFamily>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#TrackPath>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#TrackSeries>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#WindowsCopySuffix>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#Zip>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#allowedSuffixPattern>
+    rdfs:comment "Associates a name-family rule with a suffix pattern that the rule permits."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#alsoAllowFinalDraftSuffix>
+    rdfs:comment "Records whether a name-family rule also permits a final or draft suffix."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#archiveFormat>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#archiveVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#attachedTo>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#attachmentMode>
+    rdfs:comment "Specifies the attachment mode selected for an attachment."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#attachmentRole>
+    rdfs:comment "Specifies the role assigned to an attachment."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#baseName>
+    rdfs:comment "Records the base-name component of a name-family rule, separately from its extension and folder."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#byteSize>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#capabilityProfile>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#caseSensitiveNames>
+    rdfs:comment "Records whether a capability profile treats file and folder names as case-sensitive."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#content>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#currentVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#deletedAt>
+    rdfs:comment "Records the deletion time represented by a tombstone."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#entryCount>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#entryKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#extension>
+    rdfs:comment "Records the filename-extension component of a name-family rule."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#externalId>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#externalObject>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#externalRevisionId>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#folder>
+    rdfs:comment "Records the folder component of a name-family rule."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#hasAttachment>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#hasVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#inView>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#legalNamePattern>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#linkTarget>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#memberCount>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#memberMode>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#memberMtime>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#memberOrdinal>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#memberPath>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#memberTarget>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#name>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#normalizedName>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#normalizedSourceFileName>
+    rdfs:comment "Records the normalized source filename retained for a file version, separately from the originally observed filename."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#observedAt>
+    rdfs:comment "Records when a file version was observed by the source integration."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#officePackageKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#opaqueReason>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#parent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#provider>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#root>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#sourceFileName>
+    rdfs:comment "Records the filename observed for a file version in its source."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#sourceKind>
+    rdfs:comment "Classifies the source from which a file version was obtained using a SourceKind value."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsAtomicMove>
+    rdfs:comment "Records whether the source capability profile supports atomic move operations."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsLinks>
+    rdfs:comment "Records whether the source capability profile supports links."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsMultipleRoots>
+    rdfs:comment "Records whether the source capability profile supports multiple roots."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsRangeReads>
+    rdfs:comment "Records whether the source capability profile supports reading a selected byte range."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsServerSideCopy>
+    rdfs:comment "Records whether the source capability profile supports copying within the source system without downloading and re-uploading the file."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsShortcuts>
+    rdfs:comment "Records whether the source capability profile supports shortcut resources."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsStableRevisionIds>
+    rdfs:comment "Records whether the source capability profile supplies stable revision identifiers."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsTrash>
+    rdfs:comment "Records whether the source capability profile supports a trash or recycle-bin facility."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#supportsVersioning>
+    rdfs:comment "Records whether the source capability profile supports file versions."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#symbolicTargetPath>
+    rdfs:comment "Records the target path named by a symbolic link."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#target>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#targetExternalObject>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#targetNameFamilyRule>
+    rdfs:comment "Identifies the rule governing the filename family of an attachment in its target view."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#targetPathRule>
+    rdfs:comment "Identifies the rule governing the target-view path of an attachment."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#targetSeries>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#targetVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#tombstoneOf>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#unicodeNormalization>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .
+
+<https://ekgf.org/ontology/file-system#viewPath>
+    rdfs:comment "Records the path expression used by a path rule in a target view."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/file-system#> .

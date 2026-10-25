@@ -1,0 +1,96 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix cmns-org: <https://www.omg.org/spec/Commons/Organizations/> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+
+# Registry of organizations that play authority roles or host communities.
+# Mint each UUIDv4 URN once and reuse it when names or websites change.
+# Multiple websites are permitted. Reuse an existing organization when it
+# plays another authority role. Authority roles have separate identities in
+# well-known-authorities.ttl.
+#
+#   python3 -c "import uuid; print(uuid.uuid4().urn)"
+
+<urn:uuid:96c6206b-38fb-4625-a784-de7903329897>
+    rdf:type cmns-org:Organization , cmns-org:LegalEntity ;
+    rdfs:label "World Wide Web Consortium (W3C)"@en ;
+    artgov:organizationCategory artgov:StandardsBodyCategory , artgov:ConsortiumCategory ;
+    cmns-org:hasWebsite "https://www.w3.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://www.w3.org/about/> .
+
+<urn:uuid:ee14e632-d8c2-43c1-95d8-72491ce7a846>
+    rdf:type cmns-org:Organization , cmns-org:OrganizationalSubUnit ;
+    rdfs:label "Enterprise Knowledge Graph Forum"@en ;
+    artgov:organizationCategory artgov:CommunityCategory ;
+    cmns-org:isSubUnitOf <urn:uuid:ec3f703d-55a9-4bea-a818-e71705f8dd2e> ;
+    cmns-org:hasWebsite "https://ekgf.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://www.omg.org/communities/enterprise-knowledge-graph-forum.htm> .
+
+<urn:uuid:ec3f703d-55a9-4bea-a818-e71705f8dd2e>
+    rdf:type cmns-org:Organization , cmns-org:LegalEntity ;
+    rdfs:label "Object Management Group"@en ;
+    artgov:organizationCategory artgov:StandardsBodyCategory , artgov:ConsortiumCategory ;
+    cmns-org:hasWebsite "https://www.omg.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://www.omg.org/about/> .
+
+<urn:uuid:c2c98445-9dac-4515-bd06-ce6c5bdace11>
+    rdf:type cmns-org:Organization ;
+    rdfs:label "EDM Association"@en ;
+    artgov:historicalName "Enterprise Data Management Council"@en , "EDM Council"@en ;
+    cmns-org:hasWebsite "https://edmcouncil.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://edmcouncil.org/> .
+
+<urn:uuid:a3b0eb31-433a-4cda-8b20-7f47bfd424d1>
+    rdf:type cmns-org:Organization ;
+    rdfs:label "United Nations Educational, Scientific and Cultural Organization (UNESCO)"@en ;
+    cmns-org:hasWebsite "https://www.unesco.org/"^^xsd:anyURI .
+
+<urn:uuid:3cffc601-37b3-449f-8bad-0cb6c0913db2>
+    rdf:type cmns-org:Organization , cmns-org:LegalEntity ;
+    rdfs:label "TopQuadrant, Inc."@en ;
+    cmns-org:hasWebsite "https://www.topquadrant.com/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://www.topquadrant.com/terms-conditions> .
+
+<urn:uuid:208fd4f7-0736-49de-a990-0424507de642>
+    rdf:type cmns-org:Organization ;
+    rdfs:label "Internet Archive"@en ;
+    cmns-org:hasWebsite "https://archive.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://library.oclc.org/digital/api/collection/p15003coll6/id/649/download> .
+
+<urn:uuid:437298e4-0f3d-4846-a248-0a8efebbab46>
+    rdf:type cmns-org:Organization , cmns-org:OrganizationalSubUnit ;
+    rdfs:label "SPDX working group"@en ;
+    artgov:organizationCategory artgov:ProjectCategory ;
+    cmns-org:isSubUnitOf <urn:uuid:413369c0-dda9-4be7-91a1-b6b0c786dfab> ;
+    cmns-org:hasWebsite "https://spdx.org/"^^xsd:anyURI ,
+                        "https://spdx.dev/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://spdx.dev/engage/join/> ,
+                 <https://spdx.dev/about/overview/> .
+
+<urn:uuid:413369c0-dda9-4be7-91a1-b6b0c786dfab>
+    rdf:type cmns-org:Organization ;
+    rdfs:label "The Linux Foundation"@en ;
+    cmns-org:hasWebsite "https://www.linuxfoundation.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://spdx.dev/about/overview/> .
+
+<urn:uuid:11e75a50-898f-4531-a659-7c84072095d8>
+    rdf:type cmns-org:Organization ;
+    rdfs:label "FOAF project"@en ;
+    artgov:organizationCategory artgov:ProjectCategory ;
+    cmns-org:hasWebsite "http://www.foaf-project.org/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://xmlns.com/> .
+
+<urn:uuid:013afb21-34e5-4f94-8c78-fb27b4fb2863>
+    rdf:type cmns-org:Organization , cmns-org:OrganizationalSubUnit ;
+    rdfs:label "Data Science Institute, University of Galway"@en ;
+    cmns-org:isSubUnitOf <urn:uuid:b8632308-bc11-4845-aae2-c7f56e8bd79a> ;
+    artgov:historicalName "Digital Enterprise Research Institute"@en , "Insight Research Institute"@en ;
+    cmns-org:hasWebsite "https://www.universityofgalway.ie/dsi/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://www.universityofgalway.ie/dsi/> .
+
+<urn:uuid:b8632308-bc11-4845-aae2-c7f56e8bd79a>
+    rdf:type cmns-org:Organization ;
+    rdfs:label "University of Galway"@en ;
+    cmns-org:hasWebsite "https://www.universityofgalway.ie/"^^xsd:anyURI ;
+    rdfs:seeAlso <https://www.universityofgalway.ie/dsi/> .

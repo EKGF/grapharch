@@ -2,32 +2,50 @@
 title: Overview
 layout: default
 nav_order: 1
+grapharch:
+  subject: urn:grapharch:docs:topic:overview
+permalink: /overview/
 ---
-# GraphArch Overview
 
-GraphArch serves two primary use cases:
+# From source fragments to publications
 
-1. **Ontology and Schema Documentation**
+Grapharch separates source collection, logical documentation structure, and
+publication layout. The shared documentation KG connects all three.
 
-   GraphArch can document ontologies,
-   whether OWL-based or non-semantic tech,
-   such as LPG graph schemas from platforms
-   like Neo4j or TigerGraph.
-   This includes individual ontologies as
-   well as ontology families,
-   where multiple related ontologies might
-   be documented collectively, such as the
-   Financial Industry Business Ontology (FIBO).
+## Collect documentable things
 
-2. **Graph Database Endpoint or EKG Documentation**
+Each collector handles one kind of input. Markdown-file collectors retain prose
+and frontmatter; RDF-file collectors retain graph assertions; SPARQL-file
+collectors document queries without executing them. Specialized documentors can
+generate fragments for ontology classes and other RDF constructs.
 
-   GraphArch can connect to graph database
-   endpoints (SPARQL, Cypher, GSQL, etc.)
-   and generate documentation through discovery.
-   It analyzes the data structures, provides
-   profiling, and creates reports based on the
-   detected entities.
-   This could include a breakdown of the classes,
-   distribution of instances, identification of PII,
-   and a summary of data models used,
-   generating outputs like dashboards or reports.
+A documentation tree also exposes topics, ordered text fragments, and code
+examples. A topic has an identity in the KG; its source filename is provenance,
+not its meaning.
+
+## Assemble and query the graph
+
+Collection writes through a bounded channel to the graph store. Independent
+collectors run concurrently. Embedded Oxigraph writes are coordinated, and a
+failed input cannot silently replace the last complete contribution.
+
+Assembly validates a project revision. Scopes select content, and publication
+profiles arrange components. A resolved target plan pins the content and ordering
+that a renderer will consume.
+
+## Publish for the reader
+
+A documentation website supports exploration across topics. A standards document
+needs publication metadata, references, conformance sections, and stable anchors.
+A PDF needs pagination, a table of contents, and reviewable document structure.
+
+Those outputs can use the same logical fragments while applying different
+arrangements. Grapharch's own [website build](../usage/self-hosting.md) is a
+working example of this separation.
+
+## Follow implementation progress
+
+The [architecture](../other/architecture/README.md),
+[design goals](../design-goals/README.md), and
+[implementation status](../other/status.md) describe current behavior and work
+that remains, including external stores and incremental editor previews.

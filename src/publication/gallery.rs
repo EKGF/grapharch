@@ -1,0 +1,338 @@
+//! Build declared showcase fixtures and collect their published artifacts into
+//! the documentation KG. Expected-error fixtures are explicit catalog entries.
+use {
+    super::{
+        RDF_TYPE,
+        collect::{
+            Collector,
+            RdfFile,
+            collect_all,
+            published_artifact::PublishedArtifactFile,
+        },
+        dataset::Dataset,
+        definitions::{objects, text},
+        diagnostics::FailureMode,
+        render::Publisher,
+        showcases,
+        term,
+        view::RevisionView,
+        writer::GraphWriter,
+    },
+    anyhow::{Result, ensure},
+    oxigraph::{io::RdfFormat, store::Store},
+    oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
+    std::{
+        collections::{BTreeSet, HashMap},
+        path::{Component, Path},
+        sync::Arc,
+    },
+    tokio::io::AsyncReadExt,
+};
+
+struct Case {
+    id:       NamedNode,
+    key:      String,
+    kind:     String,
+    source:   String,
+    preview:  String,
+    pdf:      String,
+    expected: BTreeSet<String>,
+}
+
+pub(crate) async fn collect(
+    root: &Path,
+    dataset: &Dataset,
+    writer: &GraphWriter,
+    project: &str,
+) -> Result<()> {
+    let registry = root.join("showcases.ttl");
+    let mut file = tokio::fs::File::open(&registry).await?.take(256 * 1024 + 1);
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes).await?;
+    ensure!(
+        bytes.len() <= 256 * 1024,
+        "showcase registry exceeds byte budget"
+    );
+    let project_id = NamedNode::new(project)?;
+    let cases = tokio::task::spawn_blocking(move || read(&bytes, &project_id))
+        .await??;
+    RdfFile::new(
+        project,
+        "urn:grapharch:showcase-registry",
+        registry,
+    )?
+    .collect(writer)
+    .await?;
+    let stage = tempfile::tempdir()?;
+    let mut work: Vec<Arc<dyn Collector>> = Vec::new();
+    let mut metadata = Vec::new();
+    let mut total_bytes = 0u64;
+    let build_started = std::time::Instant::now();
+    let stage_root = stage.path();
+    use futures::StreamExt;
+    let mut pending = futures::stream::iter(cases)
+        .map(|case| build_case(case, root, stage_root, project))
+        .buffer_unordered(2);
+    while let Some(result) = pending.next().await {
+        let built = result?;
+        total_bytes += built.bytes;
+        ensure!(
+            total_bytes <= 128 * 1024 * 1024,
+            "showcase artifacts exceed 128 MiB budget"
+        );
+        work.extend(built.work);
+        metadata.extend(built.metadata);
+    }
+    ensure!(
+        work.len() <= 128,
+        "showcase gallery exceeds 128-artifact budget"
+    );
+    tracing::debug!(
+        elapsed_ms = build_started.elapsed().as_millis(),
+        "all showcase artifacts built"
+    );
+    collect_all(work, writer, 4).await?;
+    tracing::debug!(
+        elapsed_ms = build_started.elapsed().as_millis(),
+        "showcase artifacts collected"
+    );
+    let snapshot = dataset.snapshot_for(project).await?;
+    let mut stream = writer
+        .begin(
+            project,
+            "urn:grapharch:gallery-bindings",
+            "urn:grapharch:gallery-bindings",
+            &format!("gallery-bindings-v2:{snapshot}"),
+        )
+        .await?;
+    for quad in metadata {
+        stream.write(quad).await?;
+    }
+    stream.complete().await
+}
+
+struct BuiltCase {
+    work:     Vec<Arc<dyn Collector>>,
+    metadata: Vec<Quad>,
+    bytes:    u64,
+}
+
+async fn build_case(
+    case: Case,
+    root: &Path,
+    stage: &Path,
+    project: &str,
+) -> Result<BuiltCase> {
+    let mut work: Vec<Arc<dyn Collector>> = Vec::new();
+    let mut metadata = Vec::new();
+    let mut total_bytes = 0u64;
+    let case_started = std::time::Instant::now();
+    let source = tokio::fs::canonicalize(root.join(&case.source)).await?;
+    ensure!(
+        source.starts_with(root),
+        "showcase source escapes its declared root"
+    );
+    let (child, plans) = match case.kind.as_str() {
+        "authored" => showcases::authored(&source).await?,
+        "dprod" => showcases::dprod(&source).await?,
+        "ontology-family" => showcases::family(&source).await?,
+        "mixed" => showcases::mixed(&source).await?,
+        "specification" => showcases::specification(&source).await?,
+        "w3c" => showcases::w3c(&source).await?,
+        other => anyhow::bail!("unsupported showcase kind {other}"),
+    };
+    let mode = if case.expected.is_empty() {
+        FailureMode::FailFast
+    } else {
+        FailureMode::KeepGoing
+    };
+    let output = stage.join(&case.key);
+    tokio::fs::create_dir_all(&output).await?;
+    let output = tokio::fs::canonicalize(output).await?;
+    let publications = showcases::publish(
+        &Publisher::new(child.clone()).with_failure_mode(mode),
+        &plans,
+        &output,
+    )
+    .await?;
+    let actual: Vec<_> = publications
+        .iter()
+        .flat_map(|publication| {
+            publication.manifest.diagnostics.iter().cloned()
+        })
+        .collect();
+    let codes: BTreeSet<_> =
+        actual.iter().map(|error| error.code.clone()).collect();
+    ensure!(
+        codes == case.expected && actual.len() == case.expected.len(),
+        "showcase {} produced unexpected diagnostics",
+        case.id
+    );
+    let prefix = format!("showcases/artifacts/{}/", case.key);
+    let mut artifacts = HashMap::new();
+    let mut output_order = 0u32;
+    for publication in publications {
+        let target = NamedNode::new(&publication.manifest.target)?;
+        let view = RevisionView::new(
+            child.clone(),
+            NamedNode::new(&publication.manifest.input_revision)?,
+        );
+        let title = super::render::page_title(&view, &target).await?;
+        for name in publication.manifest.files {
+            let file = publication.directory.join(&name);
+            let relative = file
+                .strip_prefix(&output)?
+                .to_str()
+                .ok_or_else(|| anyhow::anyhow!("non-UTF-8 showcase path"))?
+                .replace('\\', "/");
+            let asset = PublishedArtifactFile::new(
+                project,
+                file.clone(),
+                format!("{prefix}{relative}"),
+            )?;
+            total_bytes += tokio::fs::metadata(&file).await?.len();
+            ensure!(
+                total_bytes <= 128 * 1024 * 1024,
+                "showcase artifacts exceed 128 MiB budget"
+            );
+            artifacts.insert(relative, asset.id());
+            if name == "index.html" || name == "document.pdf" {
+                metadata.push(quad(&case.id, "outputArtifact", asset.id()));
+                metadata.push(quad(
+                    &asset.id(),
+                    "order",
+                    Literal::from(output_order),
+                ));
+                output_order += 1;
+                metadata.push(Quad::new(
+                    asset.id(),
+                    NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
+                    Literal::new_simple_literal(format!(
+                        "{title} ({})",
+                        if name.ends_with("pdf") { "PDF" } else { "HTML" }
+                    )),
+                    GraphName::DefaultGraph,
+                ));
+            }
+            work.push(Arc::new(asset));
+        }
+    }
+    let preview = artifacts.get(&case.preview).ok_or_else(|| {
+        anyhow::anyhow!(
+            "showcase {} has no preview artifact {}",
+            case.id,
+            case.preview
+        )
+    })?;
+    let pdf = artifacts.get(&case.pdf).ok_or_else(|| {
+        anyhow::anyhow!(
+            "showcase {} has no PDF artifact {}",
+            case.id,
+            case.pdf
+        )
+    })?;
+    metadata.extend([
+        quad(&case.id, "previewArtifact", preview.clone()),
+        quad(&case.id, "pdfArtifact", pdf.clone()),
+        quad(
+            &case.id,
+            "diagnosticCount",
+            Literal::from(actual.len() as i64),
+        ),
+    ]);
+    let archive = output.join("documentation.nq");
+    child.export(archive.clone()).await?;
+    total_bytes += tokio::fs::metadata(&archive).await?.len();
+    ensure!(
+        total_bytes <= 128 * 1024 * 1024,
+        "showcase artifacts exceed 128 MiB budget"
+    );
+    let archive = PublishedArtifactFile::new(
+        project,
+        archive,
+        format!("{prefix}documentation.nq"),
+    )?;
+    metadata.push(quad(&case.id, "datasetArtifact", archive.id()));
+    work.push(Arc::new(archive));
+    tracing::debug!(case = %case.id, elapsed_ms = case_started.elapsed().as_millis(), "showcase built");
+
+    Ok(BuiltCase { work, metadata, bytes: total_bytes })
+}
+
+fn quad(subject: &NamedNode, field: &str, object: impl Into<Term>) -> Quad {
+    Quad::new(
+        subject.clone(),
+        term(field),
+        object,
+        GraphName::DefaultGraph,
+    )
+}
+
+fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
+    let store = Store::new()?;
+    store.load_from_reader(RdfFormat::Turtle, bytes)?;
+    let mut cases = Vec::new();
+    let mut keys = BTreeSet::new();
+    for object in objects(&store, project, "showcase")? {
+        let Term::NamedNode(id) = object? else {
+            anyhow::bail!("showcase must be an IRI")
+        };
+        ensure!(
+            store.contains(
+                Quad::new(
+                    id.clone(),
+                    NamedNode::new_unchecked(RDF_TYPE),
+                    term("Showcase"),
+                    GraphName::DefaultGraph
+                )
+                .as_ref()
+            )?,
+            "showcase must be declared"
+        );
+        let source = text(&store, &id, "source")?;
+        let key = text(&store, &id, "slug")?;
+        ensure!(
+            !key.is_empty() &&
+                key.chars().all(|c| c.is_ascii_alphanumeric() || c == '-'),
+            "invalid showcase slug"
+        );
+        ensure!(
+            keys.insert(key.clone()),
+            "duplicate showcase identity"
+        );
+        let preview = text(&store, &id, "previewPath")?;
+        let pdf = text(&store, &id, "pdfPath")?;
+        for path in [&source, &preview, &pdf] {
+            ensure!(
+                !path.is_empty() &&
+                    Path::new(path)
+                        .components()
+                        .all(|part| matches!(part, Component::Normal(_))),
+                "invalid showcase path {path}"
+            );
+        }
+        let expected = objects(&store, &id, "expectedDiagnostic")?
+            .map(|term| {
+                match term? {
+                    Term::Literal(code) => Ok(code.value().to_owned()),
+                    _ => anyhow::bail!("expected diagnostic must be a literal"),
+                }
+            })
+            .collect::<Result<_>>()?;
+        cases.push(Case {
+            kind: text(&store, &id, "kind")?,
+            id,
+            key,
+            source,
+            preview,
+            pdf,
+            expected,
+        });
+        ensure!(
+            cases.len() <= 16,
+            "gallery exceeds 16-showcase budget"
+        );
+    }
+    ensure!(!cases.is_empty(), "showcase registry is empty");
+    Ok(cases)
+}

@@ -1,0 +1,34 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix doc: <urn:grapharch:docs:> .
+<urn:grapharch:docs> a ga:Project ; dct:title "Grapharch" ;
+    ga:repository <https://github.com/EKGF/grapharch> ;
+    ga:showcasesSource "../examples" ;
+    ga:scope doc:scope ; ga:target doc:website, doc:ontology-spec .
+doc:scope a ga:Scope .
+doc:website a ga:Target ; dct:title "Grapharch documentation" ;
+    ga:scope doc:scope ; ga:profile doc:profile ;
+    ga:renderer "website" ; ga:destination "site" .
+doc:profile a ga:Profile .
+
+# This specification is generated from the actual vocabulary, not its overview page.
+doc:ontology-spec a ga:Target ;
+    dct:title "GraphArch Documentation and Publication Ontology" ;
+    ga:subtitle "Vocabulary reference, model, and publication contract" ;
+    ga:ontologySource "other/ontology/publication.ttl" ;
+    ga:scope doc:ontology-scope ; ga:profile doc:ontology-profile ;
+    ga:renderer "specification" ; ga:destination "spec/develop" ;
+    ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ; ga:publicationStatus "Editor's Draft" ;
+    ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    ga:thisVersion <https://ekgf.github.io/grapharch/spec/develop/> ;
+    ga:latestVersion <https://ekgf.github.io/grapharch/spec/develop/> ;
+    ga:editorDraft <https://ekgf.github.io/grapharch/spec/develop/> ;
+    ga:license <https://spdx.org/licenses/MIT> ;
+    ga:copyright "Copyright (c) 2024-2025 Enterprise Knowledge Graph Forum, Object Management Group Inc. Development draft, distributed under the MIT license." .
+doc:ontology-scope a ga:Scope .
+doc:ontology-profile a ga:Profile .
+<urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> a ga:Authority ; <http://www.w3.org/2000/01/rdf-schema#label> "Enterprise Knowledge Graph Forum" ;
+    ga:shortName "EKGF" ; ga:accentColor "#2b5f9f" ; ga:url "https://ekgf.org/" .
+
+<urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> <https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy> <urn:uuid:ee14e632-d8c2-43c1-95d8-72491ce7a846> .
+<urn:uuid:ee14e632-d8c2-43c1-95d8-72491ce7a846> a <https://www.omg.org/spec/Commons/Organizations/Organization> ; <http://www.w3.org/2000/01/rdf-schema#label> "Enterprise Knowledge Graph Forum"@en .

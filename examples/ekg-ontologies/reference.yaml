@@ -1,0 +1,36 @@
+repository: https://github.com/EKGF/ekg-ontologies
+revision: ce7b810990a806333d698e2934c38c8a1384b2ec
+source_state: working-tree
+license: CC0-1.0
+sources:
+  LICENSE.txt: a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499
+  dataset/ekgf-family-references.ttl: 750940b25a088257bccb97dc33edb1dacbfc6fd3d19faa9eec1dbcab4fc691d3
+  dataset/lifecycle-bindings.ttl: 9e4ad93c90f5931cc03411507b59d746f0f10ac9afb9330f919da6c4e2414046
+  dataset/well-known-authorities.ttl: ef1a7faec1a614132cf3b0fc0189e739d62ecb4974d89a54ced2bf29ac07ca6e
+  dataset/well-known-families.ttl: d65c7fd765dca57ef0e191eb66147e334443811fe565229bd55c3219999a248d
+  dataset/well-known-lifecycles.ttl: 92204548ba26490e0a36532a0f595496dc6669fcf1cdf03307fbc449e8a5a461
+  dataset/well-known-organizations.ttl: ff59323168b96573fe53ee150cfdef4f56493ad5e07b7cc15fef30af8352c0ac
+  ekgf-annotation.ttl: 1b2b3fada8aee95b9b96cb80f45bd4298907c723b0fcc1802689cec3c38feecb
+  ekgf-api.ttl: 893add20bac8c55bbe08ea61bc897f7dd04aab1c8fa79d9b11b9918a68a0b2d2
+  ekgf-artifact-dependency.ttl: c0e77a45ceafcfe9ee710faccb566711c5211543ead879435d3fa9c6503de8cf
+  ekgf-artifact-governance.ttl: 7e23bb3634afe0966f1ad789da4620db3979d349bcaa0a661f6812baaea52efb
+  ekgf-artifact-publication.ttl: 4a69984491b735b2da5b72c4d9f44f5711627dd4b6d7ad4e48f6546358ba4109
+  ekgf-authorization.ttl: 035dae9c99dd562a68ce7cb7dc3320c33bd8655e8df804c40fad906b36b1fc95
+  ekgf-capability.ttl: bdd83b177f2682c26b902ec0f5ed4b083925ec41234c1154a764fd4afa66ba61
+  ekgf-communication.ttl: c68da8e97a46392acb4a711bb00a4ac2afc9f77119534a43986d25ce72890eae
+  ekgf-concept.ttl: e6591ae819ea0312a36e10e8670ac333e282198c14954d56319502fe7d90519a
+  ekgf-dataops.ttl: b71b9c7bf369156657b5d1f1ff315a9ef00323ebe37a8f1e4c25c8327daf9f18
+  ekgf-dataset.ttl: b311d8ec3383694103bed644741bdc90f0f857dc448026ae589a4d3d89e951f4
+  ekgf-file-system.ttl: a84d3f68b0ba4520105cdb607a511f6d32f97649540f40ca8a85e6b90ffeaa4b
+  ekgf-lifecycle.ttl: ab506966c5648dde6c70591325bd8833dd67ce0fe45129177275f80e9a0026c5
+  ekgf-maturity-model.ttl: 6dfdbdff924cf5f974f12fc6c17ded9e52277e3fb3154bc68cf7c9285fe21e8d
+  ekgf-outcome.ttl: d3683c25237eb767004896107608a61a42dd0a7e2fcfc953e597adf43b085837
+  ekgf-persona.ttl: 53b92c8ff81d0134a1b67ce391a1a8518f7ff1964813c727a8f49f644f303c02
+  ekgf-raw.ttl: d5dd3634fd971363c0d7f8d3e21d48863e5611058b24bdd68ae3d204483be74d
+  ekgf-shape.ttl: c9bd3aa6f273171350acb3d98ba225e5480e294cefa2e9c0d6d60ff350e1705e
+  ekgf-specification-by-example.ttl: 20f9625ab87759bd874eaf004891efdb9eea1cfac65dc730b7e64f8ed55dd59d
+  ekgf-story-impl-sparql.ttl: cac5288421b34bdc03accb22ba4c50b305fe2b6307d097e0efddb39101ef57da
+  ekgf-story-service.ttl: 3ffded5e9828bd93e868f921130b96766a8c1f3066ca7f59cbd3fc821995d9fb
+  ekgf-story.ttl: d972596cf127962e061360e64c8db8d8e8e915dea1b7d32322f054b9530ba7b7
+  ekgf-use-case.ttl: 872fd3677b1cdc4b9e6f45d01d55ef33f641958500d2b3f06c89e376a8eff9d2
+  ekgf-user-experience.ttl: 11ec944d8e7d48133ea0e71d8ca8a1fbb6590142e90315360d7f18b45ae9411b

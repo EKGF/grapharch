@@ -1,0 +1,185 @@
+@prefix : <https://ekgf.org/ontology/dataops#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dataops: <https://ekgf.org/ontology/dataops#> .
+@prefix dataset: <https://ekgf.org/ontology/dataset#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-dataops: <https://ekgf.org/ontology/dataops#> .
+@base <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#> rdf:type owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-dataops" ;
+      sh:namespace "https://ekgf.org/ontology/dataops#"^^xsd:anyURI
+  ] ;
+                                      rdfs:label "EKG DataOps ontology" .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://ekgf.org/ontology/dataops#createdByPipeline
+dataops:createdByPipeline rdf:type owl:ObjectProperty ;
+                          rdfs:domain dataset:Dataset ;
+                          rdfs:range dataops:Pipeline .
+
+
+###  https://ekgf.org/ontology/dataops#inPipeline
+dataops:inPipeline rdf:type owl:ObjectProperty ,
+                            owl:FunctionalProperty ;
+                   rdfs:domain dataops:LoadRequest ;
+                   rdfs:range dataops:Pipeline .
+
+
+###  https://ekgf.org/ontology/dataops#loadedByLoadRequest
+dataops:loadedByLoadRequest rdf:type owl:ObjectProperty ;
+                            rdfs:domain dataops:SingleGraphDataset ;
+                            rdfs:range dataops:LoadRequest .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://ekgf.org/ontology/dataops#graph
+dataops:graph rdf:type owl:DatatypeProperty ,
+                       owl:FunctionalProperty ;
+              rdfs:domain dataops:LoadRequest ;
+              rdfs:range xsd:anyURI ;
+              rdfs:label "Load Request Target Graph"@en .
+
+
+###  https://ekgf.org/ontology/dataops#source
+dataops:source rdf:type owl:DatatypeProperty ,
+                        owl:FunctionalProperty ;
+               rdfs:domain dataops:LoadRequest ;
+               rdfs:range xsd:anyURI ;
+               rdfs:label "Load Request Source IRI"@en .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://ekgf.org/ontology/dataops#FailedLoadRequest
+dataops:FailedLoadRequest rdf:type owl:Class ;
+                          rdfs:subClassOf dataops:LoadRequest ;
+                          rdfs:label "Failed RDF Load Request"@en .
+
+
+###  https://ekgf.org/ontology/dataops#FinishedLoadRequest
+dataops:FinishedLoadRequest rdf:type owl:Class ;
+                            rdfs:subClassOf dataops:LoadRequest ;
+                            rdfs:label "Finished RDF Load Request"@en .
+
+
+###  https://ekgf.org/ontology/dataops#LoadRequest
+dataops:LoadRequest rdf:type owl:Class ;
+                    rdfs:comment "A LoadRequest represents an RDF file being loaded into the current RDF Graph Database." ;
+                    rdfs:label "RDF Load Request"@en .
+
+
+###  https://ekgf.org/ontology/dataops#LoadingLoadRequest
+dataops:LoadingLoadRequest rdf:type owl:Class ;
+                           rdfs:subClassOf dataops:LoadRequest ;
+                           rdfs:label "Loading RDF Load Request"@en .
+
+
+###  https://ekgf.org/ontology/dataops#MultiGraphDataset
+dataops:MultiGraphDataset rdf:type owl:Class ;
+                          rdfs:subClassOf dataset:Dataset ;
+                          rdfs:comment """A Multi-graph RDF Dataset can be constructed from one or more Single-graph RDF Datasets as they get loaded into a staging environment in the context of a pipeline.
+
+Usually the single-graph datasets get merged into the multi-graph dataset later on in the pipeline in order to construct a production-ready final RDF Dataset,"""@en ;
+                          rdfs:label "Logical RDF Dataset"@en .
+
+
+###  https://ekgf.org/ontology/dataops#Pipeline
+dataops:Pipeline rdf:type owl:Class .
+
+
+###  https://ekgf.org/ontology/dataops#QueuedLoadRequest
+dataops:QueuedLoadRequest rdf:type owl:Class ;
+                          rdfs:subClassOf dataops:LoadRequest ;
+                          rdfs:label "Queued RDF Load Request"@en .
+
+
+###  https://ekgf.org/ontology/dataops#SingleGraphDataset
+dataops:SingleGraphDataset rdf:type owl:Class ;
+                           rdfs:subClassOf dataset:Dataset ;
+                           rdfs:comment "A single-graph RDF dataset emerges to exist in an RDF graph dataset in the first stage of a pipeline, the load stage, where a given RDF file (usually an N-Triples or Turtle file in an S3 bucket) gets loaded into its own named graph where the IRI of the graph is equal to the S3 file URL. That would be a \"single-graph RDF dataset\" that usually ends up being merged into a \"multi-graph RDF dataset\" further down the road."@en ;
+                           rdfs:label "Single-graph RDF Dataset"@en .
+
+
+###  https://ekgf.org/ontology/dataset#Dataset
+dataset:Dataset rdf:type owl:Class ;
+                rdfs:label "RDF Dataset"@en .
+
+
+###  Generated by the OWL API (version 4.5.26.2023-07-17T20:34:13Z) https://github.com/owlcs/owlapi
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/dataops#>
+    rdfs:comment "A vocabulary for DataOps pipelines, RDF load requests, their processing states, and the single-graph and multi-graph datasets produced during loading and assembly."@en ;
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/dataops#FailedLoadRequest>
+    rdfs:comment "A load request classified as failed because its loading operation did not complete successfully."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#FinishedLoadRequest>
+    rdfs:comment "A load request classified as finished after its loading operation has completed."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#LoadRequest>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#LoadingLoadRequest>
+    rdfs:comment "A load request whose loading operation is in progress."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#MultiGraphDataset>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#Pipeline>
+    rdfs:label "Pipeline"@en ;
+    rdfs:comment "A DataOps process in which load requests bring source data into datasets and subsequent steps can assemble or transform that data."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#QueuedLoadRequest>
+    rdfs:comment "A load request waiting to be processed by a pipeline."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#SingleGraphDataset>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#createdByPipeline>
+    rdfs:label "Created By Pipeline"@en ;
+    rdfs:comment "Identifies the DataOps pipeline that produced a dataset."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#graph>
+    rdfs:comment "Records the IRI of the target graph for a load request as an xsd:anyURI literal."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#inPipeline>
+    rdfs:label "In Pipeline"@en ;
+    rdfs:comment "Identifies the pipeline to which a load request belongs. Each load request has at most one pipeline under the declared functional-property axiom."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#loadedByLoadRequest>
+    rdfs:label "Loaded By Load Request"@en ;
+    rdfs:comment "Relates a single-graph dataset to a load request that loaded its data."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .
+
+<https://ekgf.org/ontology/dataops#source>
+    rdfs:comment "Records the IRI of the source to be loaded by a load request as an xsd:anyURI literal."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/dataops#> .

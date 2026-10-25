@@ -8,12 +8,20 @@ mod definitions;
 mod diagnostic_graph;
 pub mod diagnostics;
 pub mod document;
+mod gallery;
+pub mod governance;
+mod markdown;
 mod native_html;
+pub mod ontology_family;
+mod ontology_specification;
 pub mod plan;
 pub mod render;
 pub mod scope;
+pub mod showcases;
+mod showcases_dprod;
 mod validation;
 pub mod view;
+pub mod website;
 pub mod writer;
 
 pub use {

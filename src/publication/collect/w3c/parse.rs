@@ -62,20 +62,18 @@ pub(super) fn parse(source: &str, base: &Url) -> Result<Parsed> {
             } else if child
                 .value()
                 .classes()
-                .any(|class| class == "header-wrapper")
-            {
-                if let Some(h2) = child
+                .any(|class| class == "header-wrapper") &&
+                let Some(h2) = child
                     .children()
                     .filter_map(ElementRef::wrap)
                     .find(|node| node.value().name() == "h2")
-                {
-                    ensure!(
-                        heading.is_none(),
-                        "section {id} has ambiguous headings"
-                    );
-                    heading = Some(h2);
-                    heading_wrapper = Some(child.id());
-                }
+            {
+                ensure!(
+                    heading.is_none(),
+                    "section {id} has ambiguous headings"
+                );
+                heading = Some(h2);
+                heading_wrapper = Some(child.id());
             }
         }
         let heading =

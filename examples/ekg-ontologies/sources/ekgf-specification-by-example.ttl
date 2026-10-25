@@ -1,0 +1,332 @@
+@prefix : <https://ekgf.org/ontology/specification-by-example#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sbe: <https://ekgf.org/ontology/specification-by-example#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-sbe: <https://ekgf.org/ontology/specification-by-example#> .
+@base <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#> rdf:type owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-sbe" ;
+      sh:namespace "https://ekgf.org/ontology/specification-by-example#"^^xsd:anyURI
+  ] ;
+    rdfs:label "Specification by example" .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://ekgf.org/ontology/specification-by-example#conceptValue
+sbe:conceptValue rdf:type owl:ObjectProperty ;
+    rdfs:domain sbe:StoryRequest ;
+    rdfs:range sbe:ConceptValue .
+
+
+###  https://ekgf.org/ontology/specification-by-example#dataset
+sbe:dataset rdf:type owl:ObjectProperty ;
+    owl:inverseOf sbe:isDependedOnInState ;
+    rdfs:domain sbe:State ;
+    rdfs:range <https://ekgf.org/ontology/dataset#Dataset> .
+
+
+###  https://ekgf.org/ontology/specification-by-example#given
+sbe:any rdf:type owl:NamedIndividual ;
+    rdfs:label "any" ;
+    rdfs:comment
+        """As an expected cell's value: any bound value satisfies it. For
+        results a story derives at run time — an IRI minted with UUID(),
+        a NOW() stamp — where the scenario asserts presence, not identity."""@en .
+
+sbe:capture rdf:type rdfs:Datatype ;
+    rdfs:label "capture" ;
+    rdfs:comment
+        """A literal of this datatype in an expected cell names a capture:
+        "id"^^sbe:capture binds the actual value on first sight and requires
+        equality everywhere the same name appears in the scenario. For
+        asserting that two cells, or two rows, carry the same run-time
+        value without pinning what it is."""@en .
+
+sbe:ignore rdf:type owl:DatatypeProperty ;
+    rdfs:domain sbe:Scenario ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "ignore" ;
+    rdfs:comment
+        """Skip this scenario. Kept in the model rather than as a
+        runner flag so a scenario can be parked with its reason
+        alongside it, and so the decision travels with the data."""@en .
+
+sbe:follows rdf:type owl:ObjectProperty ;
+    rdfs:domain sbe:Scenario ;
+    rdfs:range sbe:Scenario ;
+    rdfs:label "follows" ;
+    rdfs:comment
+        """This scenario runs after the named scenario, on the same
+        branch, with the predecessor's captures available: a value
+        "id"^^sbe:capture in this scenario's `when` is substituted with
+        what the predecessor's `then` bound to "id". Scenarios linked
+        by `follows` form a chain — one branch prepared once, steps in
+        dependency order — and a red step leaves the remaining steps
+        unrun. A scenario without `follows` is a chain of one."""@en .
+
+sbe:given rdf:type owl:ObjectProperty ;
+    owl:inverseOf sbe:isGivenStateOf ;
+    rdfs:domain sbe:Scenario ;
+    rdfs:range sbe:State .
+
+
+###  https://ekgf.org/ontology/specification-by-example#hasDataset
+sbe:hasDataset rdf:type owl:ObjectProperty ;
+    owl:inverseOf sbe:isUsedInGraph ;
+    rdfs:domain sbe:Graph ;
+    rdfs:range <https://ekgf.org/ontology/dataset#Dataset> ;
+    rdfs:comment
+        """a State can have one or more Graphs where each Graph can have one
+       or more Datasets"""@en ;
+    rdfs:label "has Dataset"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#hasGraph
+sbe:hasGraph rdf:type owl:ObjectProperty ;
+    owl:inverseOf sbe:isGraphInState ;
+    rdfs:domain sbe:State ;
+    rdfs:range sbe:Graph ;
+    rdfs:comment "Any Scenario State can have one or more Graphs"@en ;
+    rdfs:label "has Graph"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#hasScenario
+sbe:hasScenario rdf:type owl:ObjectProperty ;
+    owl:inverseOf sbe:validates ;
+    rdfs:domain <https://ekgf.org/ontology/story#Story> ;
+    rdfs:range sbe:Scenario .
+
+
+###  https://ekgf.org/ontology/specification-by-example#isDependedOnInState
+sbe:isDependedOnInState rdf:type owl:ObjectProperty ;
+    rdfs:domain <https://ekgf.org/ontology/dataset#Dataset> ;
+    rdfs:range sbe:State ;
+    rdfs:comment "Usually inferred from the inverse `sbe:dataset`"@en ;
+    rdfs:label "is depended on in state"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#isGivenStateOf
+sbe:isGivenStateOf rdf:type owl:ObjectProperty ;
+    rdfs:domain sbe:State ;
+    rdfs:range sbe:Scenario ;
+    rdfs:comment "Usually inferred from inverse `sbe:given`"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#isGraphInState
+sbe:isGraphInState rdf:type owl:ObjectProperty ;
+    rdfs:domain sbe:Graph ;
+    rdfs:range sbe:State ;
+    rdfs:comment "Usually inferred, a Graph can be part of one or more States"@en ;
+    rdfs:label "is Graph in State"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#isUsedInGraph
+sbe:isUsedInGraph rdf:type owl:ObjectProperty ;
+    rdfs:domain <https://ekgf.org/ontology/dataset#Dataset> ;
+    rdfs:range sbe:Graph .
+
+
+###  https://ekgf.org/ontology/specification-by-example#storyParametersForScenario
+sbe:storyParametersForScenario rdf:type owl:ObjectProperty ;
+    owl:inverseOf sbe:when ;
+    rdfs:domain sbe:State ;
+    rdfs:range sbe:Scenario ;
+    rdfs:comment "Usually inferred from inverse `sbe:when`"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#then
+sbe:then rdf:type owl:ObjectProperty ;
+    rdfs:domain sbe:Scenario ;
+    rdfs:range sbe:State .
+
+
+###  https://ekgf.org/ontology/specification-by-example#validates
+sbe:validates rdf:type
+        owl:ObjectProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain sbe:Scenario ;
+    rdfs:range <https://ekgf.org/ontology/story#Story> .
+
+
+###  https://ekgf.org/ontology/specification-by-example#when
+sbe:when rdf:type owl:ObjectProperty ;
+    rdfs:domain sbe:Scenario ;
+    rdfs:range sbe:StoryRequest .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+
+###  https://ekgf.org/ontology/specification-by-example#namedGraph
+sbe:namedGraph rdf:type owl:DatatypeProperty ;
+    rdfs:domain sbe:Graph ;
+    rdfs:range xsd:anyURI .
+
+
+###  https://ekgf.org/ontology/specification-by-example#value
+sbe:value rdf:type owl:DatatypeProperty ;
+    rdfs:domain sbe:ConceptValue .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://ekgf.org/ontology/dataset#Dataset
+<https://ekgf.org/ontology/dataset#Dataset> rdf:type owl:Class .
+
+
+###  https://ekgf.org/ontology/specification-by-example#ConceptValue
+sbe:ConceptValue rdf:type owl:Class ;
+    rdfs:comment "This is the value for a test concept"@en ;
+    rdfs:label
+        "Concept Value"@en,
+        "Valor do Conceito"@pt .
+
+
+###  https://ekgf.org/ontology/specification-by-example#Graph
+sbe:Graph rdf:type owl:Class ;
+    rdfs:comment
+        "A Graph in a Scenario State, every Scenario State (either the Given-state or the Then-state) can have one or more Graphs."@en ;
+    rdfs:label "Graph"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#Scenario
+sbe:Scenario rdf:type owl:Class ;
+    rdfs:label "Scenario"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#State
+sbe:State rdf:type owl:Class ;
+    rdfs:label "State"@en .
+
+
+###  https://ekgf.org/ontology/specification-by-example#StoryRequest
+sbe:StoryRequest rdf:type owl:Class ;
+    rdfs:comment "The inputs to the story that is being tested in the given Scenario"@en ;
+    rdfs:label "Story Request"@en .
+
+
+###  https://ekgf.org/ontology/story#Story
+<https://ekgf.org/ontology/story#Story> rdf:type owl:Class .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/specification-by-example#>
+    rdfs:comment "A vocabulary for executable story scenarios, including initial graph and dataset states, story requests, expected results, chained scenarios, and captured run-time values."@en ;
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/specification-by-example#ConceptValue>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#Graph>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#Scenario>
+    rdfs:comment "An executable example specifying the request, initial state, and expected state or results for a story. Scenarios can be chained through follows."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#State>
+    rdfs:comment "A set of graph and dataset conditions used to describe an initial or expected situation in a scenario."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#StoryRequest>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#any>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#capture>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#conceptValue>
+    rdfs:label "Concept Value"@en ;
+    rdfs:comment "Relates a story request in a scenario to a value supplied for one of the concepts involved in that request."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#dataset>
+    rdfs:label "Dataset"@en ;
+    rdfs:comment "Identifies a dataset on which a scenario state depends; it is the inverse of isDependedOnInState."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#follows>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#given>
+    rdfs:label "Given"@en ;
+    rdfs:comment "Relates a scenario to its initial state, before the story request is executed."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#hasDataset>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#hasGraph>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#hasScenario>
+    rdfs:label "Has Scenario"@en ;
+    rdfs:comment "Relates a story to an example scenario that validates its behavior; it is the inverse of validates."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#ignore>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#isDependedOnInState>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#isGivenStateOf>
+    rdfs:label "Is Given State Of"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#isGraphInState>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#isUsedInGraph>
+    rdfs:label "Is Used In Graph"@en ;
+    rdfs:comment "Relates a dataset to a scenario graph that uses it; it is the inverse of hasDataset."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#namedGraph>
+    rdfs:label "Named Graph"@en ;
+    rdfs:comment "Records the IRI naming a graph in a scenario state as an xsd:anyURI literal."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#storyParametersForScenario>
+    rdfs:label "Story Parameters For Scenario"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#then>
+    rdfs:label "Then"@en ;
+    rdfs:comment "Relates a scenario to the state or results expected after its story request is executed."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#validates>
+    rdfs:label "Validates"@en ;
+    rdfs:comment "Identifies the story whose behavior a scenario validates. The functional-property axiom assigns at most one story to a scenario."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#value>
+    rdfs:label "Value"@en ;
+    rdfs:comment "Contains the literal value represented by a scenario concept-value resource. No literal datatype restriction is declared."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .
+
+<https://ekgf.org/ontology/specification-by-example#when>
+    rdfs:label "When"@en ;
+    rdfs:comment "Relates a scenario to the story request that is executed between the initial and expected states."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/specification-by-example#> .

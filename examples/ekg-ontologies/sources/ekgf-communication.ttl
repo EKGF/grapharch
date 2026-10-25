@@ -1,0 +1,1451 @@
+@prefix : <https://ekgf.org/ontology/communication#> .
+@prefix annotation: <https://ekgf.org/ontology/annotation#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ekg-communication: <https://ekgf.org/ontology/communication#> .
+@base <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#>
+  rdf:type owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-communication" ;
+      sh:namespace "https://ekgf.org/ontology/communication#"^^xsd:anyURI
+  ] ;
+  rdfs:label "EKGF Communication Ontology"@en ;
+  rdfs:comment "Channel-neutral ontology for recipients, endpoints, audiences, memberships, consent and legal-basis evidence, campaign snapshots, communication attempts, and delivery outcomes."@en ;
+  annotation:markdownDescription "Models communication recipients separately from people and organizations. Audiences, lists, tags, and campaign snapshots are collections with reified memberships. Consent, withdrawal, suppression, legal classification, and derivation evidence attach to memberships rather than being flattened onto recipients."@en .
+
+#################################################################
+#    Classes
+#################################################################
+
+:Recipient
+  rdf:type owl:Class ;
+  rdfs:label "Recipient"@en ;
+  rdfs:comment "An addressable communication target. A recipient may represent a person, organization, group, service, mailbox, or other operational target."@en .
+
+:HumanRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Human recipient"@en ;
+  rdfs:comment "A recipient representing a natural person in a communication context."@en .
+
+:OrganizationRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Organization recipient"@en ;
+  rdfs:comment "A recipient representing an organization or other legal entity."@en .
+
+:GroupRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Group recipient"@en ;
+  rdfs:comment "A recipient representing a group, team, role, or shared function."@en .
+
+:ServiceRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Service recipient"@en ;
+  rdfs:comment "A recipient representing a technical system, webhook, service account, robot, or automation endpoint."@en .
+
+:MailboxRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Mailbox recipient"@en ;
+  rdfs:comment "A recipient representing a mailbox, shared inbox, alias, or distribution address."@en .
+
+:EmailRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Email recipient"@en ;
+  rdfs:comment "A recipient addressable by email. This class does not imply that the recipient is a person."@en .
+
+:SmsRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "SMS recipient"@en ;
+  rdfs:comment "A recipient addressable by SMS or similar text-message delivery."@en .
+
+:VoiceRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Voice recipient"@en ;
+  rdfs:comment "A recipient addressable by voice call."@en .
+
+:PostalRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Postal recipient"@en ;
+  rdfs:comment "A recipient addressable by postal mail or courier delivery."@en .
+
+:PushRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Push recipient"@en ;
+  rdfs:comment "A recipient addressable by mobile, desktop, or browser push notification."@en .
+
+:WebhookRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "Webhook recipient"@en ;
+  rdfs:comment "A recipient addressable by webhook or machine-to-machine callback."@en .
+
+:InAppRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Recipient ;
+  rdfs:label "In-app recipient"@en ;
+  rdfs:comment "A recipient addressable by in-application notification or message center delivery."@en .
+
+:CommunicationEndpoint
+  rdf:type owl:Class ;
+  rdfs:label "Communication endpoint"@en ;
+  rdfs:comment "A concrete channel address or locator used to reach a recipient."@en .
+
+:EmailEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "Email endpoint"@en ;
+  rdfs:comment "An email address endpoint."@en .
+
+:SmsEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "SMS endpoint"@en ;
+  rdfs:comment "A phone-number endpoint for SMS or similar text-message delivery."@en .
+
+:VoiceEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "Voice endpoint"@en ;
+  rdfs:comment "A phone-number endpoint for voice calls."@en .
+
+:PostalEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "Postal endpoint"@en ;
+  rdfs:comment "A postal address endpoint."@en .
+
+:PushEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "Push endpoint"@en ;
+  rdfs:comment "A device, subscription, or token endpoint for push notification delivery."@en .
+
+:WebhookEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "Webhook endpoint"@en ;
+  rdfs:comment "A URL or callback endpoint for machine-to-machine communication."@en .
+
+:InAppEndpoint
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationEndpoint ;
+  rdfs:label "In-app endpoint"@en ;
+  rdfs:comment "An account, user, workspace, or inbox locator for in-application communication."@en .
+
+:CommunicationChannel
+  rdf:type owl:Class ;
+  rdfs:label "Communication channel"@en ;
+  rdfs:comment "Controlled transport category such as email, SMS, voice, postal mail, push, webhook, or in-app notification."@en .
+
+:CommunicationPurpose
+  rdf:type owl:Class ;
+  rdfs:label "Communication purpose"@en ;
+  rdfs:comment "Controlled purpose such as marketing, transactional, operational, legal notice, support, or security."@en .
+
+:CommunicationProgram
+  rdf:type owl:Class ;
+  rdfs:label "Communication program"@en ;
+  rdfs:comment "A reusable communication surface combining channel, purpose, sender policy, authorization policy, and suppression rules."@en .
+
+:MarketingProgram
+  rdf:type owl:Class ;
+  rdfs:subClassOf :CommunicationProgram ;
+  rdfs:label "Marketing program"@en ;
+  rdfs:comment "A communication program whose purpose is marketing."@en .
+
+:RecipientCollection
+  rdf:type owl:Class ;
+  rdfs:label "Recipient collection"@en ;
+  rdfs:comment "A collection of recipients or endpoints. Lists, tags, audiences, and campaign snapshots are specializations."@en .
+
+:Audience
+  rdf:type owl:Class ;
+  rdfs:subClassOf :RecipientCollection ;
+  rdfs:label "Audience"@en ;
+  rdfs:comment "A targeting collection that may cluster recipients, endpoints, tags, lists, channel eligibility, and exclusion rules."@en .
+
+:RecipientList
+  rdf:type owl:Class ;
+  rdfs:subClassOf :RecipientCollection ;
+  rdfs:label "Recipient list"@en ;
+  rdfs:comment "A named recipient collection normally used as a communication enrollment or list scope."@en .
+
+:RecipientTag
+  rdf:type owl:Class ;
+  rdfs:subClassOf :RecipientCollection ;
+  rdfs:label "Recipient tag"@en ;
+  rdfs:comment "A lightweight classification collection such as special-peer, reviewer, or customer."@en .
+
+:CampaignAudienceSnapshot
+  rdf:type owl:Class ;
+  rdfs:subClassOf :RecipientCollection ;
+  rdfs:label "Campaign audience snapshot"@en ;
+  rdfs:comment "An immutable collection of recipients or endpoints resolved for a specific campaign or send."@en .
+
+:Membership
+  rdf:type owl:Class ;
+  rdfs:label "Membership"@en ;
+  rdfs:comment "A reified edge connecting a recipient or endpoint to a recipient collection, with status and evidence."@en .
+
+:AudienceMembership
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Membership ;
+  rdfs:label "Audience membership"@en ;
+  rdfs:comment "A membership in an audience."@en .
+
+:ListMembership
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Membership ;
+  rdfs:label "List membership"@en ;
+  rdfs:comment "A membership in a recipient list or communication scope."@en .
+
+:TagAssignment
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Membership ;
+  rdfs:label "Tag assignment"@en ;
+  rdfs:comment "A membership assigning a recipient or endpoint to a tag."@en .
+
+:CampaignRecipient
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Membership ;
+  rdfs:label "Campaign recipient"@en ;
+  rdfs:comment "A frozen membership in a campaign audience snapshot, carrying per-send state and delivery correlation."@en .
+
+:MembershipEvidence
+  rdf:type owl:Class ;
+  rdfs:label "Membership evidence"@en ;
+  rdfs:comment "Evidence or provenance supporting a membership, consent, withdrawal, suppression, or derivation."@en .
+
+:MembershipDerivationEvidence
+  rdf:type owl:Class ;
+  rdfs:subClassOf :MembershipEvidence ;
+  rdfs:label "Membership derivation evidence"@en ;
+  rdfs:comment "Evidence that a membership was derived from another collection, tag, rule, import, or operator action."@en .
+
+:MembershipEvent
+  rdf:type owl:Class ;
+  rdfs:label "Membership event"@en ;
+  rdfs:comment "Append-only event associated with a membership, such as add, remove, consent, withdrawal, or suppression."@en .
+
+:RecipientLegalClassification
+  rdf:type owl:Class ;
+  rdfs:label "Recipient legal classification"@en ;
+  rdfs:comment "Temporal legal classification of a recipient in a jurisdiction for communication, consent, and retention decisions."@en .
+
+:RecipientLegalCategory
+  rdf:type owl:Class ;
+  rdfs:label "Recipient legal category"@en ;
+  rdfs:comment "Controlled legal category such as natural person, employee, organization, technical service, group mailbox, or public authority."@en .
+
+:RecipientConsent
+  rdf:type owl:Class ;
+  rdfs:subClassOf :MembershipEvidence, :MembershipEvent ;
+  rdfs:label "Recipient consent"@en ;
+  rdfs:comment "Evidence that a recipient or endpoint has consented, or that another lawful basis was captured, for a membership scope."@en .
+
+:RecipientConsentWithdrawal
+  rdf:type owl:Class ;
+  rdfs:subClassOf :MembershipEvidence, :MembershipEvent ;
+  rdfs:label "Recipient consent withdrawal"@en ;
+  rdfs:comment "Evidence that a recipient withdrew consent or opted out for a membership scope. The membership may remain visible with a non-sendable status."@en .
+
+:RecipientSuppression
+  rdf:type owl:Class ;
+  rdfs:subClassOf :MembershipEvidence, :MembershipEvent ;
+  rdfs:label "Recipient suppression"@en ;
+  rdfs:comment "Evidence that future communication is suppressed because of unsubscribe, bounce, complaint, policy, or operator action."@en .
+
+:LegalBasis
+  rdf:type owl:Class ;
+  rdfs:label "Legal basis"@en ;
+  rdfs:comment "A controlled classification for recording a legal basis or exemption associated with a communication purpose, channel, recipient category, and jurisdiction. The classification alone does not establish permission to communicate."@en .
+
+:MembershipStatus
+  rdf:type owl:Class ;
+  rdfs:label "Membership status"@en ;
+  rdfs:comment "Controlled current status of a membership."@en .
+
+:CommunicationAttempt
+  rdf:type owl:Class ;
+  rdfs:label "Communication attempt"@en ;
+  rdfs:comment "One concrete attempt to communicate with a recipient or endpoint through a communication program."@en .
+
+:DeliveryEvent
+  rdf:type owl:Class ;
+  rdfs:label "Delivery event"@en ;
+  rdfs:comment "Provider or system event describing the outcome of a communication attempt."@en .
+
+:DeliveryStatus
+  rdf:type owl:Class ;
+  rdfs:label "Delivery status"@en ;
+  rdfs:comment "Controlled delivery status such as pending, sent, delivered, bounced, complained, suppressed, unsubscribed, failed, or skipped."@en .
+
+#################################################################
+#    Object properties
+#################################################################
+
+:representedResource
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Recipient ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "represented resource"@en ;
+  rdfs:comment "Links a communication recipient to the person, organization, service, mailbox, account, or other resource it represents, when known."@en .
+
+:hasEndpoint
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Recipient ;
+  rdfs:range :CommunicationEndpoint ;
+  rdfs:label "has endpoint"@en ;
+  rdfs:comment "Links a recipient to one concrete channel endpoint."@en .
+
+:endpointChannel
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CommunicationEndpoint ;
+  rdfs:range :CommunicationChannel ;
+  rdfs:label "endpoint channel"@en ;
+  rdfs:comment "The transport channel used by an endpoint."@en .
+
+:programChannel
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CommunicationProgram ;
+  rdfs:range :CommunicationChannel ;
+  rdfs:label "program channel"@en ;
+  rdfs:comment "The transport channel used by a communication program."@en .
+
+:programPurpose
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CommunicationProgram ;
+  rdfs:range :CommunicationPurpose ;
+  rdfs:label "program purpose"@en ;
+  rdfs:comment "The communication purpose served by a communication program."@en .
+
+:collectionPurpose
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientCollection ;
+  rdfs:range :CommunicationPurpose ;
+  rdfs:label "collection purpose"@en ;
+  rdfs:comment "The purpose associated with a list, audience, tag, or snapshot when the collection has a communication scope."@en .
+
+:allowedChannel
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientCollection ;
+  rdfs:range :CommunicationChannel ;
+  rdfs:label "allowed channel"@en ;
+  rdfs:comment "A channel allowed or expected for members of a collection."@en .
+
+:hasMembership
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientCollection ;
+  rdfs:range :Membership ;
+  rdfs:label "has membership"@en ;
+  rdfs:comment "Links a collection to a reified membership row."@en .
+
+:membershipRecipient
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :Recipient ;
+  rdfs:label "membership recipient"@en ;
+  rdfs:comment "The recipient that belongs to a collection."@en .
+
+:membershipEndpoint
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :CommunicationEndpoint ;
+  rdfs:label "membership endpoint"@en ;
+  rdfs:comment "The endpoint that belongs to a collection when membership is channel- or endpoint-specific."@en .
+
+:membershipCollection
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :RecipientCollection ;
+  rdfs:label "membership collection"@en ;
+  rdfs:comment "The collection that owns a membership."@en .
+
+:membershipStatus
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :MembershipStatus ;
+  rdfs:label "membership status"@en ;
+  rdfs:comment "Current status of a membership. Withdrawn consent and suppression are represented as status plus evidence, not by deleting the membership."@en .
+
+:membershipEvidence
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :MembershipEvidence ;
+  rdfs:label "membership evidence"@en ;
+  rdfs:comment "Links a membership to supporting evidence."@en .
+
+:membershipEvent
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :MembershipEvent ;
+  rdfs:label "membership event"@en ;
+  rdfs:comment "Links a membership to an append-only event."@en .
+
+:derivedFromMembership
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Membership ;
+  rdfs:range :Membership ;
+  rdfs:label "derived from membership"@en ;
+  rdfs:comment "Links a derived membership to another membership that caused or justified it."@en .
+
+:evidenceSource
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :MembershipEvidence ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "evidence source"@en ;
+  rdfs:comment "Source resource, import, operator action, rule, tag, form, webhook, or system fact that supports evidence."@en .
+
+:evidenceCollection
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :MembershipEvidence ;
+  rdfs:range :RecipientCollection ;
+  rdfs:label "evidence collection"@en ;
+  rdfs:comment "Collection, tag, list, or audience referenced by membership evidence."@en .
+
+:legalClassificationRecipient
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientLegalClassification ;
+  rdfs:range :Recipient ;
+  rdfs:label "legal classification recipient"@en ;
+  rdfs:comment "Recipient classified for legal, consent, or retention decisions."@en .
+
+:legalJurisdiction
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientLegalClassification ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "legal jurisdiction"@en ;
+  rdfs:comment "Jurisdiction in which a legal classification applies."@en .
+
+:legalCategory
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientLegalClassification ;
+  rdfs:range :RecipientLegalCategory ;
+  rdfs:label "legal category"@en ;
+  rdfs:comment "Legal category assigned to a recipient in a jurisdiction and time interval."@en .
+
+:legalBasis
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range :LegalBasis ;
+  rdfs:label "legal basis"@en ;
+  rdfs:comment "Legal basis or exemption associated with consent evidence, a program, or a send decision."@en .
+
+:consentMembership
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientConsent ;
+  rdfs:range :Membership ;
+  rdfs:label "consent membership"@en ;
+  rdfs:comment "Membership scope covered by a consent or lawful-basis record."@en .
+
+:withdrawnConsent
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientConsentWithdrawal ;
+  rdfs:range :RecipientConsent ;
+  rdfs:label "withdrawn consent"@en ;
+  rdfs:comment "Consent record withdrawn by a later withdrawal event."@en .
+
+:suppressionMembership
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :RecipientSuppression ;
+  rdfs:range :Membership ;
+  rdfs:label "suppression membership"@en ;
+  rdfs:comment "Membership scope suppressed by a suppression event."@en .
+
+:campaignAudience
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CampaignAudienceSnapshot ;
+  rdfs:range :Audience ;
+  rdfs:label "campaign audience"@en ;
+  rdfs:comment "Source audience resolved into a campaign snapshot."@en .
+
+:communicationProgram
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range :CommunicationProgram ;
+  rdfs:label "communication program"@en ;
+  rdfs:comment "Communication program associated with a collection, snapshot, membership, or attempt."@en .
+
+:attemptRecipient
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CommunicationAttempt ;
+  rdfs:range :Recipient ;
+  rdfs:label "attempt recipient"@en ;
+  rdfs:comment "Recipient targeted by a communication attempt."@en .
+
+:attemptEndpoint
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CommunicationAttempt ;
+  rdfs:range :CommunicationEndpoint ;
+  rdfs:label "attempt endpoint"@en ;
+  rdfs:comment "Concrete endpoint used by a communication attempt."@en .
+
+:hasDeliveryEvent
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CommunicationAttempt ;
+  rdfs:range :DeliveryEvent ;
+  rdfs:label "has delivery event"@en ;
+  rdfs:comment "Links an attempt to one delivery event."@en .
+
+:deliveryAttempt
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DeliveryEvent ;
+  rdfs:range :CommunicationAttempt ;
+  rdfs:label "delivery attempt"@en ;
+  rdfs:comment "Communication attempt described by a delivery event."@en .
+
+:deliveryStatus
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DeliveryEvent ;
+  rdfs:range :DeliveryStatus ;
+  rdfs:label "delivery status"@en ;
+  rdfs:comment "Delivery outcome status for a delivery event."@en .
+
+:retentionPolicy
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "retention policy"@en ;
+  rdfs:comment "Retention policy resource applicable to a classification, membership, evidence record, attempt, or delivery event."@en .
+
+#################################################################
+#    Datatype properties
+#################################################################
+
+:endpointAddress
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain :CommunicationEndpoint ;
+  rdfs:range xsd:string ;
+  rdfs:label "endpoint address"@en ;
+  rdfs:comment "Channel-specific endpoint address, such as an email address, phone number, postal address key, token, URL, or account identifier."@en .
+
+:jurisdictionCode
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain :RecipientLegalClassification ;
+  rdfs:range xsd:string ;
+  rdfs:label "jurisdiction code"@en ;
+  rdfs:comment "Human-readable or ISO-style jurisdiction code used when no jurisdiction resource is available."@en .
+
+:effectiveFrom
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "effective from"@en ;
+  rdfs:comment "Timestamp from which a classification, membership status, consent, suppression, or policy is effective."@en .
+
+:effectiveThrough
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "effective through"@en ;
+  rdfs:comment "Timestamp through which a classification, membership status, consent, suppression, or policy is effective."@en .
+
+:recordedAt
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "recorded at"@en ;
+  rdfs:comment "Timestamp when a fact or evidence record was recorded."@en .
+
+:occurredAt
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "occurred at"@en ;
+  rdfs:comment "Timestamp when an event, attempt, or delivery outcome occurred."@en .
+
+:capturedAt
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain :RecipientConsent ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "captured at"@en ;
+  rdfs:comment "Timestamp when consent or lawful-basis evidence was captured."@en .
+
+:policyVersion
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:string ;
+  rdfs:label "policy version"@en ;
+  rdfs:comment "Policy, terms, or notice version associated with consent, legal basis, suppression, or retention."@en .
+
+:provenance
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:string ;
+  rdfs:label "provenance"@en ;
+  rdfs:comment "Human-readable provenance string for imports, operator actions, forms, or system events."@en .
+
+:providerMessageId
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:string ;
+  rdfs:label "provider message id"@en ;
+  rdfs:comment "Provider-side message identifier for an attempt or delivery event."@en .
+
+:providerRecipientId
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:string ;
+  rdfs:label "provider recipient id"@en ;
+  rdfs:comment "Provider-side recipient identifier for an attempt or delivery event."@en .
+
+:retentionPeriod
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain rdfs:Resource ;
+  rdfs:range xsd:duration ;
+  rdfs:label "retention period"@en ;
+  rdfs:comment "Duration for which a fact, evidence record, or communication event should be retained."@en .
+
+#################################################################
+#    Controlled individuals
+#################################################################
+
+:EmailChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "Email channel"@en .
+
+:SmsChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "SMS channel"@en .
+
+:VoiceCallChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "Voice call channel"@en .
+
+:PostalMailChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "Postal mail channel"@en .
+
+:PushNotificationChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "Push notification channel"@en .
+
+:WebhookChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "Webhook channel"@en .
+
+:InAppNotificationChannel
+  rdf:type owl:NamedIndividual, :CommunicationChannel ;
+  rdfs:label "In-app notification channel"@en .
+
+:MarketingPurpose
+  rdf:type owl:NamedIndividual, :CommunicationPurpose ;
+  rdfs:label "Marketing purpose"@en .
+
+:TransactionalPurpose
+  rdf:type owl:NamedIndividual, :CommunicationPurpose ;
+  rdfs:label "Transactional purpose"@en .
+
+:OperationalPurpose
+  rdf:type owl:NamedIndividual, :CommunicationPurpose ;
+  rdfs:label "Operational purpose"@en .
+
+:LegalNoticePurpose
+  rdf:type owl:NamedIndividual, :CommunicationPurpose ;
+  rdfs:label "Legal notice purpose"@en .
+
+:SupportPurpose
+  rdf:type owl:NamedIndividual, :CommunicationPurpose ;
+  rdfs:label "Support purpose"@en .
+
+:SecurityPurpose
+  rdf:type owl:NamedIndividual, :CommunicationPurpose ;
+  rdfs:label "Security purpose"@en .
+
+:NaturalPersonCategory
+  rdf:type owl:NamedIndividual, :RecipientLegalCategory ;
+  rdfs:label "Natural person category"@en .
+
+:EmployeeCategory
+  rdf:type owl:NamedIndividual, :RecipientLegalCategory ;
+  rdfs:label "Employee category"@en .
+
+:OrganizationCategory
+  rdf:type owl:NamedIndividual, :RecipientLegalCategory ;
+  rdfs:label "Organization category"@en .
+
+:TechnicalServiceCategory
+  rdf:type owl:NamedIndividual, :RecipientLegalCategory ;
+  rdfs:label "Technical service category"@en .
+
+:GroupMailboxCategory
+  rdf:type owl:NamedIndividual, :RecipientLegalCategory ;
+  rdfs:label "Group mailbox category"@en .
+
+:PublicAuthorityCategory
+  rdf:type owl:NamedIndividual, :RecipientLegalCategory ;
+  rdfs:label "Public authority category"@en .
+
+:ConsentLegalBasis
+  rdf:type owl:NamedIndividual, :LegalBasis ;
+  rdfs:label "Consent legal basis"@en .
+
+:ContractLegalBasis
+  rdf:type owl:NamedIndividual, :LegalBasis ;
+  rdfs:label "Contract legal basis"@en .
+
+:LegitimateInterestLegalBasis
+  rdf:type owl:NamedIndividual, :LegalBasis ;
+  rdfs:label "Legitimate interest legal basis"@en .
+
+:LegalObligationLegalBasis
+  rdf:type owl:NamedIndividual, :LegalBasis ;
+  rdfs:label "Legal obligation legal basis"@en .
+
+:EmployeeOperationalLegalBasis
+  rdf:type owl:NamedIndividual, :LegalBasis ;
+  rdfs:label "Employee operational legal basis"@en .
+
+:TechnicalServiceLegalBasis
+  rdf:type owl:NamedIndividual, :LegalBasis ;
+  rdfs:label "Technical service legal basis"@en .
+
+:ActiveMembership
+  rdf:type owl:NamedIndividual, :MembershipStatus ;
+  rdfs:label "Active membership"@en .
+
+:InactiveMembership
+  rdf:type owl:NamedIndividual, :MembershipStatus ;
+  rdfs:label "Inactive membership"@en .
+
+:ConsentWithdrawnMembership
+  rdf:type owl:NamedIndividual, :MembershipStatus ;
+  rdfs:label "Consent withdrawn membership"@en .
+
+:SuppressedMembership
+  rdf:type owl:NamedIndividual, :MembershipStatus ;
+  rdfs:label "Suppressed membership"@en .
+
+:Pending
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Pending"@en .
+
+:Sent
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Sent"@en .
+
+:Delivered
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Delivered"@en .
+
+:Bounced
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Bounced"@en .
+
+:Complained
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Complained"@en .
+
+:Suppressed
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Suppressed"@en .
+
+:Unsubscribed
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Unsubscribed"@en .
+
+:Failed
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Failed"@en .
+
+:Skipped
+  rdf:type owl:NamedIndividual, :DeliveryStatus ;
+  rdfs:label "Skipped"@en .
+
+#################################################################
+#    SHACL node shapes
+#################################################################
+
+:RecipientShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :Recipient ;
+  sh:property [
+    sh:path :representedResource ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:name "Represented resource"@en
+  ] .
+
+:EmailRecipientShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :EmailRecipient ;
+  sh:property [
+    sh:path :hasEndpoint ;
+    sh:minCount 1 ;
+    sh:class :EmailEndpoint ;
+    sh:name "Email endpoint"@en
+  ] .
+
+:CommunicationEndpointShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :CommunicationEndpoint ;
+  sh:property [
+    sh:path :endpointChannel ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :CommunicationChannel ;
+    sh:name "Endpoint channel"@en
+  ] ;
+  sh:property [
+    sh:path :endpointAddress ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:name "Endpoint address"@en
+  ] .
+
+:CommunicationProgramShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :CommunicationProgram ;
+  sh:property [
+    sh:path :programChannel ;
+    sh:minCount 1 ;
+    sh:class :CommunicationChannel ;
+    sh:name "Program channel"@en
+  ] ;
+  sh:property [
+    sh:path :programPurpose ;
+    sh:minCount 1 ;
+    sh:class :CommunicationPurpose ;
+    sh:name "Program purpose"@en
+  ] .
+
+:RecipientCollectionShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :RecipientCollection ;
+  sh:property [
+    sh:path :allowedChannel ;
+    sh:class :CommunicationChannel ;
+    sh:name "Allowed channel"@en
+  ] ;
+  sh:property [
+    sh:path :collectionPurpose ;
+    sh:class :CommunicationPurpose ;
+    sh:name "Collection purpose"@en
+  ] .
+
+:MembershipShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :Membership ;
+  sh:property [
+    sh:path :membershipCollection ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :RecipientCollection ;
+    sh:name "Membership collection"@en
+  ] ;
+  sh:property [
+    sh:path :membershipRecipient ;
+    sh:maxCount 1 ;
+    sh:class :Recipient ;
+    sh:name "Membership recipient"@en
+  ] ;
+  sh:property [
+    sh:path :membershipEndpoint ;
+    sh:maxCount 1 ;
+    sh:class :CommunicationEndpoint ;
+    sh:name "Membership endpoint"@en
+  ] ;
+  sh:property [
+    sh:path :membershipStatus ;
+    sh:maxCount 1 ;
+    sh:class :MembershipStatus ;
+    sh:name "Membership status"@en
+  ] .
+
+:RecipientLegalClassificationShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :RecipientLegalClassification ;
+  sh:property [
+    sh:path :legalClassificationRecipient ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :Recipient ;
+    sh:name "Recipient"@en
+  ] ;
+  sh:property [
+    sh:path :legalJurisdiction ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:name "Legal jurisdiction"@en
+  ] ;
+  sh:property [
+    sh:path :legalCategory ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :RecipientLegalCategory ;
+    sh:name "Legal category"@en
+  ] .
+
+:RecipientConsentShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :RecipientConsent ;
+  sh:property [
+    sh:path :consentMembership ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :Membership ;
+    sh:name "Consent membership"@en
+  ] ;
+  sh:property [
+    sh:path :legalBasis ;
+    sh:minCount 1 ;
+    sh:class :LegalBasis ;
+    sh:name "Legal basis"@en
+  ] ;
+  sh:property [
+    sh:path :capturedAt ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:name "Captured at"@en
+  ] .
+
+:CommunicationAttemptShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :CommunicationAttempt ;
+  sh:property [
+    sh:path :communicationProgram ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :CommunicationProgram ;
+    sh:name "Communication program"@en
+  ] ;
+  sh:property [
+    sh:path :attemptRecipient ;
+    sh:maxCount 1 ;
+    sh:class :Recipient ;
+    sh:name "Attempt recipient"@en
+  ] ;
+  sh:property [
+    sh:path :attemptEndpoint ;
+    sh:maxCount 1 ;
+    sh:class :CommunicationEndpoint ;
+    sh:name "Attempt endpoint"@en
+  ] .
+
+:DeliveryEventShape
+  rdf:type sh:NodeShape ;
+  sh:targetClass :DeliveryEvent ;
+  sh:property [
+    sh:path :deliveryAttempt ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :CommunicationAttempt ;
+    sh:name "Delivery attempt"@en
+  ] ;
+  sh:property [
+    sh:path :deliveryStatus ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class :DeliveryStatus ;
+    sh:name "Delivery status"@en
+  ] ;
+  sh:property [
+    sh:path :occurredAt ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:name "Occurred at"@en
+  ] .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/communication#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/communication#ActiveMembership>
+    rdfs:comment "The membership-status value for a membership currently classified as active. Channel and purpose eligibility still depend on the applicable program and policy."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Audience>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#AudienceMembership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Bounced>
+    rdfs:comment "The delivery-status value recording that an attempt was reported as bounced."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CampaignAudienceSnapshot>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CampaignRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationAttempt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationAttemptShape>
+    rdfs:label "Communication Attempt Shape"@en ;
+    rdfs:comment "Validates a communication attempt's program, recipient, and endpoint references."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationChannel>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationEndpointShape>
+    rdfs:label "Communication Endpoint Shape"@en ;
+    rdfs:comment "Validates a communication endpoint's channel and address literals."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationProgram>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationProgramShape>
+    rdfs:label "Communication Program Shape"@en ;
+    rdfs:comment "Validates a communication program's declared channel and purpose."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#CommunicationPurpose>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Complained>
+    rdfs:comment "The delivery-status value recording a complaint associated with an attempt."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#ConsentLegalBasis>
+    rdfs:comment "A controlled legal-basis value for recording a classification based on consent. The value records the asserted classification; selecting it does not itself establish permission to communicate."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#ConsentWithdrawnMembership>
+    rdfs:comment "The membership-status value recording that consent associated with the membership has been withdrawn."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#ContractLegalBasis>
+    rdfs:comment "A controlled legal-basis value for recording a classification based on a contract. The value records the asserted classification; selecting it does not itself establish permission to communicate."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Delivered>
+    rdfs:comment "The delivery-status value recording that an attempt was reported as delivered."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#DeliveryEvent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#DeliveryEventShape>
+    rdfs:label "Delivery Event Shape"@en ;
+    rdfs:comment "Validates a delivery event's attempt, delivery status, and occurrence time."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#DeliveryStatus>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#EmailChannel>
+    rdfs:comment "The communication-channel value identifying email transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#EmailEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#EmailRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#EmailRecipientShape>
+    rdfs:label "Email Recipient Shape"@en ;
+    rdfs:comment "Validates the endpoint constraints declared for an email recipient."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#EmployeeCategory>
+    rdfs:comment "The recipient legal-category value identifying an employee in a recorded jurisdictional classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#EmployeeOperationalLegalBasis>
+    rdfs:comment "A controlled legal-basis value for recording a classification based on an employee operational context. The value records the asserted classification; selecting it does not itself establish permission to communicate."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Failed>
+    rdfs:comment "The delivery-status value recording that an attempt failed."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#GroupMailboxCategory>
+    rdfs:comment "The recipient legal-category value identifying a shared or group mailbox in a recorded jurisdictional classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#GroupRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#HumanRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#InAppEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#InAppNotificationChannel>
+    rdfs:comment "The communication-channel value identifying an in-application notification or message-center transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#InAppRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#InactiveMembership>
+    rdfs:comment "The membership-status value for a membership currently classified as inactive."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#LegalBasis>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#LegalNoticePurpose>
+    rdfs:comment "The communication-purpose value identifying communications classified as legal notices."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#LegalObligationLegalBasis>
+    rdfs:comment "A controlled legal-basis value for recording a classification based on a legal obligation. The value records the asserted classification; selecting it does not itself establish permission to communicate."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#LegitimateInterestLegalBasis>
+    rdfs:comment "A controlled legal-basis value for recording a classification based on legitimate interests. The value records the asserted classification; selecting it does not itself establish permission to communicate."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#ListMembership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MailboxRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MarketingProgram>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MarketingPurpose>
+    rdfs:comment "The communication-purpose value identifying marketing communications."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Membership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MembershipDerivationEvidence>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MembershipEvent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MembershipEvidence>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MembershipShape>
+    rdfs:label "Membership Shape"@en ;
+    rdfs:comment "Validates the collection, recipient or endpoint, and status recorded for a membership."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#MembershipStatus>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#NaturalPersonCategory>
+    rdfs:comment "The recipient legal-category value identifying a natural person in a recorded jurisdictional classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#OperationalPurpose>
+    rdfs:comment "The communication-purpose value identifying operational communications."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#OrganizationCategory>
+    rdfs:comment "The recipient legal-category value identifying an organization in a recorded jurisdictional classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#OrganizationRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Pending>
+    rdfs:comment "The delivery-status value recording an attempt awaiting further processing or an outcome."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PostalEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PostalMailChannel>
+    rdfs:comment "The communication-channel value identifying postal-mail transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PostalRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PublicAuthorityCategory>
+    rdfs:comment "The recipient legal-category value identifying a public authority in a recorded jurisdictional classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PushEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PushNotificationChannel>
+    rdfs:comment "The communication-channel value identifying push-notification transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#PushRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Recipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientCollection>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientCollectionShape>
+    rdfs:label "Recipient Collection Shape"@en ;
+    rdfs:comment "Validates a recipient collection's declared channels and purpose."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientConsent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientConsentShape>
+    rdfs:label "Recipient Consent Shape"@en ;
+    rdfs:comment "Validates recorded consent or legal-basis evidence for a membership, including its capture time. Structural validity does not determine legal sufficiency."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientConsentWithdrawal>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientLegalCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientLegalClassification>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientLegalClassificationShape>
+    rdfs:label "Recipient Legal Classification Shape"@en ;
+    rdfs:comment "Validates a recipient's recorded jurisdiction and legal category. Structural validity does not establish the correctness of that legal classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientList>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientShape>
+    rdfs:label "Recipient Shape"@en ;
+    rdfs:comment "Validates the resource represented by a communication recipient."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientSuppression>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#RecipientTag>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#SecurityPurpose>
+    rdfs:comment "The communication-purpose value identifying security communications."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Sent>
+    rdfs:comment "The delivery-status value recording that an attempt was sent, separately from evidence of delivery."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#ServiceRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Skipped>
+    rdfs:comment "The delivery-status value recording that an intended attempt was skipped rather than sent."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#SmsChannel>
+    rdfs:comment "The communication-channel value identifying SMS transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#SmsEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#SmsRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#SupportPurpose>
+    rdfs:comment "The communication-purpose value identifying support communications."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Suppressed>
+    rdfs:comment "The delivery-status value recording that an attempt was suppressed by a policy or suppression decision."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#SuppressedMembership>
+    rdfs:comment "The membership-status value recording that communication under the membership is suppressed."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#TagAssignment>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#TechnicalServiceCategory>
+    rdfs:comment "The recipient legal-category value identifying a technical service in a recorded jurisdictional classification."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#TechnicalServiceLegalBasis>
+    rdfs:comment "A controlled legal-basis value for recording a classification based on a technical-service context. The value records the asserted classification; selecting it does not itself establish permission to communicate."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#TransactionalPurpose>
+    rdfs:comment "The communication-purpose value identifying communications associated with a transaction."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#Unsubscribed>
+    rdfs:comment "The delivery-status value recording an unsubscribe event associated with an attempt."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#VoiceCallChannel>
+    rdfs:comment "The communication-channel value identifying voice-call transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#VoiceEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#VoiceRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#WebhookChannel>
+    rdfs:comment "The communication-channel value identifying a webhook or machine-to-machine callback transport."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#WebhookEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#WebhookRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#allowedChannel>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#attemptEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#attemptRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#campaignAudience>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#capturedAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#collectionPurpose>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#communicationProgram>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#consentMembership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#deliveryAttempt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#deliveryStatus>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#derivedFromMembership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#effectiveFrom>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#effectiveThrough>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#endpointAddress>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#endpointChannel>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#evidenceCollection>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#evidenceSource>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#hasDeliveryEvent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#hasEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#hasMembership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#jurisdictionCode>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#legalBasis>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#legalCategory>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#legalClassificationRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#legalJurisdiction>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#membershipCollection>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#membershipEndpoint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#membershipEvent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#membershipEvidence>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#membershipRecipient>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#membershipStatus>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#occurredAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#policyVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#programChannel>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#programPurpose>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#provenance>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#providerMessageId>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#providerRecipientId>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#recordedAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#representedResource>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#retentionPeriod>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#retentionPolicy>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#suppressionMembership>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .
+
+<https://ekgf.org/ontology/communication#withdrawnConsent>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/communication#> .

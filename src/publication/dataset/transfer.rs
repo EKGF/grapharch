@@ -3,7 +3,7 @@ use {
     anyhow::{Result, ensure},
     oxigraph::io::{RdfFormat, RdfParser},
     std::{
-        io::{self, BufReader, Seek, SeekFrom},
+        io::{self, BufReader, BufWriter, Seek, SeekFrom, Write},
         path::PathBuf,
     },
     uuid::Uuid,
@@ -27,7 +27,7 @@ impl Dataset {
                 // Audited blocking boundary: serializer and file writes run on
                 // a Tokio blocking worker, without
                 // materializing the dataset in memory.
-                let file = store.dump_to_writer(RdfFormat::NQuads, file)?;
+                let file = dump_to_writer(store, file)?;
                 file.sync_all()?;
                 Ok(())
             })
@@ -75,5 +75,83 @@ impl Dataset {
             Ok(())
         })
         .await
+    }
+}
+
+fn dump_to_writer<W: Write>(
+    store: &oxigraph::store::Store,
+    writer: W,
+) -> Result<W> {
+    let writer = BufWriter::with_capacity(64 * 1024, writer);
+    let writer = store.dump_to_writer(RdfFormat::NQuads, writer)?;
+    Ok(writer.into_inner().map_err(|error| error.into_error())?)
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::*,
+        oxrdf::{GraphName, Literal, NamedNode, Quad},
+    };
+
+    #[derive(Default)]
+    struct CountingWriter {
+        calls: usize,
+        bytes: usize,
+    }
+    impl Write for CountingWriter {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            self.calls += 1;
+            self.bytes += bytes.len();
+            Ok(bytes.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> { Ok(()) }
+    }
+
+    #[test]
+    fn large_rdf_literals_are_coalesced_into_bounded_file_writes() -> Result<()>
+    {
+        let store = oxigraph::store::Store::new()?;
+        store.insert(
+            Quad::new(
+                NamedNode::new("urn:test:asset")?,
+                NamedNode::new("urn:test:body")?,
+                Literal::new_simple_literal("x".repeat(256 * 1024)),
+                GraphName::DefaultGraph,
+            )
+            .as_ref(),
+        )?;
+        let output = dump_to_writer(&store, CountingWriter::default())?;
+        assert!(output.bytes >= 256 * 1024);
+        assert!(
+            output.calls <= 8,
+            "256 KiB literal required {} file writes",
+            output.calls
+        );
+        Ok(())
+    }
+    #[test]
+    fn errors_flushing_the_final_export_buffer_are_reported() -> Result<()> {
+        struct BrokenWriter;
+        impl Write for BrokenWriter {
+            fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+                Err(io::Error::other("export sink failed"))
+            }
+
+            fn flush(&mut self) -> io::Result<()> { Ok(()) }
+        }
+        let store = oxigraph::store::Store::new()?;
+        store.insert(
+            Quad::new(
+                NamedNode::new("urn:test:asset")?,
+                NamedNode::new("urn:test:body")?,
+                Literal::new_simple_literal("small buffered value"),
+                GraphName::DefaultGraph,
+            )
+            .as_ref(),
+        )?;
+        assert!(dump_to_writer(&store, BrokenWriter).is_err());
+        Ok(())
     }
 }

@@ -1,3 +1,6 @@
+#[path = "support/mod.rs"]
+mod specification_assertions;
+
 #[path = "../examples/support/mod.rs"]
 mod support;
 
@@ -137,7 +140,7 @@ async fn specification_renders_publication_metadata_and_numbered_navigation_from
     let toc_end = html[toc_start..].find("</nav>").unwrap() + toc_start;
     assert!(!html[toc_start..toc_end].contains("Abstract"));
     assert!(!html[toc_start..toc_end].contains("Status of This Document"));
-    assert!(!html.contains("<script"));
+    specification_assertions::assert_specification_scripts(&html);
     assert!(!html.contains("W3C Recommendation"));
     assert!(!html.contains("https://www.w3.org/StyleSheets"));
     assert!(html.contains("&lt;example&gt;"));

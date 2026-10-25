@@ -1,0 +1,428 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+@prefix artpub: <https://ekgf.org/ontology/artifact-publication#> .
+@prefix lifecycle: <https://ekgf.org/ontology/lifecycle#> .
+@prefix ekg-artpub: <https://ekgf.org/ontology/artifact-publication#> .
+@base <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#>
+    rdf:type owl:Ontology ;
+    sh:declare [
+        sh:prefix "ekg-artpub" ;
+        sh:namespace "https://ekgf.org/ontology/artifact-publication#"^^xsd:anyURI
+    ] ;
+    rdfs:label "The EKG Artifact Publication Ontology"@en ;
+    rdfs:comment "How semantic artifacts are published, either as a family or as explicitly selected artifact references: profiles configure generation, targets identify destinations, runs generate outputs, releases identify versions and approvals record authority decisions about exact releases. Family grouping is optional. The state of a run and of a release is described with the Lifecycle Ontology. SHACL shapes validate the scope and approval records."@en ;
+    owl:imports artgov: ,
+                lifecycle: .
+
+#################################################################
+#    Classes
+#################################################################
+
+artpub:PublicationProfile rdf:type owl:Class ;
+    rdfs:label "Publication profile"@en ;
+    rdfs:comment "Branch-scoped generator configuration for publishing either one family or one or more explicit artifact references, including section ordering, render policy, validation gates and output targets. Retain the configuration referenced by a release; changed configuration requires a new profile identity."@en .
+
+artpub:PublicationTarget rdf:type owl:Class ;
+    rdfs:label "Publication target"@en ;
+    rdfs:comment "A configured destination for a generated publication output, such as a website, PDF, RDF download, archive or package."@en .
+
+artpub:PublicationRun rdf:type owl:Class ;
+    rdfs:label "Publication run"@en ;
+    rdfs:comment "An execution that generates publication artifacts for the scope selected by a profile, branch and input commit. The scope may be a family or explicit artifact references. How far it has come is its lifecycle state; by default a run follows the execution lifecycle."@en .
+
+artpub:PublicationArtifact rdf:type owl:Class ;
+    rdfs:label "Publication artifact"@en ;
+    rdfs:comment "A generated output of a publication run, such as a website bundle, PDF, RDF export, changelog, diff report or archive."@en .
+
+artpub:StandardsRelease rdf:type owl:Class ;
+    owl:disjointWith artgov:Family ,
+                     artgov:Reference ,
+                     artpub:PublicationProfile ,
+                     artpub:PublicationRun ,
+                     artpub:PublicationArtifact ;
+    rdfs:label "Standards release"@en ;
+    rdfs:comment "A versioned snapshot of either one family or one or more explicit artifact references. Its identity, scope, version and content provenance are immutable; changed content requires a new release identity and new approvals. A release may record a branch, input commit, publication run and generated artifacts where available, but externally produced releases do not require a local generator run. Its lifecycle state may change from candidate to published, superseded or withdrawn. A version label is scoped to the release's publication context, not a global identifier. Family membership is optional and is not inferred from the references in a release."@en .
+
+artpub:ReleaseApproval rdf:type owl:Class ;
+    owl:disjointWith artgov:Family ,
+                     artgov:Reference ,
+                     artpub:StandardsRelease ,
+                     artpub:PublicationProfile ,
+                     artpub:PublicationRun ;
+    rdfs:label "Release approval"@en ;
+    rdfs:comment "An affirmative approval decision by one authority about one exact standards release at a recorded time. Several authorities can approve the same release through separate records. An approval does not extend to other releases or future family members, and does not itself publish the release. Supporting evidence can be linked with rdfs:seeAlso. Required approvers and any withdrawal of approval are matters for the applicable governance policy; a governing or publishing role alone does not establish that approval occurred."@en .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+artpub:publishesFamily rdf:type owl:ObjectProperty ;
+    rdfs:domain artpub:PublicationProfile ;
+    rdfs:range artgov:Family ;
+    rdfs:label "Publishes family"@en ;
+    rdfs:comment "Links a publication profile to the one family that it publishes. Optional: a profile can instead select artifacts individually with publishesReference."@en .
+
+artpub:publishesReference rdf:type owl:ObjectProperty ;
+    rdfs:domain artpub:PublicationProfile ;
+    rdfs:range artgov:Reference ;
+    rdfs:label "Publishes reference"@en ;
+    rdfs:comment "Selects an artifact by its stable reference for publication without a family. A profile can select several references. This does not create a family or assert family membership."@en .
+
+artpub:releaseFamily rdf:type owl:ObjectProperty ;
+    rdfs:domain artpub:StandardsRelease ;
+    rdfs:range artgov:Family ;
+    rdfs:label "Release family"@en ;
+    rdfs:comment "Identifies the one family whose version this release records. Optional: an ungrouped release selects artifacts with releaseReference instead. This is recorded explicitly, so editing a publication profile cannot change an existing release's scope."@en .
+
+artpub:releaseReference rdf:type owl:ObjectProperty ;
+    rdfs:domain artpub:StandardsRelease ;
+    rdfs:range artgov:Reference ;
+    rdfs:label "Release reference"@en ;
+    rdfs:comment "Identifies an artifact included in a release without family grouping. Each selected artifact is represented by a stable reference; the release supplies its version and content provenance. A release can select several references. These are source artifacts, distinct from generated outputs linked by publicationArtifact."@en .
+
+artpub:approvesRelease rdf:type owl:ObjectProperty ;
+    rdfs:domain artpub:ReleaseApproval ;
+    rdfs:range artpub:StandardsRelease ;
+    rdfs:label "Approves release"@en ;
+    rdfs:comment "Identifies the exact release approved by this decision. Approval is never attached to the enduring family or artifact reference."@en .
+
+artpub:approvedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain artpub:ReleaseApproval ;
+    rdfs:range artgov:Authority ;
+    rdfs:label "Approved by"@en ;
+    rdfs:comment "Identifies the authority role that issued this approval. The organization playing the role has its own identity. A separate decision record is used for each approving authority."@en .
+
+artpub:publicationProfile rdf:type owl:ObjectProperty ;
+    rdfs:range artpub:PublicationProfile ;
+    rdfs:label "Publication profile"@en ;
+    rdfs:comment "Links a publication run, target, artifact or release to the profile that governed generation."@en .
+
+artpub:publicationTarget rdf:type owl:ObjectProperty ;
+    rdfs:range artpub:PublicationTarget ;
+    rdfs:label "Publication target"@en ;
+    rdfs:comment "Links a publication profile, run or artifact to a configured output target."@en .
+
+artpub:publicationArtifact rdf:type owl:ObjectProperty ;
+    rdfs:range artpub:PublicationArtifact ;
+    rdfs:label "Publication artifact"@en ;
+    rdfs:comment "Links a publication run or a standards release to a generated publication artifact."@en .
+
+artpub:publicationRelease rdf:type owl:ObjectProperty ;
+    rdfs:range artpub:StandardsRelease ;
+    rdfs:label "Publication release"@en ;
+    rdfs:comment "Links a publication run or a generated artifact to the standards release that incorporated it."@en .
+
+artpub:publicationRun rdf:type owl:ObjectProperty ;
+    rdfs:range artpub:PublicationRun ;
+    rdfs:label "Publication run"@en ;
+    rdfs:comment "Links a standards release or a generated artifact to the publication run that produced it."@en .
+
+artpub:publicationBranch rdf:type owl:ObjectProperty ;
+    rdfs:range rdfs:Resource ;
+    rdfs:label "Publication branch"@en ;
+    rdfs:comment "Links a publication run or a standards release to the branch whose commit was published."@en .
+
+#################################################################
+#    Data Properties
+#################################################################
+
+artpub:inputCommitCid rdf:type owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "Input commit CID"@en ;
+    rdfs:comment "Content identifier of the branch commit used as input for a publication run or release."@en .
+
+artpub:generatorVersion rdf:type owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "Generator version"@en ;
+    rdfs:comment "Version of the publication generator used by a publication profile, run, artifact or release."@en .
+
+artpub:artifactUrl rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationArtifact ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Artifact URL"@en ;
+    rdfs:comment "Stable URL where a generated publication artifact can be read."@en .
+
+artpub:artifactMediaType rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationArtifact ;
+    rdfs:range xsd:string ;
+    rdfs:label "Artifact media type"@en ;
+    rdfs:comment "Media type of a generated publication artifact, such as text/html, application/pdf or text/turtle."@en .
+
+artpub:artifactChecksum rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationArtifact ;
+    rdfs:range xsd:string ;
+    rdfs:label "Artifact checksum"@en ;
+    rdfs:comment "Checksum or digest of a generated publication artifact."@en .
+
+artpub:targetUrl rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationTarget ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "Target URL"@en ;
+    rdfs:comment "Base URL or destination URL of a publication target."@en .
+
+artpub:targetKind rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationTarget ;
+    rdfs:range xsd:string ;
+    rdfs:label "Target kind"@en ;
+    rdfs:comment "Kind of publication target, such as website, pdf, rdf-download, archive or package."@en .
+
+artpub:releaseVersion rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:StandardsRelease ;
+    rdfs:range xsd:string ;
+    rdfs:label "Release version"@en ;
+    rdfs:comment "Public version label of a standards release, whether it releases a family or explicitly selected artifact references. The label belongs to the release, not the enduring family or reference, and need not be globally unique."@en .
+
+artpub:approvedAt rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:ReleaseApproval ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "Approved at"@en ;
+    rdfs:comment "Timestamp at which the authority approved the identified release. This is distinct from when it was generated or published."@en .
+
+artpub:publicationStartedAt rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationRun ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "Publication started at"@en ;
+    rdfs:comment "Timestamp at which a publication run started."@en .
+
+artpub:publicationCompletedAt rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:PublicationRun ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "Publication completed at"@en ;
+    rdfs:comment "Timestamp at which a publication run completed."@en .
+
+artpub:releasedAt rdf:type owl:DatatypeProperty ;
+    rdfs:domain artpub:StandardsRelease ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "Released at"@en ;
+    rdfs:comment "Timestamp at which a standards release was published."@en .
+
+#################################################################
+#    Validation shapes
+#################################################################
+
+artpub:PublicationProfileShape rdf:type sh:NodeShape ;
+    sh:targetClass artpub:PublicationProfile ;
+    sh:targetSubjectsOf artpub:publishesFamily , artpub:publishesReference ;
+    sh:targetObjectsOf artpub:publicationProfile ;
+    sh:class artpub:PublicationProfile ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:path artpub:publishesFamily ;
+                  sh:maxCount 1 ; sh:class artgov:Family ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path artpub:publishesReference ;
+                  sh:class artgov:Reference ; sh:nodeKind sh:IRI ] ;
+    sh:xone (
+        [ sh:property [ sh:path artpub:publishesFamily ; sh:minCount 1 ] ;
+          sh:property [ sh:path artpub:publishesReference ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path artpub:publishesFamily ; sh:maxCount 0 ] ;
+          sh:property [ sh:path artpub:publishesReference ; sh:minCount 1 ] ]
+    ) ;
+    sh:message "A publication profile selects either one family or one or more artifact references."@en .
+
+artpub:StandardsReleaseShape rdf:type sh:NodeShape ;
+    sh:targetClass artpub:StandardsRelease ;
+    sh:targetSubjectsOf artpub:releaseFamily , artpub:releaseReference , artpub:releaseVersion ;
+    sh:targetObjectsOf artpub:approvesRelease , artpub:publicationRelease ;
+    sh:class artpub:StandardsRelease ;
+    sh:nodeKind sh:IRI ;
+    sh:not [ sh:or ( [ sh:class artgov:Family ]
+                     [ sh:class artgov:Reference ]
+                     [ sh:class artpub:PublicationProfile ]
+                     [ sh:class artpub:PublicationRun ]
+                     [ sh:class artpub:PublicationArtifact ]
+                     [ sh:class artpub:ReleaseApproval ] ) ] ;
+    sh:property [ sh:path artpub:releaseFamily ;
+                  sh:maxCount 1 ; sh:class artgov:Family ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path artpub:releaseReference ;
+                  sh:class artgov:Reference ; sh:nodeKind sh:IRI ] ;
+    sh:xone (
+        [ sh:property [ sh:path artpub:releaseFamily ; sh:minCount 1 ] ;
+          sh:property [ sh:path artpub:releaseReference ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path artpub:releaseFamily ; sh:maxCount 0 ] ;
+          sh:property [ sh:path artpub:releaseReference ; sh:minCount 1 ] ]
+    ) ;
+    sh:property [ sh:path artpub:releaseVersion ;
+                  sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+    sh:property [ sh:path artpub:inputCommitCid ;
+                  sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+    sh:property [ sh:path artpub:publicationProfile ;
+                  sh:maxCount 1 ; sh:class artpub:PublicationProfile ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path artpub:publicationRun ;
+                  sh:maxCount 1 ; sh:class artpub:PublicationRun ; sh:nodeKind sh:IRI ;
+                  sh:node [
+                      sh:property [ sh:path artpub:inputCommitCid ;
+                                    sh:minCount 1 ; sh:maxCount 1 ;
+                                    sh:datatype xsd:string ; sh:minLength 1 ] ;
+                      sh:property [ sh:path artpub:publicationProfile ;
+                                    sh:minCount 1 ; sh:maxCount 1 ;
+                                    sh:class artpub:PublicationProfile ; sh:nodeKind sh:IRI ]
+                  ] ] ;
+    sh:sparql [
+        sh:message "A release and every linked publication profile must select the same family or the same artifact references."@en ;
+        sh:select """
+            PREFIX artpub: <https://ekgf.org/ontology/artifact-publication#>
+            SELECT $this WHERE {
+                $this (artpub:publicationProfile|artpub:publicationRun/artpub:publicationProfile) ?profile .
+                {
+                    { $this artpub:releaseFamily ?scope .
+                      FILTER NOT EXISTS { ?profile artpub:publishesFamily ?scope } }
+                    UNION
+                    { ?profile artpub:publishesFamily ?scope .
+                      FILTER NOT EXISTS { $this artpub:releaseFamily ?scope } }
+                    UNION
+                    { $this artpub:releaseReference ?scope .
+                      FILTER NOT EXISTS { ?profile artpub:publishesReference ?scope } }
+                    UNION
+                    { ?profile artpub:publishesReference ?scope .
+                      FILTER NOT EXISTS { $this artpub:releaseReference ?scope } }
+                }
+            }
+        """
+    ] ;
+    sh:sparql [
+        sh:message "A release linked to a publication run must record the same input commit."@en ;
+        sh:select """
+            PREFIX artpub: <https://ekgf.org/ontology/artifact-publication#>
+            SELECT $this WHERE {
+                $this artpub:publicationRun/artpub:inputCommitCid ?commit .
+                FILTER NOT EXISTS { $this artpub:inputCommitCid ?commit }
+            }
+        """
+    ] .
+
+artpub:ReleaseApprovalShape rdf:type sh:NodeShape ;
+    sh:targetClass artpub:ReleaseApproval ;
+    sh:targetSubjectsOf artpub:approvesRelease , artpub:approvedBy , artpub:approvedAt ;
+    sh:class artpub:ReleaseApproval ;
+    sh:nodeKind sh:IRI ;
+    sh:not [ sh:or ( [ sh:class artgov:Family ]
+                     [ sh:class artgov:Reference ]
+                     [ sh:class artpub:StandardsRelease ]
+                     [ sh:class artpub:PublicationProfile ]
+                     [ sh:class artpub:PublicationRun ] ) ] ;
+    sh:property [ sh:path artpub:approvesRelease ;
+                  sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:class artpub:StandardsRelease ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path artpub:approvedBy ;
+                  sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:class artgov:Authority ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path artpub:approvedAt ;
+                  sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/artifact-publication#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/artifact-publication#PublicationArtifact>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#PublicationProfile>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#PublicationProfileShape>
+    rdfs:label "Publication Profile Shape"@en ;
+    rdfs:comment "Validates that a publication profile explicitly selects a family or artifact references using the supported scope alternatives."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#PublicationRun>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#PublicationTarget>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#ReleaseApproval>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#ReleaseApprovalShape>
+    rdfs:label "Release Approval Shape"@en ;
+    rdfs:comment "Validates an approval record identifying the exact release approved, the approving authority, and the approval time."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#StandardsRelease>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#StandardsReleaseShape>
+    rdfs:label "Standards Release Shape"@en ;
+    rdfs:comment "Validates a standards release's family or reference scope, version label, and optional publication and content-provenance records."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#approvedAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#approvedBy>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#approvesRelease>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#artifactChecksum>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#artifactMediaType>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#artifactUrl>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#generatorVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#inputCommitCid>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationArtifact>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationBranch>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationCompletedAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationProfile>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationRelease>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationRun>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationStartedAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publicationTarget>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publishesFamily>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#publishesReference>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#releaseFamily>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#releaseReference>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#releaseVersion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#releasedAt>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#targetKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .
+
+<https://ekgf.org/ontology/artifact-publication#targetUrl>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-publication#> .

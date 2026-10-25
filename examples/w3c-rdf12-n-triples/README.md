@@ -2,7 +2,7 @@
 
 This is the primary W3C specification reference, using the unchanged published
 23 October 2026 Working Draft. `reference.yaml` pins source URLs and digests.
-The older RDF 1.1 fixture remains in `../w3c-n-triples`.
+
 
 Run `cargo run --example publish_showcase -- --w3c --keep-going`.
 The command deliberately exits with an error after producing the preview: the

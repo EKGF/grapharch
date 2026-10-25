@@ -3,6 +3,9 @@ title: PDF via Typst
 layout: default
 parent: Targets
 nav_order: 1
+grapharch:
+  subject: urn:grapharch:docs:topic:features:targets:typst
+permalink: /features/targets/typst/
 ---
 
 # Target &mdash; PDF via Typst

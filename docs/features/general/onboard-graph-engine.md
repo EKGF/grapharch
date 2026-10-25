@@ -3,6 +3,9 @@ title: Onboard Graph Engine
 layout: default
 parent: General
 nav_order: 4
+grapharch:
+  subject: urn:grapharch:docs:topic:features:general:onboard-graph-engine
+permalink: /features/general/onboard-graph-engine/
 ---
 
 # Onboard Graph Engine
@@ -14,16 +17,13 @@ integrating both input options seamlessly.
 > [!NOTE]
 > It may be necessary, as a feature, to support other graph databases
 > as well for this intermediate processing.
-> [RDFox](https://www.oxfordsemantic.tech) would be particularly useful
-> since it can be baked into the Rust program that we intend to build and
-> has ultimate speed, OWL reasoning and rule capabilities (SHACL, Datalog).
 
 PS: This is not really a feature but more like a technical design decision.
 
 ## Derived features
 
-- [ ]Support other databases as the intermediate store, not just embedded
-  databases like [[OxiGraph](https://github.com/oxigraph/oxigraph)](https://github.com/oxigraph/oxigraph) or RDFox but external databases, probably
+- [ ] Support other databases as the intermediate store, not just embedded
+  databases like [OxiGraph](https://github.com/oxigraph/oxigraph) but external databases, probably
   most realistic to narrow that down to SPARQL databases.
   Note that this intermediate store is NOT necessarily the source of
   the documentation elements but in case the source is a SPARQL database

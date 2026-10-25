@@ -1,0 +1,16 @@
+repository: "https://github.com/EKGF/dprod"
+revision: "89de8ff5c95149d79120f4062fcf5d1e0a82e641"
+scope: "DPROD ontology, SHACL shape reference, and dataset-schema worked example; not the full ReSpec specification"
+sources:
+  ontology.ttl:
+    path: "ontology/dprod/dprod-ontology.ttl"
+    sha256: "f6345ccebf354e0a720dc038afd78b8ec58f2b3768233633db733ff1461c5a0b"
+  shapes.ttl:
+    path: "ontology/dprod/dprod-shapes.ttl"
+    sha256: "63b11b814148597629b8a1d929e5cafcc5f50a1033cfba65d278c9719774fda6"
+  dataset-schema.md:
+    path: "examples/data-schema/README.md"
+    sha256: "940b22bb6207bed92b5cab6eca0c0d5da10fefd41ae391869c8e3c9b05f8c03f"
+  LICENSE.txt:
+    path: "LICENSE"
+    sha256: "c8c6d8a5df92ace2879d6dbcb84db0f6882e29840d33a88489f643704af2b88b"

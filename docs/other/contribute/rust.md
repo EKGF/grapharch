@@ -2,6 +2,9 @@
 title: "Rust Notes"
 layout: default
 parent: Contribute
+grapharch:
+  subject: urn:grapharch:docs:topic:other:contribute:rust
+permalink: /other/contribute/rust/
 ---
 
 # Rust Notes

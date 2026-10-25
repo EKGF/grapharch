@@ -235,7 +235,7 @@ async fn w3c_collection_requires_its_original_publication_url_before_opening_sto
             "--kind",
             "w3c-specification",
             "--source",
-            "examples/w3c-n-triples/source.html",
+            "examples/w3c-rdf12-n-triples/source.html",
         ])
         .env("RUST_LOG", "off")
         .output()

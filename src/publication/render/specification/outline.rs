@@ -225,18 +225,17 @@ impl Toc {
 }
 
 fn toc_label(label: &str) -> String {
-    if let Some((number, text)) = label.split_once(' ') {
-        if number
-            .chars()
-            .all(|c| c.is_ascii_digit() || c == '.' || c.is_ascii_uppercase())
-        {
-            return format!(
-                "<span class=\"toc-number\">{}</span> <span \
-                 class=\"toc-label\">{}</span>",
-                html_escape(number),
-                html_escape(text)
-            );
-        }
+    if let Some((number, text)) = label.split_once(' ') &&
+        number.chars().all(|c| {
+            c.is_ascii_digit() || c == '.' || c.is_ascii_uppercase()
+        })
+    {
+        return format!(
+            "<span class=\"toc-number\">{}</span> <span \
+             class=\"toc-label\">{}</span>",
+            html_escape(number),
+            html_escape(text)
+        );
     }
     format!(
         "<span class=\"toc-label\">{}</span>",

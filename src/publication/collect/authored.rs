@@ -9,7 +9,7 @@ use {
 };
 
 /// A Markdown-file collector supporting frontmatter and plain Markdown bodies.
-pub struct MarkdownFile(FileInput);
+pub struct MarkdownFile(FileInput, Option<PathBuf>);
 /// A SPARQL-file collector that documents statements without executing them.
 pub struct SparqlFile(FileInput);
 
@@ -18,18 +18,40 @@ struct Frontmatter {
     title:     Option<String>,
     #[serde(default)]
     grapharch: Hints,
+    #[serde(flatten)]
+    page:      super::page::PageHints,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Hints {
-    subject: Option<String>,
+    subject:          Option<String>,
+    #[serde(default)]
+    showcase_gallery: bool,
 }
 
 impl MarkdownFile {
     /// Configure one collector instance and source file.
     pub fn new(project: &str, collector: &str, path: PathBuf) -> Result<Self> {
-        Ok(Self(FileInput::new(project, collector, path)?))
+        Ok(Self(
+            FileInput::new(project, collector, path)?,
+            None,
+        ))
+    }
+
+    /// Collect page navigation and route hints relative to a documentation
+    /// root.
+    pub fn in_site(
+        project: &str,
+        collector: &str,
+        root: PathBuf,
+        path: PathBuf,
+    ) -> Result<Self> {
+        super::page::source_path(&root, &path)?;
+        Ok(Self(
+            FileInput::new(project, collector, path)?,
+            Some(root),
+        ))
     }
 
     /// Stable identity of the authored fragment.
@@ -53,7 +75,7 @@ impl Collector for MarkdownFile {
     }
 
     async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
-        let (source, revision) = self.0.authored().await?;
+        let (source, mut revision) = self.0.authored().await?;
         let normalized = source.replace("\r\n", "\n");
         let (frontmatter, body) =
             if let Some(rest) = normalized.strip_prefix("---\n") {
@@ -71,19 +93,96 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
-        let subject = frontmatter
+        let mut subject = frontmatter
             .grapharch
             .subject
             .map(NamedNode::new)
             .transpose()?;
-        let quads = self.0.description(
+        let mut metadata = Vec::new();
+        if let Some(root) = &self.1 {
+            use oxrdf::Literal;
+            let fragment =
+                subject.clone().unwrap_or_else(|| self.fragment_id());
+            let source = super::page::source_path(root, &self.0.path)?;
+            revision = format!("site-page-v7:{source}:{revision}");
+            subject = Some(fragment.clone());
+            metadata.extend(super::markdown_structure::describe(
+                &self.0, &fragment, body,
+            )?);
+            metadata.push(self.0.quad(
+                &self.fragment_id(),
+                "partOf",
+                fragment.clone(),
+            ));
+            if let Some(title) = &frontmatter.title {
+                metadata.push(oxrdf::Quad::new(
+                    fragment.clone(),
+                    NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
+                    Literal::new_simple_literal(title),
+                    oxrdf::GraphName::DefaultGraph,
+                ));
+            }
+            if frontmatter.grapharch.showcase_gallery {
+                metadata.push(self.0.quad(
+                    &fragment,
+                    "showcaseGallery",
+                    Literal::from(true),
+                ));
+            }
+            metadata.extend([
+                self.0.quad(
+                    &fragment,
+                    "type",
+                    crate::publication::term("Page"),
+                ),
+                self.0.quad(
+                    &fragment,
+                    "sourcePath",
+                    Literal::new_simple_literal(&source),
+                ),
+                self.0.quad(
+                    &fragment,
+                    "route",
+                    Literal::new_simple_literal(super::page::route(
+                        &source,
+                        frontmatter.page.permalink.as_deref(),
+                    )?),
+                ),
+                self.0.quad(
+                    &fragment,
+                    "navigationOrder",
+                    Literal::from(frontmatter.page.nav_order.unwrap_or(999)),
+                ),
+                self.0.quad(
+                    &fragment,
+                    "navigationHidden",
+                    Literal::from(frontmatter.page.nav_exclude),
+                ),
+            ]);
+            if let Some(parent) = &frontmatter.page.parent {
+                metadata.push(self.0.quad(
+                    &fragment,
+                    "parentTitle",
+                    Literal::new_simple_literal(parent),
+                ));
+            }
+            ensure!(
+                frontmatter.title.is_some(),
+                "{}: website pages require a frontmatter title",
+                source
+            );
+        }
+        let mut quads = self.0.description(
             body,
             "text/markdown",
             subject,
             frontmatter.title.as_deref(),
             &revision,
         )?;
-        stream.push(quads).await?;
+        quads.extend(metadata);
+        for quad in quads {
+            stream.write(quad).await?;
+        }
         Ok(revision)
     }
 }

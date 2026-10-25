@@ -281,15 +281,13 @@ pub(crate) fn title(element: ElementRef<'_>) -> String {
         .split_whitespace()
         .collect::<Vec<_>>()
         .join(" ");
-    if let Some((prefix, title)) = text.split_once(' ') {
-        if prefix
-            .bytes()
-            .all(|c| c.is_ascii_digit() || c == b'.' || c.is_ascii_uppercase()) &&
-            (prefix.contains('.') ||
-                prefix.bytes().all(|c| c.is_ascii_digit()))
-        {
-            return title.trim().to_owned();
-        }
+    if let Some((prefix, title)) = text.split_once(' ') &&
+        prefix.bytes().all(|c| {
+            c.is_ascii_digit() || c == b'.' || c.is_ascii_uppercase()
+        }) &&
+        (prefix.contains('.') || prefix.bytes().all(|c| c.is_ascii_digit()))
+    {
+        return title.trim().to_owned();
     }
     text
 }

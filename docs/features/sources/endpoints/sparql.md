@@ -3,6 +3,9 @@ title: SPARQL Endpoint
 layout: default
 parent: Endpoint
 nav_order: 4
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:endpoints:sparql
+permalink: /features/sources/endpoints/sparql/
 ---
 
 # Source &mdash; SPARQL endpoint

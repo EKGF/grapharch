@@ -2,6 +2,9 @@
 title: "Rust Installation Notes"
 layout: default
 parent: Contribute
+grapharch:
+  subject: urn:grapharch:docs:topic:other:contribute:rust-install
+permalink: /other/contribute/rust-install/
 ---
 
 # Rust Installation

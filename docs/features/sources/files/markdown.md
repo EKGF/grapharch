@@ -3,18 +3,93 @@ title: Markdown File
 layout: default
 parent: File
 nav_order: 2
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:files:markdown
+permalink: /features/sources/files/markdown/
 ---
 
-# Source &mdash; Markdown File
+# Markdown files
 
-Process a given Markdown file.
+Grapharch supports **GitHub-flavoured Markdown (GFM)** for authored documentation,
+including tables, task-list checkboxes, strikethrough, and GitHub-style callouts.
+Headings, paragraphs, links, emphasis, lists, and fenced code blocks are supported
+as well. The same parser configuration is used for collection and rendering.
 
-- This is a simple plugin that will extract the title,
-  description, and any other metadata from the file (or
-  from the YAML front matter) and add it to the
-  documentation model.
-- It could also be a file being referred to by a link in
-  some content derived by another source plugin and
-  used as a text-fragment to be included in the documentation.
-- YAML front matter may be used to provide specific information
-  about the documentable item.
+Each Markdown-file collector reads one source. YAML frontmatter supplies a title,
+a stable logical identity, and publication hints. Sections become topics and
+ordered documentation fragments in the KG; fenced code blocks also become
+queryable examples. Renderers publish those collected fragments from a pinned
+revision.
+
+## Task lists
+
+Use `- [ ]` for an incomplete task and `- [x]` for a completed task:
+
+- [x] Collect Markdown and frontmatter into the documentation KG.
+- [x] Render checked and unchecked task states.
+- [ ] Add more examples to your documentation.
+  - [ ] Include a nested task when useful.
+
+The generated website preserves the completion state and uses the checkbox as
+the list marker.
+
+## Tables and strikethrough
+
+| Construct | Syntax | Result |
+| --- | --- | --- |
+| Emphasis | `**important**` | **important** |
+| Strikethrough | `~~superseded~~` | ~~superseded~~ |
+| Inline code | Backticks around source text | `grapharch` |
+
+## Callouts
+
+Start a blockquote with `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or
+`[!CAUTION]`. Grapharch renders the type as a labelled callout rather than
+printing the marker.
+
+> [!NOTE]
+> This page is collected into the KG and rendered by Grapharch itself.
+
+> [!TIP]
+> Give documents stable identities in frontmatter so files can move without
+> changing their logical identity.
+
+> [!IMPORTANT]
+> Local links and heading references must resolve in the selected publication.
+
+> [!WARNING]
+> A failed build preserves the previous complete publication.
+
+> [!CAUTION]
+> Removing a topic can invalidate links from other documentation fragments.
+
+Markers inside inline code or fenced code blocks remain literal source text:
+
+```markdown
+> [!NOTE]
+> Write the note here.
+```
+
+## Frontmatter
+
+```yaml
+---
+title: Example topic
+parent: Usage
+nav_order: 2
+permalink: /usage/example/
+grapharch:
+  subject: urn:example:documentation:topic
+---
+```
+
+See [Self-hosted documentation](../../../usage/self-hosting.md) for a complete
+website build and the relationship between source files, logical topics, and
+publication pages.
+
+## Current boundaries
+
+The current pipeline does not execute MDX or embedded scripts. Raw HTML in
+Markdown and uncollected local images are rejected. Website images currently
+require HTTPS URLs. These boundaries are explicit; unsupported content fails the
+build.

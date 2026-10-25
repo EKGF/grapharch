@@ -6,10 +6,9 @@ use {
     },
     anyhow::Context,
     async_trait::async_trait,
-    git2::Repository,
     std::{
-        env,
         path::{Path, PathBuf},
+        sync::Arc,
         vec::Vec,
     },
     tokio::fs,
@@ -19,7 +18,7 @@ use {
 #[derive(Debug, Clone)]
 pub struct GitRepositorySourceImpl {
     repo_url: String,
-    temp_dir: PathBuf,
+    temp_dir: Arc<tempfile::TempDir>,
 }
 
 impl FileSourceCreator for GitRepositorySourceImpl {
@@ -28,8 +27,10 @@ impl FileSourceCreator for GitRepositorySourceImpl {
         endpoint_url: Option<&str>,
     ) -> anyhow::Result<Self> {
         Ok(Self {
-            repo_url: endpoint_url.unwrap().to_string(),
-            temp_dir: env::temp_dir().join("file_repo"),
+            repo_url: endpoint_url
+                .context("Git repository URL is required")?
+                .to_string(),
+            temp_dir: Arc::new(tempfile::tempdir()?),
         })
     }
 }
@@ -41,7 +42,7 @@ impl FileSource for GitRepositorySourceImpl {
         types: FileTypeSlice<'a>,
     ) -> anyhow::Result<Vec<PathBuf>> {
         let repo_url = self.repo_url.clone();
-        let temp_dir = self.temp_dir.clone();
+        let temp_dir = self.temp_dir.path().to_path_buf();
 
         if Path::new(&temp_dir).exists() {
             fs::remove_dir_all(&temp_dir)
@@ -53,14 +54,19 @@ impl FileSource for GitRepositorySourceImpl {
             .context("Failed to create temp directory")?;
 
         tokio::task::spawn_blocking(move || {
-            Repository::clone_recurse(&repo_url, &temp_dir)
-                .context("Failed to clone repository")
+            let interrupt = std::sync::atomic::AtomicBool::new(false);
+            let (mut checkout, _) = gix::prepare_clone(&*repo_url, &temp_dir)?
+                .fetch_then_checkout(gix::progress::Discard, &interrupt)?;
+            checkout.main_worktree(gix::progress::Discard, &interrupt)?;
+            Ok::<_, anyhow::Error>(())
         })
         .await??;
 
-        let files =
-            FileSystemSourceImpl::scan_files(types, self.temp_dir.clone())
-                .await?;
+        let files = FileSystemSourceImpl::scan_files(
+            types,
+            self.temp_dir.path().to_path_buf(),
+        )
+        .await?;
 
         tracing::info!(
             "Found {} files in git repository {}",
@@ -71,7 +77,7 @@ impl FileSource for GitRepositorySourceImpl {
         Ok(files)
     }
 
-    fn root_path(&self) -> Option<&Path> { Some(&self.temp_dir) }
+    fn root_path(&self) -> Option<&Path> { Some(self.temp_dir.path()) }
 
     fn url(&self) -> Option<&str> { Some(&self.repo_url) }
 

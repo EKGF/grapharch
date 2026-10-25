@@ -1,0 +1,440 @@
+@prefix : <https://ekgf.org/ontology/story#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix obda: <https://w3id.org/obda/vocabulary#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix concept: <https://ekgf.org/ontology/concept#> .
+@prefix outcome: <https://ekgf.org/ontology/outcome#> .
+@prefix persona: <https://ekgf.org/ontology/persona#> .
+@prefix story-svc: <https://ekgf.org/ontology/ekg-platform-story-service#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-story: <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#> a owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-story" ;
+      sh:namespace "https://ekgf.org/ontology/story#"^^xsd:anyURI
+  ] ;
+	owl:imports <https://ekgf.org/ontology/persona#> , <https://ekgf.org/ontology/concept#> , <https://ekgf.org/ontology/outcome#> ;
+	rdfs:comment "The EKGF Story Ontology"@en ;
+	rdfs:label "EKGF Story Ontology"@en .
+# 
+# 
+# #################################################################
+# #
+# #    Annotation properties
+# #
+# #################################################################
+# 
+# 
+# http://purl.org/dc/elements/1.1/creator
+
+<http://purl.org/dc/elements/1.1/creator> a owl:AnnotationProperty .
+# 
+# http://purl.org/dc/elements/1.1/date
+
+<http://purl.org/dc/elements/1.1/date> a owl:AnnotationProperty .
+# 
+# 
+# 
+# #################################################################
+# #
+# #    Object Properties
+# #
+# #################################################################
+# 
+# 
+# https://ekgf.org/ontology/concept#hasConcept
+
+concept:hasConcept rdfs:domain _:genid1 .
+
+_:genid1 a owl:Class ;
+	owl:unionOf _:genid3 .
+
+_:genid3 a rdf:List ;
+	rdf:first :StoryInput ;
+	rdf:rest _:genid2 .
+
+_:genid2 a rdf:List ;
+	rdf:first :StoryOutput ;
+	rdf:rest rdf:nil .
+# 
+# https://ekgf.org/ontology/story#hasInput
+
+:hasInput a owl:ObjectProperty , owl:InverseFunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range :StoryInput ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-04-28T13:27:52Z"^^xsd:dateTime ;
+	rdfs:comment "An Input Parameter links a data element concept to a Story as one of its inputs"@en ;
+	rdfs:label "has input parameter"@en .
+# 
+# https://ekgf.org/ontology/story#hasOutput
+
+:hasOutput a owl:ObjectProperty , owl:InverseFunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range :StoryOutput ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-04-28T18:48:14Z"^^xsd:dateTime .
+# 
+# https://ekgf.org/ontology/story#hasImplementation
+
+:hasImplementation a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:range :StoryImplementation ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2026-02-23T00:00:00Z"^^xsd:dateTime ;
+	rdfs:comment "Links a Story to zero or more StoryImplementations."@en ;
+	rdfs:label "has implementation"@en .
+# 
+# https://ekgf.org/ontology/story#implementationOf
+
+:implementationOf a owl:ObjectProperty ;
+	owl:inverseOf :hasImplementation ;
+	rdfs:domain :StoryImplementation ;
+	rdfs:range :Story ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2026-02-23T00:00:00Z"^^xsd:dateTime ;
+	rdfs:label "implementation of"@en .
+# 
+# https://ekgf.org/ontology/story#hasInputConcept
+
+:hasInputConcept a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:range concept:DataElementConcept ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2026-02-23T00:00:00Z"^^xsd:dateTime ;
+	rdfs:comment "Direct projection of the input concepts required by the Story."@en ;
+	rdfs:label "has input concept"@en .
+# 
+# https://ekgf.org/ontology/story#hasOutputConcept
+
+:hasOutputConcept a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:range concept:DataElementConcept ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2026-02-23T00:00:00Z"^^xsd:dateTime ;
+	rdfs:comment "Direct projection of the output concepts produced by the Story."@en ;
+	rdfs:label "has output concept"@en .
+# 
+# https://ekgf.org/ontology/story#hasDependentConcept
+
+:hasDependentConcept a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:range concept:DataElementConcept ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2026-02-23T00:00:00Z"^^xsd:dateTime ;
+	rdfs:comment "Concepts referenced by implementation logic (for example discovered from statement algebra)."@en ;
+	rdfs:label "has dependent concept"@en .
+# 
+# https://ekgf.org/ontology/story#playedBy
+
+:playedBy a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range persona:Persona ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-04-01T18:12:45Z"^^xsd:dateTime .
+# 
+# 
+# 
+# #################################################################
+# #
+# #    Data properties
+# #
+# #################################################################
+# 
+# 
+# https://ekgf.org/ontology/story#isPlural
+
+:isPlural a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range xsd:boolean ;
+	owl:propertyDisjointWith :isSingular ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-05-06T09:38:46Z"^^xsd:dateTime ;
+	rdfs:comment "Do not use, use isSingular"@en .
+# 
+# https://ekgf.org/ontology/story#isSingular
+
+:isSingular a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range xsd:boolean ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-05-06T09:37:47Z"^^xsd:dateTime ;
+	rdfs:comment "Means that the user story results in a singular Thing as its output"@en .
+# 
+# https://ekgf.org/ontology/story#isUpdate
+
+:isUpdate a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range xsd:boolean ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-05-06T09:37:47Z"^^xsd:dateTime ;
+	rdfs:comment "Means that the user story mutates the database by insert or delete statements"@en .
+# 
+# https://ekgf.org/ontology/story#serverProvidedIRI
+
+:serverProvidedIRI a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range xsd:boolean ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-04-07T20:48:22Z"^^xsd:dateTime ;
+	rdfs:comment "indicates that, if provided and if true, the Story Service needs to provide a KGIRI as the value for this input parameter."@en .
+# 
+# https://ekgf.org/ontology/story#implementationType
+
+:implementationType a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :StoryImplementation ;
+	rdfs:range xsd:token ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2026-02-23T00:00:00Z"^^xsd:dateTime ;
+	rdfs:comment "Coarse implementation type. Supported values: NamedStatement, ApiProxy, Workflow, AgentJob, Pipeline, UiAction."@en .
+# 
+# 
+# 
+# #################################################################
+# #
+# #    Classes
+# #
+# #################################################################
+# 
+# 
+# https://ekgf.org/ontology/outcome#Outcome
+
+outcome:Outcome a owl:Class .
+# 
+# https://ekgf.org/ontology/persona#Persona
+
+persona:Persona a owl:Class .
+# 
+# https://ekgf.org/ontology/story#MandatoryParameter
+
+:MandatoryParameter a owl:Class ;
+	rdfs:subClassOf :StoryInput ;
+	owl:disjointWith :OptionalParameter ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-05-03T10:47:58Z"^^xsd:dateTime .
+# 
+# https://ekgf.org/ontology/story#OptionalParameter
+
+:OptionalParameter a owl:Class ;
+	rdfs:subClassOf :StoryInput ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-05-03T10:48:18Z"^^xsd:dateTime .
+# 
+# https://ekgf.org/ontology/story#OptionalStoryOutput
+
+:OptionalStoryOutput a owl:Class ;
+	rdfs:subClassOf :StoryOutput ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-05-06T09:03:23Z"^^xsd:dateTime .
+# 
+# https://ekgf.org/ontology/story#StoryInput
+
+:StoryInput a owl:Class ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-04-01T17:24:36Z"^^xsd:dateTime ;
+	rdfs:comment "A StoryInput in the context of the Concept and Story Ontologies is the type of a blank node that serves as the specification of a parameter to a user story."@en .
+# 
+# https://ekgf.org/ontology/story#StoryOutput
+
+:StoryOutput a owl:Class ;
+	<http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+	<http://purl.org/dc/elements/1.1/date> "2020-04-07T20:40:12Z"^^xsd:dateTime ;
+	rdfs:comment "A StoryOutput in the context of the Concept and Story Ontologies is the type of a blank node that serves as the specification of a result-column or result-key of a user story."@en .
+# 
+# https://ekgf.org/ontology/story#StoryImplementation
+
+:StoryImplementation a owl:Class ;
+	rdfs:comment "An executable implementation artifact linked to a Story."@en ;
+	rdfs:label "Story Implementation"@en .
+# 
+# https://ekgf.org/ontology/story#NamedStatementImplementation
+
+:NamedStatementImplementation a owl:Class ;
+	rdfs:subClassOf :StoryImplementation ;
+	rdfs:label "Named Statement Implementation"@en .
+# 
+# https://ekgf.org/ontology/story#ApiProxyImplementation
+
+:ApiProxyImplementation a owl:Class ;
+	rdfs:subClassOf :StoryImplementation ;
+	rdfs:label "API Proxy Implementation"@en .
+# 
+# https://ekgf.org/ontology/story#WorkflowImplementation
+
+:WorkflowImplementation a owl:Class ;
+	rdfs:subClassOf :StoryImplementation ;
+	rdfs:label "Workflow Implementation"@en .
+# 
+# https://ekgf.org/ontology/story#AgentJobImplementation
+
+:AgentJobImplementation a owl:Class ;
+	rdfs:subClassOf :StoryImplementation ;
+	rdfs:label "Agent Job Implementation"@en .
+# 
+# https://ekgf.org/ontology/story#contributesTo
+
+:contributesTo a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:range outcome:Outcome ;
+	rdfs:label "contributes to"@en ;
+	rdfs:comment "The business outcome this story contributes to."@en .
+# 
+# https://ekgf.org/ontology/story#implementedBy
+
+:implementedBy a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:range :StoryImplementation ;
+	rdfs:label "implemented by"@en ;
+	rdfs:comment "An implementation that can execute this story. A story with no unambiguous runnable implementation refuses at invocation rather than guessing."@en .
+# 
+# https://ekgf.org/ontology/story#providedBy
+
+:providedBy a owl:ObjectProperty ;
+	rdfs:domain :Story ;
+	rdfs:label "provided by"@en ;
+	rdfs:comment "The provider a story is supplied by. No range is asserted: every assertion in the corpus points at a resource the corpus does not define, so the intended class is not evidenced."@en .
+# 
+# https://ekgf.org/ontology/story#notFoundOnEmpty
+
+:notFoundOnEmpty a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range xsd:boolean ;
+	rdfs:label "not found on empty"@en ;
+	rdfs:comment "A singular story that returns no rows answers 404 rather than an empty object."@en .
+# 
+# https://ekgf.org/ontology/story#isDeletion
+
+:isDeletion a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain :Story ;
+	rdfs:range xsd:boolean ;
+	rdfs:label "is deletion"@en ;
+	rdfs:comment "The story deletes. It is invoked by DELETE, and refuses a GET; how a story mutates is a property of the story, never a subclass of it."@en .
+# 
+# https://ekgf.org/ontology/story#Story
+
+:Story a owl:Class ;
+	rdfs:label "Story"@en .
+# 
+# Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/story#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/story#AgentJobImplementation>
+    rdfs:comment "A story implementation expressed as a job performed by an agent."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#ApiProxyImplementation>
+    rdfs:comment "A story implementation that delegates the interaction to an API through a proxy."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#MandatoryParameter>
+    rdfs:label "Mandatory Parameter"@en ;
+    rdfs:comment "A story input classified as mandatory for the interaction. The class is disjoint with OptionalParameter."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#NamedStatementImplementation>
+    rdfs:comment "A story implementation identified through a named executable statement."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#OptionalParameter>
+    rdfs:label "Optional Parameter"@en ;
+    rdfs:comment "A story input classified as optional for the interaction."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#OptionalStoryOutput>
+    rdfs:label "Optional Story Output"@en ;
+    rdfs:comment "A story output classified as optional for the interaction."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#Story>
+    rdfs:comment "A description of an interaction in a use case, identifying its participating persona, inputs, outputs, implementations, and the outcomes it helps achieve."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#StoryImplementation>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#StoryInput>
+    rdfs:label "Story Input"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#StoryOutput>
+    rdfs:label "Story Output"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#WorkflowImplementation>
+    rdfs:comment "A story implementation expressed as a workflow of execution steps."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#contributesTo>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#hasDependentConcept>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#hasImplementation>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#hasInput>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#hasInputConcept>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#hasOutput>
+    rdfs:label "Has Output"@en ;
+    rdfs:comment "Associates a story with one of its output descriptions. Its inverse-functional axiom means that a shared output resource identifies the same story."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#hasOutputConcept>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#implementationOf>
+    rdfs:comment "Identifies the story implemented by a story implementation; it is the inverse of hasImplementation."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#implementationType>
+    rdfs:label "Implementation Type"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#implementedBy>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#isDeletion>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#isPlural>
+    rdfs:label "Is Plural"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#isSingular>
+    rdfs:label "Is Singular"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#isUpdate>
+    rdfs:label "Is Update"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#notFoundOnEmpty>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#playedBy>
+    rdfs:label "Played By"@en ;
+    rdfs:comment "Identifies the persona playing the actor role in a story. The functional-property axiom limits a story to one persona through this property."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#providedBy>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .
+
+<https://ekgf.org/ontology/story#serverProvidedIRI>
+    rdfs:label "Server Provided IRI"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story#> .

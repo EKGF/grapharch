@@ -4,6 +4,8 @@ layout: default
 parent: Other
 nav_order: 5
 permalink: /contribute/
+grapharch:
+  subject: urn:grapharch:docs:topic:other:contribute
 ---
 
 # Contributing to GraphArch
@@ -68,8 +70,8 @@ Please ensure your code follows best practices
 and is formatted correctly.
 `rustfmt` must be used before committing,
 and this will be verified by a
-[GitHub Actions workflow](../../.github/workflows/rust-ci.yml),
-just like the [Conventional Commits check](../../.github/workflows/check-commits.yml).
+[GitHub Actions workflow](https://github.com/EKGF/grapharch/blob/main/.github/workflows/rust-ci.yml),
+just like the [Conventional Commits check](https://github.com/EKGF/grapharch/blob/main/.github/workflows/check-commits.yml).
 
 ### Testing
 
@@ -80,7 +82,7 @@ that everything works as expected.
 
 ## Code of Conduct
 
-We follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
+We follow the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
 By participating, you are expected to uphold this code.
 Please report any behavior that violates this code to
 [info@ekgf.org](mailto:info@ekgf.org).

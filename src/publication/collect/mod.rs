@@ -3,9 +3,14 @@
 
 mod authored;
 mod blank_nodes;
+pub mod git;
 mod hashing_reader;
+mod markdown_structure;
+pub(crate) mod page;
+pub(crate) mod published_artifact;
 mod rdf;
 mod source;
+mod text_asset;
 mod w3c;
 
 use {
@@ -18,6 +23,7 @@ use {
 pub use {
     authored::{MarkdownFile, SparqlFile},
     rdf::RdfFile,
+    text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,
 };
 

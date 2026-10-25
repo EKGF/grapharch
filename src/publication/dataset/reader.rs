@@ -57,6 +57,9 @@ impl Dataset {
     /// for publication data so staging and superseded contributions cannot
     /// leak in.
     pub async fn select(&self, query: String) -> Result<Rows> {
+        #[cfg(test)]
+        self.select_calls
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         ensure!(
             query.len() <= 64 * 1024,
             "query exceeds byte limit"

@@ -4,6 +4,8 @@ layout: default
 parent: Other
 nav_order: 1
 permalink: /architecture/
+grapharch:
+  subject: urn:grapharch:docs:topic:other:architecture
 ---
 # Architecture
 

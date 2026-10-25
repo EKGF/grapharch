@@ -74,7 +74,7 @@ impl Collector for W3cSpecificationFile {
             "published W3C source exceeds 2 MiB"
         );
         let revision = format!(
-            "w3c-published-v2:{:x}:{}",
+            "w3c-published-v3:{:x}:{}",
             Sha256::digest(&bytes),
             self.url
         );
@@ -94,7 +94,9 @@ impl Collector for W3cSpecificationFile {
         let target = self.target_id();
         let profile = self.id("profile", "publication");
         let scope = self.id("scope", "publication");
-        let authority = NamedNode::new_unchecked("https://www.w3.org/");
+        let authority = NamedNode::new_unchecked(
+            crate::publication::governance::W3C_AUTHORITY,
+        );
         for (subject, property, object) in [
             (project.clone(), "type", term("Project").into()),
             (
@@ -175,7 +177,10 @@ impl Collector for W3cSpecificationFile {
             (
                 authority.clone(),
                 "type",
-                term("Authority").into(),
+                NamedNode::new_unchecked(
+                    crate::publication::governance::AUTHORITY,
+                )
+                .into(),
             ),
             (authority.clone(), "shortName", lit("W3C")),
             (
@@ -188,7 +193,31 @@ impl Collector for W3cSpecificationFile {
         }
         title(output, project, &header.title).await?;
         title(output, &target, &header.title).await?;
-        title(output, &authority, "World Wide Web Consortium").await?;
+        output
+            .write(oxrdf::Quad::new(
+                authority.clone(),
+                NamedNode::new_unchecked(
+                    "http://www.w3.org/2000/01/rdf-schema#label",
+                ),
+                Literal::new_language_tagged_literal(
+                    "World Wide Web Consortium",
+                    "en",
+                )?,
+                oxrdf::GraphName::DefaultGraph,
+            ))
+            .await?;
+        output
+            .write(oxrdf::Quad::new(
+                authority.clone(),
+                NamedNode::new_unchecked(
+                    crate::publication::governance::PLAYED_BY,
+                ),
+                NamedNode::new_unchecked(
+                    crate::publication::governance::W3C_ORGANIZATION,
+                ),
+                oxrdf::GraphName::DefaultGraph,
+            ))
+            .await?;
         if let Some(copyright) = header.copyright {
             write(output, &target, "copyright", lit(&copyright)).await?;
         }

@@ -1,0 +1,177 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix api: <https://ekgf.org/ontology/api#> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+
+#
+# The members of the family of EKGF ontologies: one reference per
+# ontology in this repository. A reference gives its ontology a stable identity and slug.
+#
+
+<urn:uuid:f749fae7-72eb-4e1a-a35f-81eafbb4462a>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-api" ;
+    artgov:refersTo <https://ekgf.org/ontology/api#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:90efbf47-93b5-42f2-9cea-9d30c83b03f9>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-artifact-governance" ;
+    artgov:refersTo <https://ekgf.org/ontology/artifact-governance#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:39b7c16c-2dcc-4c48-ac52-c9b803910668>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-artifact-publication" ;
+    artgov:refersTo <https://ekgf.org/ontology/artifact-publication#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:fbdd2d08-16bf-4a64-8574-4e47a3df4c09>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-capability" ;
+    artgov:refersTo <https://ekgf.org/ontology/capability#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:ef90182b-52ab-4097-9855-a182e69cfe07>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-concept" ;
+    artgov:refersTo <https://ekgf.org/ontology/concept#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:b7c1aa16-3b54-4ff9-b5c8-0120224d878f>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-dataops" ;
+    artgov:refersTo <https://ekgf.org/ontology/dataops#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:e75e688c-19a8-46d8-84fc-149ab691b392>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-maturity-model" ;
+    artgov:refersTo <https://ekgf.org/ontology/ekgf-maturity-model> ,
+                    <https://ekgf.org/ontology/ekgf-maturity-model#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:d5632c52-f669-4240-9152-98394d2bf11a>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-outcome" ;
+    artgov:refersTo <https://ekgf.org/ontology/outcome#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:cbf2308c-ace1-4f32-857d-e105d064a2cb>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-persona" ;
+    artgov:refersTo <https://ekgf.org/ontology/persona#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:ce8f8d25-d52c-4ee8-9d45-c7d1c436f22b>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-raw" ;
+    artgov:refersTo <https://ekgf.org/ontology/raw#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:e6dd92d2-69e9-4a88-855c-8b90a0124264>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-sbe" ;
+    artgov:refersTo <https://ekgf.org/ontology/specification-by-example#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:a4abd42f-771e-434d-890c-701e101dca6b>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-story" ;
+    artgov:refersTo <https://ekgf.org/ontology/story#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:d09ed706-3c21-4f36-82ac-7d5c4d83cab8>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-story-impl-sparql" ;
+    artgov:refersTo <https://ekgf.org/ontology/story-impl-sparql#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:f6cfc134-ca84-453e-b4b9-315510a9dd18>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-story-service" ;
+    artgov:refersTo <https://ekgf.org/ontology/story-service#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:f1e09779-4907-4fa7-814c-013e7ef0dfc7>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-use-case" ;
+    artgov:refersTo <https://ekgf.org/ontology/use-case#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:83d1e43f-8ed8-4016-b4a4-7ec3b79964db>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-annotation" ;
+    artgov:refersTo <https://ekgf.org/ontology/annotation#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:6e03eeb3-f8ba-457c-b6c7-5a1c1a6c93c6>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-artifact-dependency" ;
+    artgov:refersTo <https://ekgf.org/ontology/artifact-dependency#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:b5fdb98e-0a9a-45e8-b839-874a51fd20bc>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-dataset" ;
+    artgov:refersTo <https://ekgf.org/ontology/dataset#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:4defb159-f0e5-4429-820f-7e0833ca6cff>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-shape" ;
+    artgov:refersTo <https://ekgf.org/ontology/shape#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:a2264db3-0aa6-48fa-80e7-3fb5d81e5ff1>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-user-experience" ;
+    artgov:refersTo <https://ekgf.org/ontology/user-experience#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:7ee05072-5f30-49a8-9f32-7dc20ebfa0fc>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-communication" ;
+    artgov:refersTo <https://ekgf.org/ontology/communication#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:6d716d9f-c75a-42ef-add3-62d6ec04a644>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-file-system" ;
+    artgov:refersTo <https://ekgf.org/ontology/file-system#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:72cd74e4-1629-4b8f-8460-9def819a10c7>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-lifecycle" ;
+    artgov:refersTo <https://ekgf.org/ontology/lifecycle#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
+
+<urn:uuid:6e06f26c-bc48-4170-9603-a8bb2f05809e>
+    rdf:type artgov:Reference ;
+    api:slug "ekgf-authorization" ;
+    artgov:refersTo <https://ekgf.org/ontology/authorization#> ;
+    artgov:inFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> ;
+    artgov:governedBy <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .

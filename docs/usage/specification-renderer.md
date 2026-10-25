@@ -3,6 +3,9 @@ title: Specification renderer
 layout: default
 parent: Usage
 nav_order: 3
+grapharch:
+  subject: urn:grapharch:docs:topic:usage:specification-renderer
+permalink: /usage/specification-renderer/
 ---
 
 # Specification renderer
@@ -32,7 +35,7 @@ cargo test --example publish_showcase
 The output is `output/pdf/grapharch-specification/specification/index.html`, with
 local `style.css` and an ownership manifest. The output root also contains the
 exported KG. See `examples/specification/project.ttl` and the
-[showcase catalog](../../examples/README.md).
+[showcase catalog](examples.md).
 
 ## Publication metadata
 
@@ -41,7 +44,7 @@ A specification target requires these graph assertions:
 | Predicate | Value |
 | --- | --- |
 | `dcterms:title` | Nonempty document title |
-| `ga:publisher` | `ga:Authority` IRI with its own `dcterms:title` |
+| `ga:publisher` | Authority role IRI, typed `artgov:Authority` or its equivalent `ga:Authority`, with an English `rdfs:label` |
 | `ga:publicationStatus` | Nonempty publisher-defined status, such as `Editor's Draft` |
 | `ga:publicationDate` | Valid calendar date in `YYYY-MM-DD` form, typed `xsd:date` |
 | `ga:thisVersion` | Absolute HTTP(S) IRI identifying this document version |
@@ -63,8 +66,12 @@ invalid publication does not replace the last successful generation.
 
 ## Reusable authorities
 
-An authority node has `a ga:Authority` and `dcterms:title`. Optional fields are
-`ga:shortName`, `ga:url`, `ga:accentColor`, and `ga:logo`. The accent must be a
+An authority node denotes a governance role, typed `artgov:Authority` or its
+equivalent `ga:Authority`. It requires an English `rdfs:label` and an abbreviation
+using `artgov:authorityAcronym` or the equivalent `ga:shortName`. Its player is a
+distinct party linked through Commons `isPlayedBy`, when known. Reuse the UUIDs
+in the EKGF authority registry; hosts and URLs do not determine identity.
+Optional presentation fields are `ga:url`, `ga:accentColor`, and `ga:logo`. The accent must be a
 six-digit `#RRGGBB` value. The logo is an embedded `data:image/png;base64,...`
 literal, validated as PNG with limits of 256 KiB, 2048px per dimension, and 32 MiB
 decoder allocation. Rendering does not fetch logos or reopen source assets.
@@ -84,8 +91,8 @@ only graph authority metadata is tested with another publisher name and accent.
 ## Published W3C document collection
 
 ```bash
-cargo run --example publish_showcase -- --w3c
-cargo run -- publication collect --store /tmp/grapharch-w3c --project urn:w3c:project --collector urn:w3c:collector --kind w3c-specification --source examples/w3c-n-triples/source.html --source-url https://www.w3.org/TR/2014/REC-n-triples-20140225/
+cargo run --example publish_showcase -- --w3c --keep-going
+cargo run -- publication collect --store /tmp/grapharch-w3c --project urn:w3c:project --collector urn:w3c:collector --kind w3c-specification --source examples/w3c-rdf12-n-triples/source.html --source-url https://www.w3.org/TR/2026/WD-rdf12-n-triples-20261023/
 ```
 
 This specialized collector accepts a local snapshot of supported published W3C
@@ -129,3 +136,9 @@ keyboard focus, a skip link, code and table styling, and print rules. It uses
 system fonts and local assets only. This initial implementation does not include
 an automatic bibliography engine, definition panels, requirement indexing,
 change annotations, or complete W3C/OMG publication-rule validation.
+
+On desktop screens, drag the right edge of the table of contents to resize it.
+The focused separator supports Left/Right arrow keys (Shift for larger steps),
+Home/End for its minimum/maximum width, and double-click to reset. The browser
+remembers the width across specification pages. On smaller screens the contents
+remain in the document flow; printed output has no resize control.

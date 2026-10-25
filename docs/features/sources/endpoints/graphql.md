@@ -3,6 +3,9 @@ title: GraphQL Endpoint
 layout: default
 parent: Endpoint
 nav_order: 999
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:endpoints:graphql
+permalink: /features/sources/endpoints/graphql/
 ---
 
 # Source &mdash; GraphQL endpoint

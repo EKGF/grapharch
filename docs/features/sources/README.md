@@ -4,6 +4,8 @@ layout: default
 parent: Features
 nav_order: 2
 permalink: /features/sources/
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources
 ---
 
 # Input Sources

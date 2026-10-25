@@ -15,4 +15,4 @@ The output is `output/pdf/grapharch-specification/specification/index.html`.
 The integration tests exercise authority name/accent replacement, embedded PNG
 validation, required metadata, output ownership, source deletion, nested numbering,
 and preservation of the previous publication after invalid metadata changes.
-The separate `w3c-n-triples` fixture retains W3C authority instead.
+The separate `w3c-rdf12-n-triples` fixture retains W3C authority instead.

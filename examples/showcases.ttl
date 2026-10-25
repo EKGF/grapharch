@@ -1,0 +1,30 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <urn:grapharch:showcase:> .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf .
+ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
+    dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
+    ga:order 1 ; ga:kind "authored" ; ga:source "showcase/project.ttl" ;
+    ga:previewPath "reader/index.html" ; ga:pdfPath "review/document.pdf" .
+ex:mixed a ga:Showcase ; ga:slug "mixed" ; dct:title "Markdown, SPARQL, and OWL" ;
+    dct:description "Specialized collectors and an ontology documentor turn native inputs into a reader website and PDF." ;
+    ga:order 2 ; ga:kind "mixed" ; ga:source "mixed-sources" ;
+    ga:previewPath "website/index.html" ; ga:pdfPath "review/document.pdf" .
+ex:specification a ga:Showcase ; ga:slug "specification" ; dct:title "Authority-branded specification" ;
+    dct:description "Publication metadata, a numbered contents panel, references, and a matching PDF using EKGF branding." ;
+    ga:order 3 ; ga:kind "specification" ; ga:source "specification/project.ttl" ;
+    ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" .
+ex:rdf12 a ga:Showcase ; ga:slug "rdf12" ; dct:title "W3C RDF 1.2 N-Triples" ;
+    dct:description "The current reference fixture preserves native document constructs and demonstrates a diagnostic addendum for an upstream broken link." ;
+    ga:order 5 ; ga:kind "w3c" ; ga:source "w3c-rdf12-n-triples" ;
+    ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" ;
+    ga:expectedDiagnostic "unresolved-native-reference" .
+ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and SHACL" ;
+    dct:description "The real DPROD vocabulary and shapes become 53 annotated term fragments, a standards-style reference, a companion website with stories and guides, and an independently planned review PDF." ;
+    ga:order 4 ; ga:kind "dprod" ; ga:source "dprod" ;
+    ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/document.pdf" .
+
+ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF: a family of 24 ontologies" ;
+    dct:description "A registered ontology family, with cross-ontology references, governance authority roles, SHACL structures, and explicit annotation gaps, published from one KG." ;
+    ga:order 6 ; ga:kind "ontology-family" ; ga:source "ekg-ontologies" ;
+    ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" .

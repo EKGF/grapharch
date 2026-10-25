@@ -81,6 +81,7 @@ impl TargetPlanner {
         let scope = view.node(target, "scope").await?;
         let profile = view.node(target, "profile").await?;
         let renderer = view.text(target, "renderer").await?;
+        let renderer_kind = super::Renderer::parse(&renderer)?;
         let destination = view.text(target, "destination").await?;
         let scope_plan =
             ScopeResolver::new(self.dataset.clone(), self.revision.clone())
@@ -169,9 +170,58 @@ impl TargetPlanner {
             )
             .await?;
         }
+        self.assets(&selection, renderer_kind, &mut stream).await?;
         let receipt = stream.commit().await?;
         let snapshot = self.dataset.pin(&receipt).await?;
         Ok(ResolvedPlan { id: plan, snapshot })
+    }
+
+    async fn assets(
+        &self,
+        selection: &Selection<'_>,
+        renderer: super::Renderer,
+        stream: &mut ContributionStream,
+    ) -> Result<()> {
+        let members = Dataset::logical_pattern(
+            selection.scope_snapshot,
+            &format!(
+                "{} {} ?asset",
+                selection.scope_plan,
+                term("member")
+            ),
+            0,
+        );
+        let types = selection
+            .view
+            .pattern(&format!("?asset a {}", term("BinaryAsset")), 1);
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?asset WHERE {{ {members} {types} }} ORDER \
+                 BY ?asset"
+            ))
+            .await?;
+        let mut count = 0;
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                renderer == super::Renderer::Website,
+                "binary artifact publication requires the website renderer"
+            );
+            let Term::NamedNode(asset) = &row["asset"] else {
+                bail!("plan asset must be an IRI")
+            };
+            count += 1;
+            ensure!(count <= 256, "plan exceeds 256-asset budget");
+            stream
+                .write(Quad::new(
+                    selection.plan.clone(),
+                    term("asset"),
+                    asset.clone(),
+                    selection.plan.clone(),
+                ))
+                .await?;
+        }
+        Ok(())
     }
 
     async fn entries(

@@ -3,6 +3,9 @@ title: ReSpec compatibility
 layout: default
 parent: Architecture
 nav_order: 2
+grapharch:
+  subject: urn:grapharch:docs:topic:other:architecture:respec-compatibility
+permalink: /other/architecture/respec-compatibility/
 ---
 
 # ReSpec compatibility and migration
@@ -39,7 +42,7 @@ All upstream source links below are pinned to the reviewed revision.
 
 | ReSpec feature/reference | Grapharch equivalent | Current evidence and gaps |
 | --- | --- | --- |
-| [`w3c/headers.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/w3c/headers.js): title, subtitle, versions, status, date, editors, logos, other links | Target metadata plus `ga:Authority` | Authored and published-document fixtures render these fields. Branding replacement is tested. Editor/author/former-editor roles and explicit person ordering are supported; full header-link coverage, labels, and all status combinations remain incomplete. |
+| [`w3c/headers.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/w3c/headers.js): title, subtitle, versions, status, date, editors, logos, other links | Target metadata plus `ga:Authority` | Authored and published-document fixtures render these fields. Branding replacement is tested. Editor/author/former-editor roles, ordered metadata rows, disclosure details, ORCID links, contributor notes, and explicit person ordering are supported; full header-link coverage, labels, and all status combinations remain incomplete. |
 | [`core/structure.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/structure.js), `tests/spec/core/structure-spec.js` | Profile placements, numbered outline, ToC, native aliases | Nested headings, appendices, abstract/status front matter, and native anchor resolution are tested. `maxTocLevel`, `noTOC`, unusual introductory sections, and complete numbering parity remain open. |
 | [`core/dfn.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/dfn.js), `core/link-to-dfn.js`, `core/dfn-panel.js` | Identified terms and graph references | Published `dfn` resources and their native markup are collected. Alias/plural resolution, automatic linking, cross-spec indexes, and definition panels are not implemented. |
 | [`core/biblio.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/biblio.js), `core/render-biblio.js` | Bibliographic resources and reference components | Published reference lists are preserved, including native anchors. ReSpec citation syntax, `localBiblio`, bibliography lookup, and automatic normative/informative classification are not implemented. |
@@ -47,14 +50,14 @@ All upstream source links below are pinned to the reviewed revision.
 | [`core/data-include.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/data-include.js), `core/markdown.js` | Specialized collectors, source contributions, normalized fragments | Independent Markdown files work. ReSpec include/transformation syntax and dependency reconciliation are not implemented. |
 | [`w3c/conformance.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/w3c/conformance.js), `w3c/group.js`, `w3c/linter-rules/` | Authority/process metadata, constraints, conformance components | Authored status and requirement text can be published. W3C policy templates, group lookup, legal boilerplate generation, and publication-rule parity are not implemented. |
 | [`core/webidl.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/webidl.js), `core/cddl.js`, syntax highlighting | Specialized construct collectors/documentors and code fragments | Plain source blocks are supported. WebIDL/CDDL semantics and HTML syntax-highlighting parity are not implemented. |
-| [`core/exporter.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/exporter.js), `tools/respec2html.js` | Static artifacts from pinned graph plans | HTML/CSS and embedded Typst/PDF publishing work. Native published HTML fragments currently target the specification renderer only; a shared native-HTML-to-Typst mapping remains open. |
+| [`core/exporter.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/exporter.js), `tools/respec2html.js` | Static artifacts from pinned graph plans | HTML/CSS and embedded Typst/PDF publishing work. Native published HTML is converted into Typst for paired specification PDFs. Both outputs use the same plan; a PDF download icon and diagnostic addenda are supported. |
 | `respecConfig`, `preProcess`, `postProcess`, `data-transform` | Declarative migration adapters and explicit conversion plugins | Published HTML can be collected without executing JavaScript. Import of authoring-time JavaScript configuration or hooks is not implemented. Unsupported executable hooks must be reported, not silently dropped or evaluated. |
 
 ## Real-standard acceptance fixtures
 
-The first fixture is the published
-[RDF 1.1 N-Triples Recommendation of 25 February 2014](https://www.w3.org/TR/2014/REC-n-triples-20140225/).
-`examples/w3c-n-triples/source.html` is a pinned reference input. Its digest,
+The primary fixture is the published
+[RDF 1.2 N-Triples Working Draft of 23 October 2026](https://www.w3.org/TR/2026/WD-rdf12-n-triples-20261023/).
+`examples/w3c-rdf12-n-triples/source.html` is a pinned reference input. Its digest,
 source URL, and attribution are recorded beside it. Integration tests run offline
 against that fixture. They collect content into the shared KG, assemble a target,
 export and restore the graph, delete the source, and render from the restored KG.
@@ -62,7 +65,10 @@ They check publication metadata, section/term/example/reference resources, nativ
 anchors, and representative grammar, tables, and source blocks.
 
 The specialized published-document collector is an initial migration path and a
-way to populate behavioral tests. It does not substitute for importing a ReSpec
+way to populate behavioral tests. The RDF 1.2 source contains a broken
+`#must-signal-errors` reference. Fail-fast rendering rejects it; explicit
+keep-going rendering records a KG diagnostic, includes an HTML/PDF addendum, and
+the CLI exits unsuccessfully after producing the preview. It does not substitute for importing a ReSpec
 authoring repository. Source markup is retained as provenance; rendered sections
 are independently identified fragments, not an opaque copy of the original page.
 
@@ -91,3 +97,9 @@ EKGF ReSpec build (fork HEAD observed as
 `b35286e4e5bd3b0499dda41cb83ba751f0753e7c` on 2026-10-24);
 its fork-specific behavior needs a separate audit before a
 DPROD replacement can be called compatible.
+
+The `examples/dprod/` showcase instead collects native ontology and SHACL RDF
+and a Markdown worked example from a pinned DPROD commit. It generates 53 term
+fragments and publishes HTML and PDF from the resulting KG. This tests native
+DPROD inputs; it does not establish compatibility with the EKGF ReSpec fork or
+replace the complete DPROD specification.

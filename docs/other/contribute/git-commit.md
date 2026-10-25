@@ -1,6 +1,9 @@
 ---
 title: Git Commit Notes
 parent: Contribute
+grapharch:
+  subject: urn:grapharch:docs:topic:other:contribute:git-commit
+permalink: /other/contribute/git-commit/
 ---
 
 # Git Commit Notes
@@ -87,4 +90,4 @@ git push origin features/your-feature-name
 ## Links
 
 - [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-- [How to install Cocogitto on MacOS](./macos.md#conventional-commits)
+- [How to install Cocogitto on MacOS](./macos.md#install-cocogitto)

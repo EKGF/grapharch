@@ -1,0 +1,456 @@
+@prefix : <https://ekgf.org/ontology/artifact-dependency#> .
+@prefix annotation: <https://ekgf.org/ontology/annotation#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-artdep: <https://ekgf.org/ontology/artifact-dependency#> .
+@base <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#>
+  rdf:type owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-artdep" ;
+      sh:namespace "https://ekgf.org/ontology/artifact-dependency#"^^xsd:anyURI
+  ] ;
+  owl:imports <https://ekgf.org/ontology/lifecycle#> ;
+  rdfs:label "EKGF Artifact Dependency Ontology"@en ;
+  rdfs:comment "Generic dependency vocabulary for Semantic Modelling artifacts such as OWL ontologies, SHACL shapesets, SKOS taxonomies, and concept sets."@en ;
+  annotation:markdownDescription "Separates dependency facts, evidence, and workspace or branch resolution status for Semantic Modelling dependency management."@en .
+
+#################################################################
+#    Classes
+#################################################################
+
+:SemanticArtifact
+  rdf:type owl:Class ;
+  rdfs:label "Semantic artifact"@en ;
+  rdfs:comment "A Semantic Modelling artifact that can depend on another artifact, including OWL ontologies, SHACL shapesets, SKOS taxonomies, and concept sets."@en .
+
+:Dependency
+  rdf:type owl:Class ;
+  rdfs:label "Dependency"@en ;
+  rdfs:comment "A reified dependency edge from one semantic artifact to another resource or artifact."@en .
+
+:ExplicitDependency
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Dependency ;
+  rdfs:label "Explicit dependency"@en ;
+  rdfs:comment "A dependency directly declared by a source triple such as owl:imports, sh:shapesGraph, or artdep:dependsOn."@en .
+
+:ImplicitDependency
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Dependency ;
+  rdfs:label "Implicit dependency"@en ;
+  rdfs:comment "A dependency inferred from referenced terms, namespaces, validation constraints, or profile requirements rather than an explicit import declaration."@en .
+
+:DependencyEvidence
+  rdf:type owl:Class ;
+  rdfs:label "Dependency evidence"@en ;
+  rdfs:comment "The concrete triple, graph, namespace observation, or other fact that supports a dependency edge."@en .
+
+:DependencyResolution
+  rdf:type owl:Class ;
+  rdfs:label "Dependency resolution"@en ;
+  rdfs:comment "Workspace and branch scoped resolution state for a dependency target."@en .
+
+:DependencyKind
+  rdf:type owl:Class ;
+  rdfs:label "Dependency kind"@en ;
+  rdfs:comment "Controlled values describing why the dependency exists."@en .
+
+:ResolutionStatus
+  rdf:type owl:Class ;
+  rdfs:label "Resolution status"@en ;
+  rdfs:comment "Controlled values describing whether and how a dependency target resolved in a workspace context."@en .
+
+:OntologyLoadRequest
+  rdf:type owl:Class ;
+  rdfs:label "Ontology load request"@en ;
+  rdfs:comment "A request for a worker node to load an ontology family that would satisfy one or more unloaded dependency targets. How far the request has come is its lifecycle state; by default a request follows the execution lifecycle."@en .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+:hasDependency
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :SemanticArtifact ;
+  rdfs:range :Dependency ;
+  rdfs:label "has dependency"@en ;
+  rdfs:comment "Links a semantic artifact to a reified dependency edge."@en .
+
+:dependsOn
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :SemanticArtifact ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "depends on"@en ;
+  rdfs:comment "Direct dependency projection from an artifact to the dependency target. Reified edges use artdep:Dependency when evidence or resolution state is needed."@en .
+
+:dependentArtifact
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Dependency ;
+  rdfs:range :SemanticArtifact ;
+  rdfs:label "dependent artifact"@en ;
+  rdfs:comment "The artifact that owns the dependency edge."@en .
+
+:dependencyTarget
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Dependency ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "dependency target"@en ;
+  rdfs:comment "The target resource named by the dependency edge, loaded or not."@en .
+
+:dependencyKind
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Dependency ;
+  rdfs:range :DependencyKind ;
+  rdfs:label "dependency kind"@en ;
+  rdfs:comment "Classifies why the dependency exists."@en .
+
+:dependencyEvidence
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Dependency ;
+  rdfs:range :DependencyEvidence ;
+  rdfs:label "dependency evidence"@en ;
+  rdfs:comment "Links a dependency edge to one supporting evidence record."@en .
+
+:resolution
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Dependency ;
+  rdfs:range :DependencyResolution ;
+  rdfs:label "resolution"@en ;
+  rdfs:comment "Links a dependency edge to its workspace or branch scoped resolution state."@en .
+
+:resolutionStatus
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range :ResolutionStatus ;
+  rdfs:label "resolution status"@en ;
+  rdfs:comment "The loaded, unloaded, incomplete, ambiguous, external, or unsupported state of a dependency resolution."@en .
+
+:resolvedArtifact
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range :SemanticArtifact ;
+  rdfs:label "resolved artifact"@en ;
+  rdfs:comment "The loaded artifact that satisfies the dependency target, when resolution status is Loaded."@en .
+
+:resolutionWorkspace
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "resolution workspace"@en ;
+  rdfs:comment "Workspace context in which the dependency resolution was computed."@en .
+
+:resolutionBranch
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "resolution branch"@en ;
+  rdfs:comment "Branch context in which the dependency resolution was computed."@en .
+
+:resolutionCommit
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "resolution commit"@en ;
+  rdfs:comment "Commit context in which the dependency resolution was computed, when a resolution is pinned to a specific commit."@en .
+
+:evidenceSubject
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyEvidence ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "evidence subject"@en ;
+  rdfs:comment "Subject of the source triple or observation that supports the dependency."@en .
+
+:evidencePredicate
+  rdf:type owl:AnnotationProperty ;
+  rdfs:domain :DependencyEvidence ;
+  rdfs:range rdf:Property ;
+  rdfs:label "evidence predicate"@en ;
+  rdfs:comment "Predicate of the source triple or observation that supports the dependency. It is an annotation property because its values are properties, which are not individuals."@en .
+
+:evidenceObject
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyEvidence ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "evidence object"@en ;
+  rdfs:comment "IRI object of the source triple or observation that supports the dependency."@en .
+
+:evidenceGraph
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyEvidence ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "evidence graph"@en ;
+  rdfs:comment "Named graph containing the source triple or observation that supports the dependency."@en .
+
+:referencedNamespace
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :DependencyEvidence ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "referenced namespace"@en ;
+  rdfs:comment "Namespace IRI observed in an implicit dependency, usually derived from a referenced term IRI."@en .
+
+:loadRequestDependency
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :OntologyLoadRequest ;
+  rdfs:range :Dependency ;
+  rdfs:label "load request dependency"@en ;
+  rdfs:comment "Links a load request to a dependency edge that the requested family load is expected to satisfy."@en .
+
+:loadRequestTarget
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :OntologyLoadRequest ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "load request target"@en ;
+  rdfs:comment "Dependency target IRI that caused this load request."@en .
+
+:loadRequestFamily
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :OntologyLoadRequest ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "load request family"@en ;
+  rdfs:comment "Artifact family that should be loaded to satisfy the unresolved dependency targets."@en .
+
+:loadRequestAuthority
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :OntologyLoadRequest ;
+  rdfs:range rdfs:Resource ;
+  rdfs:label "load request authority"@en ;
+  rdfs:comment "Authority governing the artifact family named by the load request."@en .
+
+#################################################################
+#    Data Properties
+#################################################################
+
+:resolutionMessage
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range xsd:string ;
+  rdfs:label "resolution message"@en ;
+  rdfs:comment "Human-readable diagnostic explaining a non-loaded or ambiguous resolution."@en .
+
+:loadHint
+  rdf:type owl:DatatypeProperty ;
+  rdfs:domain :DependencyResolution ;
+  rdfs:range xsd:anyURI ;
+  rdfs:label "load hint"@en ;
+  rdfs:comment "Optional URI hint for loading or locating an unresolved dependency target."@en .
+
+#################################################################
+#    Resolution status individuals
+#################################################################
+
+:Loaded
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "Loaded"@en ;
+  rdfs:comment "The dependency target resolves to an artifact loaded in the current workspace context."@en .
+
+:Unloaded
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "Unloaded"@en ;
+  rdfs:comment "The dependency target is known but no matching artifact is loaded in the current workspace context."@en .
+
+:Incomplete
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "Incomplete"@en ;
+  rdfs:comment "The dependency target is not sufficiently described to load or resolve automatically."@en .
+
+:Ambiguous
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "Ambiguous"@en ;
+  rdfs:comment "The dependency target matches more than one candidate artifact in the current workspace context."@en .
+
+:External
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "External"@en ;
+  rdfs:comment "The dependency target is intentionally outside the workspace and does not need to be loaded locally."@en .
+
+:Unsupported
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "Unsupported"@en ;
+  rdfs:comment "The dependency target uses a form that cannot be resolved yet."@en .
+
+:Failed
+  rdf:type owl:NamedIndividual, :ResolutionStatus ;
+  rdfs:label "Failed"@en ;
+  rdfs:comment "Dependency resolution was attempted and failed in the current workspace context."@en .
+
+#################################################################
+#    Dependency kind individuals
+#################################################################
+
+:DeclaredImportDependency
+  rdf:type owl:NamedIndividual, :DependencyKind ;
+  rdfs:label "Declared import dependency"@en ;
+  rdfs:comment "A dependency declared by an import-like predicate such as owl:imports."@en .
+
+:NamespaceReferenceDependency
+  rdf:type owl:NamedIndividual, :DependencyKind ;
+  rdfs:label "Namespace reference dependency"@en ;
+  rdfs:comment "An implicit dependency derived from terms that share an external namespace."@en .
+
+:TermReferenceDependency
+  rdf:type owl:NamedIndividual, :DependencyKind ;
+  rdfs:label "Term reference dependency"@en ;
+  rdfs:comment "An implicit dependency derived from a reference to a specific external class, property, shape, concept, or datatype."@en .
+
+:ShapeGraphDependency
+  rdf:type owl:NamedIndividual, :DependencyKind ;
+  rdfs:label "Shape graph dependency"@en ;
+  rdfs:comment "A dependency on a SHACL shapes graph or shapeset used for validation or schema reuse."@en .
+
+:ValidationDependency
+  rdf:type owl:NamedIndividual, :DependencyKind ;
+  rdfs:label "Validation dependency"@en ;
+  rdfs:comment "A dependency required to validate an artifact or data graph correctly."@en .
+
+:ProfileDependency
+  rdf:type owl:NamedIndividual, :DependencyKind ;
+  rdfs:label "Profile dependency"@en ;
+  rdfs:comment "A dependency on a standards or implementation profile."@en .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/artifact-dependency#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/artifact-dependency#Ambiguous>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#DeclaredImportDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#Dependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#DependencyEvidence>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#DependencyKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#DependencyResolution>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#ExplicitDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#External>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#Failed>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#ImplicitDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#Incomplete>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#Loaded>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#NamespaceReferenceDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#OntologyLoadRequest>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#ProfileDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#ResolutionStatus>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#SemanticArtifact>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#ShapeGraphDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#TermReferenceDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#Unloaded>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#Unsupported>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#ValidationDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#dependencyEvidence>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#dependencyKind>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#dependencyTarget>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#dependentArtifact>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#dependsOn>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#evidenceGraph>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#evidenceObject>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#evidencePredicate>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#evidenceSubject>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#hasDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#loadHint>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#loadRequestAuthority>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#loadRequestDependency>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#loadRequestFamily>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#loadRequestTarget>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#referencedNamespace>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolution>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolutionBranch>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolutionCommit>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolutionMessage>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolutionStatus>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolutionWorkspace>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .
+
+<https://ekgf.org/ontology/artifact-dependency#resolvedArtifact>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/artifact-dependency#> .

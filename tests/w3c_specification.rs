@@ -1,3 +1,6 @@
+#[path = "support/mod.rs"]
+mod specification_assertions;
+
 use grapharch::publication::{
     assembly::Assembler,
     collect::{Collector, W3cSpecificationFile},
@@ -8,113 +11,13 @@ use grapharch::publication::{
 };
 
 #[tokio::test]
-async fn published_n_triples_is_collected_as_queryable_things_and_rendered_from_restored_kg()
--> anyhow::Result<()> {
-    let temp = tempfile::tempdir()?;
-    let source = temp.path().join("source.html");
-    tokio::fs::copy("examples/w3c-n-triples/source.html", &source).await?;
-    let dataset = Dataset::memory()?;
-    let (writer, worker) =
-        GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
-    let project = "urn:w3c-example:project";
-    let collector = W3cSpecificationFile::new(
-        project,
-        "urn:w3c-example:collector",
-        source.clone(),
-        "https://www.w3.org/TR/2014/REC-n-triples-20140225/",
-    )?;
-    collector.collect(&writer).await?;
-    let revision = Assembler::new(dataset.clone()).assemble(project).await?;
-    let plan = TargetPlanner::new(dataset.clone(), revision)
-        .resolve(project, &collector.target_id(), &writer)
-        .await?;
-    drop(writer);
-    worker.await??;
-    let mut rows = dataset.select("SELECT (COUNT(DISTINCT ?section) AS ?count) WHERE { GRAPH ?graph { ?section a <https://ekgf.org/ontology/grapharch#Section> } }".into()).await?;
-    let row = rows.next().await?.unwrap();
-    let oxrdf::Term::Literal(count) = &row["count"] else {
-        panic!("expected a count")
-    };
-    assert!(count.value().parse::<usize>()? >= 25);
-    for class in ["DefinedTerm", "Example", "BibliographicEntry"] {
-        let mut rows = dataset.select(format!("SELECT ?thing WHERE {{ GRAPH ?g {{ ?thing a <https://ekgf.org/ontology/grapharch#{class}> }} }} LIMIT 1")).await?;
-        assert!(
-            rows.next().await?.is_some(),
-            "no collected {class}"
-        );
-    }
-    let archive = temp.path().join("documentation.nq");
-    dataset.export(archive.clone()).await?;
-    tokio::fs::remove_file(source).await?;
-    let restored = Dataset::memory()?;
-    restored.import(archive).await?;
-    let outcome = Publisher::new(restored).render(&plan, temp.path()).await?;
-    assert!(matches!(outcome, PublishOutcome::Published(_)));
-    let html =
-        tokio::fs::read_to_string(temp.path().join("specification/index.html"))
-            .await?;
-    for expected in [
-        "RDF 1.1 N-Triples",
-        "W3C Recommendation",
-        "25 February 2014",
-        "Gavin Carothers",
-        "Andy Seaborne",
-        "David Beckett",
-        "2.1 Simple Triples",
-        "N-Triples Internet Media Type",
-        "STRING_LITERAL_QUOTE",
-        "<table",
-        "<pre",
-        "id=\"sec-introduction\"",
-    ] {
-        assert!(html.contains(expected), "missing {expected}");
-    }
-    assert!(
-        html.find("Gavin Carothers").unwrap() <
-            html.find("Andy Seaborne").unwrap(),
-        "source editor ordering must survive collection"
-    );
-    let source_doc = scraper::Html::parse_document(include_str!(
-        "../examples/w3c-n-triples/source.html"
-    ));
-    let rendered_doc = scraper::Html::parse_document(&html);
-    assert!(
-        rendered_doc
-            .select(
-                &scraper::Selector::parse(
-                    ".table-scroll[tabindex=\"0\"] table.grammar"
-                )
-                .unwrap()
-            )
-            .next()
-            .is_some(),
-        "wide grammar tables need a keyboard-accessible scroll region"
-    );
-    for selector in ["pre", "dfn", "table td", "dl.bibliography dt"] {
-        let selector = scraper::Selector::parse(selector).unwrap();
-        let text = |document: &scraper::Html| {
-            document
-                .select(&selector)
-                .map(|node| node.text().collect::<String>())
-                .collect::<Vec<_>>()
-        };
-        assert_eq!(
-            text(&rendered_doc),
-            text(&source_doc),
-            "published construct content changed"
-        );
-    }
-    assert!(!html.contains("<script"));
-    Ok(())
-}
-
-#[tokio::test]
 async fn unsupported_published_markup_cannot_replace_a_collected_revision()
 -> anyhow::Result<()> {
     let temp = tempfile::tempdir()?;
     let source = temp.path().join("source.html");
     let original =
-        tokio::fs::read_to_string("examples/w3c-n-triples/source.html").await?;
+        tokio::fs::read_to_string("examples/w3c-rdf12-n-triples/source.html")
+            .await?;
     tokio::fs::write(&source, &original).await?;
     let dataset = Dataset::memory()?;
     let (writer, worker) =
@@ -123,19 +26,19 @@ async fn unsupported_published_markup_cannot_replace_a_collected_revision()
         "urn:w3c:project",
         "urn:w3c:collector",
         source.clone(),
-        "https://www.w3.org/TR/2014/REC-n-triples-20140225/",
+        "https://www.w3.org/TR/2026/WD-rdf12-n-triples-20261023/",
     )?;
     collector.collect(&writer).await?;
     let previous = dataset.snapshot().await?;
     let invalid = original.replace(
-        "id=\"sec-introduction\"",
-        "id=\"sec-introduction\" onclick=\"alert(1)\"",
+        "id=\"sec-intro\"",
+        "id=\"sec-intro\" onclick=\"alert(1)\"",
     );
     // An event on a section wrapper is outside its body; exercise the actual
     // fragment boundary rather than trusting the wrapper to be rendered.
     let invalid = invalid.replace(
-        "id=\"h3_sec-iri\"",
-        "id=\"h3_sec-iri\" onclick=\"alert(1)\"",
+        "id=\"x2-4-iris\"",
+        "id=\"x2-4-iris\" onclick=\"alert(1)\"",
     );
     assert_ne!(invalid, original);
     tokio::fs::write(source, invalid).await?;
@@ -154,19 +57,22 @@ fn reference_inputs_match_their_recorded_digests() -> anyhow::Result<()> {
         sha2::{Digest, Sha256},
     };
     let metadata: serde_yaml::Value = serde_yaml::from_str(include_str!(
-        "../examples/w3c-n-triples/reference.yaml"
+        "../examples/w3c-rdf12-n-triples/reference.yaml"
     ))?;
     for (file, field) in [
         ("source.html", "source_sha256"),
         ("w3c-logo.png", "logo_sha256"),
+        ("w3c-logo.svg", "logo_source_sha256"),
     ] {
-        let bytes = std::fs::read(format!("examples/w3c-n-triples/{file}"))?;
+        let bytes =
+            std::fs::read(format!("examples/w3c-rdf12-n-triples/{file}"))?;
         assert_eq!(
             format!("{:x}", Sha256::digest(&bytes)),
             metadata[field].as_str().unwrap()
         );
     }
-    let authority = include_str!("../examples/w3c-n-triples/authority.ttl");
+    let authority =
+        include_str!("../examples/w3c-rdf12-n-triples/authority.ttl");
     let encoded = authority
         .split("data:image/png;base64,")
         .nth(1)
@@ -176,7 +82,7 @@ fn reference_inputs_match_their_recorded_digests() -> anyhow::Result<()> {
         .unwrap();
     assert_eq!(
         STANDARD.decode(encoded)?,
-        std::fs::read("examples/w3c-n-triples/w3c-logo.png")?
+        std::fs::read("examples/w3c-rdf12-n-triples/w3c-logo.png")?
     );
     Ok(())
 }
@@ -270,6 +176,13 @@ async fn rdf12_publication_preserves_modern_metadata_and_document_structure()
     ] {
         assert!(html.contains(expected), "missing {expected}");
     }
+    specification_assertions::assert_specification_scripts(&html);
+    let mut constructs = restored.select("SELECT DISTINCT ?type WHERE { VALUES ?type { <https://ekgf.org/ontology/grapharch#Section> <https://ekgf.org/ontology/grapharch#DefinedTerm> <https://ekgf.org/ontology/grapharch#Example> <https://ekgf.org/ontology/grapharch#BibliographicEntry> } GRAPH ?graph { ?thing a ?type } }".into()).await?;
+    let mut kinds = 0;
+    while constructs.next().await?.is_some() {
+        kinds += 1;
+    }
+    assert_eq!(kinds, 4);
     let source_doc = scraper::Html::parse_document(include_str!(
         "../examples/w3c-rdf12-n-triples/source.html"
     ));
@@ -279,6 +192,17 @@ async fn rdf12_publication_preserves_modern_metadata_and_document_structure()
             .select(
                 &scraper::Selector::parse("header details[open] summary")
                     .unwrap()
+            )
+            .next()
+            .is_some()
+    );
+    assert!(
+        rendered
+            .select(
+                &scraper::Selector::parse(
+                    ".table-scroll[tabindex=\"0\"] table.grammar"
+                )
+                .unwrap()
             )
             .next()
             .is_some()

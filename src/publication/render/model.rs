@@ -9,6 +9,7 @@ use {
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
     serde::{Deserialize, Serialize},
+    std::collections::HashMap,
 };
 
 pub(super) struct Plan {
@@ -23,6 +24,7 @@ pub(super) struct Plan {
     pub renderer:    String,
     pub destination: String,
     pub title:       String,
+    link_index:      HashMap<NamedNode, String>,
 }
 
 /// Provenance and fixed artifact ownership for one completed publication.
@@ -96,7 +98,7 @@ impl Plan {
             "plan does not match its pinned target definition"
         );
         let title = title(&source, &target).await?;
-        Ok(Self {
+        let mut plan = Self {
             dataset,
             handle,
             source,
@@ -108,7 +110,12 @@ impl Plan {
             renderer,
             destination,
             title,
-        })
+            link_index: HashMap::new(),
+        };
+        if plan.renderer != "website" {
+            plan.index_links().await?;
+        }
+        Ok(plan)
     }
 
     pub fn is_html(&self) -> bool {
@@ -139,6 +146,19 @@ impl Plan {
                 "SELECT ?entry ?fragment ?component ?placement ?order \
                  ?fragmentOrder WHERE {{ {entries} {fields} }} ORDER BY \
                  ?order ?fragmentOrder ?entry"
+            ))
+            .await
+    }
+
+    pub async fn assets(&self) -> Result<Rows> {
+        let pattern = Dataset::logical_pattern(
+            &self.handle.snapshot,
+            &format!("{} {} ?asset", self.handle.id, term("asset")),
+            0,
+        );
+        self.dataset
+            .select(format!(
+                "SELECT DISTINCT ?asset WHERE {{ {pattern} }} ORDER BY ?asset"
             ))
             .await
     }
@@ -176,7 +196,7 @@ impl Plan {
     }
 }
 
-pub(super) async fn title(
+pub(crate) async fn title(
     view: &RevisionView,
     subject: &NamedNode,
 ) -> Result<String> {
@@ -210,6 +230,56 @@ impl Plan {
         .replace(':', "-")
     }
 
+    async fn index_links(&mut self) -> Result<()> {
+        let entries = Dataset::logical_pattern(
+            &self.handle.snapshot,
+            &format!("{} {} ?entry", self.handle.id, term("entry")),
+            0,
+        );
+        let fields = Dataset::logical_pattern(
+            &self.handle.snapshot,
+            &format!(
+                "?entry {} ?fragment ; {} ?placement ; {} ?order ; {} \
+                 ?fragmentOrder",
+                term("fragment"),
+                term("placement"),
+                term("order"),
+                term("fragmentOrder")
+            ),
+            1,
+        );
+        let subjects = self.source.pattern(
+            &format!("?fragment {} ?subject", term("subject")),
+            2,
+        );
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?subject ?fragment ?placement ?order \
+                 ?fragmentOrder ?entry WHERE {{ {entries} {fields} {subjects} \
+                 }} ORDER BY ?order ?fragmentOrder ?entry"
+            ))
+            .await?;
+        let mut count = 0;
+        while let Some(row) = rows.next().await? {
+            count += 1;
+            ensure!(
+                count <= 50_000,
+                "publication link index exceeds 50000-entry budget"
+            );
+            let subject = node(&row["subject"])?;
+            let anchor = format!(
+                "#{}",
+                self.anchor(
+                    node(&row["placement"])?,
+                    Some(node(&row["fragment"])?)
+                )
+            );
+            self.link_index.entry(subject.clone()).or_insert(anchor);
+        }
+        Ok(())
+    }
+
     pub async fn link(
         &self,
         destination: &str,
@@ -228,42 +298,8 @@ impl Plan {
                  {destination}"
             )
         })?;
-        let entries = Dataset::logical_pattern(
-            &self.handle.snapshot,
-            &format!("{} {} ?entry", self.handle.id, term("entry")),
-            0,
-        );
-        let fields = Dataset::logical_pattern(
-            &self.handle.snapshot,
-            &format!(
-                "?entry {} ?fragment ; {} ?placement ; {} ?order ; {} \
-                 ?fragmentOrder",
-                term("fragment"),
-                term("placement"),
-                term("order"),
-                term("fragmentOrder")
-            ),
-            1,
-        );
-        let subjects = self
-            .source
-            .pattern(&format!("?fragment {} {iri}", term("subject")), 2);
-        let mut rows = self
-            .dataset
-            .select(format!(
-                "SELECT ?fragment ?placement ?order ?fragmentOrder WHERE {{ \
-                 {entries} {fields} {subjects} }} ORDER BY ?order \
-                 ?fragmentOrder ?entry LIMIT 1"
-            ))
-            .await?;
-        if let Some(row) = rows.next().await? {
-            return Ok(format!(
-                "#{}",
-                self.anchor(
-                    node(&row["placement"])?,
-                    Some(node(&row["fragment"])?)
-                )
-            ));
+        if let Some(anchor) = self.link_index.get(&iri) {
+            return Ok(anchor.clone());
         }
         let destination = if self
             .source
@@ -307,5 +343,41 @@ impl Plan {
             "unsupported section kind {kind}"
         );
         Ok(kind)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn repeated_internal_links_do_not_repeat_graph_queries() -> Result<()>
+    {
+        let (dataset, plans) = crate::publication::showcases::specification(
+            std::path::Path::new("examples/specification/project.ttl"),
+        )
+        .await?;
+        let plan = Plan::read(dataset.clone(), plans[0].clone()).await?;
+        let before = dataset
+            .select_calls
+            .load(std::sync::atomic::Ordering::Relaxed);
+        let mut previous = None;
+        for _ in 0..100 {
+            let link =
+                plan.link("urn:specification:subject", "section").await?;
+            assert!(link.starts_with('#'));
+            if let Some(previous) = &previous {
+                assert_eq!(previous, &link);
+            }
+            previous = Some(link);
+        }
+        assert_eq!(
+            dataset
+                .select_calls
+                .load(std::sync::atomic::Ordering::Relaxed),
+            before,
+            "links to pinned plan subjects must use the bounded index rather \
+             than re-querying the whole plan"
+        );
+        Ok(())
     }
 }

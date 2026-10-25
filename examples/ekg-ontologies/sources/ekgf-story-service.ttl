@@ -1,0 +1,365 @@
+@prefix : <https://ekgf.org/ontology/story-service#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix obda: <https://w3id.org/obda/vocabulary#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix orcid: <http://orcid.org/> .
+@prefix story: <https://ekgf.org/ontology/story#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-story-service: <https://ekgf.org/ontology/story-service#> .
+@base <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#> rdf:type owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-story-service" ;
+      sh:namespace "https://ekgf.org/ontology/story-service#"^^xsd:anyURI
+  ] ;
+    owl:imports story: ;
+    rdfs:comment
+        "The Story Service Ontology supports the Story Service which is a program that can translate Use Case Stories to executable APIs."@en ;
+    rdfs:label "The EKGF Story Service Ontology"@en .
+
+#################################################################
+#    Annotation properties
+#################################################################
+
+###  http://purl.org/dc/elements/1.1/creator
+dc:creator rdf:type owl:AnnotationProperty .
+
+
+###  http://purl.org/dc/elements/1.1/date
+dc:date rdf:type owl:AnnotationProperty .
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://ekgf.org/ontology/story-service#hasParameter
+:hasParameter rdf:type owl:ObjectProperty ;
+    owl:inverseOf :parameterFor ;
+    rdf:type owl:InverseFunctionalProperty ;
+    rdfs:domain :Statement ;
+    rdfs:range :Parameter ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T18:16:18Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#on
+:on rdf:type owl:ObjectProperty ;
+    rdfs:range story:Story ;
+    rdfs:domain
+        [
+            rdf:type owl:Class ;
+            owl:unionOf
+                (
+                    :Parameter
+                    :Result
+                )
+        ] .
+
+
+###  https://ekgf.org/ontology/story-service#parameterFor
+:parameterFor rdf:type
+        owl:ObjectProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range :Statement ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T17:32:57Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#providedBy
+:providedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain story:Story ;
+    rdfs:range :StoryService ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-08T00:10:29Z"^^xsd:dateTime ;
+    rdfs:comment
+        "The execution of any given story can be done by (supplied by) a given (logical) instance of the story Service."@en ;
+    rdfs:label "should be supplied by"@en .
+
+
+###  https://ekgf.org/ontology/story-service#resultFor
+:resultFor rdf:type owl:ObjectProperty ;
+    rdfs:range story:Story ;
+    rdfs:domain :SPARQLResults .
+
+
+###  https://ekgf.org/ontology/story-service#shouldBeGeneratedBy
+:shouldBeGeneratedBy rdf:type
+        owl:ObjectProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range :StoryService ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T17:25:50Z"^^xsd:dateTime ;
+    rdfs:comment "Identifies the story-service instance expected to generate a parameter. The property is functional; its intended distinction from other parameter-to-service relationships requires modeling review."@en .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://ekgf.org/ontology/story-service#isServiceParameter
+:isServiceParameter rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range xsd:boolean ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-08T00:06:23Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#parameterDirection
+:parameterDirection rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-08T00:03:25Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#parameterKey
+:parameterKey rdf:type
+        owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T18:19:13Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#parameterOp
+:parameterOp rdf:type
+        owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain :Parameter ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T18:21:12Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#parameterType
+:parameterType rdf:type
+        owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T18:20:08Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#resultKey
+:resultKey rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Parameter ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-07T20:46:55Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#resultType
+:resultType rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Result ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-07T20:51:59Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#sparqlQueryName
+:sparqlQueryName rdf:type
+        owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain story:Story ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-07T20:50:13Z"^^xsd:dateTime .
+
+
+###  https://ekgf.org/ontology/story-service#sparqlStatementFileName
+:sparqlStatementFileName rdf:type owl:DatatypeProperty ;
+    rdfs:domain story:Story ;
+    rdfs:range xsd:string ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-07T20:51:10Z"^^xsd:dateTime .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://ekgf.org/ontology/story-service#Parameter
+:Parameter rdf:type owl:Class ;
+    owl:disjointWith
+        :Statement,
+        :StoryService ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#Result
+:Result rdf:type owl:Class ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#SHACLStatement
+:SHACLStatement rdf:type owl:Class ;
+    rdfs:subClassOf :Statement ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T18:14:13Z"^^xsd:dateTime ;
+    rdfs:label "SHACL Statement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#SPARQLParameter
+:SPARQLParameter rdf:type owl:Class ;
+    rdfs:subClassOf :Parameter ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T17:25:05Z"^^xsd:dateTime ;
+    rdfs:label "SPARQL Parameter"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#SPARQLResults
+:SPARQLResults rdf:type owl:Class ;
+    rdfs:subClassOf :Result ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-07T20:40:18Z"^^xsd:dateTime ;
+    rdfs:label "SPARQL Results"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#SPARQLStatement
+:SPARQLStatement rdf:type owl:Class ;
+    rdfs:subClassOf :Statement ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T17:24:10Z"^^xsd:dateTime ;
+    rdfs:label "SPARQL Statement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#Statement
+:Statement rdf:type owl:Class ;
+    owl:disjointWith :StoryService ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T17:24:43Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+###  https://ekgf.org/ontology/story-service#StoryService
+:StoryService rdf:type owl:Class ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-01T17:28:32Z"^^xsd:dateTime ;
+    rdfs:label "Story Service"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+
+#################################################################
+#    Annotations
+#################################################################
+
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/story-service#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/story-service#Parameter>
+    rdfs:label "Parameter"@en ;
+    rdfs:comment "A parameter description used by an executable statement in the story service. Parameters are distinct from statements and service instances."@en .
+
+<https://ekgf.org/ontology/story-service#Result>
+    rdfs:label "Result"@en ;
+    rdfs:comment "A description of an output supplied by a story-service execution."@en .
+
+<https://ekgf.org/ontology/story-service#SHACLStatement>
+    rdfs:comment "A story-service statement expressed using SHACL."@en .
+
+<https://ekgf.org/ontology/story-service#SPARQLParameter>
+    rdfs:comment "A statement parameter used by a SPARQL story implementation."@en .
+
+<https://ekgf.org/ontology/story-service#SPARQLResults>
+    rdfs:comment "A story-service result description for the output of a SPARQL execution."@en .
+
+<https://ekgf.org/ontology/story-service#SPARQLStatement>
+    rdfs:comment "A story-service statement expressed using SPARQL."@en .
+
+<https://ekgf.org/ontology/story-service#Statement>
+    rdfs:label "Statement"@en ;
+    rdfs:comment "An executable statement used by the story service to implement a story, such as a SPARQL or SHACL statement. It is distinct from the service that executes it."@en .
+
+<https://ekgf.org/ontology/story-service#StoryService>
+    rdfs:comment "A logical service that exposes story implementations through executable APIs and supplies the execution context for their statements and parameters."@en .
+
+<https://ekgf.org/ontology/story-service#hasParameter>
+    rdfs:label "Has Parameter"@en ;
+    rdfs:comment "Associates a statement with one of its parameters; it is the inverse of parameterFor."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#isServiceParameter>
+    rdfs:label "Is Service Parameter"@en ;
+    rdfs:comment "Records whether a parameter is classified as a service parameter by the story-service configuration."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#on>
+    rdfs:label "On"@en ;
+    rdfs:comment "Identifies the story to which a parameter or result description relates."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#parameterDirection>
+    rdfs:label "Parameter Direction"@en ;
+    rdfs:comment "Records the direction assigned to a parameter as a string. The ontology does not declare a controlled set of direction values."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#parameterFor>
+    rdfs:label "Parameter For"@en ;
+    rdfs:comment "Identifies the statement for which a parameter is defined. The functional-property axiom limits a parameter to one statement."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#parameterKey>
+    rdfs:label "Parameter Key"@en ;
+    rdfs:comment "Records the string key by which a parameter is identified in a statement or service configuration."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#parameterOp>
+    rdfs:label "Parameter Op"@en ;
+    rdfs:comment "Records an operation value associated with a parameter. The ontology does not specify its literal datatype or the allowed operations."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#parameterType>
+    rdfs:label "Parameter Type"@en ;
+    rdfs:comment "Records the parameter type identifier used by the story-service configuration. The value is a string rather than a link to an RDF class or datatype."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#providedBy>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#resultFor>
+    rdfs:label "Result For"@en ;
+    rdfs:comment "Relates a SPARQL result description to the story that produces the result."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#resultKey>
+    rdfs:label "Result Key"@en ;
+    rdfs:comment "Records a result-entry key in the story-service configuration. Its currently declared domain is Parameter, which requires review before treating it as a property restricted to Result."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#resultType>
+    rdfs:label "Result Type"@en ;
+    rdfs:comment "Records the result type identifier used by the story-service configuration as a string."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#shouldBeGeneratedBy>
+    rdfs:label "Should Be Generated By"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#sparqlQueryName>
+    rdfs:label "Sparql Query Name"@en ;
+    rdfs:comment "Records the configured name of a story's SPARQL query."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .
+
+<https://ekgf.org/ontology/story-service#sparqlStatementFileName>
+    rdfs:label "Sparql Statement File Name"@en ;
+    rdfs:comment "Records the name of the SPARQL statement file associated with a story."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/story-service#> .

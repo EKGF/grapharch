@@ -11,10 +11,24 @@ use {
 pub enum Renderer {
     /// Static HTML without a server dependency.
     Html,
+    /// Multipage static documentation website.
+    Website,
     /// Standards-style static HTML with publication metadata.
     Specification,
     /// Typst source and PDF.
     Typst,
+}
+
+impl Renderer {
+    pub(crate) fn parse(value: &str) -> Result<Self> {
+        match value {
+            "html" => Ok(Self::Html),
+            "website" => Ok(Self::Website),
+            "specification" => Ok(Self::Specification),
+            "typst" => Ok(Self::Typst),
+            other => bail!("unsupported renderer {other}"),
+        }
+    }
 }
 
 /// A target binds shared content to a scope, arrangement, and artifact
@@ -38,12 +52,7 @@ impl Target {
     pub fn read(store: &Store, id: NamedNode) -> Result<Self> {
         let scope = node(store, &id, "scope")?;
         let profile = node(store, &id, "profile")?;
-        let renderer = match text(store, &id, "renderer")?.as_str() {
-            "html" => Renderer::Html,
-            "specification" => Renderer::Specification,
-            "typst" => Renderer::Typst,
-            other => bail!("{id} unsupported renderer {other}"),
-        };
+        let renderer = Renderer::parse(&text(store, &id, "renderer")?)?;
         let destination = PathBuf::from(text(store, &id, "destination")?);
         ensure!(
             !destination.as_os_str().is_empty(),

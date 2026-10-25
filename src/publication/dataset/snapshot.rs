@@ -30,6 +30,26 @@ impl Dataset {
         self.snapshot_matching(filter).await
     }
 
+    /// Pin collected assertions owned by one source processor, so discovering
+    /// ontology declarations cannot accidentally select another source.
+    pub(crate) async fn snapshot_for_processor(
+        &self,
+        project: &str,
+        processor: &str,
+    ) -> Result<NamedNode> {
+        let project = NamedNode::new(project)?;
+        let processor = NamedNode::new(processor)?;
+        self.snapshot_matching(format!(
+            "?version {} ?attempt . ?attempt {} {project} ; {} {processor} ; \
+             {} \"collect\"",
+            term("data"),
+            term("project"),
+            term("collector"),
+            term("stage")
+        ))
+        .await
+    }
+
     async fn snapshot_matching(&self, filter: String) -> Result<NamedNode> {
         self.run(move |store| {
             // A staging snapshot is captured by one transactional update.

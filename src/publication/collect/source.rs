@@ -65,7 +65,7 @@ impl FileInput {
             "{} exceeds authored file limit",
             self.path.display()
         );
-        let revision = format!("authored-v1:{:x}", Sha256::digest(&bytes));
+        let revision = format!("authored-v2:{:x}", Sha256::digest(&bytes));
         Ok((
             String::from_utf8(bytes)
                 .context("authored source must be UTF-8")?,
@@ -89,6 +89,7 @@ impl FileInput {
         ]);
         // bounded: fixed metadata plus one capped authored body literal.
         let mut quads = vec![
+            self.quad(&self.collector, "type", term("Processor")),
             self.quad(&fragment, "type", term("Fragment")),
             self.quad(
                 &fragment,

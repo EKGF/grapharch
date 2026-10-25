@@ -1,130 +1,1198 @@
+# Grapharch documentation and publication vocabulary. Draft, maintained with the implementation.
+# OWL/RDFS axioms describe meaning; SHACL and runtime validation enforce build contracts.
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+@prefix cmns-pts: <https://www.omg.org/spec/Commons/PartiesAndSituations/> .
+@prefix adms: <http://www.w3.org/ns/adms#> .
 
 <https://ekgf.org/ontology/grapharch> a owl:Ontology ;
-    rdfs:label "Grapharch documentation and publication ontology" .
+    owl:imports <https://ekgf.org/ontology/artifact-governance#> ;
+    owl:versionIRI <https://ekgf.org/ontology/grapharch/0.0.1> ;
+    owl:versionInfo "0.0.1 — development draft" ;
+    dct:title "Grapharch documentation and publication ontology"@en ;
+    rdfs:label "Grapharch documentation and publication ontology"@en ;
+    dct:description "A vocabulary for collecting source contributions, generating reusable documentation fragments, assembling validated dataset revisions, resolving publication plans, and recording HTML and PDF publication results. It separates the identity of documented resources and logical components from target-specific arrangement and presentation."@en ;
+    dct:creator <https://ekgf.org/> ;
+    dct:publisher <https://ekgf.org/> ;
+    dct:license <https://spdx.org/licenses/MIT> ;
+    dct:rights "Copyright (c) 2024-2025 Enterprise Knowledge Graph Forum, Object Management Group Inc. Distributed under the MIT license in the Grapharch repository."@en ;
+    dct:modified "2026-10-25"^^xsd:date ;
+    dct:language "en" ;
+    vann:preferredNamespacePrefix "ga" ;
+    vann:preferredNamespaceUri "https://ekgf.org/ontology/grapharch#" ;
+    adms:status <http://purl.org/adms/status/UnderDevelopment> ;
+    rdfs:seeAlso <https://ekgf.github.io/grapharch/ontology/>,
+        <https://ekgf.github.io/grapharch/other/ontology/publication.shacl.ttl>,
+        <https://github.com/EKGF/grapharch> ;
+    skos:scopeNote "This is the evolving publication-pipeline vocabulary. Earlier documentation.ttl and doc-component-categories.ttl files are prototype vocabularies, not imports or authoritative definitions of this contract. Version 0.0.1 is a development identifier; immutable releases and persistent namespace hosting remain release work."@en ;
+    rdfs:comment "Domain and range declarations support RDF inference; they are not closed-world validation rules. Broad rdfs:Resource domains and ranges are intentional where properties are reused across resource kinds or identify arbitrary domain resources. Cardinalities, value sets, path safety, markup safety, size budgets, and lifecycle transitions are enforced by the companion SHACL shapes and Rust implementation. Embedded RDF examples illustrate individual relationships; they are not complete build configurations. The ontology imports the Artifact Governance Ontology for authority semantics. Grapharch does not fetch imports implicitly during a documentation build."@en .
 
-ga:Project a owl:Class ; rdfs:label "Project" .
-ga:Collector a owl:Class ; rdfs:label "Collector" .
-ga:Scope a owl:Class ; rdfs:label "Scope" .
-ga:Target a owl:Class ; rdfs:label "Target" .
-ga:Profile a owl:Class ; rdfs:label "Profile" .
-ga:Placement a owl:Class ; rdfs:label "Placement" .
-ga:Component a owl:Class ; rdfs:label "Component" .
-ga:Fragment a owl:Class ; rdfs:label "Fragment" .
-ga:Contribution a owl:Class ; rdfs:label "Contribution" .
-ga:ExternalReference a owl:Class ; rdfs:label "ExternalReference" .
-ga:Revision a owl:Class ; rdfs:label "Revision" .
-ga:Plan a owl:Class ; rdfs:label "Plan" .
-ga:PublicationJob a owl:Class ; rdfs:label "PublicationJob" .
+<https://ekgf.org/> rdfs:label "Enterprise Knowledge Graph Forum"@en .
 
-ga:scope a owl:ObjectProperty ; rdfs:label "scope" .
-ga:target a owl:ObjectProperty ; rdfs:label "target" .
-ga:collector a owl:ObjectProperty ; rdfs:label "collector" .
-ga:kind a owl:DatatypeProperty ; rdfs:label "kind" .
-ga:source a owl:DatatypeProperty ; rdfs:label "source" .
-ga:include a owl:ObjectProperty ; rdfs:label "include" .
-ga:exclude a owl:ObjectProperty ; rdfs:label "exclude" .
-ga:compose a owl:ObjectProperty ; rdfs:label "compose" .
-ga:traverse a owl:ObjectProperty ; rdfs:label "traverse" .
-ga:maxDepth a owl:DatatypeProperty ; rdfs:label "maxDepth" .
-ga:profile a owl:ObjectProperty ; rdfs:label "profile" .
-ga:renderer a owl:DatatypeProperty ; rdfs:label "renderer" .
-ga:destination a owl:DatatypeProperty ; rdfs:label "destination" .
-ga:placement a owl:ObjectProperty ; rdfs:label "placement" .
-ga:component a owl:ObjectProperty ; rdfs:label "component" .
-ga:order a owl:DatatypeProperty ; rdfs:label "order" .
-ga:fragment a owl:ObjectProperty ; rdfs:label "fragment" .
-ga:subject a owl:ObjectProperty ; rdfs:label "subject" .
-ga:body a owl:DatatypeProperty ; rdfs:label "body" .
-ga:format a owl:DatatypeProperty ; rdfs:label "format" .
-ga:contribution a owl:ObjectProperty ; rdfs:label "contribution" .
-ga:project a owl:ObjectProperty ; rdfs:label "project" .
-ga:revision a owl:DatatypeProperty ; rdfs:label "revision" .
-ga:reference a owl:ObjectProperty ; rdfs:label "reference" .
+# Classes
 
-ga:Processor a owl:Class ; rdfs:label "Contribution processor" .
-ga:Documentor a owl:Class ; rdfs:subClassOf ga:Processor ; rdfs:label "Specialized RDF fragment generator" .
-ga:Collector rdfs:subClassOf ga:Processor .
-ga:processor a owl:ObjectProperty ; rdfs:label "Owning processor" .
-ga:member a owl:ObjectProperty ; rdfs:label "Resolved scope member" .
-ga:inputRevision a owl:ObjectProperty ; rdfs:label "Pinned input revision" .
+ga:Project a owl:Class ;
+    rdfs:label "Documentation project"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified documentation configuration whose sources, processors, scopes, profiles, and publication targets share a logical RDF dataset."@en ;
+    dct:description "An identified documentation configuration whose sources, processors, scopes, profiles, and publication targets share a logical RDF dataset."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:manual> a ga:Project ;\n    ga:target <urn:manual:web> ."@en .
 
-ga:ScopePlan a owl:Class ; rdfs:label "Resolved scope membership" .
-ga:Entry a owl:Class ; rdfs:label "Target-specific fragment placement" .
-ga:entry a owl:ObjectProperty ; rdfs:label "Publication plan entry" .
-ga:scopePlan a owl:ObjectProperty ; rdfs:label "Resolved scope plan" .
-ga:fragmentOrder a owl:DatatypeProperty ; rdfs:label "Fragment position within a placement" .
-ga:stage a owl:DatatypeProperty ; rdfs:label "Contribution lifecycle stage" .
-ga:currentRevision a owl:ObjectProperty ; rdfs:label "Current validated project revision" .
-ga:validatedFor a owl:ObjectProperty ; rdfs:label "Project for which a revision was validated" .
+ga:Collector a owl:Class ;
+    rdfs:label "Source collector"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A specialized processor that reads one supported kind of native source, recognizes its documentation hints, and contributes normalized RDF with source provenance."@en ;
+    dct:description "A specialized processor that reads one supported kind of native source, recognizes its documentation hints, and contributes normalized RDF with source provenance."@en ;
+    rdfs:subClassOf ga:Processor .
 
-# Publication presentation hints and job provenance.
-ga:style a owl:DatatypeProperty ; rdfs:label "HTML presentation style" .
-ga:sectionKind a owl:DatatypeProperty ; rdfs:label "Publication section kind" .
-ga:url a owl:DatatypeProperty ; rdfs:label "External reference URL" .
-ga:plan a owl:ObjectProperty ; rdfs:label "Rendered publication plan" .
-ga:planSnapshot a owl:ObjectProperty ; rdfs:label "Pinned plan snapshot" .
-ga:artifactDirectory a owl:ObjectProperty ; rdfs:label "Published artifact directory" .
-ga:status a owl:DatatypeProperty ; rdfs:label "Publication job status" .
+ga:Scope a owl:Class ;
+    rdfs:label "Documentation scope"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A reusable selection of documentable resources defined by inclusions, exclusions, composition, and explicitly bounded relationship traversal."@en ;
+    dct:description "A reusable selection of documentable resources defined by inclusions, exclusions, composition, and explicitly bounded relationship traversal."@en ;
+    skos:scopeNote "Scope membership is explicit. A reference to an external resource does not imply inclusion. Traversal requires a declared maximum depth; cyclic composition is rejected."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n<urn:scope> a ga:Scope ;\n    ga:include <urn:root> ;\n    ga:traverse rdfs:subClassOf ;\n    ga:maxDepth 2 ."@en .
 
-# Publisher-neutral specification front matter.
-ga:publisher a owl:ObjectProperty ; rdfs:label "Specification publisher" .
-ga:publicationStatus a owl:DatatypeProperty ; rdfs:label "Declared publication status" .
-ga:publicationDate a owl:DatatypeProperty ; rdfs:label "Publication date" .
-ga:thisVersion a owl:ObjectProperty ; rdfs:label "This published document version" .
-ga:latestVersion a owl:ObjectProperty ; rdfs:label "Latest published document version" .
-ga:previousVersion a owl:ObjectProperty ; rdfs:label "Previous document version" .
-ga:editorDraft a owl:ObjectProperty ; rdfs:label "Latest editor draft" .
-ga:editor a owl:ObjectProperty ; rdfs:label "Document editor" .
-ga:affiliation a owl:DatatypeProperty ; rdfs:label "Editor affiliation" .
-ga:license a owl:ObjectProperty ; rdfs:label "Document license" .
-ga:copyright a owl:DatatypeProperty ; rdfs:label "Document copyright statement" .
+ga:Target a owl:Class ;
+    rdfs:label "Publication target"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A named publication configuration binding one scope, one presentation profile, a renderer, and a relative output destination."@en ;
+    dct:description "A named publication configuration binding one scope, one presentation profile, a renderer, and a relative output destination."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:manual:web> a ga:Target ;\n    ga:scope <urn:scope> ;\n    ga:profile <urn:reader> ;\n    ga:renderer \"html\" ;\n    ga:destination \"reader\" ."@en ;
+    skos:scopeNote "A project can define separate specification, companion-website, and document targets with different scopes and profiles. Targets are publications, not merely alternative styling choices. Plans for a publication family can share one assembled input revision while retaining independent placement and execution records."@en .
 
-# Authority branding is reusable across targets and rendering styles.
-ga:Authority a owl:Class ; rdfs:label "Publishing authority" .
-ga:shortName a owl:DatatypeProperty ; rdfs:label "Authority abbreviation" .
-ga:accentColor a owl:DatatypeProperty ; rdfs:label "Authority accent color" .
-ga:logo a owl:DatatypeProperty ; rdfs:label "Embedded authority logo" .
-ga:subtitle a owl:DatatypeProperty ; rdfs:label "Publication subtitle" .
-ga:implementationReport a owl:ObjectProperty ; rdfs:label "Implementation report" .
-ga:testSuite a owl:ObjectProperty ; rdfs:label "Publication test suite" .
+ga:Profile a owl:Class ;
+    rdfs:label "Publication profile"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified arrangement of logical components for a publication audience or purpose, expressed through ordered placements."@en ;
+    dct:description "An identified arrangement of logical components for a publication audience or purpose, expressed through ordered placements."@en .
 
-# Identified constructs collected from published specification documents.
-ga:Section a owl:Class ; rdfs:label "Specification section" .
-ga:DefinedTerm a owl:Class ; rdfs:label "Defined term" .
-ga:Example a owl:Class ; rdfs:label "Specification example" .
-ga:BibliographicEntry a owl:Class ; rdfs:label "Bibliographic entry" .
-ga:partOf a owl:ObjectProperty ; rdfs:label "Containing source document" .
-ga:nativeAnchor a owl:DatatypeProperty ; rdfs:label "Original section anchor" .
-ga:headingAnchor a owl:DatatypeProperty ; rdfs:label "Original section heading anchor" .
-ga:sourceMarkup a owl:DatatypeProperty ; rdfs:label "Retained source DOM markup" .
+ga:Placement a owl:Class ;
+    rdfs:label "Component placement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A profile-specific occurrence of a logical component with an explicit position, independent of that component and its reusable fragments."@en ;
+    dct:description "A profile-specific occurrence of a logical component with an explicit position, independent of that component and its reusable fragments."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:reader> a ga:Profile ;\n    ga:placement <urn:intro:placement> .\n<urn:intro:placement> a ga:Placement ;\n    ga:component <urn:introduction> ;\n    ga:order 0 ."@en .
 
-ga:author a owl:ObjectProperty ; rdfs:label "Document author" .
-ga:formerEditor a owl:ObjectProperty ; rdfs:label "Former document editor" .
+ga:Component a owl:Class ;
+    rdfs:label "Logical component"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A logical documentation unit that groups reusable fragments independently of their position in a particular output."@en ;
+    dct:description "A logical documentation unit that groups reusable fragments independently of their position in a particular output."@en .
 
-# Diagnostics are derived output, never source contribution heads.
-ga:Diagnostic a owl:Class ; rdfs:label "Build diagnostic" .
-ga:Operation a owl:Class ; rdfs:label "Pipeline operation" .
-ga:diagnostic a owl:ObjectProperty ; rdfs:label "Operation diagnostic" .
-ga:about a owl:ObjectProperty ; rdfs:label "Diagnosed artifact" .
-ga:sourceFragment a owl:ObjectProperty ; rdfs:label "Affected source fragment" .
-ga:severity a owl:DatatypeProperty ; rdfs:label "Diagnostic severity" .
-ga:code a owl:DatatypeProperty ; rdfs:label "Stable diagnostic code" .
-ga:message a owl:DatatypeProperty ; rdfs:label "Diagnostic message" .
-ga:unresolvedReference a owl:DatatypeProperty ; rdfs:label "Reported reference" .
-ga:diagnosticCount a owl:DatatypeProperty ; rdfs:label "Diagnostic count" .
-ga:executionPolicy a owl:DatatypeProperty ; rdfs:label "Execution failure policy" .
+ga:Fragment a owl:Class ;
+    rdfs:label "Documentation fragment"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified unit of authored or generated content with a body, content format, one or more documented subjects, and contribution provenance."@en ;
+    dct:description "An identified unit of authored or generated content with a body, content format, one or more documented subjects, and contribution provenance."@en ;
+    skos:scopeNote "A fragment is reusable across targets. Output position belongs to placements and resolved entries, not to the identity of the documented subject."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:intro> a ga:Fragment ;\n    ga:subject <urn:product> ;\n    ga:body \"An introduction.\" ;\n    ga:format \"text/markdown\" ;\n    ga:contribution <urn:contribution:intro> ."@en .
 
-# Ordered metadata retained from published specifications.
-ga:MetadataRow a owl:Class ; rdfs:label "Publication metadata row" .
-ga:metadataRow a owl:ObjectProperty ; rdfs:label "Metadata row" .
-ga:field a owl:DatatypeProperty ; rdfs:label "Metadata field" .
-ga:linkLabel a owl:DatatypeProperty ; rdfs:label "Metadata link label" .
-ga:latestRecommendation a owl:ObjectProperty ; rdfs:label "Latest recommendation" .
-ga:statusUrl a owl:ObjectProperty ; rdfs:label "Publication status URL" .
-ga:metadataDisclosure a owl:DatatypeProperty ; rdfs:label "Collapsible publication metadata" .
-ga:tocFrontMatter a owl:DatatypeProperty ; rdfs:label "Include front matter in contents" .
-ga:personNote a owl:DatatypeProperty ; rdfs:label "Contributor note" .
-ga:orcid a owl:ObjectProperty ; rdfs:label "Contributor ORCID" .
+ga:Contribution a owl:Class ;
+    rdfs:label "Source contribution"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A stable ownership unit identifying the output of one processor for one source in one project, whose committed versions may change over time."@en ;
+    dct:description "A stable ownership unit identifying the output of one processor for one source in one project, whose committed versions may change over time."@en ;
+    skos:scopeNote "The stable contribution owner, immutable version identifier, and individual execution attempt are distinct resources. A failed or superseded attempt must not advance the committed head."@en .
+
+ga:ExternalReference a owl:Class ;
+    rdfs:label "External reference"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified reference to material outside the selected documentation content; linking to it does not add its subject to a publication scope."@en ;
+    dct:description "An identified reference to material outside the selected documentation content; linking to it does not add its subject to a publication scope."@en .
+
+ga:Revision a owl:Class ;
+    rdfs:label "Assembled dataset revision"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified documentation dataset state accepted by assembly for a project, against which scope resolution and publication planning can operate."@en ;
+    dct:description "An identified documentation dataset state accepted by assembly for a project, against which scope resolution and publication planning can operate."@en ;
+    skos:scopeNote "Assembly validates the selected source and document contributions. A captured contribution snapshot is not automatically an assembled, publishable revision. Revision resources are not Oxigraph transaction identifiers."@en .
+
+ga:Plan a owl:Class ;
+    rdfs:label "Publication plan"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A resolved publication instruction set selecting content, ordered entries, and assets for one target against a pinned input revision."@en ;
+    dct:description "A resolved publication instruction set selecting content, ordered entries, and assets for one target against a pinned input revision."@en ;
+    skos:scopeNote "A plan and its input content must be read through their pinned snapshots. Plan contributions and diagnostics do not become source contribution heads for later assembly."@en .
+
+ga:PublicationJob a owl:Class ;
+    rdfs:label "Publication job"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A recorded rendering attempt for a target and pinned plan, including its execution policy, outcome, diagnostic count, and output location when published."@en ;
+    dct:description "A recorded rendering attempt for a target and pinned plan, including its execution policy, outcome, diagnostic count, and output location when published."@en ;
+    skos:scopeNote "Output locations can be local execution artifacts. They are not necessarily public URLs and are not inputs required to reconstruct source documentation."@en ;
+    rdfs:subClassOf ga:Operation .
+
+ga:Processor a owl:Class ;
+    rdfs:label "Contribution processor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified pipeline participant that owns reproducible contributions to a documentation project at a declared lifecycle stage."@en ;
+    dct:description "An identified pipeline participant that owns reproducible contributions to a documentation project at a declared lifecycle stage."@en ;
+    skos:scopeNote "Processor identity denotes a configured contribution owner; it does not imply a separate operating-system process or separately distributed binary."@en .
+
+ga:Documentor a owl:Class ;
+    rdfs:label "Specialized RDF fragment generator"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A specialized processor that reads already collected RDF and generates documentation fragments for identified resources without interpreting source-native syntax."@en ;
+    dct:description "A specialized processor that reads already collected RDF and generates documentation fragments for identified resources without interpreting source-native syntax."@en ;
+    rdfs:subClassOf ga:Processor .
+
+ga:ScopePlan a owl:Class ;
+    rdfs:label "Resolved scope plan"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An evaluated scope result recording the selected documentable members for a particular input revision."@en ;
+    dct:description "An evaluated scope result recording the selected documentable members for a particular input revision."@en .
+
+ga:Entry a owl:Class ;
+    rdfs:label "Resolved fragment occurrence"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A resolved occurrence of one fragment within a component placement in a publication plan, preserving placement and fragment order."@en ;
+    dct:description "A resolved occurrence of one fragment within a component placement in a publication plan, preserving placement and fragment order."@en .
+
+ga:Authority a owl:Class ;
+    rdfs:label "Publishing authority"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A governance role responsible for semantic artifacts or their publication namespaces, distinct from the party playing that role and reusable across publication targets."@en ;
+    dct:description "A governance role responsible for semantic artifacts or their publication namespaces, distinct from the party playing that role and reusable across publication targets."@en ;
+    owl:equivalentClass artgov:Authority ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    skos:scopeNote "Authority has the meaning defined by the Artifact Governance Ontology in EKGF/ekg-ontologies. Reuse its registered UUIDv4 authority identities. Link the distinct organization or other party with cmns-rlcmp:isPlayedBy. Names, hosts, and URLs are metadata, not authority identity keys. The player may be unknown. Display names use rdfs:label; canonical abbreviations use artgov:authorityAcronym."@en .
+
+ga:Section a owl:Class ;
+    rdfs:label "Specification section"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified section discovered in a source specification, retaining its source-document relationship and native anchors."@en ;
+    dct:description "An identified section discovered in a source specification, retaining its source-document relationship and native anchors."@en .
+
+ga:DefinedTerm a owl:Class ;
+    rdfs:label "Defined term"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified term definition discovered in documentation, retaining its source identity for linking and reference resolution."@en ;
+    dct:description "An identified term definition discovered in documentation, retaining its source identity for linking and reference resolution."@en .
+
+ga:Example a owl:Class ;
+    rdfs:label "Specification example"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified example discovered in documentation, such as a fenced code block with its language and source-fragment relationship."@en ;
+    dct:description "An identified example discovered in documentation, such as a fenced code block with its language and source-fragment relationship."@en .
+
+ga:BibliographicEntry a owl:Class ;
+    rdfs:label "Bibliographic entry"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified bibliographic reference discovered in a source specification and available for citation and reference linking."@en ;
+    dct:description "An identified bibliographic reference discovered in a source specification and available for citation and reference linking."@en .
+
+ga:Diagnostic a owl:Class ;
+    rdfs:label "Build diagnostic"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified report of a pipeline problem or observation, linked to its operation, affected resource, input revision, and reusable diagnostic fragment."@en ;
+    dct:description "An identified report of a pipeline problem or observation, linked to its operation, affected resource, input revision, and reusable diagnostic fragment."@en ;
+    skos:scopeNote "Diagnostics are derived output. They can be rendered as documentation, but do not change the source assertions they report on."@en .
+
+ga:Operation a owl:Class ;
+    rdfs:label "Pipeline operation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified execution of a pipeline stage for which diagnostics and an execution policy can be recorded."@en ;
+    dct:description "An identified execution of a pipeline stage for which diagnostics and an execution policy can be recorded."@en .
+
+ga:MetadataRow a owl:Class ;
+    rdfs:label "Publication metadata row"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An ordered front-matter record preserving a source publication field, display label, and associated value or link."@en ;
+    dct:description "An ordered front-matter record preserving a source publication field, display label, and associated value or link."@en .
+
+ga:Topic a owl:Class ;
+    rdfs:label "Documentation topic"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A logical documentation component with stable identity, reusable fragments, and optional parent-topic and example relationships."@en ;
+    dct:description "A logical documentation component with stable identity, reusable fragments, and optional parent-topic and example relationships."@en ;
+    rdfs:subClassOf ga:Component .
+
+ga:Page a owl:Class ;
+    rdfs:label "Website page grouping"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An output-oriented grouping of documentation topics with a source path, website route, and navigation hints."@en ;
+    dct:description "An output-oriented grouping of documentation topics with a source path, website route, and navigation hints."@en .
+
+ga:TextAsset a owl:Class ;
+    rdfs:label "Collected UTF-8 download"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A collected UTF-8 text resource retained in the documentation graph for publication as a downloadable file."@en ;
+    dct:description "A collected UTF-8 text resource retained in the documentation graph for publication as a downloadable file."@en ;
+    rdfs:subClassOf ga:Fragment .
+
+ga:Showcase a owl:Class ;
+    rdfs:label "Executable documentation showcase"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An executable documentation example connecting native inputs and expected diagnostics to generated previews, PDFs, other outputs, and an exported dataset."@en ;
+    dct:description "An executable documentation example connecting native inputs and expected diagnostics to generated previews, PDFs, other outputs, and an exported dataset."@en .
+
+ga:BinaryAsset a owl:Class ;
+    rdfs:label "Chunked publication artifact"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A retained publication artifact represented by ordered base64 chunks, an output route, a byte count, and a SHA-256 digest."@en ;
+    dct:description "A retained publication artifact represented by ordered base64 chunks, an output route, a byte count, and a SHA-256 digest."@en ;
+    skos:scopeNote "Binary assets are explicitly selected through ga:asset and are not placeholder fragments. Publication verifies decoded size and SHA-256 digest before committing the output."@en ;
+    owl:disjointWith ga:Fragment .
+
+# Resource relationships
+
+ga:scope a owl:ObjectProperty ;
+    rdfs:label "Documentation scope"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a project, target, or evaluated scope plan with the reusable documentation scope that it configures or resolves."@en ;
+    dct:description "Associates a project, target, or evaluated scope plan with the reusable documentation scope that it configures or resolves."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Scope .
+
+ga:target a owl:ObjectProperty ;
+    rdfs:label "Publication target"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a project, publication plan, or publication job with the publication target being configured, resolved, or rendered."@en ;
+    dct:description "Associates a project, publication plan, or publication job with the publication target being configured, resolved, or rendered."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Target .
+
+ga:collector a owl:ObjectProperty ;
+    rdfs:label "Configured collector or executing processor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a project with a configured collector, or a contribution attempt with the processor executing its stage."@en ;
+    dct:description "Associates a project with a configured collector, or a contribution attempt with the processor executing its stage."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Processor ;
+    skos:scopeNote "Project declarations use collector instances. Internal attempt metadata also uses this property for documentors and other processors; its range is therefore ga:Processor rather than ga:Collector."@en .
+
+ga:include a owl:ObjectProperty ;
+    rdfs:label "Included scope seed"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a resource explicitly included as a seed member of a documentation scope."@en ;
+    dct:description "Identifies a resource explicitly included as a seed member of a documentation scope."@en ;
+    rdfs:domain ga:Scope ;
+    rdfs:range rdfs:Resource .
+
+ga:exclude a owl:ObjectProperty ;
+    rdfs:label "Excluded scope member"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a resource excluded from the resolved members of a documentation scope."@en ;
+    dct:description "Identifies a resource excluded from the resolved members of a documentation scope."@en ;
+    rdfs:domain ga:Scope ;
+    rdfs:range rdfs:Resource .
+
+ga:compose a owl:ObjectProperty ;
+    rdfs:label "Composed scope"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Includes the selection of another documentation scope in the scope being defined, subject to bounded traversal and exclusion rules."@en ;
+    dct:description "Includes the selection of another documentation scope in the scope being defined, subject to bounded traversal and exclusion rules."@en ;
+    rdfs:domain ga:Scope ;
+    rdfs:range ga:Scope .
+
+ga:traverse a owl:ObjectProperty ;
+    rdfs:label "Traversal predicate"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies an RDF predicate along which scope resolution may follow outgoing relationships from included resources."@en ;
+    dct:description "Identifies an RDF predicate along which scope resolution may follow outgoing relationships from included resources."@en ;
+    rdfs:domain ga:Scope ;
+    rdfs:range rdf:Property .
+
+ga:profile a owl:ObjectProperty ;
+    rdfs:label "Publication profile"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a publication target or resolved plan with the profile defining its component arrangement."@en ;
+    dct:description "Associates a publication target or resolved plan with the profile defining its component arrangement."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Profile .
+
+ga:placement a owl:ObjectProperty ;
+    rdfs:label "Component placement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a publication profile or resolved plan entry with a target-specific component occurrence."@en ;
+    dct:description "Associates a publication profile or resolved plan entry with a target-specific component occurrence."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Placement .
+
+ga:component a owl:ObjectProperty ;
+    rdfs:label "Logical component"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a placement or resolved entry with the logical component whose fragments are being arranged."@en ;
+    dct:description "Associates a placement or resolved entry with the logical component whose fragments are being arranged."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Component .
+
+ga:fragment a owl:ObjectProperty ;
+    rdfs:label "Documentation fragment"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a component, plan entry, or diagnostic with a reusable documentation fragment."@en ;
+    dct:description "Associates a component, plan entry, or diagnostic with a reusable documentation fragment."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Fragment .
+
+ga:subject a owl:ObjectProperty ;
+    rdfs:label "Documented subject"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a documentable resource described by a fragment, independently of that resource being selected for a particular output."@en ;
+    dct:description "Identifies a documentable resource described by a fragment, independently of that resource being selected for a particular output."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:contribution a owl:ObjectProperty ;
+    rdfs:label "Source contribution"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the stable processor-owned contribution from which a documentation fragment or retained asset originates."@en ;
+    dct:description "Identifies the stable processor-owned contribution from which a documentation fragment or retained asset originates."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Contribution .
+
+ga:project a owl:ObjectProperty ;
+    rdfs:label "Documentation project"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the documentation project to which a contribution, execution attempt, resolved plan, or publication job belongs."@en ;
+    dct:description "Identifies the documentation project to which a contribution, execution attempt, resolved plan, or publication job belongs."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Project .
+
+ga:reference a owl:ObjectProperty ;
+    rdfs:label "Referenced resource"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a resource referenced by a documentation fragment and checked during assembly and publication planning."@en ;
+    dct:description "Identifies a resource referenced by a documentation fragment and checked during assembly and publication planning."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:processor a owl:ObjectProperty ;
+    rdfs:label "Owning processor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the processor that owns a contribution, including a collector, documentor, or other pipeline processor."@en ;
+    dct:description "Identifies the processor that owns a contribution, including a collector, documentor, or other pipeline processor."@en ;
+    rdfs:domain ga:Contribution ;
+    rdfs:range ga:Processor .
+
+ga:member a owl:ObjectProperty ;
+    rdfs:label "Resolved scope member"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a documentable resource selected into an evaluated scope plan."@en ;
+    dct:description "Identifies a documentable resource selected into an evaluated scope plan."@en ;
+    rdfs:domain ga:ScopePlan ;
+    rdfs:range rdfs:Resource .
+
+ga:inputRevision a owl:ObjectProperty ;
+    rdfs:label "Pinned input revision"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the pinned input dataset state against which a plan, operation, diagnostic, or publication job was produced."@en ;
+    dct:description "Identifies the pinned input dataset state against which a plan, operation, diagnostic, or publication job was produced."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:entry a owl:ObjectProperty ;
+    rdfs:label "Publication plan entry"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a resolved publication plan with one of its ordered fragment occurrences."@en ;
+    dct:description "Associates a resolved publication plan with one of its ordered fragment occurrences."@en ;
+    rdfs:domain ga:Plan ;
+    rdfs:range ga:Entry .
+
+ga:scopePlan a owl:ObjectProperty ;
+    rdfs:label "Resolved scope plan"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the evaluated scope result used to select the content of a publication plan."@en ;
+    dct:description "Identifies the evaluated scope result used to select the content of a publication plan."@en ;
+    rdfs:domain ga:Plan ;
+    rdfs:range ga:ScopePlan .
+
+ga:currentRevision a owl:ObjectProperty ;
+    rdfs:label "Current validated project revision"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the most recently accepted assembled revision of a documentation project."@en ;
+    dct:description "Identifies the most recently accepted assembled revision of a documentation project."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range ga:Revision .
+
+ga:validatedFor a owl:ObjectProperty ;
+    rdfs:label "Project for which a revision was validated"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the project for which assembly accepted a dataset revision as publishable input."@en ;
+    dct:description "Identifies the project for which assembly accepted a dataset revision as publishable input."@en ;
+    rdfs:domain ga:Revision ;
+    rdfs:range ga:Project .
+
+ga:plan a owl:ObjectProperty ;
+    rdfs:label "Rendered publication plan"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the resolved publication plan rendered by a publication job."@en ;
+    dct:description "Identifies the resolved publication plan rendered by a publication job."@en ;
+    rdfs:domain ga:PublicationJob ;
+    rdfs:range ga:Plan .
+
+ga:planSnapshot a owl:ObjectProperty ;
+    rdfs:label "Pinned plan snapshot"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the pinned contribution snapshot containing the resolved publication plan used by a rendering job."@en ;
+    dct:description "Identifies the pinned contribution snapshot containing the resolved publication plan used by a rendering job."@en ;
+    rdfs:domain ga:PublicationJob ;
+    rdfs:range rdfs:Resource .
+
+ga:artifactDirectory a owl:ObjectProperty ;
+    rdfs:label "Published artifact directory"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the directory in which a successful publication job wrote its output files; a local file IRI records execution provenance rather than a portable download URL."@en ;
+    dct:description "Identifies the directory in which a successful publication job wrote its output files; a local file IRI records execution provenance rather than a portable download URL."@en ;
+    rdfs:domain ga:PublicationJob ;
+    rdfs:range rdfs:Resource .
+
+ga:publisher a owl:ObjectProperty ;
+    rdfs:label "Specification publisher"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the publishing authority responsible for a specification target."@en ;
+    dct:description "Identifies the publishing authority responsible for a specification target."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:Authority .
+
+ga:thisVersion a owl:ObjectProperty ;
+    rdfs:label "This published document version"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the public location of the particular document version described by the publication metadata."@en ;
+    dct:description "Identifies the public location of the particular document version described by the publication metadata."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:latestVersion a owl:ObjectProperty ;
+    rdfs:label "Latest published document version"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the public location of the latest published version of a document."@en ;
+    dct:description "Identifies the public location of the latest published version of a document."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:previousVersion a owl:ObjectProperty ;
+    rdfs:label "Previous document version"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the public location of the preceding version of a document."@en ;
+    dct:description "Identifies the public location of the preceding version of a document."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:editorDraft a owl:ObjectProperty ;
+    rdfs:label "Latest editor draft"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the public location of the latest editor-maintained draft of a document."@en ;
+    dct:description "Identifies the public location of the latest editor-maintained draft of a document."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:editor a owl:ObjectProperty ;
+    rdfs:label "Document editor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a contributor credited as an editor of a specification."@en ;
+    dct:description "Identifies a contributor credited as an editor of a specification."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:license a owl:ObjectProperty ;
+    rdfs:label "Document license"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the license governing the published document or its documented content."@en ;
+    dct:description "Identifies the license governing the published document or its documented content."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:implementationReport a owl:ObjectProperty ;
+    rdfs:label "Implementation report"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the report describing implementations of a specification."@en ;
+    dct:description "Identifies the report describing implementations of a specification."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:testSuite a owl:ObjectProperty ;
+    rdfs:label "Publication test suite"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the test suite associated with a specification."@en ;
+    dct:description "Identifies the test suite associated with a specification."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:partOf a owl:ObjectProperty ;
+    rdfs:label "Containing source document"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the containing document, page, or logical topic of a collected documentation construct."@en ;
+    dct:description "Identifies the containing document, page, or logical topic of a collected documentation construct."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:author a owl:ObjectProperty ;
+    rdfs:label "Document author"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a contributor credited as an author of a specification."@en ;
+    dct:description "Identifies a contributor credited as an author of a specification."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:formerEditor a owl:ObjectProperty ;
+    rdfs:label "Former document editor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a contributor credited as a former editor of a specification."@en ;
+    dct:description "Identifies a contributor credited as a former editor of a specification."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:diagnostic a owl:ObjectProperty ;
+    rdfs:label "Operation diagnostic"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a pipeline operation or publication job with a recorded diagnostic."@en ;
+    dct:description "Associates a pipeline operation or publication job with a recorded diagnostic."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Diagnostic .
+
+ga:about a owl:ObjectProperty ;
+    rdfs:label "Diagnosed artifact"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the resource or artifact to which a diagnostic applies."@en ;
+    dct:description "Identifies the resource or artifact to which a diagnostic applies."@en ;
+    rdfs:domain ga:Diagnostic ;
+    rdfs:range rdfs:Resource .
+
+ga:sourceFragment a owl:ObjectProperty ;
+    rdfs:label "Affected source fragment"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the existing documentation fragment affected by a diagnostic, when the problem can be located to a fragment."@en ;
+    dct:description "Identifies the existing documentation fragment affected by a diagnostic, when the problem can be located to a fragment."@en ;
+    rdfs:domain ga:Diagnostic ;
+    rdfs:range ga:Fragment .
+
+ga:metadataRow a owl:ObjectProperty ;
+    rdfs:label "Metadata row"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a publication target with an ordered front-matter metadata record retained from its source."@en ;
+    dct:description "Associates a publication target with an ordered front-matter metadata record retained from its source."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:MetadataRow .
+
+ga:latestRecommendation a owl:ObjectProperty ;
+    rdfs:label "Latest recommendation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the latest recommendation referenced in specification front matter."@en ;
+    dct:description "Identifies the latest recommendation referenced in specification front matter."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:statusUrl a owl:ObjectProperty ;
+    rdfs:label "Publication status URL"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the explanatory web page linked from a specification publication-status label."@en ;
+    dct:description "Identifies the explanatory web page linked from a specification publication-status label."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:orcid a owl:ObjectProperty ;
+    rdfs:label "Contributor ORCID"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the ORCID record associated with a publication contributor."@en ;
+    dct:description "Identifies the ORCID record associated with a publication contributor."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:topic a owl:ObjectProperty ;
+    rdfs:label "Document topic"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a page or documentation construct with an identified logical documentation topic."@en ;
+    dct:description "Associates a page or documentation construct with an identified logical documentation topic."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Topic .
+
+ga:parentTopic a owl:ObjectProperty ;
+    rdfs:label "Enclosing logical topic"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the enclosing logical topic of a documentation topic, independently of filesystem directory layout."@en ;
+    dct:description "Identifies the enclosing logical topic of a documentation topic, independently of filesystem directory layout."@en ;
+    rdfs:domain ga:Topic ;
+    rdfs:range ga:Topic .
+
+ga:example a owl:ObjectProperty ;
+    rdfs:label "Topic code example"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a logical documentation topic with an identified code example."@en ;
+    dct:description "Associates a logical documentation topic with an identified code example."@en ;
+    rdfs:domain ga:Topic ;
+    rdfs:range ga:Example .
+
+ga:derivedFrom a owl:ObjectProperty ;
+    rdfs:label "Source documentation fragment"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the source documentation fragment from which a topic, example, or other documentation construct was derived."@en ;
+    dct:description "Identifies the source documentation fragment from which a topic, example, or other documentation construct was derived."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Fragment .
+
+ga:repository a owl:ObjectProperty ;
+    rdfs:label "Project source repository"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the source repository of a documentation project, enabling source links and repository-specific presentation."@en ;
+    dct:description "Identifies the source repository of a documentation project, enabling source links and repository-specific presentation."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range rdfs:Resource .
+
+ga:showcase a owl:ObjectProperty ;
+    rdfs:label "Project showcase"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a documentation project with an executable showcase included in its gallery."@en ;
+    dct:description "Associates a documentation project with an executable showcase included in its gallery."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range ga:Showcase .
+
+ga:previewArtifact a owl:ObjectProperty ;
+    rdfs:label "Primary HTML preview"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the retained HTML artifact used as the primary live preview of a showcase."@en ;
+    dct:description "Identifies the retained HTML artifact used as the primary live preview of a showcase."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:BinaryAsset .
+
+ga:pdfArtifact a owl:ObjectProperty ;
+    rdfs:label "Primary PDF output"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the retained PDF artifact offered for a showcase."@en ;
+    dct:description "Identifies the retained PDF artifact offered for a showcase."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:BinaryAsset .
+
+ga:datasetArtifact a owl:ObjectProperty ;
+    rdfs:label "Exported showcase dataset"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the retained RDF dataset export offered for a showcase."@en ;
+    dct:description "Identifies the retained RDF dataset export offered for a showcase."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:BinaryAsset .
+
+ga:outputArtifact a owl:ObjectProperty ;
+    rdfs:label "Showcase publication output"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a retained publication output belonging to a showcase, including outputs beyond its primary preview and PDF."@en ;
+    dct:description "Identifies a retained publication output belonging to a showcase, including outputs beyond its primary preview and PDF."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:BinaryAsset .
+
+ga:chunk a owl:ObjectProperty ;
+    rdfs:label "Ordered artifact content chunk"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies an ordered base64 content chunk of a retained binary artifact."@en ;
+    dct:description "Identifies an ordered base64 content chunk of a retained binary artifact."@en ;
+    rdfs:domain ga:BinaryAsset ;
+    rdfs:range rdfs:Resource .
+
+ga:asset a owl:ObjectProperty ;
+    rdfs:label "Artifact selected by a publication plan"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a retained binary artifact explicitly selected by a publication plan for emission alongside its rendered documentation."@en ;
+    dct:description "Identifies a retained binary artifact explicitly selected by a publication plan for emission alongside its rendered documentation."@en ;
+    rdfs:domain ga:Plan ;
+    rdfs:range ga:BinaryAsset .
+
+ga:head a owl:ObjectProperty ;
+    rdfs:label "Committed contribution head"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a stable contribution owner with its current committed version in control metadata, or with a pinned version in a snapshot graph."@en ;
+    dct:description "Associates a stable contribution owner with its current committed version in control metadata, or with a pinned version in a snapshot graph."@en ;
+    rdfs:domain ga:Contribution ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "Its interpretation depends on graph context: the control graph holds mutable current heads, while snapshot graphs retain immutable selections. Querying all graphs without snapshot selection can mix revisions."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:owner> ga:head <urn:version:one> ."@en .
+
+ga:pending a owl:ObjectProperty ;
+    rdfs:label "Pending contribution attempt"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a stable contribution owner with its active uncommitted attempt; starting a newer attempt supersedes the pending attempt."@en ;
+    dct:description "Associates a stable contribution owner with its active uncommitted attempt; starting a newer attempt supersedes the pending attempt."@en ;
+    rdfs:domain ga:Contribution ;
+    rdfs:range rdfs:Resource .
+
+ga:failed a owl:ObjectProperty ;
+    rdfs:label "Failed contribution attempt"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a stable contribution owner with a failed attempt retained for failure reporting without replacing its committed head."@en ;
+    dct:description "Associates a stable contribution owner with a failed attempt retained for failure reporting without replacing its committed head."@en ;
+    rdfs:domain ga:Contribution ;
+    rdfs:range rdfs:Resource .
+
+ga:version a owl:ObjectProperty ;
+    rdfs:label "Contribution version"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a contribution attempt with its reproducible version identifier, which can be finalized before commit."@en ;
+    dct:description "Associates a contribution attempt with its reproducible version identifier, which can be finalized before commit."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:data a owl:ObjectProperty ;
+    rdfs:label "Retained contribution data"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a committed contribution version with the retained attempt whose physical graphs contain its assertions."@en ;
+    dct:description "Associates a committed contribution version with the retained attempt whose physical graphs contain its assertions."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:attempt a owl:ObjectProperty ;
+    rdfs:label "Owning contribution attempt"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a physical retained graph with the contribution attempt that wrote it."@en ;
+    dct:description "Associates a physical retained graph with the contribution attempt that wrote it."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+# Literal-valued properties
+
+ga:kind a owl:DatatypeProperty ;
+    rdfs:label "Implementation kind"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the implementation dispatch key identifying a collector or showcase pipeline kind."@en ;
+    dct:description "Records the implementation dispatch key identifying a collector or showcase pipeline kind."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:source a owl:DatatypeProperty ;
+    rdfs:label "Source identifier"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the source identifier interpreted by the owning processor, such as a file path, query input, or showcase fixture directory."@en ;
+    dct:description "Records the source identifier interpreted by the owning processor, such as a file path, query input, or showcase fixture directory."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "This property is a literal in the current contract, even when the string resembles an IRI. Its interpretation is specific to the configured processor."@en .
+
+ga:maxDepth a owl:DatatypeProperty ;
+    rdfs:label "Maximum traversal depth"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the maximum number of relationship steps followed during scope traversal, with zero retaining only seed members."@en ;
+    dct:description "Specifies the maximum number of relationship steps followed during scope traversal, with zero retaining only seed members."@en ;
+    rdfs:domain ga:Scope ;
+    rdfs:range xsd:integer ;
+    skos:scopeNote "The current implementation accepts integers from 0 through 4294967295 and requires this property when ga:traverse is present."@en .
+
+ga:renderer a owl:DatatypeProperty ;
+    rdfs:label "Renderer identifier"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the renderer dispatch identifier selected for a target or recorded by a publication job."@en ;
+    dct:description "Records the renderer dispatch identifier selected for a target or recorded by a publication job."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Current dispatch values are html, website, specification, and typst. These are implementation identifiers rather than a closed OWL enumeration of all possible renderers."@en .
+
+ga:destination a owl:DatatypeProperty ;
+    rdfs:label "Output destination"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies a safe relative directory within an output root in which a target publishes its generated files."@en ;
+    dct:description "Specifies a safe relative directory within an output root in which a target publishes its generated files."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Target ga:Plan ) ] ;
+    rdfs:range xsd:string .
+
+ga:order a owl:DatatypeProperty ;
+    rdfs:label "Local position"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the nonnegative integer position of an item within its containing ordered collection."@en ;
+    dct:description "Specifies the nonnegative integer position of an item within its containing ordered collection."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:integer ;
+    skos:scopeNote "The current implementation accepts integers from 0 through 4294967295. Ordering is local to the containing collection, not a global position."@en .
+
+ga:body a owl:DatatypeProperty ;
+    rdfs:label "Content body"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains the literal content of a documentation fragment or collected text resource, interpreted according to its declared format."@en ;
+    dct:description "Contains the literal content of a documentation fragment or collected text resource, interpreted according to its declared format."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:format a owl:DatatypeProperty ;
+    rdfs:label "Content format"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the content-format identifier used to interpret a retained fragment or asset body."@en ;
+    dct:description "Records the content-format identifier used to interpret a retained fragment or asset body."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Current fragment paths use media-type identifiers such as text/markdown and text/html. A format identifier does not authorize execution of embedded scripts."@en .
+
+ga:revision a owl:DatatypeProperty ;
+    rdfs:label "Source revision token"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the source or processor revision token identifying the reproducible content of a contribution attempt; this value is a literal, not a dataset revision IRI."@en ;
+    dct:description "Records the source or processor revision token identifying the reproducible content of a contribution attempt; this value is a literal, not a dataset revision IRI."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:contribution:intro> ga:revision \"sha256:source-content-digest\" ."@en .
+
+ga:fragmentOrder a owl:DatatypeProperty ;
+    rdfs:label "Fragment position within a placement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the nonnegative integer position of a fragment within a resolved component placement."@en ;
+    dct:description "Specifies the nonnegative integer position of a fragment within a resolved component placement."@en ;
+    rdfs:domain ga:Entry ;
+    rdfs:range xsd:integer ;
+    skos:scopeNote "The current implementation accepts integers from 0 through 4294967295."@en .
+
+ga:stage a owl:DatatypeProperty ;
+    rdfs:label "Contribution lifecycle stage"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the contribution lifecycle stage used to distinguish collected content, generated documentation, and derived plans."@en ;
+    dct:description "Records the contribution lifecycle stage used to distinguish collected content, generated documentation, and derived plans."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Current contribution stage values are collect, document, and plan. Assembly and rendering have separate revision and job records."@en .
+
+ga:style a owl:DatatypeProperty ;
+    rdfs:label "HTML presentation style"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the HTML presentation style requested by a publication target or retained in its plan."@en ;
+    dct:description "Records the HTML presentation style requested by a publication target or retained in its plan."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:sectionKind a owl:DatatypeProperty ;
+    rdfs:label "Publication section kind"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the structural role of a component, such as abstract, status, appendix, glossary, or references."@en ;
+    dct:description "Records the structural role of a component, such as abstract, status, appendix, glossary, or references."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:url a owl:DatatypeProperty ;
+    rdfs:label "External reference URL"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records a literal web address used for external-reference or contributor presentation; this legacy representation is distinct from IRI-valued publication links."@en ;
+    dct:description "Records a literal web address used for external-reference or contributor presentation; this legacy representation is distinct from IRI-valued publication links."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The object is a string literal in the existing contract. Properties such as ga:thisVersion, ga:repository, and ga:orcid instead have IRI objects."@en .
+
+ga:status a owl:DatatypeProperty ;
+    rdfs:label "Execution outcome"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the execution outcome of a pipeline operation or publication job, independently of a specification publication-status label."@en ;
+    dct:description "Records the execution outcome of a pipeline operation or publication job, independently of a specification publication-status label."@en ;
+    rdfs:domain ga:Operation ;
+    rdfs:range xsd:string .
+
+ga:publicationStatus a owl:DatatypeProperty ;
+    rdfs:label "Declared publication status"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the authority-specific publication maturity label displayed in specification front matter."@en ;
+    dct:description "Records the authority-specific publication maturity label displayed in specification front matter."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "This is publisher-controlled text, for example Working Draft or Reference Preview. It neither asserts external approval nor determines execution success."@en .
+
+ga:publicationDate a owl:DatatypeProperty ;
+    rdfs:label "Publication date"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the declared publication date displayed in specification front matter, using an XML Schema date literal."@en ;
+    dct:description "Specifies the declared publication date displayed in specification front matter, using an XML Schema date literal."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:date ;
+    skos:scopeNote "The value is an xsd:date. Rendering additionally checks calendar validity; ontology range axioms do not perform that validation."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n<urn:manual:web> ga:publicationDate \"2026-10-25\"^^xsd:date ."@en .
+
+ga:affiliation a owl:DatatypeProperty ;
+    rdfs:label "Editor affiliation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the organization affiliation displayed for a publication contributor."@en ;
+    dct:description "Records the organization affiliation displayed for a publication contributor."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:copyright a owl:DatatypeProperty ;
+    rdfs:label "Document copyright statement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains the copyright and rights notice displayed for a publication."@en ;
+    dct:description "Contains the copyright and rights notice displayed for a publication."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:shortName a owl:DatatypeProperty ;
+    rdfs:label "Authority abbreviation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the abbreviated name of a publishing authority used in compact publication labels."@en ;
+    dct:description "Records the abbreviated name of a publishing authority used in compact publication labels."@en ;
+    rdfs:domain ga:Authority ;
+    rdfs:range xsd:string ;
+    owl:equivalentProperty artgov:authorityAcronym .
+
+ga:accentColor a owl:DatatypeProperty ;
+    rdfs:label "Authority accent color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the six-digit hexadecimal RGB color used for authority accents in a rendered publication."@en ;
+    dct:description "Specifies the six-digit hexadecimal RGB color used for authority accents in a rendered publication."@en ;
+    rdfs:domain ga:Authority ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The current renderer requires a value matching #[0-9A-Fa-f]{6}."@en .
+
+ga:logo a owl:DatatypeProperty ;
+    rdfs:label "Embedded authority logo"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains the embedded PNG data URL used as the publishing authority logo without requiring a network fetch at render time."@en ;
+    dct:description "Contains the embedded PNG data URL used as the publishing authority logo without requiring a network fetch at render time."@en ;
+    rdfs:domain ga:Authority ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The current renderer accepts data:image/png;base64, values and validates image content and size. The literal is a data URL, not an RDF link to a logo resource."@en .
+
+ga:subtitle a owl:DatatypeProperty ;
+    rdfs:label "Publication subtitle"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains the secondary title displayed below a publication title."@en ;
+    dct:description "Contains the secondary title displayed below a publication title."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:nativeAnchor a owl:DatatypeProperty ;
+    rdfs:label "Original section anchor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records an original source-document element identifier preserved for stable linking after collection and rendering."@en ;
+    dct:description "Records an original source-document element identifier preserved for stable linking after collection and rendering."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:headingAnchor a owl:DatatypeProperty ;
+    rdfs:label "Original section heading anchor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records a source heading identifier used for linking, including a retained HTML heading anchor or a Markdown-derived heading slug."@en ;
+    dct:description "Records a source heading identifier used for linking, including a retained HTML heading anchor or a Markdown-derived heading slug."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:sourceMarkup a owl:DatatypeProperty ;
+    rdfs:label "Retained source DOM markup"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains retained source-document DOM markup used to preserve supported specification constructs through the RDF handoff."@en ;
+    dct:description "Contains retained source-document DOM markup used to preserve supported specification constructs through the RDF handoff."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:severity a owl:DatatypeProperty ;
+    rdfs:label "Diagnostic severity"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the severity level of a diagnostic as an informational, warning, or error classification."@en ;
+    dct:description "Records the severity level of a diagnostic as an informational, warning, or error classification."@en ;
+    rdfs:domain ga:Diagnostic ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Current values are info, warning, and error. A diagnostic code identifies a category independently of severity."@en .
+
+ga:code a owl:DatatypeProperty ;
+    rdfs:label "Stable diagnostic code"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the stable machine-readable diagnostic category used by automation and expected-diagnostic checks."@en ;
+    dct:description "Records the stable machine-readable diagnostic category used by automation and expected-diagnostic checks."@en ;
+    rdfs:domain ga:Diagnostic ;
+    rdfs:range xsd:string .
+
+ga:message a owl:DatatypeProperty ;
+    rdfs:label "Diagnostic message"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains the human-readable explanation of a diagnostic."@en ;
+    dct:description "Contains the human-readable explanation of a diagnostic."@en ;
+    rdfs:domain ga:Diagnostic ;
+    rdfs:range xsd:string .
+
+ga:unresolvedReference a owl:DatatypeProperty ;
+    rdfs:label "Reported reference"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the original reference text or address that could not be resolved during processing."@en ;
+    dct:description "Records the original reference text or address that could not be resolved during processing."@en ;
+    rdfs:domain ga:Diagnostic ;
+    rdfs:range xsd:string .
+
+ga:diagnosticCount a owl:DatatypeProperty ;
+    rdfs:label "Diagnostic count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the number of diagnostics associated with a pipeline operation or publication job."@en ;
+    dct:description "Records the number of diagnostics associated with a pipeline operation or publication job."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:integer .
+
+ga:executionPolicy a owl:DatatypeProperty ;
+    rdfs:label "Execution failure policy"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records whether an operation stops at the first error or continues to collect diagnostics and produce permitted diagnostic output."@en ;
+    dct:description "Records whether an operation stops at the first error or continues to collect diagnostics and produce permitted diagnostic output."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Current policy values are fail-fast and keep-going. Keep-going can publish diagnostic artifacts but still reports an unsuccessful build when errors remain."@en .
+
+ga:field a owl:DatatypeProperty ;
+    rdfs:label "Metadata field"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the recognized metadata field identifier of a publication metadata row."@en ;
+    dct:description "Records the recognized metadata field identifier of a publication metadata row."@en ;
+    rdfs:domain ga:MetadataRow ;
+    rdfs:range xsd:string .
+
+ga:linkLabel a owl:DatatypeProperty ;
+    rdfs:label "Metadata link label"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the human-readable link text retained for a publication metadata row."@en ;
+    dct:description "Records the human-readable link text retained for a publication metadata row."@en ;
+    rdfs:domain ga:MetadataRow ;
+    rdfs:range xsd:string .
+
+ga:metadataDisclosure a owl:DatatypeProperty ;
+    rdfs:label "Collapsible publication metadata"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether specification metadata is presented in a collapsible disclosure element."@en ;
+    dct:description "Specifies whether specification metadata is presented in a collapsible disclosure element."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:boolean .
+
+ga:tocFrontMatter a owl:DatatypeProperty ;
+    rdfs:label "Include front matter in contents"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether unnumbered front-matter sections are included in the specification table of contents."@en ;
+    dct:description "Specifies whether unnumbered front-matter sections are included in the specification table of contents."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:boolean .
+
+ga:personNote a owl:DatatypeProperty ;
+    rdfs:label "Contributor note"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains a supplementary contributor note, such as a service period or memorial acknowledgement."@en ;
+    dct:description "Contains a supplementary contributor note, such as a service period or memorial acknowledgement."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:language a owl:DatatypeProperty ;
+    rdfs:label "Example code language"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the source-code language identifier retained from an example code fence."@en ;
+    dct:description "Records the source-code language identifier retained from an example code fence."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:sourcePath a owl:DatatypeProperty ;
+    rdfs:label "Source-relative path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the source-relative file path retained for provenance and source navigation."@en ;
+    dct:description "Records the source-relative file path retained for provenance and source navigation."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:route a owl:DatatypeProperty ;
+    rdfs:label "Website-relative route"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the safe website-relative output path assigned to a page or retained downloadable asset."@en ;
+    dct:description "Records the safe website-relative output path assigned to a page or retained downloadable asset."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:parentTitle a owl:DatatypeProperty ;
+    rdfs:label "Navigation parent title"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the authored navigation-parent title used when assembling the website page hierarchy."@en ;
+    dct:description "Records the authored navigation-parent title used when assembling the website page hierarchy."@en ;
+    rdfs:domain ga:Page ;
+    rdfs:range xsd:string .
+
+ga:navigationOrder a owl:DatatypeProperty ;
+    rdfs:label "Sibling navigation order"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the numeric ordering hint used to arrange sibling pages in website navigation."@en ;
+    dct:description "Specifies the numeric ordering hint used to arrange sibling pages in website navigation."@en ;
+    rdfs:domain ga:Page ;
+    rdfs:range xsd:integer ;
+    skos:scopeNote "The Markdown collector accepts integers from 0 through 4294967295 and uses 999 when nav_order is omitted. The hint orders sibling pages rather than documentation fragments."@en .
+
+ga:navigationHidden a owl:DatatypeProperty ;
+    rdfs:label "Exclude page from navigation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a page is omitted from website navigation while remaining available at its route."@en ;
+    dct:description "Specifies whether a page is omitted from website navigation while remaining available at its route."@en ;
+    rdfs:domain ga:Page ;
+    rdfs:range xsd:boolean .
+
+ga:showcasesSource a owl:DatatypeProperty ;
+    rdfs:label "Declared showcase source directory"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the explicitly configured source directory containing the showcase registry and native fixture inputs."@en ;
+    dct:description "Records the explicitly configured source directory containing the showcase registry and native fixture inputs."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:string .
+
+ga:showcaseGallery a owl:DatatypeProperty ;
+    rdfs:label "Render showcase collection on this page"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a documentation page displays the generated collection of project showcases."@en ;
+    dct:description "Specifies whether a documentation page displays the generated collection of project showcases."@en ;
+    rdfs:domain ga:Page ;
+    rdfs:range xsd:boolean .
+
+ga:slug a owl:DatatypeProperty ;
+    rdfs:label "Stable showcase artifact directory name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the stable safe directory name used to group a showcase and its publication artifacts."@en ;
+    dct:description "Records the stable safe directory name used to group a showcase and its publication artifacts."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:previewPath a owl:DatatypeProperty ;
+    rdfs:label "Declared primary HTML output"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the declared relative path of the primary HTML output expected from a showcase pipeline."@en ;
+    dct:description "Records the declared relative path of the primary HTML output expected from a showcase pipeline."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:pdfPath a owl:DatatypeProperty ;
+    rdfs:label "Declared primary PDF output"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the declared relative path of the primary PDF output expected from a showcase pipeline."@en ;
+    dct:description "Records the declared relative path of the primary PDF output expected from a showcase pipeline."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:expectedDiagnostic a owl:DatatypeProperty ;
+    rdfs:label "Expected fixture diagnostic code"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records a diagnostic code that must be observed when executing a showcase with a known source problem."@en ;
+    dct:description "Records a diagnostic code that must be observed when executing a showcase with a known source problem."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:base64 a owl:DatatypeProperty ;
+    rdfs:label "Base64-encoded chunk bytes"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Contains the base64 encoding of the bytes in one retained binary-artifact chunk."@en ;
+    dct:description "Contains the base64 encoding of the bytes in one retained binary-artifact chunk."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The current encoding uses canonical base64 text in an xsd:string literal, not an xsd:base64Binary typed literal."@en .
+
+ga:contentDigest a owl:DatatypeProperty ;
+    rdfs:label "Artifact SHA-256 digest"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the lowercase hexadecimal SHA-256 digest of the complete decoded artifact bytes."@en ;
+    dct:description "Records the lowercase hexadecimal SHA-256 digest of the complete decoded artifact bytes."@en ;
+    rdfs:domain ga:BinaryAsset ;
+    rdfs:range xsd:string .
+
+ga:contentSize a owl:DatatypeProperty ;
+    rdfs:label "Artifact byte count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the nonnegative number of decoded bytes in the complete retained artifact."@en ;
+    dct:description "Records the nonnegative number of decoded bytes in the complete retained artifact."@en ;
+    rdfs:domain ga:BinaryAsset ;
+    rdfs:range xsd:integer .
+
+ga:original a owl:DatatypeProperty ;
+    rdfs:label "Original logical graph"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the serialized original logical graph name represented by a retained physical graph, preserving the distinction between named, blank-node, and default graphs."@en ;
+    dct:description "Records the serialized original logical graph name represented by a retained physical graph, preserving the distinction between named, blank-node, and default graphs."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The value is an xsd:string containing the graph-name spelling: <IRI> for a named graph, _:identifier for a blank-node graph, or DEFAULT for the default graph. It is not an IRI-valued relationship and does not reserve a domain IRI as a default-graph sentinel."@en .
+
+ga:ontologySource a owl:DatatypeProperty ;
+    rdfs:label "Ontology specification source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the source-relative Turtle vocabulary file from which a specification target generates its ontology reference fragments and publication artifacts."@en ;
+    dct:description "Identifies the source-relative Turtle vocabulary file from which a specification target generates its ontology reference fragments and publication artifacts."@en ;
+    rdfs:domain ga:Target ; rdfs:range xsd:string ;
+    skos:scopeNote "The website build reads this declared source, generates named class and property reference fragments using the ontology's English annotations and preferred namespace, and retains the specification outputs as website assets. Source paths must stay inside the documentation root. Unsupported anonymous expressions or missing required annotations fail the build."@en .

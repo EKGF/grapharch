@@ -2,85 +2,64 @@ name: Docs CI
 
 on:
   push:
-    branches:
-      - "main"
-      - "feature/**"
+    branches: [main]
     paths:
-      - "docs/**"
+      - 'docs/**'
+      - 'examples/**'
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - 'tests/**'
+      - '.github/workflows/pages.yml'
   pull_request:
-    branches:
-      - "main"
     paths:
-      - "docs/**"
-    # Run manually
+      - 'docs/**'
+      - 'examples/**'
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'tests/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Allow one concurrent deployment
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # Build job
   pages-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config libssl-dev
+      - name: Verify self-documentation
+        run: cargo test --locked --test showcase_gallery --test specification_sidebar --test dprod_showcase --test w3c_specification --test self_documentation --test ontology_specification --test publication_ontology --test authority_governance --test ontology_family --test repository_sources
+      - name: Generate documentation with Grapharch
+        run: >-
+          cargo run --locked -- publication build-site
+          --source docs --definitions docs/grapharch.ttl
+          --project urn:grapharch:docs --target urn:grapharch:docs:website
+          --output-root output/docs
+      - uses: actions/upload-pages-artifact@v3
         with:
-          sparse-checkout: docs
+          path: output/docs/site
 
-      - name: Move & Show
-        run: |
-          rm Cargo.toml Cargo.lock cog.toml *.code* *.sh rust* 2>/dev/null || true
-          shopt -s dotglob ; mv docs/* .
-          rm -rf docs
-          rm *.sh
-          ls -R
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-          cache-version: 0 # Increment this number if you need to re-download cached gems
-
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-
-      - name: Build with Jekyll
-        # Outputs to the './_site' directory by default
-        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
-        env:
-          JEKYLL_ENV: production
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload artifact
-        # Automatically uploads an artifact from the './_site' directory by default
-        uses: actions/upload-pages-artifact@v3
-
-  # Deployment job
   pages-deploy:
+    if: github.event_name != 'pull_request'
     needs: pages-build
-
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    runs-on: ubuntu-latest
     permissions:
-      pages: write # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-
-    # Deploy to the github-pages environment
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
-    # Specify runner + deployment step
-    runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

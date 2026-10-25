@@ -22,8 +22,18 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             markdown.depth(*level) + 1
                         ));
                     },
-                    Tag::BlockQuote(_) => {
-                        output.push_str("#quote(block: true)[")
+                    Tag::BlockQuote(kind) => {
+                        if let Some(kind) = kind {
+                            output.push_str(&format!(
+                                "#block(breakable: true, inset: 10pt, stroke: \
+                                 (left: 2pt + \
+                                 rgb(\"#526174\")))[#strong[#text({})]#\
+                                 linebreak()\n",
+                                quote(super::callouts::label(*kind))
+                            ));
+                        } else {
+                            output.push_str("#quote(block: true)[");
+                        }
                     },
                     Tag::CodeBlock(kind) => {
                         let lang = match kind {

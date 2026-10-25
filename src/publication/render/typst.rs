@@ -30,7 +30,8 @@ pub(super) async fn begin(
     let publisher =
         match plan.source.optional(&plan.target, "publisher").await? {
             Some(oxrdf::Term::NamedNode(publisher)) => {
-                title(&plan.source, &publisher).await?
+                crate::publication::governance::name(&plan.source, &publisher)
+                    .await?
             },
             None => title(&plan.source, &plan.project).await?,
             _ => anyhow::bail!("PDF publisher must be an IRI"),

@@ -1,9 +1,0 @@
-title: RDF 1.1 N-Triples
-source: https://www.w3.org/TR/2014/REC-n-triples-20140225/
-publication_date: '2014-02-25'
-retrieved: '2026-10-24'
-source_sha256: c1b0128244a787b408f5ec6f9a45ac148b998191f5a4341c1979a397722ac036
-logo_source: https://www.w3.org/Icons/w3c_home.png
-logo_sha256: 590608bf256237f22d84bbab2a0a1afc0d4f20db6350bbac2c6841f1f3e13b01
-semantic_round_trip: tested
-exact_visual_parity: not_yet_verified

@@ -1,0 +1,299 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix api: <https://ekgf.org/ontology/api#> .
+@prefix story: <https://ekgf.org/ontology/story#> .
+@prefix concept: <https://ekgf.org/ontology/concept#> .
+@prefix outcome: <https://ekgf.org/ontology/outcome#> .
+@prefix persona: <https://ekgf.org/ontology/persona#> .
+@prefix use-case: <https://ekgf.org/ontology/use-case#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-use-case: <https://ekgf.org/ontology/use-case#> .
+@base <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#>
+    rdf:type owl:Ontology ;
+    sh:declare [
+        sh:prefix "ekg-use-case" ;
+        sh:namespace "https://ekgf.org/ontology/use-case#"^^xsd:anyURI
+    ] ;
+    owl:imports api: ,
+                outcome: ,
+                persona: ,
+                story: ;
+    rdfs:label "EKGF Use Case Ontology"@en ;
+    rdfs:comment "The EKGF Use Case Ontology, based on the EKG/Method as documented on https://method.ekgf.org. It describes the use case tree and the stereotype of each use case. The lifecycle of a use case is described with the Lifecycle Ontology."@en .
+
+#################################################################
+#    Classes
+#################################################################
+
+use-case:UseCase rdf:type owl:Class ;
+    rdfs:label "Use Case"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-08T00:00:01Z"^^xsd:dateTime .
+
+use-case:UseCaseStereoType rdf:type owl:Class ;
+    rdfs:label "Use Case Stereotype"@en ;
+    rdfs:comment "The kind of node a use case is in the use case tree."@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+use-case:hasStereoType rdf:type owl:ObjectProperty ,
+                                owl:FunctionalProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range use-case:UseCaseStereoType ;
+    rdfs:label "has stereotype"@en .
+
+use-case:isPartOf rdf:type owl:ObjectProperty ,
+                           owl:IrreflexiveProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range use-case:UseCase ;
+    rdfs:label "is part of"@en ;
+    rdfs:comment "The parent of the use case in the use case tree. A use case without a parent is a root."@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-06-20T12:36:22Z"^^xsd:dateTime .
+
+use-case:isUsedIn rdf:type owl:ObjectProperty ,
+                           owl:IrreflexiveProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range use-case:UseCase ;
+    rdfs:label "is used in"@en ;
+    rdfs:comment "Another use case in which this use case is used."@en .
+
+use-case:hasOutcome rdf:type owl:ObjectProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range outcome:Outcome ;
+    rdfs:label "has outcome"@en ;
+    rdfs:comment "An outcome the use case is meant to achieve."@en .
+
+use-case:involvesPersona rdf:type owl:ObjectProperty ;
+    owl:inverseOf use-case:isInvolvedInUseCase ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range persona:Persona ;
+    rdfs:label "Involves persona"@en ;
+    rdfs:comment "The given persona is involved in the current use case"@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-06-20T14:13:55Z"^^xsd:dateTime .
+
+use-case:isInvolvedInUseCase rdf:type owl:ObjectProperty ;
+    rdfs:domain persona:Persona ;
+    rdfs:range use-case:UseCase ;
+    rdfs:label "Is involved in"@en ;
+    rdfs:comment "This persona is involved in the given use case"@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-08T00:01:05Z"^^xsd:dateTime .
+
+use-case:usesConcept rdf:type owl:ObjectProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range concept:DataElementConcept ;
+    rdfs:label "Uses concept"@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-06-20T12:40:26Z"^^xsd:dateTime .
+
+use-case:isUsedInUseCase rdf:type owl:ObjectProperty ;
+    owl:inverseOf use-case:usesConcept ;
+    rdfs:domain concept:DataElementConcept ;
+    rdfs:range use-case:UseCase ;
+    rdfs:label "Is used in use case"@en ;
+    rdfs:comment "The current data element concept is used in the given UseCase"@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-06-20T12:40:56Z"^^xsd:dateTime .
+
+use-case:ownsConceptSet rdf:type owl:ObjectProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range concept:ConceptSet ;
+    rdfs:label "owns concept-set"@en .
+
+use-case:usedIn rdf:type owl:ObjectProperty ;
+    rdfs:range use-case:UseCase ;
+    rdfs:label "Used in"@en ;
+    rdfs:comment "The use case that a story or an outcome belongs to. It has no domain because both stories and outcomes carry it."@en ;
+    dc:creator <http://orcid.org/0000-0003-2309-5068> ;
+    dc:date "2020-04-08T00:02:11Z"^^xsd:dateTime .
+
+use-case:hasColor rdf:type owl:ObjectProperty ;
+    rdfs:label "has color"@en-us ,
+               "has colour"@en .
+
+#################################################################
+#    Data Properties
+#################################################################
+
+use-case:screenLayoutIndex rdf:type owl:DatatypeProperty ;
+    rdfs:domain use-case:UseCase ;
+    rdfs:range xsd:integer ;
+    rdfs:label "screen layout index"@en ;
+    rdfs:comment "Index that places the use case in the screen layout of the use case tree."@en .
+
+use-case:hexColor rdf:type owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "hex color"@en ;
+    rdfs:comment "Display color as a CSS hex string, such as #3b82f6."@en .
+
+#################################################################
+#    Stereotypes
+#################################################################
+
+use-case:UseCaseStereoTypeRoot rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "root" ;
+    rdfs:label "Root"@en ;
+    rdfs:comment "A structural root node in the use case tree. A root use case has no parent. Ideally there is one, but nothing stops you from having several."@en ;
+    use-case:hexColor "#6b7280" .
+
+use-case:UseCaseStereoTypeBusinessCapabilityArea rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "business-capability-area" ;
+    rdfs:label "Business Capability Area"@en ;
+    rdfs:comment "A grouping of related business capabilities."@en ;
+    use-case:hexColor "#5b6d8a" .
+
+use-case:UseCaseStereoTypeBusinessCapability rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "business-capability" ;
+    rdfs:label "Business Capability"@en ;
+    rdfs:comment "A business capability in the enterprise capability map."@en ;
+    use-case:hexColor "#365885" .
+
+use-case:UseCaseStereoTypeDataLandscape rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "data-landscape" ;
+    rdfs:label "Data Landscape"@en .
+
+use-case:UseCaseStereoTypeDataDomain rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "data-domain" ;
+    rdfs:label "Data Domain"@en ;
+    rdfs:comment "A top-level data domain in the enterprise data landscape. A data domain owns and manages concept sets and their concepts, and usually has no stories."@en ;
+    use-case:hexColor "#0f766e" .
+
+use-case:UseCaseStereoTypeDataSubdomain rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "data-subdomain" ;
+    rdfs:label "Data Subdomain"@en ;
+    rdfs:comment "A subdomain that belongs to a parent data domain."@en ;
+    use-case:hexColor "#2ea39a" .
+
+use-case:UseCaseStereoTypeUseCase rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "use-case" ;
+    rdfs:label "Use Case"@en ;
+    rdfs:comment "A concrete use case delivered within a business or data context. The default stereotype of a new use case."@en ;
+    use-case:hexColor "#5b5bd6" .
+
+use-case:UseCaseStereoTypeDataTransformation rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "data-transformation" ;
+    rdfs:label "Data Transformation"@en ;
+    rdfs:comment "A use case that transforms data from one or more input datasets into one or more output datasets. Most of its stories are update stories."@en ;
+    use-case:hexColor "#b7791f" .
+
+use-case:UseCaseStereoTypeApplication rdf:type owl:NamedIndividual ,
+        use-case:UseCaseStereoType ;
+    api:slug "app" ;
+    rdfs:label "Application"@en ;
+    rdfs:comment "An application-level use case."@en ;
+    use-case:hexColor "#2563eb" .
+
+#################################################################
+#    General axioms
+#################################################################
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( concept:DataElementConcept
+                story:Story
+                use-case:UseCase
+              )
+] .
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/use-case#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/use-case#UseCase>
+    rdfs:comment "A description of a business interaction or need, organized in a use-case tree and connected to its stories, outcomes, and concepts."@en .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoType>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeApplication>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeBusinessCapability>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeBusinessCapabilityArea>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeDataDomain>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeDataLandscape>
+    rdfs:comment "The controlled use-case stereotype identifying a data-landscape use case."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeDataSubdomain>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeDataTransformation>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeRoot>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#UseCaseStereoTypeUseCase>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#hasColor>
+    rdfs:comment "Associates a resource with a color resource used for presentation. It is an object property, distinct from a hexadecimal color literal annotation."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#hasOutcome>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#hasStereoType>
+    rdfs:comment "Assigns a use-case stereotype to a use case. Its functional-property axiom limits a use case to one stereotype through this property."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#hexColor>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#involvesPersona>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#isInvolvedInUseCase>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#isPartOf>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#isUsedIn>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#isUsedInUseCase>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#ownsConceptSet>
+    rdfs:comment "Identifies a concept set owned by a use case, separating ownership of the set from use of individual concepts."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#screenLayoutIndex>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#usedIn>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .
+
+<https://ekgf.org/ontology/use-case#usesConcept>
+    rdfs:comment "Relates a use case to a data element concept involved in its interactions."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/use-case#> .

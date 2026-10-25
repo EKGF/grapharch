@@ -55,16 +55,22 @@ pub struct CommittedContribution {
 /// workers.
 #[derive(Clone)]
 pub struct Dataset {
-    pub(crate) store: Arc<Store>,
-    coordination:     Arc<Mutex<()>>,
+    pub(crate) store:        Arc<Store>,
+    coordination:            Arc<Mutex<()>>,
+    #[cfg(test)]
+    pub(crate) select_calls: Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl Dataset {
     /// Create an in-memory dataset.
     pub fn memory() -> Result<Self> {
         Ok(Self {
-            store:        Arc::new(Store::new()?),
-            coordination: Arc::new(Mutex::new(())),
+            #[cfg(test)]
+            select_calls:              Arc::new(
+                std::sync::atomic::AtomicUsize::new(0),
+            ),
+            store:                     Arc::new(Store::new()?),
+            coordination:              Arc::new(Mutex::new(())),
         })
     }
 
@@ -72,8 +78,12 @@ impl Dataset {
     /// executor.
     pub async fn open(path: PathBuf) -> Result<Self> {
         Ok(Self {
-            coordination: Arc::new(Mutex::new(())),
-            store:        Arc::new(
+            #[cfg(test)]
+            select_calls:              Arc::new(
+                std::sync::atomic::AtomicUsize::new(0),
+            ),
+            coordination:              Arc::new(Mutex::new(())),
+            store:                     Arc::new(
                 tokio::task::spawn_blocking(move || Store::open(path))
                     .await??,
             ),

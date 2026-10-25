@@ -4,6 +4,8 @@ layout: default
 parent: Features
 nav_order: 4
 permalink: /features/formats/
+grapharch:
+  subject: urn:grapharch:docs:topic:features:formats
 ---
 
 # Formats
@@ -22,7 +24,6 @@ data in a variety of formats, structures, and protocols.
 1. [git](../sources/endpoints/git-repo.md)
 1. [SPARQL](../sources/endpoints/sparql.md)
 1. [Cypher](../sources/endpoints/cypher.md)
-1. [GSQL](../sources/endpoints/gsql.md)
 1. [GraphQL](../sources/endpoints/graphql.md)
 1. [SQL](../sources/endpoints/sql.md)
 1. ...
@@ -40,9 +41,9 @@ non-RDF files such as JSON, CSV, XML, YAML, TOML, Parquet,
 again there's no limit, as long as someone writes a plugin
 for it to support it.
 
-1. [Markdown](../source/file/source-file-markdown.md)
-1. [JSON](../source/file/source-file-json.md)
-1. [CSV](../source/file/source-file-csv.md)
-1. [XML](../source/file/source-file-xml.md)
-1. [YAML](../source/file/source-file-yaml.md)
-1. [TOML](../source/file/source-file-toml.md)
+1. [Markdown](../sources/files/markdown.md)
+1. [JSON](../sources/files/json.md)
+1. [CSV](../sources/files/csv.md)
+1. [XML](../sources/files/xml.md)
+1. [YAML](../sources/files/yaml.md)
+1. [TOML](../sources/files/toml.md)

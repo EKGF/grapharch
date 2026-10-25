@@ -1,0 +1,12 @@
+/* Semantic GFM alerts share presentation across HTML renderers. */
+blockquote.markdown-alert-note{--callout-color:#175a98;--callout-background:#f1f6fc}
+blockquote.markdown-alert-tip{--callout-color:#176644;--callout-background:#eff8f2}
+blockquote.markdown-alert-important{--callout-color:#68449c;--callout-background:#f6f2fb}
+blockquote.markdown-alert-warning{--callout-color:#825600;--callout-background:#fff8e7}
+blockquote.markdown-alert-caution{--callout-color:#aa3035;--callout-background:#fff2f2}
+blockquote[class*="markdown-alert-"]{border-left:4px solid var(--callout-color);background:var(--callout-background);color:inherit;padding:16px 20px;border-radius:0 6px 6px 0}
+blockquote .callout-title{color:var(--callout-color);font-size:.9em;line-height:1.4;margin:0 0 10px}
+blockquote[class*="markdown-alert-"]>p:last-child{margin-bottom:0}
+/* Task-list checkboxes are the list markers, including mixed/nested lists. */
+li.task-list-item{list-style-type:none;position:relative}
+li.task-list-item>input[type="checkbox"],li.task-list-item>p>input[type="checkbox"]{position:absolute;left:-1.55em;top:.4em;margin:0;width:1em;height:1em;accent-color:var(--accent,#1755a4);opacity:1}

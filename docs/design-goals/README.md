@@ -3,6 +3,8 @@ title: "Design Goals"
 layout: default
 nav_order: 2
 permalink: /design-goals/
+grapharch:
+  subject: urn:grapharch:docs:topic:design-goals
 ---
 
 # Design Goals
@@ -66,18 +68,14 @@ The program should be fast, so that:
       components such as "chapters", "sections", "tables", "lists", etc in
       the documentation model.
 
-- [ ] On the output side, many different types of documentation can be generated
-      from the same documentation model. For instance, a documentation model can
-      be exported to a set of markdown files, to a set of html files, to a
-      set of json files, etc.
+- [ ] On the output side, different publication targets reuse the same
+      documentation graph and logical fragments. Built-in renderers produce
+      final publication artifacts directly:
 
-  - [ ] [typst files that are used to generate professional PDFs](../features/targets/typst.md)
-  - [ ] json files that can be used for further processing or
-        feeding into a search engine.
-  - [ ] [markdown files that can be used for further processing by tools
-        like MkDocs](../features/targets/markdown-for-mkdocs.md)
-  - [ ] [reStructuredText files that can be used for further processing by tools
-        like Sphinx](../features/targets/rst-for-sphinx.md)
+  - [x] [HTML and CSS for static websites](../features/targets/html.md)
+  - [x] [Standards-style specification HTML with a paired PDF](../usage/specification-renderer.md)
+  - [x] [Typst source and PDF documents](../features/targets/typst.md)
+  - [x] RDF dataset export for inspection and reuse.
 
 - [ ] Most of the logic of the program will be published as a library, so that
       it can be reused in other projects.

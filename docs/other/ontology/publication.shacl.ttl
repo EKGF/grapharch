@@ -1,4 +1,6 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -22,7 +24,7 @@ ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
 ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("html" "specification" "typst") ] ;
+    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("html" "website" "specification" "typst") ] ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
@@ -59,7 +61,7 @@ ga:SpecificationTargetShape a sh:NodeShape ; sh:targetClass ga:Target ;
 
 ga:SpecificationMetadataShape a sh:NodeShape ;
     sh:property [ sh:path <http://purl.org/dc/terms/title> ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:publisher ; sh:nodeKind sh:IRI ; sh:class ga:Authority ; sh:node ga:SpecificationIdentityShape ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:publisher ; sh:nodeKind sh:IRI ; sh:or ( [ sh:class ga:Authority ] [ sh:class artgov:Authority ] ) ; sh:node ga:AuthorityShape ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:publicationStatus ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:publicationDate ; sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:thisVersion ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
@@ -77,8 +79,10 @@ ga:SpecificationIdentityShape a sh:NodeShape ;
     sh:property [ sh:path ga:url ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:affiliation ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:maxCount 1 ] .
 
-ga:AuthorityShape a sh:NodeShape ; sh:targetClass ga:Authority ;
-    sh:node ga:SpecificationIdentityShape ;
+ga:AuthorityShape a sh:NodeShape ; sh:targetClass ga:Authority, artgov:Authority ;
+    sh:property [ sh:path rdfs:label ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+    sh:property [ sh:path <https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy> ; sh:nodeKind sh:IRI ] ;
+    sh:or ( [ sh:property [ sh:path ga:shortName ; sh:minCount 1 ] ] [ sh:property [ sh:path artgov:authorityAcronym ; sh:minCount 1 ] ] ) ;
     sh:property [ sh:path ga:shortName ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:accentColor ; sh:nodeKind sh:Literal ; sh:pattern "^#[0-9A-Fa-f]{6}$" ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:logo ; sh:nodeKind sh:Literal ; sh:pattern "^data:image/png;base64," ; sh:maxLength 350000 ; sh:maxCount 1 ] .
@@ -92,3 +96,22 @@ ga:DiagnosticShape a sh:NodeShape ; sh:targetClass ga:Diagnostic ; sh:nodeKind s
     sh:property [ sh:path ga:about ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:inputRevision ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:sourceFragment ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] .
+
+ga:PageShape a sh:NodeShape ; sh:targetClass ga:Page ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:route ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:topic ; sh:class ga:Topic ; sh:minCount 1 ] ;
+    sh:property [ sh:path ga:navigationHidden ; sh:datatype xsd:boolean ; sh:minCount 1 ; sh:maxCount 1 ] .
+ga:TopicShape a sh:NodeShape ; sh:targetClass ga:Topic ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:fragment ; sh:class ga:Fragment ; sh:minCount 1 ] ;
+    sh:property [ sh:path ga:partOf ; sh:class ga:Page ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:parentTopic ; sh:class ga:Topic ; sh:maxCount 1 ] .
+
+ga:BinaryAssetShape a sh:NodeShape ; sh:targetClass ga:BinaryAsset ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:route ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:contentDigest ; sh:datatype xsd:string ; sh:pattern "^[a-f0-9]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:contentSize ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:minCount 1 ; sh:maxCount 1 ] .
+ga:ShowcaseShape a sh:NodeShape ; sh:targetClass ga:Showcase ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:previewArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:pdfArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:datasetArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] .

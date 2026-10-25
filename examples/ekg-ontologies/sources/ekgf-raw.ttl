@@ -1,0 +1,450 @@
+@prefix : <https://ekgf.org/ontology/raw#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-raw: <https://ekgf.org/ontology/raw#> .
+@base <https://ekgf.org/ontology/raw#> .
+
+:
+    rdf:type owl:Ontology ;
+    sh:declare [
+        sh:prefix "ekg-raw" ;
+        sh:namespace "https://ekgf.org/ontology/raw#"^^xsd:anyURI
+    ] ;
+    owl:imports rdf: ;
+    rdfs:comment
+        "The Raw Data Ontology is used by a \"capture step\" in an EKG DataOps pipeline to capture any data from any data source as RDF triples without mapping it to higher level ontologies. It is assumed that subsequent steps in a given EKG DataOps pipeline will transform the raw data to match with target ontologies."@en ;
+    rdfs:label "The Raw Data Ontology"@en .
+
+#################################################################
+#    Annotation properties
+#################################################################
+
+###  http://purl.org/dc/elements/1.1/creator
+<http://purl.org/dc/elements/1.1/creator>
+    rdf:type owl:AnnotationProperty .
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://ekgf.org/ontology/raw#forPredicate
+:forPredicate
+    rdf:type owl:ObjectProperty ;
+    rdfs:domain :Value ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:14:28Z"^^xsd:dateTime ;
+    rdfs:comment "The predicate for which the given value was encountered"@en ;
+    rdfs:label "For Predicate"@en .
+
+
+###  https://ekgf.org/ontology/raw#hasView
+:hasView
+    rdf:type owl:ObjectProperty ;
+    owl:inverseOf :isViewIn ;
+    rdf:type owl:InverseFunctionalProperty ;
+    rdfs:domain :Source ;
+    rdfs:range :View ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:28:29Z"^^xsd:dateTime ;
+    rdfs:comment "One Source can have multiple Views"@en .
+
+
+###  https://ekgf.org/ontology/raw#isRowInView
+:isRowInView
+    rdf:type owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain :Row ;
+    rdfs:range :View ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:36:41Z"^^xsd:dateTime ;
+    rdfs:comment "The current row occurs in the given view."@en .
+
+
+###  https://ekgf.org/ontology/raw#isViewIn
+:isViewIn
+    rdf:type owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain :View ;
+    rdfs:range :Source ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:30:00Z"^^xsd:dateTime ;
+    rdfs:comment "This View occurs in the given Source"@en .
+
+
+###  https://ekgf.org/ontology/raw#predicate
+:predicate
+    rdf:type owl:AnnotationProperty ;
+    rdfs:domain :Column ;
+    rdfs:range rdf:Property ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:33:37Z"^^xsd:dateTime ;
+    rdfs:comment "The property that this Column is mapped to. A column is mapped to one property. It is an annotation property because its values are properties, which are not individuals."@en .
+
+
+###  https://ekgf.org/ontology/raw#valueOf
+:valueOf
+    rdf:type owl:ObjectProperty ;
+    rdfs:range :Row ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:17:59Z"^^xsd:dateTime ;
+    rdfs:comment "The Row at which we encountered this value"@en ;
+    rdfs:label "Value of"@en .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://ekgf.org/ontology/raw#columnNumber
+:columnNumber
+    rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain :Column ;
+    rdfs:range xsd:integer ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:31:29Z"^^xsd:dateTime ;
+    rdfs:comment "1-based column index"@en ;
+    rdfs:label "Column number"@en .
+
+
+###  https://ekgf.org/ontology/raw#count
+:count
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:comment "Count non-NA cells for each column or row."@en ;
+    rdfs:label "Count"@en ;
+    rdfs:seeAlso
+        "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.count.html#pandas.DataFrame.count"@en .
+
+
+###  https://ekgf.org/ontology/raw#fileName
+:fileName
+    rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain :File ;
+    rdfs:range xsd:string ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:26:52Z"^^xsd:dateTime ;
+    rdfs:comment "The name of the file as it was passed to the capture step"@en ;
+    rdfs:label "File name"@en .
+
+
+###  https://ekgf.org/ontology/raw#freq
+:freq
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:label "The most common value’s frequency"@en ;
+    rdfs:seeAlso "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html"@en .
+
+
+###  https://ekgf.org/ontology/raw#legacyId
+:legacyId
+    rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain :Row ;
+    rdfs:range xsd:string ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:38:33Z"^^xsd:dateTime ;
+    rdfs:comment "The values in the key-column in the given view will always be mapped to raw:legacyId"@en ;
+    rdfs:label "Legacy ID"@en .
+
+
+###  https://ekgf.org/ontology/raw#legacyIdInIri
+:legacyIdInIri
+    rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:40:31Z"^^xsd:dateTime ;
+    rdfs:comment "The value of legacyId translated to an IRI-compliant lower kebab-case value"@en .
+
+
+###  https://ekgf.org/ontology/raw#localName
+:localName
+    rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain :Column ;
+    rdfs:range xsd:string ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:32:26Z"^^xsd:dateTime ;
+    rdfs:comment "The local name of the property that this Column is mapped to"@en ;
+    rdfs:label "Local name"@en .
+
+
+###  https://ekgf.org/ontology/raw#max
+:max
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:comment "The maximum of the values for the given axis."@en ;
+    rdfs:label "Maximum"@en ;
+    rdfs:seeAlso
+        "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.max.html#pandas.DataFrame.max"@en .
+
+
+###  https://ekgf.org/ontology/raw#mean
+:mean
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:comment "The mean of the values for the given axis."@en ;
+    rdfs:label "Mean"@en ;
+    rdfs:seeAlso
+        "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.mean.html#pandas.DataFrame.mean"@en .
+
+
+###  https://ekgf.org/ontology/raw#min
+:min
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:comment "The minimum of the values for the requested axis."@en ;
+    rdfs:label "Minimum"@en ;
+    rdfs:seeAlso
+        "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.min.html#pandas.DataFrame.min"@en .
+
+
+###  https://ekgf.org/ontology/raw#std
+:std
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:comment "The sample standard deviation over given axis."@en ;
+    rdfs:label "Standard deviation"@en ;
+    rdfs:seeAlso
+        "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.std.html#pandas.DataFrame.std"@en .
+
+
+###  https://ekgf.org/ontology/raw#top
+:top
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:label "Most common value"@en ;
+    rdfs:seeAlso "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html"@en .
+
+
+###  https://ekgf.org/ontology/raw#unique
+:unique
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    rdfs:label "Number of unique values"@en ;
+    rdfs:seeAlso "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html"@en .
+
+
+###  https://ekgf.org/ontology/raw#viewRowNumber
+:viewRowNumber
+    rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain :Row ;
+    rdfs:range xsd:integer ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:41:42Z"^^xsd:dateTime ;
+    rdfs:comment "The 0-based sequence number of the Row in the given View as it was encountered in the Source"@en .
+
+
+###  https://ekgf.org/ontology/raw#25pct
+:25pct
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> .
+
+
+###  https://ekgf.org/ontology/raw#50pct
+:50pct
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> .
+
+
+###  https://ekgf.org/ontology/raw#75pct
+:75pct
+    rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Column ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://ekgf.org/ontology/raw#Column
+:Column
+    rdf:type owl:Class ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:09:19Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  https://ekgf.org/ontology/raw#File
+:File
+    rdf:type owl:Class ;
+    rdfs:subClassOf :Source ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:26:36Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  https://ekgf.org/ontology/raw#Row
+:Row
+    rdf:type owl:Class ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:09:08Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  https://ekgf.org/ontology/raw#Source
+:Source
+    rdf:type owl:Class ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:26:09Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  https://ekgf.org/ontology/raw#Value
+:Value
+    rdf:type owl:Class ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:14:07Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  https://ekgf.org/ontology/raw#View
+:View
+    rdf:type owl:Class ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:25:24Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  https://ekgf.org/ontology/raw#XlsxFile
+:XlsxFile
+    rdf:type owl:Class ;
+    rdfs:subClassOf :File ;
+    <http://purl.org/dc/elements/1.1/creator> <http://orcid.org/0000-0003-2309-5068> ;
+    <http://purl.org/dc/elements/1.1/date> "2020-06-13T09:26:15Z"^^xsd:dateTime ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/raw#>
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/raw#25pct>
+    rdfs:label "25th percentile"@en ;
+    rdfs:comment "Records the 25th-percentile summary value for a captured column."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#50pct>
+    rdfs:label "50th percentile"@en ;
+    rdfs:comment "Records the 50th-percentile summary value, or median, for a captured column."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#75pct>
+    rdfs:label "75th percentile"@en ;
+    rdfs:comment "Records the 75th-percentile summary value for a captured column."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#Column>
+    rdfs:label "Column"@en ;
+    rdfs:comment "A field position in a captured raw-data view, with source metadata and optional statistics or mapping information."@en .
+
+<https://ekgf.org/ontology/raw#File>
+    rdfs:label "File"@en ;
+    rdfs:comment "A file used as a raw-data source during the capture step of a DataOps pipeline."@en .
+
+<https://ekgf.org/ontology/raw#Row>
+    rdfs:label "Row"@en ;
+    rdfs:comment "A record encountered in a raw-data view, retaining its source identifier, sequence position, and captured values."@en .
+
+<https://ekgf.org/ontology/raw#Source>
+    rdfs:label "Source"@en ;
+    rdfs:comment "An input data source captured as RDF before transformation into higher-level domain ontologies. A source may expose several views."@en .
+
+<https://ekgf.org/ontology/raw#Value>
+    rdfs:label "Value"@en ;
+    rdfs:comment "A captured value occurrence associated with a source row and the predicate for which it was encountered."@en .
+
+<https://ekgf.org/ontology/raw#View>
+    rdfs:label "View"@en ;
+    rdfs:comment "A tabular or record-oriented view within a captured source, organizing the rows and columns exposed by that source."@en .
+
+<https://ekgf.org/ontology/raw#XlsxFile>
+    rdfs:label "XLSX file"@en ;
+    rdfs:comment "A raw-data file source in the Excel XLSX workbook format."@en .
+
+<https://ekgf.org/ontology/raw#columnNumber>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#count>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#fileName>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#forPredicate>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#freq>
+    rdfs:comment "Records the occurrence count of the most frequently occurring value in a captured column."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#hasView>
+    rdfs:label "Has View"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#isRowInView>
+    rdfs:label "Is Row In View"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#isViewIn>
+    rdfs:label "Is View In"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#legacyId>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#legacyIdInIri>
+    rdfs:label "Legacy Id In Iri"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#localName>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#max>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#mean>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#min>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#predicate>
+    rdfs:label "Predicate"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#std>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#top>
+    rdfs:comment "Records the most frequently occurring value observed in a captured column."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#unique>
+    rdfs:comment "Records the number of distinct values observed in a captured column."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#valueOf>
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .
+
+<https://ekgf.org/ontology/raw#viewRowNumber>
+    rdfs:label "View Row Number"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/raw#> .

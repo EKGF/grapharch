@@ -1,0 +1,418 @@
+@prefix : <https://ekgf.org/ontology/ekgf-maturity-model#> .
+@prefix ekgmm: <https://ekgf.org/ontology/ekgf-maturity-model#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ekg-mm: <https://ekgf.org/ontology/ekgf-maturity-model#> .
+@base <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model>
+  rdf:type owl:Ontology ;
+  sh:declare [
+      sh:prefix "ekg-mm" ;
+      sh:namespace "https://ekgf.org/ontology/ekgf-maturity-model#"^^xsd:anyURI
+  ] .
+
+#################################################################
+#    Annotation properties
+#################################################################
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#iriLocalName
+:iriLocalName
+  rdf:type owl:AnnotationProperty ;
+  rdfs:comment "The \"local name\" of the given object as it is used in IRIs or URIs"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#iriLocalTypeName
+:iriLocalTypeName
+  rdf:type owl:AnnotationProperty ;
+  rdfs:comment "The \"local type name\" of the given object as it is used in IRIs or URIs"@en .
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#hasCapability
+:hasCapability
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain
+    [
+      rdf:type owl:Class ;
+      owl:unionOf
+        (
+          :CapabilityArea
+          :Pillar
+        )
+    ] ;
+  rdfs:range :Capability ;
+  rdfs:label "hasCapability"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#hasLevel
+:hasLevel
+  rdf:type owl:ObjectProperty ;
+  owl:inverseOf :levelInModel ;
+  rdfs:domain :Model ;
+  rdfs:range :Level ;
+  rdfs:label "hasLevel"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#hasPillar
+:hasPillar
+  rdf:type owl:ObjectProperty ;
+  owl:inverseOf :pillarInModel ;
+  rdfs:domain :Model ;
+  rdfs:range :Pillar ;
+  rdfs:label "hasPillar"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#inArea
+:inArea
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :Capability ;
+  rdfs:range :CapabilityArea ;
+  rdfs:label "inArea"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#inModel
+:inModel
+  rdf:type owl:ObjectProperty, owl:TransitiveProperty ;
+  rdfs:domain
+    [
+      rdf:type owl:Class ;
+      owl:unionOf
+        (
+          :Capability
+          :CapabilityArea
+          :Level
+          :Pillar
+        )
+    ] ;
+  rdfs:range :Model ;
+  rdfs:label "inModel"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#inPillar
+:inPillar
+  rdf:type owl:ObjectProperty ;
+  rdfs:domain :CapabilityArea ;
+  rdfs:range :Pillar ;
+  rdfs:label "inPillar"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#levelInModel
+:levelInModel
+  rdf:type owl:ObjectProperty, owl:FunctionalProperty ;
+  rdfs:domain :Level ;
+  rdfs:range :Model ;
+  rdfs:label "levelInModel"@en .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#pillarInModel
+:pillarInModel
+  rdf:type owl:ObjectProperty, owl:FunctionalProperty ;
+  rdfs:domain :Pillar ;
+  rdfs:range :Model ;
+  rdfs:label "pillarInModel"@en .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#capabilityNumber
+:capabilityNumber
+  rdf:type owl:DatatypeProperty, owl:FunctionalProperty ;
+  rdfs:range xsd:string ;
+  rdfs:comment
+    "A capability number in the format `<pillar>.<area>.<capability>` where `<pillar>` is an uppercase letter and `<area>` and `<capability>` are integer numbers."@en .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Capability
+:Capability
+  rdf:type owl:Class ;
+  rdfs:label "Capability"@en ;
+  :iriLocalTypeName "capability" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#CapabilityArea
+:CapabilityArea
+  rdf:type owl:Class ;
+  rdfs:label "Capability Area"@en ;
+  :iriLocalTypeName "capability-area" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Level
+:Level
+  rdf:type owl:Class ;
+  rdfs:label "Level"@en ;
+  :iriLocalTypeName "level" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Model
+:Model
+  rdf:type owl:Class ;
+  rdfs:label "Model"@en ;
+  :iriLocalTypeName "model" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Pillar
+:Pillar
+  rdf:type owl:Class ;
+  rdfs:label "Pillar"@en ;
+  :iriLocalTypeName "pillar" .
+
+
+#################################################################
+#    Individuals
+#################################################################
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#BusinessPillar
+:BusinessPillar
+  rdf:type owl:NamedIndividual, :Pillar ;
+  :inModel :EKGFMaturityModel ;
+  rdfs:label "Business Pillar"@en ;
+  :iriLocalName "business" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#DataPillar
+:DataPillar
+  rdf:type owl:NamedIndividual, :Pillar ;
+  rdfs:label "Data Pillar"@en ;
+  :iriLocalName "data" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#EKGFMaturityModel
+:EKGFMaturityModel
+  rdf:type owl:NamedIndividual, :Model ;
+  :hasLevel :Level1, :Level2, :Level3, :Level4, :Level5 ;
+  :hasPillar :BusinessPillar, :DataPillar, :OrganizationPillar, :TechnologyPillar ;
+  rdfs:label "Test EKG/MM"@en ;
+  :iriLocalName "ekg-mm" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Level1
+:Level1
+  rdf:type owl:NamedIndividual, :Level ;
+  :iriLocalName "1" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Level2
+:Level2
+  rdf:type owl:NamedIndividual, :Level ;
+  :iriLocalName "2" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Level3
+:Level3
+  rdf:type owl:NamedIndividual, :Level ;
+  :iriLocalName "3" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Level4
+:Level4
+  rdf:type owl:NamedIndividual, :Level ;
+  :iriLocalName "4" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#Level5
+:Level5
+  rdf:type owl:NamedIndividual, :Level ;
+  :iriLocalName "5" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#OrganizationPillar
+:OrganizationPillar
+  rdf:type owl:NamedIndividual, :Pillar ;
+  rdfs:label "Organization Pillar"@en ;
+  :iriLocalName "organization" .
+
+
+###  https://ekgf.org/ontology/ekgf-maturity-model#TechnologyPillar
+:TechnologyPillar
+  rdf:type owl:NamedIndividual, :Pillar ;
+  rdfs:label "Technology Pillar"@en ;
+  :iriLocalName "technology" .
+
+
+#################################################################
+#    General axioms
+#################################################################
+
+[
+  rdf:type owl:AllDisjointClasses ;
+  owl:members
+    (
+      :Capability
+      :CapabilityArea
+      :Level
+      :Model
+      :Pillar
+    )
+] .
+
+
+[
+  rdf:type owl:AllDisjointClasses ;
+  owl:members
+    (
+      :Capability
+      :Level
+      :Model
+      :Pillar
+    )
+] .
+
+
+[
+  rdf:type owl:AllDisjointClasses ;
+  owl:members
+    (
+      :Capability
+      :Level
+      :Pillar
+    )
+] .
+
+
+[
+  rdf:type owl:AllDifferent ;
+  owl:distinctMembers
+    (
+      :BusinessPillar
+      :DataPillar
+      :OrganizationPillar
+      :TechnologyPillar
+    )
+] .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi
+
+
+#################################################################
+#    Documentation annotations
+#################################################################
+
+<https://ekgf.org/ontology/ekgf-maturity-model>
+    rdfs:label "EKGF Maturity Model Ontology"@en ;
+    rdfs:comment "A vocabulary for organizing maturity models into pillars, capability areas, capabilities, and levels, with an example EKGF model containing four pillars and five numbered levels."@en ;
+    <http://purl.org/dc/terms/license> <https://creativecommons.org/publicdomain/zero/1.0/> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#BusinessPillar>
+    rdfs:comment "The business dimension of the example EKGF maturity model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Capability>
+    rdfs:comment "An ability assessed within the maturity model and associated with a capability area."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#CapabilityArea>
+    rdfs:comment "A subject area within a maturity-model pillar that organizes related capabilities."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#DataPillar>
+    rdfs:comment "The data dimension of the example EKGF maturity model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#EKGFMaturityModel>
+    rdfs:comment "The example EKGF maturity-model instance in this vocabulary, containing five numbered levels and four pillars. This instance does not provide the assessment criteria for those levels."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Level>
+    rdfs:comment "A maturity level defined within a particular maturity model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Level1>
+    rdfs:label "Level 1"@en ;
+    rdfs:comment "Numbered level 1 of the example EKGF maturity model. The vocabulary supplies the level identifier without defining its assessment criteria."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Level2>
+    rdfs:label "Level 2"@en ;
+    rdfs:comment "Numbered level 2 of the example EKGF maturity model. The vocabulary supplies the level identifier without defining its assessment criteria."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Level3>
+    rdfs:label "Level 3"@en ;
+    rdfs:comment "Numbered level 3 of the example EKGF maturity model. The vocabulary supplies the level identifier without defining its assessment criteria."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Level4>
+    rdfs:label "Level 4"@en ;
+    rdfs:comment "Numbered level 4 of the example EKGF maturity model. The vocabulary supplies the level identifier without defining its assessment criteria."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Level5>
+    rdfs:label "Level 5"@en ;
+    rdfs:comment "Numbered level 5 of the example EKGF maturity model. The vocabulary supplies the level identifier without defining its assessment criteria."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Model>
+    rdfs:comment "An identified maturity assessment model organizing pillars and levels."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#OrganizationPillar>
+    rdfs:comment "The organizational dimension of the example EKGF maturity model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#Pillar>
+    rdfs:comment "A dimension of a maturity model, such as business, data, organization, or technology."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#TechnologyPillar>
+    rdfs:comment "The technology dimension of the example EKGF maturity model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#capabilityNumber>
+    rdfs:label "Capability Number"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#hasCapability>
+    rdfs:comment "Associates a pillar or capability area with a capability it includes."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#hasLevel>
+    rdfs:comment "Associates a maturity model with a level defined in that model; it is the inverse of levelInModel."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#hasPillar>
+    rdfs:comment "Associates a maturity model with one of its pillars; it is the inverse of pillarInModel."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#inArea>
+    rdfs:comment "Identifies the capability area containing a maturity-model capability."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#inModel>
+    rdfs:comment "Relates a capability, capability area, level, or pillar to the maturity model in which it participates. The property is declared transitive."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#inPillar>
+    rdfs:comment "Identifies the pillar containing a capability area."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#iriLocalName>
+    rdfs:label "IRI local name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#iriLocalTypeName>
+    rdfs:label "IRI local type name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#levelInModel>
+    rdfs:comment "Identifies the maturity model defining a level. The functional-property axiom limits each level resource to one model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .
+
+<https://ekgf.org/ontology/ekgf-maturity-model#pillarInModel>
+    rdfs:comment "Identifies the maturity model containing a pillar. The functional-property axiom limits each pillar resource to one model."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/ekgf-maturity-model> .

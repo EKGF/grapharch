@@ -2,6 +2,9 @@
 title: "Contributing Code"
 layout: default
 parent: Contribute
+grapharch:
+  subject: urn:grapharch:docs:topic:other:contribute:contribute-code
+permalink: /other/contribute/contribute-code/
 ---
 
 # How to Contribute

@@ -3,6 +3,9 @@ title: Flexible Output Formats
 layout: default
 parent: General
 nav_order: 3
+grapharch:
+  subject: urn:grapharch:docs:topic:features:general:flexible-output-formats
+permalink: /features/general/flexible-output-formats/
 ---
 
 # Flexible Output Formats

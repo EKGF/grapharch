@@ -2,7 +2,7 @@
 name = "grapharch"
 version = "0.0.1"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 description = "GraphArch is a tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as either a website or a PDF"
 authors = ["Jacobus Geluk <jacobus.geluk@ekgf.org>"]
 license = "MIT"
@@ -25,7 +25,7 @@ tokio-util = "0.7.14"
 futures = "0.3"
 aws-sdk-s3 = "1.79.0"
 async-trait = "0.1"
-git2 = "0.20.0"
+gix = { version = "0.89.0", default-features = false, features = ["max-performance-safe", "comfort", "sha1", "revision", "blocking-http-transport-reqwest-rust-tls", "worktree-mutation"] }
 tempfile = "3.19.0"
 ignore = "0.4.23"
 uuid = { version = "1.16", features = ["v4"] }

@@ -4,6 +4,8 @@ layout: default
 parent: Source
 nav_order: 999
 permalink: /features/sources/endpoints/
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:endpoints
 ---
 
 # Endpoint-based Source

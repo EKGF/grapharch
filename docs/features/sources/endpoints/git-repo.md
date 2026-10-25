@@ -3,35 +3,42 @@ title: Git Repository
 layout: default
 parent: Endpoint
 nav_order: 3
+grapharch:
+  subject: urn:grapharch:docs:topic:features:sources:endpoints:git-repo
+permalink: /features/sources/endpoints/git-repo/
 ---
 
-# Source &mdash; git repository
+# Source — Git repository
 
-Allow users to specify a particular git repository to be their source
-of input for any information about ontologies, schema's and the like.
+Use a local checkout or a remote Git repository as the source for an ontology
+family publication:
 
-We could create a shallow bare clone of that repo, for caching purposes
-and to provide fast access for various types of scans.
+- **Local working tree:** read an existing clone directly, including uncommitted
+  edits, without copying or changing the checkout.
+- **Remote Git repository:** fetch an explicit branch, tag ref, or commit into a
+  reusable bare cache, then read RDF blobs directly without a checkout.
 
-## RDF, OWL, SHACL, SKOS
+The cache lives under the system temporary directory in `grapharch-git-cache`.
+`--git-cache` can select a persistent location. Entries are keyed by repository
+URL and locked during fetch; subsequent runs fetch incrementally. A build pins
+one commit before dispatching its independent RDF file collectors. Network,
+missing-ref, parsing, and metadata errors fail the build; cached state is never
+silently substituted for a failed fetch.
 
-Find any RDF files and try to document them.
+See [ontology family source commands](../../../usage/ontology-families.md).
 
-## Non-RDF
+## Git provenance
 
-Sky is the limit here. We could search for existing
-documentation in the form of markdown, ascidoc, word etc.
+The KG retains the observed commit identifier, separate author and committer
+identities, and their timestamps using PROV, Dublin Core, FOAF, and Schema.org.
+Each remote RDF file records its commit and immutable source location. Local
+working-tree provenance records HEAD as its basis, while collected file hashes
+identify actual input contents. HEAD is not presented as the exact content of
+uncommitted files.
 
-We could scan for Excel spreadsheets and document them.
+Current provenance describes the selected commit. Per-file last-change history,
+blame, contributor statistics, and automatic release notes are future consumers
+of the same cached Git object database.
 
-Erwin diagrams, UML, Mermaid, SQL schema, and so forth.
-
-## License
-
-Find the license and ownership info.
-
-## Git log
-
-Derive documentation from the git-log.
-Contributors, change frequency, percentage contributed,
-and so forth.
+Supported RDF formats are Turtle, RDF/XML, N-Triples, N-Quads, TriG, and N3.
+Configure submodules as separate repository sources.

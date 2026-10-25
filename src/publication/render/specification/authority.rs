@@ -1,7 +1,7 @@
 use {
     super::{
         super::{markup::html_escape, model::Plan},
-        metadata::{explicit_title, optional, validate_url},
+        metadata::{optional, validate_url},
     },
     anyhow::{Result, ensure},
     base64::{Engine, engine::general_purpose::STANDARD},
@@ -20,14 +20,11 @@ pub(super) struct Authority {
 impl Authority {
     pub async fn read(plan: &Plan) -> Result<Self> {
         let node = plan.source.node(&plan.target, "publisher").await?;
-        ensure!(
-            plan.source.has_type(&node, "Authority").await?,
-            "specification publisher must be a ga:Authority"
-        );
-        let name = explicit_title(plan, &node).await?;
-        let short = optional(plan, &node, "shortName")
-            .await?
-            .unwrap_or_else(|| name.clone());
+        let name =
+            crate::publication::governance::name(&plan.source, &node).await?;
+        let short =
+            crate::publication::governance::acronym(&plan.source, &node)
+                .await?;
         let color = optional(plan, &node, "accentColor")
             .await?
             .unwrap_or_else(|| "#005a9c".into());

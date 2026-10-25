@@ -1,10 +1,12 @@
 //! Static HTML and embedded Typst/PDF publication from immutable target plans.
 
+mod callouts;
 mod content;
 mod diagnostic_graph;
 mod engine;
 mod files;
 mod html;
+mod markdown_html;
 mod markup;
 mod model;
 mod native_typst;
@@ -12,8 +14,9 @@ mod record;
 mod specification;
 mod typst;
 mod typst_markdown;
-
+mod website;
 pub use model::PublicationManifest;
+pub(crate) use model::title as page_title;
 use {
     crate::publication::{
         dataset::Dataset,
@@ -133,10 +136,7 @@ impl Publisher {
         let _worker = self.workers.clone().acquire_owned().await?;
         let plan = Plan::read(self.dataset.clone(), handle).await?;
         ensure!(
-            matches!(
-                plan.renderer.as_str(),
-                "html" | "specification" | "typst"
-            ),
+            crate::publication::Renderer::parse(&plan.renderer).is_ok(),
             "unsupported publication engine"
         );
         let destination = files::prepare(&root, &plan).await?;
@@ -188,17 +188,29 @@ impl Publisher {
         }
         let stage = Staging::new(&destination).await?;
         let result = async {
-            let diagnostics =
-                content::write(plan, &stage.path, self.failure_mode).await?;
+            let website_files = if plan.renderer == "website" {
+                Some(website::write(plan, &stage.path).await?)
+            } else {
+                None
+            };
+            let diagnostics = if website_files.is_some() {
+                Vec::new()
+            } else {
+                content::write(plan, &stage.path, self.failure_mode).await?
+            };
             if plan.is_html() {
                 let style = if plan.renderer == "specification" {
                     specification::STYLE
                 } else {
                     html::STYLE
                 };
-                tokio::fs::write(stage.path.join("style.css"), style).await?;
+                tokio::fs::write(
+                    stage.path.join("style.css"),
+                    format!("{style}\n{}", include_str!("callouts.css")),
+                )
+                .await?;
             }
-            if plan.renderer != "html" {
+            if matches!(plan.renderer.as_str(), "typst" | "specification") {
                 ensure!(
                     tokio::fs::metadata(stage.path.join("main.typ"))
                         .await?
@@ -224,6 +236,9 @@ impl Publisher {
                 tokio::fs::write(stage.path.join("document.pdf"), pdf).await?;
             }
             let mut manifest = plan.manifest(job);
+            if let Some(files) = website_files {
+                manifest.files = files;
+            }
             manifest.diagnostics = diagnostics;
             manifest.failure_mode = self.failure_mode;
             tokio::fs::write(

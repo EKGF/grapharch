@@ -62,12 +62,18 @@ impl Diagnostic {
     }
 }
 
+/// The source and pinned input against which a stage diagnostic was observed.
+pub struct SourceContext<'a> {
+    pub project:        &'a str,
+    pub processor:      &'a str,
+    pub source:         &'a str,
+    pub stage:          &'a str,
+    pub input_revision: Option<&'a oxrdf::NamedNode>,
+}
+
 pub(crate) async fn record(
     dataset: &super::dataset::Dataset,
-    project: &str,
-    processor: &str,
-    source: &str,
-    stage: &str,
+    source_context: &SourceContext<'_>,
     diagnostic: Diagnostic,
 ) -> anyhow::Result<()> {
     use {
@@ -79,6 +85,8 @@ pub(crate) async fn record(
         },
         oxrdf::{Literal, NamedNode, Quad, Term},
     };
+    let &SourceContext { project, processor, source, stage, input_revision } =
+        source_context;
     let job = uuid::Uuid::new_v4().to_string();
     let graph = NamedNode::new_unchecked("urn:grapharch:diagnostics");
     let context = Context {
@@ -88,7 +96,15 @@ pub(crate) async fn record(
         processor: NamedNode::new(processor)?,
         source:    source.into(),
         about:     identity("source-artifact", &[project, processor, source]),
-        revision:  dataset.snapshot_for(project).await?,
+        revision:  match input_revision {
+            Some(revision) => (*revision).clone(),
+            None => dataset.snapshot_for(project).await?,
+        },
+    };
+    let status = if matches!(diagnostic.severity, Severity::Error) {
+        "failed"
+    } else {
+        "completed-with-diagnostics"
     };
     let mut data = quads(&context, &job, &[diagnostic])?;
     let fields: [(NamedNode, Term); 6] = [
@@ -111,7 +127,7 @@ pub(crate) async fn record(
         ),
         (
             term("status"),
-            Literal::new_simple_literal("failed").into(),
+            Literal::new_simple_literal(status).into(),
         ),
     ];
     for (predicate, object) in fields {
