@@ -327,9 +327,7 @@ impl AnnotatedTermDocumentor {
     }
 
     fn selected(&self, literal: &Literal) -> bool {
-        literal.language().is_none_or(|language| {
-            language.eq_ignore_ascii_case(&self.language)
-        })
+        super::description::selected(literal, &self.language)
     }
 }
 #[async_trait]
@@ -348,6 +346,8 @@ impl Documentor for AnnotatedTermDocumentor {
             .await?;
         let mut label = Vec::new();
         let mut definitions = Vec::new();
+        let mut markdown_descriptions = Vec::new();
+        let mut comments = Vec::new();
         let mut notes = Vec::new();
         let mut facts = Vec::new();
         let mut types = Vec::new();
@@ -370,6 +370,9 @@ impl Documentor for AnnotatedTermDocumentor {
                 "http://www.w3.org/2000/01/rdf-schema#label" => {
                     Some(&mut label)
                 },
+                super::description::MARKDOWN => {
+                    Some(&mut markdown_descriptions)
+                },
                 "http://purl.org/dc/terms/description" => {
                     Some(&mut definitions)
                 },
@@ -390,15 +393,12 @@ impl Documentor for AnnotatedTermDocumentor {
                     continue;
                 },
                 "http://www.w3.org/2004/02/skos/core#scopeNote" |
-                "http://www.w3.org/2004/02/skos/core#note" |
+                "http://www.w3.org/2004/02/skos/core#note" => Some(&mut notes),
                 "http://www.w3.org/2000/01/rdf-schema#comment" => {
-                    if self.source_annotations &&
-                        predicate.as_str() ==
-                            "http://www.w3.org/2000/01/rdf-schema#comment"
-                    {
+                    if self.source_annotations {
                         Some(&mut definitions)
                     } else {
-                        Some(&mut notes)
+                        Some(&mut comments)
                     }
                 },
                 _ => None,
@@ -474,6 +474,14 @@ impl Documentor for AnnotatedTermDocumentor {
                 code(&self.compact(predicate))
             ));
         }
+        let markdown = super::description::select(
+            markdown_descriptions,
+            &self.subject,
+            &self.language,
+        )?;
+        if markdown.is_none() {
+            notes.extend(comments);
+        }
         ensure!(
             self.source_annotations || label.len() == 1,
             "{} requires exactly one label for {}",
@@ -481,13 +489,15 @@ impl Documentor for AnnotatedTermDocumentor {
             self.language
         );
         ensure!(
-            self.source_annotations || definitions.len() == 1,
+            markdown.is_some() ||
+                self.source_annotations ||
+                definitions.len() == 1,
             "{} requires exactly one Dublin Core description for {}",
             self.subject,
             self.language
         );
         let missing_label = label.is_empty();
-        let missing_definition = definitions.is_empty();
+        let missing_definition = markdown.is_none() && definitions.is_empty();
         let mut distinct_definitions = HashSet::new();
         definitions.retain(|definition| {
             distinct_definitions.insert(definition.clone())
@@ -504,11 +514,16 @@ impl Documentor for AnnotatedTermDocumentor {
                     .join("; ")
             )
         };
-        let definition_text = definitions
-            .iter()
-            .map(|value| escape(value))
-            .collect::<Vec<_>>()
-            .join("\n\n");
+        let definition_text = match markdown {
+            Some(body) => super::description::nested(&body, 3)?,
+            None => {
+                definitions
+                    .iter()
+                    .map(|value| escape(value))
+                    .collect::<Vec<_>>()
+                    .join("\n\n")
+            },
+        };
         let mut gaps = Vec::new();
         if self.source_annotations && missing_label {
             gaps.push("Missing source label.");
@@ -615,7 +630,7 @@ impl Documentor for AnnotatedTermDocumentor {
         hash.update([u8::from(self.source_annotations)]);
         hash.update(body.as_bytes());
         let revision = format!(
-            "annotated-term-v4:{}:{}",
+            "annotated-term-v5:{}:{}",
             self.language,
             hex::encode(hash.finalize())
         );

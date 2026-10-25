@@ -201,7 +201,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("ontology-spec-v1:{snapshot}"),
+            &format!("ontology-spec-v2:{snapshot}"),
         )
         .await?;
     let contribution = identity("contribution", &[
@@ -222,7 +222,7 @@ async fn build(
         q(
             &contribution,
             "revision",
-            Literal::new_simple_literal(format!("ontology-spec-v1:{snapshot}")),
+            Literal::new_simple_literal(format!("ontology-spec-v2:{snapshot}")),
         ),
     ];
     for (position, (kind, title, property)) in [
@@ -245,14 +245,25 @@ async fn build(
     .into_iter()
     .enumerate()
     {
-        let value = source_view
-            .optional_by(ontology, &NamedNode::new(property)?)
-            .await?
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "ontology missing front-matter annotation {property}"
-                )
-            })?;
+        let rich = if property == "http://www.w3.org/2000/01/rdf-schema#comment"
+        {
+            super::document::description::read(&source_view, ontology, "en")
+                .await?
+        } else {
+            None
+        };
+        let value = if let Some(body) = rich {
+            Term::Literal(Literal::new_simple_literal(body))
+        } else {
+            source_view
+                .optional_by(ontology, &NamedNode::new(property)?)
+                .await?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "ontology missing front-matter annotation {property}"
+                    )
+                })?
+        };
         let Term::Literal(body) = value else {
             anyhow::bail!("ontology front matter requires literals")
         };

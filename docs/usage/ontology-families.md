@@ -114,6 +114,41 @@ annotations appear as warnings and become `ga:Diagnostic` resources with source
 and revision provenance. Rendering does not invent definitions, execute SHACL
 validation, or fetch external ontology imports.
 
+### Rich descriptions
+
+Use `annotation:markdownDescription` from
+`https://ekgf.org/ontology/annotation#` on an ontology, class, property, or
+individual when its explanation needs Markdown:
+
+```turtle
+@prefix annotation: <https://ekgf.org/ontology/annotation#> .
+
+<https://example.org/ontology/Account>
+    annotation:markdownDescription """
+## Scope
+
+An account records **agreed responsibilities**.
+
+- Identify the responsible party.
+- Link the applicable agreement.
+"""@en .
+```
+
+The reference renders headings, lists, links, fenced code, tables, and GitHub
+Flavoured Markdown task lists. Headings nest beneath the resource's title.
+The rich description replaces the plain description in the detailed reference;
+without it, the existing source definitions and comments remain available.
+An ontology's short comment still provides context in the family overview.
+
+English publications select `@en` or untagged text. Identical rich
+values are accepted; distinct competing values fail with an explicit error.
+Descriptions in another language are not substituted for missing English text.
+The original annotation and source provenance remain in the documentation graph.
+Raw HTML and unsafe links fail rendering rather than executing or silently
+losing content.
+
+### Publishing authority
+
 Your publishing authority is configurable. `ga:Authority` is equivalent to the
 Artifact Governance `Authority`, a Commons party role. Its organization is a
 separate resource linked with `cmns-rlcmp:isPlayedBy`. Display names come from

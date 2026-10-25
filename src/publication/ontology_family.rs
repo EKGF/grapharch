@@ -475,15 +475,21 @@ async fn build(
                 known.len() <= 8000,
                 "family exceeds 8000-resource publication budget"
             );
+            let rich =
+                super::document::description::read(&source, subject, "en")
+                    .await?;
             let mut descriptions = Vec::new();
-            for property in [
-                "http://www.w3.org/2000/01/rdf-schema#comment",
-                "http://purl.org/dc/terms/description",
-                "http://www.w3.org/2004/02/skos/core#definition",
-            ] {
-                descriptions.extend(english(&source, subject, property).await?);
+            if rich.is_none() {
+                for property in [
+                    "http://www.w3.org/2000/01/rdf-schema#comment",
+                    "http://purl.org/dc/terms/description",
+                    "http://www.w3.org/2004/02/skos/core#definition",
+                ] {
+                    descriptions
+                        .extend(english(&source, subject, property).await?);
+                }
             }
-            if descriptions.is_empty() {
+            if rich.is_none() && descriptions.is_empty() {
                 missing += 1;
             }
             terms.push(subject.clone());
@@ -556,7 +562,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v6:{snapshot}"),
+            &format!("family-v7:{snapshot}"),
             super::dataset::Stage::Document,
         )
         .await?;
@@ -691,6 +697,16 @@ async fn build(
             "http://www.w3.org/2000/01/rdf-schema#label",
         )
         .await?;
+        let description = match super::document::description::read(
+            &member.view,
+            &member.ontology,
+            "en",
+        )
+        .await?
+        {
+            Some(body) => super::document::description::nested(&body, 3)?,
+            None => comments.join("\n\n"),
+        };
         let introduction = format!(
             "## Ontology metadata\n\n{}\n\nIRI: `{}`\n\nPrefix: \
              `{}`\n\nNamespace: `{}`\n\n{}\n",
@@ -698,7 +714,7 @@ async fn build(
             member.ontology.as_str(),
             member.prefix,
             member.namespace,
-            comments.join("\n\n")
+            description
         );
         fragment(
             &mut data,

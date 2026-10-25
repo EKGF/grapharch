@@ -129,18 +129,28 @@ impl ResourceDocumentor {
             "SELECT DISTINCT ?predicate ?object WHERE {{ {pattern} }} ORDER \
              BY ?predicate ?object"
         );
+        let rich = super::description::read(
+            &crate::publication::view::RevisionView::new(
+                self.dataset.clone(),
+                self.snapshot.clone(),
+            ),
+            subject,
+            "en",
+        )
+        .await?;
         let mut rows = self.dataset.select(query.clone()).await?;
-        let mut description = None;
+        let mut description = rich.clone();
         while let Some(row) = rows.next().await? {
             digest.update(format!(
                 "{} {}\n",
                 row["predicate"], row["object"]
             ));
-            if row["predicate"] ==
-                NamedNode::new(
-                    "http://www.w3.org/2000/01/rdf-schema#comment",
-                )?
-                .into()
+            if rich.is_none() &&
+                row["predicate"] ==
+                    NamedNode::new(
+                        "http://www.w3.org/2000/01/rdf-schema#comment",
+                    )?
+                    .into()
             {
                 ensure!(
                     description.is_none(),
@@ -154,7 +164,7 @@ impl ResourceDocumentor {
             }
         }
         let revision =
-            format!("resource-v1:{}", hex::encode(digest.finalize()));
+            format!("resource-v2:{}", hex::encode(digest.finalize()));
         if self
             .dataset
             .is_current(
