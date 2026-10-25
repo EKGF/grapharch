@@ -265,10 +265,15 @@ fn public_repository_url(repository: &str) -> Result<url::Url> {
             url
         },
         gix::url::Scheme::File => {
-            url::Url::from_file_path(
-                Path::new(std::str::from_utf8(&remote.path)?).canonicalize()?,
-            )
-            .map_err(|_| anyhow::anyhow!("invalid local repository URL"))?
+            let path = if repository.starts_with("file:") {
+                url::Url::parse(repository)?.to_file_path().map_err(|_| {
+                    anyhow::anyhow!("invalid file repository URL")
+                })?
+            } else {
+                PathBuf::from(std::str::from_utf8(&remote.path)?)
+            };
+            url::Url::from_file_path(path.canonicalize()?)
+                .map_err(|_| anyhow::anyhow!("invalid local repository URL"))?
         },
         _ => url::Url::parse(repository)?,
     };
@@ -540,6 +545,21 @@ impl Collector for Revision {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn file_repository_urls_preserve_spaces_and_native_path_identity()
+    -> anyhow::Result<()> {
+        let root = tempfile::tempdir()?;
+        let path = root.path().join("a repository with spaces");
+        std::fs::create_dir(&path)?;
+        let url = url::Url::from_directory_path(&path).unwrap();
+        let public = super::public_repository_url(url.as_str())?;
+        assert_eq!(
+            public.to_file_path().unwrap().canonicalize()?,
+            path.canonicalize()?
+        );
+        Ok(())
+    }
+
     #[test]
     fn git_source_urls_support_scp_syntax_without_exposing_credentials()
     -> anyhow::Result<()> {

@@ -201,7 +201,7 @@ mod tests {
         for file in &files {
             println!("{}", file.display());
         }
-        let our_readme = current_dir()?.join("README.md");
+        let our_readme = current_dir()?.join("README.md").canonicalize()?;
         assert!(&files.contains(&our_readme));
         Ok(())
     }
