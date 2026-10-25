@@ -36,6 +36,33 @@ pub(super) async fn begin(
             None => title(&plan.source, &plan.project).await?,
             _ => anyhow::bail!("PDF publisher must be an IRI"),
         };
+    let ribbon = match plan
+        .source
+        .optional(&plan.target, "publicationStatus")
+        .await?
+    {
+        Some(oxrdf::Term::Literal(status)) => {
+            anyhow::ensure!(
+                !status.value().trim().is_empty(),
+                "PDF publicationStatus cannot be empty"
+            );
+            let authority =
+                match plan.source.optional(&plan.target, "publisher").await? {
+                    Some(oxrdf::Term::NamedNode(publisher)) => {
+                        crate::publication::governance::acronym(
+                            &plan.source,
+                            &publisher,
+                        )
+                        .await?
+                    },
+                    None => publisher.clone(),
+                    _ => anyhow::bail!("PDF publisher must be an IRI"),
+                };
+            quote(&format!("{authority} {}", status.value()))
+        },
+        None => "none".into(),
+        _ => anyhow::bail!("PDF publicationStatus must be a literal"),
+    };
     let supplied_authors = authors.clone();
     if authors.is_empty() {
         authors.push(publisher.clone());
@@ -51,7 +78,8 @@ pub(super) async fn begin(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \
              Scope: {}\n// Profile: {}\n#set document(title: {}, author: \
              {author}, date: none)\n#let ga-style = {}\n#let ga-accent = \
-             rgb({})\n#let ga-title = {}\n#let ga-publisher = {}\n",
+             rgb({})\n#let ga-title = {}\n#let ga-publisher = {}\n#let \
+             ga-ribbon = {ribbon}\n",
             plan.project,
             plan.target,
             plan.revision,
@@ -122,16 +150,9 @@ pub(super) async fn begin(
     }
     file.write_all(
         format!(
-            "\n#v(10mm)\n#text(size: 10pt, weight: \"bold\", fill: ga-accent, \
-             tracking: 0.7pt)[#text({})]\n#v(14mm)\n#text(size: if \
-             ga-specification {{ 32pt }} else {{ 38pt }}, weight: \"bold\", \
-             fill: ga-heading)[#text({})]\n{subtitle}#v(8mm)\n#line(length: \
-             100%, stroke: 1.5pt + \
-             ga-accent)\n#v(6mm)\n{front}\n#pagebreak()\n#outline(title: \
-             [Contents], depth: \
-             3)\n#pagebreak()\n#counter(heading).update(0)\n",
-            quote(&publisher),
-            quote(&plan.title)
+            "\n#ga-cover(ga-publisher, ga-title, [{subtitle}], \
+             [{front}])\n#pagebreak()\n#outline(title: [Contents], depth: \
+             3)\n#pagebreak()\n#counter(heading).update(0)\n"
         )
         .as_bytes(),
     )

@@ -95,8 +95,17 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
         std::fs::read_to_string(publication.directory.join("main.typ"))?;
     assert!(typst.contains("#let ga-style = \"specification\""));
     assert!(typst.contains("#let ga-accent = rgb(\"#2b5f9f\")"));
+    assert!(
+        typst.contains("#let ga-ribbon = \"EKGF Editor's Draft\""),
+        "the PDF ribbon must use the pinned authority short name and \
+         publication status"
+    );
+    assert!(typst.contains("rotate(-90deg, reflow: true)"));
+    assert!(typst.contains("#ga-cover("));
     assert!(typst.contains("Editor's Draft"));
     assert!(typst.contains("Publication requirements"));
+    let metadata = std::fs::read(publication.directory.join("document.pdf"))?;
+    assert!(metadata.starts_with(b"%PDF-"));
     Ok(())
 }
 
@@ -142,5 +151,46 @@ async fn malformed_pdf_publisher_is_rejected() -> Result<()> {
     let result = Publisher::new(dataset).render(&plans[2], out.path()).await;
     let error = result.err().expect("publisher literals must fail");
     assert!(format!("{error:#}").contains("publisher must be an IRI"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn long_authority_and_status_fit_the_pdf_ribbon() -> Result<()> {
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    let authority =
+        "International Council for Open Standards and Interoperability";
+    let status =
+        "Public review documentation preview for implementing organizations";
+    let fixture = include_str!("../examples/specification/project.ttl")
+        .replace(
+            "ga:shortName \"EKGF\"",
+            &format!("ga:shortName \"{authority}\""),
+        )
+        .replace("Editor's Draft", status);
+    std::fs::write(&path, fixture)?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    std::fs::remove_file(path)?;
+    let out = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], out.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    let typst =
+        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    assert!(typst.contains(&format!(
+        "#let ga-ribbon = \"{authority} {status}\""
+    )));
+    assert!(
+        typst.contains("(ribbon-height - 12mm) / ribbon-measure"),
+        "ribbon text must fit its available measure without truncating \
+         metadata"
+    );
+    assert!(
+        std::fs::read(publication.directory.join("document.pdf"))?
+            .starts_with(b"%PDF-")
+    );
     Ok(())
 }

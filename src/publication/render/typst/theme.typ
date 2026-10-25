@@ -3,7 +3,7 @@
 #let ga-ink = rgb("#182b35")
 #let ga-muted = rgb("#526670")
 #let ga-line = rgb("#dce5e5")
-#let ga-soft = if ga-specification { rgb("#edf2f6") } else { rgb("#edf4f1") }
+#let ga-soft = ga-accent.lighten(94%)
 #let ga-heading = if ga-specification { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
 #set text(font: "Liberation Sans", size: if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: false)
@@ -57,7 +57,43 @@
     #body
   ]
 }
+#let ga-cover(publisher, title, subtitle, front) = {
+  v(12mm)
+  block(width: 100%, inset: (bottom: 6mm), stroke: (bottom: 0.6pt + ga-accent))[
+    #text(size: 9pt, weight: "bold", fill: ga-accent, tracking: 0.9pt)[#text(publisher)]
+  ]
+  v(13mm)
+  block(width: 100%)[#set par(leading: 0.4em)
+    #text(size: if ga-specification { 34pt } else { 40pt }, weight: "bold", fill: ga-heading)[#text(title)]
+  ]
+  subtitle
+  v(8mm)
+  rect(width: 16mm, height: 1.5mm, fill: ga-accent, stroke: none)
+  if front != [] {
+    v(9mm)
+    block(width: 100%, inset: (x: 6mm, y: 5mm), fill: ga-soft, radius: (top-right: 4mm, bottom-left: 4mm))[
+      #set text(size: 9pt)
+      #set par(leading: 0.6em, spacing: 0.7em)
+      #front
+    ]
+  }
+}
 #set page(paper: "a4", margin: (left: 23mm, right: 23mm, top: 25mm, bottom: 23mm),
+  background: context {
+    if counter(page).get().first() == 1 {
+      place(top + right, rect(width: 15mm, height: 100%, fill: ga-soft, stroke: none))
+      place(bottom + left, rect(width: 100%, height: 3mm, fill: ga-accent, stroke: none))
+    }
+    if ga-ribbon != none {
+      let ribbon-measure = measure(text(size: 9pt, weight: "bold", ga-ribbon)).width
+      let ribbon-height = calc.min(160mm, calc.max(82mm, ribbon-measure + 12mm))
+      place(top + left, block(width: 8mm, height: ribbon-height, fill: ga-accent)[
+        #place(center + horizon, rotate(-90deg, reflow: true)[
+          #text(size: calc.min(9pt, (ribbon-height - 12mm) / ribbon-measure * 9pt), fill: white, weight: "bold")[#text(ga-ribbon)]
+        ])
+      ])
+    }
+  },
   header: context {
     if counter(page).get().first() > 1 {
       set text(size: 8pt, fill: ga-muted)
@@ -68,15 +104,15 @@
       grid(columns: (1fr, 1fr), column-gutter: 15pt,
         [#ga-running(ga-publisher)], align(right)[#ga-running(running)])
       v(4pt)
-      line(length: 100%, stroke: 0.4pt + ga-line)
+      line(length: 100%, stroke: 0.5pt + ga-accent)
     }
   },
   footer: context {
     if counter(page).get().first() > 1 {
       set text(size: 8pt, fill: ga-muted)
-      line(length: 100%, stroke: 0.4pt + ga-line)
+      line(length: 100%, stroke: 0.5pt + ga-accent)
       v(5pt)
       grid(columns: (1fr, auto), column-gutter: 15pt,
-        [#ga-running(ga-publisher, limit: 80)], [#counter(page).display("1 / 1", both: true)])
+        [#ga-running(ga-publisher, limit: 80)], [#text(fill: ga-accent, weight: "bold")[#counter(page).display("1 / 1", both: true)]])
     }
   })
