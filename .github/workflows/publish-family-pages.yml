@@ -1,0 +1,100 @@
+name: Publish an ontology family to Pages
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Exact published GraphArch version without v
+        type: string
+        required: true
+      source:
+        description: Source path within the consuming repository
+        type: string
+        default: .
+      source-kind:
+        description: directory or checkout
+        type: string
+        default: directory
+      definitions:
+        description: Publication definitions path within the consuming repository
+        type: string
+        required: true
+      project:
+        description: Project IRI
+        type: string
+        required: true
+      target:
+        description: Publication target IRI
+        type: string
+        required: true
+      output:
+        description: Generated output root
+        type: string
+        default: build/docs
+      include-kg:
+        description: Include the exported documentation KG in the website artifact
+        type: boolean
+        default: true
+      deploy:
+        description: Deploy the built artifact to GitHub Pages
+        type: boolean
+        default: false
+    outputs:
+      page-url:
+        description: GitHub Pages URL when deployment is enabled
+        value: ${{ jobs.deploy.outputs.page-url }}
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EKGF/grapharch@3dd1d4b21ff897b5761f2ee1e31e10ec97f3e9c8
+        id: grapharch
+        with:
+          version: ${{ inputs.version }}
+          source: ${{ inputs.source }}
+          source-kind: ${{ inputs.source-kind }}
+          definitions: ${{ inputs.definitions }}
+          project: ${{ inputs.project }}
+          target: ${{ inputs.target }}
+          output: ${{ inputs.output }}
+      - name: Stage the published website and optional KG archive
+        id: stage
+        env:
+          PUBLICATION_PATH: ${{ steps.grapharch.outputs.publication-path }}
+          KG_PATH: ${{ steps.grapharch.outputs.kg-path }}
+          INCLUDE_KG: ${{ inputs.include-kg }}
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          import shutil
+          site = Path(os.environ['PUBLICATION_PATH'])
+          destination = Path(os.environ['RUNNER_TEMP']) / 'grapharch-pages'
+          shutil.copytree(site, destination)
+          if os.environ['INCLUDE_KG'] == 'true':
+              archive = destination / 'documentation.nq'
+              if archive.exists():
+                  raise ValueError('Publication already contains documentation.nq; refusing to replace it')
+              shutil.copyfile(os.environ['KG_PATH'], archive)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'path={destination}\n')
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.stage.outputs.path }}
+  deploy:
+    if: inputs.deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    outputs:
+      page-url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

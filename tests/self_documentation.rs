@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions_fixture;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -99,12 +102,11 @@ fn copy_documentation(source: &Path, destination: &Path) -> Result<()> {
 fn setup(source: &Path, home: &str) -> Result<()> {
     std::fs::write(
         source.join("grapharch.ttl"),
-        include_str!("../docs/grapharch.ttl")
-            .replace(
-                "    ga:ontologySource \"other/ontology/publication.ttl\" ;\n",
-                "",
-            )
-            .replace("    ga:showcasesSource \"../examples\" ;\n", ""),
+        definitions_fixture::edit_definitions(
+            include_str!("../docs/grapharch.ttl"),
+            &["ontologySource", "showcasesSource"],
+            None,
+        )?,
     )?;
     std::fs::write(
         source.join("index.md"),
@@ -348,16 +350,14 @@ async fn repository_link_and_icon_follow_pinned_project_metadata() -> Result<()>
     let source = tempfile::tempdir()?;
     let output = tempfile::tempdir()?;
     setup(source.path(), "Repository metadata")?;
-    let definitions = include_str!("../docs/grapharch.ttl")
-        .replace(
-            "    ga:ontologySource \"other/ontology/publication.ttl\" ;\n",
-            "",
-        )
-        .replace("    ga:showcasesSource \"../examples\" ;\n", "");
-    let definitions = definitions.replace(
-        "https://github.com/EKGF/grapharch",
-        "https://github.com/example/another-project",
-    );
+    let definitions = definitions_fixture::edit_definitions(
+        include_str!("../docs/grapharch.ttl"),
+        &["ontologySource", "showcasesSource"],
+        Some((
+            "urn:grapharch:docs",
+            "https://github.com/example/another-project",
+        )),
+    )?;
     std::fs::write(source.path().join("grapharch.ttl"), &definitions)?;
     let built = collect_case(source.path()).await?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
