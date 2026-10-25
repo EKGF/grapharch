@@ -16,7 +16,13 @@ post_bump_hooks = []
 [git_hooks.commit-msg]
 script = """#!/bin/sh
 cog verify --file "$1" || exit $?
-cog check || exit $?
+base="${GRAPHARCH_COMMIT_BASE:-refs/remotes/origin/main}"
+if git rev-parse --verify "$base^{commit}" >/dev/null 2>&1; then
+    cog check "$base..HEAD" || exit $?
+else
+    printf 'Cannot resolve commit-check base %s; fetch it before committing.\n' "$base" >&2
+    exit 1
+fi
 cargo +nightly fmt -v --all --check || exit $?
 cargo +nightly clippy || exit $?
 """

@@ -1,12 +1,29 @@
-name: "Check Commits"
-on: [push]
+name: Check Commits
+on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   check-commits:
     runs-on: ubuntu-latest
-    name: "check conventional commit compliance"
+    name: check conventional commit compliance
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: "Conventional commits check"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Test commit-range policy
+        run: python3 -B -m unittest discover -s tests -p test_commit_policy.py -v
+      - name: Resolve introduced commits
+        id: commits
+        env:
+          GRAPHARCH_EVENT: ${{ github.event_name }}
+          GRAPHARCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          GRAPHARCH_BEFORE: ${{ github.event.before }}
+          GRAPHARCH_BASE: ${{ github.event.pull_request.base.sha }}
+          GRAPHARCH_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 .github/scripts/commit-range.py
+      - name: Conventional commits check
         uses: cocogitto/cocogitto-action@v4
+        with:
+          command: check
+          args: ${{ steps.commits.outputs.range }}
