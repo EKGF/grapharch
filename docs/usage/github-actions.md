@@ -68,7 +68,7 @@ permissions:
   id-token: write
 jobs:
   documentation:
-    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@<reviewed-workflow-commit-SHA>
+    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@67a4ea21d5dd110039e999e5a241a8c30677fd8b
     with:
       version: '0.0.1'
       source-kind: checkout
