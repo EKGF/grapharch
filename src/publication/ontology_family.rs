@@ -290,6 +290,7 @@ async fn build(
         let id = input.identity()?;
         managed.add(id.processor, id.source, false)?;
     }
+    managed.persist_inventory(writer, true).await?;
     managed.retire(writer, false).await?;
     collect_all(work, writer, concurrency).await?;
     tracing::info!(
@@ -542,6 +543,14 @@ async fn build(
         target.as_str(),
     ]);
     managed.add(owner.as_str(), target.as_str(), true)?;
+    let term_processor =
+        AnnotatedTermDocumentor::processor_identity(project, "en");
+    for member in &members {
+        for subject in &member.terms {
+            managed.add(term_processor.as_str(), subject.as_str(), true)?;
+        }
+    }
+    managed.persist_inventory(writer, true).await?;
     let mut stream = writer
         .begin_stage(
             project,
@@ -947,11 +956,13 @@ fn standard_prefixes() -> BTreeMap<String, String> {
 // The manifest records only this builder's ownership; it never scans/removes
 // unrelated project contributors. Failed discovery retains a failed attempt.
 struct ManagedFamily {
-    project:  String,
-    owner:    NamedNode,
-    previous: std::collections::BTreeSet<(String, String, bool)>,
-    next:     std::collections::BTreeSet<(String, String, bool)>,
-    stream:   Option<super::writer::ContributionStream>,
+    project:   String,
+    owner:     NamedNode,
+    inventory: NamedNode,
+    target:    String,
+    previous:  std::collections::BTreeSet<(String, String, bool)>,
+    next:      std::collections::BTreeSet<(String, String, bool)>,
+    stream:    Option<super::writer::ContributionStream>,
 }
 impl ManagedFamily {
     async fn begin(
@@ -961,50 +972,39 @@ impl ManagedFamily {
         target: &str,
     ) -> Result<Self> {
         let owner = identity("family-discovery", &[project, target]);
+        let inventory = identity("family-inventory", &[project, target]);
         let snapshot = dataset.snapshot_for(project).await?;
         let view = RevisionView::new(dataset.clone(), snapshot);
-        let predicate = NamedNode::new("http://www.w3.org/ns/prov#hadMember")?;
-        let mut rows = view.objects_by(&owner, &predicate).await?;
+        let pattern = view.pattern(&format!(
+            "VALUES ?root {{ {owner} {inventory} }} ?root <http://www.w3.org/ns/prov#hadMember> ?entry . OPTIONAL {{ ?entry <http://www.w3.org/ns/prov#wasAttributedTo> ?processor ; <http://purl.org/dc/terms/identifier> ?source ; <http://purl.org/dc/terms/description> ?stage }}"
+        ), 0);
+        let mut rows = dataset
+            .select(format!(
+                "SELECT DISTINCT ?processor ?source ?stage WHERE {{ {pattern} \
+                 }} LIMIT 100001"
+            ))
+            .await?;
         let mut previous = std::collections::BTreeSet::new();
         while let Some(row) = rows.next().await? {
             ensure!(
                 previous.len() < 100_000,
                 "family ownership manifest exceeds entry budget"
             );
-            let Term::NamedNode(entry) = &row["value"] else {
-                anyhow::bail!("invalid family manifest entry");
+            let Some(Term::NamedNode(processor)) = row.get("processor") else {
+                anyhow::bail!("missing or invalid manifest processor");
             };
-            let get = |property: &str| NamedNode::new(property).unwrap();
-            let Some(Term::NamedNode(processor)) = view
-                .optional_by(
-                    entry,
-                    &get("http://www.w3.org/ns/prov#wasAttributedTo"),
-                )
-                .await?
-            else {
-                anyhow::bail!("missing manifest processor");
+            let Some(Term::Literal(source)) = row.get("source") else {
+                anyhow::bail!("missing or invalid manifest source");
             };
-            let Some(Term::Literal(source)) = view
-                .optional_by(entry, &get("http://purl.org/dc/terms/identifier"))
-                .await?
-            else {
-                anyhow::bail!("missing manifest source");
-            };
-            let Some(Term::Literal(stage)) = view
-                .optional_by(
-                    entry,
-                    &get("http://purl.org/dc/terms/description"),
-                )
-                .await?
-            else {
-                anyhow::bail!("missing manifest stage");
+            let Some(Term::Literal(stage)) = row.get("stage") else {
+                anyhow::bail!("missing or invalid manifest stage");
             };
             ensure!(
                 matches!(stage.value(), "collect" | "document"),
                 "invalid manifest stage"
             );
             previous.insert((
-                processor.into_string(),
+                processor.as_str().into(),
                 source.value().into(),
                 stage.value() == "document",
             ));
@@ -1021,6 +1021,8 @@ impl ManagedFamily {
         Ok(Self {
             project: project.into(),
             owner,
+            inventory,
+            target: target.into(),
             previous,
             next: Default::default(),
             stream: Some(stream),
@@ -1040,6 +1042,44 @@ impl ManagedFamily {
         self.next
             .insert((processor.into(), source.into(), document));
         Ok(())
+    }
+
+    /// Persist ownership before producers can acknowledge any inputs. Keep
+    /// previous entries until success, so cancellation and failure cannot
+    /// orphan either old or newly discovered contributions.
+    async fn persist_inventory(
+        &self,
+        writer: &GraphWriter,
+        include_previous: bool,
+    ) -> Result<()> {
+        use sha2::{Digest, Sha256};
+        let mut entries = self.next.clone();
+        if include_previous {
+            entries.extend(self.previous.iter().cloned());
+        }
+        ensure!(
+            entries.len() <= 100_000,
+            "family ownership inventory exceeds entry budget"
+        );
+        let mut hash = Sha256::new();
+        for entry in &entries {
+            hash.update(format!("{entry:?}\n"));
+        }
+        let revision = format!(
+            "family-inventory-v1:{}",
+            hex::encode(hash.finalize())
+        );
+        let mut stream = writer
+            .begin_stage(
+                &self.project,
+                self.inventory.as_str(),
+                &self.target,
+                &revision,
+                super::dataset::Stage::Document,
+            )
+            .await?;
+        write_owned_entries(&mut stream, &self.inventory, &entries).await?;
+        stream.complete().await
     }
 
     async fn retire(&self, writer: &GraphWriter, document: bool) -> Result<()> {
@@ -1066,55 +1106,8 @@ impl ManagedFamily {
         // Pending streams created with an explicit document stage need a final
         // revision just as collected streams do.
         stream.set_revision(&revision).await?;
-        stream
-            .write(Quad::new(
-                self.owner.clone(),
-                NamedNode::new(super::RDF_TYPE)?,
-                NamedNode::new("http://www.w3.org/ns/prov#Collection")?,
-                GraphName::DefaultGraph,
-            ))
-            .await?;
-        for (processor, source, document) in &self.next {
-            let entry = identity("family-owned-input", &[
-                self.owner.as_str(),
-                processor,
-                source,
-            ]);
-            for (subject, predicate, object) in [
-                (
-                    self.owner.clone(),
-                    "http://www.w3.org/ns/prov#hadMember",
-                    Term::from(entry.clone()),
-                ),
-                (
-                    entry.clone(),
-                    "http://www.w3.org/ns/prov#wasAttributedTo",
-                    NamedNode::new(processor)?.into(),
-                ),
-                (
-                    entry.clone(),
-                    "http://purl.org/dc/terms/identifier",
-                    Literal::new_simple_literal(source).into(),
-                ),
-                (
-                    entry,
-                    "http://purl.org/dc/terms/description",
-                    Literal::new_simple_literal(
-                        if *document { "document" } else { "collect" },
-                    )
-                    .into(),
-                ),
-            ] {
-                stream
-                    .write(Quad::new(
-                        subject,
-                        NamedNode::new(predicate)?,
-                        object,
-                        GraphName::DefaultGraph,
-                    ))
-                    .await?;
-            }
-        }
+        write_owned_entries(stream, &self.owner, &self.next).await?;
+        self.persist_inventory(writer, false).await?;
         self.stream.take().unwrap().complete().await
     }
 
@@ -1124,4 +1117,61 @@ impl ManagedFamily {
         }
         Ok(())
     }
+}
+
+async fn write_owned_entries(
+    stream: &mut super::writer::ContributionStream,
+    root: &NamedNode,
+    entries: &std::collections::BTreeSet<(String, String, bool)>,
+) -> Result<()> {
+    stream
+        .write(Quad::new(
+            root.clone(),
+            NamedNode::new(super::RDF_TYPE)?,
+            NamedNode::new("http://www.w3.org/ns/prov#Collection")?,
+            GraphName::DefaultGraph,
+        ))
+        .await?;
+    for (processor, source, document) in entries {
+        let entry = identity("family-owned-input", &[
+            root.as_str(),
+            processor,
+            source,
+        ]);
+        for (subject, predicate, object) in [
+            (
+                root.clone(),
+                "http://www.w3.org/ns/prov#hadMember",
+                Term::from(entry.clone()),
+            ),
+            (
+                entry.clone(),
+                "http://www.w3.org/ns/prov#wasAttributedTo",
+                NamedNode::new(processor)?.into(),
+            ),
+            (
+                entry.clone(),
+                "http://purl.org/dc/terms/identifier",
+                Literal::new_simple_literal(source).into(),
+            ),
+            (
+                entry,
+                "http://purl.org/dc/terms/description",
+                Literal::new_simple_literal(
+                    if *document { "document" } else { "collect" },
+                )
+                .into(),
+            ),
+        ] {
+            stream
+                .write(Quad::new(
+                    subject,
+                    NamedNode::new(predicate)?,
+                    object,
+                    GraphName::DefaultGraph,
+                ))
+                .await?;
+        }
+    }
+    Ok(())
 }

@@ -333,3 +333,57 @@ async fn failed_json_builds_emit_no_success_object() -> Result<()> {
     assert!(!result.stderr.is_empty());
     Ok(())
 }
+
+#[tokio::test]
+async fn a_failed_build_from_another_checkout_does_not_leave_unmanaged_inputs()
+-> Result<()> {
+    let dataset = Dataset::memory()?;
+    let (writer, worker) = grapharch::publication::writer::GraphWriter::spawn(
+        dataset.clone(),
+        4,
+        4 * 1024 * 1024,
+    )?;
+    let unrelated = Quad::new(
+        NamedNode::new("urn:outside")?,
+        NamedNode::new("urn:predicate")?,
+        NamedNode::new("urn:object")?,
+        GraphName::DefaultGraph,
+    );
+    let mut stream = writer
+        .begin(
+            "urn:project",
+            "urn:independent",
+            "urn:external-source",
+            "revision-one",
+        )
+        .await?;
+    stream.write(unrelated.clone()).await?;
+    stream.complete().await?;
+    drop(writer);
+    worker.await??;
+    let original = Fixture::new()?;
+    original.build(dataset.clone()).await?;
+    let historical = dataset.snapshot_for("urn:project").await?;
+    let broken = Fixture::new()?;
+    let definitions = broken.definitions.path().join("project.ttl");
+    let invalid = std::fs::read_to_string(&definitions)?.replace(
+        "ga:renderer \"specification\"",
+        "ga:renderer \"unsupported\"",
+    );
+    std::fs::write(&definitions, invalid)?;
+    assert!(broken.build(dataset.clone()).await.is_err());
+    let recovered = Fixture::new()?;
+    recovered.build(dataset.clone()).await?;
+    dataset.ensure_ready("urn:project").await?;
+    let current = dataset.snapshot_for("urn:project").await?;
+    assert!(dataset.contains(&current, unrelated.clone()).await?);
+    assert!(dataset.contains(&historical, unrelated).await?);
+    let old_ontology_term = Quad::new(
+        NamedNode::new("https://example.org/extra#Term")?,
+        NamedNode::new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")?,
+        NamedNode::new("http://www.w3.org/2002/07/owl#Class")?,
+        GraphName::DefaultGraph,
+    );
+    assert!(dataset.contains(&historical, old_ontology_term).await?);
+    Ok(())
+}

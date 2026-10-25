@@ -57,8 +57,13 @@ not merely successful query execution.
 
 A persistent family build records a bounded ownership manifest using PROV and
 Dublin Core terms. Discovery registers a pending document-stage contribution
-before source I/O. Failed discovery blocks assembly; successful discovery retires
-only missing managed contributions. Generated family bindings belong to the
+before source I/O. A separate durable inventory records planned ownership before
+collection or documentation starts. Failed or interrupted runs therefore remain
+accountable when the next run retires their inputs; they cannot leave newly
+promoted source contributions outside the ownership manifest. Inventory reads
+use one bounded query, and successful runs trim the inventory to their final
+owned set. Failed discovery blocks assembly; successful discovery retires only
+missing managed contributions. Generated family bindings belong to the
 document stage. Documentors pin collected-stage assertions, so a new run cannot
 incorporate its own preceding generated output into its input revision. Historical
 snapshots continue to reference their immutable contribution graphs. A VS Code extension is a later consumer
