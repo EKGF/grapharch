@@ -207,3 +207,129 @@ async fn native_rdf4j_family_publishes_from_restored_pinned_kg() -> Result<()> {
     ))?;
     publish_restore(Dataset::sparql(config).await?).await
 }
+#[tokio::test]
+async fn family_cli_json_is_machine_readable_when_logging_is_enabled()
+-> Result<()> {
+    let f = Fixture::new()?;
+    let output = tempfile::tempdir()?;
+    let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .args(["-vv", "publication", "build-family", "--source"])
+        .arg(f.root.path())
+        .arg("--definitions")
+        .arg(f.definitions.path().join("project.ttl"))
+        .args([
+            "--project",
+            "urn:project",
+            "--target",
+            "urn:target",
+            "--output-root",
+        ])
+        .arg(output.path().join("published family"))
+        .arg("--json")
+        .env("RUST_LOG", "info")
+        .output()
+        .await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&result.stdout)?;
+    assert_eq!(value["schema_version"], 1);
+    assert!(
+        value["plan"]
+            .as_str()
+            .unwrap()
+            .starts_with("urn:grapharch:publication-plan:")
+    );
+    for key in ["publication_path", "pdf_path", "kg_path"] {
+        let path = std::path::Path::new(value[key].as_str().unwrap());
+        assert!(path.is_absolute());
+        assert!(path.exists(), "missing {key}");
+    }
+    assert!(
+        std::path::Path::new(value["publication_path"].as_str().unwrap())
+            .join("index.html")
+            .is_file()
+    );
+    assert!(
+        String::from_utf8_lossy(&result.stderr)
+            .contains("family sources collected")
+    );
+    Ok(())
+}
+#[tokio::test]
+async fn site_cli_json_reports_the_actual_published_directory() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("sources");
+    std::fs::create_dir(&source)?;
+    std::fs::write(
+        source.join("README.md"),
+        "---\ntitle: Welcome\npermalink: /\n---\n# Welcome\nA minimal \
+         companion website.\n",
+    )?;
+    let definitions = source.join("project.ttl");
+    std::fs::write(
+        &definitions,
+        r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix dct:<http://purl.org/dc/terms/> .
+<urn:site> a ga:Project;dct:title "Minimal docs";ga:scope <urn:scope>;ga:target <urn:website> .
+<urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
+<urn:website> a ga:Target;dct:title "Minimal docs";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer "website";ga:destination "unusual/destination" ."#,
+    )?;
+    let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .args(["-vv", "publication", "build-site", "--source"])
+        .arg(source)
+        .arg("--definitions")
+        .arg(definitions)
+        .args([
+            "--project",
+            "urn:site",
+            "--target",
+            "urn:website",
+            "--output-root",
+        ])
+        .arg(root.path().join("output"))
+        .arg("--json")
+        .env("RUST_LOG", "info")
+        .output()
+        .await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&result.stdout)?;
+    assert_eq!(value["schema_version"], 1);
+    assert!(value["pdf_path"].is_null());
+    let publication =
+        std::path::Path::new(value["publication_path"].as_str().unwrap());
+    assert!(publication.ends_with("unusual/destination"));
+    assert!(publication.join("index.html").exists());
+    assert!(std::path::Path::new(value["kg_path"].as_str().unwrap()).is_file());
+    Ok(())
+}
+#[tokio::test]
+async fn failed_json_builds_emit_no_success_object() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .args(["publication", "build-site", "--source"])
+        .arg(root.path().join("missing"))
+        .arg("--definitions")
+        .arg(root.path().join("missing.ttl"))
+        .args([
+            "--project",
+            "urn:site",
+            "--target",
+            "urn:website",
+            "--output-root",
+        ])
+        .arg(root.path().join("output"))
+        .arg("--json")
+        .env("RUST_LOG", "info")
+        .output()
+        .await?;
+    assert!(!result.status.success());
+    assert!(result.stdout.is_empty());
+    assert!(!result.stderr.is_empty());
+    Ok(())
+}

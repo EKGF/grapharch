@@ -12,6 +12,7 @@ pub fn setup_tracing(
     });
 
     fmt()
+        .with_writer(std::io::stderr)
         .with_env_filter(env_filter)
         .without_time()
         .with_target(false)

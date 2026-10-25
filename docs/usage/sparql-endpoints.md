@@ -123,3 +123,27 @@ and [transaction isolation documentation](https://rdf4j.org/documentation/progra
 The SPARQL integration CI runs the complete family publish/export/restore path
 against a dedicated NativeStore repository; deterministic local protocol tests
 also exercise rejected isolation, failures, response limits, and invalid locations.
+
+## Consume build results in automation
+
+Both `publication build-family` and `publication build-site` accept `--json`.
+Successful builds print one JSON object to standard output. Logs and diagnostics
+use standard error, including when verbosity or `RUST_LOG` enables tracing.
+The result schema is:
+
+```json
+{
+  "schema_version": 1,
+  "publication_path": "/absolute/output/specification",
+  "pdf_path": "/absolute/output/specification/document.pdf",
+  "kg_path": "/absolute/output/documentation.nq",
+  "plan": "urn:grapharch:publication-plan:...",
+  "snapshot": "urn:grapharch:snapshot:..."
+}
+```
+
+`publication_path` is the actual published HTML directory, suitable for upload
+to static hosting; it follows the configured target destination. `pdf_path` is
+`null` for `build-site`. `kg_path` identifies the separate whole-KG archive.
+Family results also include `ontology_count` and `resource_count`. Failed builds
+return an unsuccessful exit status and do not print a success result object.

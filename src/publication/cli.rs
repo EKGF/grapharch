@@ -87,6 +87,9 @@ pub enum PublicationCommand {
     /// Collect a documentation tree and publish its logical topics as a
     /// website.
     BuildSite {
+        /// Emit one versioned JSON result object on stdout; logs use stderr.
+        #[arg(long)]
+        json:        bool,
         #[arg(long)]
         source:      PathBuf,
         #[arg(long)]
@@ -103,6 +106,9 @@ pub enum PublicationCommand {
     /// Collect an explicitly registered family of RDF ontologies and publish
     /// its reference.
     BuildFamily {
+        /// Emit one versioned JSON result object on stdout; logs use stderr.
+        #[arg(long)]
+        json:             bool,
         #[command(flatten)]
         backend:          BuildStoreOptions,
         /// YAML list of stable collector identities and endpoint graph
@@ -247,6 +253,7 @@ pub async fn run(
 ) -> Result<()> {
     match command {
         PublicationCommand::BuildFamily {
+            json,
             backend,
             sparql_sources,
             source,
@@ -367,16 +374,28 @@ pub async fn run(
                 .dataset
                 .export(output_root.join("documentation.nq"))
                 .await?;
-            println!(
-                "{}\nontologies={}\nresources={}\nplan={}\nsnapshot={}",
-                publication.directory.display(),
-                built.ontology_count,
-                built.term_count,
-                built.plan.id,
-                built.plan.snapshot
-            );
+            if *json {
+                print_build_json(
+                    &publication.directory,
+                    true,
+                    output_root,
+                    &built.plan,
+                    Some((built.ontology_count, built.term_count)),
+                )
+                .await?;
+            } else {
+                println!(
+                    "{}\nontologies={}\nresources={}\nplan={}\nsnapshot={}",
+                    publication.directory.display(),
+                    built.ontology_count,
+                    built.term_count,
+                    built.plan.id,
+                    built.plan.snapshot
+                );
+            }
         },
         PublicationCommand::BuildSite {
+            json,
             source,
             definitions,
             project,
@@ -392,26 +411,33 @@ pub async fn run(
                 *concurrency,
             )
             .await?;
-            match Publisher::new(built.dataset.clone())
+            let outcome = Publisher::new(built.dataset.clone())
                 .with_failure_mode(mode)
                 .render(&built.plan, output_root)
-                .await?
-            {
-                PublishOutcome::Published(publication) => {
-                    println!("{}", publication.directory.display())
-                },
-                PublishOutcome::Superseded => {
-                    anyhow::bail!("website publication superseded")
-                },
-            }
+                .await?;
+            let PublishOutcome::Published(publication) = outcome else {
+                anyhow::bail!("website publication superseded")
+            };
             built
                 .dataset
                 .export(output_root.join("documentation.nq"))
                 .await?;
-            println!(
-                "plan={}\nsnapshot={}",
-                built.plan.id, built.plan.snapshot
-            );
+            if *json {
+                print_build_json(
+                    &publication.directory,
+                    false,
+                    output_root,
+                    &built.plan,
+                    None,
+                )
+                .await?;
+            } else {
+                println!("{}", publication.directory.display());
+                println!(
+                    "plan={}\nsnapshot={}",
+                    built.plan.id, built.plan.snapshot
+                );
+            }
         },
         PublicationCommand::Render { store, plan, snapshot, output_root } => {
             let dataset = store.open().await?;
@@ -626,4 +652,41 @@ async fn bounded_file(path: &PathBuf, limit: u64) -> Result<Vec<u8>> {
         path.display()
     );
     Ok(bytes)
+}
+
+/// Versioned result for CI consumers. Paths come from the completed
+/// publication, rather than assumptions about renderer destination layout.
+async fn print_build_json(
+    directory: &std::path::Path,
+    has_pdf: bool,
+    output_root: &std::path::Path,
+    plan: &ResolvedPlan,
+    counts: Option<(usize, usize)>,
+) -> Result<()> {
+    let publication_path = tokio::fs::canonicalize(directory).await?;
+    let pdf_path = if has_pdf {
+        Some(tokio::fs::canonicalize(directory.join("document.pdf")).await?)
+    } else {
+        None
+    };
+    let kg_path =
+        tokio::fs::canonicalize(output_root.join("documentation.nq")).await?;
+    let mut result = serde_json::json!({
+        "schema_version": 1,
+        "publication_path": publication_path,
+        "pdf_path": pdf_path,
+        "kg_path": kg_path,
+        "plan": plan.id.as_str(),
+        "snapshot": plan.snapshot.as_str(),
+    });
+    if let Some((ontologies, resources)) = counts {
+        result["ontology_count"] = ontologies.into();
+        result["resource_count"] = resources.into();
+    }
+    use std::io::Write;
+    let mut stdout = std::io::stdout().lock();
+    serde_json::to_writer(&mut stdout, &result)?;
+    writeln!(stdout)?;
+    stdout.flush()?;
+    Ok(())
 }
