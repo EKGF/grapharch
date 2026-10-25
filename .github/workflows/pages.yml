@@ -34,8 +34,8 @@ jobs:
   pages-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
       - name: Native build dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config libssl-dev
       - name: Verify self-documentation
@@ -46,7 +46,7 @@ jobs:
           --source docs --definitions docs/grapharch.ttl
           --project urn:grapharch:docs --target urn:grapharch:docs:website
           --output-root output/docs
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: output/docs/site
 
@@ -63,4 +63,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
