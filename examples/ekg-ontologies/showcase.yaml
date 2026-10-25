@@ -1,7 +1,4 @@
-# Published gallery input. Offline acceptance data in sources/ is independent.
-definitions: project.ttl
-project: urn:ekgf-family:project
-target: urn:ekgf-family:specification
+# Published gallery transport. Publication hints are owned by the upstream RDF.
 source:
   kind: git
   url: https://github.com/EKGF/ekg-ontologies.git

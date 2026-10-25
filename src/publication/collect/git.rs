@@ -17,6 +17,14 @@ use {
     },
 };
 
+pub(crate) mod hints;
+
+pub struct DiscoveredRepository {
+    pub scan:    RepositoryScan,
+    pub project: String,
+    pub target:  String,
+}
+
 pub struct RepositoryScan {
     pub root:       PathBuf,
     pub commit:     String,
@@ -118,12 +126,62 @@ pub async fn remote_repository(
     })
     .await?
 }
+/// Fetch once and discover upstream-owned publication hints from that pinned
+/// tree.
+pub async fn remote_publication(
+    url: &str,
+    reference: &str,
+    cache: &Path,
+    hints_path: Option<&Path>,
+) -> Result<DiscoveredRepository> {
+    ensure!(
+        !reference.is_empty(),
+        "a Git ref or commit is required"
+    );
+    let (url, reference, cache, hints_path) = (
+        url.to_owned(),
+        reference.to_owned(),
+        cache.to_owned(),
+        hints_path.map(Path::to_owned),
+    );
+    tokio::task::spawn_blocking(move || {
+        let (scan, hints) = scan_remote_selected(
+            &url,
+            &reference,
+            &cache,
+            None,
+            hints_path.as_deref(),
+        )?;
+        let hints = hints.ok_or_else(|| {
+            anyhow::anyhow!(
+                "publication hint discovery did not return identities"
+            )
+        })?;
+        Ok(DiscoveredRepository {
+            scan,
+            project: hints.project,
+            target: hints.target,
+        })
+    })
+    .await?
+}
+
 fn scan_remote(
     url: &str,
     reference: &str,
     cache: &Path,
     project: &str,
 ) -> Result<RepositoryScan> {
+    Ok(scan_remote_selected(url, reference, cache, Some(project), None)?.0)
+}
+
+fn scan_remote_selected(
+    url: &str,
+    reference: &str,
+    cache: &Path,
+    project: Option<&str>,
+    hints_path: Option<&Path>,
+) -> Result<(RepositoryScan, Option<hints::PublicationHints>)> {
     use fs2::FileExt;
     std::fs::create_dir_all(cache)?;
     let key = identity("git-cache", &[url])
@@ -167,14 +225,8 @@ fn scan_remote(
     let commit = repo
         .find_reference("refs/grapharch/source")?
         .peel_to_commit()?;
-    let revision = Revision::read(
-        project,
-        public_repository_url(url)?.into(),
-        &commit,
-        false,
-    )?;
     let mut pending = vec![(String::new(), commit.tree_id()?.detach())];
-    let mut files: Vec<Arc<dyn Collector>> = Vec::new();
+    let mut entries = Vec::new();
     let mut count = 0;
     while let Some((prefix, id)) = pending.pop() {
         let tree = repo.find_object(id)?.try_into_tree()?;
@@ -199,25 +251,10 @@ fn scan_remote(
                     if supported(Path::new(&relative)) =>
                 {
                     ensure!(
-                        files.len() < 4096,
+                        entries.len() < 4096,
                         "repository exceeds 4096 RDF-source budget"
                     );
-                    let base = blob_url(url, &revision.commit, &relative)?;
-                    let source =
-                        identity("git-file", &[url, &relative]).into_string();
-                    files.push(Arc::new(GitRdfFile {
-                        project: project.into(),
-                        processor: identity("family-source", &[
-                            project, &relative,
-                        ])
-                        .into_string(),
-                        source,
-                        base,
-                        relative,
-                        repository: path.clone(),
-                        blob: entry.object_id(),
-                        revision: revision.clone(),
-                    }));
+                    entries.push((relative, entry.object_id()));
                 },
                 gix::objs::tree::EntryKind::Link
                     if supported(Path::new(&relative)) =>
@@ -237,16 +274,63 @@ fn scan_remote(
         }
     }
     ensure!(
-        !files.is_empty(),
+        !entries.is_empty(),
         "repository contains no supported RDF files"
     );
+    let discovered = if project.is_none() {
+        Some(
+            hints::discover(
+                &repo,
+                url,
+                &commit.id.to_string(),
+                &entries,
+                hints_path,
+            )
+            .with_context(|| {
+                format!(
+                    "discover publication hints at resolved Git commit {}",
+                    commit.id
+                )
+            })?,
+        )
+    } else {
+        None
+    };
+    let project = project
+        .or_else(|| discovered.as_ref().map(|hints| hints.project.as_str()))
+        .ok_or_else(|| anyhow::anyhow!("repository project is required"))?;
+    let revision = Revision::read(
+        project,
+        public_repository_url(url)?.into(),
+        &commit,
+        false,
+    )?;
+    let mut files: Vec<Arc<dyn Collector>> = Vec::with_capacity(entries.len());
+    for (relative, blob) in entries {
+        let base = blob_url(url, &revision.commit, &relative)?;
+        let source = identity("git-file", &[url, &relative]).into_string();
+        files.push(Arc::new(GitRdfFile {
+            project: project.into(),
+            processor: identity("family-source", &[project, &relative])
+                .into_string(),
+            source,
+            base,
+            relative,
+            repository: path.clone(),
+            blob,
+            revision: revision.clone(),
+        }));
+    }
     tracing::info!(commit=%revision.commit, files=files.len(), cache_reused=reused, "Git repository pinned");
-    Ok(RepositoryScan {
-        root: path,
-        commit: revision.commit.clone(),
-        files,
-        provenance: Arc::new(revision),
-    })
+    Ok((
+        RepositoryScan {
+            root: path,
+            commit: revision.commit.clone(),
+            files,
+            provenance: Arc::new(revision),
+        },
+        discovered,
+    ))
 }
 pub(super) fn supported(path: &Path) -> bool {
     path.extension().and_then(|v| v.to_str()).is_some_and(|v| {

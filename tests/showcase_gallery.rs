@@ -31,6 +31,12 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     let mut config: serde_yaml::Value = serde_yaml::from_str(
         &std::fs::read_to_string(family.join("showcase.yaml"))?,
     )?;
+    // This old acceptance corpus predates upstream-owned publication hints.
+    // Its explicit test override is distinct from the transport-only live
+    // configuration.
+    config["definitions"] = "project.ttl".into();
+    config["project"] = "urn:ekgf-family:project".into();
+    config["target"] = "urn:ekgf-family:specification".into();
     config["source"]["url"] = url.into();
     config["source"]["ref"] = commit.into();
     std::fs::write(

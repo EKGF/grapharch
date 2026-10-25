@@ -14,22 +14,20 @@ of `HEAD` in the same `ref` field when a showcase needs a reproducible historica
 revision. An unavailable repository or revision fails the build; cached or
 copied content is never silently substituted.
 
-The configuration declares the definitions file, project and publication target,
-so the same family showcase pipeline works with another ontology repository.
-Its RDF collectors generate a family reference, PDF and cross-ontology links.
-Missing English labels and definitions become explicit KG diagnostics. No
-source descriptions are invented, imports fetched, or SHACL validation or OWL
-reasoning implied.
+The configuration declares only the repository and revision selector. Project,
+publication target, authority, title and destination are discovered from the
+upstream RDF. Hints may live in `publication/grapharch.ttl` or within ontology
+files; there must be one unambiguous declared project and target. An explicit
+`source.config` RDF path can select publication hints when a repository contains
+multiple projects. No upstream files are copied into GraphArch.
 
-To build the repository example directly:
+The same pipeline works with another ontology repository. Its collectors generate
+a family reference, PDF and cross-ontology links. Missing English labels and
+definitions become explicit KG diagnostics. No source descriptions are invented,
+imports fetched, or SHACL validation or OWL reasoning implied.
 
-```sh
-grapharch publication build-family \
-  --git-repository https://github.com/EKGF/ekg-ontologies.git --git-ref HEAD \
-  --definitions examples/ekg-ontologies/project.ttl \
-  --project urn:ekgf-family:project --target urn:ekgf-family:specification \
-  --output-root output/ekgf-family
-```
+The local `project.ttl` belongs to the older offline acceptance fixture below;
+it is not the live gallery's publication configuration.
 
 ## Separate offline acceptance corpus
 

@@ -26,9 +26,9 @@ use {
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FamilyShowcase {
-    definitions: std::path::PathBuf,
-    project:     String,
-    target:      String,
+    definitions: Option<std::path::PathBuf>,
+    project:     Option<String>,
+    target:      Option<String>,
     source:      FamilyShowcaseSource,
 }
 
@@ -37,6 +37,7 @@ struct FamilyShowcase {
 enum FamilyShowcaseSource {
     Git {
         url:       String,
+        config:    Option<std::path::PathBuf>,
         #[serde(rename = "ref")]
         reference: String,
     },
@@ -67,38 +68,67 @@ pub async fn family(
         "family showcase configuration exceeds 64 KiB"
     );
     let config: FamilyShowcase = serde_yaml::from_slice(&bytes)?;
-    NamedNode::new(&config.project)?;
-    NamedNode::new(&config.target)?;
-    ensure!(
-        config
-            .definitions
-            .components()
-            .all(|part| matches!(part, Component::Normal(_))),
-        "family definitions must be a relative path beneath the configuration"
-    );
-    let definitions =
-        tokio::fs::canonicalize(root.join(&config.definitions)).await?;
-    ensure!(
-        definitions.starts_with(root),
-        "family definitions escape the configuration directory"
-    );
-    let FamilyShowcaseSource::Git { url, reference } = config.source;
+    let FamilyShowcaseSource::Git { url, reference, config: hints_path } =
+        config.source;
     ensure!(
         !reference.is_empty() &&
             reference.len() <= 1024 &&
             !reference.chars().any(char::is_control),
         "family Git ref must be a nonempty bounded reference"
     );
-    let built = super::ontology_family::collect_remote(
-        &url,
-        &reference,
-        cache,
-        &definitions,
-        &config.project,
-        &config.target,
-        4,
-    )
-    .await?;
+    let built = match (config.definitions, config.project, config.target) {
+        (None, None, None) => {
+            let repository = super::collect::git::remote_publication(
+                &url,
+                &reference,
+                cache,
+                hints_path.as_deref(),
+            )
+            .await?;
+            super::ontology_family::collect_prepared(
+                Dataset::memory()?,
+                repository,
+                4,
+            )
+            .await?
+        },
+        (Some(path), Some(project), Some(target)) => {
+            ensure!(
+                hints_path.is_none(),
+                "explicit local definitions conflict with repository hints \
+                 path"
+            );
+            NamedNode::new(&project)?;
+            NamedNode::new(&target)?;
+            ensure!(
+                path.components()
+                    .all(|part| matches!(part, Component::Normal(_))),
+                "family definitions must be a relative path beneath the \
+                 configuration"
+            );
+            let definitions = tokio::fs::canonicalize(root.join(path)).await?;
+            ensure!(
+                definitions.starts_with(root),
+                "family definitions escape the configuration directory"
+            );
+            super::ontology_family::collect_remote(
+                &url,
+                &reference,
+                cache,
+                &definitions,
+                &project,
+                &target,
+                4,
+            )
+            .await?
+        },
+        _ => {
+            anyhow::bail!(
+                "family showcase override requires definitions, project and \
+                 target together"
+            )
+        },
+    };
     Ok((built.dataset, vec![built.plan]))
 }
 

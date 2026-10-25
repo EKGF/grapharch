@@ -185,3 +185,195 @@ async fn repository_showcase_refreshes_head_reuses_cache_and_keeps_pinned_revisi
     assert!(publication.directory.join("document.pdf").is_file());
     Ok(())
 }
+
+#[tokio::test]
+async fn repository_publication_hints_can_live_inside_an_ontology_without_local_definitions()
+-> Result<()> {
+    use grapharch::publication::{
+        render::{PublishOutcome, Publisher},
+        showcases,
+    };
+    let root = tempfile::tempdir()?;
+    let bootstrap = root.path().join("bootstrap");
+    configuration(&bootstrap, "file:///unused", "HEAD")?;
+    let hints = std::fs::read_to_string(bootstrap.join("project.ttl"))?
+        .replace(
+            "ga:destination \"specification\"",
+            "ga:destination \"upstream/spec\"",
+        );
+    let source = root.path().join("ontology");
+    std::fs::create_dir(&source)?;
+    std::fs::write(
+        source.join("vocabulary.ttl"),
+        format!(
+            r#"
+@prefix owl:<http://www.w3.org/2002/07/owl#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix gov:<https://ekgf.org/ontology/artifact-governance#> . @prefix sh:<http://www.w3.org/ns/shacl#> .
+<urn:example:family> a gov:Family; rdfs:label "Embedded hints family"@en .
+<https://example.org/ontology#> a owl:Ontology; gov:inFamily <urn:example:family>; rdfs:label "Embedded hints ontology"@en; sh:declare [sh:prefix "example"; sh:namespace "https://example.org/ontology#"] .
+<https://example.org/ontology#Thing> a owl:Class; rdfs:label "Thing"@en; rdfs:comment "Defined alongside its publication hints."@en .
+{hints}
+"#
+        ),
+    )?;
+    let (url, commit) =
+        family_repository::bare_copy(&source, &root.path().join("remote"))?;
+    let config = root.path().join("showcase.yaml");
+    std::fs::write(
+        &config,
+        serde_yaml::to_string(
+            &serde_json::json!({"source":{"kind":"git","url":url,"ref":"HEAD"}}),
+        )?,
+    )?;
+    std::fs::remove_dir_all(bootstrap)?;
+    let (dataset, plans) =
+        showcases::family(&config, &root.path().join("cache")).await?;
+    assert!(contains_commit(&dataset, &commit).await?);
+    assert!(
+        contains_body(
+            &dataset,
+            "Defined alongside its publication hints."
+        )
+        .await?
+    );
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], output.path())
+        .await?
+    else {
+        panic!("expected discovered publication")
+    };
+    assert_eq!(
+        publication.directory,
+        output.path().canonicalize()?.join("upstream/spec")
+    );
+    // Preparing resolves HEAD once. Advancing the upstream must not change that
+    // scan.
+    let prepared = grapharch::publication::collect::git::remote_publication(
+        &url,
+        "HEAD",
+        &root.path().join("cache"),
+        None,
+    )
+    .await?;
+    let checkout = root.path().join("remote/checkout");
+    let original = std::fs::read_to_string(checkout.join("vocabulary.ttl"))?;
+    std::fs::write(
+        checkout.join("vocabulary.ttl"),
+        original.replace(
+            "Defined alongside its publication hints.",
+            "The upstream moved after discovery.",
+        ),
+    )?;
+    family_repository::git(&checkout, &[
+        "commit",
+        "-am",
+        "Move upstream after discovery",
+    ])?;
+    family_repository::git(&checkout, &[
+        "push",
+        root.path().join("remote/remote.git").to_str().unwrap(),
+        "HEAD:main",
+    ])?;
+    let built = grapharch::publication::ontology_family::collect_prepared(
+        grapharch::publication::dataset::Dataset::memory()?,
+        prepared,
+        2,
+    )
+    .await?;
+    assert!(contains_commit(&built.dataset, &commit).await?);
+    assert!(
+        contains_body(
+            &built.dataset,
+            "Defined alongside its publication hints."
+        )
+        .await?
+    );
+    assert!(
+        !contains_body(
+            &built.dataset,
+            "The upstream moved after discovery."
+        )
+        .await?
+    );
+    // Ambiguous hints require explicit selection; an explicit RDF path may
+    // select one project.
+    std::fs::write(checkout.join("another-project.ttl"),"<urn:another:project> a <https://ekgf.org/ontology/grapharch#Project>; <http://purl.org/dc/terms/title> \"Another project\"; <https://ekgf.org/ontology/grapharch#target> <urn:example:target> .")?;
+    family_repository::git(&checkout, &["add", "another-project.ttl"])?;
+    family_repository::git(&checkout, &[
+        "commit",
+        "-m",
+        "Add another publication project",
+    ])?;
+    family_repository::git(&checkout, &[
+        "push",
+        root.path().join("remote/remote.git").to_str().unwrap(),
+        "HEAD:main",
+    ])?;
+    let failure = showcases::family(&config, &root.path().join("cache"))
+        .await
+        .err()
+        .expect("ambiguous projects require explicit selection");
+    assert!(format!("{failure:#}").contains("exactly one ga:Project"));
+    let mut selection: serde_yaml::Value =
+        serde_yaml::from_str(&std::fs::read_to_string(&config)?)?;
+    selection["source"]["config"] = "vocabulary.ttl".into();
+    std::fs::write(&config, serde_yaml::to_string(&selection)?)?;
+    let (selected, _) =
+        showcases::family(&config, &root.path().join("cache")).await?;
+    assert!(
+        contains_body(&selected, "The upstream moved after discovery.").await?
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn filesystem_discovery_preserves_the_selected_dataset_for_directory_and_checkout()
+-> Result<()> {
+    use grapharch::publication::{
+        dataset::Dataset,
+        ontology_family::{self, FamilySource},
+    };
+    let root = tempfile::tempdir()?;
+    let bootstrap = root.path().join("bootstrap");
+    configuration(&bootstrap, "file:///unused", "HEAD")?;
+    let source = root.path().join("source");
+    std::fs::create_dir_all(source.join("publication"))?;
+    std::fs::copy(
+        bootstrap.join("project.ttl"),
+        source.join("publication/grapharch.ttl"),
+    )?;
+    std::fs::write(
+        source.join("vocabulary.ttl"),
+        r#"
+@prefix owl:<http://www.w3.org/2002/07/owl#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix gov:<https://ekgf.org/ontology/artifact-governance#> . @prefix sh:<http://www.w3.org/ns/shacl#> .
+<urn:example:family> a gov:Family; rdfs:label "Filesystem family"@en .
+<https://example.org/ontology#> a owl:Ontology; gov:inFamily <urn:example:family>; rdfs:label "Filesystem ontology"@en; sh:declare [sh:prefix "example";sh:namespace "https://example.org/ontology#"] .
+<https://example.org/ontology#Thing> a owl:Class;rdfs:label "Thing"@en;rdfs:comment "Filesystem term definition"@en .
+"#,
+    )?;
+    let dataset = Dataset::memory()?;
+    let observed = dataset.clone();
+    ontology_family::collect_discovered_from(
+        dataset,
+        FamilySource::Directory(&source),
+        None,
+        2,
+    )
+    .await?;
+    assert!(contains_body(&observed, "Filesystem term definition").await?);
+    let remote = root.path().join("repository");
+    family_repository::bare_copy(&source, &remote)?;
+    let dataset = Dataset::memory()?;
+    let observed = dataset.clone();
+    ontology_family::collect_discovered_from(
+        dataset,
+        FamilySource::LocalRepository(&remote.join("checkout")),
+        Some(std::path::Path::new("publication/grapharch.ttl")),
+        2,
+    )
+    .await?;
+    assert!(contains_body(&observed, "Filesystem term definition").await?);
+    Ok(())
+}

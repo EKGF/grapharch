@@ -42,6 +42,7 @@ struct Member {
 /// Source discovery is separate from the specialized per-document collectors.
 pub enum FamilySource<'a> {
     Directory(&'a Path),
+    PreparedRepository(super::collect::git::RepositoryScan),
     LocalRepository(&'a Path),
     RemoteRepository {
         url:       &'a str,
@@ -120,17 +121,110 @@ pub async fn collect_from(
     target: &str,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
+    collect_from_optional(
+        dataset,
+        source,
+        Some(definitions),
+        project,
+        target,
+        concurrency,
+    )
+    .await
+}
+
+/// Use upstream configuration already present in a prepared repository's RDF
+/// sources.
+pub async fn collect_prepared(
+    dataset: Dataset,
+    repository: super::collect::git::DiscoveredRepository,
+    concurrency: usize,
+) -> Result<CollectedFamily> {
+    collect_from_optional(
+        dataset,
+        FamilySource::PreparedRepository(repository.scan),
+        None,
+        &repository.project,
+        &repository.target,
+        concurrency,
+    )
+    .await
+}
+
+/// Discover upstream RDF publication identities while retaining the caller's KG
+/// backend.
+pub async fn collect_discovered_from(
+    dataset: Dataset,
+    source: FamilySource<'_>,
+    hints_path: Option<&Path>,
+    concurrency: usize,
+) -> Result<CollectedFamily> {
+    match source {
+        FamilySource::RemoteRepository { url, reference, cache } => {
+            let repository = super::collect::git::remote_publication(
+                url, reference, cache, hints_path,
+            )
+            .await?;
+            collect_prepared(dataset, repository, concurrency).await
+        },
+        FamilySource::Directory(path) | FamilySource::LocalRepository(path) => {
+            let root = tokio::fs::canonicalize(path).await?;
+            let paths = discover(&root).await?;
+            let hint_path = hints_path.map(Path::to_owned);
+            let read_root = root.clone();
+            let hints = tokio::task::spawn_blocking(move || {
+                super::collect::git::hints::discover_files(
+                    &read_root,
+                    &paths,
+                    hint_path.as_deref(),
+                )
+            })
+            .await??;
+            collect_from_optional(
+                dataset,
+                source,
+                None,
+                &hints.project,
+                &hints.target,
+                concurrency,
+            )
+            .await
+        },
+        FamilySource::PreparedRepository(_) => {
+            anyhow::bail!(
+                "prepared repository requires discovered project and target \
+                 identities"
+            )
+        },
+        FamilySource::Sparql(_) => {
+            anyhow::bail!(
+                "SPARQL sources require explicit publication definitions"
+            )
+        },
+    }
+}
+
+async fn collect_from_optional(
+    dataset: Dataset,
+    source: FamilySource<'_>,
+    definitions: Option<&Path>,
+    project: &str,
+    target: &str,
+    concurrency: usize,
+) -> Result<CollectedFamily> {
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
     let mut managed =
         ManagedFamily::begin(&dataset, &writer, project, target).await?;
     let result = async {
-        let definitions = tokio::fs::canonicalize(definitions).await?;
+        let definitions = match definitions {
+            Some(path) => Some(tokio::fs::canonicalize(path).await?),
+            None => None,
+        };
         let inputs = match source {
             FamilySource::Directory(path) => {
                 file_collectors(
                     &tokio::fs::canonicalize(path).await?,
-                    &definitions,
+                    definitions.as_deref(),
                     project,
                 )
                 .await?
@@ -138,8 +232,12 @@ pub async fn collect_from(
             FamilySource::LocalRepository(path) => {
                 let scan = super::collect::git::local_repository(path, project)
                     .await?;
-                let mut inputs =
-                    file_collectors(&scan.root, &definitions, project).await?;
+                let mut inputs = file_collectors(
+                    &scan.root,
+                    definitions.as_deref(),
+                    project,
+                )
+                .await?;
                 inputs.push(scan.provenance);
                 inputs
             },
@@ -148,6 +246,11 @@ pub async fn collect_from(
                     url, reference, cache, project,
                 )
                 .await?;
+                let mut inputs = scan.files;
+                inputs.push(scan.provenance);
+                inputs
+            },
+            FamilySource::PreparedRepository(scan) => {
                 let mut inputs = scan.files;
                 inputs.push(scan.provenance);
                 inputs
@@ -173,7 +276,7 @@ pub async fn collect_from(
         };
         build(
             inputs,
-            &definitions,
+            definitions.as_deref(),
             &dataset,
             &writer,
             project,
@@ -196,12 +299,12 @@ pub async fn collect_from(
 
 async fn file_collectors(
     root: &Path,
-    definitions: &Path,
+    definitions: Option<&Path>,
     project: &str,
 ) -> Result<Vec<Arc<dyn Collector>>> {
     let mut inputs: Vec<Arc<dyn Collector>> = Vec::new();
     for path in discover(root).await? {
-        if path == definitions {
+        if definitions.is_some_and(|definitions| path == definitions) {
             continue;
         }
         let relative = path
@@ -267,7 +370,7 @@ async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
 #[allow(clippy::too_many_arguments)]
 async fn build(
     inputs: Vec<Arc<dyn Collector>>,
-    definitions: &Path,
+    definitions: Option<&Path>,
     dataset: &Dataset,
     writer: &GraphWriter,
     project: &str,
@@ -276,11 +379,14 @@ async fn build(
     managed: &mut ManagedFamily,
 ) -> Result<(ResolvedPlan, usize, usize)> {
     let started = std::time::Instant::now();
-    let mut work: Vec<Arc<dyn Collector>> = vec![Arc::new(RdfFile::new(
-        project,
-        "urn:grapharch:family-definitions",
-        definitions.to_owned(),
-    )?)];
+    let mut work: Vec<Arc<dyn Collector>> = Vec::new();
+    if let Some(definitions) = definitions {
+        work.push(Arc::new(RdfFile::new(
+            project,
+            "urn:grapharch:family-definitions",
+            definitions.to_owned(),
+        )?));
+    }
     let mut sources = Vec::new();
     for collector in inputs {
         sources.push(NamedNode::new(collector.identity()?.processor)?);

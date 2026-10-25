@@ -34,8 +34,8 @@ struct Case {
     key:      String,
     kind:     String,
     source:   String,
-    preview:  String,
-    pdf:      String,
+    preview:  Option<String>,
+    pdf:      Option<String>,
     expected: BTreeSet<String>,
 }
 
@@ -230,20 +230,18 @@ async fn build_case(
             work.push(Arc::new(asset));
         }
     }
-    let preview = artifacts.get(&case.preview).ok_or_else(|| {
-        anyhow::anyhow!(
-            "showcase {} has no preview artifact {}",
-            case.id,
-            case.preview
-        )
-    })?;
-    let pdf = artifacts.get(&case.pdf).ok_or_else(|| {
-        anyhow::anyhow!(
-            "showcase {} has no PDF artifact {}",
-            case.id,
-            case.pdf
-        )
-    })?;
+    let preview = artifact_selection(
+        &artifacts,
+        case.preview.as_deref(),
+        "index.html",
+        &case.id,
+    )?;
+    let pdf = artifact_selection(
+        &artifacts,
+        case.pdf.as_deref(),
+        "document.pdf",
+        &case.id,
+    )?;
     metadata.extend([
         quad(&case.id, "previewArtifact", preview.clone()),
         quad(&case.id, "pdfArtifact", pdf.clone()),
@@ -270,6 +268,51 @@ async fn build_case(
     tracing::debug!(case = %case.id, elapsed_ms = case_started.elapsed().as_millis(), "showcase built");
 
     Ok(BuiltCase { work, metadata, bytes: total_bytes })
+}
+
+fn artifact_selection<'a>(
+    artifacts: &'a HashMap<String, NamedNode>,
+    selected: Option<&str>,
+    filename: &str,
+    case: &NamedNode,
+) -> Result<&'a NamedNode> {
+    if let Some(path) = selected {
+        return artifacts.get(path).ok_or_else(|| {
+            anyhow::anyhow!("showcase {case} has no selected artifact {path}")
+        });
+    }
+    let mut choices = artifacts.iter().filter(|(path, _)| {
+        Path::new(path)
+            .file_name()
+            .is_some_and(|name| name == filename)
+    });
+    let (_, asset) = choices.next().ok_or_else(|| {
+        anyhow::anyhow!("showcase {case} has no {filename} artifact")
+    })?;
+    ensure!(
+        choices.next().is_none(),
+        "showcase {case} requires explicit selection among multiple \
+         {filename} artifacts"
+    );
+    Ok(asset)
+}
+
+fn optional_text(
+    store: &Store,
+    subject: &NamedNode,
+    field: &str,
+) -> Result<Option<String>> {
+    let mut values = objects(store, subject, field)?;
+    let value = values.next().transpose()?;
+    ensure!(
+        values.next().is_none(),
+        "showcase {field} must have at most one value"
+    );
+    match value {
+        None => Ok(None),
+        Some(Term::Literal(value)) => Ok(Some(value.value().to_owned())),
+        _ => anyhow::bail!("showcase {field} must be a literal"),
+    }
 }
 
 fn quad(subject: &NamedNode, field: &str, object: impl Into<Term>) -> Quad {
@@ -313,9 +356,12 @@ fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
             keys.insert(key.clone()),
             "duplicate showcase identity"
         );
-        let preview = text(&store, &id, "previewPath")?;
-        let pdf = text(&store, &id, "pdfPath")?;
-        for path in [&source, &preview, &pdf] {
+        let preview = optional_text(&store, &id, "previewPath")?;
+        let pdf = optional_text(&store, &id, "pdfPath")?;
+        for path in std::iter::once(source.as_str())
+            .chain(preview.as_deref())
+            .chain(pdf.as_deref())
+        {
             ensure!(
                 !path.is_empty() &&
                     Path::new(path)
