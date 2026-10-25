@@ -68,6 +68,120 @@ impl AnnotatedTermDocumentor {
         self
     }
 
+    async fn anonymous_facts(
+        &self,
+        view: &RevisionView,
+        iri: &NamedNode,
+    ) -> Result<Vec<(NamedNode, Term)>> {
+        let pattern = view.pattern(&format!("{iri} ?predicate ?object"), 3);
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?predicate ?object WHERE {{ {pattern} }} \
+                 ORDER BY ?predicate ?object LIMIT 65"
+            ))
+            .await?;
+        let mut facts = Vec::new();
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                facts.len() < 64,
+                "anonymous RDF expression exceeds fact budget for {}",
+                self.subject
+            );
+            let Term::NamedNode(predicate) = &row["predicate"] else {
+                anyhow::bail!("RDF predicate must be named")
+            };
+            facts.push((predicate.clone(), row["object"].clone()));
+        }
+        ensure!(
+            !facts.is_empty(),
+            "anonymous RDF expression has no retained facts for {}",
+            self.subject
+        );
+        Ok(facts)
+    }
+
+    async fn source_collection(
+        &self,
+        view: &RevisionView,
+        mut facts: Vec<(NamedNode, Term)>,
+        references: &mut HashSet<NamedNode>,
+        path: &mut HashSet<NamedNode>,
+        depth: usize,
+    ) -> Result<String> {
+        const FIRST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#first";
+        const REST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest";
+        const NIL: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil";
+        let mut items = Vec::new();
+        let mut cells = Vec::new();
+        loop {
+            ensure!(
+                items.len() < 4096,
+                "RDF collection exceeds 4096-item budget for {}",
+                self.subject
+            );
+            let first: Vec<_> =
+                facts.iter().filter(|(p, _)| p.as_str() == FIRST).collect();
+            let rest: Vec<_> =
+                facts.iter().filter(|(p, _)| p.as_str() == REST).collect();
+            ensure!(
+                first.len() == 1 && rest.len() == 1,
+                "malformed RDF collection for {}: each cell needs exactly one \
+                 rdf:first and rdf:rest",
+                self.subject
+            );
+            let mut item = self
+                .source_value(view, &first[0].1, references, path, depth + 1)
+                .await?;
+            let Term::NamedNode(next) = &rest[0].1 else {
+                anyhow::bail!(
+                    "malformed RDF collection for {}: rdf:rest must identify \
+                     a list cell or rdf:nil",
+                    self.subject
+                )
+            };
+            let next = next.clone();
+            let mut annotations = Vec::new();
+            for (predicate, object) in &facts {
+                if predicate.as_str() == FIRST ||
+                    predicate.as_str() == REST ||
+                    (predicate.as_str() == RDF_TYPE &&
+                        matches!(object, Term::NamedNode(n) if n.as_str() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#List"))
+                {
+                    continue;
+                }
+                let value = self
+                    .source_value(view, object, references, path, depth + 1)
+                    .await?;
+                annotations.push(format!(
+                    "{}: {value}",
+                    code(&self.compact(predicate))
+                ));
+            }
+            if !annotations.is_empty() {
+                item.push_str(&format!(
+                    " (list-cell annotations: {})",
+                    annotations.join("; ")
+                ));
+            }
+            items.push(item);
+            if next.as_str() == NIL {
+                break;
+            }
+            ensure!(
+                path.insert(next.clone()),
+                "cyclic RDF collection for {}",
+                self.subject
+            );
+            cells.push(next.clone());
+            facts = self.anonymous_facts(view, &next).await?;
+        }
+        for cell in cells {
+            path.remove(&cell);
+        }
+        Ok(format!("({})", items.join(", ")))
+    }
+
     fn source_value<'a>(
         &'a self,
         view: &'a RevisionView,
@@ -79,7 +193,8 @@ impl AnnotatedTermDocumentor {
         Box::pin(async move {
             ensure!(
                 depth <= 24,
-                "anonymous RDF expression exceeds depth budget"
+                "anonymous RDF expression exceeds depth budget for {}",
+                self.subject
             );
             match value {
                 Term::NamedNode(iri)
@@ -87,47 +202,46 @@ impl AnnotatedTermDocumentor {
                 {
                     ensure!(
                         path.insert(iri.clone()),
-                        "cyclic anonymous RDF expression"
+                        "cyclic anonymous RDF expression for {}",
+                        self.subject
                     );
-                    let pattern =
-                        view.pattern(&format!("{iri} ?predicate ?object"), 3);
-                    let mut rows = self
-                        .dataset
-                        .select(format!(
-                            "SELECT DISTINCT ?predicate ?object WHERE {{ \
-                             {pattern} }} ORDER BY ?predicate ?object LIMIT 65"
-                        ))
-                        .await?;
-                    let mut pairs = Vec::new();
-                    while let Some(row) = rows.next().await? {
-                        ensure!(
-                            pairs.len() < 64,
-                            "anonymous RDF expression exceeds fact budget"
-                        );
-                        let Term::NamedNode(predicate) = &row["predicate"]
-                        else {
-                            anyhow::bail!("RDF predicate must be named")
-                        };
-                        let object = self
-                            .source_value(
-                                view,
-                                &row["object"],
-                                references,
-                                path,
-                                depth + 1,
-                            )
-                            .await?;
-                        pairs.push(format!(
-                            "{}: {object}",
-                            code(&self.compact(predicate))
-                        ));
-                    }
-                    ensure!(
-                        !pairs.is_empty(),
-                        "anonymous RDF expression has no retained facts"
-                    );
+                    let facts = self.anonymous_facts(view, iri).await?;
+                    let rendered = if facts.iter().any(|(p, _)| {
+                        matches!(p.as_str(),
+                        "http://www.w3.org/1999/02/22-rdf-syntax-ns#first" |
+                        "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest")
+                    }) {
+                        self.source_collection(
+                            view, facts, references, path, depth,
+                        )
+                        .await?
+                    } else {
+                        let mut pairs = Vec::new();
+                        for (predicate, object) in facts {
+                            let object = self
+                                .source_value(
+                                    view,
+                                    &object,
+                                    references,
+                                    path,
+                                    depth + 1,
+                                )
+                                .await?;
+                            pairs.push(format!(
+                                "{}: {object}",
+                                code(&self.compact(&predicate))
+                            ));
+                        }
+                        format!("({})", pairs.join("; "))
+                    };
                     path.remove(iri);
-                    Ok(format!("({})", pairs.join("; ")))
+                    Ok(rendered)
+                },
+                Term::NamedNode(iri)
+                    if iri.as_str() ==
+                        "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil" =>
+                {
+                    Ok("()".into())
                 },
                 Term::NamedNode(iri) if self.documented.contains(iri) => {
                     references.insert(iri.clone());
