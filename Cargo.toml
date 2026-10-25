@@ -44,7 +44,7 @@ typst-pdf = "0.13.1"
 printpdf = "0.8.2"
 chrono = "0.4"
 quick-error = "2.0.1"
-typst-kit = { version = "0.13.1", features = ["embed-fonts"] }
+typst-kit = { version = "0.13.1", default-features = false, features = ["embed-fonts"] }
 regex = "1.11.1"
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 fs2 = "0.4"

@@ -63,6 +63,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config
       - uses: actions-rust-lang/setup-rust-toolchain@v2
       - run: cargo fmt --check
+      - name: Verify portable TLS dependency graphs
+        run: python packaging/check_release_dependencies.py
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked --all-targets
   binaries:
