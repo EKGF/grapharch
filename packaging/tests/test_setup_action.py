@@ -31,6 +31,18 @@ class SetupActionTest(unittest.TestCase):
         ):
             setup.target()
 
+    def test_windows_architecture_names(self):
+        for machine, expected in [
+            ("ARM64", "aarch64-pc-windows-msvc"),
+            ("AMD64", "x86_64-pc-windows-msvc"),
+        ]:
+            with (
+                self.subTest(machine=machine),
+                patch.object(setup.platform, "system", return_value="Windows"),
+                patch.object(setup.platform, "machine", return_value=machine),
+            ):
+                self.assertEqual(setup.target(), expected)
+
     def test_corrupt_cached_archive_fails_before_execution(self):
         import io
         import os

@@ -19,11 +19,11 @@ def target():
     }
     cpus = {
         "x86_64": "x86_64",
-        "AMD64": "x86_64",
+        "amd64": "x86_64",
         "arm64": "aarch64",
         "aarch64": "aarch64",
     }
-    system, cpu = platform.system(), platform.machine()
+    system, cpu = platform.system(), platform.machine().lower()
     if system not in systems or cpu not in cpus:
         raise ValueError(f"Unsupported platform: {system}/{cpu}")
     if system == "Linux":
