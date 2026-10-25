@@ -310,7 +310,10 @@ impl Catalog {
                 out.push_str(&format!("<li>{link}</li>"));
             } else {
                 out.push_str(&format!(
-                    "<li><details{}><summary>{link}</summary>{}</details></li>",
+                    "<li><details \
+                     data-id=\"{}\"{}><summary>{link}</summary>{}</details></\
+                     li>",
+                    esc(page.id.as_str()),
                     if ancestors.contains(&page.id) || &page.id == active {
                         " open"
                     } else {
