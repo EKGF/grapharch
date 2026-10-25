@@ -26,7 +26,7 @@ jobs:
             fi
             sleep 2
           done
-          printf 'RDF4J did not become ready\n' >&2
+          printf 'RDF4J did not become ready after %s attempts\n' "$attempt" >&2
           exit 1
       - name: Create dedicated NativeStore repository
         run: >-
