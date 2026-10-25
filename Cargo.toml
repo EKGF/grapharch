@@ -10,7 +10,7 @@ repository = "https://github.com/ekgf/grapharch"
 homepage = "https://ekgf.github.io/grapharch/"
 
 [dependencies]
-oxigraph = "0.4.9"
+oxigraph = "0.4.11"
 oxrdf = "0.2.4"
 oxrdfio = { version = "0.1.7", features = ["async-tokio"] }
 oxttl = { version = "0.1.7", features = ["async-tokio"] }
