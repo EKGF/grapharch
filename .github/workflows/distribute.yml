@@ -38,10 +38,10 @@ jobs:
       version: ${{ steps.metadata.outputs.version }}
       publish: ${{ steps.metadata.outputs.publish }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - id: metadata
@@ -50,7 +50,7 @@ jobs:
         run: python packaging/release_metadata.py
       - run: python packaging/distribute.py check
       - run: python -m unittest discover -s packaging/tests
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - run: node --test npm/tests/*.test.cjs
@@ -58,10 +58,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: metadata
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
       - run: cargo fmt --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked --all-targets
@@ -77,16 +77,16 @@ jobs:
       CXXSTDLIB_STATIC: ${{ matrix.os == 'linux' && '1' || '' }}
       RUSTFLAGS: ${{ matrix.os == 'win32' && '-C target-feature=+crt-static' || '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           architecture: ${{ matrix.cpu }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           architecture: ${{ matrix.cpu }}
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
       - name: Configure native Windows build environment
@@ -116,7 +116,7 @@ jobs:
         run: python packaging/smoke.py --target ${{ matrix.target }} --output dist
       - name: Remove smoke-only main package before aggregation
         run: python packaging/prepare_platform.py --target ${{ matrix.target }} --output dist --clean-main
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: distribution-${{ matrix.target }}
           path: dist/
@@ -126,14 +126,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [metadata, binaries]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: distribution-*
           path: dist
@@ -143,7 +143,7 @@ jobs:
       - run: python packaging/distribute.py verify-release --output dist
       - run: python packaging/distribute.py homebrew --output dist --destination dist/homebrew/grapharch.rb
       - run: ruby -c dist/homebrew/grapharch.rb
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-distribution
           path: dist/
@@ -157,11 +157,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.metadata.outputs.version }}
           target_commitish: ${{ github.sha }}
@@ -181,7 +181,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
@@ -197,14 +197,14 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
@@ -218,10 +218,10 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
       - id: auth
         uses: rust-lang/crates-io-auth-action@v1
       - run: cargo publish --locked --package grapharch
@@ -233,7 +233,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: homebrew
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
@@ -241,7 +241,7 @@ jobs:
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: test -n "$TAP_TOKEN" || { printf 'HOMEBREW_TAP_TOKEN is required\n' >&2; exit 1; }
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: legra-ai/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
