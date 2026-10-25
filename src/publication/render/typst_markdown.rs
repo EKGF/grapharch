@@ -1,13 +1,14 @@
 use {
     super::markup::{Markdown, quote},
     anyhow::{Result, bail},
-    pulldown_cmark::{CodeBlockKind, Event, Tag, TagEnd},
+    pulldown_cmark::{Alignment, CodeBlockKind, Event, Tag, TagEnd},
 };
 
 pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut output = String::new();
     let mut code = None;
     let mut heading = None;
+    let mut table_head = false;
     for event in &markdown.events {
         match event {
             Event::Start(tag) => {
@@ -24,12 +25,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                     },
                     Tag::BlockQuote(kind) => {
                         if let Some(kind) = kind {
+                            let label = super::callouts::label(*kind);
                             output.push_str(&format!(
-                                "#block(breakable: true, inset: 10pt, stroke: \
-                                 (left: 2pt + \
-                                 rgb(\"#526174\")))[#strong[#text({})]#\
-                                 linebreak()\n",
-                                quote(super::callouts::label(*kind))
+                                "#ga-callout({}, kind: {})[",
+                                quote(label),
+                                quote(&label.to_ascii_lowercase())
                             ));
                         } else {
                             output.push_str("#quote(block: true)[");
@@ -66,15 +66,46 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push_str(&format!("#link({destination})["));
                     },
                     Tag::Table(columns) => {
+                        let mut widths = columns
+                            .iter()
+                            .map(|alignment| {
+                                if *alignment == Alignment::Right {
+                                    "auto"
+                                } else {
+                                    "1fr"
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        if columns.len() == 1 {
+                            widths.push(',');
+                        }
+                        let alignments = columns
+                            .iter()
+                            .map(|alignment| {
+                                match alignment {
+                                    Alignment::Right => "right",
+                                    Alignment::Center => "center",
+                                    _ => "left",
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ");
                         output.push_str(&format!(
-                            "#table(columns: {}, inset: 6pt, stroke: 0.4pt + \
-                             rgb(\"#cbd5e1\"), ",
-                            columns.len()
-                        ))
+                            "#ga-table(columns: ({widths}), align: \
+                             ({alignments}), "
+                        ));
                     },
-                    Tag::TableHead => output.push_str("table.header("),
+                    Tag::TableHead => {
+                        table_head = true;
+                        output.push_str("table.header(");
+                    },
                     Tag::TableRow => {},
-                    Tag::TableCell => output.push('['),
+                    Tag::TableCell => {
+                        output.push_str(
+                            if table_head { "[#strong[" } else { "[" },
+                        )
+                    },
                     other => {
                         bail!(
                             "unsupported Markdown construct in Typst: \
@@ -102,8 +133,14 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push_str(")\n");
                     },
                     TagEnd::List(_) | TagEnd::Table => output.push_str(")\n"),
-                    TagEnd::Item | TagEnd::TableCell => output.push_str("],"),
-                    TagEnd::TableHead => output.push_str("),"),
+                    TagEnd::Item => output.push_str("],"),
+                    TagEnd::TableCell => {
+                        output.push_str(if table_head { "]]," } else { "]," })
+                    },
+                    TagEnd::TableHead => {
+                        table_head = false;
+                        output.push_str("),");
+                    },
                     TagEnd::TableRow => {},
                     TagEnd::Emphasis |
                     TagEnd::Strong |

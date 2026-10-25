@@ -14,6 +14,7 @@ mod record;
 mod specification;
 mod typst;
 mod typst_markdown;
+mod typst_style;
 mod website;
 pub use model::PublicationManifest;
 pub(crate) use model::title as page_title;

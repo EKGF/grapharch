@@ -77,15 +77,7 @@ fn emit(element: ElementRef<'_>, diagnostics: &[Diagnostic]) -> Result<String> {
     let mut out = match tag {
         "pre" => {
             let text = element.text().collect::<String>();
-            let mut code = String::new();
-            for line in text.lines() {
-                code.push_str(&format!("#text({})#linebreak()\n", quote(line)));
-            }
-            format!(
-                "#block(fill: rgb(\"#f5f5f5\"), inset: 6pt, breakable: \
-                 true)[#set text(font: \"DejaVu Sans Mono\", size: 7.5pt, \
-                 hyphenate: false)\n{code}]\n"
-            )
+            format!("#raw({}, block: true)\n", quote(&text))
         },
         "table" => table(element, diagnostics)?,
         "ul" | "ol" => {
@@ -171,14 +163,14 @@ fn emit(element: ElementRef<'_>, diagnostics: &[Diagnostic]) -> Result<String> {
         },
         "dt" | "summary" => {
             format!(
-                "#block(above: 5pt, below: 2pt)[#strong[{}]]",
+                "#v(6pt, weak: false)\n#block(sticky: true)[#strong[{}]]\n",
                 children(element, diagnostics)?
             )
         },
         "dd" => {
             format!(
-                "#block(inset: (left: 12pt), above: 1pt, below: 3pt, \
-                 breakable: true)[{}]",
+                "#v(3pt, weak: false)\n#block(inset: (left: 12pt), above: \
+                 1pt, below: 3pt, breakable: true)[{}]\n\n",
                 children(element, diagnostics)?
             )
         },
@@ -230,7 +222,22 @@ fn table(
         columns.to_string()
     };
     let mut cells = String::new();
-    for row in rows {
+    let mut in_header = false;
+    let mut has_header = false;
+    for (row_index, row) in rows.into_iter().enumerate() {
+        let header = row
+            .children()
+            .filter_map(ElementRef::wrap)
+            .all(|cell| cell.value().name() == "th") &&
+            (row_index == 0 || in_header);
+        if header && !in_header {
+            cells.push_str("table.header(");
+            in_header = true;
+            has_header = true;
+        } else if !header && in_header {
+            cells.push_str("),");
+            in_header = false;
+        }
         for (index, cell) in
             row.children().filter_map(ElementRef::wrap).enumerate()
         {
@@ -253,10 +260,11 @@ fn table(
             ));
         }
     }
+    if in_header {
+        cells.push_str("),");
+    }
     Ok(format!(
-        "#block(above: 6pt, below: 6pt, breakable: true)[#set text(size: \
-         8.5pt)\n#table(columns: {widths}, inset: 3pt, stroke: 0.3pt + \
-         rgb(\"#cbd5e1\"), {cells})]\n"
+        "#ga-table(columns: {widths}, has-header: {has_header}, {cells})\n"
     ))
 }
 

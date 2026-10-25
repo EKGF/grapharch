@@ -842,10 +842,10 @@ ga:stage a owl:DatatypeProperty ;
     skos:scopeNote "Current contribution stage values are collect, document, and plan. Assembly and rendering have separate revision and job records."@en .
 
 ga:style a owl:DatatypeProperty ;
-    rdfs:label "HTML presentation style"@en ;
+    rdfs:label "Publication presentation style"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Records the HTML presentation style requested by a publication target or retained in its plan."@en ;
-    dct:description "Records the HTML presentation style requested by a publication target or retained in its plan."@en ;
+    skos:definition "Records the Publication presentation style requested by a publication target or retained in its plan."@en ;
+    dct:description "Records the Publication presentation style requested by a publication target or retained in its plan."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:string .
 

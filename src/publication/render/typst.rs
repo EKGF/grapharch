@@ -36,6 +36,7 @@ pub(super) async fn begin(
             None => title(&plan.source, &plan.project).await?,
             _ => anyhow::bail!("PDF publisher must be an IRI"),
         };
+    let supplied_authors = authors.clone();
     if authors.is_empty() {
         authors.push(publisher.clone());
     }
@@ -44,26 +45,91 @@ pub(super) async fn begin(
     if plan.renderer == "specification" {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     }
+    let style = super::typst_style::Style::read(plan).await?;
     file.write_all(
         format!(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \
              Scope: {}\n// Profile: {}\n#set document(title: {}, author: \
-             {author}, date: none)\n#set page(paper: \"a4\", margin: (x: \
-             22mm, y: 20mm), numbering: \"1\")\n#set text(font: \"Libertinus \
-             Serif\", size: 10.5pt, lang: \"en\")\n#set par(justify: \
-             true)\n#set heading(numbering: \"1.1\")\n#show heading: set \
-             text(fill: rgb(\"#10243a\"))\n#show table.cell.where(y: 0): set \
-             text(weight: \"bold\")\n#show raw: set text(font: \"DejaVu Sans \
-             Mono\", size: 8.5pt)\n#text(size: 13pt, fill: \
-             rgb(\"#526174\"))[#text({})]\n#v(8pt)\n#text(size: 28pt, weight: \
-             \"bold\")[#text({})]\n#v(12pt)\n{front}\n#v(20pt)\n#\
-             outline(title: [Contents], depth: 3)\n#pagebreak()\n",
+             {author}, date: none)\n#let ga-style = {}\n#let ga-accent = \
+             rgb({})\n#let ga-title = {}\n#let ga-publisher = {}\n",
             plan.project,
             plan.target,
             plan.revision,
             plan.scope,
             plan.profile,
             quote(&plan.title),
+            quote(style.name),
+            quote(&style.accent),
+            quote(&plan.title),
+            quote(&publisher)
+        )
+        .as_bytes(),
+    )
+    .await?;
+    file.write_all(include_str!("typst/theme.typ").as_bytes())
+        .await?;
+    let subtitle = match plan.source.optional(&plan.target, "subtitle").await? {
+        Some(oxrdf::Term::Literal(value)) => {
+            format!(
+                "#v(5mm)\n#text(size: 16pt, fill: ga-muted)[#text({})]\n",
+                quote(value.value())
+            )
+        },
+        None => String::new(),
+        _ => anyhow::bail!("publication subtitle must be a literal"),
+    };
+    if style.name == "reader" {
+        if let Some(value) = plan
+            .source
+            .optional_by(
+                &plan.target,
+                &oxrdf::NamedNode::new("http://purl.org/dc/terms/description")?,
+            )
+            .await?
+        {
+            let oxrdf::Term::Literal(value) = value else {
+                anyhow::bail!("PDF description must be a literal")
+            };
+            front.push_str(&format!(
+                "#block(above: 8pt, below: 16pt)[#text(size: 12pt, fill: \
+                 ga-muted)[#text({})]]\n",
+                quote(value.value())
+            ));
+        }
+        for (field, label) in [
+            ("publicationStatus", "Status"),
+            ("publicationDate", "Published"),
+        ] {
+            if let Some(value) =
+                plan.source.optional(&plan.target, field).await?
+            {
+                let oxrdf::Term::Literal(value) = value else {
+                    anyhow::bail!("PDF {field} must be a literal")
+                };
+                front.push_str(&format!(
+                    "#block(above: 8pt)[#strong[#text({})] #text({})]\n",
+                    quote(&format!("{label}:")),
+                    quote(value.value())
+                ));
+            }
+        }
+        if !supplied_authors.is_empty() {
+            front.push_str(&format!(
+                "#block(above: 8pt)[#strong[Authors:] #text({})]\n",
+                quote(&supplied_authors.join(", "))
+            ));
+        }
+    }
+    file.write_all(
+        format!(
+            "\n#v(10mm)\n#text(size: 10pt, weight: \"bold\", fill: ga-accent, \
+             tracking: 0.7pt)[#text({})]\n#v(14mm)\n#text(size: if \
+             ga-specification {{ 32pt }} else {{ 38pt }}, weight: \"bold\", \
+             fill: ga-heading)[#text({})]\n{subtitle}#v(8mm)\n#line(length: \
+             100%, stroke: 1.5pt + \
+             ga-accent)\n#v(6mm)\n{front}\n#pagebreak()\n#outline(title: \
+             [Contents], depth: \
+             3)\n#pagebreak()\n#counter(heading).update(0)\n",
             quote(&publisher),
             quote(&plan.title)
         )
@@ -83,6 +149,12 @@ pub(super) async fn entry(
     diagnostics: &[crate::publication::diagnostics::Diagnostic],
 ) -> Result<()> {
     if entry.first {
+        if matches!(
+            entry.kind.as_str(),
+            "appendix" | "glossary" | "references"
+        ) {
+            file.write_all(b"#pagebreak(weak: true)\n").await?;
+        }
         file.write_all(b"#[\n").await?;
         if entry.kind == "appendix" {
             file.write_all(

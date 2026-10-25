@@ -23,6 +23,7 @@ pub(super) struct Assets {
     book:    LazyHash<FontBook>,
     // bounded: fixed embedded font assets, independent of graph/document size.
     fonts:   Vec<FontSlot>,
+    sans:    Vec<Font>,
 }
 
 impl Assets {
@@ -33,10 +34,28 @@ impl Assets {
                 !fonts.fonts.is_empty(),
                 "Typst requires the embedded font assets"
             );
+            let sans = [
+                include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSans-Bold.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSans-Italic.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSans-BoldItalic.ttf")
+                    .as_slice(),
+            ]
+            .into_iter()
+            .map(|bytes| {
+                Font::new(Bytes::new(bytes), 0)
+                    .ok_or_else(|| anyhow::anyhow!("invalid embedded PDF font"))
+            })
+            .collect::<Result<Vec<_>>>()?;
+            let mut book = fonts.book;
+            for font in &sans {
+                book.push(font.info().clone());
+            }
             Ok(Arc::new(Self {
                 library: LazyHash::new(Library::default()),
-                book:    LazyHash::new(fonts.book),
-                fonts:   fonts.fonts,
+                book: LazyHash::new(book),
+                fonts: fonts.fonts,
+                sans,
             }))
         })
         .await?
@@ -76,7 +95,14 @@ impl World for DocumentWorld {
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.assets.fonts.get(index)?.get()
+        if index < self.assets.fonts.len() {
+            self.assets.fonts.get(index)?.get()
+        } else {
+            self.assets
+                .sans
+                .get(index - self.assets.fonts.len())
+                .cloned()
+        }
     }
 
     fn today(&self, _offset: Option<i64>) -> Option<Datetime> { None }
