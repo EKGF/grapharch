@@ -20,6 +20,7 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 | Collect sources and publish from a pinned KG | [Publication pipeline](publication-pipeline.md) |
 | Generate this documentation website | [Self-hosted documentation](self-hosting.md) |
 | Publish a standards-style specification and PDF | [Specification renderer](specification-renderer.md) |
+| Build an ontology family in CI or publish it to Pages | [GitHub Actions](github-actions.md) |
 
 The `publication` commands provide the current publishing workflows. See
 [Getting started](getting-started.md) for prebuilt installation options, current
