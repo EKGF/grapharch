@@ -1,9 +1,27 @@
-name: Set up GraphArch
-description: Install an exact GraphArch release binary and verify its checksum
+name: Publish documentation with GraphArch
+description: Build documentation with a pinned and checksum-verified GraphArch release
 inputs:
   version:
     description: Exact published version, without a leading v
     required: true
+  mode:
+    description: build-family (default) or install for setup only
+    default: build-family
+  source:
+    description: Source directory containing the ontology family
+    default: .
+  source-kind:
+    description: directory or checkout (for local Git repository provenance)
+    default: directory
+  definitions:
+    description: Publication definitions file (required in build-family mode)
+  project:
+    description: Project IRI (required in build-family mode)
+  target:
+    description: Publication target IRI (required in build-family mode)
+  output:
+    description: Output root directory
+    default: build/docs
   cache:
     description: Cache verified release binaries
     default: 'true'
@@ -12,12 +30,29 @@ outputs:
     value: ${{ steps.install.outputs.version }}
   binary-path:
     value: ${{ steps.install.outputs.binary-path }}
+  publication-path:
+    value: ${{ steps.build.outputs.publication-path }}
+  pdf-path:
+    value: ${{ steps.build.outputs.pdf-path }}
+  kg-path:
+    value: ${{ steps.build.outputs.kg-path }}
 runs:
   using: composite
   steps:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+    - name: Validate publication inputs
+      shell: bash
+      env:
+        GRAPHARCH_MODE: ${{ inputs.mode }}
+        GRAPHARCH_SOURCE: ${{ inputs.source }}
+        GRAPHARCH_SOURCE_KIND: ${{ inputs.source-kind }}
+        GRAPHARCH_DEFINITIONS: ${{ inputs.definitions }}
+        GRAPHARCH_PROJECT: ${{ inputs.project }}
+        GRAPHARCH_TARGET: ${{ inputs.target }}
+        GRAPHARCH_OUTPUT: ${{ inputs.output }}
+      run: python "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
     - id: platform
       shell: bash
       env:
@@ -33,3 +68,15 @@ runs:
       env:
         GRAPHARCH_VERSION: ${{ inputs.version }}
       run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" install
+    - id: build
+      shell: bash
+      env:
+        GRAPHARCH_MODE: ${{ inputs.mode }}
+        GRAPHARCH_BINARY: ${{ steps.install.outputs.binary-path }}
+        GRAPHARCH_SOURCE: ${{ inputs.source }}
+        GRAPHARCH_SOURCE_KIND: ${{ inputs.source-kind }}
+        GRAPHARCH_DEFINITIONS: ${{ inputs.definitions }}
+        GRAPHARCH_PROJECT: ${{ inputs.project }}
+        GRAPHARCH_TARGET: ${{ inputs.target }}
+        GRAPHARCH_OUTPUT: ${{ inputs.output }}
+      run: python "$GITHUB_ACTION_PATH/packaging/build_action.py"

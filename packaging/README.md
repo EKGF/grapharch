@@ -16,13 +16,24 @@ Configure protected GitHub environments `release`, `pypi`, `npm`, `crates-io`, a
 
 ## Consumer GitHub Action
 
-Use the root composite action pinned to a reviewed commit SHA or release tag:
+Use one action step to install a pinned release and build an ontology family. Check out the consuming repository first, then pin the action itself to a reviewed commit SHA:
 
 ```yaml
+- uses: actions/checkout@v4
 - uses: EKGF/grapharch@<reviewed-commit-SHA>
+  id: docs
   with:
     version: '0.0.1' # must already be published as a GitHub release
-- run: grapharch --help
+    source-kind: checkout
+    source: .
+    definitions: grapharch/project.ttl
+    project: urn:example:project
+    target: urn:example:specification
+    output: build/docs
 ```
 
-`version` is required and exact, without `v`; `cache` defaults to `true`. Outputs are `version` and the absolute `binary-path`. The verified installation directory is added to PATH. A checksum is fetched and checked even on cache hits. Unsupported platforms, missing artifacts, corrupt archives and version mismatches fail without compilation or alternate downloads. The action requires no registry credentials.
+The default `mode` is `build-family`. `source-kind` defaults to `directory`; choose `checkout` explicitly to collect a local Git repository with provenance. Definitions, project and target are required for a build. The output root defaults to `build/docs`. Paths with spaces are supported; all CLI arguments are passed directly without shell interpretation. The build requires a release supporting `build-family --json` report schema version 1.
+
+Outputs `publication-path`, `pdf-path` and `kg-path` are canonical absolute paths validated to exist beneath the chosen output root. The publication directory contains `index.html`; the PDF and KG are checked separately. Upload `publication-path` as the website, and optionally include the separate `kg-path` archive in deployment packaging. The action does not deploy or reread sources to assemble outputs.
+
+Use `mode: install` for setup alone, then invoke any CLI command yourself. `version` is required and exact, without `v`; `cache` defaults to `true`. Outputs `version` and the absolute `binary-path` are available in both modes. The verified installation directory is added to PATH. A checksum is fetched and checked even on cache hits. Unsupported platforms, missing artifacts, corrupt archives and version mismatches fail without compilation or alternate downloads. Invalid inputs fail before downloading; CLI failures preserve their exit status. No registry credentials are needed.
