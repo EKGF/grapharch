@@ -9,8 +9,9 @@ permalink: /usage/
 
 # Using Grapharch
 
-Grapharch is one Rust CLI with specialized collectors and renderers. The
-`publication` commands operate on the shared documentation dataset.
+GraphArch is one command-line tool for collecting documentation sources and
+publishing websites, specifications, and PDFs. Keep the configuration in your
+project and use the same publication command locally and in CI.
 
 Begin with [Getting started](getting-started.md), then run one of these workflows:
 
@@ -20,6 +21,6 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 | Generate this documentation website | [Self-hosted documentation](self-hosting.md) |
 | Publish a standards-style specification and PDF | [Specification renderer](specification-renderer.md) |
 
-The older `generate` command is a prototype. New work uses the graph-backed
-publication pipeline. Distributed release binaries and a complete project
-configuration system remain delivery work; build from source for now.
+The `publication` commands provide the current publishing workflows. See
+[Getting started](getting-started.md) for prebuilt installation options, current
+release availability, and the contributor-only source-build path.
