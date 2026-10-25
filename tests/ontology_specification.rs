@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions_fixture;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -21,8 +24,11 @@ async fn ontology_spec_is_published_with_the_companion_site_from_a_restored_grap
     )?;
     std::fs::write(
         source.path().join("grapharch.ttl"),
-        std::fs::read_to_string(repo.join("docs/grapharch.ttl"))?
-            .replace("    ga:showcasesSource \"../examples\" ;\n", "") + "\n<urn:unrelated:ontology> a <http://www.w3.org/2002/07/owl#Ontology> .\n",
+        definitions_fixture::edit_definitions(
+            &std::fs::read_to_string(repo.join("docs/grapharch.ttl"))?,
+            &["showcasesSource"],
+            None,
+        )? + "\n<urn:unrelated:ontology> a <http://www.w3.org/2002/07/owl#Ontology> .\n",
     )?;
     std::fs::write(
         source.path().join("index.md"),
