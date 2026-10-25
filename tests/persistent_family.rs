@@ -387,3 +387,33 @@ async fn a_failed_build_from_another_checkout_does_not_leave_unmanaged_inputs()
     assert!(dataset.contains(&historical, old_ontology_term).await?);
     Ok(())
 }
+
+#[tokio::test]
+async fn unchanged_builds_do_not_rewrite_acknowledged_ownership_inventory()
+-> Result<()> {
+    async fn attempts(dataset: &Dataset) -> Result<String> {
+        let mut rows = dataset
+            .select(
+                "PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT \
+                 (COUNT(*) AS ?count) WHERE { GRAPH <urn:grapharch:control> { \
+                 ?attempt ga:project <urn:project> ; ga:collector ?collector \
+                 . FILTER STRSTARTS(STR(?collector), \
+                 'urn:grapharch:family-inventory:') } }"
+                    .into(),
+            )
+            .await?;
+        Ok(rows.next().await?.unwrap()["count"].to_string())
+    }
+    let fixture = Fixture::new()?;
+    let dataset = Dataset::memory()?;
+    fixture.build(dataset.clone()).await?;
+    let first = attempts(&dataset).await?;
+    fixture.build(dataset.clone()).await?;
+    assert_eq!(
+        attempts(&dataset).await?,
+        first,
+        "unchanged ownership must not create redundant inventory write \
+         attempts"
+    );
+    Ok(())
+}

@@ -1078,13 +1078,14 @@ fn standard_prefixes() -> BTreeMap<String, String> {
 // The manifest records only this builder's ownership; it never scans/removes
 // unrelated project contributors. Failed discovery retains a failed attempt.
 struct ManagedFamily {
-    project:   String,
-    owner:     NamedNode,
-    inventory: NamedNode,
-    target:    String,
-    previous:  std::collections::BTreeSet<(String, String, bool)>,
-    next:      std::collections::BTreeSet<(String, String, bool)>,
-    stream:    Option<super::writer::ContributionStream>,
+    project:        String,
+    owner:          NamedNode,
+    inventory:      NamedNode,
+    target:         String,
+    previous:       std::collections::BTreeSet<(String, String, bool)>,
+    last_inventory: std::collections::BTreeSet<(String, String, bool)>,
+    next:           std::collections::BTreeSet<(String, String, bool)>,
+    stream:         Option<super::writer::ContributionStream>,
 }
 impl ManagedFamily {
     async fn begin(
@@ -1102,16 +1103,13 @@ impl ManagedFamily {
         ), 0);
         let mut rows = dataset
             .select(format!(
-                "SELECT DISTINCT ?processor ?source ?stage WHERE {{ {pattern} \
-                 }} LIMIT 100001"
+                "SELECT DISTINCT ?root ?processor ?source ?stage WHERE {{ \
+                 {pattern} }} LIMIT 200001"
             ))
             .await?;
         let mut previous = std::collections::BTreeSet::new();
+        let mut last_inventory = std::collections::BTreeSet::new();
         while let Some(row) = rows.next().await? {
-            ensure!(
-                previous.len() < 100_000,
-                "family ownership manifest exceeds entry budget"
-            );
             let Some(Term::NamedNode(processor)) = row.get("processor") else {
                 anyhow::bail!("missing or invalid manifest processor");
             };
@@ -1125,11 +1123,19 @@ impl ManagedFamily {
                 matches!(stage.value(), "collect" | "document"),
                 "invalid manifest stage"
             );
-            previous.insert((
+            let entry = (
                 processor.as_str().into(),
                 source.value().into(),
                 stage.value() == "document",
-            ));
+            );
+            if row.get("root") == Some(&Term::NamedNode(inventory.clone())) {
+                last_inventory.insert(entry.clone());
+            }
+            previous.insert(entry);
+            ensure!(
+                previous.len() <= 100_000,
+                "family ownership manifest exceeds entry budget"
+            );
         }
         let stream = writer
             .begin_stage(
@@ -1146,6 +1152,7 @@ impl ManagedFamily {
             inventory,
             target: target.into(),
             previous,
+            last_inventory,
             next: Default::default(),
             stream: Some(stream),
         })
@@ -1170,7 +1177,7 @@ impl ManagedFamily {
     /// previous entries until success, so cancellation and failure cannot
     /// orphan either old or newly discovered contributions.
     async fn persist_inventory(
-        &self,
+        &mut self,
         writer: &GraphWriter,
         include_previous: bool,
     ) -> Result<()> {
@@ -1183,6 +1190,9 @@ impl ManagedFamily {
             entries.len() <= 100_000,
             "family ownership inventory exceeds entry budget"
         );
+        if entries == self.last_inventory {
+            return Ok(());
+        }
         let mut hash = Sha256::new();
         for entry in &entries {
             hash.update(format!("{entry:?}\n"));
@@ -1201,7 +1211,9 @@ impl ManagedFamily {
             )
             .await?;
         write_owned_entries(&mut stream, &self.inventory, &entries).await?;
-        stream.complete().await
+        stream.complete().await?;
+        self.last_inventory = entries;
+        Ok(())
     }
 
     async fn retire(&self, writer: &GraphWriter, document: bool) -> Result<()> {
