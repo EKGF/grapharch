@@ -1,3 +1,6 @@
+#[path = "support/family_repository.rs"]
+mod family_repository;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -16,6 +19,23 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     copy_tree(
         &repo.join("examples"),
         &source.path().join("examples"),
+    )?;
+    // The acceptance test explicitly selects a local bare repository, never the
+    // network.
+    let family = source.path().join("examples/ekg-ontologies");
+    let repository = tempfile::tempdir()?;
+    let (url, commit) = family_repository::bare_copy(
+        &family.join("sources"),
+        repository.path(),
+    )?;
+    let mut config: serde_yaml::Value = serde_yaml::from_str(
+        &std::fs::read_to_string(family.join("showcase.yaml"))?,
+    )?;
+    config["source"]["url"] = url.into();
+    config["source"]["ref"] = commit.into();
+    std::fs::write(
+        family.join("showcase.yaml"),
+        serde_yaml::to_string(&config)?,
     )?;
     let docs = source.path().join("docs");
     std::fs::create_dir(&docs)?;
@@ -69,6 +89,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     let archive = output.path().join("documentation.nq");
     built.dataset.export(archive.clone()).await?;
     std::fs::remove_dir_all(source.path())?;
+    std::fs::remove_dir_all(repository.path())?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)

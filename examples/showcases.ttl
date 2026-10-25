@@ -24,7 +24,7 @@ ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and
     ga:order 4 ; ga:kind "dprod" ; ga:source "dprod" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/document.pdf" .
 
-ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF: a family of 24 ontologies" ;
-    dct:description "A registered ontology family, with cross-ontology references, governance authority roles, SHACL structures, and explicit annotation gaps, published from one KG." ;
-    ga:order 6 ; ga:kind "ontology-family" ; ga:source "ekg-ontologies" ;
+ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;
+    dct:description "The latest default branch of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
+    ga:order 6 ; ga:kind "ontology-family" ; ga:source "ekg-ontologies/showcase.yaml" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" .

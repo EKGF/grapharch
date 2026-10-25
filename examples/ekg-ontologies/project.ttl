@@ -7,7 +7,7 @@ ex:scope a ga:Scope .
 ex:profile a ga:Profile, artpub:PublicationProfile ; artpub:publishesFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> .
 ex:specification a ga:Target ; dct:title "EKGF Ontology Family" ;
     dct:description "A generated reference for the registered EKGF ontology family, collected from its native Turtle sources. The family brings together artifact governance, publication, dependencies, lifecycles, concepts, communications, data operations, stories, use cases, and related vocabularies." ;
-    <http://www.w3.org/2000/01/rdf-schema#comment> "This is a generated documentation preview of the pinned EKGF source corpus, not an approved standards release. Supplied annotations are reproduced; missing English labels and definitions are reported as documentation gaps. The reference does not invent definitions, fetch imports, execute SHACL validation, or claim complete OWL reasoning." ;
+    <http://www.w3.org/2000/01/rdf-schema#comment> "This is a generated documentation preview of the collected EKGF repository revision, not an approved standards release. Supplied annotations are reproduced; missing English labels and definitions are reported as documentation gaps. The reference does not invent definitions, fetch imports, execute SHACL validation, or claim complete OWL reasoning." ;
     ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer "specification" ; ga:destination "specification" ;
     ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ; ga:publicationStatus "Documentation Preview" ;
     ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ;

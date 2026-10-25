@@ -1,0 +1,8 @@
+# Published gallery input. Offline acceptance data in sources/ is independent.
+definitions: project.ttl
+project: urn:ekgf-family:project
+target: urn:ekgf-family:specification
+source:
+  kind: git
+  url: https://github.com/EKGF/ekg-ontologies.git
+  ref: HEAD

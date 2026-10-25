@@ -23,13 +23,79 @@ use {
     std::{path::Path, sync::Arc},
 };
 
-/// Collect a registry-selected EKGF ontology family.
-pub async fn family(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    let built = super::ontology_family::collect(
-        &source.join("sources"),
-        &source.join("project.ttl"),
-        "urn:ekgf-family:project",
-        "urn:ekgf-family:specification",
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FamilyShowcase {
+    definitions: std::path::PathBuf,
+    project:     String,
+    target:      String,
+    source:      FamilyShowcaseSource,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+enum FamilyShowcaseSource {
+    Git {
+        url:       String,
+        #[serde(rename = "ref")]
+        reference: String,
+    },
+}
+
+/// Collect an explicitly configured repository family through the shared Git
+/// cache. A moving ref is freshly resolved by the collector; its concrete
+/// commit is retained in the KG.
+pub async fn family(
+    source: &Path,
+    cache: &Path,
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    use {anyhow::ensure, std::path::Component, tokio::io::AsyncReadExt};
+    let source = tokio::fs::canonicalize(source).await?;
+    let root = source.parent().ok_or_else(|| {
+        anyhow::anyhow!(
+            "family showcase configuration requires a parent directory"
+        )
+    })?;
+    let mut bytes = Vec::new();
+    tokio::fs::File::open(&source)
+        .await?
+        .take(64 * 1024 + 1)
+        .read_to_end(&mut bytes)
+        .await?;
+    ensure!(
+        bytes.len() <= 64 * 1024,
+        "family showcase configuration exceeds 64 KiB"
+    );
+    let config: FamilyShowcase = serde_yaml::from_slice(&bytes)?;
+    NamedNode::new(&config.project)?;
+    NamedNode::new(&config.target)?;
+    ensure!(
+        config
+            .definitions
+            .components()
+            .all(|part| matches!(part, Component::Normal(_))),
+        "family definitions must be a relative path beneath the configuration"
+    );
+    let definitions =
+        tokio::fs::canonicalize(root.join(&config.definitions)).await?;
+    ensure!(
+        definitions.starts_with(root),
+        "family definitions escape the configuration directory"
+    );
+    let FamilyShowcaseSource::Git { url, reference } = config.source;
+    ensure!(
+        !reference.is_empty() &&
+            reference.len() <= 1024 &&
+            !reference.chars().any(char::is_control),
+        "family Git ref must be a nonempty bounded reference"
+    );
+    let built = super::ontology_family::collect_remote(
+        &url,
+        &reference,
+        cache,
+        &definitions,
+        &config.project,
+        &config.target,
         4,
     )
     .await?;

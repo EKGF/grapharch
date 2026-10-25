@@ -149,12 +149,14 @@ specification, companion-site, and approval-PDF publications are described in
 
 These projects are examples and test cases for the general pipeline:
 
-- **EKGF ontology family:** an offline fixture covering 24 ontologies and 704
+- **EKGF ontology family:** the gallery follows the remote repository's latest
+  default branch and records its resolved commit in the downloadable KG. A separate
+  offline fixture covers 24 ontologies and 704
   named resources. See
   [the examples guide](examples.md), or browse the
-  [showcase gallery](../showcases.md). The copied corpus makes regression tests
-  and gallery builds reproducible without network access; repository-mode builds
-  do not need it.
+  [showcase gallery](../showcases.md). The copied corpus keeps regression tests
+  reproducible without network access. Published gallery builds use the remote
+  repository and fail if it cannot be fetched.
 - **DPROD:** an individual-ontology showcase demonstrating a specification,
   companion website, and PDF. It is not a required vocabulary or input.
 - **FIBO:** a larger family intended for future validation. Full FIBO coverage

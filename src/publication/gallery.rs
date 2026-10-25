@@ -135,7 +135,20 @@ async fn build_case(
     let (child, plans) = match case.kind.as_str() {
         "authored" => showcases::authored(&source).await?,
         "dprod" => showcases::dprod(&source).await?,
-        "ontology-family" => showcases::family(&source).await?,
+        "ontology-family" => {
+            showcases::family(
+                &source,
+                &root
+                    .parent()
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "showcase root requires a project directory"
+                        )
+                    })?
+                    .join("output/cache/git"),
+            )
+            .await?
+        },
         "mixed" => showcases::mixed(&source).await?,
         "specification" => showcases::specification(&source).await?,
         "w3c" => showcases::w3c(&source).await?,
