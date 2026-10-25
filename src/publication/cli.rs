@@ -21,12 +21,64 @@ use {
         writer::GraphWriter,
     },
     anyhow::{Result, ensure},
-    clap::{Subcommand, ValueEnum},
+    clap::{Args, Subcommand, ValueEnum},
     oxigraph::{io::RdfFormat, store::Store},
     oxrdf::{NamedNode, Term},
     std::path::PathBuf,
     tokio::io::AsyncReadExt,
 };
+
+/// Exactly one store location is selected for every independent pipeline stage.
+#[derive(Args)]
+pub struct StoreOptions {
+    #[arg(
+        long,
+        required_unless_present = "sparql_store",
+        conflicts_with = "sparql_store"
+    )]
+    store:        Option<PathBuf>,
+    /// YAML configuration for a transaction-capable external SPARQL KG.
+    #[arg(long)]
+    sparql_store: Option<PathBuf>,
+}
+impl StoreOptions {
+    async fn open(&self) -> Result<Dataset> {
+        if let Some(path) = &self.sparql_store {
+            let bytes = bounded_file(path, 64 * 1024).await?;
+            Dataset::sparql(serde_yaml::from_slice(&bytes)?).await
+        } else {
+            Dataset::open(
+                self.store
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("a store is required"))?,
+            )
+            .await
+        }
+    }
+}
+
+#[derive(Args)]
+pub struct BuildStoreOptions {
+    #[arg(long, conflicts_with = "sparql_store")]
+    store:        Option<PathBuf>,
+    #[arg(long)]
+    sparql_store: Option<PathBuf>,
+}
+impl BuildStoreOptions {
+    async fn open(&self) -> Result<Dataset> {
+        match (&self.store, &self.sparql_store) {
+            (Some(path), None) => Dataset::open(path.clone()).await,
+            (None, Some(path)) => {
+                Dataset::sparql(serde_yaml::from_slice(
+                    &bounded_file(path, 64 * 1024).await?,
+                )?)
+                .await
+            },
+            (None, None) => Dataset::memory(),
+            _ => anyhow::bail!("choose one KG backend"),
+        }
+    }
+}
 
 /// Independently executable publication operations using a persistent shared
 /// dataset.
@@ -51,7 +103,13 @@ pub enum PublicationCommand {
     /// Collect an explicitly registered family of RDF ontologies and publish
     /// its reference.
     BuildFamily {
-        #[arg(long, required_unless_present_any = ["local_repository", "github", "git_repository"], conflicts_with_all = ["local_repository", "github", "git_repository"])]
+        #[command(flatten)]
+        backend:          BuildStoreOptions,
+        /// YAML list of stable collector identities and endpoint graph
+        /// queries.
+        #[arg(long,conflicts_with_all=["source","local_repository","github","git_repository"])]
+        sparql_sources:   Option<PathBuf>,
+        #[arg(long, required_unless_present_any = ["local_repository", "github", "git_repository", "sparql_sources"], conflicts_with_all = ["local_repository", "github", "git_repository"])]
         source:           Option<PathBuf>,
         /// Read a local Git clone's working tree directly.
         #[arg(long, conflicts_with_all = ["github", "git_repository"])]
@@ -81,8 +139,8 @@ pub enum PublicationCommand {
     },
     /// Render a pinned target plan without rereading its original sources.
     Render {
-        #[arg(long)]
-        store:       PathBuf,
+        #[command(flatten)]
+        store:       StoreOptions,
         #[arg(long)]
         plan:        String,
         #[arg(long)]
@@ -92,15 +150,15 @@ pub enum PublicationCommand {
     },
     /// Assemble and atomically promote a validated project revision.
     Assemble {
-        #[arg(long)]
-        store:   PathBuf,
+        #[command(flatten)]
+        store:   StoreOptions,
         #[arg(long)]
         project: String,
     },
     /// Resolve one target or every registered target from a validated revision.
     Plan {
-        #[arg(long)]
-        store:    PathBuf,
+        #[command(flatten)]
+        store:    StoreOptions,
         #[arg(long)]
         project:  String,
         #[arg(long)]
@@ -115,10 +173,10 @@ pub enum PublicationCommand {
         #[arg(long)]
         definitions: PathBuf,
     },
-    /// Collect one source through a bounded writer into an embedded dataset.
+    /// Collect one source through a bounded writer into the selected KG.
     Collect {
-        #[arg(long)]
-        store:      PathBuf,
+        #[command(flatten)]
+        store:      StoreOptions,
         #[arg(long)]
         project:    String,
         #[arg(long)]
@@ -134,13 +192,13 @@ pub enum PublicationCommand {
     /// Pin current complete source contributions without copying their
     /// assertions.
     Snapshot {
-        #[arg(long)]
-        store: PathBuf,
+        #[command(flatten)]
+        store: StoreOptions,
     },
     /// Resolve a scope against an explicit pinned snapshot.
     ResolveScope {
-        #[arg(long)]
-        store:    PathBuf,
+        #[command(flatten)]
+        store:    StoreOptions,
         #[arg(long)]
         project:  String,
         #[arg(long)]
@@ -150,22 +208,22 @@ pub enum PublicationCommand {
     },
     /// Stream an explicit inspection SELECT query from a UTF-8 query file.
     Query {
-        #[arg(long)]
-        store: PathBuf,
+        #[command(flatten)]
+        store: StoreOptions,
         #[arg(long)]
         query: PathBuf,
     },
     /// Export a complete dataset, including contributions and pinned snapshots.
     Export {
-        #[arg(long)]
-        store:  PathBuf,
+        #[command(flatten)]
+        store:  StoreOptions,
         #[arg(long)]
         output: PathBuf,
     },
     /// Import into an empty dataset; existing data is never merged implicitly.
     Import {
-        #[arg(long)]
-        store: PathBuf,
+        #[command(flatten)]
+        store: StoreOptions,
         #[arg(long)]
         input: PathBuf,
     },
@@ -177,6 +235,7 @@ pub enum SourceKind {
     Markdown,
     Sparql,
     Rdf,
+    SparqlEndpoint,
     W3cSpecification,
 }
 
@@ -188,6 +247,8 @@ pub async fn run(
 ) -> Result<()> {
     match command {
         PublicationCommand::BuildFamily {
+            backend,
+            sparql_sources,
             source,
             local_repository,
             github,
@@ -201,13 +262,34 @@ pub async fn run(
             concurrency,
         } => {
             ensure!(*concurrency > 0, "concurrency must be positive");
-            let built = if let Some(source) = source {
+            let dataset = backend.open().await?;
+            let built = if let Some(path) = sparql_sources {
+                ensure!(
+                    git_ref.is_none() && git_cache.is_none(),
+                    "Git options require a Git source"
+                );
+                let configs = serde_yaml::from_slice::<
+                    Vec<super::ontology_family::SparqlFamilyCollector>,
+                >(
+                    &bounded_file(path, 256 * 1024).await?
+                )?;
+                super::ontology_family::collect_from(
+                    dataset,
+                    super::ontology_family::FamilySource::Sparql(&configs),
+                    definitions,
+                    project,
+                    target,
+                    *concurrency,
+                )
+                .await?
+            } else if let Some(source) = source {
                 ensure!(
                     git_ref.is_none() && git_cache.is_none(),
                     "Git options require a remote repository"
                 );
-                super::ontology_family::collect(
-                    source,
+                super::ontology_family::collect_from(
+                    dataset,
+                    super::ontology_family::FamilySource::Directory(source),
                     definitions,
                     project,
                     target,
@@ -219,8 +301,11 @@ pub async fn run(
                     git_ref.is_none() && git_cache.is_none(),
                     "working-tree mode does not accept remote Git options"
                 );
-                super::ontology_family::collect_repository(
-                    source,
+                super::ontology_family::collect_from(
+                    dataset,
+                    super::ontology_family::FamilySource::LocalRepository(
+                        source,
+                    ),
                     definitions,
                     project,
                     target,
@@ -257,10 +342,13 @@ pub async fn run(
                 let cache = git_cache.clone().unwrap_or_else(|| {
                     std::env::temp_dir().join("grapharch-git-cache")
                 });
-                super::ontology_family::collect_remote(
-                    &url,
-                    reference,
-                    &cache,
+                super::ontology_family::collect_from(
+                    dataset,
+                    super::ontology_family::FamilySource::RemoteRepository {
+                        url: &url,
+                        reference,
+                        cache: &cache,
+                    },
                     definitions,
                     project,
                     target,
@@ -326,7 +414,7 @@ pub async fn run(
             );
         },
         PublicationCommand::Render { store, plan, snapshot, output_root } => {
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             let plan = ResolvedPlan {
                 id:       NamedNode::new(plan)?,
                 snapshot: NamedNode::new(snapshot)?,
@@ -354,7 +442,7 @@ pub async fn run(
             }
         },
         PublicationCommand::Assemble { store, project } => {
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             println!(
                 "{}",
                 Assembler::new(dataset).assemble(project).await?.as_str()
@@ -367,7 +455,7 @@ pub async fn run(
             target,
             all: _,
         } => {
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             let revision = NamedNode::new(revision)?;
             Assembler::new(dataset.clone())
                 .require_validated(project, &revision)
@@ -436,7 +524,7 @@ pub async fn run(
                 "--source-url is required for w3c-specification and is \
                  invalid for other collector kinds"
             );
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             let (writer, task) =
                 GraphWriter::spawn(dataset, 8, 4 * 1024 * 1024)?;
             let result = match kind {
@@ -462,6 +550,16 @@ pub async fn run(
                         .collect(&writer)
                         .await
                 },
+                SourceKind::SparqlEndpoint => {
+                    let config = serde_yaml::from_slice(
+                        &bounded_file(source, 128 * 1024).await?,
+                    )?;
+                    super::collect::SparqlEndpointSource::new(
+                        project, collector, config,
+                    )?
+                    .collect(&writer)
+                    .await
+                },
                 SourceKind::Rdf => {
                     RdfFile::new(project, collector, source.clone())?
                         .collect(&writer)
@@ -473,7 +571,7 @@ pub async fn run(
             result?;
         },
         PublicationCommand::Snapshot { store } => {
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             println!("{}", dataset.snapshot().await?.as_str());
         },
         PublicationCommand::ResolveScope {
@@ -482,7 +580,7 @@ pub async fn run(
             snapshot,
             scope,
         } => {
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             dataset.ensure_ready(project).await?;
             let resolver =
                 ScopeResolver::new(dataset.clone(), NamedNode::new(snapshot)?);
@@ -498,7 +596,7 @@ pub async fn run(
         PublicationCommand::Query { store, query } => {
             let query =
                 String::from_utf8(bounded_file(query, 64 * 1024).await?)?;
-            let dataset = Dataset::open(store.clone()).await?;
+            let dataset = store.open().await?;
             let mut rows = dataset.select(query).await?;
             while let Some(row) = rows.next().await? {
                 for (variable, value) in row.iter() {
@@ -508,16 +606,10 @@ pub async fn run(
             }
         },
         PublicationCommand::Export { store, output } => {
-            Dataset::open(store.clone())
-                .await?
-                .export(output.clone())
-                .await?
+            store.open().await?.export(output.clone()).await?
         },
         PublicationCommand::Import { store, input } => {
-            Dataset::open(store.clone())
-                .await?
-                .import(input.clone())
-                .await?
+            store.open().await?.import(input.clone()).await?
         },
     }
     Ok(())

@@ -32,6 +32,13 @@ pub struct AnnotatedTermDocumentor {
     source_annotations: bool,
 }
 impl AnnotatedTermDocumentor {
+    pub(crate) fn processor_identity(
+        project: &str,
+        language: &str,
+    ) -> NamedNode {
+        identity("annotated-term-documentor", &[project, language])
+    }
+
     /// Bind one term and its annotation policy to a pinned collected graph.
     pub fn new(
         dataset: Dataset,
@@ -503,10 +510,8 @@ impl Documentor for AnnotatedTermDocumentor {
             self.language,
             hash.finalize()
         );
-        let processor = identity("annotated-term-documentor", &[
-            self.project.as_str(),
-            &self.language,
-        ]);
+        let processor =
+            Self::processor_identity(self.project.as_str(), &self.language);
         let contribution = identity("contribution", &[
             self.project.as_str(),
             processor.as_str(),

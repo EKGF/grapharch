@@ -30,6 +30,22 @@ impl Dataset {
         self.snapshot_matching(filter).await
     }
 
+    /// Pin source assertions without feeding generated documentation back into
+    /// a documentor's input revision.
+    pub(crate) async fn snapshot_collected_for(
+        &self,
+        project: &str,
+    ) -> Result<NamedNode> {
+        let project = NamedNode::new(project)?;
+        self.snapshot_matching(format!(
+            "?version {} ?attempt . ?attempt {} {project} ; {} \"collect\"",
+            term("data"),
+            term("project"),
+            term("stage")
+        ))
+        .await
+    }
+
     /// Pin collected assertions owned by one source processor, so discovering
     /// ontology declarations cannot accidentally select another source.
     pub(crate) async fn snapshot_for_processor(
@@ -59,9 +75,9 @@ impl Dataset {
             ))?;
             store.update(
                 format!(
-                    "CREATE SILENT GRAPH {capture}; INSERT {{ GRAPH {capture} \
-                     {{ ?owner {} ?version }} }} WHERE {{ GRAPH <{CONTROL}> \
-                     {{ ?owner {} ?version . {filter} }} }}",
+                    "INSERT {{ GRAPH {capture} {{ ?owner {} ?version }} }} \
+                     WHERE {{ GRAPH <{CONTROL}> {{ ?owner {} ?version . \
+                     {filter} }} }}",
                     term("head"),
                     term("head")
                 )
@@ -90,7 +106,8 @@ impl Dataset {
             ))?;
             store.update(
                 format!(
-                    "ADD GRAPH {capture} TO GRAPH {revision}; DROP GRAPH \
+                    "INSERT {{ GRAPH {revision} {{ ?s ?p ?o }} }} WHERE {{ \
+                     GRAPH {capture} {{ ?s ?p ?o }} }}; DROP SILENT GRAPH \
                      {capture}"
                 )
                 .as_str(),

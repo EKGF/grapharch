@@ -7,7 +7,7 @@ use {
         view::RevisionView,
     },
     anyhow::{Result, ensure},
-    oxigraph::sparql::{QueryOptions, QueryResults},
+    oxigraph::sparql::QueryResults,
     oxrdf::{NamedNode, Quad},
     std::io,
 };
@@ -107,10 +107,7 @@ impl Assembler {
                     );
                     if matches!(
                         transaction
-                            .query_opt(
-                                blocked.as_str(),
-                                QueryOptions::default()
-                            )
+                            .query(blocked.as_str())
                             .map_err(io::Error::other)?,
                         QueryResults::Boolean(true)
                     ) {
@@ -129,10 +126,7 @@ impl Assembler {
                     );
                     if matches!(
                         transaction
-                            .query_opt(
-                                changed.as_str(),
-                                QueryOptions::default()
-                            )
+                            .query(changed.as_str())
                             .map_err(io::Error::other)?,
                         QueryResults::Boolean(true)
                     ) {

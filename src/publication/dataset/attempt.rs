@@ -4,15 +4,13 @@ use {
         Dataset,
         MAX_CHUNK_BYTES,
         MAX_CHUNK_QUADS,
+        backend::Transaction,
         identity,
         original_graph,
     },
     crate::publication::term,
     anyhow::{Result, ensure},
-    oxigraph::{
-        sparql::{QueryOptions, QueryResults},
-        store::Transaction,
-    },
+    oxigraph::sparql::QueryResults,
     oxrdf::{NamedNode, Quad},
     std::io,
 };
@@ -200,7 +198,7 @@ impl Attempt {
                         term("original")
                     );
                     if let QueryResults::Boolean(true) = transaction
-                        .query_opt(changed.as_str(), QueryOptions::default())
+                        .query(changed.as_str())
                         .map_err(io::Error::other)?
                     {
                         return Err(io::Error::other(
@@ -271,7 +269,7 @@ impl Attempt {
 }
 
 fn discard_unreferenced(
-    store: &oxigraph::store::Store,
+    store: &super::backend::BackendStore,
     attempt: &NamedNode,
 ) -> Result<()> {
     store.transaction::<_, io::Error>(|mut transaction| {
@@ -288,27 +286,46 @@ fn discard_unreferenced(
         {
             return Ok(());
         }
-        for mapping in transaction.quads_for_pattern(
-            None,
-            Some(term("attempt").as_ref()),
-            Some(attempt.as_ref().into()),
-            Some(NamedNode::new_unchecked(CONTROL).as_ref().into()),
-        ) {
-            let mapping = mapping?;
+        let mappings = transaction
+            .quads_for_pattern(
+                None,
+                Some(term("attempt").as_ref()),
+                Some(attempt.as_ref().into()),
+                Some(NamedNode::new_unchecked(CONTROL).as_ref().into()),
+            )
+            .take(100_001)
+            .collect::<io::Result<Vec<_>>>()?;
+        ensure_metadata_budget(mappings.len())?;
+        for mapping in mappings {
             let oxrdf::Subject::NamedNode(graph) = mapping.subject else {
                 return Err(io::Error::other("invalid physical graph mapping"));
             };
             transaction.remove_named_graph(graph.as_ref())?;
-            for metadata in transaction.quads_for_pattern(
-                Some(graph.as_ref().into()),
-                None,
-                None,
-                Some(NamedNode::new_unchecked(CONTROL).as_ref().into()),
-            ) {
-                transaction.remove(metadata?.as_ref())?;
+            let metadata = transaction
+                .quads_for_pattern(
+                    Some(graph.as_ref().into()),
+                    None,
+                    None,
+                    Some(NamedNode::new_unchecked(CONTROL).as_ref().into()),
+                )
+                .take(100_001)
+                .collect::<io::Result<Vec<_>>>()?;
+            ensure_metadata_budget(metadata.len())?;
+            for metadata in metadata {
+                transaction.remove(metadata.as_ref())?;
             }
         }
         Ok(())
     })?;
     Ok(())
+}
+
+fn ensure_metadata_budget(size: usize) -> io::Result<()> {
+    if size > 100_000 {
+        Err(io::Error::other(
+            "attempt cleanup exceeds 100000 metadata-row budget",
+        ))
+    } else {
+        Ok(())
+    }
 }

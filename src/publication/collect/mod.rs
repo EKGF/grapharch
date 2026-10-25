@@ -3,6 +3,7 @@
 
 mod authored;
 mod blank_nodes;
+mod endpoint;
 pub mod git;
 mod hashing_reader;
 mod markdown_structure;
@@ -22,6 +23,7 @@ use {
 };
 pub use {
     authored::{MarkdownFile, SparqlFile},
+    endpoint::{SparqlEndpointSource, SparqlSourceConfig},
     rdf::RdfFile,
     text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,

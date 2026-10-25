@@ -1,0 +1,44 @@
+name: SPARQL integration
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-store:
+    runs-on: ubuntu-latest
+    services:
+      rdf4j:
+        image: eclipse/rdf4j-workbench:6.1.0-tomcat@sha256:7a18cecfc879f3143b5a57fe31176a0774fa57e5313f639c6f51756f390f7670
+        ports:
+          - 8080:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Wait for isolated RDF4J server
+        shell: bash
+        run: |
+          for attempt in {1..90}; do
+            if curl --fail --silent http://127.0.0.1:8080/rdf4j-server/protocol; then
+              exit 0
+            fi
+            sleep 2
+          done
+          printf 'RDF4J did not become ready\n' >&2
+          exit 1
+      - name: Create dedicated NativeStore repository
+        run: >-
+          curl --fail --show-error --request PUT
+          --header 'Content-Type: text/turtle'
+          --data-binary @tests/fixtures/sparql/native-store.ttl
+          http://127.0.0.1:8080/rdf4j-server/repositories/grapharch-ci
+      - name: Verify protocol limits and downgraded-isolation rejection
+        run: cargo test --locked --test sparql_endpoints
+      - name: Verify real isolation and complete family publication from restored KG
+        env:
+          GRAPHARCH_TEST_RDF4J_URL: http://127.0.0.1:8080/rdf4j-server/repositories/grapharch-ci
+        run: >-
+          cargo test --locked --test persistent_family
+          native_rdf4j_family_publishes_from_restored_pinned_kg -- --ignored --exact

@@ -39,3 +39,5 @@ pub const RDF_TYPE: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 pub fn term(local: &str) -> oxrdf::NamedNode {
     oxrdf::NamedNode::new_unchecked(format!("{NAMESPACE}{local}"))
 }
+
+pub mod sparql;

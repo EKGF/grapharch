@@ -46,7 +46,20 @@ the new publication contract. Markdown processing and HTML generation remain
 incomplete in that prototype. New graph-backed publication definitions live in
 `src/publication`; implementation status is recorded on the [status page](../status.md).
 
-Embedded Oxigraph and external SPARQL are planned backends for the same stage
-interfaces. Backend support requires consistency and failure contract tests,
-not merely successful query execution. A VS Code extension is a later consumer
+Embedded Oxigraph and external RDF4J transactions implement the same stage
+interfaces. External KG connections must demonstrate SERIALIZABLE isolation
+using a predicate-range/phantom conflict probe; standard SPARQL Query/Update
+endpoints alone are rejected as writable KG backends. Generic endpoints remain
+supported collection sources through specialized CONSTRUCT/DESCRIBE collectors.
+See [SPARQL services](../../usage/sparql-endpoints.md) for configuration and
+protocol limits. Backend support requires consistency and failure contract tests,
+not merely successful query execution.
+
+A persistent family build records a bounded ownership manifest using PROV and
+Dublin Core terms. Discovery registers a pending document-stage contribution
+before source I/O. Failed discovery blocks assembly; successful discovery retires
+only missing managed contributions. Generated family bindings belong to the
+document stage. Documentors pin collected-stage assertions, so a new run cannot
+incorporate its own preceding generated output into its input revision. Historical
+snapshots continue to reference their immutable contribution graphs. A VS Code extension is a later consumer
 of the same long-lived incremental pipeline.

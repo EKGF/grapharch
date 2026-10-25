@@ -39,6 +39,24 @@ struct Member {
     missing:   usize,
 }
 
+/// Source discovery is separate from the specialized per-document collectors.
+pub enum FamilySource<'a> {
+    Directory(&'a Path),
+    LocalRepository(&'a Path),
+    RemoteRepository {
+        url:       &'a str,
+        reference: &'a str,
+        cache:     &'a Path,
+    },
+    Sparql(&'a [SparqlFamilyCollector]),
+}
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SparqlFamilyCollector {
+    pub collector: String,
+    pub source:    super::collect::SparqlSourceConfig,
+}
+
 pub async fn collect(
     source: &Path,
     definitions: &Path,
@@ -46,13 +64,16 @@ pub async fn collect(
     target: &str,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
-    let source = tokio::fs::canonicalize(source).await?;
-    let definitions = tokio::fs::canonicalize(definitions).await?;
-    let inputs = file_collectors(&source, &definitions, project).await?;
-    collect_inputs(inputs, &definitions, project, target, concurrency).await
+    collect_from(
+        Dataset::memory()?,
+        FamilySource::Directory(source),
+        definitions,
+        project,
+        target,
+        concurrency,
+    )
+    .await
 }
-
-/// Read a Git checkout directly, including its uncommitted working-tree edits.
 pub async fn collect_repository(
     source: &Path,
     definitions: &Path,
@@ -60,16 +81,16 @@ pub async fn collect_repository(
     target: &str,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
-    let scanned =
-        super::collect::git::local_repository(source, project).await?;
-    let definitions = tokio::fs::canonicalize(definitions).await?;
-    let mut inputs =
-        file_collectors(&scanned.root, &definitions, project).await?;
-    inputs.push(scanned.provenance);
-    collect_inputs(inputs, &definitions, project, target, concurrency).await
+    collect_from(
+        Dataset::memory()?,
+        FamilySource::LocalRepository(source),
+        definitions,
+        project,
+        target,
+        concurrency,
+    )
+    .await
 }
-
-/// Publish one pinned remote Git revision, reading blobs from its bare cache.
 #[allow(clippy::too_many_arguments)]
 pub async fn collect_remote(
     url: &str,
@@ -80,14 +101,99 @@ pub async fn collect_remote(
     target: &str,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
-    let definitions = tokio::fs::canonicalize(definitions).await?;
-    let scanned =
-        super::collect::git::remote_repository(url, reference, cache, project)
-            .await?;
-    let mut inputs = scanned.files;
-    inputs.push(scanned.provenance);
-    collect_inputs(inputs, &definitions, project, target, concurrency).await
+    collect_from(
+        Dataset::memory()?,
+        FamilySource::RemoteRepository { url, reference, cache },
+        definitions,
+        project,
+        target,
+        concurrency,
+    )
+    .await
 }
+/// Run the family stages against an explicitly selected shared KG.
+pub async fn collect_from(
+    dataset: Dataset,
+    source: FamilySource<'_>,
+    definitions: &Path,
+    project: &str,
+    target: &str,
+    concurrency: usize,
+) -> Result<CollectedFamily> {
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
+    let mut managed =
+        ManagedFamily::begin(&dataset, &writer, project, target).await?;
+    let result = async {
+        let definitions = tokio::fs::canonicalize(definitions).await?;
+        let inputs = match source {
+            FamilySource::Directory(path) => {
+                file_collectors(
+                    &tokio::fs::canonicalize(path).await?,
+                    &definitions,
+                    project,
+                )
+                .await?
+            },
+            FamilySource::LocalRepository(path) => {
+                let scan = super::collect::git::local_repository(path, project)
+                    .await?;
+                let mut inputs =
+                    file_collectors(&scan.root, &definitions, project).await?;
+                inputs.push(scan.provenance);
+                inputs
+            },
+            FamilySource::RemoteRepository { url, reference, cache } => {
+                let scan = super::collect::git::remote_repository(
+                    url, reference, cache, project,
+                )
+                .await?;
+                let mut inputs = scan.files;
+                inputs.push(scan.provenance);
+                inputs
+            },
+            FamilySource::Sparql(configs) => {
+                ensure!(
+                    !configs.is_empty() && configs.len() <= 4096,
+                    "family SPARQL sources require between 1 and 4096 \
+                     collectors"
+                );
+                let mut inputs: Vec<Arc<dyn Collector>> = Vec::new();
+                for config in configs {
+                    inputs.push(Arc::new(
+                        super::collect::SparqlEndpointSource::new(
+                            project,
+                            &config.collector,
+                            config.source.clone(),
+                        )?,
+                    ));
+                }
+                inputs
+            },
+        };
+        build(
+            inputs,
+            &definitions,
+            &dataset,
+            &writer,
+            project,
+            target,
+            concurrency,
+            &mut managed,
+        )
+        .await
+    }
+    .await;
+    if result.is_err() {
+        managed.abort().await?;
+    }
+    drop(managed);
+    drop(writer);
+    worker.await??;
+    let (plan, ontology_count, term_count) = result?;
+    Ok(CollectedFamily { dataset, plan, ontology_count, term_count })
+}
+
 async fn file_collectors(
     root: &Path,
     definitions: &Path,
@@ -110,31 +216,6 @@ async fn file_collectors(
         )?));
     }
     Ok(inputs)
-}
-async fn collect_inputs(
-    inputs: Vec<Arc<dyn Collector>>,
-    definitions: &Path,
-    project: &str,
-    target: &str,
-    concurrency: usize,
-) -> Result<CollectedFamily> {
-    let dataset = Dataset::memory()?;
-    let (writer, worker) =
-        GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
-    let result = build(
-        inputs,
-        definitions,
-        &dataset,
-        &writer,
-        project,
-        target,
-        concurrency,
-    )
-    .await;
-    drop(writer);
-    worker.await??;
-    let (plan, ontology_count, term_count) = result?;
-    Ok(CollectedFamily { dataset, plan, ontology_count, term_count })
 }
 async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
     let mut pending = vec![root.to_owned()];
@@ -192,6 +273,7 @@ async fn build(
     project: &str,
     target: &str,
     concurrency: usize,
+    managed: &mut ManagedFamily,
 ) -> Result<(ResolvedPlan, usize, usize)> {
     let started = std::time::Instant::now();
     let mut work: Vec<Arc<dyn Collector>> = vec![Arc::new(RdfFile::new(
@@ -204,12 +286,17 @@ async fn build(
         sources.push(NamedNode::new(collector.identity()?.processor)?);
         work.push(collector);
     }
+    for input in &work {
+        let id = input.identity()?;
+        managed.add(id.processor, id.source, false)?;
+    }
+    managed.retire(writer, false).await?;
     collect_all(work, writer, concurrency).await?;
     tracing::info!(
         elapsed_ms = started.elapsed().as_millis(),
         "family sources collected"
     );
-    let snapshot = dataset.snapshot_for(project).await?;
+    let snapshot = dataset.snapshot_collected_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     let target = NamedNode::new(target)?;
     ensure!(
@@ -454,12 +541,14 @@ async fn build(
         owner.as_str(),
         target.as_str(),
     ]);
+    managed.add(owner.as_str(), target.as_str(), true)?;
     let mut stream = writer
-        .begin(
+        .begin_stage(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v5:{snapshot}"),
+            &format!("family-v6:{snapshot}"),
+            super::dataset::Stage::Document,
         )
         .await?;
     let mut data = vec![
@@ -672,6 +761,11 @@ async fn build(
                 .map(|subject| (member.snapshot.clone(), subject.clone()))
         })
         .collect::<Vec<_>>();
+    let term_processor =
+        AnnotatedTermDocumentor::processor_identity(project, "en");
+    for (_, subject) in &jobs {
+        managed.add(term_processor.as_str(), subject.as_str(), true)?;
+    }
     futures::stream::iter(jobs.into_iter().map(|(snapshot, subject)| {
         let dataset = dataset.clone();
         let prefixes = prefixes.clone();
@@ -694,6 +788,7 @@ async fn build(
         term_count,
         "family resources documented"
     );
+    managed.finish(writer).await?;
     let revision = Assembler::new(dataset.clone()).assemble(project).await?;
     let plan = TargetPlanner::new(dataset.clone(), revision)
         .resolve(project, &target, writer)
@@ -847,4 +942,183 @@ fn standard_prefixes() -> BTreeMap<String, String> {
     .into_iter()
     .map(|(namespace, prefix)| (namespace.into(), prefix.into()))
     .collect()
+}
+
+// The manifest records only this builder's ownership; it never scans/removes
+// unrelated project contributors. Failed discovery retains a failed attempt.
+struct ManagedFamily {
+    project:  String,
+    owner:    NamedNode,
+    previous: std::collections::BTreeSet<(String, String, bool)>,
+    next:     std::collections::BTreeSet<(String, String, bool)>,
+    stream:   Option<super::writer::ContributionStream>,
+}
+impl ManagedFamily {
+    async fn begin(
+        dataset: &Dataset,
+        writer: &GraphWriter,
+        project: &str,
+        target: &str,
+    ) -> Result<Self> {
+        let owner = identity("family-discovery", &[project, target]);
+        let snapshot = dataset.snapshot_for(project).await?;
+        let view = RevisionView::new(dataset.clone(), snapshot);
+        let predicate = NamedNode::new("http://www.w3.org/ns/prov#hadMember")?;
+        let mut rows = view.objects_by(&owner, &predicate).await?;
+        let mut previous = std::collections::BTreeSet::new();
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                previous.len() < 100_000,
+                "family ownership manifest exceeds entry budget"
+            );
+            let Term::NamedNode(entry) = &row["value"] else {
+                anyhow::bail!("invalid family manifest entry");
+            };
+            let get = |property: &str| NamedNode::new(property).unwrap();
+            let Some(Term::NamedNode(processor)) = view
+                .optional_by(
+                    entry,
+                    &get("http://www.w3.org/ns/prov#wasAttributedTo"),
+                )
+                .await?
+            else {
+                anyhow::bail!("missing manifest processor");
+            };
+            let Some(Term::Literal(source)) = view
+                .optional_by(entry, &get("http://purl.org/dc/terms/identifier"))
+                .await?
+            else {
+                anyhow::bail!("missing manifest source");
+            };
+            let Some(Term::Literal(stage)) = view
+                .optional_by(
+                    entry,
+                    &get("http://purl.org/dc/terms/description"),
+                )
+                .await?
+            else {
+                anyhow::bail!("missing manifest stage");
+            };
+            ensure!(
+                matches!(stage.value(), "collect" | "document"),
+                "invalid manifest stage"
+            );
+            previous.insert((
+                processor.into_string(),
+                source.value().into(),
+                stage.value() == "document",
+            ));
+        }
+        let stream = writer
+            .begin_stage(
+                project,
+                owner.as_str(),
+                target,
+                &format!("pending:{}", uuid::Uuid::new_v4()),
+                super::dataset::Stage::Document,
+            )
+            .await?;
+        Ok(Self {
+            project: project.into(),
+            owner,
+            previous,
+            next: Default::default(),
+            stream: Some(stream),
+        })
+    }
+
+    fn add(
+        &mut self,
+        processor: &str,
+        source: &str,
+        document: bool,
+    ) -> Result<()> {
+        ensure!(
+            self.next.len() < 100_000,
+            "family ownership manifest exceeds entry budget"
+        );
+        self.next
+            .insert((processor.into(), source.into(), document));
+        Ok(())
+    }
+
+    async fn retire(&self, writer: &GraphWriter, document: bool) -> Result<()> {
+        for (processor, source, stage) in self.previous.difference(&self.next) {
+            if *stage == document {
+                writer.remove(&self.project, processor, source).await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn finish(&mut self, writer: &GraphWriter) -> Result<()> {
+        use sha2::{Digest, Sha256};
+        self.retire(writer, true).await?;
+        let mut hash = Sha256::new();
+        for entry in &self.next {
+            hash.update(format!("{entry:?}\n"));
+        }
+        let revision = format!("family-manifest-v1:{:x}", hash.finalize());
+        let stream = self.stream.as_mut().unwrap();
+        // Pending streams created with an explicit document stage need a final
+        // revision just as collected streams do.
+        stream.set_revision(&revision).await?;
+        stream
+            .write(Quad::new(
+                self.owner.clone(),
+                NamedNode::new(super::RDF_TYPE)?,
+                NamedNode::new("http://www.w3.org/ns/prov#Collection")?,
+                GraphName::DefaultGraph,
+            ))
+            .await?;
+        for (processor, source, document) in &self.next {
+            let entry = identity("family-owned-input", &[
+                self.owner.as_str(),
+                processor,
+                source,
+            ]);
+            for (subject, predicate, object) in [
+                (
+                    self.owner.clone(),
+                    "http://www.w3.org/ns/prov#hadMember",
+                    Term::from(entry.clone()),
+                ),
+                (
+                    entry.clone(),
+                    "http://www.w3.org/ns/prov#wasAttributedTo",
+                    NamedNode::new(processor)?.into(),
+                ),
+                (
+                    entry.clone(),
+                    "http://purl.org/dc/terms/identifier",
+                    Literal::new_simple_literal(source).into(),
+                ),
+                (
+                    entry,
+                    "http://purl.org/dc/terms/description",
+                    Literal::new_simple_literal(
+                        if *document { "document" } else { "collect" },
+                    )
+                    .into(),
+                ),
+            ] {
+                stream
+                    .write(Quad::new(
+                        subject,
+                        NamedNode::new(predicate)?,
+                        object,
+                        GraphName::DefaultGraph,
+                    ))
+                    .await?;
+            }
+        }
+        self.stream.take().unwrap().complete().await
+    }
+
+    async fn abort(&mut self) -> Result<()> {
+        if let Some(stream) = self.stream.take() {
+            stream.abort().await?;
+        }
+        Ok(())
+    }
 }

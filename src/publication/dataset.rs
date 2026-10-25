@@ -1,10 +1,10 @@
-//! Embedded dataset with isolated contribution attempts and immutable
+//! Embedded or remote dataset with isolated contribution attempts and immutable
 //! snapshots.
 
 use {
     super::term,
     anyhow::{Result, ensure},
-    oxigraph::{sparql::QueryResults, store::Store},
+    oxigraph::sparql::QueryResults,
     oxrdf::{GraphName, Literal, NamedNode},
     sha2::{Digest, Sha256},
     std::{
@@ -15,6 +15,9 @@ use {
 };
 
 mod attempt;
+mod backend;
+use backend::BackendStore;
+pub use backend::SparqlStoreConfig;
 mod reader;
 mod snapshot;
 pub use reader::Rows;
@@ -51,11 +54,11 @@ pub struct CommittedContribution {
     pub(crate) version: NamedNode,
 }
 
-/// One shared embedded dataset. All blocking storage operations leave Tokio
+/// One shared dataset backend. All blocking storage operations leave Tokio
 /// workers.
 #[derive(Clone)]
 pub struct Dataset {
-    pub(crate) store:        Arc<Store>,
+    pub(crate) store:        Arc<BackendStore>,
     coordination:            Arc<Mutex<()>>,
     #[cfg(test)]
     pub(crate) select_calls: Arc<std::sync::atomic::AtomicUsize>,
@@ -69,7 +72,7 @@ impl Dataset {
             select_calls:              Arc::new(
                 std::sync::atomic::AtomicUsize::new(0),
             ),
-            store:                     Arc::new(Store::new()?),
+            store:                     Arc::new(BackendStore::memory()?),
             coordination:              Arc::new(Mutex::new(())),
         })
     }
@@ -84,15 +87,33 @@ impl Dataset {
             ),
             coordination:              Arc::new(Mutex::new(())),
             store:                     Arc::new(
-                tokio::task::spawn_blocking(move || Store::open(path))
+                tokio::task::spawn_blocking(move || BackendStore::open(path))
                     .await??,
+            ),
+        })
+    }
+
+    /// Connect an external KG using the verified RDF4J transaction protocol.
+    /// Generic query/update-only endpoints are intentionally not accepted as
+    /// stores.
+    pub async fn sparql(config: SparqlStoreConfig) -> Result<Self> {
+        let remote = tokio::task::spawn_blocking(move || {
+            backend::remote::RemoteStore::connect(config)
+        })
+        .await??;
+        Ok(Self {
+            store:                     Arc::new(BackendStore::Remote(remote)),
+            coordination:              Arc::new(Mutex::new(())),
+            #[cfg(test)]
+            select_calls:              Arc::new(
+                std::sync::atomic::AtomicUsize::new(0),
             ),
         })
     }
 
     pub(crate) async fn run<T: Send + 'static>(
         &self,
-        operation: impl FnOnce(&Store) -> Result<T> + Send + 'static,
+        operation: impl FnOnce(&BackendStore) -> Result<T> + Send + 'static,
     ) -> Result<T> {
         let store = self.store.clone();
         let coordination = self.coordination.clone();

@@ -79,7 +79,7 @@ impl Dataset {
 }
 
 fn dump_to_writer<W: Write>(
-    store: &oxigraph::store::Store,
+    store: &super::backend::BackendStore,
     writer: W,
 ) -> Result<W> {
     let writer = BufWriter::with_capacity(64 * 1024, writer);
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn large_rdf_literals_are_coalesced_into_bounded_file_writes() -> Result<()>
     {
-        let store = oxigraph::store::Store::new()?;
+        let store = super::super::backend::BackendStore::memory()?;
         store.insert(
             Quad::new(
                 NamedNode::new("urn:test:asset")?,
@@ -141,7 +141,7 @@ mod tests {
 
             fn flush(&mut self) -> io::Result<()> { Ok(()) }
         }
-        let store = oxigraph::store::Store::new()?;
+        let store = super::super::backend::BackendStore::memory()?;
         store.insert(
             Quad::new(
                 NamedNode::new("urn:test:asset")?,
