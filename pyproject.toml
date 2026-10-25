@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin==1.15.0"]
+build-backend = "maturin"
+
+[project]
+name = "grapharch"
+dynamic = ["version"]
+description = "Generate documentation websites, specifications, and PDFs from a documentation knowledge graph"
+readme = "packaging/PYPI_README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "packaging/licenses/*.txt", "src/publication/render/fonts/LICENSE*"]
+authors = [{name = "Jacobus Geluk", email = "jacobus.geluk@ekgf.org"}]
+keywords = ["documentation", "ontology", "rdf", "specification", "pdf"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Documentation",
+]
+
+[project.urls]
+Homepage = "https://ekgf.github.io/grapharch/"
+Repository = "https://github.com/EKGF/grapharch"
+Issues = "https://github.com/EKGF/grapharch/issues"
+
+[tool.maturin]
+bindings = "bin"
+manifest-path = "Cargo.toml"
+strip = true

@@ -1,0 +1,23 @@
+name: Package checks
+on:
+  push:
+    branches: [main]
+    paths: ['action.yml', 'npm/**', 'packaging/**', 'pyproject.toml', 'Cargo.toml', 'cog.toml', '.github/workflows/package-checks.yml', '.github/workflows/distribute.yml']
+  pull_request:
+    paths: ['action.yml', 'npm/**', 'packaging/**', 'pyproject.toml', 'Cargo.toml', 'cog.toml', '.github/workflows/package-checks.yml', '.github/workflows/distribute.yml']
+permissions:
+  contents: read
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python packaging/distribute.py check
+      - run: python -m unittest discover -s packaging/tests
+      - run: node --test npm/tests/*.test.cjs

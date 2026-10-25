@@ -2,26 +2,23 @@ from_latest_tag = false
 ignore_merge_commits = true
 generate_mono_repository_global_tag = true
 branch_whitelist = ["main", "release/**"]
-tag_prefix = ""
+tag_prefix = "v"
 
 pre_bump_hooks = [
-    "cargo build --release",
     "cargo set-version --workspace {{version}}",
+    "python3 packaging/distribute.py sync-version",
+    "cargo check --locked",
 ]
-post_bump_hooks = [
-    "git push --no-verify",
-    "git push origin {{version}} --no-verify",
-]
+post_bump_hooks = []
 
 [git_hooks]
 
 [git_hooks.commit-msg]
 script = """#!/bin/sh
-set -e
-cog verify --file $1
-cog check
-cargo +nightly fmt -v --all --check
-cargo +nightly clippy
+cog verify --file "$1" || exit $?
+cog check || exit $?
+cargo +nightly fmt -v --all --check || exit $?
+cargo +nightly clippy || exit $?
 """
 
 

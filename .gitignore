@@ -40,3 +40,9 @@ output.pdf
 
 # Local design references and canvas state
 /.superdesign/
+
+# Package staging and local Python tooling
+/dist/
+/npm/node_modules/
+__pycache__/
+/.venv/

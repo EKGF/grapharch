@@ -1,0 +1,35 @@
+name: Set up GraphArch
+description: Install an exact GraphArch release binary and verify its checksum
+inputs:
+  version:
+    description: Exact published version, without a leading v
+    required: true
+  cache:
+    description: Cache verified release binaries
+    default: 'true'
+outputs:
+  version:
+    value: ${{ steps.install.outputs.version }}
+  binary-path:
+    value: ${{ steps.install.outputs.binary-path }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - id: platform
+      shell: bash
+      env:
+        GRAPHARCH_VERSION: ${{ inputs.version }}
+      run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" identify
+    - uses: actions/cache@v4
+      if: inputs.cache == 'true'
+      with:
+        path: ${{ runner.tool_cache }}/grapharch/${{ inputs.version }}/${{ steps.platform.outputs.target }}
+        key: grapharch-release-${{ inputs.version }}-${{ steps.platform.outputs.target }}-v1
+    - id: install
+      shell: bash
+      env:
+        GRAPHARCH_VERSION: ${{ inputs.version }}
+      run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" install

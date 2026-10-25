@@ -6,6 +6,7 @@ rust-version = "1.88"
 description = "GraphArch is a tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as either a website or a PDF"
 authors = ["Jacobus Geluk <jacobus.geluk@ekgf.org>"]
 license = "MIT"
+include = ["/src/**", "/docs/other/ontology/*.ttl", "/packaging/licenses/*.txt", "/Cargo.toml", "/Cargo.lock", "/LICENSE", "/README.md"]
 repository = "https://github.com/ekgf/grapharch"
 homepage = "https://ekgf.github.io/grapharch/"
 
@@ -52,3 +53,9 @@ scraper = "0.23"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "=0.9.3"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }.zip"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "zip"
+disabled-strategies = ["quick-install", "compile"]

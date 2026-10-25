@@ -1,25 +1,23 @@
-name: "Release Changelog"
+name: Release
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish this validated Cargo.toml version as a GitHub release
+        type: boolean
+        required: true
+        default: false
+      publish-packages:
+        description: Publish registries and update Homebrew
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  id-token: write
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Perform release"
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: "Cocogitto release"
-        id: release
-        uses: cocogitto/cocogitto-action@v3
-        with:
-          release: true
-          git-user: 'Release Bot'
-          git-user-email: 'jacobus.geluk@ekgf.org'
-      - name: "Generate Changelog"
-        run: cog changelog --at ${{ steps.release.outputs.version }} -t full_hash > GITHUB_CHANGELOG.md
-      - name: Upload github release
-        uses: softprops/action-gh-release@v1
-        with:
-          body_path: GITHUB_CHANGELOG.md
-          tag_name: ${{ steps.release.outputs.version }}
+  distribute:
+    uses: ./.github/workflows/distribute.yml
+    with:
+      publish: ${{ inputs.publish }}
+      publish-packages: ${{ inputs.publish-packages }}
+    secrets: inherit
