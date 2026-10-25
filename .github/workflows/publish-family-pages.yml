@@ -48,7 +48,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: EKGF/grapharch@3dd1d4b21ff897b5761f2ee1e31e10ec97f3e9c8
         id: grapharch
         with:
@@ -80,7 +80,7 @@ jobs:
               shutil.copyfile(os.environ['KG_PATH'], archive)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write(f'path={destination}\n')
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ steps.stage.outputs.path }}
   deploy:
@@ -97,4 +97,4 @@ jobs:
       page-url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
