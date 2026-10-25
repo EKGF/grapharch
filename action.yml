@@ -39,7 +39,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.12'
     - name: Validate publication inputs
@@ -58,7 +58,7 @@ runs:
       env:
         GRAPHARCH_VERSION: ${{ inputs.version }}
       run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" identify
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       if: inputs.cache == 'true'
       with:
         path: ${{ runner.tool_cache }}/grapharch/${{ inputs.version }}/${{ steps.platform.outputs.target }}

@@ -15,8 +15,8 @@ jobs:
         ports:
           - 8080:8080
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
       - name: Wait for isolated RDF4J server
         shell: bash
         run: |
