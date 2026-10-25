@@ -8,7 +8,7 @@ use {
         model::{GraphName, NamedNode, Quad},
         store::Store,
     },
-    oxrdf::{Subject, Term, TermRef},
+    oxrdf::{NamedOrBlankNode, Term, TermRef},
     std::{path::PathBuf, sync::Arc},
 };
 
@@ -70,7 +70,10 @@ impl LoaderStore {
             LIMIT 100
         "#;
 
-        let results = self.store.query(query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(query)?
+            .on_store(&self.store)
+            .execute()?;
 
         if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
             println!("First 100 triples in the store:");
@@ -128,7 +131,7 @@ impl LoaderStore {
 
     pub async fn insert_quad2(
         &self,
-        subject: impl Into<Subject>,
+        subject: impl Into<NamedOrBlankNode>,
         predicate: impl Into<NamedNode>,
         object: impl Into<Term>,
         graph_name: impl Into<GraphName>,
@@ -180,7 +183,10 @@ impl LoaderStore {
             ORDER BY ?class
         "#;
 
-        let results = self.store.query(query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(query)?
+            .on_store(&self.store)
+            .execute()?;
         let mut classes = Vec::new();
 
         match results {
@@ -255,7 +261,10 @@ impl LoaderStore {
                 pattern
             );
 
-            let results = self.store.query(&query)?;
+            let results = oxigraph::sparql::SparqlEvaluator::new()
+                .parse_query(&query)?
+                .on_store(&self.store)
+                .execute()?;
 
             if let oxigraph::sparql::QueryResults::Solutions(solutions) =
                 results

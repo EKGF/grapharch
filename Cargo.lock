@@ -1677,12 +1677,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecow"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dca6141d10838e13f9b166c190254a3f9b5d8379521f9b7510810061cef17a4"
-
-[[package]]
 name = "ego-tree"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3114,10 +3108,10 @@ dependencies = [
  "console",
  "const_format",
  "core-foundation 0.10.0",
- "ecow 0.3.1",
  "fs2",
  "futures",
  "gix",
+ "hex",
  "ignore",
  "image",
  "lazy_static",
@@ -7127,7 +7121,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "140458bc8c72b014266f8ea5fad57165c8159845105eea8949c8954b2a8f49f4"
 dependencies = [
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "typst-eval",
  "typst-html",
  "typst-layout",
@@ -7152,7 +7146,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "850733c95becdb1b0153fd50e979b06d1a3d42f2411f2a0206b3a793501205ac"
 dependencies = [
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "if_chain",
  "indexmap",
  "stacker",
@@ -7172,7 +7166,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "654de5a88b9104f9b19723166eb16b8aec6df72a060d91736b81dc72e905e7cc"
 dependencies = [
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "typst-library",
  "typst-macros",
  "typst-svg",
@@ -7188,7 +7182,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "818fa9d54e1663fe20d15f6359945616cc4026d68c4de6c4eb0add7556fe2a90"
 dependencies = [
  "dirs",
- "ecow 0.2.6",
+ "ecow",
  "env_proxy",
  "flate2",
  "fontdb 0.21.0",
@@ -7215,7 +7209,7 @@ dependencies = [
  "az",
  "bumpalo",
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "hypher",
  "icu_properties",
  "icu_provider",
@@ -7252,7 +7246,7 @@ dependencies = [
  "codex",
  "comemo",
  "csv",
- "ecow 0.2.6",
+ "ecow",
  "flate2",
  "fontdb 0.21.0",
  "hayagriva",
@@ -7321,7 +7315,7 @@ dependencies = [
  "base64 0.22.1",
  "bytemuck",
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "image",
  "indexmap",
  "miniz_oxide",
@@ -7348,7 +7342,7 @@ dependencies = [
  "arrayvec",
  "bumpalo",
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "regex",
  "typst-library",
  "typst-macros",
@@ -7365,7 +7359,7 @@ checksum = "674c8e5cb94015c9f870c48bace6b64eb706075766643f3b1f67606c6b03feae"
 dependencies = [
  "base64 0.22.1",
  "comemo",
- "ecow 0.2.6",
+ "ecow",
  "flate2",
  "image",
  "ttf-parser 0.24.1",
@@ -7383,7 +7377,7 @@ version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ba949ac75a374ea6b2f61d32e6c63acb818e6179d16f78b2cba988fbb5e23a8"
 dependencies = [
- "ecow 0.2.6",
+ "ecow",
  "serde",
  "toml",
  "typst-timing",

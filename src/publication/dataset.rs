@@ -307,8 +307,8 @@ pub(crate) fn identity(kind: &str, parts: &[&str]) -> NamedNode {
         digest.update(part.as_bytes());
     }
     NamedNode::new_unchecked(format!(
-        "urn:grapharch:{kind}:{:x}",
-        digest.finalize()
+        "urn:grapharch:{kind}:{}",
+        hex::encode(digest.finalize())
     ))
 }
 
@@ -363,5 +363,17 @@ mod coordination_tests {
             "a source write overtook the guarded metadata operation"
         );
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod identity_encoding_tests {
+    #[test]
+    fn dependency_upgrades_preserve_existing_content_addressed_identities() {
+        assert_eq!(
+            super::identity("test", &["abc", "def"]).as_str(),
+            "urn:grapharch:test:\
+             19e1bdaa45f95c790af886561eee00c622fdedb99c41248234702715ccd6d096"
+        );
     }
 }

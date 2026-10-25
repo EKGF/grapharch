@@ -119,7 +119,10 @@ pub(crate) fn objects(
         term(property)
     );
     let oxigraph::sparql::QueryResults::Solutions(rows) =
-        store.query(query.as_str())?
+        oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(query.as_str())?
+            .on_store(store)
+            .execute()?
     else {
         bail!("expected property values")
     };

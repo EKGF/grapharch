@@ -1,6 +1,6 @@
 use {
     crate::publication::dataset::identity,
-    oxrdf::{BlankNode, GraphName, NamedNode, Quad, Subject, Term},
+    oxrdf::{BlankNode, GraphName, NamedNode, NamedOrBlankNode, Quad, Term},
     std::collections::HashMap,
 };
 
@@ -40,7 +40,7 @@ impl BlankNodes {
 
     pub fn normalize(&mut self, quad: Quad) -> Quad {
         let subject = match quad.subject {
-            Subject::BlankNode(blank) => self.node(blank).into(),
+            NamedOrBlankNode::BlankNode(blank) => self.node(blank).into(),
             subject => subject,
         };
         let object = match quad.object {

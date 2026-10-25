@@ -87,7 +87,7 @@ impl TypstGenerator {
     }
 
     fn compile_to_pdf(&self) -> anyhow::Result<()> {
-        use super::error::eco_vec_into_anyhow;
+        use super::error::diagnostics_into_anyhow;
 
         info!(
             "Starting Typst compilation from directory: {}",
@@ -107,7 +107,7 @@ impl TypstGenerator {
             Ok(doc) => doc,
             Err(err) => {
                 info!("Compilation failed with errors: {:?}", err);
-                return Err(eco_vec_into_anyhow(err));
+                return Err(diagnostics_into_anyhow(err));
             },
         };
 

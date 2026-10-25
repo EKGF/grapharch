@@ -244,7 +244,10 @@ impl OWLOntologyDocumentorImpl {
             }
         "#;
 
-        let results = self.loader_store.store().query(query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(query)?
+            .on_store(&self.loader_store.store())
+            .execute()?;
         let mut info = String::new();
 
         // Don't add a heading here, as the chapter title will be the heading
@@ -318,7 +321,10 @@ impl OWLOntologyDocumentorImpl {
                 LIMIT 10
             "#;
 
-            let results = self.loader_store.store().query(query)?;
+            let results = oxigraph::sparql::SparqlEvaluator::new()
+                .parse_query(query)?
+                .on_store(&self.loader_store.store())
+                .execute()?;
 
             if let oxigraph::sparql::QueryResults::Solutions(solutions) =
                 results
@@ -332,9 +338,9 @@ impl OWLOntologyDocumentorImpl {
                             solution.get("o"),
                         ) {
                             info.push_str(&format!(
-                                "- Subject: #link(\"{0}\")[\"{0}\"]\n  \
-                                 Predicate: #link(\"{1}\")[\"{1}\"]\n  \
-                                 Object: {2}\n\n",
+                                "- NamedOrBlankNode: \
+                                 #link(\"{0}\")[\"{0}\"]\n  Predicate: \
+                                 #link(\"{1}\")[\"{1}\"]\n  Object: {2}\n\n",
                                 s, p, o
                             ));
                         }
@@ -360,7 +366,10 @@ impl OWLOntologyDocumentorImpl {
             LIMIT 10
         "#;
 
-        let results = self.loader_store.store().query(query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(query)?
+            .on_store(&self.loader_store.store())
+            .execute()?;
 
         if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
             let solutions: Vec<_> = solutions.collect::<Result<_, _>>()?;
@@ -372,8 +381,9 @@ impl OWLOntologyDocumentorImpl {
                         solution.get("o"),
                     ) {
                         info.push_str(&format!(
-                            "- Subject: #link(\"{0}\")[\"{0}\"]\n  Predicate: \
-                             #link(\"{1}\")[\"{1}\"]\n  Object: {2}\n\n",
+                            "- NamedOrBlankNode: #link(\"{0}\")[\"{0}\"]\n  \
+                             Predicate: #link(\"{1}\")[\"{1}\"]\n  Object: \
+                             {2}\n\n",
                             s, p, o
                         ));
                     }

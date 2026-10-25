@@ -105,7 +105,10 @@ impl Section {
             self.get_named_node()
         );
 
-        let results = self.get_model().get_store().query(&query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(&query)?
+            .on_store(self.get_model().get_store())
+            .execute()?;
         let mut chapters = Vec::new();
 
         if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {

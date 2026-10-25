@@ -1058,7 +1058,10 @@ impl ManagedFamily {
         for entry in &self.next {
             hash.update(format!("{entry:?}\n"));
         }
-        let revision = format!("family-manifest-v1:{:x}", hash.finalize());
+        let revision = format!(
+            "family-manifest-v1:{}",
+            hex::encode(hash.finalize())
+        );
         let stream = self.stream.as_mut().unwrap();
         // Pending streams created with an explicit document stage need a final
         // revision just as collected streams do.

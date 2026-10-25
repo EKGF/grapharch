@@ -1,7 +1,14 @@
 #![allow(dead_code)]
 use {
     anyhow::Result,
-    oxigraph::{sparql::results::QueryResultsFormat, store::Store},
+    oxigraph::{
+        sparql::{
+            QueryResults,
+            SparqlEvaluator,
+            results::{QueryResultsFormat, QueryResultsSerializer},
+        },
+        store::Store,
+    },
     std::{
         collections::HashMap,
         io::{Read, Write},
@@ -203,10 +210,7 @@ fn serve(
             match action {
                 "QUERY" => {
                     let tx = state.transactions.get(&id).unwrap();
-                    let mut output = Vec::new();
-                    tx.store
-                        .query(&body)?
-                        .write(&mut output, QueryResultsFormat::Json)?;
+                    let output = query_json(&tx.store, &body)?;
                     (
                         200,
                         "application/sparql-results+json",
@@ -286,11 +290,7 @@ fn serve(
             }
         }
     } else if url.path() == "/repositories/test" && method == "POST" {
-        let mut output = Vec::new();
-        state
-            .store
-            .query(&body)?
-            .write(&mut output, QueryResultsFormat::Json)?;
+        let output = query_json(&state.store, &body)?;
         (
             200,
             "application/sparql-results+json",
@@ -310,4 +310,31 @@ fn serve(
         body.len()
     )?;
     Ok(())
+}
+
+fn query_json(store: &Store, query: &str) -> Result<Vec<u8>> {
+    let serializer =
+        QueryResultsSerializer::from_format(QueryResultsFormat::Json);
+    match SparqlEvaluator::new()
+        .parse_query(query)?
+        .on_store(store)
+        .execute()?
+    {
+        QueryResults::Boolean(value) => {
+            Ok(serializer.serialize_boolean_to_writer(Vec::new(), value)?)
+        },
+        QueryResults::Solutions(rows) => {
+            let mut writer = serializer.serialize_solutions_to_writer(
+                Vec::new(),
+                rows.variables().to_vec(),
+            )?;
+            for row in rows {
+                writer.serialize(row?.iter())?;
+            }
+            Ok(writer.finish()?)
+        },
+        QueryResults::Graph(_) => {
+            anyhow::bail!("protocol mock requires SELECT or ASK")
+        },
+    }
 }

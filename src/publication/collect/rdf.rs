@@ -44,7 +44,7 @@ impl RdfFile {
             );
             hash.update(&buffer[..count]);
         }
-        Ok(format!("rdf-v1:{:x}", hash.finalize()))
+        Ok(format!("rdf-v1:{}", hex::encode(hash.finalize())))
     }
 }
 

@@ -48,7 +48,8 @@ impl SparqlEndpointSource {
             !config.query.is_empty() && config.query.len() <= 64 * 1024,
             "SPARQL source query must be between 1 and 65536 bytes"
         );
-        let query = spargebra::Query::parse(&config.query, None)?;
+        let query =
+            spargebra::SparqlParser::new().parse_query(&config.query)?;
         ensure!(
             matches!(
                 query,
@@ -178,7 +179,10 @@ impl Collector for SparqlEndpointSource {
         }
         writer.flush().await?;
         drop(writer);
-        let revision = format!("sparql-source-v1:{:x}", hash.finalize());
+        let revision = format!(
+            "sparql-source-v1:{}",
+            hex::encode(hash.finalize())
+        );
         let mut blanks = BlankNodes::new(
             self.project.as_str(),
             self.collector.as_str(),

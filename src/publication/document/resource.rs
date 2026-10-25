@@ -153,7 +153,8 @@ impl ResourceDocumentor {
                 description = Some(comment.value().to_owned());
             }
         }
-        let revision = format!("resource-v1:{:x}", digest.finalize());
+        let revision =
+            format!("resource-v1:{}", hex::encode(digest.finalize()));
         if self
             .dataset
             .is_current(

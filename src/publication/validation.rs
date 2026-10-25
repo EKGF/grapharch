@@ -149,7 +149,7 @@ pub fn validate(store: &Store) -> Result<()> {
             None,
         ) {
             let subject = quad?.subject;
-            let oxrdf::Subject::NamedNode(subject) = subject else {
+            let oxrdf::NamedOrBlankNode::NamedNode(subject) = subject else {
                 bail!("{class} requires a stable IRI, found {subject}")
             };
             for field in &fields {

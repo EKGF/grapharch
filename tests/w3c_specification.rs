@@ -67,7 +67,7 @@ fn reference_inputs_match_their_recorded_digests() -> anyhow::Result<()> {
         let bytes =
             std::fs::read(format!("examples/w3c-rdf12-n-triples/{file}"))?;
         assert_eq!(
-            format!("{:x}", Sha256::digest(&bytes)),
+            hex::encode(Sha256::digest(&bytes)),
             metadata[field].as_str().unwrap()
         );
     }

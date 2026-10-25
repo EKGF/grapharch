@@ -16,13 +16,13 @@ fn ontology() -> Result<Store> {
 }
 
 fn ask(store: &Store, pattern: &str) -> Result<bool> {
-    let QueryResults::Boolean(value) = store.query(format!(
+    let QueryResults::Boolean(value) = oxigraph::sparql::SparqlEvaluator::new().parse_query(format!(
         "PREFIX ga: <https://ekgf.org/ontology/grapharch#> \
          PREFIX owl: <http://www.w3.org/2002/07/owl#> \
          PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \
          PREFIX dct: <http://purl.org/dc/terms/> \
          PREFIX skos: <http://www.w3.org/2004/02/skos/core#> ASK {{ {pattern} }}"
-    ).as_str())? else { panic!("expected ASK result") };
+    ).as_str())?.on_store(store).execute()? else { panic!("expected ASK result") };
     Ok(value)
 }
 
@@ -112,9 +112,9 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
 #[test]
 fn embedded_turtle_examples_are_parseable() -> Result<()> {
     let store = ontology()?;
-    let QueryResults::Solutions(examples) = store.query(
+    let QueryResults::Solutions(examples) = oxigraph::sparql::SparqlEvaluator::new().parse_query(
         "SELECT ?term ?example WHERE { ?term <http://www.w3.org/2004/02/skos/core#example> ?example }",
-    )? else { panic!("expected examples") };
+    )?.on_store(&store).execute()? else { panic!("expected examples") };
     let mut count = 0;
     for example in examples {
         let example = example?;

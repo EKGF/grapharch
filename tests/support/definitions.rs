@@ -9,7 +9,7 @@ pub fn edit_definitions(
 ) -> Result<String> {
     use {
         anyhow::ensure,
-        oxrdf::{NamedNode, Subject, Term},
+        oxrdf::{NamedNode, NamedOrBlankNode, Term},
         oxrdfio::{RdfFormat, RdfParser, RdfSerializer},
     };
     const NAMESPACE: &str = "https://ekgf.org/ontology/grapharch#";
@@ -19,12 +19,14 @@ pub fn edit_definitions(
         .collect::<std::result::Result<Vec<_>, _>>()?;
     let mut seen = vec![false; removed.len()];
     let repository = repository
-        .map(|(subject, url)| -> Result<(Subject, Term)> {
-            Ok((
-                NamedNode::new(subject)?.into(),
-                NamedNode::new(url)?.into(),
-            ))
-        })
+        .map(
+            |(subject, url)| -> Result<(NamedOrBlankNode, Term)> {
+                Ok((
+                    NamedNode::new(subject)?.into(),
+                    NamedNode::new(url)?.into(),
+                ))
+            },
+        )
         .transpose()?;
     let mut changed_repository = repository.is_none();
     let mut serializer =

@@ -13,7 +13,7 @@ use {
         },
         store::LoaderStore,
     },
-    oxrdf::{GraphName, Literal, NamedNode, Quad, Subject, Term},
+    oxrdf::{GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Term},
     sha2::{Digest, Sha256},
     std::path::PathBuf,
     tokio::{fs, io::AsyncReadExt, time::Instant},
@@ -68,7 +68,7 @@ impl<'a> FileRegistryWriter<'a> {
 
     pub async fn insert_quad2(
         &self,
-        subject: impl Into<Subject>,
+        subject: impl Into<NamedOrBlankNode>,
         predicate: impl Into<NamedNode>,
         object: impl Into<Term>,
     ) -> anyhow::Result<()> {
@@ -94,7 +94,7 @@ impl<'a> FileRegistryWriter<'a> {
         let mut hasher = Sha256::new();
         hasher.update(file_content_str.as_bytes());
         let hash_result = hasher.finalize();
-        let file_hash = format!("{:x}", hash_result);
+        let file_hash = hex::encode(hash_result);
 
         // Create a NamedNode for the file content using the hash
         let file_content_node =

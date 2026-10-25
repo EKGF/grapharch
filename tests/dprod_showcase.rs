@@ -99,7 +99,7 @@ fn dprod_fixture_matches_its_pinned_native_sources() -> Result<()> {
             Path::new("examples/dprod/sources").join(file.as_str().unwrap()),
         )?;
         assert_eq!(
-            format!("{:x}", Sha256::digest(&bytes)),
+            hex::encode(Sha256::digest(&bytes)),
             entry["sha256"].as_str().unwrap()
         );
     }

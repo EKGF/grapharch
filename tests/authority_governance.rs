@@ -50,7 +50,7 @@ fn grapharch_authority_is_equivalent_to_the_governance_role() -> Result<()> {
         RdfFormat::Turtle,
         include_bytes!("../docs/other/ontology/publication.ttl").as_slice(),
     )?;
-    let QueryResults::Boolean(aligned) = store.query("ASK { <https://ekgf.org/ontology/grapharch#Authority> <http://www.w3.org/2002/07/owl#equivalentClass> <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole> }")? else { panic!("ASK required") };
+    let QueryResults::Boolean(aligned) = oxigraph::sparql::SparqlEvaluator::new().parse_query("ASK { <https://ekgf.org/ontology/grapharch#Authority> <http://www.w3.org/2002/07/owl#equivalentClass> <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole> }")?.on_store(&store).execute()? else { panic!("ASK required") };
     assert!(
         aligned,
         "Authority must reuse the governance role semantics"

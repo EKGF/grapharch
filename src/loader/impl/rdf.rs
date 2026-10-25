@@ -16,7 +16,7 @@ use {
         path::{Path, PathBuf},
         sync::Arc,
     },
-    tracing::{error, info},
+    tracing::info,
 };
 
 /// This loader is used to load RDF files into the loader store.
@@ -90,23 +90,13 @@ impl RDFLoader {
 
         let documentors_result = tokio::spawn(async move {
             let store = loader_store.store();
-            let bulk_loader = store.bulk_loader();
             let file_name_x = file_name_clone.as_path();
             let reader = std::fs::File::open(file_name_x)?;
-            if let Err(loader_error) =
-                bulk_loader.load_from_reader(parser, reader)
-            {
-                error!(
-                    "Error loading RDF data from {}: {}",
-                    file_name_x.display(),
-                    loader_error
-                );
-            } else {
-                info!(
-                    "Successfully loaded RDF data from {}",
-                    file_name_x.display()
-                );
-            }
+            load_bulk_rdf(&store, parser, reader)?;
+            info!(
+                "Successfully loaded RDF data from {}",
+                file_name_x.display()
+            );
 
             // Check if this is an OWL ontology
             let query = r#"
@@ -119,7 +109,11 @@ impl RDFLoader {
                 }
             "#;
 
-            let is_ontology = match store.query(query)? {
+            let is_ontology = match oxigraph::sparql::SparqlEvaluator::new()
+                .parse_query(query)?
+                .on_store(&store)
+                .execute()?
+            {
                 oxigraph::sparql::QueryResults::Boolean(b) => b,
                 _ => false,
             };
@@ -160,5 +154,45 @@ impl RDFLoader {
                 extension
             ))
         }
+    }
+}
+
+fn load_bulk_rdf(
+    store: &oxigraph::store::Store,
+    parser: RdfParser,
+    reader: impl std::io::Read,
+) -> anyhow::Result<()> {
+    let mut loader = store.bulk_loader();
+    loader.load_from_reader(parser, reader)?;
+    loader.commit()?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod bulk_commit_tests {
+    use super::*;
+    #[test]
+    fn final_bulk_batch_is_visible_before_documentor_queries()
+    -> anyhow::Result<()> {
+        let store = oxigraph::store::Store::new()?;
+        load_bulk_rdf(
+            &store,
+            RdfParser::from_format(RdfFormat::Turtle),
+            b"<urn:subject> <urn:predicate> <urn:object> .".as_slice(),
+        )?;
+        assert_eq!(
+            store.len()?,
+            1,
+            "loading must acknowledge the final pending batch"
+        );
+        assert!(
+            load_bulk_rdf(
+                &store,
+                RdfParser::from_format(RdfFormat::Turtle),
+                b"invalid Turtle".as_slice()
+            )
+            .is_err()
+        );
+        Ok(())
     }
 }

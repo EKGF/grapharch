@@ -249,7 +249,7 @@ fn family_fixture_native_sources_match_the_pinned_manifest() -> Result<()> {
                 .join(path.as_str().unwrap()),
         )?;
         assert_eq!(
-            format!("{:x}", Sha256::digest(bytes)),
+            hex::encode(Sha256::digest(bytes)),
             digest.as_str().unwrap()
         );
     }

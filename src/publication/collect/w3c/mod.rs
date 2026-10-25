@@ -74,8 +74,8 @@ impl Collector for W3cSpecificationFile {
             "published W3C source exceeds 2 MiB"
         );
         let revision = format!(
-            "w3c-published-v3:{:x}:{}",
-            Sha256::digest(&bytes),
+            "w3c-published-v3:{}:{}",
+            hex::encode(Sha256::digest(&bytes)),
             self.url
         );
         let source = String::from_utf8(bytes)?;

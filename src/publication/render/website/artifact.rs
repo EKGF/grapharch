@@ -69,7 +69,7 @@ pub(super) async fn write(
     }
     ensure!(
         bytes == expected_size &&
-            format!("{:x}", hash.finalize()) == expected_digest,
+            hex::encode(hash.finalize()) == expected_digest,
         "artifact size or digest mismatch"
     );
     file.flush().await?;

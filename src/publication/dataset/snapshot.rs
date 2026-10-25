@@ -101,8 +101,8 @@ impl Dataset {
                 }
             }
             let revision = NamedNode::new(format!(
-                "urn:grapharch:snapshot:{:x}",
-                digest.finalize()
+                "urn:grapharch:snapshot:{}",
+                hex::encode(digest.finalize())
             ))?;
             store.update(
                 format!(

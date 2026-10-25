@@ -99,7 +99,10 @@ impl Attempt {
             .await
     }
 
-    fn check_pending(&self, transaction: &Transaction<'_>) -> io::Result<()> {
+    fn check_pending(
+        &self,
+        transaction: &Transaction<'_, '_>,
+    ) -> io::Result<()> {
         if !transaction.contains(
             Quad::new(
                 self.owner.clone(),
@@ -297,7 +300,8 @@ fn discard_unreferenced(
             .collect::<io::Result<Vec<_>>>()?;
         ensure_metadata_budget(mappings.len())?;
         for mapping in mappings {
-            let oxrdf::Subject::NamedNode(graph) = mapping.subject else {
+            let oxrdf::NamedOrBlankNode::NamedNode(graph) = mapping.subject
+            else {
                 return Err(io::Error::other("invalid physical graph mapping"));
             };
             transaction.remove_named_graph(graph.as_ref())?;

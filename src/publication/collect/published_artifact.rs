@@ -121,7 +121,7 @@ impl Collector for PublishedArtifactFile {
             }
             index += 1;
         }
-        let digest = format!("{:x}", hash.finalize());
+        let digest = hex::encode(hash.finalize());
         let revision = format!("published-artifact-v2:{}:{digest}", self.route);
         let contribution = identity("contribution", &[
             &self.project,

@@ -21,7 +21,7 @@ impl<R> HashingReader<R> {
     }
 
     pub fn revision(self) -> String {
-        format!("rdf-v1:{:x}", self.hash.finalize())
+        format!("rdf-v1:{}", hex::encode(self.hash.finalize()))
     }
 }
 

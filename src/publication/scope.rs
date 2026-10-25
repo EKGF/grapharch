@@ -1,5 +1,5 @@
-//! Subject selection stored in graph-backed working sets rather than Rust
-//! collections.
+//! NamedOrBlankNode selection stored in graph-backed working sets rather than
+//! Rust collections.
 
 use {
     super::{

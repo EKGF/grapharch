@@ -357,8 +357,8 @@ pub(crate) fn example_id(element: ElementRef<'_>) -> String {
         .map(str::to_owned)
         .unwrap_or_else(|| {
             format!(
-                "grapharch-example-{:x}",
-                Sha256::digest(element.html().as_bytes())
+                "grapharch-example-{}",
+                hex::encode(Sha256::digest(element.html().as_bytes()))
             )
         })
 }

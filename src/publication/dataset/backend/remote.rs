@@ -9,15 +9,18 @@ use {
         status,
     },
     anyhow::{Result, ensure},
-    oxigraph::sparql::{QueryResults, results::QueryResultsFormat},
+    oxigraph::sparql::{
+        QueryResults,
+        results::{QueryResultsFormat, QueryResultsParser},
+    },
     oxrdf::{
         GraphNameRef,
         Literal,
         NamedNode,
         NamedNodeRef,
+        NamedOrBlankNodeRef,
         Quad,
         QuadRef,
-        SubjectRef,
         TermRef,
     },
     oxrdfio::{RdfFormat, RdfParser},
@@ -194,10 +197,13 @@ impl RemoteStore {
                 .send()
                 .map_err(http_error)?;
             status(response.status())?;
-            let result = QueryResults::read(
-                LimitedRead::new(response, self.config.http.max_response_bytes),
-                QueryResultsFormat::Json,
-            )?;
+            let result: QueryResults =
+                QueryResultsParser::from_format(QueryResultsFormat::Json)
+                    .for_reader(LimitedRead::new(
+                        response,
+                        self.config.http.max_response_bytes,
+                    ))?
+                    .into();
             ensure!(
                 matches!(result, QueryResults::Boolean(true)),
                 "query and transaction endpoints do not expose the same \
@@ -243,7 +249,7 @@ impl RemoteSession {
             .query(&[("action", action), ("infer", "false")]))
     }
 
-    pub fn query(&self, query: &str) -> io::Result<QueryResults> {
+    pub fn query(&self, query: &str) -> io::Result<QueryResults<'static>> {
         self.flush()?;
         let response = self
             .request("QUERY")?
@@ -274,7 +280,9 @@ impl RemoteSession {
             ),
             _session: self.clone(),
         };
-        QueryResults::read(reader, QueryResultsFormat::Json)
+        QueryResultsParser::from_format(QueryResultsFormat::Json)
+            .for_reader(reader)
+            .map(Into::into)
             .map_err(io::Error::other)
     }
 
@@ -393,7 +401,7 @@ impl RemoteSession {
 
     pub fn quads_for_pattern(
         &self,
-        s: Option<SubjectRef<'_>>,
+        s: Option<NamedOrBlankNodeRef<'_>>,
         p: Option<NamedNodeRef<'_>>,
         o: Option<TermRef<'_>>,
         g: Option<GraphNameRef<'_>>,

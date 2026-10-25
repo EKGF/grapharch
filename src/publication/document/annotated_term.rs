@@ -348,11 +348,6 @@ impl Documentor for AnnotatedTermDocumentor {
                         self.union(&view, predicate, value, &mut references)
                             .await?
                     },
-                    _ => {
-                        anyhow::bail!(
-                            "unsupported RDF term in reference documentation"
-                        )
-                    },
                 }
             };
             if predicate.as_str() == RDF_TYPE &&
@@ -506,9 +501,9 @@ impl Documentor for AnnotatedTermDocumentor {
         hash.update([u8::from(self.source_annotations)]);
         hash.update(body.as_bytes());
         let revision = format!(
-            "annotated-term-v4:{}:{:x}",
+            "annotated-term-v4:{}:{}",
             self.language,
-            hash.finalize()
+            hex::encode(hash.finalize())
         );
         let processor =
             Self::processor_identity(self.project.as_str(), &self.language);

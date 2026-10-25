@@ -156,7 +156,10 @@ impl Book {
             self.get_named_node()
         );
 
-        let results = self.get_model().get_store().query(&query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(&query)?
+            .on_store(self.get_model().get_store())
+            .execute()?;
         let mut sections = Vec::new();
 
         if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
@@ -206,7 +209,10 @@ impl Book {
             }
         "#;
 
-        let results = model.get_store().query(query)?;
+        let results = oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(query)?
+            .on_store(model.get_store())
+            .execute()?;
         let mut books = Vec::new();
 
         if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
