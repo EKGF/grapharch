@@ -20,3 +20,7 @@ class ReleaseDependenciesTest(unittest.TestCase):
                 dependencies.validate_tree(
                     f"grapharch v0.0.1\n{name} v1.0.0 (*)\n", "linux"
                 )
+
+    def test_unused_legacy_pdf_engine_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "unused legacy PDF"):
+            dependencies.validate_tree("grapharch v0.0.1\nprintpdf v0.8.2\n", "linux")
