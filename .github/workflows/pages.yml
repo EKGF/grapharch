@@ -41,7 +41,7 @@ jobs:
       - name: Verify self-documentation
         run: cargo test --locked --test showcase_gallery --test specification_sidebar --test dprod_showcase --test w3c_specification --test self_documentation --test ontology_specification --test publication_ontology --test authority_governance --test ontology_family --test repository_sources
       - name: Reuse remote ontology repository cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: output/cache/git
           key: grapharch-git-${{ runner.os }}-${{ hashFiles('examples/**/showcase.yaml') }}
