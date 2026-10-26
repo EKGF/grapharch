@@ -238,32 +238,26 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
         verify_tree(destination, destination, &names, &mut 0)?;
     } else {
         ensure!(
-            manifest.files.len() <= 4 &&
-                manifest.files.iter().all(|name| {
-                    matches!(
-                        name.as_str(),
-                        "index.html" |
-                            "style.css" |
-                            "main.typ" |
-                            "document.pdf"
-                    )
-                }),
-            "invalid publication artifact ownership"
+            manifest.files.len() <= 260,
+            "publication artifact ownership exceeds budget"
         );
-        for entry in fs::read_dir(destination)? {
-            let entry = entry?;
-            let name = entry.file_name();
-            let name = name.to_str().ok_or_else(|| {
-                anyhow::anyhow!("unowned non-UTF-8 output path")
-            })?;
+        let mut names = std::collections::HashSet::new();
+        for name in &manifest.files {
+            validate_artifact_path(name)?;
+            let fixed = matches!(
+                name.as_str(),
+                "index.html" | "style.css" | "main.typ" | "document.pdf"
+            );
+            let image = name.starts_with("assets/") &&
+                [".svg", ".png", ".jpg", ".jpeg"]
+                    .iter()
+                    .any(|extension| name.ends_with(extension));
             ensure!(
-                entry.file_type()?.is_file() &&
-                    (name == "manifest.yaml" ||
-                        manifest.files.iter().any(|owned| owned == name)),
-                "output contains an unowned artifact: {}",
-                entry.path().display()
+                (fixed || image) && names.insert(name.as_str()),
+                "invalid publication artifact ownership"
             );
         }
+        verify_tree(destination, destination, &names, &mut 0)?;
     }
     Ok(true)
 }

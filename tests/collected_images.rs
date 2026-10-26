@@ -250,3 +250,54 @@ async fn image_metadata_is_inherited_from_the_retained_source_fragment()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn retained_image_publications_can_be_replaced_but_unowned_nested_files_are_protected()
+-> Result<()> {
+    for renderer in ["specification", "typst", "html"] {
+        let source = tempfile::tempdir()?;
+        let path = source.path().join("project.ttl");
+        let content = fixture(
+            SVG.as_bytes(),
+            "image/svg+xml",
+            "assets/badge.svg",
+            "Retained badge",
+        )
+        .replace(
+            "ga:renderer \"specification\"",
+            &format!("ga:renderer \"{renderer}\""),
+        );
+        std::fs::write(&path, content)?;
+        let (dataset, plans) = showcases::specification(&path).await?;
+        let output = tempfile::tempdir()?;
+        let archive = output.path().join("documentation.nq");
+        dataset.export(archive.clone()).await?;
+        std::fs::remove_dir_all(source.path())?;
+        let restored = Dataset::memory()?;
+        restored.import(archive).await?;
+        let publisher = Publisher::new(restored);
+        publisher.render(&plans[0], output.path()).await?;
+        let PublishOutcome::Published(second) =
+            publisher.render(&plans[0], output.path()).await?
+        else {
+            panic!("replacement required")
+        };
+        assert_eq!(
+            std::fs::read(second.directory.join("assets/badge.svg"))?,
+            SVG.as_bytes()
+        );
+        let guard = second.directory.join("assets/user-owned.txt");
+        std::fs::write(&guard, "Preserve unrelated files.")?;
+        let error = publisher
+            .render(&plans[0], output.path())
+            .await
+            .err()
+            .expect("unowned nested file must block replacement");
+        assert!(format!("{error:#}").contains("unowned artifact"));
+        assert_eq!(
+            std::fs::read_to_string(guard)?,
+            "Preserve unrelated files."
+        );
+    }
+    Ok(())
+}
