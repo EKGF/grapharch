@@ -13,6 +13,8 @@ pub struct MarkdownFile(
     FileInput,
     Option<PathBuf>,
     Option<(String, String)>,
+    // Git-supplied Markdown provides its own repository-aware references.
+    bool,
 );
 /// A SPARQL-file collector that documents statements without executing them.
 pub struct SparqlFile(FileInput);
@@ -40,7 +42,7 @@ impl MarkdownFile {
         website: bool,
         hints: Option<(String, String)>,
     ) -> Self {
-        Self(input, website.then(PathBuf::new), hints)
+        Self(input, website.then(PathBuf::new), hints, false)
     }
 
     /// Configure one collector instance and source file.
@@ -49,6 +51,7 @@ impl MarkdownFile {
             FileInput::new(project, collector, path)?,
             None,
             None,
+            true,
         ))
     }
 
@@ -65,6 +68,7 @@ impl MarkdownFile {
             FileInput::new(project, collector, path)?,
             Some(root),
             None,
+            true,
         ))
     }
 
@@ -203,6 +207,13 @@ impl Collector for MarkdownFile {
                 "{}: website pages require a frontmatter title",
                 source
             );
+        }
+        if self.3 {
+            let images = super::markdown_images::describe(&self.0, body)?;
+            if !images.is_empty() {
+                revision = format!("markdown-http-images-v1:{revision}");
+            }
+            metadata.extend(images);
         }
         let mut quads = self.0.description(
             body,

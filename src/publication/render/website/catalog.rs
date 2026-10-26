@@ -91,10 +91,17 @@ impl Catalog {
         }
         let owner = plan.source.pattern(
             &format!(
-                "?owner {} ?ref",
+                "?referenceOwner {} ?ref",
                 crate::publication::term("reference")
             ),
             0,
+        );
+        let page_owner = plan.source.pattern(
+            &format!(
+                "?referenceOwner {} ?owner",
+                crate::publication::term("partOf")
+            ),
+            2,
         );
         let fields = plan.source.pattern(
             &format!(
@@ -111,7 +118,8 @@ impl Catalog {
             .dataset
             .select(format!(
                 "SELECT DISTINCT ?owner ?original ?url ?path ?asset WHERE {{ \
-                 {owner} {fields} }}"
+                 {{ {owner} BIND(?referenceOwner AS ?owner) }} UNION {{ \
+                 {owner} {page_owner} }} {fields} }}"
             ))
             .await?;
         let mut bytes = 0usize;

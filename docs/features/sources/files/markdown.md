@@ -87,9 +87,20 @@ See [Self-hosted documentation](../../../usage/self-hosting.md) for a complete
 website build and the relationship between source files, logical topics, and
 publication pages.
 
+## Images
+
+PNG, JPEG, and SVG images at HTTPS URLs are collected into the documentation
+graph. Shared URLs create one image input per project batch. The website,
+specification, and PDF use those retained bytes, so rendering an exported graph
+does not contact the image host or reopen the original Markdown files.
+
+Images need alternative text. Active SVG content, unsafe URLs, oversized images,
+and content that disagrees with its declared format are rejected. Repository
+sources also resolve relative images against the selected Git revision.
+
 ## Current boundaries
 
 The current pipeline does not execute MDX or embedded scripts. Raw HTML in
-Markdown and uncollected local images are rejected. Website images currently
-require HTTPS URLs. These boundaries are explicit; unsupported content fails the
+Markdown and uncollected local images are rejected. Ordinary Markdown-file images require HTTPS URLs; relative images need a
+repository source. These boundaries are explicit; unsupported content fails the
 build.

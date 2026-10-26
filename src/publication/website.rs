@@ -42,6 +42,28 @@ pub async fn collect(
     target: &str,
     concurrency: usize,
 ) -> Result<CollectedWebsite> {
+    collect_with_asset_factory(
+        source,
+        definitions,
+        project,
+        target,
+        concurrency,
+        &super::collect::default_http_image_factory,
+    )
+    .await
+}
+
+/// Build a site with an explicit factory for retained image sources. Source
+/// requests are deduplicated across the complete Markdown batch before any
+/// specialized image collector runs.
+pub async fn collect_with_asset_factory(
+    source: &Path,
+    definitions: &Path,
+    project: &str,
+    target: &str,
+    concurrency: usize,
+    asset_factory: &super::collect::AssetCollectorFactory<'_>,
+) -> Result<CollectedWebsite> {
     let source = tokio::fs::canonicalize(source).await?;
     let definitions = tokio::fs::canonicalize(definitions).await?;
     let paths = discover(&source).await?;
@@ -78,6 +100,14 @@ pub async fn collect(
             }
         }
         collect_all(work, &writer, concurrency).await?;
+        let images = super::collect::http_image_collectors_with_factory(
+            &dataset,
+            project,
+            asset_factory,
+        )
+        .await?;
+        collect_all(images, &writer, concurrency).await?;
+
         super::ontology_specification::collect(
             &source, &dataset, &writer, project,
         )

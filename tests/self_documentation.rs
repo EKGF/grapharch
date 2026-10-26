@@ -1,5 +1,7 @@
 #[path = "support/definitions.rs"]
 mod definitions_fixture;
+#[path = "support/recorded_images.rs"]
+mod recorded_images;
 
 use {
     anyhow::Result,
@@ -22,7 +24,7 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         &root.join("examples"),
         &sources.path().join("examples"),
     )?;
-    let built = website::collect(
+    let built = recorded_images::collect_site(
         &docs,
         &docs.join("grapharch.ttl"),
         "urn:grapharch:docs",
@@ -166,7 +168,7 @@ fn setup(source: &Path, home: &str) -> Result<()> {
 }
 
 async fn collect_case(source: &Path) -> Result<website::CollectedWebsite> {
-    website::collect(
+    recorded_images::collect_site(
         source,
         &source.join("grapharch.ttl"),
         "urn:grapharch:docs",

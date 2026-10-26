@@ -7,6 +7,7 @@ mod endpoint;
 pub mod git;
 mod hashing_reader;
 mod image;
+mod markdown_images;
 mod markdown_structure;
 pub(crate) mod page;
 pub(crate) mod published_artifact;
@@ -15,6 +16,7 @@ mod source;
 mod text_asset;
 mod w3c;
 
+pub(crate) use markdown_images::default_http_image_factory;
 use {
     super::writer::{ContributionStream, GraphWriter},
     anyhow::{Result, ensure},
@@ -26,6 +28,12 @@ pub use {
     authored::{MarkdownFile, SparqlFile},
     endpoint::{SparqlEndpointSource, SparqlSourceConfig},
     image::HttpImage,
+    markdown_images::{
+        AssetCollectorFactory,
+        HttpImageRequest,
+        http_image_collectors,
+        http_image_collectors_with_factory,
+    },
     rdf::RdfFile,
     text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,
