@@ -405,7 +405,24 @@ async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_wit
         url::Url::from_file_path(remote.join("remote.git").canonicalize()?)
             .unwrap()
             .to_string();
-    std::fs::remove_dir_all(remote.join("remote.git"))?;
+    // Make HEAD unavailable without deleting Git's object files: the local
+    // upload-pack subprocess can still be releasing those files on Windows.
+    // A fresh probe proves this origin can no longer supply the requested ref.
+    std::fs::write(
+        remote.join("remote.git/HEAD"),
+        "ref: refs/heads/unavailable\n",
+    )?;
+    assert!(
+        remote_publication(
+            &url,
+            "HEAD",
+            &root.path().join("offline-probe"),
+            None,
+        )
+        .await
+        .is_err(),
+        "the origin must be unable to serve HEAD before prepared collection"
+    );
     let failure =
         ontology_family::collect_prepared(Dataset::memory()?, prepared, 2)
             .await
@@ -414,8 +431,8 @@ async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_wit
     let message = format!("{failure:#}");
     assert!(
         message.contains("publication scope must identify an artgov:Family"),
-        "collection must use pinned cached blobs even after the origin is \
-         removed: {message}"
+        "collection must use pinned cached blobs even after the origin can no \
+         longer supply HEAD: {message}"
     );
     assert!(
         message.contains(&commit),
