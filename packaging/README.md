@@ -8,6 +8,11 @@ No registries have been published by this implementation. PyPI `grapharch`, npm 
 
 Run the **Build and distribute** workflow manually with both publishing switches disabled. This builds six platforms, audits runtime dependencies, runs offline installs through Python/npm and the standalone ZIP, and uploads `release-distribution`. Inspect that artifact and workflow results before publishing.
 
+Source verification and native jobs save compiler caches only after success.
+GitHub cache entries are immutable: caching a canceled or failed build can leave
+a partial entry that later successful builds cannot replace. Remove such an
+entry before expecting a complete dependency cache to be saved under that key.
+
 The `publish` switch creates the GitHub release. The separate `publish-packages` switch enables registry publication and the Homebrew tap update. A native-only release can therefore be published before registry ownership is ready. Tag pushes build and publish native GitHub artifacts, while registry publishing remains disabled. Only stable `MAJOR.MINOR.PATCH` versions are supported. Bump Cargo.toml and run `python3 packaging/distribute.py sync-version`; the reviewed version and tag must agree. Version bump hooks do not push changes or tags.
 
 Configure protected GitHub environments `release`, `pypi`, `npm`, `crates-io`, and `homebrew`. Register trusted publishers for this repository's `distribute.yml` workflow and corresponding environment in PyPI, every npm package, and crates.io. npm publishing requires permission to the product scope and main package. The Homebrew environment needs `HOMEBREW_TAP_TOKEN` with narrowly scoped write access to `legra-ai/homebrew-tap`; the generated formula uses verified release checksums. No sibling checkout is modified by builds.

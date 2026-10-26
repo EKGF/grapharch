@@ -63,6 +63,8 @@ jobs:
         timeout-minutes: 5
         run: python3 packaging/install_build_dependencies.py
       - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          cache-on-failure: false
       - run: cargo fmt --check
       - name: Verify portable TLS dependency graphs
         run: python packaging/check_release_dependencies.py
@@ -93,6 +95,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
+          cache-on-failure: false
       - name: Configure native Windows build environment
         if: matrix.os == 'win32'
         uses: ilammy/msvc-dev-cmd@v1

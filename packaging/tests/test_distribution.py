@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DistributionTests(unittest.TestCase):
+    def test_failed_release_jobs_do_not_publish_immutable_partial_compiler_caches(self):
+        workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
+        for name, following in (("verify-source", "binaries"), ("binaries", "assemble")):
+            job = workflow.split(f"  {name}:\n", 1)[1].split(f"  {following}:\n", 1)[0]
+            self.assertIn("cache-on-failure: false", job, name)
+
     def test_host_reserves_the_output_root_before_container_artifacts_arrive(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "dist"
