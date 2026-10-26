@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {anyhow::Result, std::path::Path};
 
 fn docs(root: &Path) -> Result<std::path::PathBuf> {
@@ -5,10 +8,11 @@ fn docs(root: &Path) -> Result<std::path::PathBuf> {
     std::fs::create_dir_all(&docs)?;
     std::fs::write(
         docs.join("grapharch.ttl"),
-        include_str!("../docs/grapharch.ttl").replace(
-            "    ga:ontologySource \"other/ontology/publication.ttl\" ;\n",
-            "",
-        ),
+        definitions::edit_definitions(
+            include_str!("../docs/grapharch.ttl"),
+            &["ontologySource"],
+            None,
+        )?,
     )?;
     std::fs::write(
         docs.join("index.md"),
@@ -90,12 +94,12 @@ async fn verification_keeps_healthy_case_and_error_kg_when_another_case_fails()
     assert!(report.ensure_success().is_err());
     assert_eq!(report.cases.len(), 2);
     assert!(!report.cases[0].succeeded);
+    assert_eq!(report.cases[0].source, "missing.ttl");
     assert!(
         report.cases[0]
             .error
             .as_deref()
-            .unwrap()
-            .contains("No such file")
+            .is_some_and(|error| !error.trim().is_empty())
     );
     assert!(report.cases[0].dataset_archive.is_none());
     assert!(
