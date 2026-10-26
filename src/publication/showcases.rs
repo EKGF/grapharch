@@ -23,6 +23,19 @@ use {
     std::{path::Path, sync::Arc},
 };
 
+pub use super::gallery::{GalleryReport, ShowcaseReport};
+
+/// Run every declared live showcase and retain structured diagnostics and KG
+/// evidence.
+pub async fn verify_gallery(
+    dataset: Dataset,
+    root: &Path,
+    project: &str,
+    output: &Path,
+) -> Result<GalleryReport> {
+    super::gallery::verify(dataset, root, project, output).await
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FamilyShowcase {

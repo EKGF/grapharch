@@ -15,7 +15,12 @@ Open the HTML, download the PDF, or inspect the exported graph.
 
 The previews below display the actual generated HTML. All publication artifacts
 are retained in the KG and can be rendered again after their source files are
-removed. The examples also serve as regression tests.
+removed. The examples also serve as regression and live integration tests.
+
+Every declared showcase is attempted, even when another case fails. Unexpected
+failures block a new publication. Verification retains a structured per-case
+report, KG diagnostics, and collected case graphs where available; declared
+expected-error examples are checked against their expected diagnostics.
 
 See [Examples and showcases](usage/examples.md) for runnable commands, fixture
 coverage, and the limits of each demonstration.

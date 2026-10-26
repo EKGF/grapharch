@@ -139,6 +139,7 @@ pub async fn collect_prepared(
     repository: super::collect::git::DiscoveredRepository,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
+    let commit = repository.scan.commit.clone();
     collect_from_optional(
         dataset,
         FamilySource::PreparedRepository(repository.scan),
@@ -148,6 +149,11 @@ pub async fn collect_prepared(
         concurrency,
     )
     .await
+    .map_err(|error| {
+        error.context(format!(
+            "build publication from resolved Git commit {commit}"
+        ))
+    })
 }
 
 /// Discover upstream RDF publication identities while retaining the caller's KG

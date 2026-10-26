@@ -39,12 +39,95 @@ struct Case {
     expected: BTreeSet<String>,
 }
 
+/// Complete, bounded coverage of the declared showcase suite.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct GalleryReport {
+    pub schema_version:  u32,
+    pub succeeded:       bool,
+    pub cases:           Vec<ShowcaseReport>,
+    pub dataset_archive: Option<std::path::PathBuf>,
+}
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ShowcaseReport {
+    pub id:              String,
+    pub source:          String,
+    pub succeeded:       bool,
+    pub error:           Option<String>,
+    pub dataset_archive: Option<std::path::PathBuf>,
+}
+impl GalleryReport {
+    pub fn ensure_success(&self) -> Result<()> {
+        let failures = self
+            .cases
+            .iter()
+            .filter_map(|case| {
+                case.error.as_ref().map(|error| {
+                    format!("{} [{}]: {error}", case.id, case.source)
+                })
+            })
+            .collect::<Vec<_>>();
+        ensure!(
+            self.succeeded,
+            "showcase verification failed:\n{}",
+            failures.join("\n")
+        );
+        Ok(())
+    }
+}
+
 pub(crate) async fn collect(
     root: &Path,
     dataset: &Dataset,
     writer: &GraphWriter,
     project: &str,
 ) -> Result<()> {
+    let stage = tempfile::tempdir()?;
+    let report =
+        collect_at(root, dataset, writer, project, stage.path()).await?;
+    report.ensure_success()
+}
+
+/// Retain per-case evidence even when one or more live showcases fail.
+pub async fn verify(
+    dataset: Dataset,
+    root: &Path,
+    project: &str,
+    output: &Path,
+) -> Result<GalleryReport> {
+    tokio::fs::create_dir_all(output).await?;
+    let output = tokio::fs::canonicalize(output).await?;
+    ensure!(
+        std::fs::read_dir(&output)?.next().transpose()?.is_none(),
+        "gallery verification output must be new or empty; stale artifacts \
+         are not reused"
+    );
+    let root = tokio::fs::canonicalize(root).await?;
+    let stage = output.join("artifacts");
+    tokio::fs::create_dir(&stage).await?;
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
+    let result = collect_at(&root, &dataset, &writer, project, &stage).await;
+    drop(writer);
+    worker.await??;
+    let mut report = result?;
+    let archive = output.join("verification.nq");
+    dataset.export(archive.clone()).await?;
+    report.dataset_archive = Some(archive);
+    tokio::fs::write(
+        output.join("report.json"),
+        serde_json::to_vec_pretty(&report)?,
+    )
+    .await?;
+    Ok(report)
+}
+
+async fn collect_at(
+    root: &Path,
+    dataset: &Dataset,
+    writer: &GraphWriter,
+    project: &str,
+    stage_root: &Path,
+) -> Result<GalleryReport> {
     let registry = root.join("showcases.ttl");
     let mut file = tokio::fs::File::open(&registry).await?.take(256 * 1024 + 1);
     let mut bytes = Vec::new();
@@ -63,25 +146,79 @@ pub(crate) async fn collect(
     )?
     .collect(writer)
     .await?;
-    let stage = tempfile::tempdir()?;
     let mut work: Vec<Arc<dyn Collector>> = Vec::new();
     let mut metadata = Vec::new();
     let mut total_bytes = 0u64;
     let build_started = std::time::Instant::now();
-    let stage_root = stage.path();
+    let observed = dataset.snapshot_for(project).await?;
+    let mut reports = Vec::new();
     use futures::StreamExt;
     let mut pending = futures::stream::iter(cases)
-        .map(|case| build_case(case, root, stage_root, project))
+        .map(|case| {
+            async move {
+                let id = case.id.as_str().to_owned();
+                let source = case.source.clone();
+                let key = case.key.clone();
+                (
+                    id,
+                    source,
+                    key,
+                    build_case(case, root, stage_root, project).await,
+                )
+            }
+        })
         .buffer_unordered(2);
-    while let Some(result) = pending.next().await {
-        let built = result?;
-        total_bytes += built.bytes;
-        ensure!(
-            total_bytes <= 128 * 1024 * 1024,
-            "showcase artifacts exceed 128 MiB budget"
-        );
-        work.extend(built.work);
-        metadata.extend(built.metadata);
+    while let Some((id, source, key, result)) = pending.next().await {
+        let archive = stage_root.join(&key).join("documentation.nq");
+        let mut report = ShowcaseReport {
+            id,
+            source,
+            succeeded: false,
+            error: None,
+            dataset_archive: archive.is_file().then_some(archive),
+        };
+        match result {
+            Ok(built) => {
+                if total_bytes + built.bytes > 128 * 1024 * 1024 {
+                    report.error = Some(
+                        "showcase artifacts exceed 128 MiB gallery budget"
+                            .into(),
+                    );
+                } else {
+                    total_bytes += built.bytes;
+                    work.extend(built.work);
+                    metadata.extend(built.metadata);
+                    report.succeeded = true;
+                }
+            },
+            Err(error) => report.error = Some(format!("{error:#}")),
+        }
+        reports.push(report);
+    }
+    // Every case has completed before errors can propagate from reporting or
+    // aggregation.
+    reports.sort_by(|left, right| left.id.cmp(&right.id));
+    for report in &reports {
+        if let Some(error) = &report.error {
+            super::diagnostics::record(
+                dataset,
+                &super::diagnostics::SourceContext {
+                    project,
+                    processor: &report.id,
+                    source: &report.source,
+                    stage: "showcase-verification",
+                    input_revision: Some(&observed),
+                },
+                super::diagnostics::Diagnostic {
+                    severity:        super::diagnostics::Severity::Error,
+                    code:            "showcase-build-failed".into(),
+                    message:         error.clone(),
+                    reference:       report.id.clone(),
+                    source_fragment: None,
+                },
+            )
+            .await?;
+        }
     }
     ensure!(
         work.len() <= 128,
@@ -108,7 +245,13 @@ pub(crate) async fn collect(
     for quad in metadata {
         stream.write(quad).await?;
     }
-    stream.complete().await
+    stream.complete().await?;
+    Ok(GalleryReport {
+        schema_version:  1,
+        succeeded:       reports.iter().all(|case| case.succeeded),
+        cases:           reports,
+        dataset_archive: None,
+    })
 }
 
 struct BuiltCase {
@@ -167,7 +310,27 @@ async fn build_case(
         &plans,
         &output,
     )
-    .await?;
+    .await;
+    // Archive the observed KG after the publication attempt, including any
+    // diagnostics.
+    let archive = output.join("documentation.nq");
+    let temporary = output.join("documentation.nq.partial");
+    let archived = async {
+        child.export(temporary.clone()).await?;
+        tokio::fs::rename(&temporary, &archive).await?;
+        Ok::<_, anyhow::Error>(())
+    }
+    .await;
+    let publications = match (publications, archived) {
+        (Err(error), Err(archive_error)) => {
+            anyhow::bail!(
+                "{error:#}; could not archive diagnostics: {archive_error:#}"
+            )
+        },
+        (Err(error), Ok(())) => return Err(error),
+        (Ok(_), Err(error)) => return Err(error),
+        (Ok(publications), Ok(())) => publications,
+    };
     let actual: Vec<_> = publications
         .iter()
         .flat_map(|publication| {
@@ -178,8 +341,12 @@ async fn build_case(
         actual.iter().map(|error| error.code.clone()).collect();
     ensure!(
         codes == case.expected && actual.len() == case.expected.len(),
-        "showcase {} produced unexpected diagnostics",
-        case.id
+        "showcase {} produced unexpected diagnostics: expected {:?}, observed \
+         {:?} ({} diagnostics)",
+        case.id,
+        case.expected,
+        codes,
+        actual.len()
     );
     let prefix = format!("showcases/artifacts/{}/", case.key);
     let mut artifacts = HashMap::new();
@@ -252,7 +419,6 @@ async fn build_case(
         ),
     ]);
     let archive = output.join("documentation.nq");
-    child.export(archive.clone()).await?;
     total_bytes += tokio::fs::metadata(&archive).await?.len();
     ensure!(
         total_bytes <= 128 * 1024 * 1024,
