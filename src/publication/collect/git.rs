@@ -277,6 +277,7 @@ fn scan_remote_selected(
         !entries.is_empty(),
         "repository contains no supported RDF files"
     );
+    let public_origin = public_repository_url(url)?.to_string();
     let discovered = if project.is_none() {
         Some(
             hints::discover(
@@ -288,7 +289,8 @@ fn scan_remote_selected(
             )
             .with_context(|| {
                 format!(
-                    "discover publication hints at resolved Git commit {}",
+                    "discover publication hints from {public_origin} at \
+                     resolved Git commit {}",
                     commit.id
                 )
             })?,
@@ -299,12 +301,7 @@ fn scan_remote_selected(
     let project = project
         .or_else(|| discovered.as_ref().map(|hints| hints.project.as_str()))
         .ok_or_else(|| anyhow::anyhow!("repository project is required"))?;
-    let revision = Revision::read(
-        project,
-        public_repository_url(url)?.into(),
-        &commit,
-        false,
-    )?;
+    let revision = Revision::read(project, public_origin, &commit, false)?;
     let mut files: Vec<Arc<dyn Collector>> = Vec::with_capacity(entries.len());
     for (relative, blob) in entries {
         let base = blob_url(url, &revision.commit, &relative)?;

@@ -140,6 +140,7 @@ pub async fn collect_prepared(
     concurrency: usize,
 ) -> Result<CollectedFamily> {
     let commit = repository.scan.commit.clone();
+    let origin = repository.scan.provenance.identity()?.source.to_owned();
     collect_from_optional(
         dataset,
         FamilySource::PreparedRepository(repository.scan),
@@ -151,7 +152,7 @@ pub async fn collect_prepared(
     .await
     .map_err(|error| {
         error.context(format!(
-            "build publication from resolved Git commit {commit}"
+            "build publication from {origin} at resolved Git commit {commit}"
         ))
     })
 }

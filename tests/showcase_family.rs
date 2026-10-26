@@ -377,3 +377,49 @@ async fn filesystem_discovery_preserves_the_selected_dataset_for_directory_and_c
     assert!(contains_body(&observed, "Filesystem term definition").await?);
     Ok(())
 }
+
+#[tokio::test]
+async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_without_refetch()
+-> Result<()> {
+    use grapharch::publication::{
+        collect::git::remote_publication,
+        dataset::Dataset,
+        ontology_family,
+    };
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("source");
+    configuration(&source, "file:///unused", "HEAD")?;
+    // Hints are discoverable, but the declared family has no ontology registry.
+    // Failure happens after preparation, where no CollectedFamily can be
+    // returned.
+    let remote = root.path().join("remote");
+    let (url, commit) = family_repository::bare_copy(&source, &remote)?;
+    let prepared =
+        remote_publication(&url, "HEAD", &root.path().join("cache"), None)
+            .await?;
+    let expected_origin =
+        url::Url::from_file_path(remote.join("remote.git").canonicalize()?)
+            .unwrap()
+            .to_string();
+    std::fs::remove_dir_all(remote.join("remote.git"))?;
+    let failure =
+        ontology_family::collect_prepared(Dataset::memory()?, prepared, 2)
+            .await
+            .err()
+            .expect("incomplete family must fail after preparation");
+    let message = format!("{failure:#}");
+    assert!(
+        message.contains("publication scope must identify an artgov:Family"),
+        "collection must use pinned cached blobs even after the origin is \
+         removed: {message}"
+    );
+    assert!(
+        message.contains(&commit),
+        "failure must identify observed commit: {message}"
+    );
+    assert!(
+        message.contains(expected_origin.trim_end_matches('/')),
+        "failure must identify observed upstream repository: {message}"
+    );
+    Ok(())
+}
