@@ -4,3 +4,4 @@ examples/dprod/sources/** -text -whitespace
 examples/ekg-ontologies/sources/** -text -whitespace
 examples/w3c-rdf12-n-triples/source.html -text
 examples/w3c-rdf12-n-triples/w3c-logo.png -text
+examples/w3c-rdf12-n-triples/w3c-logo.svg -text
