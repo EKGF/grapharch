@@ -125,14 +125,18 @@ impl Images {
                 "publication reference index exceeds byte budget"
             );
             let parsed = url::Url::parse(&url)?;
+            let asset = row.get("asset").map(node).transpose()?.cloned();
+            let retained = asset.as_ref().is_some_and(|asset| {
+                parsed.scheme() == "urn" && url == asset.as_str()
+            });
             ensure!(
-                matches!(parsed.scheme(), "https" | "http" | "mailto"),
+                matches!(parsed.scheme(), "https" | "http" | "mailto") ||
+                    retained,
                 "unsafe collected reference URL {url}"
             );
-            let asset = row.get("asset").map(node).transpose()?.cloned();
             if let Some(asset) = &asset {
                 ensure!(
-                    matches!(parsed.scheme(), "https" | "http"),
+                    matches!(parsed.scheme(), "https" | "http") || retained,
                     "unsafe collected image URL {url}"
                 );
                 ensure!(
@@ -157,7 +161,18 @@ impl Images {
     pub fn link(&self, fragment: &NamedNode, original: &str) -> Option<&str> {
         self.references
             .get(&(fragment.clone(), original.into()))
-            .map(|reference| reference.url.as_str())
+            .map(|reference| {
+                match &reference.asset {
+                    Some(asset) => {
+                        self.assets
+                            .get(asset)
+                            .expect("indexed image asset")
+                            .route
+                            .as_str()
+                    },
+                    None => reference.url.as_str(),
+                }
+            })
     }
 
     pub fn image(&self, fragment: &NamedNode, original: &str) -> Result<&str> {

@@ -90,12 +90,27 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
     }
     std::fs::write(
         repo.path().join("README.md"),
-        "# Development documentation\n\nDEVELOP ONE\n",
+        "# Development documentation\n\nDEVELOP ONE\n\n![Fixture \
+         badge](badge.svg)\n\n[Download \
+         badge](badge.svg)\n\n![PNG](tiny%20photo+%25.png)\n\n![JPEG](tiny.\
+         jpg)\n",
+    )?;
+    std::fs::write(
+        repo.path().join("badge.svg"),
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#fff"/></svg>"##,
     )?;
     std::fs::write(
         repo.path().join("example.md"),
-        "# Dataset example\n\nA dataset.\n",
+        "# Dataset example\n\nA dataset.\n\n![Shared badge](badge.svg)\n",
     )?;
+    for (name, format) in [
+        ("tiny photo+%.png", image::ImageFormat::Png),
+        ("tiny.jpg", image::ImageFormat::Jpeg),
+    ] {
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(2, 2).write_to(&mut bytes, format)?;
+        std::fs::write(repo.path().join(name), bytes.into_inner())?;
+    }
     let mut definitions =
         std::fs::read_to_string("examples/dprod/project.ttl")?
             .replace(
@@ -218,6 +233,12 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         }
     }
     assert!(observed);
+    let mut assets=dataset.select("SELECT (COUNT(DISTINCT ?asset) AS ?count) WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> } }".into()).await?;
+    let row = assets.next().await?.unwrap();
+    let oxrdf::Term::Literal(count) = &row["count"] else {
+        panic!("asset count literal")
+    };
+    assert_eq!(count.value(), "3");
     let archive = output.path().join("documentation.nq");
     dataset.export(archive.clone()).await?;
     std::fs::write(
@@ -234,6 +255,25 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
     let (updated, _) = showcases::dprod_remote(&config, cache.path()).await?;
     let mut rows=updated.select("SELECT ?body WHERE { GRAPH ?g { ?f <https://ekgf.org/ontology/grapharch#body> ?body } FILTER(CONTAINS(STR(?body),'DEVELOP TWO')) }".into()).await?;
     assert!(rows.next().await?.is_some());
+    std::fs::remove_file(repo.path().join("badge.svg"))?;
+    git(repo.path(), &["add", "-u"])?;
+    git(repo.path(), &[
+        "commit",
+        "-m",
+        "missing required image",
+    ])?;
+    git(repo.path(), &[
+        "push",
+        remote.path().join("remote.git").to_str().unwrap(),
+        "develop",
+    ])?;
+    let failure = showcases::dprod_remote(&config, cache.path())
+        .await
+        .err()
+        .ok_or_else(|| anyhow::anyhow!("missing Git image must fail"))?;
+    assert!(
+        format!("{failure:#}").contains("missing required Git blob badge.svg")
+    );
     std::fs::remove_dir_all(repo.path())?;
     std::fs::remove_dir_all(remote.path())?;
     std::fs::remove_file(&config)?;
@@ -243,6 +283,10 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         showcases::publish(&Publisher::new(restored), &plans, output.path())
             .await?;
     assert_eq!(publications.len(), 3);
+    let site =
+        std::fs::read_to_string(output.path().join("website/index.html"))?;
+    assert!(site.contains("href=\"assets/image-"));
+    assert!(site.contains("src=\"assets/image-"));
     assert!(
         showcases::dprod_remote(&config, cache.path())
             .await

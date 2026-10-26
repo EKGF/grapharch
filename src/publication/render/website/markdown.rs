@@ -127,6 +127,19 @@ pub(super) fn render(
     Ok(Content { html, headings })
 }
 fn link(value: &str, page: &Page, catalog: &Catalog) -> Result<String> {
+    if let Some((_, _, Some(asset))) = catalog
+        .references
+        .get(&(page.id.as_str().into(), value.into()))
+    {
+        let target = catalog.pages.get(asset).ok_or_else(|| {
+            anyhow::anyhow!("image link asset is not selected")
+        })?;
+        return Ok(format!(
+            "{}{}",
+            "../".repeat(page.route.matches('/').count()),
+            target.route
+        ));
+    }
     if let Some((path, url, asset)) = catalog
         .references
         .get(&(page.id.as_str().into(), value.into())) &&

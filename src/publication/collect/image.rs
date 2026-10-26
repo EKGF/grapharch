@@ -42,24 +42,6 @@ impl HttpImage {
     }
 
     pub fn id(&self) -> NamedNode { self.id.clone() }
-
-    fn quad(
-        &self,
-        subject: &NamedNode,
-        field: &str,
-        value: impl Into<Term>,
-    ) -> Quad {
-        Quad::new(
-            subject.clone(),
-            if field == "type" {
-                NamedNode::new_unchecked(RDF_TYPE)
-            } else {
-                term(field)
-            },
-            value,
-            GraphName::DefaultGraph,
-        )
-    }
 }
 #[async_trait]
 impl Collector for HttpImage {
@@ -122,9 +104,51 @@ impl Collector for HttpImage {
             );
             bytes.extend_from_slice(&chunk);
         }
-        image_assets::validate(&bytes, &mime)?;
-        let digest = hex::encode(Sha256::digest(&bytes));
-        let extension = match mime.as_str() {
+        ImageAsset {
+            project:   &self.project,
+            processor: &self.processor,
+            source:    &self.url,
+            id:        &self.id,
+        }
+        .write(&bytes, &mime, stream)
+        .await
+    }
+}
+
+pub(super) struct ImageAsset<'a> {
+    pub project:   &'a str,
+    pub processor: &'a str,
+    pub source:    &'a str,
+    pub id:        &'a NamedNode,
+}
+impl ImageAsset<'_> {
+    fn quad(
+        &self,
+        subject: &NamedNode,
+        field: &str,
+        value: impl Into<Term>,
+    ) -> Quad {
+        Quad::new(
+            subject.clone(),
+            if field == "type" {
+                NamedNode::new_unchecked(RDF_TYPE)
+            } else {
+                term(field)
+            },
+            value,
+            GraphName::DefaultGraph,
+        )
+    }
+
+    pub async fn write(
+        &self,
+        bytes: &[u8],
+        mime: &str,
+        stream: &mut ContributionStream,
+    ) -> Result<String> {
+        image_assets::validate(bytes, mime)?;
+        let digest = hex::encode(Sha256::digest(bytes));
+        let extension = match mime {
             "image/svg+xml" => "svg",
             "image/png" => "png",
             "image/jpeg" => "jpg",
@@ -132,42 +156,42 @@ impl Collector for HttpImage {
         };
         let route = format!(
             "assets/image-{}.{}",
-            hex::encode(Sha256::digest(self.url.as_bytes())),
+            hex::encode(Sha256::digest(self.source.as_bytes())),
             extension
         );
         let contribution = identity("contribution", &[
-            &self.project,
-            &self.processor,
-            &self.url,
+            self.project,
+            self.processor,
+            self.source,
         ]);
         for quad in [
-            self.quad(&self.id, "type", term("BinaryAsset")),
+            self.quad(self.id, "type", term("BinaryAsset")),
             self.quad(
-                &self.id,
+                self.id,
                 "route",
                 Literal::new_simple_literal(route),
             ),
             self.quad(
-                &self.id,
+                self.id,
                 "format",
-                Literal::new_simple_literal(&mime),
+                Literal::new_simple_literal(mime),
             ),
             self.quad(
-                &self.id,
+                self.id,
                 "sourcePath",
-                Literal::new_simple_literal(&self.url),
+                Literal::new_simple_literal(self.source),
             ),
             self.quad(
-                &self.id,
+                self.id,
                 "contentDigest",
                 Literal::new_simple_literal(&digest),
             ),
             self.quad(
-                &self.id,
+                self.id,
                 "contentSize",
                 Literal::from(bytes.len() as i64),
             ),
-            self.quad(&self.id, "contribution", contribution),
+            self.quad(self.id, "contribution", contribution),
         ] {
             stream.write(quad).await?;
         }
@@ -177,7 +201,7 @@ impl Collector for HttpImage {
                 &index.to_string(),
             ]);
             for quad in [
-                self.quad(&self.id, "chunk", chunk.clone()),
+                self.quad(self.id, "chunk", chunk.clone()),
                 self.quad(&chunk, "order", Literal::from(index as u32)),
                 self.quad(
                     &chunk,
@@ -188,6 +212,6 @@ impl Collector for HttpImage {
                 stream.write(quad).await?;
             }
         }
-        Ok(format!("http-image-v1:{digest}"))
+        Ok(format!("retained-image-v1:{digest}"))
     }
 }

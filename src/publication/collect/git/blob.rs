@@ -21,8 +21,18 @@ impl RepositoryScan {
     /// re-fetches or reads a working tree, and never follows symlinks or
     /// submodules.
     pub async fn blob(&self, relative: &Path) -> Result<PinnedGitBlob> {
+        PinnedGitBlob::at(self.root.clone(), self.revision.clone(), relative)
+            .await
+    }
+}
+impl PinnedGitBlob {
+    async fn at(
+        root: PathBuf,
+        revision: Arc<Revision>,
+        relative: &Path,
+    ) -> Result<Self> {
         ensure!(
-            !self.revision.working_tree,
+            !revision.working_tree,
             "Git blob transport requires a remote pinned tree"
         );
         ensure!(
@@ -32,8 +42,8 @@ impl RepositoryScan {
                     .all(|p| matches!(p, std::path::Component::Normal(_))),
             "Git blob path must be source-relative without traversal"
         );
-        let path = self.root.clone();
-        let commit = self.commit.clone();
+        let path = root.clone();
+        let commit = revision.commit.clone();
         let relative = relative
             .to_str()
             .context("Git blob path must be UTF-8")?
@@ -60,17 +70,16 @@ impl RepositoryScan {
         })
         .await??;
         Ok(PinnedGitBlob {
-            repository: self.root.clone(),
-            source: identity("git-file", &[&self.revision.origin, &relative])
+            repository: root.clone(),
+            source: identity("git-file", &[&revision.origin, &relative])
                 .into_string(),
-            location: blob_url(&self.revision.origin, &self.commit, &relative)?,
+            location: blob_url(&revision.origin, &revision.commit, &relative)?,
             relative,
             blob,
-            revision: self.revision.clone(),
+            revision: revision.clone(),
         })
     }
-}
-impl PinnedGitBlob {
+
     pub fn commit(&self) -> &str { &self.revision.commit }
 
     pub fn source(&self) -> &str { &self.source }
@@ -118,6 +127,48 @@ impl PinnedGitBlob {
             blob:       self.blob,
             revision:   self.revision.as_ref().clone(),
         }))
+    }
+
+    fn relative_path(&self, destination: &str) -> Result<String> {
+        ensure!(
+            url::Url::parse(destination).is_err() &&
+                !destination.starts_with("//"),
+            "expected repository-relative image"
+        );
+        let base = url::Url::parse(&format!(
+            "https://repository.invalid/{}",
+            self.relative
+        ))?;
+        let resolved = base.join(destination)?;
+        ensure!(
+            resolved.host_str() == Some("repository.invalid") &&
+                resolved.query().is_none() &&
+                resolved.fragment().is_none(),
+            "Git images cannot have queries or fragments"
+        );
+        let relative = percent_encoding::percent_decode_str(
+            resolved.path().trim_start_matches('/'),
+        )
+        .decode_utf8()?
+        .into_owned();
+        ensure!(
+            !relative.is_empty() &&
+                Path::new(&relative)
+                    .components()
+                    .all(|p| matches!(p, std::path::Component::Normal(_))),
+            "Git image path contains traversal"
+        );
+        Ok(relative)
+    }
+
+    async fn image_blob(&self, destination: &str) -> Result<Self> {
+        let relative = self.relative_path(destination)?;
+        Self::at(
+            self.repository.clone(),
+            self.revision.clone(),
+            Path::new(&relative),
+        )
+        .await
     }
 
     async fn reference(
@@ -276,16 +327,32 @@ impl GitMarkdownFile {
             urls.len() <= 64,
             "Markdown exceeds 64-image budget"
         );
-        urls.into_iter()
-            .map(|url| {
-                Ok(
-                    Arc::new(crate::publication::collect::HttpImage::new(
-                        &self.blob.revision.project,
-                        &url,
-                    )?) as Arc<dyn Collector>,
-                )
-            })
-            .collect()
+        let mut collectors = Vec::new();
+        for url in urls {
+            collectors.push(self.image(&url).await?.2);
+        }
+        Ok(collectors)
+    }
+
+    async fn image(
+        &self,
+        destination: &str,
+    ) -> Result<(NamedNode, String, Arc<dyn Collector>)> {
+        if url::Url::parse(destination).is_ok() {
+            let image = crate::publication::collect::HttpImage::new(
+                &self.blob.revision.project,
+                destination,
+            )?;
+            Ok((image.id(), destination.into(), Arc::new(image)))
+        } else {
+            let image =
+                GitImageFile::new(self.blob.image_blob(destination).await?);
+            Ok((
+                image.id.clone(),
+                image.id.as_str().into(),
+                Arc::new(image),
+            ))
+        }
     }
 
     pub fn with_page_hints(
@@ -338,6 +405,24 @@ impl Collector for GitMarkdownFile {
             MarkdownFile::supplied(input, self.website, self.hints.clone())
                 .produce(stream)
                 .await?;
+        let image_destinations = pulldown_cmark::Parser::new_ext(
+            &text,
+            crate::publication::markdown::options(),
+        )
+        .filter_map(|event| {
+            match event {
+                pulldown_cmark::Event::Start(pulldown_cmark::Tag::Image {
+                    dest_url,
+                    ..
+                }) => Some(dest_url.to_string()),
+                _ => None,
+            }
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+        ensure!(
+            image_destinations.len() <= 64,
+            "Markdown exceeds image budget"
+        );
         let mut count = 0;
         let mut seen = std::collections::BTreeSet::new();
         for event in pulldown_cmark::Parser::new_ext(
@@ -351,6 +436,9 @@ impl Collector for GitMarkdownFile {
             else {
                 continue
             };
+            if image_destinations.contains(dest_url.as_ref()) {
+                continue;
+            }
             if !seen.insert(dest_url.to_string()) {
                 continue;
             }
@@ -417,10 +505,7 @@ impl Collector for GitMarkdownFile {
                 ..
             }) = event
             {
-                let image = crate::publication::collect::HttpImage::new(
-                    &self.blob.revision.project,
-                    &dest_url,
-                )?;
+                let (asset, url, _) = self.image(&dest_url).await?;
                 let reference = identity("git-markdown-reference", &[
                     self.fragment.as_str(),
                     &dest_url,
@@ -434,7 +519,7 @@ impl Collector for GitMarkdownFile {
                     (
                         self.fragment.clone(),
                         crate::publication::term("asset"),
-                        Term::NamedNode(image.id()),
+                        Term::NamedNode(asset.clone()),
                     ),
                     (
                         reference.clone(),
@@ -454,13 +539,12 @@ impl Collector for GitMarkdownFile {
                     (
                         reference.clone(),
                         crate::publication::term("url"),
-                        Literal::new_simple_literal(dest_url.to_string())
-                            .into(),
+                        Literal::new_simple_literal(url).into(),
                     ),
                     (
                         reference,
                         crate::publication::term("asset"),
-                        Term::NamedNode(image.id()),
+                        Term::NamedNode(asset.clone()),
                     ),
                 ] {
                     stream
@@ -476,6 +560,69 @@ impl Collector for GitMarkdownFile {
         }
         self.blob.provenance(stream).await?;
         Ok(revision)
+    }
+}
+
+struct GitImageFile {
+    blob:      PinnedGitBlob,
+    processor: String,
+    id:        NamedNode,
+}
+impl GitImageFile {
+    fn new(blob: PinnedGitBlob) -> Self {
+        Self {
+            processor: identity("git-image-collector", &[
+                &blob.revision.project,
+                &blob.source,
+            ])
+            .into_string(),
+            id: identity("image-asset", &[
+                &blob.revision.project,
+                &blob.source,
+            ]),
+            blob,
+        }
+    }
+}
+#[async_trait]
+impl Collector for GitImageFile {
+    fn identity(&self) -> Result<SourceIdentity<'_>> {
+        Ok(SourceIdentity {
+            project:   &self.blob.revision.project,
+            processor: &self.processor,
+            source:    &self.blob.source,
+        })
+    }
+
+    async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
+        let bytes = self
+            .blob
+            .bytes(crate::publication::image_assets::MAX_IMAGE_BYTES as u64)
+            .await?;
+        let extension = Path::new(&self.blob.relative)
+            .extension()
+            .and_then(|v| v.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let mime = match extension.as_str() {
+            "svg" => "image/svg+xml",
+            "png" => "image/png",
+            "jpg" | "jpeg" => "image/jpeg",
+            _ => anyhow::bail!("unsupported Git image extension: {extension}"),
+        };
+        let revision = super::super::image::ImageAsset {
+            project:   &self.blob.revision.project,
+            processor: &self.processor,
+            source:    &self.blob.source,
+            id:        &self.id,
+        }
+        .write(&bytes, mime, stream)
+        .await?;
+        self.blob.provenance(stream).await?;
+        Ok(format!(
+            "git-image-v1:{}:{revision}",
+            self.blob.revision()
+        ))
     }
 }
 
