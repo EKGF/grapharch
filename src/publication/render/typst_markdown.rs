@@ -9,10 +9,38 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut code = None;
     let mut heading = None;
     let mut table_head = false;
-    for event in &markdown.events {
+    let mut in_image = false;
+    for (index, event) in markdown.events.iter().enumerate() {
+        if in_image {
+            if matches!(event, Event::End(TagEnd::Image)) {
+                in_image = false;
+            }
+            continue;
+        }
         match event {
             Event::Start(tag) => {
                 match tag {
+                    Tag::Image { dest_url, .. } => {
+                        let mut alt = String::new();
+                        for event in &markdown.events[index + 1..] {
+                            match event {
+                                Event::End(TagEnd::Image) => break,
+                                Event::Text(text) | Event::Code(text) => {
+                                    alt.push_str(text)
+                                },
+                                Event::SoftBreak | Event::HardBreak => {
+                                    alt.push(' ')
+                                },
+                                _ => {},
+                            }
+                        }
+                        output.push_str(&format!(
+                            "#image({}, alt: {})",
+                            quote(dest_url),
+                            quote(&alt)
+                        ));
+                        in_image = true;
+                    },
                     Tag::Paragraph => {
                         output.push_str("#block(breakable: true)[")
                     },

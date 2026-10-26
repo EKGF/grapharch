@@ -127,7 +127,10 @@ pub(super) async fn write(
         }
         let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
         let markdown = if entry.format == "text/markdown" {
-            Some(Markdown::parse(&entry.body, plan, &anchor).await?)
+            Some(
+                Markdown::parse(&entry.body, plan, &anchor, &entry.fragment)
+                    .await?,
+            )
         } else {
             None
         };
@@ -187,7 +190,10 @@ pub(super) async fn write_typst(
         }
         let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
         let markdown = if entry.format == "text/markdown" {
-            Some(Markdown::parse(&entry.body, plan, &anchor).await?)
+            Some(
+                Markdown::parse(&entry.body, plan, &anchor, &entry.fragment)
+                    .await?,
+            )
         } else {
             None
         };

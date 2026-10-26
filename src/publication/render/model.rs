@@ -25,6 +25,7 @@ pub(super) struct Plan {
     pub destination: String,
     pub title:       String,
     link_index:      HashMap<NamedNode, String>,
+    pub images:      super::collected_images::Images,
 }
 
 /// Provenance and fixed artifact ownership for one completed publication.
@@ -111,6 +112,7 @@ impl Plan {
             destination,
             title,
             link_index: HashMap::new(),
+            images: Default::default(),
         };
         if plan.renderer != "website" {
             plan.index_links().await?;
@@ -164,8 +166,8 @@ impl Plan {
     }
 
     pub fn manifest(&self, job: &str) -> PublicationManifest {
-        // bounded: the fixed output set; no per-subject artifact list is
-        // collected.
+        // Fixed document outputs; bounded retained image routes are appended
+        // after their bytes are restored and verified.
         let files = if self.renderer == "specification" {
             vec![
                 "index.html".into(),

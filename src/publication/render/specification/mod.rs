@@ -291,7 +291,7 @@ async fn markdown<'a>(
 ) -> Result<Option<Markdown<'a>>> {
     if entry.format == "text/markdown" {
         Ok(Some(
-            Markdown::parse(&entry.body, plan, anchor).await?,
+            Markdown::parse(&entry.body, plan, anchor, &entry.fragment).await?,
         ))
     } else {
         Ok(None)

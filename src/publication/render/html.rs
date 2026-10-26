@@ -35,7 +35,8 @@ pub(super) const STYLE: &str =
      24px}@media(max-width:760px){body{display:block;padding:\
      22px}aside{position:static;margin-bottom:32px}h1{font-size:2rem}}@media \
      print{body{display:block;max-width:none;padding:0}aside{display:\
-     none}pre{white-space:pre-wrap}a{color:inherit}}";
+     none}pre{white-space:pre-wrap}a{color:inherit}}img{max-width:100%;height:\
+     auto}";
 
 pub(super) async fn begin(
     file: &mut BufWriter<File>,

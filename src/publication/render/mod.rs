@@ -1,6 +1,7 @@
 //! Static HTML and embedded Typst/PDF publication from immutable target plans.
 
 mod callouts;
+mod collected_images;
 mod content;
 mod diagnostic_graph;
 mod engine;
@@ -135,7 +136,7 @@ impl Publisher {
         job: String,
     ) -> Result<PublishOutcome> {
         let _worker = self.workers.clone().acquire_owned().await?;
-        let plan = Plan::read(self.dataset.clone(), handle).await?;
+        let mut plan = Plan::read(self.dataset.clone(), handle).await?;
         ensure!(
             crate::publication::Renderer::parse(&plan.renderer).is_ok(),
             "unsupported publication engine"
@@ -149,7 +150,13 @@ impl Publisher {
             target: plan.target.as_str().to_owned(),
         };
         record::begin(&plan, &destination, &job, self.failure_mode).await?;
-        let result = self.publish(&plan, destination, ticket, &job).await;
+        let result = async {
+            if plan.renderer != "website" {
+                plan.images = collected_images::Images::read(&plan).await?;
+            }
+            self.publish(&plan, destination, ticket, &job).await
+        }
+        .await;
         if let Err(error) = record::finish(&plan, &job, &result).await {
             let context = match &result {
                 Ok(PublishOutcome::Published(_)) => {
@@ -189,6 +196,11 @@ impl Publisher {
         }
         let stage = Staging::new(&destination).await?;
         let result = async {
+            let image_files = if plan.renderer == "website" {
+                Vec::new()
+            } else {
+                plan.images.write(plan, &stage.path).await?
+            };
             let website_files = if plan.renderer == "website" {
                 Some(website::write(plan, &stage.path).await?)
             } else {
@@ -240,6 +252,7 @@ impl Publisher {
             if let Some(files) = website_files {
                 manifest.files = files;
             }
+            manifest.files.extend(image_files);
             manifest.diagnostics = diagnostics;
             manifest.failure_mode = self.failure_mode;
             tokio::fs::write(

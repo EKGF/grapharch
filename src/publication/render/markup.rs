@@ -16,6 +16,7 @@ impl<'a> Markdown<'a> {
         body: &'a str,
         plan: &Plan,
         prefix: &str,
+        fragment: &oxrdf::NamedNode,
     ) -> Result<Self> {
         ensure!(
             body.len() <= 1024 * 1024,
@@ -57,8 +58,35 @@ impl<'a> Markdown<'a> {
                 Event::Start(Tag::HtmlBlock) => {
                     bail!("raw HTML is not supported in shared Markdown")
                 },
-                Event::Start(Tag::Image { .. }) => {
-                    bail!("Markdown images require collected asset support")
+                Event::Start(Tag::Image { dest_url, .. }) => {
+                    let mut alt = String::new();
+                    for part in &events[index + 1..] {
+                        match part {
+                            Event::End(TagEnd::Image) => break,
+                            Event::Text(text) | Event::Code(text) => {
+                                alt.push_str(text)
+                            },
+                            Event::SoftBreak | Event::HardBreak => {
+                                alt.push(' ')
+                            },
+                            Event::Start(Tag::Image { .. }) => {
+                                bail!("nested Markdown images are unsupported")
+                            },
+                            _ => {},
+                        }
+                    }
+                    ensure!(
+                        !alt.trim().is_empty() && alt.len() <= 1024,
+                        "Markdown image alternative text must be nonempty and \
+                         at most 1024 bytes"
+                    );
+                    let path =
+                        plan.images.image(fragment, dest_url)?.to_owned();
+                    if let Event::Start(Tag::Image { dest_url, .. }) =
+                        &mut events[index]
+                    {
+                        *dest_url = path.into();
+                    }
                 },
                 Event::Start(Tag::Table(columns)) => {
                     ensure!(
@@ -100,7 +128,11 @@ impl<'a> Markdown<'a> {
                     {
                         resolved
                     } else {
-                        let resolved = plan.link(&original, prefix).await?;
+                        let resolved =
+                            match plan.images.link(fragment, &original) {
+                                Some(url) => url.to_owned(),
+                                None => plan.link(&original, prefix).await?,
+                            };
                         links.entry(original).or_insert(resolved)
                     }
                     .clone();

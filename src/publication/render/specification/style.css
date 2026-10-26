@@ -44,3 +44,5 @@ footer{border-top:1px solid #ddd;font-size:.8rem;color:#555;padding-top:1rem;mar
 /* Numeric summary columns leave most of the table to names and identifiers. */
 thead th[style*="text-align: right"]{width:14%}
 th[style*="text-align: right"],td[style*="text-align: right"]{font-variant-numeric:tabular-nums}
+
+img{max-width:100%;height:auto}
