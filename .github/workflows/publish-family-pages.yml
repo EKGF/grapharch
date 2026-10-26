@@ -17,15 +17,15 @@ on:
       definitions:
         description: Publication definitions path within the consuming repository
         type: string
-        required: true
+        required: false
       project:
         description: Project IRI
         type: string
-        required: true
+        required: false
       target:
         description: Publication target IRI
         type: string
-        required: true
+        required: false
       output:
         description: Generated output root
         type: string
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: EKGF/grapharch@3dd1d4b21ff897b5761f2ee1e31e10ec97f3e9c8
+      - uses: EKGF/grapharch@7f6703989bba63143c1c063cdd2052cf1821cebc
         id: grapharch
         with:
           version: ${{ inputs.version }}
