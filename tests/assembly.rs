@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     grapharch::publication::{
         assembly::Assembler,
@@ -58,10 +61,11 @@ async fn invalid_update_preserves_last_valid_revision_and_historical_content()
     let valid = assembler.assemble(project).await?;
     tokio::fs::write(
         &path,
-        source.replace(
-            "ex:spec a ga:Target ; ga:scope ex:family ;",
-            "ex:spec a ga:Target ;",
-        ),
+        definitions::remove_property(
+            source,
+            "urn:example:spec",
+            "https://ekgf.org/ontology/grapharch#scope",
+        )?,
     )
     .await?;
     collector.collect(&writer).await?;

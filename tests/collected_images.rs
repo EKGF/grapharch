@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     anyhow::Result,
     base64::{Engine, engine::general_purpose::STANDARD},
@@ -229,12 +232,31 @@ async fn image_metadata_is_inherited_from_the_retained_source_fragment()
         "image/svg+xml",
         "assets/badge.svg",
         "Inherited source badge",
-    )
-    .replace(
-        "ex:intro-body ga:asset ex:image ; ga:reference",
-        "ex:intro-body ga:derivedFrom ex:source-fragment \
-         .\nex:source-fragment ga:asset ex:image ; ga:reference",
     );
+    let fixture = definitions::edit_quads(&fixture, |quads| {
+        use oxrdf::{GraphName, NamedNode, NamedOrBlankNode, Quad};
+        let body: NamedOrBlankNode =
+            NamedNode::new("urn:specification:intro-body")?.into();
+        let source = NamedNode::new("urn:specification:source-fragment")?;
+        for quad in quads.iter_mut() {
+            if quad.subject == body &&
+                matches!(
+                    quad.predicate.as_str(),
+                    "https://ekgf.org/ontology/grapharch#asset" |
+                        "https://ekgf.org/ontology/grapharch#reference"
+                )
+            {
+                quad.subject = source.clone().into();
+            }
+        }
+        quads.push(Quad::new(
+            body,
+            NamedNode::new("https://ekgf.org/ontology/grapharch#derivedFrom")?,
+            source,
+            GraphName::DefaultGraph,
+        ));
+        Ok(())
+    })?;
     std::fs::write(&path, fixture)?;
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;

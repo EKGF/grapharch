@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     grapharch::publication::{
         assembly::Assembler,
@@ -77,10 +80,12 @@ async fn missing_references_and_overlapping_destinations_fail_explicitly()
         let mut source =
             include_str!("fixtures/publication/projects.ttl").to_owned();
         if suffix.contains("destination") {
-            source = source.replace(
-                "ga:destination \"build/reader\"",
-                "ga:destination \"build/spec/reader\"",
-            );
+            source = definitions::set_property(
+                &source,
+                "urn:example:reader",
+                "https://ekgf.org/ontology/grapharch#destination",
+                definitions::literal("build/spec/reader"),
+            )?;
         } else {
             source.push_str(suffix);
         }

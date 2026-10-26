@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 #[path = "support/mod.rs"]
 mod specification_assertions;
 
@@ -196,7 +199,16 @@ async fn incomplete_or_unsafe_specification_metadata_preserves_previous_output()
             "HTTP",
         ),
     ] {
-        tokio::fs::write(&source, fixture.replace(before, after)).await?;
+        let changed = if message == "publicationStatus" {
+            definitions::remove_property(
+                &fixture,
+                "urn:specification:target",
+                "https://ekgf.org/ontology/grapharch#publicationStatus",
+            )?
+        } else {
+            definitions::replace_values(&fixture, before, after)?
+        };
+        tokio::fs::write(&source, changed).await?;
         let (dataset, plans) = support::specification(&source).await?;
         let outcome =
             Publisher::new(dataset).render(&plans[0], temp.path()).await;
@@ -232,10 +244,18 @@ async fn specification_authority_controls_branding_without_changing_renderer()
         ),
         ("Example Standards Authority", "ESA", "#664499"),
     ] {
-        let text = fixture
-            .replace("Enterprise Knowledge Graph Forum", name)
-            .replace("\"EKGF\"", &format!("\"{short}\""))
-            .replace("#2b5f9f", color);
+        let text = definitions::replace_values(
+            &fixture,
+            "Enterprise Knowledge Graph Forum",
+            name,
+        )?;
+        let text = definitions::set_property(
+            &text,
+            "urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a",
+            "https://ekgf.org/ontology/grapharch#shortName",
+            definitions::literal(short),
+        )?;
+        let text = definitions::replace_values(&text, "#2b5f9f", color)?;
         tokio::fs::write(&source, text).await?;
         let (dataset, plans) = support::specification(&source).await?;
         support::publish(&Publisher::new(dataset), &plans, temp.path()).await?;

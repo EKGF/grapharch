@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 #[path = "support/family_repository.rs"]
 mod family_repository;
 
@@ -47,10 +50,11 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     std::fs::create_dir(&docs)?;
     std::fs::write(
         docs.join("grapharch.ttl"),
-        include_str!("../docs/grapharch.ttl").replace(
-            "    ga:ontologySource \"other/ontology/publication.ttl\" ;\n",
-            "",
-        ),
+        definitions::edit_definitions(
+            include_str!("../docs/grapharch.ttl"),
+            &["ontologySource"],
+            None,
+        )?,
     )?;
     std::fs::write(
         docs.join("index.md"),

@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -11,10 +14,12 @@ use {
 async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     let source = tempfile::tempdir()?;
     let path = source.path().join("project.ttl");
-    let fixture = include_str!("../examples/showcase/project.ttl").replace(
-        "ga:profile ex:spec-profile ; ga:renderer \"typst\"",
-        "ga:profile ex:reader-profile ; ga:renderer \"typst\"",
-    );
+    let fixture = definitions::set_property(
+        include_str!("../examples/showcase/project.ttl"),
+        "urn:showcase:pdf",
+        "https://ekgf.org/ontology/grapharch#profile",
+        definitions::iri("urn:showcase:reader-profile")?,
+    )?;
     let fixture = fixture.replace("Literal brackets such as", r"## Coverage\n\n| Term | Count |\n| --- | ---: |\n| Document | 28 |\n\n> [!WARNING]\n> Review annotations must stay together.\n\nLiteral brackets such as");
     let long_iri = format!(
         "https://example.org/{}",
@@ -77,10 +82,12 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
     let path = source.path().join("project.ttl");
     std::fs::write(
         &path,
-        include_str!("../examples/specification/project.ttl").replace(
-            "ex:profile a ga:Profile ;",
-            "ex:profile a ga:Profile ; ga:style \"reader\" ;",
-        ),
+        definitions::set_property(
+            include_str!("../examples/specification/project.ttl"),
+            "urn:specification:profile",
+            "https://ekgf.org/ontology/grapharch#style",
+            definitions::literal("reader"),
+        )?,
     )?;
     let (dataset, plans) = showcases::specification(&path).await?;
     std::fs::remove_file(path)?;
@@ -115,10 +122,12 @@ async fn unsupported_pdf_style_is_rejected() -> Result<()> {
     let path = source.path().join("project.ttl");
     std::fs::write(
         &path,
-        include_str!("../examples/showcase/project.ttl").replace(
-            "ga:style \"specification\"",
-            "ga:style \"unsupported\"",
-        ),
+        definitions::set_property(
+            include_str!("../examples/showcase/project.ttl"),
+            "urn:showcase:spec-profile",
+            "https://ekgf.org/ontology/grapharch#style",
+            definitions::literal("unsupported"),
+        )?,
     )?;
     let (dataset, plans) = showcases::authored(&path).await?;
     let plan = &plans[2];
@@ -140,11 +149,12 @@ async fn malformed_pdf_publisher_is_rejected() -> Result<()> {
     let source = tempfile::tempdir()?;
     let path = source.path().join("project.ttl");
     let original = include_str!("../examples/showcase/project.ttl");
-    let fixture = original.replace(
-        "ga:renderer \"typst\" ;",
-        "ga:renderer \"typst\" ; ga:publisher \"invalid publisher\" ;",
-    );
-    assert_ne!(fixture, original);
+    let fixture = definitions::set_property(
+        original,
+        "urn:showcase:pdf",
+        "https://ekgf.org/ontology/grapharch#publisher",
+        definitions::literal("invalid publisher"),
+    )?;
     std::fs::write(&path, fixture)?;
     let (dataset, plans) = showcases::authored(&path).await?;
     let out = tempfile::tempdir()?;
@@ -162,12 +172,18 @@ async fn long_authority_and_status_fit_the_pdf_ribbon() -> Result<()> {
         "International Council for Open Standards and Interoperability";
     let status =
         "Public review documentation preview for implementing organizations";
-    let fixture = include_str!("../examples/specification/project.ttl")
-        .replace(
-            "ga:shortName \"EKGF\"",
-            &format!("ga:shortName \"{authority}\""),
-        )
-        .replace("Editor's Draft", status);
+    let fixture = definitions::set_property(
+        include_str!("../examples/specification/project.ttl"),
+        "urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a",
+        "https://ekgf.org/ontology/grapharch#shortName",
+        definitions::literal(authority),
+    )?;
+    let fixture = definitions::set_property(
+        &fixture,
+        "urn:specification:target",
+        "https://ekgf.org/ontology/grapharch#publicationStatus",
+        definitions::literal(status),
+    )?;
     std::fs::write(&path, fixture)?;
     let (dataset, plans) = showcases::specification(&path).await?;
     std::fs::remove_file(path)?;

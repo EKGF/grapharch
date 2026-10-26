@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     anyhow::Result,
     grapharch::publication::{render::Publisher, showcases},
@@ -13,21 +16,43 @@ async fn canonical_governance_authority_renders_as_a_role_with_a_distinct_player
     let path = source.path().join("project.ttl");
     let role = "urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a";
     let organization = "urn:uuid:ee14e632-d8c2-43c1-95d8-72491ce7a846";
-    let fixture = fixture
-        .replace("ex:publisher", &format!("<{role}>"))
-        .replace(
-            "a ga:Authority",
-            "a <https://ekgf.org/ontology/artifact-governance#Authority>",
-        )
-        .replace(
-            "ga:shortName",
-            "<https://ekgf.org/ontology/artifact-governance#authorityAcronym>",
-        )
-        .replace(
-            "dct:title \"Enterprise Knowledge Graph Forum\"",
-            "<http://www.w3.org/2000/01/rdf-schema#label> \"Enterprise \
-             Knowledge Graph Forum\"@en",
-        );
+    let fixture = definitions::edit_quads(&fixture, |quads| {
+        use oxrdf::{NamedNode, Term};
+        for quad in quads {
+            if quad.predicate.as_str() ==
+                "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" &&
+                quad.object ==
+                    definitions::iri(
+                        "https://ekgf.org/ontology/grapharch#Authority",
+                    )?
+            {
+                quad.object = definitions::iri(
+                    "https://ekgf.org/ontology/artifact-governance#Authority",
+                )?;
+            }
+            if quad.predicate.as_str() ==
+                "https://ekgf.org/ontology/grapharch#shortName"
+            {
+                quad.predicate=NamedNode::new("https://ekgf.org/ontology/artifact-governance#authorityAcronym")?;
+            }
+            if quad.predicate.as_str() == "http://purl.org/dc/terms/title" &&
+                quad.object ==
+                    definitions::literal(
+                        "Enterprise Knowledge Graph Forum",
+                    )
+            {
+                quad.predicate = NamedNode::new(
+                    "http://www.w3.org/2000/01/rdf-schema#label",
+                )?;
+                quad.object =
+                    Term::Literal(oxrdf::Literal::new_language_tagged_literal(
+                        "Enterprise Knowledge Graph Forum",
+                        "en",
+                    )?);
+            }
+        }
+        Ok(())
+    })?;
     let fixture = format!("{fixture}\n<{role}> <https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy> <{organization}> .\n<{organization}> a <https://www.omg.org/spec/Commons/Organizations/Organization> .\n");
     std::fs::write(&path, &fixture)?;
     let (dataset, plans) = showcases::specification(Path::new(&path)).await?;

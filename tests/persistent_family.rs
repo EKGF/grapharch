@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -366,10 +369,12 @@ async fn a_failed_build_from_another_checkout_does_not_leave_unmanaged_inputs()
     let historical = dataset.snapshot_for("urn:project").await?;
     let broken = Fixture::new()?;
     let definitions = broken.definitions.path().join("project.ttl");
-    let invalid = std::fs::read_to_string(&definitions)?.replace(
-        "ga:renderer \"specification\"",
-        "ga:renderer \"unsupported\"",
-    );
+    let invalid = definitions::set_property(
+        &std::fs::read_to_string(&definitions)?,
+        "urn:target",
+        "https://ekgf.org/ontology/grapharch#renderer",
+        definitions::literal("unsupported"),
+    )?;
     std::fs::write(&definitions, invalid)?;
     assert!(broken.build(dataset.clone()).await.is_err());
     let recovered = Fixture::new()?;

@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use anyhow::Result;
 
 #[test]
@@ -196,11 +199,12 @@ async fn repository_publication_hints_can_live_inside_an_ontology_without_local_
     let root = tempfile::tempdir()?;
     let bootstrap = root.path().join("bootstrap");
     configuration(&bootstrap, "file:///unused", "HEAD")?;
-    let hints = std::fs::read_to_string(bootstrap.join("project.ttl"))?
-        .replace(
-            "ga:destination \"specification\"",
-            "ga:destination \"upstream/spec\"",
-        );
+    let hints = definitions::set_property(
+        &std::fs::read_to_string(bootstrap.join("project.ttl"))?,
+        "urn:example:target",
+        "https://ekgf.org/ontology/grapharch#destination",
+        definitions::literal("upstream/spec"),
+    )?;
     let source = root.path().join("ontology");
     std::fs::create_dir(&source)?;
     std::fs::write(

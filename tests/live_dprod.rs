@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use grapharch::publication::{dataset::Dataset, render::Publisher, showcases};
 #[tokio::test]
 #[ignore = "explicit remote develop acceptance; performs read-only network \
@@ -112,20 +115,24 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         std::fs::write(repo.path().join(name), bytes.into_inner())?;
     }
     let mut definitions =
-        std::fs::read_to_string("examples/dprod/project.ttl")?
-            .replace(
-                " ; dct:title \"Data Product Ontology (DPROD)\"",
-                "",
-            )
-            .replace(
-                " ; dct:title \"DPROD ontology and SHACL reference\"",
-                "",
-            )
-            .replace(
-                "    ga:license \
-                 <https://creativecommons.org/licenses/by/4.0/> ;\n",
-                "",
-            );
+        std::fs::read_to_string("examples/dprod/project.ttl")?;
+    for subject in [
+        "urn:dprod-showcase:project",
+        "urn:dprod-showcase:specification",
+    ] {
+        definitions = definitions::remove_property(
+            &definitions,
+            subject,
+            "http://purl.org/dc/terms/title",
+        )?;
+    }
+    definitions = definitions::edit_quads(&definitions, |quads| {
+        quads.retain(|quad| {
+            quad.predicate.as_str() !=
+                "https://ekgf.org/ontology/grapharch#license"
+        });
+        Ok(())
+    })?;
     definitions.push_str(
         "\nex:project ga:collector ex:c1,ex:c2,ex:c3,ex:c4,ex:c5,ex:c6 .\n",
     );

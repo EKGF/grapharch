@@ -1,3 +1,6 @@
+#[path = "support/definitions.rs"]
+mod definitions;
+
 use {
     grapharch::publication::{
         assembly::Assembler,
@@ -23,11 +26,12 @@ async fn plans_in(
     body: &str,
     source: &Path,
 ) -> anyhow::Result<(Dataset, ResolvedPlan, ResolvedPlan)> {
-    let source_text = include_str!("fixtures/publication/projects.ttl")
-        .replace(
-            "\"Shared introduction.\"",
-            &Literal::new_simple_literal(body).to_string(),
-        );
+    let source_text = definitions::set_property(
+        include_str!("fixtures/publication/projects.ttl"),
+        "urn:example:intro-fragment",
+        "https://ekgf.org/ontology/grapharch#body",
+        Literal::new_simple_literal(body).into(),
+    )?;
     let titles = "\n@prefix dct: <http://purl.org/dc/terms/> . \
                   ex:ontology-project dct:title \"Documentation graph\" . \
                   ex:spec dct:title \"Specification\" . ex:pdf dct:title \
