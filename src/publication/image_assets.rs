@@ -62,10 +62,11 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                 };
                 count += 1;
                 ensure!(count <= 4096, "SVG exceeds element budget");
-                let tag = element.value().name().to_ascii_lowercase();
+                let qualified_tag = element.value().name().to_ascii_lowercase();
+                let tag = qualified_tag.rsplit(':').next().unwrap();
                 ensure!(
                     !matches!(
-                        tag.as_str(),
+                        tag,
                         "script" |
                             "foreignobject" |
                             "iframe" |
@@ -100,7 +101,7 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                         "SVG escaped or external CSS URLs are unsupported"
                     );
                     ensure!(
-                        !name.starts_with("on"),
+                        !name.rsplit(':').next().unwrap().starts_with("on"),
                         "SVG event handlers are unsupported"
                     );
                     if name == "href" || name.ends_with(":href") {
@@ -165,6 +166,7 @@ mod tests {
     fn svg_active_content_and_external_resources_are_rejected() {
         for source in [
             "<svg><script>alert(1)</script></svg>",
+            "<svg xmlns='http://www.w3.org/2000/svg' xmlns:s='http://www.w3.org/2000/svg'><s:script>alert(1)</s:script></svg>",
             "<svg onload='a()'/>",
             "<svg><image href='https://example.org/a.png'/></svg>",
             "<!DOCTYPE svg><svg/>",
