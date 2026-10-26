@@ -277,3 +277,73 @@ fn execution_policy_flags_are_global_and_mutually_exclusive() {
             .contains("cannot be used with")
     );
 }
+
+#[tokio::test]
+async fn markdown_collection_collects_referenced_assets_before_reporting_success()
+-> anyhow::Result<()> {
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("image.md");
+    let store = root.path().join("store");
+    std::fs::write(
+        &source,
+        "# Image\n\n![Unavailable](https://127.0.0.1:0/missing.svg)\n",
+    )?;
+    let mut command = Command::new(env!("CARGO_BIN_EXE_grapharch"));
+    command
+        .args([
+            "publication",
+            "collect",
+            "--kind",
+            "markdown",
+            "--project",
+            "urn:cli:image",
+            "--collector",
+            "urn:cli:markdown",
+            "--store",
+        ])
+        .arg(&store)
+        .arg("--source")
+        .arg(&source)
+        .env("NO_PROXY", "*")
+        .env_remove("HTTPS_PROXY")
+        .env_remove("HTTP_PROXY")
+        .env_remove("ALL_PROXY")
+        .kill_on_drop(true);
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        command.output(),
+    )
+    .await??;
+    assert!(
+        !result.status.success(),
+        "an unavailable referenced image must fail collection rather than \
+         leave an unresolved request"
+    );
+    let dataset = grapharch::publication::dataset::Dataset::open(store).await?;
+    let mut rows = dataset
+        .select(
+            "PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT ?body \
+             WHERE { GRAPH ?g { ?fragment a ga:Fragment; ga:body ?body } } \
+             LIMIT 1"
+                .into(),
+        )
+        .await?;
+    assert!(
+        rows.next().await?.is_some(),
+        "the collected Markdown should be retained for diagnosing the image \
+         failure"
+    );
+    let mut diagnostics = dataset
+        .select(
+            "PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT \
+             ?diagnostic WHERE { GRAPH ?g { ?diagnostic a ga:Diagnostic; \
+             ga:code \"collection-failed\" } } LIMIT 1"
+                .into(),
+        )
+        .await?;
+    assert!(
+        diagnostics.next().await?.is_some(),
+        "the failed image must be recorded as a KG diagnostic"
+    );
+    Ok(())
+}

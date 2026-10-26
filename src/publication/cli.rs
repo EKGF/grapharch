@@ -595,7 +595,7 @@ pub async fn run(
             );
             let dataset = store.open().await?;
             let (writer, task) =
-                GraphWriter::spawn(dataset, 8, 4 * 1024 * 1024)?;
+                GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
             let result = match kind {
                 SourceKind::W3cSpecification => {
                     W3cSpecificationFile::new(
@@ -610,9 +610,17 @@ pub async fn run(
                     .await
                 },
                 SourceKind::Markdown => {
-                    MarkdownFile::new(project, collector, source.clone())?
-                        .collect(&writer)
-                        .await
+                    async {
+                        MarkdownFile::new(project, collector, source.clone())?
+                            .collect(&writer)
+                            .await?;
+                        let images = super::collect::http_image_collectors(
+                            &dataset, project,
+                        )
+                        .await?;
+                        super::collect::collect_all(images, &writer, 8).await
+                    }
+                    .await
                 },
                 SourceKind::Sparql => {
                     SparqlFile::new(project, collector, source.clone())?
