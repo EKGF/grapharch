@@ -116,11 +116,13 @@ impl Assembler {
                         ));
                     }
                     let current = input_heads(&project);
+                    // Symmetric set difference on (owner, version). Correlated
+                    // NOT EXISTS makes Oxigraph repeatedly scan the head set,
+                    // producing a quadratic Cartesian join on large families.
                     let changed = format!(
                         "ASK {{ {{ GRAPH {revision} {{ ?owner {} ?version }} \
-                         FILTER NOT EXISTS {{ {current} }} }} UNION {{ \
-                         {current} FILTER NOT EXISTS {{ GRAPH {revision} {{ \
-                         ?owner {} ?version }} }} }} }}",
+                         MINUS {{ {current} }} }} UNION {{ {current} MINUS {{ \
+                         GRAPH {revision} {{ ?owner {} ?version }} }} }} }}",
                         term("head"),
                         term("head")
                     );
@@ -178,6 +180,70 @@ mod tests {
             writer::GraphWriter,
         },
     };
+
+    #[tokio::test]
+    async fn promotion_compares_thousands_of_heads_without_a_cartesian_join()
+    -> Result<()> {
+        let dataset = Dataset::memory()?;
+        let revision = NamedNode::new("urn:large:revision")?;
+        dataset
+            .run(|store| {
+                for n in 0..4096 {
+                    let owner = NamedNode::new(format!("urn:large:owner:{n}"))?;
+                    let version =
+                        NamedNode::new(format!("urn:large:version:{n}"))?;
+                    let attempt =
+                        NamedNode::new(format!("urn:large:attempt:{n}"))?;
+                    for quad in [
+                        Quad::new(
+                            owner.clone(),
+                            term("head"),
+                            version.clone(),
+                            NamedNode::new_unchecked(CONTROL),
+                        ),
+                        Quad::new(
+                            version.clone(),
+                            term("data"),
+                            attempt.clone(),
+                            NamedNode::new_unchecked(CONTROL),
+                        ),
+                        Quad::new(
+                            attempt.clone(),
+                            term("project"),
+                            NamedNode::new("urn:large:project")?,
+                            NamedNode::new_unchecked(CONTROL),
+                        ),
+                        Quad::new(
+                            attempt,
+                            term("stage"),
+                            oxrdf::Literal::new_simple_literal("document"),
+                            NamedNode::new_unchecked(CONTROL),
+                        ),
+                        Quad::new(
+                            owner,
+                            term("head"),
+                            version,
+                            NamedNode::new("urn:large:revision")?,
+                        ),
+                    ] {
+                        store.insert(quad.as_ref())?;
+                    }
+                }
+                Ok(())
+            })
+            .await?;
+        tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            Assembler::new(dataset).promote("urn:large:project", &revision),
+        )
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(
+                "head comparison must not perform a quadratic Cartesian join"
+            )
+        })??;
+        Ok(())
+    }
 
     #[tokio::test]
     async fn promotion_rechecks_both_head_changes_and_incomplete_inputs()
