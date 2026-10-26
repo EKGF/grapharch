@@ -25,8 +25,12 @@ pub(super) const STYLE: &str =
      #1755a4}.subtitle,footer{color:#526174}pre{overflow:auto;padding:18px;\
      background:#f3f5f8;border:1px solid \
      #dfe4eb;border-radius:4px}code{font:0.86em \
-     ui-monospace,monospace}table{border-collapse:collapse;table-layout:fixed;\
-     width:100%;margin:24px 0}th,td{border:1px solid #d4dbe5;padding:10px \
+     ui-monospace,monospace}table{border-collapse:collapse;table-layout:auto;\
+     width:100%;margin:24px \
+     0}table:has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th:\
+     first-child,table:has(>thead>tr>th:nth-child(2):last-child)>tbody>tr>td:\
+     first-child{min-width:min(7.5rem,25vw)}th,td{border:1px solid \
+     #d4dbe5;padding:10px \
      14px;text-align:left;vertical-align:top}th{background:#\
      f3f5f8}blockquote{border-left:3px solid \
      #8ba7ca;padding-left:20px;margin-left:0;color:#415269}footer{margin-top:\

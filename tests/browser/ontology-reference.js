@@ -12,6 +12,11 @@ async (page) => {
   check(!hierarchy.some(h => h.text.includes('Named individual:')), 'repeated type prefix');
   const table = chapter.locator('table').first();
   check(await table.locator('tbody tr').count() === 2, 'duplicate ontology and namespace IRI');
+  const facts = page.locator('table').filter({has:page.locator('td code', {hasText:/^sh:sparql$/})}).first();
+  const columnRatio = await facts.evaluate(table => table.querySelector('th').getBoundingClientRect().width / table.getBoundingClientRect().width);
+  check(columnRatio < 0.3, `predicate column wastes space: ${columnRatio}`);
+  const predicateWidth = await facts.locator('th').first().evaluate(cell => cell.getBoundingClientRect().width);
+  check(predicateWidth >= 125, `predicate labels are cramped: ${predicateWidth}`);
   const ribbon = page.locator('.authority-banner');
   const style = await ribbon.evaluate(e => ({select:getComputedStyle(e).userSelect, cursor:getComputedStyle(e).cursor}));
   check(style.select === 'none' && style.cursor === 'default', 'selectable status ribbon');
@@ -23,7 +28,9 @@ async (page) => {
   await page.setViewportSize({width:390,height:844});
   await overview.scrollIntoViewIfNeeded();
   check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'mobile horizontal overflow');
+  const mobileRatio = await facts.evaluate(table => table.querySelector('th').getBoundingClientRect().width / table.getBoundingClientRect().width);
+  check(mobileRatio < 0.4, `mobile predicate column wastes space: ${mobileRatio}`);
   await page.screenshot({path:'output/reference-review/mobile.png'});
   if (failures.length) throw new Error(failures.join('; '));
-  return {passed:true, hierarchy:hierarchy.slice(0,8), ribbon:style};
+  return {passed:true, hierarchy:hierarchy.slice(0,8), columnRatio, mobileRatio, predicateWidth, ribbon:style};
 }

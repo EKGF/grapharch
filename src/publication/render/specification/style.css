@@ -24,7 +24,7 @@ p{margin:1rem 0}.head{position:relative;padding-bottom:1rem;border-bottom:1px so
 section,.fragment{scroll-margin-top:1rem}.self-link{font-size:.75em;margin-left:.5rem;text-decoration:none;opacity:0}.self-link:focus-visible,h2:hover>.self-link,h3:hover>.self-link,h4:hover>.self-link,h5:hover>.self-link,h6:hover>.self-link{opacity:1}
 pre{background:#f7f7f7;border-left:3px solid #c9d4df;padding:1rem;overflow:auto;line-height:1.45;font-size:.86rem}
 code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em}pre code{font-size:inherit}:not(pre)>code{overflow-wrap:anywhere}
-table{border-collapse:collapse;width:100%;margin:1.5rem 0;font-size:.94rem;table-layout:fixed}th,td{padding:.6rem .8rem;border:1px solid #d8dfe5;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#edf2f6}
+table{border-collapse:collapse;width:100%;margin:1.5rem 0;font-size:.94rem;table-layout:auto}th,td{padding:.6rem .8rem;border:1px solid #d8dfe5;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#edf2f6}
 .table-scroll{overflow-x:auto;max-width:100%}.table-scroll:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}.grammar{table-layout:auto;min-width:42rem}.grammar td:nth-child(-n+3){white-space:nowrap}.grammar td{font-family:ui-monospace,monospace;border:0;padding:.2em .4em}.grammar-literal{color:gray}.example{margin:1.5em 0}.example-title{font-size:.9em;font-weight:bold;color:#555}.bibliography dt{font-weight:bold;margin-top:1em}
 blockquote{border-left:4px solid #cbd7e2;padding:.3rem 1.2rem;margin:1.2rem 0;background:#f6f8fa}
 .skip-link{position:absolute;top:-5rem;left:1rem;background:#fff;padding:.7rem;z-index:2}.skip-link:focus{top:1rem}
@@ -46,3 +46,6 @@ thead th[style*="text-align: right"]{width:14%}
 th[style*="text-align: right"],td[style*="text-align: right"]{font-variant-numeric:tabular-nums}
 
 img{max-width:100%;height:auto}
+
+/* Keep key/value labels readable without reserving half the table. */
+table:has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th:first-child,table:has(>thead>tr>th:nth-child(2):last-child)>tbody>tr>td:first-child{min-width:min(7.5rem,25vw)}
