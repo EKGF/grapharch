@@ -30,6 +30,7 @@ pub struct AnnotatedTermDocumentor {
     prefixes:           Arc<BTreeMap<String, String>>,
     documented:         Arc<HashSet<NamedNode>>,
     source_annotations: bool,
+    family_reference:   bool,
 }
 impl AnnotatedTermDocumentor {
     pub(crate) fn processor_identity(
@@ -58,6 +59,7 @@ impl AnnotatedTermDocumentor {
             prefixes,
             documented,
             source_annotations: false,
+            family_reference: false,
         })
     }
 
@@ -65,6 +67,13 @@ impl AnnotatedTermDocumentor {
     /// missing labels or definitions. Missing annotations become warnings.
     pub fn with_source_annotations(mut self) -> Self {
         self.source_annotations = true;
+        self
+    }
+
+    /// Nest a consistently labelled term under its family's type section.
+    pub(crate) fn with_family_reference(mut self) -> Self {
+        self.source_annotations = true;
+        self.family_reference = true;
         self
     }
 
@@ -515,7 +524,12 @@ impl Documentor for AnnotatedTermDocumentor {
             )
         };
         let definition_text = match markdown {
-            Some(body) => super::description::nested(&body, 3)?,
+            Some(body) => {
+                super::description::nested(
+                    &body,
+                    if self.family_reference { 4 } else { 3 },
+                )?
+            },
             None => {
                 definitions
                     .iter()
@@ -542,7 +556,13 @@ impl Documentor for AnnotatedTermDocumentor {
         let individual = types.iter().any(|(iri, _)| {
             iri.as_str() == "http://www.w3.org/2002/07/owl#NamedIndividual"
         });
-        let heading = if individual {
+        let heading = if self.family_reference {
+            if label.is_empty() {
+                self.compact(&self.subject)
+            } else {
+                label.join("; ")
+            }
+        } else if individual {
             let name = if label.is_empty() {
                 self.compact(&self.subject)
             } else {
@@ -553,6 +573,12 @@ impl Documentor for AnnotatedTermDocumentor {
             self.compact(&self.subject)
         };
         let mut individual_summary = String::new();
+        if self.family_reference && !individual {
+            individual_summary.push_str(&format!(
+                "\n\n**Identifier:** {}",
+                code(&self.compact(&self.subject))
+            ));
+        }
         if individual {
             let (roles, classes): (Vec<_>, Vec<_>) =
                 types
@@ -596,8 +622,9 @@ impl Documentor for AnnotatedTermDocumentor {
             }
         }
         let body = format!(
-            "## {}\n\n{label_line}{individual_summary}\n\n{}{}\n\n**IRI:** \
+            "{} {}\n\n{label_line}{individual_summary}\n\n{}{}\n\n**IRI:** \
              {}\n\n{}\n\n| RDF predicate | Value |\n| --- | --- |\n{}\n",
+            if self.family_reference { "###" } else { "##" },
             escape(&heading),
             definition_text,
             gaps,
@@ -714,6 +741,16 @@ impl Documentor for AnnotatedTermDocumentor {
                     subject,
                     predicate,
                     object,
+                    GraphName::DefaultGraph,
+                ))
+                .await?;
+        }
+        if self.family_reference {
+            stream
+                .write(Quad::new(
+                    fragment.clone(),
+                    term("headingDepth"),
+                    Literal::from(2u32),
                     GraphName::DefaultGraph,
                 ))
                 .await?;

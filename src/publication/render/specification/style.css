@@ -14,7 +14,7 @@ p{margin:1rem 0}.head{position:relative;padding-bottom:1rem;border-bottom:1px so
 .publication-status{font-size:1.4rem;color:var(--authority-color);margin:0 0 1.75rem;line-height:1.35}.publication-status time{white-space:nowrap}
 .publication-metadata{font-size:1rem;line-height:1.35;margin:0;clear:both}.publication-metadata dt{font-weight:bold;margin-top:.65rem}.publication-metadata dd{margin:.05rem 0 .05rem 2rem;overflow-wrap:anywhere}
 .copyright{font-size:.8rem;color:#333;margin:1.3rem 0 0}
-.authority-banner{position:fixed;top:0;left:0;z-index:1;writing-mode:vertical-rl;transform:rotate(180deg);padding:1.8rem .3rem;background:var(--authority-color);color:#fff;font-size:.95rem;letter-spacing:.03em}
+.authority-banner{user-select:none;-webkit-user-select:none;cursor:default;position:fixed;top:0;left:0;z-index:1;writing-mode:vertical-rl;transform:rotate(180deg);padding:1.8rem .3rem;background:var(--authority-color);color:#fff;font-size:.95rem;letter-spacing:.03em}
 .toc{position:fixed;inset:0 auto 0 0;width:var(--toc-size);overflow:auto;padding:1.3rem 1.4rem 2rem 2.4rem;background:#f7f8f9;border-right:1px solid #b9c8d5;font-size:.95rem;line-height:1.25}
 .toc h2{font-size:.95rem;text-transform:uppercase;color:#7c8d9a;margin:0 0 1.5rem;font-weight:bold}
 .toc ol{list-style:none;padding:0;margin:0}.toc ol ol{margin-top:.2rem}.toc li{margin:.25rem 0}.toc>ol>li{margin-top:1.3rem}.toc>ol>li>a{font-weight:bold}

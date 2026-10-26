@@ -20,6 +20,8 @@ use {
         sync::Arc,
     },
 };
+mod reference;
+
 const GOVERNANCE: &str = "https://ekgf.org/ontology/artifact-governance#";
 const PUBLICATION: &str = "https://ekgf.org/ontology/artifact-publication#";
 pub struct CollectedFamily {
@@ -675,7 +677,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v7:{snapshot}"),
+            &format!("family-v8:{snapshot}"),
             super::dataset::Stage::Document,
         )
         .await?;
@@ -820,13 +822,27 @@ async fn build(
             Some(body) => super::document::description::nested(&body, 3)?,
             None => comments.join("\n\n"),
         };
+        let layout =
+            reference::Layout::read(&member.view, &member.ontology).await?;
+        let identifiers = if member.ontology.as_str() == member.namespace {
+            format!(
+                "| Ontology IRI / Namespace | `{}` |\n",
+                member.namespace
+            )
+        } else {
+            format!(
+                "| Ontology IRI | `{}` |\n| Namespace | `{}` |\n",
+                member.ontology.as_str(),
+                member.namespace
+            )
+        };
         let introduction = format!(
-            "## Ontology metadata\n\n{}\n\nIRI: `{}`\n\nPrefix: \
-             `{}`\n\nNamespace: `{}`\n\n{}\n",
+            "## {}\n\n{}\n\n| Identifier | Value |\n| --- | --- |\n{}| Prefix \
+             | `{}` |\n\n{}\n",
+            layout.overview,
             labels.join("; "),
-            member.ontology.as_str(),
+            identifiers,
             member.prefix,
-            member.namespace,
             description
         );
         fragment(
@@ -838,33 +854,71 @@ async fn build(
             &introduction,
             0,
         );
-        for (position, subject) in member.terms.iter().enumerate() {
-            let documentor = AnnotatedTermDocumentor::new(
-                dataset.clone(),
-                member.snapshot.clone(),
-                project,
-                subject.clone(),
-                "en",
-                prefixes.clone(),
-                known.clone(),
-            )?
-            .with_source_annotations();
+        let groups = layout.group(dataset, &member.view, &member.terms).await?;
+        let mut position = 1u32;
+        for (section, terms) in groups {
+            let id = identity("family-reference-section", &[
+                target.as_str(),
+                member.ontology.as_str(),
+                &section.kind,
+            ]);
             data.extend([
-                q(&scope, "include", subject.clone()),
                 q(
                     &identity("family-component", &[
                         target.as_str(),
                         member.ontology.as_str(),
                     ]),
                     "fragment",
-                    documentor.fragment_id(),
+                    id.clone(),
+                ),
+                q(&id, "type", term("Fragment")),
+                q(&id, "subject", member.ontology.clone()),
+                q(
+                    &id,
+                    "body",
+                    Literal::new_simple_literal(format!(
+                        "## {}\n",
+                        section.title
+                    )),
                 ),
                 q(
-                    &documentor.fragment_id(),
-                    "order",
-                    Literal::from(position as u32 + 1),
+                    &id,
+                    "format",
+                    Literal::new_simple_literal("text/markdown"),
                 ),
+                q(&id, "contribution", contribution.clone()),
+                q(&id, "order", Literal::from(position)),
             ]);
+            position += 1;
+            for subject in terms {
+                let documentor = AnnotatedTermDocumentor::new(
+                    dataset.clone(),
+                    member.snapshot.clone(),
+                    project,
+                    subject.clone(),
+                    "en",
+                    prefixes.clone(),
+                    known.clone(),
+                )?
+                .with_family_reference();
+                data.extend([
+                    q(&scope, "include", subject.clone()),
+                    q(
+                        &identity("family-component", &[
+                            target.as_str(),
+                            member.ontology.as_str(),
+                        ]),
+                        "fragment",
+                        documentor.fragment_id(),
+                    ),
+                    q(
+                        &documentor.fragment_id(),
+                        "order",
+                        Literal::from(position),
+                    ),
+                ]);
+                position += 1;
+            }
         }
     }
     let coverage_subject = identity("family-coverage", &[target.as_str()]);
@@ -912,7 +966,7 @@ async fn build(
             AnnotatedTermDocumentor::new(
                 dataset, snapshot, project, subject, "en", prefixes, known,
             )?
-            .with_source_annotations()
+            .with_family_reference()
             .document(writer)
             .await
         }
