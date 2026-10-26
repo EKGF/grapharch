@@ -39,3 +39,56 @@ async fn specification_has_an_accessible_sidebar_resize_control()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn specification_navigation_has_search_and_collapsible_sections()
+-> anyhow::Result<()> {
+    let (dataset, plans) = showcases::specification(std::path::Path::new(
+        "examples/specification/project.ttl",
+    ))
+    .await?;
+    let output = tempfile::tempdir()?;
+    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    let html = std::fs::read_to_string(
+        output.path().join("specification/index.html"),
+    )?;
+    let document = scraper::Html::parse_document(&html);
+    for selector in [
+        "button[data-search-open]",
+        "dialog#spec-search",
+        "input#spec-search-query[type=search]",
+        "select#spec-search-kind",
+        "button[data-toc-collapse]",
+        "button[data-toc-expand]",
+    ] {
+        assert_eq!(
+            document
+                .select(&scraper::Selector::parse(selector).unwrap())
+                .count(),
+            1,
+            "missing {selector}"
+        );
+    }
+    assert!(html.contains("aria-expanded"));
+    assert!(html.contains("showModal"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn sidebar_classification_accepts_fragments_with_multiple_subjects()
+-> anyhow::Result<()> {
+    let source = std::fs::read_to_string("examples/specification/project.ttl")?;
+    let root = tempfile::tempdir()?;
+    let path = root.path().join("project.ttl");
+    std::fs::write(
+        &path,
+        source.replace(
+            "ga:subject ex:subject",
+            "ga:subject ex:subject, ex:another-subject",
+        ),
+    )?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    let output = tempfile::tempdir()?;
+    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    Ok(())
+}

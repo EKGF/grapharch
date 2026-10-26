@@ -142,3 +142,55 @@ The focused separator supports Left/Right arrow keys (Shift for larger steps),
 Home/End for its minimum/maximum width, and double-click to reset. The browser
 remembers the width across specification pages. On smaller screens the contents
 remain in the document flow; printed output has no resize control.
+
+## Large families: one specification page per ontology
+
+Select `ga:renderer "specification-pages"` on a family publication target to
+publish a collection of smaller standards-style HTML pages. The family overview
+stays at `index.html`; each remaining logical component gets its own page. The
+ontology-family documentor already supplies one component per ontology and one
+per explicitly declared module, so this produces ontology and module pages
+without guessing boundaries from filenames or splitting a generated HTML book.
+
+```turtle
+<urn:example:specification>
+    ga:renderer "specification-pages" ;
+    ga:destination "specification" .
+```
+
+Use this setting **instead of** the target's existing `ga:renderer` value;
+conflicting renderer values are errors. All other scope, profile, authority,
+status, date, and source hints keep their existing meaning. Run the normal
+`publication build-family` command with that target.
+
+Each ontology page has the familiar specification header, local numbered
+sections, and a local contents list. Family navigation retains the module tree.
+Routes use stable placement identities, and links between documented terms point
+to the page and anchor that own the referenced content. Styles, images, page
+routes, and the shared `search-index.json` use relative URLs and work beneath a
+GitHub Pages project path. Rendering requires only the resolved plan and its
+pinned KG, including when the original source files have been deleted.
+
+This renderer publishes HTML **without compiling a PDF**. Use a separate PDF or
+single-document specification target when a book is wanted. The existing
+`specification` renderer still produces a single standards page and its PDF.
+A companion marketing or guide website remains a separate `website` target.
+
+## Contents navigation and search
+
+Both specification renderers provide collapsible contents branches, **Collapse
+all** and **Expand all** controls, and a **Search & filter** dialog. Open search
+with the button or **Ctrl K** / **Command K**; close it with **Escape**. Search
+matches heading titles and, for paginated publications, page subject identifiers
+and ontology/module context. Filters select ontologies, modules, or sections and
+terms. Results are limited to the first 50 matches; refine the query to narrow
+them down. This is a navigation index, rather than full-text body search.
+
+The paginated renderer shares one search index across the family and loads it
+when search is first opened. Its **Browse this family** disclosure loads a shared
+navigation index only when expanded, instead of duplicating the full family tree
+in every HTML page. Publications are bounded to 8,192 pages; navigation and
+search index content is derived from the pinned plan. A failed index load is displayed as an error.
+The single-page renderer indexes its document headings, including headings
+omitted from the visible contents by `ga:tocDepth`. Links remain usable with
+JavaScript disabled; collapse and search controls require JavaScript.

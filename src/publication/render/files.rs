@@ -16,7 +16,7 @@ use {
     uuid::Uuid,
 };
 
-const METADATA_LIMIT: u64 = 1024 * 1024;
+const METADATA_LIMIT: u64 = 4 * 1024 * 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct Ticket {
@@ -238,7 +238,12 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
         verify_tree(destination, destination, &names, &mut 0)?;
     } else {
         ensure!(
-            manifest.files.len() <= 260,
+            manifest.files.len() <=
+                if manifest.renderer == "specification-pages" {
+                    crate::publication::limits::PUBLICATION_FILES
+                } else {
+                    260
+                },
             "publication artifact ownership exceeds budget"
         );
         let mut names = std::collections::HashSet::new();
@@ -248,12 +253,23 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 name.as_str(),
                 "index.html" | "style.css" | "main.typ" | "document.pdf"
             );
+            let page = manifest.renderer == "specification-pages" &&
+                (matches!(
+                    name.as_str(),
+                    "search-index.json" | "navigation.json"
+                ) || name
+                    .strip_prefix("section-")
+                    .and_then(|value| value.strip_suffix(".html"))
+                    .is_some_and(|hash| {
+                        hash.len() == 64 &&
+                            hash.bytes().all(|b| b.is_ascii_hexdigit())
+                    }));
             let image = name.starts_with("assets/") &&
                 [".svg", ".png", ".jpg", ".jpeg"]
                     .iter()
                     .any(|extension| name.ends_with(extension));
             ensure!(
-                (fixed || image) && names.insert(name.as_str()),
+                (fixed || image || page) && names.insert(name.as_str()),
                 "invalid publication artifact ownership"
             );
         }
@@ -291,8 +307,8 @@ fn verify_tree(
     for entry in fs::read_dir(directory)? {
         *visited += 1;
         ensure!(
-            *visited <= 4096,
-            "website output exceeds filesystem-entry budget"
+            *visited <= crate::publication::limits::PUBLICATION_FILES * 2,
+            "publication output exceeds filesystem-entry budget"
         );
         let entry = entry?;
         let path = entry.path();
@@ -496,6 +512,54 @@ mod recovery_tests {
             "Previous valid page"
         );
         assert!(!tokio::fs::try_exists(backup).await?);
+        Ok(())
+    }
+    #[test]
+    fn paginated_ownership_accepts_thousands_of_pages_but_rejects_unowned_files()
+    -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut files = vec![
+            "index.html".into(),
+            "search-index.json".into(),
+            "navigation.json".into(),
+        ];
+        for i in 0..4200 {
+            files.push(format!("section-{i:064x}.html"));
+        }
+        for file in &files {
+            fs::write(root.path().join(file), b"")?;
+        }
+        let manifest = PublicationManifest {
+            version: 1,
+            project: "urn:project".into(),
+            target: "urn:target".into(),
+            input_revision: "urn:revision".into(),
+            plan: "urn:plan".into(),
+            plan_snapshot: "urn:snapshot".into(),
+            scope: "urn:scope".into(),
+            profile: "urn:profile".into(),
+            renderer: "specification-pages".into(),
+            job: "fixture".into(),
+            files,
+            failure_mode: Default::default(),
+            diagnostics: Vec::new(),
+        };
+        fs::write(
+            root.path().join("manifest.yaml"),
+            serde_yaml::to_string(&manifest)?,
+        )?;
+        assert!(owned(root.path(), "urn:project", "urn:target")?);
+        fs::write(root.path().join("notes.txt"), b"keep this file")?;
+        assert!(
+            owned(root.path(), "urn:project", "urn:target")
+                .unwrap_err()
+                .to_string()
+                .contains("unowned artifact")
+        );
+        assert_eq!(
+            fs::read_to_string(root.path().join("notes.txt"))?,
+            "keep this file"
+        );
         Ok(())
     }
 }

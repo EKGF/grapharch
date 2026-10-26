@@ -730,3 +730,189 @@ async fn module_cycles_and_uncollected_members_fail_explicitly() -> Result<()> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    let source = f.root.path().join("core.ttl");
+    std::fs::write(&source, format!("{}\n<https://example.org/core#Term> rdfs:subClassOf <https://example.org/extra#Term> .",std::fs::read_to_string(&source)?))?;
+    let settings = f.definitions.path().join("project.ttl");
+    std::fs::write(
+        &settings,
+        std::fs::read_to_string(&settings)?
+            .replace(
+                "ga:renderer \"specification\"",
+                "ga:renderer \"specification-pages\"",
+            )
+            .replace("Example reference", "An organisation's reference"),
+    )?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("kg.nq");
+    built.dataset.export(archive.clone()).await?;
+    std::fs::remove_dir_all(f.root.path())?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let publisher = Publisher::new(restored);
+    let PublishOutcome::Published(p) =
+        publisher.render(&built.plan, output.path()).await?
+    else {
+        panic!("not published")
+    };
+    assert!(
+        !p.directory.join("document.pdf").exists(),
+        "HTML target must not compile the family book"
+    );
+    let index: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        p.directory.join("search-index.json"),
+    )?)?;
+    let pages = index.as_array().expect("search entries");
+    let route = |title: &str| {
+        pages
+            .iter()
+            .find(|p| p["title"] == title && p["kind"] == "ontology")
+            .expect("ontology page")["href"]
+            .as_str()
+            .unwrap()
+            .split('#')
+            .next()
+            .unwrap()
+            .to_owned()
+    };
+    let core = route("core ontology");
+    let extra = route("extra ontology");
+    assert_ne!(core, extra);
+    let html = std::fs::read_to_string(p.directory.join(&core))?;
+    assert!(html.contains("<h1>core ontology</h1>"));
+    assert!(html.contains("core term"));
+    assert!(!html.contains("data-page-body=\"extra ontology\""));
+    let doc = scraper::Html::parse_document(&html);
+    assert!(
+        doc.select(&scraper::Selector::parse("main .fragment a").unwrap())
+            .any(|a| {
+                a.value()
+                    .attr("href")
+                    .is_some_and(|h| h.starts_with(&format!("{extra}#")))
+            }),
+        "cross-ontology reference must point at its owning page"
+    );
+    for file in &p.manifest.files {
+        if !file.ends_with(".html") {
+            continue;
+        }
+        let html = std::fs::read_to_string(p.directory.join(file))?;
+        let doc = scraper::Html::parse_document(&html);
+        assert_eq!(
+            doc.select(
+                &scraper::Selector::parse("dialog#spec-search").unwrap()
+            )
+            .count(),
+            1
+        );
+        for a in doc.select(&scraper::Selector::parse("a[href]").unwrap()) {
+            let href = a.value().attr("href").unwrap();
+            if href.contains(":") {
+                continue;
+            }
+            let (path, id) = href.split_once('#').unwrap_or((href, ""));
+            let path = if path.is_empty() { file } else { path };
+            assert!(
+                p.directory.join(path).exists(),
+                "missing route {path}"
+            );
+            if !id.is_empty() {
+                let target = scraper::Html::parse_document(
+                    &std::fs::read_to_string(p.directory.join(path))?,
+                );
+                assert!(
+                    target
+                        .select(&scraper::Selector::parse("[id]").unwrap())
+                        .any(|e| e.value().attr("id") == Some(id)),
+                    "missing anchor {href}"
+                );
+            }
+        }
+    }
+    assert!(
+        matches!(
+            publisher.render(&built.plan, output.path()).await?,
+            PublishOutcome::Published(_)
+        ),
+        "paginated target must be replaceable on a subsequent run"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn paginated_family_cli_reports_no_pdf_in_json() -> Result<()> {
+    let f = Fixture::new()?;
+    let settings = f.definitions.path().join("project.ttl");
+    std::fs::write(
+        &settings,
+        std::fs::read_to_string(&settings)?.replace(
+            "ga:renderer \"specification\"",
+            "ga:renderer \"specification-pages\"",
+        ),
+    )?;
+    let output = tempfile::tempdir()?;
+    let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .args(["publication", "build-family", "--source"])
+        .arg(f.root.path())
+        .arg("--definitions")
+        .arg(settings)
+        .args([
+            "--project",
+            "urn:project",
+            "--target",
+            "urn:target",
+            "--output-root",
+        ])
+        .arg(output.path())
+        .arg("--json")
+        .output()
+        .await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&result.stdout)?;
+    assert!(value["pdf_path"].is_null());
+    assert!(
+        std::path::Path::new(value["publication_path"].as_str().unwrap())
+            .join("search-index.json")
+            .is_file()
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn paginated_routing_never_treats_literal_prose_as_an_html_link()
+-> Result<()> {
+    use grapharch::publication::render::Publisher;
+    let f = Fixture::new()?;
+    let source = f.root.path().join("core.ttl");
+    std::fs::write(
+        &source,
+        std::fs::read_to_string(&source)?.replace(
+            "A supplied definition.",
+            r##"Literal text: href=\"#missing\"."##,
+        ),
+    )?;
+    let settings = f.definitions.path().join("project.ttl");
+    std::fs::write(
+        &settings,
+        std::fs::read_to_string(&settings)?.replace(
+            "ga:renderer \"specification\"",
+            "ga:renderer \"specification-pages\"",
+        ),
+    )?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    Publisher::new(built.dataset)
+        .render(&built.plan, output.path())
+        .await?;
+    Ok(())
+}

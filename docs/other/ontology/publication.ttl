@@ -779,7 +779,7 @@ ga:renderer a owl:DatatypeProperty ;
     dct:description "Records the renderer dispatch identifier selected for a target or recorded by a publication job."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:string ;
-    skos:scopeNote "Current dispatch values are html, website, specification, and typst. These are implementation identifiers rather than a closed OWL enumeration of all possible renderers."@en .
+    skos:scopeNote "Current dispatch values are html, website, specification, specification-pages, and typst. These are implementation identifiers rather than a closed OWL enumeration of all possible renderers."@en .
 
 ga:destination a owl:DatatypeProperty ;
     rdfs:label "Output destination"@en ;

@@ -118,3 +118,28 @@ per-change showcase build. A normal CI path can check the full KG/HTML and
 representative module PDFs; scheduled or manual optimized runs can measure the
 entire PDF. This example does not silently add a 14-minute, 14-GiB job to the
 default showcase gallery or claim that a previous PDF is a build of newer inputs.
+
+### Paginated family specification
+
+For interactive browsing, generate a family overview and separate ontology/module
+pages instead of the monolithic HTML/PDF book:
+
+```sh
+python3 examples/fibo/prepare.py \
+  --source ../fibo \
+  --output output/fibo-pages/config \
+  --renderer specification-pages \
+  --base-url http://localhost:8873/specification/
+cargo run --release -- publication build-family \
+  --local-repository ../fibo \
+  --definitions output/fibo-pages/config/publication.ttl \
+  --project urn:fibo-benchmark:project \
+  --target urn:fibo-benchmark:target \
+  --output-root output/fibo-pages \
+  --concurrency 4
+```
+
+Serve `output/fibo-pages` with any static HTTP server. The paginated target does
+not compile a PDF. Each ontology has its own specification page; module pages and
+family navigation retain the declared hierarchy. Search and filter span the
+whole family through one shared title/identifier index.

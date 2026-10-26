@@ -420,7 +420,11 @@ pub async fn run(
             if *json {
                 print_build_json(
                     &publication.directory,
-                    true,
+                    publication
+                        .manifest
+                        .files
+                        .iter()
+                        .any(|file| file == "document.pdf"),
                     output_root,
                     &built.plan,
                     Some((built.ontology_count, built.term_count)),

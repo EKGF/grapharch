@@ -206,13 +206,30 @@ impl Publisher {
             } else {
                 None
             };
-            let diagnostics = if website_files.is_some() {
+            let page_files = if plan.renderer == "specification-pages" {
+                Some(
+                    specification::pages::write(
+                        plan,
+                        &stage.path,
+                        self.failure_mode,
+                    )
+                    .await?,
+                )
+            } else {
+                None
+            };
+            let diagnostics = if let Some((_, diagnostics)) = &page_files {
+                diagnostics.clone()
+            } else if website_files.is_some() {
                 Vec::new()
             } else {
                 content::write(plan, &stage.path, self.failure_mode).await?
             };
             if plan.is_html() {
-                let style = if plan.renderer == "specification" {
+                let style = if matches!(
+                    plan.renderer.as_str(),
+                    "specification" | "specification-pages"
+                ) {
                     specification::STYLE
                 } else {
                     html::STYLE
@@ -251,6 +268,9 @@ impl Publisher {
             }
             let mut manifest = plan.manifest(job);
             if let Some(files) = website_files {
+                manifest.files = files;
+            }
+            if let Some((files, _)) = page_files {
                 manifest.files = files;
             }
             manifest.files.extend(image_files);

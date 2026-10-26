@@ -15,6 +15,8 @@ pub enum Renderer {
     Website,
     /// Standards-style static HTML with publication metadata.
     Specification,
+    /// Component-sized standards pages with shared family navigation.
+    SpecificationPages,
     /// Typst source and PDF.
     Typst,
 }
@@ -25,6 +27,7 @@ impl Renderer {
             "html" => Ok(Self::Html),
             "website" => Ok(Self::Website),
             "specification" => Ok(Self::Specification),
+            "specification-pages" => Ok(Self::SpecificationPages),
             "typst" => Ok(Self::Typst),
             other => bail!("unsupported renderer {other}"),
         }

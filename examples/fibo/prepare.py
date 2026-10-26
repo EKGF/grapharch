@@ -14,7 +14,7 @@ OWL = "{http://www.w3.org/2002/07/owl#}"
 XML = "{http://www.w3.org/XML/1998/namespace}"
 
 
-def prepare(source: Path, output: Path, title: str, base_url: str) -> dict:
+def prepare(source: Path, output: Path, title: str, base_url: str, renderer: str = "specification") -> dict:
     started = time.perf_counter()
     source = source.resolve(strict=True)
     if not source.is_dir():
@@ -73,7 +73,7 @@ def prepare(source: Path, output: Path, title: str, base_url: str) -> dict:
     dct:description "Local documentation and performance preview of the selected FIBO sources.";
     rdfs:comment "Unofficial GraphArch documentation preview. No approval is implied, imports are not fetched, and no reasoning is performed.";
     ga:scope <urn:fibo-benchmark:scope>; ga:profile <urn:fibo-benchmark:profile>;
-    ga:renderer "specification"; ga:destination "specification"; ga:tocDepth 4;
+    ga:renderer "{renderer}"; ga:destination "specification"; ga:tocDepth 4;
     ga:publicationStatus "Documentation Preview";
     ga:publicationDate "2026-10-26"^^<http://www.w3.org/2001/XMLSchema#date>;
     ga:thisVersion <{base_url}>; ga:latestVersion <{base_url}>;
@@ -98,12 +98,13 @@ def main() -> None:
     parser.add_argument("--source", type=Path, default=Path("../fibo"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--title", default="Financial Industry Business Ontology (FIBO)")
+    parser.add_argument("--renderer", choices=("specification", "specification-pages"), default="specification")
     parser.add_argument("--base-url", default="http://localhost:8872/specification/")
     args = parser.parse_args()
     url = urllib.parse.urlsplit(args.base_url)
     if url.scheme not in {"http", "https"} or not url.netloc or any(c in args.base_url for c in "<>\n\r"):
         raise ValueError("base-url must be an HTTP(S) publication URL")
-    result = prepare(args.source, args.output, args.title, args.base_url)
+    result = prepare(args.source, args.output, args.title, args.base_url, args.renderer)
     print(json.dumps({key: value for key, value in result.items() if key != "files"}))
 
 

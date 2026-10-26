@@ -52,8 +52,8 @@ pub struct PublicationManifest {
     pub renderer:       String,
     /// Successful job identity.
     pub job:            String,
-    /// Files owned by this generation; bounded by the renderer's fixed
-    /// artifact set.
+    /// Files owned by this generation; bounded by the renderer's
+    /// artifact budgets.
     pub files:          Vec<String>,
     /// Execution policy used for this publication.
     #[serde(default)]
@@ -144,7 +144,10 @@ impl Plan {
     }
 
     pub fn is_html(&self) -> bool {
-        matches!(self.renderer.as_str(), "html" | "specification")
+        matches!(
+            self.renderer.as_str(),
+            "html" | "specification" | "specification-pages"
+        )
     }
 
     pub async fn entries(&self) -> Result<Rows> {

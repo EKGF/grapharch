@@ -17,6 +17,8 @@ pub(super) struct Outline {
 }
 
 impl Outline {
+    pub(super) fn page() -> Self { Self { frontmatter: 2, ..Self::default() } }
+
     pub fn component(
         &mut self,
         kind: &str,
