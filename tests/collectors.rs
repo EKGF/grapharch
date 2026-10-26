@@ -318,3 +318,74 @@ async fn keep_going_collectors_finish_independent_sources_and_report_failures()
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn fibo_modules_are_normalized_without_reclassifying_arbitrary_parts()
+-> anyhow::Result<()> {
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().join("modules.ttl");
+    std::fs::write(
+        &path,
+        r#"
+@prefix dct:<http://purl.org/dc/terms/> .
+@prefix av:<https://spec.edmcouncil.org/fibo/ontology/FND/Utilities/AnnotationVocabulary/> .
+<urn:module> dct:hasPart <urn:ontology>, <urn:second-ontology> ; a av:Module, <https://ekgf.org/ontology/grapharch#OntologyModule> .
+<urn:unrelated> dct:hasPart <urn:other> .
+"#,
+    )?;
+    let dataset = Dataset::memory()?;
+    let (writer, worker) = GraphWriter::spawn(dataset.clone(), 2, 1024 * 1024)?;
+    let collector = RdfFile::new("urn:project", "urn:collector", path)?;
+    collector.collect(&writer).await?;
+    let snapshot = dataset.snapshot().await?;
+    for (subject, predicate, object, expected) in [
+        (
+            "urn:module",
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            "https://ekgf.org/ontology/grapharch#OntologyModule",
+            true,
+        ),
+        (
+            "urn:module",
+            "https://ekgf.org/ontology/grapharch#moduleMember",
+            "urn:ontology",
+            true,
+        ),
+        (
+            "urn:unrelated",
+            "https://ekgf.org/ontology/grapharch#moduleMember",
+            "urn:other",
+            false,
+        ),
+        (
+            "urn:module",
+            "http://purl.org/dc/terms/hasPart",
+            "urn:ontology",
+            true,
+        ),
+    ] {
+        assert_eq!(
+            dataset
+                .contains(
+                    &snapshot,
+                    Quad::new(
+                        NamedNode::new(subject)?,
+                        NamedNode::new(predicate)?,
+                        NamedNode::new(object)?,
+                        GraphName::DefaultGraph
+                    )
+                )
+                .await?,
+            expected
+        );
+    }
+    collector.collect(&writer).await?;
+    assert_eq!(
+        snapshot,
+        dataset.snapshot().await?,
+        "module hint normalization must be deterministic and idempotent"
+    );
+    drop(writer);
+    worker.await??;
+    Ok(())
+}

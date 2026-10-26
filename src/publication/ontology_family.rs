@@ -20,6 +20,7 @@ use {
         sync::Arc,
     },
 };
+mod modules;
 mod reference;
 
 const GOVERNANCE: &str = "https://ekgf.org/ontology/artifact-governance#";
@@ -587,8 +588,9 @@ async fn build(
                 "resource belongs to multiple source namespaces: {subject}"
             );
             ensure!(
-                known.len() <= 8000,
-                "family exceeds 8000-resource publication budget"
+                known.len() <= super::limits::FAMILY_RESOURCES,
+                "family exceeds {}-resource publication budget",
+                super::limits::FAMILY_RESOURCES
             );
             let rich =
                 super::document::description::read(&source, subject, "en")
@@ -652,6 +654,11 @@ async fn build(
         "no registered family ontology was found in the supplied sources"
     );
     members.sort_by(|a, b| a.prefix.cmp(&b.prefix));
+    let chapters = modules::chapters(dataset, &view, &members).await?;
+    let module_count = chapters
+        .iter()
+        .filter(|chapter| chapter.module_body.is_some())
+        .count();
     let ontology_count = members.len();
     let term_count = members.iter().map(|m| m.terms.len()).sum();
     let missing: usize = members.iter().map(|m| m.missing).sum();
@@ -677,7 +684,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v8:{snapshot}"),
+            &format!("family-v9:{snapshot}"),
             super::dataset::Stage::Document,
         )
         .await?;
@@ -743,27 +750,46 @@ async fn build(
          added.\n\n| Ontology | Resources | Missing definitions |\n| --- | \
          ---: | ---: |\n"
     );
-    for member in &members {
+    if module_count > 0 {
         overview.push_str(&format!(
-            "- **[{}]({})**\n",
-            member.title,
-            member.ontology.as_str(),
+            "## Modules\n\n{module_count} explicitly declared modules. \
+             Ontologies without explicit module membership remain separate \
+             reference chapters.\n\n"
         ));
-        let descriptions = english(
-            &member.view,
-            &member.ontology,
-            "http://www.w3.org/2000/01/rdf-schema#comment",
-        )
-        .await?;
-        if let Some(description) = descriptions.first() {
-            // Keep supplied prose; indent continuation lines within the list
-            // item.
-            overview.push_str(&format!(
-                "\n  {}\n",
-                description.replace('\n', "\n  ")
-            ));
+        for chapter in &chapters {
+            if chapter.module_body.is_some() {
+                overview.push_str(&format!(
+                    "{}- [{}]({})\n",
+                    "  ".repeat(chapter.depth - 1),
+                    chapter.title,
+                    chapter.subject.as_str()
+                ));
+            }
         }
-        overview.push('\n');
+    }
+    for member in &members {
+        if module_count == 0 {
+            overview.push_str(&format!(
+                "- **[{}]({})**\n",
+                member.title,
+                member.ontology.as_str(),
+            ));
+            let descriptions = english(
+                &member.view,
+                &member.ontology,
+                "http://www.w3.org/2000/01/rdf-schema#comment",
+            )
+            .await?;
+            if let Some(description) = descriptions.first() {
+                // Keep supplied prose; indent continuation lines within the
+                // list item.
+                overview.push_str(&format!(
+                    "\n  {}\n",
+                    description.replace('\n', "\n  ")
+                ));
+            }
+            overview.push('\n');
+        }
         coverage.push_str(&format!(
             "| [{}]({}) | {} | {} |\n",
             member.title,
@@ -790,7 +816,35 @@ async fn build(
         &overview,
         0,
     );
-    for (order, member) in members.iter().enumerate() {
+    for (order, chapter) in chapters.iter().enumerate() {
+        if let Some(body) = &chapter.module_body {
+            component(
+                &mut data,
+                &target,
+                &profile,
+                &chapter.subject,
+                &chapter.title,
+                "section",
+                order as u32 + 3,
+            );
+            if let Some(parent) = &chapter.parent {
+                parent_placement(&mut data, &target, &chapter.subject, parent);
+            }
+            fragment(
+                &mut data,
+                &scope,
+                &target,
+                &chapter.subject,
+                &contribution,
+                body,
+                0,
+            );
+            continue;
+        }
+        let member = &members[chapter.member.expect("ontology chapter index")];
+        if let Some(parent) = &chapter.parent {
+            parent_placement(&mut data, &target, &chapter.subject, parent);
+        }
         component(
             &mut data,
             &target,
@@ -929,7 +983,7 @@ async fn build(
         &coverage_subject,
         "Documentation coverage",
         "appendix",
-        members.len() as u32 + 3,
+        chapters.len() as u32 + 3,
     );
     fragment(
         &mut data,
@@ -982,9 +1036,17 @@ async fn build(
     );
     managed.finish(writer).await?;
     let revision = Assembler::new(dataset.clone()).assemble(project).await?;
+    tracing::info!(
+        elapsed_ms = started.elapsed().as_millis(),
+        "family revision assembled"
+    );
     let plan = TargetPlanner::new(dataset.clone(), revision)
         .resolve(project, &target, writer)
         .await?;
+    tracing::info!(
+        elapsed_ms = started.elapsed().as_millis(),
+        "family target planned"
+    );
     Ok((plan, ontology_count, term_count))
 }
 async fn english(
@@ -1022,6 +1084,24 @@ fn q(subject: &NamedNode, field: &str, object: impl Into<Term>) -> Quad {
         object,
         GraphName::DefaultGraph,
     )
+}
+fn parent_placement(
+    data: &mut Vec<Quad>,
+    target: &NamedNode,
+    subject: &NamedNode,
+    parent: &NamedNode,
+) {
+    data.push(q(
+        &identity("family-placement", &[
+            target.as_str(),
+            subject.as_str(),
+        ]),
+        "parentPlacement",
+        identity("family-placement", &[
+            target.as_str(),
+            parent.as_str(),
+        ]),
+    ));
 }
 fn component(
     data: &mut Vec<Quad>,

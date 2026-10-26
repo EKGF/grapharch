@@ -211,8 +211,8 @@ These projects are examples and test cases for the general pipeline:
   repository and fail if it cannot be fetched.
 - **DPROD:** an individual-ontology showcase demonstrating a specification,
   companion website, and PDF. It is not a required vocabulary or input.
-- **FIBO:** a larger family intended for future validation. Full FIBO coverage
-  and performance have not yet been verified.
+- **FIBO:** the large-family and native-module benchmark reads an existing clone;
+  see `examples/fibo` for source manifests, setup, and timing instructions.
 
 The same pipeline works with other organizations, repositories, and ontologies.
 Tests also exercise independently defined families, namespaces,
@@ -254,3 +254,43 @@ The ontology IRI identifies the ontology; its namespace prefixes vocabulary
 terms. They may differ (for example, `https://example.org/vocabulary` and
 `https://example.org/vocabulary#`). The overview shows them in adjacent rows
 when different and combines them into one row when equal.
+
+
+## Native modules and large families
+
+Explicit FIBO `Module` instances and their `dct:hasPart` assertions become
+`ga:OntologyModule` and `ga:moduleMember` facts alongside the unchanged native
+assertions. Module nesting is preserved in the publication plan using
+`ga:parentPlacement`. A domain can contain modules, which contain ontology
+references and their Classes, Properties, Named Individuals, and Shapes sections.
+The same hierarchy drives HTML numbering, contents navigation, and PDF chapters.
+
+Containment is not inferred from directories or imports. Ontologies without
+explicit module membership remain separate reference chapters. Missing members,
+cycles, multiple parents, or more than eight component levels fail explicitly.
+For headings deeper than HTML's six native heading tags, the specification
+retains the semantic level using `aria-level` on an `h6` heading.
+
+A target or profile can set `ga:tocDepth` to an integer from 1 to 8. A target's
+value takes precedence. For example, depth 4 can list a large family's modules
+and ontologies while leaving individual vocabulary entries out of the sidebar
+and PDF outline. When absent, HTML keeps its complete contents and PDF retains
+its depth of three.
+
+Large-family budgets are finite and coordinated across the pipeline:
+
+| Item | Limit |
+| --- | ---: |
+| Family resources, including ontology identities | 32,768 |
+| Publication entries | 65,536 |
+| Combined fragment content | 128 MiB |
+| Link/reference index entries | 131,072 |
+| Specification anchors | 262,144 |
+| Specification links | 1,048,576 |
+| Generated Typst source | 256 MiB |
+| Individual retained artifact | 128 MiB |
+| Retained showcase/website assets combined | 512 MiB |
+
+Per-fragment, source-file, and concurrent-writer bounds still apply. The
+[FIBO benchmark](https://github.com/EKGF/grapharch/tree/main/examples/fibo)
+includes reproducible setup for an existing clone; no FIBO corpus is vendored.

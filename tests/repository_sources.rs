@@ -445,3 +445,44 @@ async fn pinned_git_markdown_reads_develop_and_never_falls_back_to_main()
     worker.await??;
     Ok(())
 }
+
+#[tokio::test]
+async fn git_blob_collectors_preserve_and_normalize_native_module_hints()
+-> anyhow::Result<()> {
+    use grapharch::publication::{
+        collect::{collect_all, git::remote_repository},
+        dataset::Dataset,
+        writer::GraphWriter,
+    };
+    let repo = repository()?;
+    std::fs::write(repo.path().join("modules.ttl"),"<urn:module> a <https://spec.edmcouncil.org/fibo/ontology/FND/Utilities/AnnotationVocabulary/Module>; <http://purl.org/dc/terms/hasPart> <urn:ontology> .")?;
+    git(repo.path(), &["add", "modules.ttl"])?;
+    git(repo.path(), &["commit", "-m", "Declare a module"])?;
+    let cache = tempfile::tempdir()?;
+    let url = url::Url::from_directory_path(repo.path())
+        .unwrap()
+        .to_string();
+    let scan =
+        remote_repository(&url, "main", cache.path(), "urn:module:project")
+            .await?;
+    let dataset = Dataset::memory()?;
+    let (writer, worker) = GraphWriter::spawn(dataset.clone(), 2, 1024 * 1024)?;
+    collect_all(scan.files, &writer, 2).await?;
+    let snapshot = dataset.snapshot().await?;
+    assert!(
+        dataset
+            .contains(
+                &snapshot,
+                oxrdf::Quad::new(
+                    oxrdf::NamedNode::new("urn:module")?,
+                    grapharch::publication::term("moduleMember"),
+                    oxrdf::NamedNode::new("urn:ontology")?,
+                    oxrdf::GraphName::DefaultGraph
+                )
+            )
+            .await?
+    );
+    drop(writer);
+    worker.await??;
+    Ok(())
+}

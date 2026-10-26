@@ -632,3 +632,101 @@ async fn family_reference_keeps_distinct_ontology_and_namespace_iris_adjacent()
     assert!(rows[2].contains("Prefix"));
     Ok(())
 }
+
+#[tokio::test]
+async fn ontology_families_can_exceed_eight_thousand_named_resources()
+-> Result<()> {
+    let f = Fixture::new()?;
+    f.configure(false)?;
+    let path = f.root.path().join("core.ttl");
+    let mut source = std::fs::read_to_string(&path)?;
+    for n in 0..8001 {
+        source.push_str(&format!(
+            "\n<https://example.org/core#Class{n}> a owl:Class; rdfs:label \
+             \"Class {n}\"@en; rdfs:comment \"A scale regression fixture \
+             class.\"@en .\n"
+        ));
+    }
+    std::fs::write(path, source)?;
+    let built = f.build(Dataset::memory()?).await?;
+    assert_eq!(built.term_count, 8002);
+    Ok(())
+}
+
+#[tokio::test]
+async fn native_fibo_modules_survive_kg_restore_and_nest_the_reference()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    f.configure(false)?;
+    let path = f.root.path().join("core.ttl");
+    let mut text = std::fs::read_to_string(&path)?;
+    text.push_str(r#"
+@prefix av:<https://spec.edmcouncil.org/fibo/ontology/FND/Utilities/AnnotationVocabulary/> .
+@prefix dct:<http://purl.org/dc/terms/> .
+<urn:domain> a av:Module; rdfs:label "Example domain"@en; dct:abstract "A supplied domain abstract."@en; dct:hasPart <urn:module> .
+<urn:module> a av:Module; rdfs:label "Example module"@en; dct:abstract "A supplied module abstract."@en; dct:hasPart <https://example.org/core#> .
+"#);
+    std::fs::write(path, text)?;
+    let settings = f.definitions.path().join("project.ttl");
+    let mut settings_text = std::fs::read_to_string(&settings)?;
+    settings_text.push_str(
+        "\n<urn:target> <https://ekgf.org/ontology/grapharch#tocDepth> 4 .\n",
+    );
+    std::fs::write(settings, settings_text)?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("kg.nq");
+    built.dataset.export(archive.clone()).await?;
+    std::fs::remove_dir_all(f.root.path())?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(p) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("not published")
+    };
+    let html = std::fs::read_to_string(p.directory.join("index.html"))?;
+    let doc = scraper::Html::parse_document(&html);
+    for (selector, label) in [
+        ("main h2", "Example domain"),
+        ("main h3", "Example module"),
+        ("main h4", "core ontology"),
+        ("main h5", "Classes"),
+        ("main h6", "core term"),
+    ] {
+        assert!(
+            doc.select(&scraper::Selector::parse(selector).unwrap())
+                .any(|e| e.text().collect::<String>().contains(label)),
+            "missing nested {selector}: {label}"
+        );
+    }
+    assert!(html.contains("A supplied module abstract."));
+    let typst = std::fs::read_to_string(p.directory.join("main.typ"))?;
+    assert!(
+        typst.contains("depth: 4"),
+        "module book outline depth is configurable"
+    );
+    assert!(typst.contains("#heading(level: 2)[#text(\"Example module\")"));
+    assert!(typst.contains("#heading(level: 3)[#text(\"core ontology\")"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn module_cycles_and_uncollected_members_fail_explicitly() -> Result<()> {
+    for (parts, message) in [
+        ("<urn:a> <http://purl.org/dc/terms/hasPart> <urn:b> . <urn:b> <http://purl.org/dc/terms/hasPart> <urn:a> .", "cycle"),
+        ("<urn:a> <http://purl.org/dc/terms/hasPart> <urn:missing> .", "uncollected member"),
+        ("<urn:a> <http://purl.org/dc/terms/hasPart> <https://example.org/core#> . <urn:b> <http://purl.org/dc/terms/hasPart> <https://example.org/core#> .", "multiple parents"),
+    ] {
+        let f=Fixture::new()?;f.configure(false)?;
+        let path=f.root.path().join("core.ttl");
+        let mut text=std::fs::read_to_string(&path)?;
+        text.push_str(&format!("\n<urn:a> a <https://spec.edmcouncil.org/fibo/ontology/FND/Utilities/AnnotationVocabulary/Module>; rdfs:label \"A\" .\n<urn:b> a <https://spec.edmcouncil.org/fibo/ontology/FND/Utilities/AnnotationVocabulary/Module>; rdfs:label \"B\" .\n{parts}\n"));
+        std::fs::write(path,text)?;
+        let error=f.build(Dataset::memory()?).await.err().expect("bad module graph must fail");
+        assert!(format!("{error:#}").contains(message),"{error:#}");
+    }
+    Ok(())
+}

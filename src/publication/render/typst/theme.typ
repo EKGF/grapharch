@@ -98,9 +98,25 @@
     if counter(page).get().first() > 1 {
       set text(size: 8pt, fill: ga-muted)
       let chapters = query(heading.where(level: 1))
-      let on-page = chapters.filter(it => it.location().page() == here().page())
-      let previous = query(heading.where(level: 1).before(here()))
-      let running = if on-page.len() > 0 { on-page.first().body.text } else if previous.len() > 0 { previous.last().body.text } else { ga-title }
+      // Generated chapter headings are in flow/page order. Find the first
+      // chapter on this page with logarithmic lookups, not a full per-page
+      // interpreted filter over the document's chapter list.
+      let current-page = here().page()
+      let begin = 0
+      let end = chapters.len()
+      while begin < end {
+        let middle = calc.floor((begin + end) / 2)
+        if chapters.at(middle).location().page() < current-page {
+          begin = middle + 1
+        } else {
+          end = middle
+        }
+      }
+      let running = if begin < chapters.len() and chapters.at(begin).location().page() == current-page {
+        chapters.at(begin).body.text
+      } else if begin > 0 {
+        chapters.at(begin - 1).body.text
+      } else { ga-title }
       grid(columns: (1fr, 1fr), column-gutter: 15pt,
         [#ga-running(ga-publisher)], align(right)[#ga-running(running)])
       v(4pt)

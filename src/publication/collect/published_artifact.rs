@@ -16,7 +16,8 @@ use {
     tokio::io::AsyncReadExt,
 };
 
-pub(crate) const MAX_ARTIFACT_BYTES: u64 = 32 * 1024 * 1024;
+pub(crate) const MAX_ARTIFACT_BYTES: u64 =
+    crate::publication::limits::ARTIFACT_BYTES;
 pub(crate) struct PublishedArtifactFile {
     project:   String,
     processor: String,
@@ -99,7 +100,8 @@ impl Collector for PublishedArtifactFile {
             total += length as u64;
             ensure!(
                 total <= MAX_ARTIFACT_BYTES,
-                "showcase artifact exceeds 32 MiB budget"
+                "showcase artifact exceeds {}-byte budget",
+                MAX_ARTIFACT_BYTES
             );
             hash.update(&buffer[..length]);
             let chunk = identity("published-artifact-chunk", &[
@@ -181,5 +183,36 @@ impl Collector for PublishedArtifactFile {
             stream.write(quad).await?;
         }
         Ok(revision)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn retained_publications_can_exceed_thirty_two_mib() -> Result<()> {
+        use crate::publication::{dataset::Dataset, writer::GraphWriter};
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("large.html");
+        std::fs::File::create(&path)?.set_len(33 * 1024 * 1024)?;
+        let dataset = Dataset::memory()?;
+        let (writer, worker) =
+            GraphWriter::spawn(dataset.clone(), 2, 1024 * 1024)?;
+        let artifact = PublishedArtifactFile::new(
+            "urn:large:project",
+            path,
+            "large.html".into(),
+        )?;
+        artifact.collect(&writer).await?;
+        let snapshot = dataset.snapshot().await?;
+        let view =
+            crate::publication::view::RevisionView::new(dataset, snapshot);
+        assert_eq!(
+            view.text(&artifact.id(), "contentSize").await?,
+            (33 * 1024 * 1024u64).to_string()
+        );
+        drop(writer);
+        worker.await??;
+        Ok(())
     }
 }

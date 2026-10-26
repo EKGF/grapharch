@@ -45,8 +45,9 @@ impl Catalog {
             let body = plan.source.text(fragment, "body").await?;
             bytes += body.len();
             ensure!(
-                bytes <= 16 * 1024 * 1024,
-                "website exceeds 16 MiB content budget"
+                bytes as u64 <=
+                    crate::publication::limits::PUBLICATION_CONTENT_BYTES,
+                "website exceeds 128 MiB content budget"
             );
             if current.as_ref().is_some_and(|id| id != &owner) {
                 let previous = current.take().unwrap();
@@ -146,7 +147,9 @@ impl Catalog {
                 .map(|id| id.as_str().to_owned());
             bytes += original.value().len() + url.value().len() + path.len();
             ensure!(
-                bytes <= 8 * 1024 * 1024 && catalog.references.len() < 16384,
+                bytes <= crate::publication::limits::REFERENCE_INDEX_BYTES &&
+                    catalog.references.len() <
+                        crate::publication::limits::LINK_INDEX_ENTRIES,
                 "website reference index exceeds budget"
             );
             let key = (owner.as_str().into(), original.value().into());

@@ -10,7 +10,7 @@ mod rows;
 use {
     super::{
         content::{Entries, Entry, code_language},
-        markup::{Markdown, html_escape},
+        markup::{Markdown, heading_level, html_escape},
         model::Plan,
     },
     crate::publication::{
@@ -66,7 +66,8 @@ pub(super) async fn write(
             if open {
                 file.write_all(b"</section>\n").await?;
             }
-            let label = outline.component(&entry.kind, &entry.title)?;
+            let label =
+                outline.component(&entry.kind, &entry.title, entry.depth)?;
             if !navigation &&
                 !matches!(entry.kind.as_str(), "abstract" | "status")
             {
@@ -74,9 +75,10 @@ pub(super) async fn write(
                 navigation = true;
             }
             let id = plan.anchor(&entry.placement, None);
+            let (level, aria) = heading_level(entry.depth + 1);
             file.write_all(
                 format!(
-                    "<section id=\"{id}\"><h2>{}{}</h2>\n",
+                    "<section id=\"{id}\"><h{level}{aria}>{}{}</h{level}>\n",
                     html_escape(&label),
                     permalink(&id)
                 )
@@ -159,6 +161,7 @@ async fn toc(
     let mut outline = Outline::default();
     let mut toc = Toc::new();
     let front_matter = config::flag(plan, "tocFrontMatter").await?;
+    let toc_depth = plan.toc_depth().await?.unwrap_or(usize::MAX);
     let mut ids: HashSet<String> = ["document", "toc", "toc-title"]
         .into_iter()
         .map(str::to_owned)
@@ -166,13 +169,19 @@ async fn toc(
     let mut links = Vec::new();
     while let Some(entry) = entries.next(plan).await? {
         if entry.first {
-            let label = outline.component(&entry.kind, &entry.title)?;
-            if front_matter ||
-                !matches!(entry.kind.as_str(), "abstract" | "status")
+            let label =
+                outline.component(&entry.kind, &entry.title, entry.depth)?;
+            if (front_matter ||
+                !matches!(entry.kind.as_str(), "abstract" | "status")) &&
+                entry.depth <= toc_depth
             {
                 file.write_all(
-                    toc.entry(1, &plan.anchor(&entry.placement, None), &label)?
-                        .as_bytes(),
+                    toc.entry(
+                        entry.depth,
+                        &plan.anchor(&entry.placement, None),
+                        &label,
+                    )?
+                    .as_bytes(),
                 )
                 .await?;
             }
@@ -217,12 +226,17 @@ async fn toc(
                 } else {
                     heading.text
                 };
-                if front_matter ||
-                    !matches!(entry.kind.as_str(), "abstract" | "status")
+                if (front_matter ||
+                    !matches!(entry.kind.as_str(), "abstract" | "status")) &&
+                    heading.depth + entry.depth <= toc_depth
                 {
                     file.write_all(
-                        toc.entry(heading.depth + 1, &heading.id, &label)?
-                            .as_bytes(),
+                        toc.entry(
+                            heading.depth + entry.depth,
+                            &heading.id,
+                            &label,
+                        )?
+                        .as_bytes(),
                     )
                     .await?;
                 }
@@ -235,12 +249,17 @@ async fn toc(
                 } else {
                     heading.text
                 };
-                if front_matter ||
-                    !matches!(entry.kind.as_str(), "abstract" | "status")
+                if (front_matter ||
+                    !matches!(entry.kind.as_str(), "abstract" | "status")) &&
+                    heading.depth + entry.depth <= toc_depth
                 {
                     file.write_all(
-                        toc.entry(heading.depth + 1, &heading.id, &label)?
-                            .as_bytes(),
+                        toc.entry(
+                            heading.depth + entry.depth,
+                            &heading.id,
+                            &label,
+                        )?
+                        .as_bytes(),
                     )
                     .await?;
                 }
@@ -249,7 +268,8 @@ async fn toc(
     }
     outline.finish()?;
     ensure!(
-        ids.len() <= 20_000 && links.len() <= 50_000,
+        ids.len() <= crate::publication::limits::SPECIFICATION_ANCHORS &&
+            links.len() <= crate::publication::limits::SPECIFICATION_LINKS,
         "specification exceeds native anchor/link budget"
     );
     let mut diagnostics = Vec::new();
@@ -291,7 +311,14 @@ async fn markdown<'a>(
 ) -> Result<Option<Markdown<'a>>> {
     if entry.format == "text/markdown" {
         Ok(Some(
-            Markdown::parse(&entry.body, plan, anchor, &entry.fragment).await?,
+            Markdown::parse(
+                &entry.body,
+                plan,
+                anchor,
+                &entry.fragment,
+                entry.depth,
+            )
+            .await?,
         ))
     } else {
         Ok(None)

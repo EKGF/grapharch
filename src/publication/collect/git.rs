@@ -448,7 +448,7 @@ impl Collector for GitRdfFile {
         )
         .context("unsupported RDF blob format")?;
         let revision = format!(
-            "git-rdf-v1:{}:{}",
+            "git-rdf-v2:{}:{}",
             self.revision.commit, self.blob
         );
         let mut blanks = BlankNodes::new(
@@ -460,8 +460,14 @@ impl Collector for GitRdfFile {
         let mut parser = RdfParser::from_format(format)
             .with_base_iri(&self.base)?
             .for_tokio_async_reader(bytes.as_slice());
+        let mut modules = super::module_hints::ModuleHints::default();
         while let Some(quad) = parser.next().await {
-            stream.write(blanks.normalize(quad?)).await?;
+            let quad = blanks.normalize(quad?);
+            modules.observe(&quad)?;
+            stream.write(quad).await?;
+        }
+        for quad in modules.finish()? {
+            stream.write(quad).await?;
         }
         stream
             .write(Quad::new(

@@ -120,6 +120,29 @@ impl Plan {
         Ok(plan)
     }
 
+    pub async fn toc_depth(&self) -> Result<Option<usize>> {
+        let value = match self.source.optional(&self.target, "tocDepth").await?
+        {
+            Some(value) => Some(value),
+            None => self.source.optional(&self.profile, "tocDepth").await?,
+        };
+        let Some(value) = value else { return Ok(None) };
+        let Term::Literal(value) = value else {
+            anyhow::bail!("tocDepth must be an integer")
+        };
+        ensure!(
+            value.datatype().as_str() ==
+                "http://www.w3.org/2001/XMLSchema#integer",
+            "tocDepth must have datatype xsd:integer"
+        );
+        let depth = value.value().parse::<usize>()?;
+        ensure!(
+            (1..=8).contains(&depth),
+            "tocDepth must be between one and eight"
+        );
+        Ok(Some(depth))
+    }
+
     pub fn is_html(&self) -> bool {
         matches!(self.renderer.as_str(), "html" | "specification")
     }
@@ -266,8 +289,9 @@ impl Plan {
         while let Some(row) = rows.next().await? {
             count += 1;
             ensure!(
-                count <= 50_000,
-                "publication link index exceeds 50000-entry budget"
+                count <= crate::publication::limits::LINK_INDEX_ENTRIES,
+                "publication link index exceeds {}-entry budget",
+                crate::publication::limits::LINK_INDEX_ENTRIES
             );
             let subject = node(&row["subject"])?;
             let anchor = format!(

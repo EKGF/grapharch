@@ -15,6 +15,7 @@ use {
     anyhow::{Result, bail, ensure},
     constraints::{destination, destination_path, integer},
     oxrdf::{Literal, NamedNode, Quad, Term},
+    std::collections::{HashMap, HashSet},
 };
 
 /// A planner bound to one validated input revision, independent of current
@@ -39,7 +40,9 @@ struct Selection<'a> {
     scope_snapshot: &'a NamedNode,
     scope_plan:     &'a NamedNode,
     plan:           &'a NamedNode,
-    profile:        &'a NamedNode,
+    orders:         HashMap<NamedNode, u32>,
+    documented:     HashSet<NamedNode>,
+    external:       HashSet<NamedNode>,
 }
 
 impl TargetPlanner {
@@ -147,7 +150,16 @@ impl TargetPlanner {
             scope_snapshot: &scope_snapshot,
             scope_plan:     &scope_plan,
             plan:           &plan,
-            profile:        &profile,
+            orders:         self.fragment_orders(&view).await?,
+            documented:     self
+                .documented_subjects(
+                    &view,
+                    &profile,
+                    &scope_snapshot,
+                    &scope_plan,
+                )
+                .await?,
+            external:       self.external_references(&view).await?,
         };
         let mut previous = None;
         while let Some(row) = placements.next().await? {
@@ -261,6 +273,108 @@ impl TargetPlanner {
         Ok(())
     }
 
+    async fn documented_subjects(
+        &self,
+        view: &RevisionView,
+        profile: &NamedNode,
+        scope_snapshot: &NamedNode,
+        scope_plan: &NamedNode,
+    ) -> Result<HashSet<NamedNode>> {
+        let placements = view.pattern(
+            &format!("{profile} {} ?placement", term("placement")),
+            0,
+        );
+        let components = view.pattern(
+            &format!("?placement {} ?component", term("component")),
+            1,
+        );
+        let fragments = view.pattern(
+            &format!("?component {} ?fragment", term("fragment")),
+            2,
+        );
+        let subjects = view.pattern(
+            &format!("?fragment {} ?subject", term("subject")),
+            3,
+        );
+        let scope = Dataset::logical_pattern(
+            scope_snapshot,
+            &format!("{scope_plan} {} ?subject", term("member")),
+            4,
+        );
+        self.named_index(format!(
+            "SELECT DISTINCT ?subject WHERE {{ {placements} {components} \
+             {fragments} {subjects} {scope} }}"
+        ))
+        .await
+    }
+
+    async fn external_references(
+        &self,
+        view: &RevisionView,
+    ) -> Result<HashSet<NamedNode>> {
+        let pattern = view.pattern(
+            &format!("?subject a {}", term("ExternalReference")),
+            0,
+        );
+        self.named_index(format!(
+            "SELECT DISTINCT ?subject WHERE {{ {pattern} }}"
+        ))
+        .await
+    }
+
+    async fn named_index(&self, query: String) -> Result<HashSet<NamedNode>> {
+        let mut rows = self.dataset.select(query).await?;
+        let mut result = HashSet::new();
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                result.len() < super::limits::LINK_INDEX_ENTRIES,
+                "publication reference index exceeds entry budget"
+            );
+            let Term::NamedNode(subject) = &row["subject"] else {
+                bail!("publication subject must be a named identity")
+            };
+            result.insert(subject.clone());
+        }
+        Ok(result)
+    }
+
+    async fn fragment_orders(
+        &self,
+        view: &RevisionView,
+    ) -> Result<HashMap<NamedNode, u32>> {
+        let fragments = view.pattern(
+            &format!("?fragment <{RDF_TYPE}> {}", term("Fragment")),
+            0,
+        );
+        let order =
+            view.pattern(&format!("?fragment {} ?value", term("order")), 1);
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?fragment ?value WHERE {{ {fragments} \
+                 {order} }}"
+            ))
+            .await?;
+        let mut result = HashMap::new();
+        while let Some(row) = rows.next().await? {
+            let Term::NamedNode(fragment) = &row["fragment"] else {
+                bail!("fragment must have a stable IRI")
+            };
+            ensure!(
+                result.len() < super::limits::PUBLICATION_ENTRIES as usize,
+                "fragment order index exceeds publication entry budget"
+            );
+            let value = integer(&row["value"], "fragment order")?;
+            if let Some(previous) = result.insert(fragment.clone(), value) {
+                ensure!(
+                    previous == value,
+                    "conflicting fragment order for {fragment}"
+                );
+            }
+        }
+        Ok(result)
+    }
+
     async fn entries(
         &self,
         selection: &Selection<'_>,
@@ -286,22 +400,35 @@ impl TargetPlanner {
             &format!("{scope_plan} {} ?subject", term("member")),
             2,
         );
-        let fragment_order = view.pattern(
-            &format!("?fragment {} ?fragmentOrder", term("order")),
-            3,
-        );
-        let mut rows = self.dataset.select(format!("SELECT DISTINCT ?fragment ?fragmentOrder WHERE {{ {fragments} {subjects} {members} OPTIONAL {{ {fragment_order} }} }} ORDER BY <http://www.w3.org/2001/XMLSchema#integer>(?fragmentOrder) ?fragment")).await?;
-        let mut count = 0u64;
-        let mut previous = None;
-        let mut missing_order = false;
+        // The OPTIONAL order join used to re-evaluate the logical contribution
+        // union for every fragment. Resolve this small metadata index once and
+        // sort only this component's bounded fragment IDs, never its bodies.
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?fragment WHERE {{ {fragments} {subjects} \
+                 {members} }}"
+            ))
+            .await?;
+        let mut selected = Vec::new();
         while let Some(row) = rows.next().await? {
             let Term::NamedNode(fragment) = &row["fragment"] else {
                 bail!("fragment must have a stable IRI")
             };
-            let fragment_order = row
-                .get("fragmentOrder")
-                .map(|value| integer(value, "fragment order"))
-                .transpose()?;
+            ensure!(
+                selected.len() < super::limits::PUBLICATION_ENTRIES as usize,
+                "component exceeds publication entry budget"
+            );
+            selected.push((
+                selection.orders.get(fragment).copied(),
+                fragment.clone(),
+            ));
+        }
+        selected.sort();
+        let mut previous = None;
+        let mut missing_order = false;
+        for (count, (fragment_order, fragment)) in selected.iter().enumerate() {
+            let fragment_order = *fragment_order;
             ensure!(
                 count == 0 || (!missing_order && fragment_order.is_some()),
                 "multiple selected fragments in {component} require explicit \
@@ -313,7 +440,6 @@ impl TargetPlanner {
             );
             missing_order |= fragment_order.is_none();
             previous = fragment_order;
-            count += 1;
             self.references(selection, fragment).await?;
             let entry = identity("plan-entry", &[
                 plan.as_str(),
@@ -361,7 +487,6 @@ impl TargetPlanner {
         fragment: &NamedNode,
     ) -> Result<()> {
         let view = selection.view;
-        let profile = selection.profile;
         let direct = view.pattern(
             &format!("{fragment} {} ?value", term("reference")),
             0,
@@ -385,43 +510,9 @@ impl TargetPlanner {
             let Term::NamedNode(reference) = &row["value"] else {
                 bail!("fragment reference must be an IRI")
             };
-            if view.has_type(reference, "ExternalReference").await? {
-                continue;
-            }
-            let placements = view.pattern(
-                &format!("{profile} {} ?placement", term("placement")),
-                0,
-            );
-            let component = view.pattern(
-                &format!("?placement {} ?component", term("component")),
-                1,
-            );
-            let fragments = view.pattern(
-                &format!("?component {} ?fragment", term("fragment")),
-                2,
-            );
-            let subject = view.pattern(
-                &format!("?fragment {} {reference}", term("subject")),
-                3,
-            );
-            let member = Dataset::logical_pattern(
-                selection.scope_snapshot,
-                &format!(
-                    "{} {} {reference}",
-                    selection.scope_plan,
-                    term("member")
-                ),
-                4,
-            );
-            let mut resolved = self
-                .dataset
-                .select(format!(
-                    "SELECT ?fragment WHERE {{ {placements} {component} \
-                     {fragments} {subject} {member} }} LIMIT 1"
-                ))
-                .await?;
             ensure!(
-                resolved.next().await?.is_some(),
+                selection.external.contains(reference) ||
+                    selection.documented.contains(reference),
                 "{fragment} references missing content {reference}; declare \
                  external references explicitly"
             );

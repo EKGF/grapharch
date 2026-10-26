@@ -10,6 +10,7 @@ pub mod diagnostics;
 pub mod document;
 mod gallery;
 pub mod governance;
+mod limits;
 mod markdown;
 mod native_html;
 pub mod ontology_family;

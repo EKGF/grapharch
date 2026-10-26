@@ -236,7 +236,18 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             "placement",
             Some("Placement"),
         )]),
+        ("OntologyModule", vec![Field::many(
+            "moduleMember",
+            None,
+        )]),
         ("Placement", vec![
+            Field {
+                name:      "parentPlacement",
+                required:  false,
+                multiple:  false,
+                reference: Some("Placement"),
+                literal:   false,
+            },
             Field::one("component", Some("Component")),
             Field::text("order"),
         ]),

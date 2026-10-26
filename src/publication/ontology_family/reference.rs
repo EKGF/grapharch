@@ -116,7 +116,8 @@ impl Layout {
         let mut rows = dataset
             .select(format!(
                 "SELECT DISTINCT ?subject ?kind WHERE {{ {pattern} \
-                 FILTER(isIRI(?subject) && isIRI(?kind)) }} LIMIT 64001"
+                 FILTER(isIRI(?subject) && isIRI(?kind)) }} LIMIT {}",
+                crate::publication::limits::SOURCE_TYPE_ASSERTIONS + 1
             ))
             .await?;
         let mut types: BTreeMap<NamedNode, HashSet<String>> = BTreeMap::new();
@@ -124,7 +125,7 @@ impl Layout {
         while let Some(row) = rows.next().await? {
             count += 1;
             ensure!(
-                count <= 64000,
+                count <= crate::publication::limits::SOURCE_TYPE_ASSERTIONS,
                 "ontology reference exceeds type assertion budget"
             );
             if let (Term::NamedNode(subject), Term::NamedNode(kind)) =

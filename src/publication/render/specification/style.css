@@ -2,7 +2,7 @@
 *{box-sizing:border-box}
 html{color:var(--ink);background:#fff;font:16px/1.5 Arial,Helvetica,sans-serif;scroll-padding-top:1rem}
 body{margin:0;padding:2.5rem 2rem 4rem calc(var(--toc-size) + 2rem)}
-main{max-width:50rem;margin:0}
+main{max-width:50rem;margin:0;overflow-wrap:anywhere}
 a{color:var(--link);text-underline-offset:.1em}a:visited{color:#5a3696}a:hover{color:#0074b8}
 a:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
 h1,h2,h3,h4,h5,h6{line-height:1.2;color:var(--authority-color);overflow-wrap:anywhere}

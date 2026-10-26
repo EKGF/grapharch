@@ -9,7 +9,7 @@ use {
 
 #[derive(Default)]
 pub(super) struct Outline {
-    section:     u32,
+    sections:    [u32; 8],
     appendix:    u32,
     prefix:      Option<String>,
     levels:      [u32; 4],
@@ -17,7 +17,16 @@ pub(super) struct Outline {
 }
 
 impl Outline {
-    pub fn component(&mut self, kind: &str, title: &str) -> Result<String> {
+    pub fn component(
+        &mut self,
+        kind: &str,
+        title: &str,
+        depth: usize,
+    ) -> Result<String> {
+        ensure!(
+            (1..=8).contains(&depth),
+            "component depth must be between one and eight"
+        );
         self.levels = [0; 4];
         match kind {
             "abstract" => {
@@ -45,8 +54,19 @@ impl Outline {
                 );
                 self.prefix = match kind {
                     "section" => {
-                        self.section += 1;
-                        Some(self.section.to_string())
+                        ensure!(
+                            self.sections[..depth - 1].iter().all(|n| *n > 0),
+                            "component hierarchy skips a level"
+                        );
+                        self.sections[depth - 1] += 1;
+                        self.sections[depth..].fill(0);
+                        Some(
+                            self.sections[..depth]
+                                .iter()
+                                .map(u32::to_string)
+                                .collect::<Vec<_>>()
+                                .join("."),
+                        )
                     },
                     "appendix" => {
                         self.appendix += 1;
@@ -153,11 +173,17 @@ pub(super) fn markdown_html(
                 let id = id.as_ref().ok_or_else(|| {
                     anyhow::anyhow!("heading has no stable identity")
                 })?;
-                current = Some((depth + 2, id.to_string()));
+                let logical_level = depth + markdown.component_depth + 1;
+                let level = logical_level.min(6);
+                let aria = if logical_level > 6 {
+                    format!(" role=\"heading\" aria-level=\"{logical_level}\"")
+                } else {
+                    String::new()
+                };
+                current = Some((level, id.to_string()));
                 events.push(Event::Html(
                     format!(
-                        "<h{} id=\"{}\">{number}",
-                        depth + 2,
+                        "<h{level}{aria} id=\"{}\">{number}",
                         html_escape(id)
                     )
                     .into(),

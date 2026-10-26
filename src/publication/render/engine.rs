@@ -117,6 +117,7 @@ pub(super) async fn compile(
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         let world = DocumentWorld { root, assets };
+        let started = std::time::Instant::now();
         let result = typst::compile::<PagedDocument>(&world);
         let document = result.output.map_err(|diagnostics| {
             anyhow::anyhow!("Typst compilation failed: {diagnostics:?}")
@@ -126,11 +127,64 @@ pub(super) async fn compile(
             "Typst compilation warnings: {:?}",
             result.warnings
         );
-        typst_pdf::pdf(&document, &PdfOptions::default()).map_err(
+        tracing::info!(
+            elapsed_ms = started.elapsed().as_millis(),
+            pages = document.pages.len(),
+            "Typst document laid out"
+        );
+        let pdf_started = std::time::Instant::now();
+        let pdf = typst_pdf::pdf(&document, &PdfOptions::default()).map_err(
             |diagnostics| {
                 anyhow::anyhow!("PDF generation failed: {diagnostics:?}")
             },
-        )
+        )?;
+        tracing::info!(
+            elapsed_ms = pdf_started.elapsed().as_millis(),
+            bytes = pdf.len(),
+            "PDF encoded"
+        );
+        Ok(pdf)
     })
     .await?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    #[ignore = "native performance acceptance: run with cargo test --release \
+                --lib large_book_running_headers -- --ignored"]
+    async fn large_book_running_headers_complete_without_per_page_chapter_scans()
+    -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let source = format!(
+            "#let ga-style = \"specification\"\n#let ga-accent = \
+             rgb(\"#2b5f9f\")\n#let ga-title = \"Running header scale \
+             test\"\n#let ga-publisher = \"Example Authority\"\n#let \
+             ga-ribbon = none\n{}\n#for chapter in range(128) {{ \
+             heading(level: 1)[#text(\"Chapter \" + str(chapter))]; for term \
+             in range(128) {{ heading(level: 6, numbering: none)[#text(\"Term \
+             \" + str(term))]; [A bounded header performance fixture.]; }}; \
+             pagebreak() }}",
+            include_str!("typst/theme.typ")
+        );
+        std::fs::write(root.path().join("main.typ"), source)?;
+        let assets = Assets::load().await?;
+        let pdf = tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            compile(
+                root.path().to_owned(),
+                assets,
+                Arc::new(tokio::sync::Semaphore::new(1)),
+            ),
+        )
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(
+                "running headers must not scan every chapter on every page"
+            )
+        })??;
+        assert!(pdf.starts_with(b"%PDF-"));
+        Ok(())
+    }
 }

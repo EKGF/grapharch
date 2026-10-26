@@ -148,11 +148,12 @@ pub(super) async fn begin(
             ));
         }
     }
+    let toc_depth = plan.toc_depth().await?.unwrap_or(3);
     file.write_all(
         format!(
             "\n#ga-cover(ga-publisher, ga-title, [{subtitle}], \
              [{front}])\n#pagebreak()\n#outline(title: [Contents], depth: \
-             3)\n#pagebreak()\n#counter(heading).update(0)\n"
+             {toc_depth})\n#pagebreak()\n#counter(heading).update(0)\n"
         )
         .as_bytes(),
     )
@@ -198,7 +199,8 @@ pub(super) async fn entry(
         };
         file.write_all(
             format!(
-                "#heading(level: 1{numbering})[#text({})]#label({})\n",
+                "#heading(level: {}{numbering})[#text({})]#label({})\n",
+                entry.depth,
                 quote(&entry.title),
                 quote(&plan.anchor(&entry.placement, None))
             )

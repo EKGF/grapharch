@@ -1233,3 +1233,39 @@ ga:headingDepth a owl:DatatypeProperty ;
     rdfs:range xsd:integer .
 
 ga:ReferenceSection skos:scopeNote "Use ga:sectionKind to select classes, properties, individuals, shapes, or other; dct:title supplies one English or untagged plain-text heading; ga:order supplies a distinct integer from 0 to 1000. Defaults are Classes (10), Properties (20), Named Individuals (30), Shapes (40), and Other Terms (50). Empty categories are omitted. Overrides rename and reorder categories without suppressing resources. Named individuals take precedence over other declared types; then classes, properties, shapes, and other terms."@en .
+
+
+ga:OntologyModule a owl:Class ;
+    rdfs:label "Ontology module"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A named grouping of ontologies or subordinate modules, recognized from explicit source assertions and preserved independently of its publication placement."@en ;
+    dct:description "A named grouping of ontologies or subordinate modules, recognized from explicit source assertions and preserved independently of its publication placement."@en .
+
+
+ga:moduleMember a owl:ObjectProperty ;
+    rdfs:label "Module member"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Relates an explicitly declared ontology module to one of its named ontologies or subordinate modules without inferring containment from directories or imports."@en ;
+    dct:description "Relates an explicitly declared ontology module to one of its named ontologies or subordinate modules without inferring containment from directories or imports."@en ;
+    rdfs:domain ga:OntologyModule ;
+    rdfs:range rdfs:Resource .
+
+
+ga:parentPlacement a owl:ObjectProperty ;
+    rdfs:label "Parent placement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Places a documentation component beneath an earlier component in the same publication, preserving its parent hierarchy in a pinned publication plan."@en ;
+    dct:description "Places a documentation component beneath an earlier component in the same publication, preserving its parent hierarchy in a pinned publication plan."@en ;
+    rdfs:domain ga:Placement ;
+    rdfs:range ga:Placement .
+
+ga:OntologyModule skos:scopeNote "FIBO Module instances and their dct:hasPart assertions are recognized by the RDF source adapter. Original source assertions are retained. Publication rejects cycles, ambiguous multiple parents, missing members, and hierarchies deeper than eight component levels. Ontologies without explicit module membership remain separate reference chapters."@en .
+
+
+ga:tocDepth a owl:DatatypeProperty ;
+    rdfs:label "Maximum contents depth"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Sets a maximum heading depth for a specification contents sidebar and its PDF outline, allowing large families to list modules and ontologies without every vocabulary term."@en ;
+    dct:description "Sets a maximum heading depth for a specification contents sidebar and its PDF outline, allowing large families to list modules and ontologies without every vocabulary term."@en ;
+    rdfs:domain rdfs:Resource ; rdfs:range xsd:integer ;
+    skos:scopeNote "An integer from one to eight on a target or profile. A target value overrides its profile. When absent, HTML retains the full outline and PDF retains its default depth of three."@en .

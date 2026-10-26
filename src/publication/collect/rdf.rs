@@ -44,7 +44,7 @@ impl RdfFile {
             );
             hash.update(&buffer[..count]);
         }
-        Ok(format!("rdf-v1:{}", hex::encode(hash.finalize())))
+        Ok(format!("rdf-v2:{}", hex::encode(hash.finalize())))
     }
 }
 
@@ -82,6 +82,7 @@ impl Collector for RdfFile {
         let mut parser = RdfParser::from_format(format)
             .with_base_iri(base.as_str())?
             .for_tokio_async_reader(&mut observed);
+        let mut modules = super::module_hints::ModuleHints::default();
         while let Some(quad) = parser.next().await {
             let quad = match quad {
                 Ok(quad) => quad,
@@ -89,9 +90,14 @@ impl Collector for RdfFile {
                     return Err(error.into());
                 },
             };
-            stream.write(blanks.normalize(quad)).await?;
+            let quad = blanks.normalize(quad);
+            modules.observe(&quad)?;
+            stream.write(quad).await?;
         }
         drop(parser);
+        for quad in modules.finish()? {
+            stream.write(quad).await?;
+        }
         if raw_revision != observed.revision() {
             anyhow::bail!("RDF source changed during collection");
         }

@@ -1,7 +1,7 @@
 use {
     super::{
         content::{Entry, code_language, letter},
-        markup::{Markdown, html_escape},
+        markup::{Markdown, heading_level, html_escape},
         model::{Plan, node, title},
     },
     anyhow::{Result, ensure},
@@ -85,7 +85,7 @@ pub(super) async fn begin(
     while let Some(row) = rows.next().await? {
         count += 1;
         ensure!(
-            count <= 10_000,
+            count <= crate::publication::limits::PUBLICATION_ENTRIES,
             "target exceeds rendering entry budget"
         );
         let placement = node(&row["placement"])?;
@@ -131,9 +131,11 @@ pub(super) async fn entry(
 ) -> Result<()> {
     if entry.first {
         // Every first entry after the first opens a new component section.
+        let (level, aria) = heading_level(entry.depth + 1);
         file.write_all(
             format!(
-                "<!--component--><section id=\"{}\"><h2>{}</h2>\n",
+                "<!--component--><section \
+                 id=\"{}\"><h{level}{aria}>{}</h{level}>\n",
                 plan.anchor(&entry.placement, None),
                 html_escape(
                     &if entry.kind == "appendix" {

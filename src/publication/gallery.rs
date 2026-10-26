@@ -179,9 +179,11 @@ async fn collect_at(
         };
         match result {
             Ok(built) => {
-                if total_bytes + built.bytes > 128 * 1024 * 1024 {
+                if total_bytes + built.bytes >
+                    super::limits::RETAINED_ASSET_BYTES
+                {
                     report.error = Some(
-                        "showcase artifacts exceed 128 MiB gallery budget"
+                        "showcase artifacts exceed 512 MiB gallery budget"
                             .into(),
                     );
                 } else {
@@ -383,8 +385,8 @@ async fn build_case(
             )?;
             total_bytes += tokio::fs::metadata(&file).await?.len();
             ensure!(
-                total_bytes <= 128 * 1024 * 1024,
-                "showcase artifacts exceed 128 MiB budget"
+                total_bytes <= super::limits::RETAINED_ASSET_BYTES,
+                "showcase artifacts exceed 512 MiB budget"
             );
             artifacts.insert(relative, asset.id());
             if name == "index.html" || name == "document.pdf" {
@@ -432,8 +434,8 @@ async fn build_case(
     let archive = output.join("documentation.nq");
     total_bytes += tokio::fs::metadata(&archive).await?.len();
     ensure!(
-        total_bytes <= 128 * 1024 * 1024,
-        "showcase artifacts exceed 128 MiB budget"
+        total_bytes <= super::limits::RETAINED_ASSET_BYTES,
+        "showcase artifacts exceed 512 MiB budget"
     );
     let archive = PublishedArtifactFile::new(
         project,

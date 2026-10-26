@@ -7,9 +7,10 @@ use {
 
 pub(super) struct Markdown<'a> {
     // bounded: one fragment, capped at 1 MiB before parsing; never the corpus.
-    pub events:    Vec<Event<'a>>,
-    base_level:    usize,
-    heading_depth: usize,
+    pub events:          Vec<Event<'a>>,
+    base_level:          usize,
+    heading_depth:       usize,
+    pub component_depth: usize,
 }
 
 impl<'a> Markdown<'a> {
@@ -18,6 +19,7 @@ impl<'a> Markdown<'a> {
         plan: &Plan,
         prefix: &str,
         fragment: &oxrdf::NamedNode,
+        component_depth: usize,
     ) -> Result<Self> {
         ensure!(
             body.len() <= 1024 * 1024,
@@ -173,7 +175,7 @@ impl<'a> Markdown<'a> {
                 );
             }
         }
-        Ok(Self { events, base_level, heading_depth })
+        Ok(Self { events, base_level, heading_depth, component_depth })
     }
 
     pub fn depth(&self, level: HeadingLevel) -> usize {
@@ -184,15 +186,30 @@ impl<'a> Markdown<'a> {
         let events = self.events.iter().cloned().map(|event| {
             match event {
                 Event::Start(Tag::Heading { level, id, classes, attrs }) => {
+                    let logical = self.depth(level) + self.component_depth + 1;
+                    if logical > 6 {
+                        let (_, aria) = heading_level(logical);
+                        return Event::Html(
+                            format!(
+                                "<h6{aria} id=\"{}\">",
+                                html_escape(id.as_deref().unwrap_or_default())
+                            )
+                            .into(),
+                        );
+                    }
                     Event::Start(Tag::Heading {
-                        level: shifted(self.depth(level)),
+                        level: shifted(
+                            self.depth(level) + self.component_depth - 1,
+                        ),
                         id,
                         classes,
                         attrs,
                     })
                 },
                 Event::End(TagEnd::Heading(level)) => {
-                    Event::End(TagEnd::Heading(shifted(self.depth(level))))
+                    Event::End(TagEnd::Heading(shifted(
+                        self.depth(level) + self.component_depth - 1,
+                    )))
                 },
                 event => event,
             }
@@ -252,4 +269,14 @@ pub(super) fn quote(value: &str) -> String {
             .replace('\r', "\\r")
             .replace('\t', "\\t")
     )
+}
+
+/// HTML has six heading tags; ARIA preserves deeper semantic book levels.
+pub(super) fn heading_level(logical: usize) -> (usize, String) {
+    let attributes = if logical > 6 {
+        format!(" role=\"heading\" aria-level=\"{logical}\"")
+    } else {
+        String::new()
+    };
+    (logical.min(6), attributes)
 }

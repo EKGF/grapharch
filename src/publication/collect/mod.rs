@@ -9,6 +9,7 @@ mod hashing_reader;
 mod image;
 mod markdown_images;
 mod markdown_structure;
+mod module_hints;
 pub(crate) mod page;
 pub(crate) mod published_artifact;
 mod rdf;

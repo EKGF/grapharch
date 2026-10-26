@@ -14,8 +14,9 @@ use {
     },
 };
 
-const MAX_ENTRIES: u64 = 10_000;
-const MAX_CONTENT_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_ENTRIES: u64 = crate::publication::limits::PUBLICATION_ENTRIES;
+const MAX_CONTENT_BYTES: u64 =
+    crate::publication::limits::PUBLICATION_CONTENT_BYTES;
 
 pub(super) struct Entry {
     pub fragment:  NamedNode,
@@ -25,6 +26,7 @@ pub(super) struct Entry {
     pub body:      String,
     pub format:    String,
     pub first:     bool,
+    pub depth:     usize,
 }
 
 pub(super) struct Entries {
@@ -32,6 +34,7 @@ pub(super) struct Entries {
     previous:     Option<NamedNode>,
     count:        u64,
     bytes:        u64,
+    depths:       std::collections::HashMap<NamedNode, usize>,
     pub appendix: u32,
 }
 
@@ -42,6 +45,7 @@ impl Entries {
             previous: None,
             count:    0,
             bytes:    0,
+            depths:   Default::default(),
             appendix: 0,
         })
     }
@@ -53,7 +57,8 @@ impl Entries {
         self.count += 1;
         ensure!(
             self.count <= MAX_ENTRIES,
-            "target exceeds the 10000-entry rendering budget"
+            "target exceeds the {}-entry rendering budget",
+            MAX_ENTRIES
         );
         let fragment = node(&row["fragment"])?.clone();
         let placement = node(&row["placement"])?.clone();
@@ -66,12 +71,42 @@ impl Entries {
         self.bytes += body.len() as u64;
         ensure!(
             self.bytes <= MAX_CONTENT_BYTES,
-            "target exceeds the 16 MiB content budget; select a smaller \
-             publication scope"
+            "target exceeds the {}-byte content budget; select a smaller \
+             publication scope",
+            MAX_CONTENT_BYTES
         );
         let first = self.previous.as_ref() != Some(&placement);
         let kind = plan.section_kind(&placement).await?;
+        let depth = if first {
+            let depth = match plan
+                .source
+                .optional(&placement, "parentPlacement")
+                .await?
+            {
+                None => 1,
+                Some(oxrdf::Term::NamedNode(parent)) => {
+                    self.depths.get(&parent).ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "parent placement must precede its selected \
+                             child: {parent}"
+                        )
+                    })? + 1
+                },
+                Some(_) => {
+                    anyhow::bail!("parentPlacement must identify a placement")
+                },
+            };
+            ensure!(
+                depth <= 8,
+                "publication component hierarchy exceeds eight levels"
+            );
+            self.depths.insert(placement.clone(), depth);
+            depth
+        } else {
+            self.depths[&placement]
+        };
         let entry = Entry {
+            depth,
             format: plan.source.text(&fragment, "format").await?,
             title: title(&plan.source, component).await?,
             fragment,
@@ -80,6 +115,11 @@ impl Entries {
             kind,
             first,
         };
+        ensure!(
+            entry.depth == 1 || entry.format != "text/html",
+            "nested native HTML components require explicit heading \
+             remapping; use Markdown for module references"
+        );
         ensure!(
             entry.kind != "section" || self.appendix == 0,
             "numbered main sections cannot follow appendices"
@@ -128,8 +168,14 @@ pub(super) async fn write(
         let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
         let markdown = if entry.format == "text/markdown" {
             Some(
-                Markdown::parse(&entry.body, plan, &anchor, &entry.fragment)
-                    .await?,
+                Markdown::parse(
+                    &entry.body,
+                    plan,
+                    &anchor,
+                    &entry.fragment,
+                    entry.depth,
+                )
+                .await?,
             )
         } else {
             None
@@ -191,8 +237,14 @@ pub(super) async fn write_typst(
         let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
         let markdown = if entry.format == "text/markdown" {
             Some(
-                Markdown::parse(&entry.body, plan, &anchor, &entry.fragment)
-                    .await?,
+                Markdown::parse(
+                    &entry.body,
+                    plan,
+                    &anchor,
+                    &entry.fragment,
+                    entry.depth,
+                )
+                .await?,
             )
         } else {
             None

@@ -32,6 +32,7 @@ ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI 
     sh:property [ sh:path ga:placement ; sh:nodeKind sh:IRI ; sh:class ga:Placement ] .
 
 ga:PlacementShape a sh:NodeShape ; sh:targetClass ga:Placement ; sh:nodeKind sh:IRI ;
+    sh:property [sh:path ga:parentPlacement; sh:nodeKind sh:IRI; sh:class ga:Placement; sh:maxCount 1] ;
     sh:property [ sh:path ga:component ; sh:nodeKind sh:IRI ; sh:class ga:Component ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:order ; sh:nodeKind sh:Literal ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
@@ -130,3 +131,11 @@ ga:ReferenceSectionShape a sh:NodeShape ; sh:targetObjectsOf ga:referenceSection
     sh:property [ sh:path ga:sectionKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("classes" "properties" "individuals" "shapes" "other") ] ;
     sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:uniqueLang true ; sh:minLength 1 ; sh:maxLength 160 ] ;
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1000 ] .
+
+
+ga:OntologyModuleShape a sh:NodeShape ; sh:targetClass ga:OntologyModule ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:moduleMember ; sh:nodeKind sh:IRI ] .
+
+
+ga:ContentsDepthShape a sh:NodeShape ; sh:targetSubjectsOf ga:tocDepth ;
+    sh:property [sh:path ga:tocDepth; sh:datatype xsd:integer; sh:minInclusive 1; sh:maxInclusive 8; sh:maxCount 1] .

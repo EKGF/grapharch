@@ -64,6 +64,7 @@ impl Dataset {
             query.len() <= 64 * 1024,
             "query exceeds byte limit"
         );
+        tracing::trace!(%query, "executing SPARQL SELECT");
         let store = self.store.clone();
         let (sender, receiver) = mpsc::channel(2);
         let task = tokio::task::spawn_blocking(move || {

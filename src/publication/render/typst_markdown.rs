@@ -48,7 +48,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         heading = id.as_ref().map(ToString::to_string);
                         output.push_str(&format!(
                             "#heading(level: {})[",
-                            markdown.depth(*level) + 1
+                            markdown.depth(*level) + markdown.component_depth
                         ));
                     },
                     Tag::BlockQuote(kind) => {

@@ -228,7 +228,7 @@ impl Publisher {
                     tokio::fs::metadata(stage.path.join("main.typ"))
                         .await?
                         .len() <=
-                        64 * 1024 * 1024,
+                        crate::publication::limits::TYPST_SOURCE_BYTES,
                     "Typst source exceeds compilation budget"
                 );
                 let assets = self
@@ -243,7 +243,8 @@ impl Publisher {
                 )
                 .await?;
                 ensure!(
-                    pdf.len() <= 128 * 1024 * 1024,
+                    pdf.len() as u64 <=
+                        crate::publication::limits::ARTIFACT_BYTES,
                     "PDF exceeds artifact byte budget"
                 );
                 tokio::fs::write(stage.path.join("document.pdf"), pdf).await?;

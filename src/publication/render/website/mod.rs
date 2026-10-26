@@ -102,8 +102,8 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         asset_bytes +=
             plan.source.text(id, "contentSize").await?.parse::<u64>()?;
         ensure!(
-            asset_bytes <= 128 * 1024 * 1024,
-            "website assets exceed 128 MiB budget"
+            asset_bytes <= crate::publication::limits::RETAINED_ASSET_BYTES,
+            "website assets exceed 512 MiB budget"
         );
         let output = stage.join(&asset.route);
         tokio::fs::create_dir_all(
