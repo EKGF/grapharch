@@ -84,8 +84,11 @@ impl Images {
             ),
             200,
         );
+        // Keep direct references separate from positive inheritance paths:
+        // a zero-length path would enumerate unrelated graph nodes, including
+        // large retained artifact literals, before joining selected entries.
         let owners = plan.source.pattern(
-            &format!("?fragment {}* ?owner", term("derivedFrom")),
+            &format!("?fragment {}+ ?owner", term("derivedFrom")),
             201,
         );
         let references = plan.source.pattern(&format!("?owner {} ?reference . ?reference <http://purl.org/dc/terms/identifier> ?original ; {} ?url", term("reference"), term("url")), 202);
@@ -96,8 +99,10 @@ impl Images {
         let mut rows = plan
             .dataset
             .select(format!(
-                "SELECT DISTINCT ?fragment ?original ?url ?asset WHERE {{ \
-                 {entries} {owners} {references} OPTIONAL {{ {asset} }} }}"
+                "SELECT DISTINCT ?fragment ?original ?url ?asset WHERE {{ {{ \
+                 {entries} BIND(?fragment AS ?owner) {references} OPTIONAL {{ \
+                 {asset} }} }} UNION {{ {entries} {owners} {references} \
+                 OPTIONAL {{ {asset} }} }} }}"
             ))
             .await?;
         let mut count = 0;
