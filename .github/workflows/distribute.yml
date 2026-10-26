@@ -60,7 +60,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install native dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config
+        timeout-minutes: 5
+        run: python3 packaging/install_build_dependencies.py
       - uses: actions-rust-lang/setup-rust-toolchain@v2
       - run: cargo fmt --check
       - name: Verify portable TLS dependency graphs
