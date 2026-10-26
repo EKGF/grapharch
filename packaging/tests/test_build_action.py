@@ -172,3 +172,21 @@ class BuildActionTest(unittest.TestCase):
             command = run.call_args.args[0]
             self.assertIn("--local-repository", command)
             self.assertNotIn("--source", command)
+
+    def test_embedded_hints_need_no_external_definitions_or_identifiers(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment = self.environment(root) | {
+                "GRAPHARCH_DEFINITIONS": "",
+                "GRAPHARCH_PROJECT": "",
+                "GRAPHARCH_TARGET": "",
+            }
+            with patch.dict(os.environ, environment):
+                self.assertEqual(
+                    build_action.configuration(),
+                    [
+                        "publication", "build-family", "--source",
+                        "sources with spaces", "--output-root",
+                        str(root / "build/my docs"),
+                    ],
+                )

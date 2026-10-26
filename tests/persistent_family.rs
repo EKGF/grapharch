@@ -417,3 +417,44 @@ async fn unchanged_builds_do_not_rewrite_acknowledged_ownership_inventory()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn cli_discovers_publication_hints_embedded_in_an_ontology() -> Result<()>
+{
+    let fixture = Fixture::new()?;
+    let ontology = fixture.root.path().join("core.ttl");
+    let mut content = std::fs::read_to_string(&ontology)?;
+    content.push_str(&std::fs::read_to_string(
+        fixture.definitions.path().join("project.ttl"),
+    )?);
+    std::fs::write(ontology, content)?;
+    let output = tempfile::tempdir()?;
+    let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .args(["publication", "build-family", "--source"])
+        .arg(fixture.root.path())
+        .arg("--output-root")
+        .arg(output.path())
+        .arg("--json")
+        .output()
+        .await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&result.stdout)?;
+    let path =
+        std::path::Path::new(report["publication_path"].as_str().unwrap());
+    let html = std::fs::read_to_string(path.join("index.html"))?;
+    assert!(html.contains("Example reference"));
+    assert!(html.contains("core ontology") && html.contains("extra ontology"));
+    assert!(
+        std::fs::read(report["pdf_path"].as_str().unwrap())?
+            .starts_with(b"%PDF-")
+    );
+    assert!(
+        std::fs::read_to_string(report["kg_path"].as_str().unwrap())?
+            .contains("urn:project")
+    );
+    Ok(())
+}

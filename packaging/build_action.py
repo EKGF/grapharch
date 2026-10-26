@@ -27,14 +27,25 @@ def configuration():
     if kind not in {"directory", "checkout"}:
         raise ValueError("source-kind must be directory or checkout")
     arguments = ["publication", "build-family"]
-    for option, name in [
-        ("--source" if kind == "directory" else "--local-repository", "SOURCE"),
-        ("--definitions", "DEFINITIONS"),
-        ("--project", "PROJECT"),
-        ("--target", "TARGET"),
-        ("--output-root", "OUTPUT"),
-    ]:
-        arguments.extend([option, required(f"GRAPHARCH_{name}")])
+    option = "--source" if kind == "directory" else "--local-repository"
+    arguments.extend([option, required("GRAPHARCH_SOURCE")])
+    overrides = [
+        os.environ.get(f"GRAPHARCH_{name}", "")
+        for name in ["DEFINITIONS", "PROJECT", "TARGET"]
+    ]
+    if any(overrides):
+        if not all(overrides):
+            raise ValueError(
+                "definitions, project and target must be supplied together, "
+                "or omitted to discover repository hints"
+            )
+        for option, name in [
+            ("--definitions", "DEFINITIONS"),
+            ("--project", "PROJECT"),
+            ("--target", "TARGET"),
+        ]:
+            arguments.extend([option, required(f"GRAPHARCH_{name}")])
+    arguments.extend(["--output-root", required("GRAPHARCH_OUTPUT")])
     return arguments
 
 

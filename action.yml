@@ -14,11 +14,11 @@ inputs:
     description: directory or checkout (for local Git repository provenance)
     default: directory
   definitions:
-    description: Publication definitions file (required in build-family mode)
+    description: Optional external publication definitions (supply with project and target)
   project:
-    description: Project IRI (required in build-family mode)
+    description: Optional project IRI for external definitions
   target:
-    description: Publication target IRI (required in build-family mode)
+    description: Optional target IRI for external definitions
   output:
     description: Output root directory
     default: build/docs

@@ -24,7 +24,7 @@ use {
     clap::{Args, Subcommand, ValueEnum},
     oxigraph::{io::RdfFormat, store::Store},
     oxrdf::{NamedNode, Term},
-    std::path::PathBuf,
+    std::path::{Path, PathBuf},
     tokio::io::AsyncReadExt,
 };
 
@@ -126,18 +126,18 @@ pub enum PublicationCommand {
         /// Read any remote Git URL through a bare Git cache.
         #[arg(long)]
         git_repository:   Option<String>,
-        /// Branch, full tag ref, HEAD, or commit ID for a remote source.
+        /// Branch, full tag ref, or commit ID (defaults to remote HEAD).
         #[arg(long)]
         git_ref:          Option<String>,
         /// Bare-cache parent directory (defaults to the system temp cache).
         #[arg(long)]
         git_cache:        Option<PathBuf>,
-        #[arg(long)]
-        definitions:      PathBuf,
-        #[arg(long)]
-        project:          String,
-        #[arg(long)]
-        target:           String,
+        #[arg(long, requires_all = ["project", "target"])]
+        definitions:      Option<PathBuf>,
+        #[arg(long, requires_all = ["definitions", "target"])]
+        project:          Option<String>,
+        #[arg(long, requires_all = ["definitions", "project"])]
+        target:           Option<String>,
         #[arg(long)]
         output_root:      PathBuf,
         #[arg(long, default_value_t = 4)]
@@ -280,12 +280,12 @@ pub async fn run(
                 >(
                     &bounded_file(path, 256 * 1024).await?
                 )?;
-                super::ontology_family::collect_from(
+                collect_configured_family(
                     dataset,
                     super::ontology_family::FamilySource::Sparql(&configs),
-                    definitions,
-                    project,
-                    target,
+                    definitions.as_deref(),
+                    project.as_deref(),
+                    target.as_deref(),
                     *concurrency,
                 )
                 .await?
@@ -294,12 +294,12 @@ pub async fn run(
                     git_ref.is_none() && git_cache.is_none(),
                     "Git options require a remote repository"
                 );
-                super::ontology_family::collect_from(
+                collect_configured_family(
                     dataset,
                     super::ontology_family::FamilySource::Directory(source),
-                    definitions,
-                    project,
-                    target,
+                    definitions.as_deref(),
+                    project.as_deref(),
+                    target.as_deref(),
                     *concurrency,
                 )
                 .await?
@@ -308,14 +308,14 @@ pub async fn run(
                     git_ref.is_none() && git_cache.is_none(),
                     "working-tree mode does not accept remote Git options"
                 );
-                super::ontology_family::collect_from(
+                collect_configured_family(
                     dataset,
                     super::ontology_family::FamilySource::LocalRepository(
                         source,
                     ),
-                    definitions,
-                    project,
-                    target,
+                    definitions.as_deref(),
+                    project.as_deref(),
+                    target.as_deref(),
                     *concurrency,
                 )
                 .await?
@@ -343,22 +343,20 @@ pub async fn run(
                         })?
                         .clone()
                 };
-                let reference = git_ref.as_deref().ok_or_else(|| {
-                    anyhow::anyhow!("remote repository requires --git-ref")
-                })?;
+                let reference = git_ref.as_deref().unwrap_or("HEAD");
                 let cache = git_cache.clone().unwrap_or_else(|| {
                     std::env::temp_dir().join("grapharch-git-cache")
                 });
-                super::ontology_family::collect_from(
+                collect_configured_family(
                     dataset,
                     super::ontology_family::FamilySource::RemoteRepository {
                         url: &url,
                         reference,
                         cache: &cache,
                     },
-                    definitions,
-                    project,
-                    target,
+                    definitions.as_deref(),
+                    project.as_deref(),
+                    target.as_deref(),
                     *concurrency,
                 )
                 .await?
@@ -689,4 +687,42 @@ async fn print_build_json(
     writeln!(stdout)?;
     stdout.flush()?;
     Ok(())
+}
+
+async fn collect_configured_family(
+    dataset: Dataset,
+    source: super::ontology_family::FamilySource<'_>,
+    definitions: Option<&Path>,
+    project: Option<&str>,
+    target: Option<&str>,
+    concurrency: usize,
+) -> Result<super::ontology_family::CollectedFamily> {
+    match (definitions, project, target) {
+        (Some(definitions), Some(project), Some(target)) => {
+            super::ontology_family::collect_from(
+                dataset,
+                source,
+                definitions,
+                project,
+                target,
+                concurrency,
+            )
+            .await
+        },
+        (None, None, None) => {
+            super::ontology_family::collect_discovered_from(
+                dataset,
+                source,
+                None,
+                concurrency,
+            )
+            .await
+        },
+        _ => {
+            anyhow::bail!(
+                "definitions, project and target must be supplied together, \
+                 or omitted to discover source hints"
+            )
+        },
+    }
 }
