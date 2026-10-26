@@ -103,6 +103,20 @@ pub enum PublicationCommand {
         #[arg(long, default_value_t = 4)]
         concurrency: usize,
     },
+    /// Run every declared showcase, retain reports and KGs, and fail if any
+    /// case fails.
+    VerifyGallery {
+        #[arg(long)]
+        json:        bool,
+        #[command(flatten)]
+        backend:     BuildStoreOptions,
+        #[arg(long)]
+        source:      PathBuf,
+        #[arg(long)]
+        project:     String,
+        #[arg(long)]
+        output_root: PathBuf,
+    },
     /// Collect an explicitly registered family of RDF ontologies and publish
     /// its reference.
     BuildFamily {
@@ -252,6 +266,37 @@ pub async fn run(
     mode: FailureMode,
 ) -> Result<()> {
     match command {
+        PublicationCommand::VerifyGallery {
+            json,
+            backend,
+            source,
+            project,
+            output_root,
+        } => {
+            let report = super::showcases::verify_gallery(
+                backend.open().await?,
+                source,
+                project,
+                output_root,
+            )
+            .await?;
+            if *json {
+                println!("{}", serde_json::to_string(&report)?);
+            } else {
+                for case in &report.cases {
+                    println!(
+                        "{}: {}",
+                        case.id,
+                        if case.succeeded { "passed" } else { "failed" }
+                    );
+                }
+                println!(
+                    "report={}",
+                    output_root.join("report.json").display()
+                );
+            }
+            report.ensure_success()?;
+        },
         PublicationCommand::BuildFamily {
             json,
             backend,
