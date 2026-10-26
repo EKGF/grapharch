@@ -1,6 +1,7 @@
 """The shipped packages contain and execute the same CLI artifact."""
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DistributionTests(unittest.TestCase):
+    def test_source_verification_uses_the_declared_linux_release_host(self):
+        platforms = json.loads((ROOT / "packaging/platforms.json").read_text())
+        host = next(item["runner"] for item in platforms
+                    if item["target"] == "x86_64-unknown-linux-gnu")
+        workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
+        source_job = workflow.split("  verify-source:\n", 1)[1].split("  binaries:\n", 1)[0]
+        runner = re.search(r"^    runs-on: (.+)$", source_job, re.MULTILINE).group(1)
+        self.assertEqual(runner, host)
+
     def test_builds_platform_package_and_verified_standalone_archive(self):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)
