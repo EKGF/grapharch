@@ -384,7 +384,7 @@ async fn pinned_git_markdown_reads_develop_and_never_falls_back_to_main()
     .await?;
     let plain = first.blob(std::path::Path::new("plain.md")).await?;
     GitMarkdownFile::new(
-        plain,
+        plain.clone(),
         "urn:plain-markdown",
         NamedNode::new("urn:plain-guide")?,
         true,
@@ -416,6 +416,29 @@ async fn pinned_git_markdown_reads_develop_and_never_falls_back_to_main()
         view.text(&NamedNode::new("urn:plain-guide")?, "body")
             .await?
             .contains("Native Markdown body")
+    );
+    let mut revisions = Vec::new();
+    for route in ["guide/", "other/"] {
+        let collector = GitMarkdownFile::new(
+            plain.clone(),
+            "urn:plain-markdown",
+            NamedNode::new("urn:plain-guide")?,
+            true,
+        )?
+        .with_page_hints("Source-owned page title".into(), route.into())?;
+        let mut stream = writer
+            .begin_pending(
+                "urn:test:project",
+                "urn:plain-markdown",
+                plain.source(),
+            )
+            .await?;
+        revisions.push(collector.produce(&mut stream).await?);
+        stream.abort().await?;
+    }
+    assert_ne!(
+        revisions[0], revisions[1],
+        "source-owned page hints must participate in revision identity"
     );
     drop(writer);
     worker.await??;

@@ -301,6 +301,15 @@ impl Collector for GitMarkdownFile {
         let text =
             String::from_utf8(self.blob.bytes(MAX_AUTHORED_BYTES).await?)
                 .context("Git Markdown must be UTF-8")?;
+        let hints = self.hints.as_ref();
+        let revision = identity("git-markdown-revision-v2", &[
+            &self.blob.revision(),
+            self.fragment.as_str(),
+            if self.website { "website" } else { "fragment" },
+            hints.map(|v| v.0.as_str()).unwrap_or(""),
+            hints.map(|v| v.1.as_str()).unwrap_or(""),
+        ])
+        .into_string();
         let input = FileInput::supplied(
             &self.blob.revision.project,
             &self.processor,
@@ -308,7 +317,7 @@ impl Collector for GitMarkdownFile {
             self.blob.source.clone(),
             self.fragment.clone(),
             text.clone(),
-            self.blob.revision(),
+            revision,
         )?;
         let revision =
             MarkdownFile::supplied(input, self.website, self.hints.clone())
