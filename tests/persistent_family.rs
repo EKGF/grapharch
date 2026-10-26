@@ -463,3 +463,172 @@ async fn cli_discovers_publication_hints_embedded_in_an_ontology() -> Result<()>
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn family_reference_groups_terms_and_honors_source_heading_hints()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    let path = f.root.path().join("core.ttl");
+    let mut source = std::fs::read_to_string(&path)?;
+    source.push_str(r#"
+@prefix ga:<https://ekgf.org/ontology/grapharch#> .
+<https://example.org/core#> ga:overviewTitle "Summary"@en ;
+    ga:referenceSection <urn:section:instances> .
+<urn:section:instances> a ga:ReferenceSection ; ga:sectionKind "individuals" ;
+    <http://purl.org/dc/terms/title> "Examples"@en ; ga:order 0 .
+<https://example.org/core#prop> a owl:ObjectProperty ; rdfs:label "Connects"@en ; rdfs:comment "A relation."@en .
+<https://example.org/core#Instance> a owl:NamedIndividual, owl:Class, <https://example.org/core#Term> ; rdfs:label "An example"@en ; rdfs:comment "An instance."@en .
+<https://example.org/core#Shape> a sh:NodeShape ; rdfs:label "Validation"@en ; rdfs:comment "A shape."@en .
+<https://example.org/core#Concept> a <http://www.w3.org/2004/02/skos/core#Concept> ; rdfs:label "A concept"@en ; rdfs:comment "A concept."@en .
+"#);
+    std::fs::write(&path, source)?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("kg.nq");
+    built.dataset.export(archive.clone()).await?;
+    std::fs::remove_dir_all(f.root.path())?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(p) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("not published")
+    };
+    let html = std::fs::read_to_string(p.directory.join("index.html"))?;
+    let doc = scraper::Html::parse_document(&html);
+    let headings = doc
+        .select(&scraper::Selector::parse("main h3, main h4").unwrap())
+        .map(|e| {
+            (
+                e.value().name().to_string(),
+                e.text().collect::<String>(),
+            )
+        })
+        .collect::<Vec<_>>();
+    let index = |needle: &str| {
+        headings
+            .iter()
+            .position(|(_, text)| text.trim_end_matches('§').ends_with(needle))
+            .unwrap_or_else(|| panic!("missing {needle}: {headings:?}"))
+    };
+    assert!(!html.contains("Ontology metadata"));
+    assert!(index("Summary") < index("Examples"));
+    assert!(index("Examples") < index("An example"));
+    assert!(index("An example") < index("Classes"));
+    assert!(index("Classes") < index("core term"));
+    assert!(index("Properties") < index("Connects"));
+    assert!(index("Shapes") < index("Validation"));
+    assert!(index("Other Terms") < index("A concept"));
+    assert_eq!(
+        headings
+            .iter()
+            .filter(|(_, text)| {
+                text.trim_end_matches('§').ends_with("An example")
+            })
+            .count(),
+        1,
+        "punned resources must appear once"
+    );
+    assert_eq!(headings[index("An example")].0, "h4");
+    assert!(!html.contains("Named individual: An example"));
+    let metadata = doc
+        .select(&scraper::Selector::parse("main table").unwrap())
+        .next()
+        .expect("aligned ontology metadata");
+    assert_eq!(
+        metadata
+            .select(&scraper::Selector::parse("tbody tr").unwrap())
+            .count(),
+        2,
+        "equal ontology and namespace IRIs must be shown once, plus prefix"
+    );
+    assert!(
+        metadata
+            .text()
+            .collect::<String>()
+            .contains("Ontology IRI / Namespace")
+    );
+    assert!(
+        std::fs::read_to_string(p.directory.join("style.css"))?
+            .contains("user-select:none"),
+        "status ribbon must not select text"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn family_reference_rejects_ambiguous_section_order() -> Result<()> {
+    let f = Fixture::new()?;
+    let path = f.root.path().join("core.ttl");
+    let mut source = std::fs::read_to_string(&path)?;
+    source.push_str(r#"
+@prefix ga:<https://ekgf.org/ontology/grapharch#> .
+<https://example.org/core#> ga:referenceSection <urn:section> .
+<urn:section> ga:sectionKind "individuals" ; <http://purl.org/dc/terms/title> "Examples"@en ; ga:order 10 .
+"#);
+    std::fs::write(path, source)?;
+    let result = f.build(Dataset::memory()?).await;
+    assert!(
+        format!(
+            "{:#}",
+            result.err().expect("duplicate orders must fail")
+        )
+        .contains("distinct orders")
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn family_reference_keeps_distinct_ontology_and_namespace_iris_adjacent()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    let path = f.root.path().join("core.ttl");
+    std::fs::write(
+        &path,
+        std::fs::read_to_string(&path)?.replace(
+            "<https://example.org/core#> a owl:Ontology",
+            "<https://example.org/core> a owl:Ontology",
+        ),
+    )?;
+    let definitions = f.definitions.path().join("project.ttl");
+    std::fs::write(
+        &definitions,
+        std::fs::read_to_string(&definitions)?.replace(
+            "<https://example.org/core#> gov:inFamily",
+            "<https://example.org/core> gov:inFamily",
+        ),
+    )?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(p) = Publisher::new(built.dataset)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("not published")
+    };
+    let doc = scraper::Html::parse_document(&std::fs::read_to_string(
+        p.directory.join("index.html"),
+    )?);
+    let table = doc
+        .select(&scraper::Selector::parse("main table").unwrap())
+        .next()
+        .unwrap();
+    let rows = table
+        .select(&scraper::Selector::parse("tbody tr").unwrap())
+        .map(|row| row.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert_eq!(rows.len(), 3);
+    assert!(
+        rows[0].contains("Ontology IRI") &&
+            rows[0].contains("https://example.org/core")
+    );
+    assert!(
+        rows[1].contains("Namespace") &&
+            rows[1].contains("https://example.org/core#")
+    );
+    assert!(rows[2].contains("Prefix"));
+    Ok(())
+}

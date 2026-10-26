@@ -122,12 +122,13 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
         doc.select(&count_headers).count() >= 2,
         "family resource counts must be right-aligned numeric columns"
     );
-    let individual_heading = scraper::Selector::parse("h3").unwrap();
+    let individual_heading = scraper::Selector::parse("h4").unwrap();
     assert!(
         doc.select(&individual_heading).any(|heading| {
-            heading.text().collect::<String>().contains(
-                "Named individual: Designing and managing data products",
-            )
+            heading
+                .text()
+                .collect::<String>()
+                .contains("Designing and managing data products")
         }),
         "named individuals need readable, explicitly classified headings"
     );

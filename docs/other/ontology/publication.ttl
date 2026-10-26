@@ -1197,3 +1197,39 @@ ga:ontologySource a owl:DatatypeProperty ;
     dct:description "Identifies the source-relative Turtle vocabulary file from which a specification target generates its ontology reference fragments and publication artifacts."@en ;
     rdfs:domain ga:Target ; rdfs:range xsd:string ;
     skos:scopeNote "The website build reads this declared source, generates named class and property reference fragments using the ontology's English annotations and preferred namespace, and retains the specification outputs as website assets. Source paths must stay inside the documentation root. Unsupported anonymous expressions or missing required annotations fail the build."@en .
+
+
+ga:ReferenceSection a owl:Class ;
+    rdfs:label "Reference section"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A source-owned title and ordering override for one kind of resource section in an ontology family reference."@en ;
+    dct:description "A source-owned title and ordering override for one kind of resource section in an ontology family reference."@en .
+
+
+ga:overviewTitle a owl:AnnotationProperty ;
+    rdfs:label "Overview title"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Supplies the plain-text heading of an ontology overview, replacing the default Overview heading in generated family references."@en ;
+    dct:description "Supplies the plain-text heading of an ontology overview, replacing the default Overview heading in generated family references."@en ;
+    rdfs:domain owl:Ontology ;
+    rdfs:range rdfs:Literal .
+
+
+ga:referenceSection a owl:ObjectProperty ;
+    rdfs:label "Reference section override"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates an ontology with a named reference section override controlling the title and order of one resource category."@en ;
+    dct:description "Associates an ontology with a named reference section override controlling the title and order of one resource category."@en ;
+    rdfs:domain owl:Ontology ;
+    rdfs:range ga:ReferenceSection .
+
+
+ga:headingDepth a owl:DatatypeProperty ;
+    rdfs:label "Fragment heading depth"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Sets the starting depth of a fragment heading beneath its component, preserving section nesting across independently generated fragments."@en ;
+    dct:description "Sets the starting depth of a fragment heading beneath its component, preserving section nesting across independently generated fragments."@en ;
+    rdfs:domain ga:Fragment ;
+    rdfs:range xsd:integer .
+
+ga:ReferenceSection skos:scopeNote "Use ga:sectionKind to select classes, properties, individuals, shapes, or other; dct:title supplies one English or untagged plain-text heading; ga:order supplies a distinct integer from 0 to 1000. Defaults are Classes (10), Properties (20), Named Individuals (30), Shapes (40), and Other Terms (50). Empty categories are omitted. Overrides rename and reorder categories without suppressing resources. Named individuals take precedence over other declared types; then classes, properties, shapes, and other terms."@en .

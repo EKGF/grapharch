@@ -1,3 +1,4 @@
+@prefix dct: <http://purl.org/dc/terms/> .
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -38,6 +39,7 @@ ga:ComponentShape a sh:NodeShape ; sh:targetClass ga:Component ; sh:nodeKind sh:
     sh:property [ sh:path ga:fragment ; sh:nodeKind sh:IRI ; sh:class ga:Fragment ] .
 
 ga:FragmentShape a sh:NodeShape ; sh:targetClass ga:Fragment ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:headingDepth ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxInclusive 4 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:subject ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
     sh:property [ sh:path ga:body ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
@@ -122,3 +124,9 @@ ga:AssetReferenceShape a sh:NodeShape ;
     rdfs:comment "Requires asset links on authored fragments, collected references and publication plans to identify retained binary assets with IRIs."@en ;
     sh:targetSubjectsOf ga:asset ;
     sh:property [ sh:path ga:asset ; sh:nodeKind sh:IRI ; sh:class ga:BinaryAsset ] .
+
+
+ga:ReferenceSectionShape a sh:NodeShape ; sh:targetObjectsOf ga:referenceSection ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:sectionKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("classes" "properties" "individuals" "shapes" "other") ] ;
+    sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:uniqueLang true ; sh:minLength 1 ; sh:maxLength 160 ] ;
+    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1000 ] .

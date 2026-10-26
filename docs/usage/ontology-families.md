@@ -217,3 +217,40 @@ These projects are examples and test cases for the general pipeline:
 The same pipeline works with other organizations, repositories, and ontologies.
 Tests also exercise independently defined families, namespaces,
 and authorities, and verify rendering from the KG after sources are removed.
+
+
+## Arrange each ontology reference
+
+Each ontology chapter opens with an **Overview**, followed by nonempty **Classes**,
+**Properties**, **Named Individuals**, **Shapes**, and **Other Terms** sections.
+Term headings use supplied labels consistently; the prefixed identifier remains
+in the entry. Classification uses explicit source types, without fetching imports
+or inferring missing types. A punned named individual appears once under Named
+Individuals and retains all its declared types in its entry.
+
+Put GraphArch hints in the ontology source to rename the overview or rename and
+reorder its resource sections:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+<https://example.org/vocabulary> ga:overviewTitle "Summary"@en ;
+    ga:referenceSection <https://example.org/docs/examples-section> .
+
+<https://example.org/docs/examples-section> a ga:ReferenceSection ;
+    ga:sectionKind "individuals" ;
+    dct:title "Examples"@en ;
+    ga:order 0 .
+```
+
+Section kinds are `classes`, `properties`, `individuals`, `shapes`, and `other`.
+Their default orders are 10, 20, 30, 40, and 50. Overrides require a title and an
+integer order from 0 to 1000, distinct from every other section's order. Empty
+sections are omitted; overrides do not hide resources. Titles are plain text,
+with one English or untagged value per section.
+
+The ontology IRI identifies the ontology; its namespace prefixes vocabulary
+terms. They may differ (for example, `https://example.org/vocabulary` and
+`https://example.org/vocabulary#`). The overview shows them in adjacent rows
+when different and combines them into one row when equal.

@@ -7,8 +7,9 @@ use {
 
 pub(super) struct Markdown<'a> {
     // bounded: one fragment, capped at 1 MiB before parsing; never the corpus.
-    pub events: Vec<Event<'a>>,
-    base_level: usize,
+    pub events:    Vec<Event<'a>>,
+    base_level:    usize,
+    heading_depth: usize,
 }
 
 impl<'a> Markdown<'a> {
@@ -37,6 +38,23 @@ impl<'a> Markdown<'a> {
             })
             .min()
             .unwrap_or(1);
+        let heading_depth =
+            match plan.source.optional(fragment, "headingDepth").await? {
+                None => 1,
+                Some(oxrdf::Term::Literal(value)) => {
+                    ensure!(
+                        value.datatype().as_str() ==
+                            "http://www.w3.org/2001/XMLSchema#integer",
+                        "fragment headingDepth must have datatype xsd:integer"
+                    );
+                    value.value().parse::<usize>()?
+                },
+                Some(_) => bail!("fragment headingDepth must be an integer"),
+            };
+        ensure!(
+            (1..=4).contains(&heading_depth),
+            "fragment headingDepth must be between 1 and 4"
+        );
         let mut previous_depth = 0;
         for event in &events {
             if let Event::Start(Tag::Heading { level, .. }) = event {
@@ -155,11 +173,11 @@ impl<'a> Markdown<'a> {
                 );
             }
         }
-        Ok(Self { events, base_level })
+        Ok(Self { events, base_level, heading_depth })
     }
 
     pub fn depth(&self, level: HeadingLevel) -> usize {
-        level as usize - self.base_level + 1
+        level as usize - self.base_level + self.heading_depth
     }
 
     pub fn html(&self) -> String {

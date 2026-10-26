@@ -38,7 +38,7 @@ fn ontology_has_publication_metadata_and_human_definitions() -> Result<()> {
          FILTER(isIRI(?version) && isIRI(?license) && lang(?description) = \
          'en')"
     )?);
-    assert!(!ask(&store, "?term a ?type . VALUES ?type { owl:Class owl:ObjectProperty owl:DatatypeProperty } FILTER(isIRI(?term) && STRSTARTS(STR(?term), STR(ga:))) FILTER NOT EXISTS { ?term rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40) }")?, "every public term needs an English definition and ontology membership");
+    assert!(!ask(&store, "?term a ?type . VALUES ?type { owl:Class owl:ObjectProperty owl:DatatypeProperty owl:AnnotationProperty } FILTER(isIRI(?term) && STRSTARTS(STR(?term), STR(ga:))) FILTER NOT EXISTS { ?term rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40) }")?, "every public term needs an English definition and ontology membership");
     assert!(
         !ask(
             &store,
@@ -96,7 +96,8 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
             &store,
             &format!(
                 "ga:{name} a ?kind . VALUES ?kind {{ owl:Class \
-                 owl:ObjectProperty owl:DatatypeProperty }}"
+                 owl:ObjectProperty owl:DatatypeProperty \
+                 owl:AnnotationProperty }}"
             ),
         )? {
             missing.push(name);

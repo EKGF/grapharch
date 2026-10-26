@@ -245,7 +245,8 @@ async fn local_working_tree_and_cached_remote_feed_the_same_family_pipeline()
     };
     let html =
         std::fs::read_to_string(publication.directory.join("index.html"))?;
-    assert!(html.contains("Named individual: Draft example"));
+    assert!(html.contains("Named Individuals"));
+    assert!(html.contains("Draft example"));
     assert!(html.contains("Example ontology"));
     Ok(())
 }
