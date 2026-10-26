@@ -203,13 +203,19 @@ impl TargetPlanner {
             .await?;
         let mut count = 0;
         while let Some(row) = rows.next().await? {
-            ensure!(
-                renderer == super::Renderer::Website,
-                "binary artifact publication requires the website renderer"
-            );
             let Term::NamedNode(asset) = &row["asset"] else {
                 bail!("plan asset must be an IRI")
             };
+            if renderer != super::Renderer::Website {
+                let mime = selection.view.text(asset, "format").await?;
+                ensure!(
+                    matches!(
+                        mime.as_str(),
+                        "image/png" | "image/jpeg" | "image/svg+xml"
+                    ),
+                    "non-image binary artifacts require the website renderer"
+                );
+            }
             count += 1;
             ensure!(count <= 256, "plan exceeds 256-asset budget");
             stream
