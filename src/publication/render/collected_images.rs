@@ -97,8 +97,7 @@ impl Images {
             .dataset
             .select(format!(
                 "SELECT DISTINCT ?fragment ?original ?url ?asset WHERE {{ \
-                 {entries} {{ BIND(?fragment AS ?owner) }} UNION {{ {owners} \
-                 }} {references} OPTIONAL {{ {asset} }} }}"
+                 {entries} {owners} {references} OPTIONAL {{ {asset} }} }}"
             ))
             .await?;
         let mut count = 0;

@@ -301,3 +301,67 @@ async fn retained_image_publications_can_be_replaced_but_unowned_nested_files_ar
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn unselected_fragments_do_not_leak_image_references_into_a_publication()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    let selected = fixture(
+        SVG.as_bytes(),
+        "image/svg+xml",
+        "assets/badge.svg",
+        "Selected badge",
+    );
+    std::fs::write(
+        &path,
+        format!(
+            r#"{selected}
+ex:outside-source a ga:Fragment ; ga:subject ex:outside-subject ; ga:body "Outside this publication." ; ga:format "text/markdown" ; ga:contribution ex:authored ; ga:reference ex:outside-reference .
+ex:outside-reference a ga:ExternalReference ; dct:identifier "https://outside.example/badge.svg" ; ga:url "https://outside.example/badge.svg" ; ga:asset ex:outside-asset .
+"#
+        ),
+    )?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], output.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    assert!(publication.directory.join("assets/badge.svg").exists());
+    assert!(!publication.directory.join("assets/outside.svg").exists());
+    Ok(())
+}
+
+#[tokio::test]
+async fn selected_image_reference_without_retained_bytes_is_still_an_error()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    let selected = fixture(
+        SVG.as_bytes(),
+        "image/svg+xml",
+        "assets/badge.svg",
+        "Missing badge",
+    )
+    .replace(
+        "ga:url \"https://example.org/badge.svg\" ; ga:asset ex:image .",
+        "ga:url \"https://example.org/badge.svg\" ; ga:asset ex:missing-image \
+         .",
+    );
+    std::fs::write(&path, selected)?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    let output = tempfile::tempdir()?;
+    let error = Publisher::new(dataset)
+        .render(&plans[0], output.path())
+        .await
+        .err()
+        .expect("selected missing image must not be ignored");
+    assert!(format!("{error:#}").contains(
+        "reference image is absent from the pinned publication assets"
+    ));
+    assert!(!output.path().join("specification/index.html").exists());
+    Ok(())
+}
