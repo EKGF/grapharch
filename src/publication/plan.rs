@@ -191,14 +191,45 @@ impl TargetPlanner {
             ),
             0,
         );
+        let scoped_subjects = Dataset::logical_pattern(
+            selection.scope_snapshot,
+            &format!(
+                "{} {} ?selected",
+                selection.scope_plan,
+                term("member")
+            ),
+            2,
+        );
+        let direct = selection
+            .view
+            .pattern(&format!("?selected {} ?asset", term("asset")), 3);
+        let fragment = selection.view.pattern(
+            &format!("?fragment {} ?selected", term("subject")),
+            4,
+        );
+        let attached = selection
+            .view
+            .pattern(&format!("?fragment {} ?asset", term("asset")), 5);
+        let derived = selection.view.pattern(
+            &format!("?fragment {} ?owner", term("derivedFrom")),
+            6,
+        );
+        let inherited = selection
+            .view
+            .pattern(&format!("?owner {} ?asset", term("asset")), 7);
+        let candidates = format!(
+            "{{ {members} }} UNION {{ {scoped_subjects} {{ {direct} }} UNION \
+             {{ {fragment} {{ {attached} }} UNION {{ {derived} {inherited} }} \
+             }} }}"
+        );
         let types = selection
             .view
             .pattern(&format!("?asset a {}", term("BinaryAsset")), 1);
         let mut rows = self
             .dataset
             .select(format!(
-                "SELECT DISTINCT ?asset WHERE {{ {members} {types} }} ORDER \
-                 BY ?asset"
+                "SELECT DISTINCT ?asset WHERE {{ {{ {candidates} }} {types} \
+                 }} ORDER BY ?asset"
             ))
             .await?;
         let mut count = 0;

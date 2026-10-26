@@ -277,7 +277,18 @@ async fn build_case(
     );
     let (child, plans) = match case.kind.as_str() {
         "authored" => showcases::authored(&source).await?,
-        "dprod" => showcases::dprod(&source).await?,
+        "dprod" => {
+            showcases::dprod_remote(
+                &source,
+                &root
+                    .parent()
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("examples root has no parent")
+                    })?
+                    .join("output/cache/git"),
+            )
+            .await?
+        },
         "ontology-family" => {
             showcases::family(
                 &source,

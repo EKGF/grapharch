@@ -113,6 +113,21 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         )
         .await?;
         artifact::write(plan, id, &output).await?;
+        if let Some(oxrdf::Term::Literal(mime)) =
+            plan.source.optional(id, "format").await? &&
+            mime.value().starts_with("image/")
+        {
+            let size = tokio::fs::metadata(&output).await?.len();
+            ensure!(
+                size <= crate::publication::image_assets::MAX_IMAGE_BYTES
+                    as u64,
+                "image exceeds byte budget"
+            );
+            crate::publication::image_assets::validate(
+                &tokio::fs::read(&output).await?,
+                mime.value(),
+            )?;
+        }
         files.push(asset.route.clone());
     }
     ensure!(

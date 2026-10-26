@@ -21,7 +21,7 @@ ex:rdf12 a ga:Showcase ; ga:slug "rdf12" ; dct:title "W3C RDF 1.2 N-Triples" ;
     ga:expectedDiagnostic "unresolved-native-reference" .
 ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and SHACL" ;
     dct:description "The real DPROD vocabulary and shapes become 53 annotated term fragments, a standards-style reference, a companion website with stories and guides, and an independently planned review PDF." ;
-    ga:order 4 ; ga:kind "dprod" ; ga:source "dprod" ;
+    ga:order 4 ; ga:kind "dprod" ; ga:source "dprod/live.yaml" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/document.pdf" .
 
 ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;

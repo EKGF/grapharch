@@ -44,7 +44,9 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
             let source = std::str::from_utf8(bytes)?;
             let lower = source.to_ascii_lowercase();
             ensure!(
-                !lower.contains("<!doctype") && !lower.contains("<!entity"),
+                !lower.contains("<!doctype") &&
+                    !lower.contains("<!entity") &&
+                    !lower.contains("<?"),
                 "SVG document types and entities are unsupported"
             );
             let document = scraper::Html::parse_fragment(source);
@@ -90,6 +92,14 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                         .filter(|c| !c.is_whitespace())
                         .collect::<String>();
                     ensure!(
+                        !value.contains('\\') &&
+                            compact
+                                .split("url(")
+                                .skip(1)
+                                .all(|v| v.starts_with('#')),
+                        "SVG escaped or external CSS URLs are unsupported"
+                    );
+                    ensure!(
                         !name.starts_with("on"),
                         "SVG event handlers are unsupported"
                     );
@@ -117,6 +127,18 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                 if tag == "style" {
                     let css =
                         element.text().collect::<String>().to_ascii_lowercase();
+                    let compact = css
+                        .chars()
+                        .filter(|c| !c.is_whitespace())
+                        .collect::<String>();
+                    ensure!(
+                        !css.contains('\\') &&
+                            compact
+                                .split("url(")
+                                .skip(1)
+                                .all(|v| v.starts_with('#')),
+                        "SVG escaped or external CSS URLs are unsupported"
+                    );
                     ensure!(
                         !css.contains("@import") &&
                             !css.contains("http") &&
@@ -147,6 +169,8 @@ mod tests {
             "<svg><image href='https://example.org/a.png'/></svg>",
             "<!DOCTYPE svg><svg/>",
             "<svg><style>@import 'https://example.org/a.css';</style></svg>",
+            "<svg><style>rect{fill:url(//example.org/a.svg)}</style></svg>",
+            r"<svg style='fill:u\72l(//example.org/a.svg)'/>",
         ] {
             assert!(
                 validate(source.as_bytes(), "image/svg+xml").is_err(),

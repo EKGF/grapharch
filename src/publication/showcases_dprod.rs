@@ -104,7 +104,12 @@ async fn build(
             &format!("{BASE}collector:{key}"),
             path,
         )?);
-        markdown.push((key, title, kind, collector.fragment_id()));
+        markdown.push((
+            key.to_owned(),
+            title.to_owned(),
+            kind.to_owned(),
+            collector.fragment_id(),
+        ));
         work.push(collector);
     }
     for (key, path) in [
@@ -128,17 +133,29 @@ async fn build(
         )?));
     }
     collect_all(work, writer, 4).await?;
+    assemble(
+        dataset,
+        writer,
+        markdown,
+        "https://www.omg.org/spec/DPROD/dprod/",
+        "https://www.omg.org/spec/DPROD/shapes/",
+        false,
+    )
+    .await
+}
+async fn assemble(
+    dataset: &Dataset,
+    writer: &GraphWriter,
+    markdown: Vec<(String, String, String, NamedNode)>,
+    ontology: &str,
+    shapes: &str,
+    derive: bool,
+) -> Result<Vec<ResolvedPlan>> {
     let collected = dataset.snapshot_for(PROJECT).await?;
     let view = RevisionView::new(dataset.clone(), collected.clone());
     let prefixes = Arc::new(BTreeMap::from([
-        (
-            "https://www.omg.org/spec/DPROD/dprod/".into(),
-            "dprod".into(),
-        ),
-        (
-            "https://www.omg.org/spec/DPROD/shapes/".into(),
-            "dprod-shapes".into(),
-        ),
+        (ontology.into(), "dprod".into()),
+        (shapes.into(), "dprod-shapes".into()),
         (
             "http://www.w3.org/1999/02/22-rdf-syntax-ns#".into(),
             "rdf".into(),
@@ -204,6 +221,70 @@ async fn build(
             &format!("dprod-reference-v1:{collected}"),
         )
         .await?;
+    if derive {
+        let native = NamedNode::new(ontology)?;
+        for (target, predicate, native_predicate) in [
+            (
+                node("project"),
+                NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
+                "http://purl.org/dc/terms/title",
+            ),
+            (
+                node("specification"),
+                NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
+                "http://purl.org/dc/terms/title",
+            ),
+            (
+                node("specification"),
+                NamedNode::new_unchecked(
+                    "http://purl.org/dc/terms/description",
+                ),
+                "http://purl.org/dc/terms/description",
+            ),
+            (
+                node("specification"),
+                term("license"),
+                "http://purl.org/dc/terms/license",
+            ),
+        ] {
+            ensure!(
+                view.optional_by(&target, &predicate).await?.is_none(),
+                "derived native header conflicts with source settings"
+            );
+            let value = view
+                .optional_by(&native, &NamedNode::new(native_predicate)?)
+                .await?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "native DPROD ontology missing {native_predicate}"
+                    )
+                })?;
+            bindings
+                .write(Quad::new(
+                    target,
+                    predicate,
+                    value,
+                    GraphName::DefaultGraph,
+                ))
+                .await?;
+        }
+    }
+    let mut assets = dataset
+        .select(format!(
+            "SELECT DISTINCT ?asset WHERE {{ {} }}",
+            view.pattern(&format!("?fragment {} ?asset", term("asset")), 0)
+        ))
+        .await?;
+    while let Some(row) = assets.next().await? {
+        let Term::NamedNode(asset) = &row["asset"] else {
+            anyhow::bail!("image asset must be IRI")
+        };
+        for scope in [node("scope"), node("website-scope")] {
+            bindings
+                .write(quad(&scope, "include", asset.clone()))
+                .await?;
+        }
+    }
     let mut order = 0u32;
     for (key, title, kind, fragment) in &markdown[..3] {
         place(&mut bindings, key, title, kind, order).await?;
@@ -271,7 +352,7 @@ async fn build(
         .await?;
     let date = view
         .optional_by(
-            &NamedNode::new("https://www.omg.org/spec/DPROD/dprod/")?,
+            &NamedNode::new(ontology)?,
             &NamedNode::new("http://purl.org/dc/terms/issued")?,
         )
         .await?
@@ -403,4 +484,191 @@ async fn place(
             .await?;
     }
     Ok(())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RemoteConfig {
+    repository:  String,
+    r#ref:       String,
+    definitions: String,
+}
+pub(super) async fn collect_remote(
+    config: &Path,
+    cache: &Path,
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    let config: RemoteConfig =
+        serde_yaml::from_slice(&tokio::fs::read(config).await?)?;
+    ensure!(
+        config.r#ref == "develop",
+        "DPROD showcase must use develop"
+    );
+    let scan = super::collect::git::remote_repository(
+        &config.repository,
+        &config.r#ref,
+        cache,
+        PROJECT,
+    )
+    .await?;
+    let dataset = Dataset::memory()?;
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
+    let result = async {
+        scan.provenance.collect(&writer).await?;
+        scan.blob(Path::new(&config.definitions))
+            .await?
+            .rdf_collector("urn:dprod-showcase:settings")?
+            .collect(&writer)
+            .await?;
+        let view = RevisionView::new(
+            dataset.clone(),
+            dataset.snapshot_for(PROJECT).await?,
+        );
+        let mut definition_rows =
+            view.objects(&node("project"), "collector").await?;
+        let mut definitions = Vec::new();
+        while let Some(row) = definition_rows.next().await? {
+            ensure!(
+                definitions.len() < 64,
+                "DPROD exceeds collector budget"
+            );
+            definitions.push(row["value"].clone());
+        }
+        definitions.sort_by_key(ToString::to_string);
+        let mut work = Vec::<Arc<dyn Collector>>::new();
+        let mut markdown = BTreeMap::new();
+        let mut subjects = BTreeMap::new();
+        let mut images = HashSet::new();
+        for definition in definitions {
+            let Term::NamedNode(definition) = definition else {
+                anyhow::bail!("collector must be IRI")
+            };
+            let kind = view.text(&definition, "kind").await?;
+            let path = view.text(&definition, "sourcePath").await?;
+            let blob = scan.blob(Path::new(&path)).await?;
+            match kind.as_str() {
+                "rdf" => {
+                    subjects
+                        .insert(path, view.node(&definition, "subject").await?);
+                    work.push(blob.rdf_collector(definition.as_str())?);
+                },
+                "markdown" | "markdown-page" => {
+                    let fragment = view.node(&definition, "fragment").await?;
+                    let key = view
+                        .optional_by(
+                            &definition,
+                            &NamedNode::new_unchecked(
+                                "http://purl.org/dc/terms/identifier",
+                            ),
+                        )
+                        .await?
+                        .and_then(|v| {
+                            if let Term::Literal(v) = v {
+                                Some(v.value().to_owned())
+                            } else {
+                                None
+                            }
+                        })
+                        .ok_or_else(|| {
+                            anyhow::anyhow!(
+                                "Markdown collector has no slot identifier"
+                            )
+                        })?;
+                    let mut collector =
+                        super::collect::git::GitMarkdownFile::new(
+                            blob,
+                            definition.as_str(),
+                            fragment.clone(),
+                            kind == "markdown-page",
+                        )?;
+                    if kind == "markdown-page" {
+                        let title = view
+                            .optional_by(
+                                &definition,
+                                &NamedNode::new_unchecked(
+                                    "http://purl.org/dc/terms/title",
+                                ),
+                            )
+                            .await?
+                            .ok_or_else(|| {
+                                anyhow::anyhow!("page hint title missing")
+                            })?;
+                        let Term::Literal(title) = title else {
+                            anyhow::bail!("page title must be literal")
+                        };
+                        collector = collector.with_page_hints(
+                            title.value().into(),
+                            view.text(&definition, "route").await?,
+                        )?;
+                    }
+                    for image in collector.image_collectors().await? {
+                        if images.insert(image.identity()?.source.to_owned()) {
+                            work.push(image);
+                        }
+                    }
+                    ensure!(
+                        markdown.insert(key, fragment).is_none(),
+                        "duplicate Markdown slot"
+                    );
+                    work.push(Arc::new(collector));
+                },
+                _ => anyhow::bail!("unsupported DPROD collector kind {kind}"),
+            }
+        }
+        collect_all(work, &writer, 4).await?;
+        let view = RevisionView::new(
+            dataset.clone(),
+            dataset.snapshot_for(PROJECT).await?,
+        );
+        let mut authored = Vec::new();
+        for (key, kind) in [
+            ("abstract", "abstract"),
+            ("status", "status"),
+            ("overview", "section"),
+            ("example", "section"),
+        ] {
+            let fragment = markdown.remove(key).ok_or_else(|| {
+                anyhow::anyhow!("missing source-owned Markdown slot {key}")
+            })?;
+            let title = view
+                .optional_by(
+                    &fragment,
+                    &NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
+                )
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Markdown title missing"))?;
+            let Term::Literal(title) = title else {
+                anyhow::bail!("title must be literal")
+            };
+            authored.push((
+                key.into(),
+                title.value().into(),
+                kind.into(),
+                fragment,
+            ));
+        }
+        ensure!(
+            markdown.is_empty(),
+            "unsupported additional DPROD Markdown slots"
+        );
+        let ontology = subjects
+            .get("ontology/dprod/dprod-ontology.ttl")
+            .ok_or_else(|| anyhow::anyhow!("ontology hint missing"))?;
+        let shapes = subjects
+            .get("ontology/dprod/dprod-shapes.ttl")
+            .ok_or_else(|| anyhow::anyhow!("shapes hint missing"))?;
+        assemble(
+            &dataset,
+            &writer,
+            authored,
+            ontology.as_str(),
+            shapes.as_str(),
+            true,
+        )
+        .await
+    }
+    .await;
+    drop(writer);
+    worker.await??;
+    Ok((dataset, result?))
 }

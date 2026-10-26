@@ -348,3 +348,11 @@ pub async fn publish(
     }
     Ok(publications)
 }
+
+/// Build the live DPROD showcase exclusively from its remote develop revision.
+pub async fn dprod_remote(
+    source: &Path,
+    cache: &Path,
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    super::showcases_dprod::collect_remote(source, cache).await
+}

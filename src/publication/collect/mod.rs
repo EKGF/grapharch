@@ -6,6 +6,7 @@ mod blank_nodes;
 mod endpoint;
 pub mod git;
 mod hashing_reader;
+mod image;
 mod markdown_structure;
 pub(crate) mod page;
 pub(crate) mod published_artifact;
@@ -24,6 +25,7 @@ use {
 pub use {
     authored::{MarkdownFile, SparqlFile},
     endpoint::{SparqlEndpointSource, SparqlSourceConfig},
+    image::HttpImage,
     rdf::RdfFile,
     text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,

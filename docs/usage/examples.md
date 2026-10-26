@@ -95,3 +95,23 @@ a [three-publication family](publication-families.md) and derivative reference p
 or an official OMG publication.
 
 Standalone SKOS vocabularies and use-case trees still need their own fixtures.
+
+### Live DPROD gallery
+
+The gallery reads `EKGF/dprod` directly from its remote `develop` branch.
+`examples/dprod/live.yaml` specifies only the repository, branch and location of
+its source-owned publication settings. Each build resolves one Git commit and
+collects its ontology, shapes and Markdown at that revision. A reusable local
+Git cache avoids cloning the complete repository again. Missing source files,
+invalid hints and unavailable sources stop the build; copied fixtures are never
+used as a replacement.
+
+Repository links resolve to published companion pages where available, or to
+verified files at the same commit on GitHub. Images are collected into the
+publication KG, checked for supported content and size, and restored from that
+KG when producing HTML and PDF. Renderers do not fetch images or reopen Git.
+
+The older pinned corpus in `examples/dprod/` remains an offline regression
+fixture for `publish_showcase --dprod`; the live gallery uses the remote source.
+Run its network acceptance explicitly with
+`cargo test --test live_dprod -- --ignored`.

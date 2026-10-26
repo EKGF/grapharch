@@ -22,16 +22,18 @@ pub(super) struct Page {
     pub headings:     HashSet<String>,
 }
 pub(super) struct Catalog {
-    pub pages:   BTreeMap<String, Page>,
-    pub sources: HashMap<String, String>,
-    pub routes:  HashMap<String, String>,
+    pub pages:      BTreeMap<String, Page>,
+    pub sources:    HashMap<String, String>,
+    pub routes:     HashMap<String, String>,
+    pub references: HashMap<(String, String), (String, String, Option<String>)>,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
         let mut catalog = Self {
-            pages:   BTreeMap::new(),
-            sources: HashMap::new(),
-            routes:  HashMap::new(),
+            pages:      BTreeMap::new(),
+            sources:    HashMap::new(),
+            routes:     HashMap::new(),
+            references: HashMap::new(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;
@@ -86,6 +88,69 @@ impl Catalog {
                 "selected plan asset is not a binary artifact"
             );
             catalog.insert(plan, asset.clone()).await?;
+        }
+        let owner = plan.source.pattern(
+            &format!(
+                "?owner {} ?ref",
+                crate::publication::term("reference")
+            ),
+            0,
+        );
+        let fields = plan.source.pattern(
+            &format!(
+                "?ref <http://purl.org/dc/terms/identifier> ?original ; {} \
+                 ?url . OPTIONAL {{ ?ref {} ?path }} OPTIONAL {{ ?ref {} \
+                 ?asset }}",
+                crate::publication::term("url"),
+                crate::publication::term("sourcePath"),
+                crate::publication::term("asset")
+            ),
+            1,
+        );
+        let mut refs = plan
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?owner ?original ?url ?path ?asset WHERE {{ \
+                 {owner} {fields} }}"
+            ))
+            .await?;
+        let mut bytes = 0usize;
+        while let Some(row) = refs.next().await? {
+            let owner = node(&row["owner"])?;
+            if !catalog.pages.contains_key(owner.as_str()) {
+                continue;
+            }
+            let oxrdf::Term::Literal(original) = &row["original"] else {
+                anyhow::bail!("reference identifier must be literal")
+            };
+            let oxrdf::Term::Literal(url) = &row["url"] else {
+                anyhow::bail!("reference URL must be literal")
+            };
+            let path = match row.get("path") {
+                Some(oxrdf::Term::Literal(v)) => v.value().to_owned(),
+                None => String::new(),
+                _ => anyhow::bail!("reference path must be literal"),
+            };
+            let asset = row
+                .get("asset")
+                .map(node)
+                .transpose()?
+                .map(|id| id.as_str().to_owned());
+            bytes += original.value().len() + url.value().len() + path.len();
+            ensure!(
+                bytes <= 8 * 1024 * 1024 && catalog.references.len() < 16384,
+                "website reference index exceeds budget"
+            );
+            let key = (owner.as_str().into(), original.value().into());
+            let value = (path, url.value().into(), asset);
+            if let Some(previous) =
+                catalog.references.insert(key, value.clone())
+            {
+                ensure!(
+                    previous == value,
+                    "conflicting website reference metadata"
+                );
+            }
         }
         // Keep only compact headings and page metadata after indexing.
         let parents: Vec<_> = catalog

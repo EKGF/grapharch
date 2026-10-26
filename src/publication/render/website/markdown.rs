@@ -69,11 +69,29 @@ pub(super) fn render(
                 *dest_url = link(dest_url, page, catalog)?.into();
             },
             Event::Start(Tag::Image { dest_url, .. }) => {
-                let url = url::Url::parse(dest_url)?;
-                ensure!(
-                    url.scheme() == "https",
-                    "website images currently require HTTPS: {dest_url}"
-                );
+                let (_, _, asset) = catalog
+                    .references
+                    .get(&(page.id.as_str().into(), dest_url.to_string()))
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "image is not retained in the publication KG: \
+                             {dest_url}"
+                        )
+                    })?;
+                let asset = asset
+                    .as_ref()
+                    .and_then(|id| catalog.pages.get(id))
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "image asset is not selected: {dest_url}"
+                        )
+                    })?;
+                *dest_url = format!(
+                    "{}{}",
+                    "../".repeat(page.route.matches('/').count()),
+                    asset.route
+                )
+                .into();
             },
             Event::Html(_) |
             Event::InlineHtml(_) |
@@ -109,6 +127,14 @@ pub(super) fn render(
     Ok(Content { html, headings })
 }
 fn link(value: &str, page: &Page, catalog: &Catalog) -> Result<String> {
+    if let Some((path, url, asset)) = catalog
+        .references
+        .get(&(page.id.as_str().into(), value.into())) &&
+        asset.is_none() &&
+        !catalog.sources.contains_key(path)
+    {
+        return Ok(url.clone());
+    }
     if let Ok(url) = url::Url::parse(value) {
         ensure!(
             matches!(url.scheme(), "https" | "http" | "mailto"),
