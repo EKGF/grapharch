@@ -1,13 +1,15 @@
 """Multiple C++ libraries in one crate must share a valid static runtime policy."""
 
 from pathlib import Path
+import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from link_environment import environment
+from link_environment import environment, linux_runtime_environment, write_shell
 
 
 class LinkEnvironmentTests(unittest.TestCase):
@@ -36,6 +38,33 @@ class LinkEnvironmentTests(unittest.TestCase):
         self.assertEqual(environment("aarch64-pc-windows-msvc"), {})
         with self.assertRaises(ValueError):
             environment("unknown-target")
+
+    def test_compiler_runtime_search_path_survives_spaces_and_shell_transport(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            library = root / "compiler runtime/libstdc++.a"
+            library.parent.mkdir()
+            library.write_bytes(b"!<arch>\n")
+            compiler = root / "compiler.py"
+            compiler.write_text(f"print({str(library)!r})\n")
+            settings = linux_runtime_environment(
+                compiler=(sys.executable, str(compiler)),
+                previous={"RUSTFLAGS": "-D warnings"},
+            )
+            self.assertEqual(settings["CXXSTDLIB"], "static=stdc++")
+            self.assertEqual(settings["CARGO_ENCODED_RUSTFLAGS"].split("\x1f"),
+                             ["-D", "warnings", "-L", f"native={library.parent}"])
+            script = root / "environment.sh"
+            write_shell(script, settings)
+            result = subprocess.run(
+                ["bash", "-c", '. "$1" || exit $?; exec "$2" -c "$3"',
+                 "link-probe", str(script), sys.executable,
+                 'import json,os; print(json.dumps({key:os.environ[key] for key in '
+                 '["CXXSTDLIB", "CARGO_ENCODED_RUSTFLAGS"]}))'],
+                capture_output=True, text=True, check=True, timeout=30,
+                env=os.environ.copy(),
+            )
+            self.assertEqual(json.loads(result.stdout), settings)
 
 
 if __name__ == "__main__":
