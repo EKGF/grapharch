@@ -71,13 +71,12 @@ jobs:
   binaries:
     needs: [metadata, verify-source]
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix: ${{ fromJSON(needs.metadata.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
-      CXXSTDLIB_STATIC: ${{ matrix.os == 'linux' && '1' || '' }}
       RUSTFLAGS: ${{ matrix.os == 'win32' && '-C target-feature=+crt-static' || '' }}
     steps:
       - uses: actions/checkout@v7
@@ -89,6 +88,8 @@ jobs:
         with:
           node-version: '24'
           architecture: ${{ matrix.cpu }}
+      - name: Configure native runtime linking
+        run: python packaging/link_environment.py --target ${{ matrix.target }}
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
