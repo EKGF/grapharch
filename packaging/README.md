@@ -31,13 +31,10 @@ Use one action step to install a pinned release and build an ontology family. Ch
     version: '0.0.1' # must already be published as a GitHub release
     source-kind: checkout
     source: .
-    definitions: grapharch/project.ttl
-    project: urn:example:project
-    target: urn:example:specification
     output: build/docs
 ```
 
-The default `mode` is `build-family`. `source-kind` defaults to `directory`; choose `checkout` explicitly to collect a local Git repository with provenance. Definitions, project and target are required for a build. The output root defaults to `build/docs`. Paths with spaces are supported; all CLI arguments are passed directly without shell interpretation. The build requires a release supporting `build-family --json` report schema version 1.
+The default `mode` is `build-family`. `source-kind` defaults to `directory`; choose `checkout` explicitly to collect a local Git repository with provenance. GraphArch discovers the project and target from publication hints in the source RDF. To use external publication definitions instead, supply `definitions`, `project` and `target` together. The output root defaults to `build/docs`. Paths with spaces are supported; all CLI arguments are passed directly without shell interpretation. The build requires a release supporting `build-family --json` report schema version 1.
 
 Outputs `publication-path`, `pdf-path` and `kg-path` are canonical absolute paths validated to exist beneath the chosen output root. The publication directory contains `index.html`; the PDF and KG are checked separately. Upload `publication-path` as the website, and optionally include the separate `kg-path` archive in deployment packaging. The action does not deploy or reread sources to assemble outputs.
 
