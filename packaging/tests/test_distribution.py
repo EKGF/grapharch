@@ -13,6 +13,13 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DistributionTests(unittest.TestCase):
+    def test_container_bootstrap_uses_the_declared_python_version(self):
+        workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
+        version = re.search(r"python-version: '([0-9.]+)'", workflow).group(1)
+        tag = "cp" + version.replace(".", "")
+        before_script = workflow.split("          before-script-linux:", 1)[1].split("      - name:", 1)[0]
+        self.assertIn(f"/opt/python/{tag}-{tag}/bin/python packaging/link_environment.py", before_script)
+
     def test_source_verification_uses_the_declared_linux_release_host(self):
         platforms = json.loads((ROOT / "packaging/platforms.json").read_text())
         host = next(item["runner"] for item in platforms

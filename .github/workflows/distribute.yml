@@ -109,7 +109,7 @@ jobs:
           args: --release --locked --bindings bin --strip --auditwheel check --out dist/wheels
           before-script-linux: |
             yum install -y clang-devel || { printf 'Cannot install libclang\n' >&2; exit 1; }
-            python3 packaging/link_environment.py --target ${{ matrix.target }} --shell-output /tmp/grapharch-link-environment.sh || { printf 'Cannot configure the static C++ runtime\n' >&2; exit 1; }
+            /opt/python/cp312-cp312/bin/python packaging/link_environment.py --target ${{ matrix.target }} --shell-output /tmp/grapharch-link-environment.sh || { printf 'Cannot configure the static C++ runtime\n' >&2; exit 1; }
             . /tmp/grapharch-link-environment.sh || { printf 'Cannot load native runtime configuration\n' >&2; exit 1; }
       - name: Create standalone and npm artifacts from the wheel's executable
         run: python packaging/prepare_platform.py --target ${{ matrix.target }} --output dist
