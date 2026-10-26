@@ -2,10 +2,10 @@
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix artpub: <https://ekgf.org/ontology/artifact-publication#> .
 @prefix ex: <urn:ekgf-family:> .
-ex:project a ga:Project ; dct:title "EKGF Ontology Family" ; ga:repository <https://github.com/EKGF/ekg-ontologies> ; ga:target ex:specification .
+ex:project a ga:Project ; dct:title "EKGF Ontologies" ; ga:repository <https://github.com/EKGF/ekg-ontologies> ; ga:target ex:specification .
 ex:scope a ga:Scope .
 ex:profile a ga:Profile, artpub:PublicationProfile ; artpub:publishesFamily <urn:uuid:c0eda36a-f42a-4fa3-aea9-c7a5543207eb> .
-ex:specification a ga:Target ; dct:title "EKGF Ontology Family" ;
+ex:specification a ga:Target ; dct:title "EKGF Ontologies" ;
     dct:description "A generated reference for the registered EKGF ontology family, collected from its native Turtle sources. The family brings together artifact governance, publication, dependencies, lifecycles, concepts, communications, data operations, stories, use cases, and related vocabularies." ;
     <http://www.w3.org/2000/01/rdf-schema#comment> "This is a generated documentation preview of the collected EKGF repository revision, not an approved standards release. Supplied annotations are reproduced; missing English labels and definitions are reported as documentation gaps. The reference does not invent definitions, fetch imports, execute SHACL validation, or claim complete OWL reasoning." ;
     ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer "specification" ; ga:destination "specification" ;

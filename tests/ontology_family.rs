@@ -57,7 +57,7 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
     let html =
         std::fs::read_to_string(publication.directory.join("index.html"))?;
     for text in [
-        "EKGF Ontology Family",
+        "EKGF Ontologies",
         "24 ontologies",
         "artifact-governance",
         "artifact-publication",
@@ -370,5 +370,24 @@ async fn family_accepts_native_rdfxml_and_namespace_hints_without_parsing_xml_ca
     };
     assert!(body.value().contains("owl:someValuesFrom"));
     assert!(!body.value().contains("urn:grapharch:skolem:"));
+    Ok(())
+}
+
+#[test]
+fn offline_family_example_uses_the_registered_family_name() -> Result<()> {
+    use oxrdf::Term;
+    let titles = oxrdfio::RdfParser::from_format(oxrdfio::RdfFormat::Turtle)
+        .for_reader(
+            include_bytes!("../examples/ekg-ontologies/project.ttl").as_slice(),
+        )
+        .collect::<std::result::Result<Vec<_>, _>>()?
+        .into_iter()
+        .filter(|quad| {
+            quad.predicate.as_str() == "http://purl.org/dc/terms/title"
+        })
+        .map(|quad| quad.object)
+        .collect::<Vec<_>>();
+    assert_eq!(titles.len(), 2);
+    assert!(titles.iter().all(|title| matches!(title, Term::Literal(value) if value.value() == "EKGF Ontologies")));
     Ok(())
 }
