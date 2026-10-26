@@ -251,3 +251,39 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn remote_transport_rejects_oversized_settings_and_main_before_network()
+-> anyhow::Result<()> {
+    let root = tempfile::tempdir()?;
+    let config = root.path().join("remote.yaml");
+    let cache = root.path().join("cache");
+    std::fs::write(&config, vec![b' '; 64 * 1024 + 1])?;
+    assert!(
+        format!(
+            "{:#}",
+            showcases::dprod_remote(&config, &cache)
+                .await
+                .err()
+                .unwrap()
+        )
+        .contains("64 KiB")
+    );
+    std::fs::write(
+        &config,
+        "repository: https://example.invalid/never-fetch.git\nref: \
+         main\ndefinitions: publication/grapharch.ttl\n",
+    )?;
+    assert!(
+        format!(
+            "{:#}",
+            showcases::dprod_remote(&config, &cache)
+                .await
+                .err()
+                .unwrap()
+        )
+        .contains("must use develop")
+    );
+    assert!(!cache.exists());
+    Ok(())
+}

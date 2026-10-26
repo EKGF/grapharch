@@ -497,8 +497,15 @@ pub(super) async fn collect_remote(
     config: &Path,
     cache: &Path,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    let config: RemoteConfig =
-        serde_yaml::from_slice(&tokio::fs::read(config).await?)?;
+    use tokio::io::AsyncReadExt;
+    let input = tokio::fs::File::open(config).await?;
+    let mut bytes = Vec::new();
+    input.take(64 * 1024 + 1).read_to_end(&mut bytes).await?;
+    ensure!(
+        bytes.len() <= 64 * 1024,
+        "DPROD transport settings exceed 64 KiB budget"
+    );
+    let config: RemoteConfig = serde_yaml::from_slice(&bytes)?;
     ensure!(
         config.r#ref == "develop",
         "DPROD showcase must use develop"
@@ -603,6 +610,10 @@ pub(super) async fn collect_remote(
                     }
                     for image in collector.image_collectors().await? {
                         if images.insert(image.identity()?.source.to_owned()) {
+                            ensure!(
+                                images.len() <= 256,
+                                "DPROD exceeds image asset budget"
+                            );
                             work.push(image);
                         }
                     }
