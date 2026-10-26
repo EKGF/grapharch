@@ -139,10 +139,17 @@ impl PinnedGitBlob {
             resolved.host_str() == Some("repository.invalid"),
             "Git reference escaped repository"
         );
-        let relative = resolved.path().trim_start_matches('/').to_owned();
+        let relative = percent_encoding::percent_decode_str(
+            resolved.path().trim_start_matches('/'),
+        )
+        .decode_utf8()?
+        .into_owned();
         ensure!(
-            !relative.contains('%'),
-            "percent-encoded Git references are unsupported"
+            !relative.is_empty() &&
+                Path::new(&relative)
+                    .components()
+                    .all(|p| matches!(p, std::path::Component::Normal(_))),
+            "Git reference path contains traversal"
         );
         let (repository, commit, path) = (
             self.repository.clone(),
@@ -181,11 +188,19 @@ impl PinnedGitBlob {
             "Git reference publication requires a GitHub HTTPS origin"
         );
         let mut target = url::Url::parse(&format!(
-            "{origin}/{}/{}/{}",
+            "{origin}/{}/{}/",
             if is_tree { "tree" } else { "blob" },
-            self.revision.commit,
-            relative
+            self.revision.commit
         ))?;
+        {
+            let mut segments = target.path_segments_mut().map_err(|_| {
+                anyhow::anyhow!("Git origin has no hierarchical path")
+            })?;
+            segments.pop_if_empty();
+            for part in relative.split('/') {
+                segments.push(part);
+            }
+        }
         target.set_query(resolved.query());
         target.set_fragment(resolved.fragment());
         Ok(Some((relative, target.into())))
@@ -493,6 +508,15 @@ mod reference_tests {
             "# Readme\n[guide](guide.md#example)\n",
         )?;
         std::fs::write(source.path().join("guide.md"), "# Guide\n")?;
+        for path in [
+            "space name.md",
+            "literal+plus.md",
+            "literal%name.md",
+            "café.md",
+        ] {
+            std::fs::write(source.path().join(path), "# Encoded path\n")?;
+        }
+
         std::fs::write(
             source.path().join("ontology.ttl"),
             "<urn:test:a> <urn:test:p> <urn:test:b> .",
@@ -519,6 +543,17 @@ mod reference_tests {
                 scan.commit
             )
         );
+        for (source, path) in [
+            ("space%20name.md", "space name.md"),
+            ("literal+plus.md", "literal+plus.md"),
+            ("literal%2Bplus.md", "literal+plus.md"),
+            ("literal%25name.md", "literal%name.md"),
+            ("caf%C3%A9.md", "café.md"),
+        ] {
+            let (actual, url) = blob.reference(source).await?.unwrap();
+            assert_eq!(actual, path);
+            assert!(url.contains(&scan.commit));
+        }
         assert!(blob.reference("missing.md").await.is_err());
         assert!(blob.reference("#local").await?.is_none());
         assert!(blob.reference("https://example.org/guide").await?.is_none());

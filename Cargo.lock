@@ -2323,6 +2323,7 @@ dependencies = [
  "oxrdf",
  "oxrdfio",
  "oxttl",
+ "percent-encoding",
  "pulldown-cmark",
  "quick-error",
  "regex",
