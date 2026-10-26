@@ -98,6 +98,8 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.cpu == 'arm64' && 'arm64' || 'x64' }}
+      - name: Reserve the distribution directory on the host
+        run: python packaging/prepare_platform.py --target ${{ matrix.target }} --output dist --initialize
       - name: Build the CLI wheel
         uses: PyO3/maturin-action@v1
         with:

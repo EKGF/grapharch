@@ -1,6 +1,7 @@
 """The shipped packages contain and execute the same CLI artifact."""
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -13,6 +14,28 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DistributionTests(unittest.TestCase):
+    def test_host_reserves_the_output_root_before_container_artifacts_arrive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "dist"
+            command = [sys.executable, str(ROOT / "packaging/prepare_platform.py"),
+                       "--target", "aarch64-apple-darwin", "--output", str(output),
+                       "--initialize"]
+            initialized = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            if hasattr(os, "getuid"):
+                self.assertEqual(output.stat().st_uid, os.getuid())
+            wheels = output / "wheels"
+            wheels.mkdir()
+            wheels.chmod(0o555)
+            try:
+                (output / "npm").mkdir()
+                self.assertTrue((output / "npm").is_dir())
+            finally:
+                wheels.chmod(0o755)
+            repeated = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertNotEqual(repeated.returncode, 0)
+            self.assertTrue((output / "npm").is_dir())
+
     def test_container_bootstrap_uses_the_declared_python_version(self):
         workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
         version = re.search(r"python-version: '([0-9.]+)'", workflow).group(1)
