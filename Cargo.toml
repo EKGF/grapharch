@@ -23,6 +23,8 @@ tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "blocking", "rustls-tls-native-roots"] }
 url = "2.5.4"
 percent-encoding = "2.3.1"
+roxmltree = "0.20.0"
+xmlparser = "0.13.6"
 tokio-util = "0.7.14"
 futures = "0.3"
 async-trait = "0.1"

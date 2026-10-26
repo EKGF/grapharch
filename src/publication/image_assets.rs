@@ -42,31 +42,52 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
         },
         "image/svg+xml" => {
             let source = std::str::from_utf8(bytes)?;
-            let lower = source.to_ascii_lowercase();
-            ensure!(
-                !lower.contains("<!doctype") &&
-                    !lower.contains("<!entity") &&
-                    !lower.contains("<?"),
-                "SVG document types and entities are unsupported"
-            );
-            let document = scraper::Html::parse_fragment(source);
-            let svg = scraper::Selector::parse("svg").unwrap();
-            ensure!(
-                document.select(&svg).count() == 1,
-                "image must contain exactly one SVG root"
-            );
-            let mut count = 0;
-            for node in document.tree.nodes() {
-                let Some(element) = scraper::ElementRef::wrap(node) else {
-                    continue
-                };
-                count += 1;
-                ensure!(count <= 4096, "SVG exceeds element budget");
-                let qualified_tag = element.value().name().to_ascii_lowercase();
-                let tag = qualified_tag.rsplit(':').next().unwrap();
+            // Tokenization rejects empty DTDs too; roxmltree permits them
+            // despite allow_dtd=false. Tokens borrow the original
+            // input; source bytes are never rewritten.
+            for token in xmlparser::Tokenizer::from(source) {
                 ensure!(
                     !matches!(
-                        tag,
+                        token?,
+                        xmlparser::Token::DtdStart { .. } |
+                            xmlparser::Token::EmptyDtd { .. } |
+                            xmlparser::Token::EntityDeclaration { .. } |
+                            xmlparser::Token::DtdEnd { .. } |
+                            xmlparser::Token::ProcessingInstruction { .. }
+                    ),
+                    "SVG document types, custom entities and processing \
+                     instructions are unsupported"
+                );
+            }
+            let document = roxmltree::Document::parse_with_options(
+                source,
+                roxmltree::ParsingOptions {
+                    allow_dtd:   false,
+                    nodes_limit: 8192,
+                },
+            )?;
+            let root = document.root_element();
+            ensure!(
+                root.tag_name().name() == "svg" &&
+                    root.tag_name().namespace() ==
+                        Some("http://www.w3.org/2000/svg"),
+                "image must have an SVG namespace root"
+            );
+            let mut count = 0;
+            for element in document.descendants() {
+                ensure!(
+                    !element.is_pi(),
+                    "SVG processing instructions are unsupported"
+                );
+                if !element.is_element() {
+                    continue;
+                }
+                count += 1;
+                ensure!(count <= 4096, "SVG exceeds element budget");
+                let tag = element.tag_name().name().to_ascii_lowercase();
+                ensure!(
+                    !matches!(
+                        tag.as_str(),
                         "script" |
                             "foreignobject" |
                             "iframe" |
@@ -82,11 +103,9 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                     ),
                     "unsupported active or external SVG element: {tag}"
                 );
-                for (name, value) in element.value().attrs() {
-                    let name = name.to_ascii_lowercase();
-                    if name == "xmlns" || name.starts_with("xmlns:") {
-                        continue;
-                    }
+                for attribute in element.attributes() {
+                    let name = attribute.name().to_ascii_lowercase();
+                    let value = attribute.value();
                     let compact = value
                         .to_ascii_lowercase()
                         .chars()
@@ -101,10 +120,10 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                         "SVG escaped or external CSS URLs are unsupported"
                     );
                     ensure!(
-                        !name.rsplit(':').next().unwrap().starts_with("on"),
+                        !name.starts_with("on"),
                         "SVG event handlers are unsupported"
                     );
-                    if name == "href" || name.ends_with(":href") {
+                    if name == "href" {
                         ensure!(
                             value.starts_with('#'),
                             "SVG external references are unsupported"
@@ -126,8 +145,12 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                     );
                 }
                 if tag == "style" {
-                    let css =
-                        element.text().collect::<String>().to_ascii_lowercase();
+                    let css = element
+                        .descendants()
+                        .filter(|node| node.is_text())
+                        .filter_map(|node| node.text())
+                        .collect::<String>()
+                        .to_ascii_lowercase();
                     let compact = css
                         .chars()
                         .filter(|c| !c.is_whitespace())
@@ -163,16 +186,43 @@ mod tests {
         assert!(validate(br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#fff"/></svg>"##,"image/svg+xml").is_ok());
     }
     #[test]
+    fn svg_xml_declarations_and_namespace_prefixes_preserve_original_bytes() {
+        let source=br##"<?xml version="1.0" encoding="UTF-8"?><!-- A comment can mention <?xml-stylesheet?> or <!DOCTYPE svg> without enabling either. --><s:svg xmlns:s="http://www.w3.org/2000/svg" width="20" height="10"><s:title>One &amp; two</s:title><s:rect width="20" height="10" fill="#fff"/></s:svg>"##;
+        let before = source.to_vec();
+        validate(source, "image/svg+xml").unwrap();
+        assert_eq!(source.as_slice(), before);
+    }
+    #[test]
+    fn svg_xml_parser_and_element_counts_are_bounded() {
+        for children in
+            ["<rect/>".repeat(4096), "<!-- comment -->".repeat(8192)]
+        {
+            let source = format!(
+                "<svg xmlns='http://www.w3.org/2000/svg'>{children}</svg>"
+            );
+            assert!(validate(source.as_bytes(), "image/svg+xml").is_err());
+        }
+    }
+    #[test]
+    fn svg_requires_well_formed_xml_and_the_svg_root_namespace() {
+        for source in ["<svg xmlns='http://www.w3.org/2000/svg'><rect></svg>","<svg xmlns='urn:not-svg'/>","<svg/>","<div/><svg xmlns='http://www.w3.org/2000/svg'/>","<svg xmlns='http://www.w3.org/2000/svg'>&undefined;</svg>","<?xml-stylesheet href='https://example.org/a.css'?><svg xmlns='http://www.w3.org/2000/svg'/>","<!DOCTYPE svg [<!ENTITY local 'test'>]><svg xmlns='http://www.w3.org/2000/svg'>&local;</svg>","<!DOCTYPE svg SYSTEM 'https://example.org/svg.dtd'><svg xmlns='http://www.w3.org/2000/svg'/>"] {
+            assert!(validate(source.as_bytes(),"image/svg+xml").is_err(),"{source}");
+        }
+    }
+    #[test]
     fn svg_active_content_and_external_resources_are_rejected() {
         for source in [
-            "<svg><script>alert(1)</script></svg>",
+            "<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>",
             "<svg xmlns='http://www.w3.org/2000/svg' xmlns:s='http://www.w3.org/2000/svg'><s:script>alert(1)</s:script></svg>",
-            "<svg onload='a()'/>",
-            "<svg><image href='https://example.org/a.png'/></svg>",
+            "<svg xmlns='http://www.w3.org/2000/svg' onload='a()'/>",
+            "<svg xmlns='http://www.w3.org/2000/svg' xmlns:s='urn:custom' s:onload='a()'/>",
+            "<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><a xlink:href='https://example.org/a'>x</a></svg>",
+            "<svg xmlns='http://www.w3.org/2000/svg'><image href='https://example.org/a.png'/></svg>",
             "<!DOCTYPE svg><svg/>",
-            "<svg><style>@import 'https://example.org/a.css';</style></svg>",
-            "<svg><style>rect{fill:url(//example.org/a.svg)}</style></svg>",
-            r"<svg style='fill:u\72l(//example.org/a.svg)'/>",
+            "<!DOCTYPE svg><svg xmlns='http://www.w3.org/2000/svg'/>",
+            "<svg xmlns='http://www.w3.org/2000/svg'><style>@import 'https://example.org/a.css';</style></svg>",
+            "<svg xmlns='http://www.w3.org/2000/svg'><style>rect{fill:url(//example.org/a.svg)}</style></svg>",
+            r"<svg xmlns='http://www.w3.org/2000/svg' style='fill:u\72l(//example.org/a.svg)'/>",
         ] {
             assert!(
                 validate(source.as_bytes(), "image/svg+xml").is_err(),

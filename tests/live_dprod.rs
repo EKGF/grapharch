@@ -100,7 +100,7 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
     )?;
     std::fs::write(
         repo.path().join("badge.svg"),
-        r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#fff"/></svg>"##,
+        r##"<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#fff"/></svg>"##,
     )?;
     std::fs::write(
         repo.path().join("example.md"),
@@ -246,6 +246,14 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         panic!("asset count literal")
     };
     assert_eq!(count.value(), "3");
+    let expected_svg = std::fs::read(repo.path().join("badge.svg"))?;
+    let mut routes=dataset.select("SELECT DISTINCT ?route WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> ; <https://ekgf.org/ontology/grapharch#format> 'image/svg+xml' ; <https://ekgf.org/ontology/grapharch#route> ?route } }".into()).await?;
+    let row = routes.next().await?.unwrap();
+    let oxrdf::Term::Literal(svg_route) = &row["route"] else {
+        panic!("SVG route literal")
+    };
+    let svg_route = svg_route.value().to_owned();
+    assert!(routes.next().await?.is_none());
     let archive = output.path().join("documentation.nq");
     dataset.export(archive.clone()).await?;
     std::fs::write(
@@ -290,6 +298,13 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         showcases::publish(&Publisher::new(restored), &plans, output.path())
             .await?;
     assert_eq!(publications.len(), 3);
+    for target in ["website", "specification", "pdf"] {
+        assert_eq!(
+            std::fs::read(output.path().join(target).join(&svg_route))?,
+            expected_svg,
+            "SVG XML bytes must survive KG export/restore without rewriting"
+        );
+    }
     let site =
         std::fs::read_to_string(output.path().join("website/index.html"))?;
     assert!(site.contains("href=\"assets/image-"));

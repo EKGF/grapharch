@@ -2328,6 +2328,7 @@ dependencies = [
  "quick-error",
  "regex",
  "reqwest 0.12.9",
+ "roxmltree 0.20.0",
  "scraper",
  "serde",
  "serde_json",
@@ -2344,6 +2345,7 @@ dependencies = [
  "typst-pdf",
  "url",
  "uuid",
+ "xmlparser",
 ]
 
 [[package]]
