@@ -2328,7 +2328,7 @@ dependencies = [
  "quick-error",
  "regex",
  "reqwest 0.12.9",
- "roxmltree 0.20.0",
+ "roxmltree",
  "scraper",
  "serde",
  "serde_json",
