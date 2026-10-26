@@ -30,7 +30,21 @@ Use `publication build-family` with one source option:
 | Remote Git repository | `--git-repository https://git.example.org/team/ontologies.git --git-ref main` | Files at one resolved commit |
 | GitHub repository | `--github OWNER/REPO --git-ref main` | The same remote Git mode, with a GitHub URL shortcut |
 
-For example, publish a local checkout using your publication definitions:
+When the source RDF contains one unambiguous `ga:Project` and `ga:Target`,
+GraphArch discovers the publication hints directly:
+
+```sh
+grapharch publication build-family \
+  --local-repository /path/to/your-repo \
+  --output-root ./output/family
+```
+
+Hints can live inside an ontology or in a separate RDF file in the same
+repository. The source owns its title, authority, family membership, and
+publication settings. Multiple projects or targets require an explicit selection;
+GraphArch does not choose one arbitrarily.
+
+For external publication definitions, supply all three override options:
 
 ```sh
 grapharch publication build-family \
@@ -50,6 +64,9 @@ source, and `documentation.nq`.
 For a remote source, replace the source option with `--git-repository URL
 --git-ref REF`, or the GitHub shortcut. Unqualified refs mean branches; use
 `refs/tags/<tag>` for a tag or a full commit ID for an immutable selection.
+If `--git-ref` is omitted, GraphArch follows the remote default branch (`HEAD`).
+Each build resolves that moving ref once and records the concrete commit in the
+documentation KG. The cached bare repository is refreshed on subsequent runs.
 
 ## Describe your family
 

@@ -23,21 +23,22 @@ installs and verifies an exact release before running the build.
 After checking out your repository, add this step:
 
 ```yaml
-- uses: actions/checkout@v4
-- uses: EKGF/grapharch@3dd1d4b21ff897b5761f2ee1e31e10ec97f3e9c8
+- uses: actions/checkout@v7
+- uses: EKGF/grapharch@7f6703989bba63143c1c063cdd2052cf1821cebc
   id: docs
   with:
     version: '0.0.1'
     source-kind: checkout
     source: .
-    definitions: grapharch.ttl
-    project: urn:example:project
-    target: urn:example:specification
     output: build/docs
 ```
 
-Replace the definitions path and both IRIs with your project's publication
-configuration. `source-kind: checkout` records provenance from a local Git
+GraphArch discovers a unique project and target from publication hints in your
+repository’s RDF. Put those hints in your ontologies or a separate RDF file
+alongside them. Ambiguous or incomplete hints fail explicitly. To use external
+definitions instead, supply `definitions`, `project` and `target` together.
+
+`source-kind: checkout` records provenance from a local Git
 checkout. Use `directory` to collect a plain source directory; GraphArch never
 switches between these modes implicitly. Paths with spaces are supported. Keep
 generated output directories ignored in your repository when also building
@@ -68,14 +69,11 @@ permissions:
   id-token: write
 jobs:
   documentation:
-    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@67a4ea21d5dd110039e999e5a241a8c30677fd8b
+    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@92f22d5a653876e9dee1f50c4543a688ba8c9f97
     with:
       version: '0.0.1'
       source-kind: checkout
       source: .
-      definitions: grapharch.ttl
-      project: urn:example:project
-      target: urn:example:specification
       deploy: false
 ```
 
@@ -89,3 +87,26 @@ the publishing source and set `deploy: true`. The deployment uses the
 `github-pages` environment and returns a `page-url` workflow output. Set
 `include-kg: false` to omit the downloadable KG. You can add branch triggers
 when you are ready for automatic publication.
+
+## Check live showcases in CI
+
+GraphArch’s own gallery is also an integration test suite. Run every declared
+showcase and retain evidence when an upstream repository changes:
+
+```sh
+grapharch publication verify-gallery \
+  --source examples --project urn:grapharch:docs \
+  --output-root output/showcase-verification --json
+```
+
+Use a new or empty output directory. Verification checks every case with bounded
+parallelism, records unexpected failures as KG diagnostics, and exits nonzero if
+any case fails. It retains `report.json`, `verification.nq`, and each available
+case’s artifacts and KG. A collection failure may prevent a case KG from being
+available; the report says so explicitly. Repository failures include the observed
+commit and source location.
+
+The GraphArch website workflow runs these live checks on changes and nightly.
+It uploads the evidence even when verification fails and blocks publication of
+an incomplete gallery. Pinned offline fixtures remain separate regression tests;
+they are never substituted for an unavailable live source.
