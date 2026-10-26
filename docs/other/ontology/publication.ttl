@@ -23,7 +23,7 @@
     dct:publisher <https://ekgf.org/> ;
     dct:license <https://spdx.org/licenses/MIT> ;
     dct:rights "Copyright (c) 2024-2025 Enterprise Knowledge Graph Forum, Object Management Group Inc. Distributed under the MIT license in the Grapharch repository."@en ;
-    dct:modified "2026-10-25"^^xsd:date ;
+    dct:modified "2026-10-26"^^xsd:date ;
     dct:language "en" ;
     vann:preferredNamespacePrefix "ga" ;
     vann:preferredNamespaceUri "https://ekgf.org/ontology/grapharch#" ;
@@ -105,8 +105,8 @@ ga:Contribution a owl:Class ;
 ga:ExternalReference a owl:Class ;
     rdfs:label "External reference"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "An identified reference to material outside the selected documentation content; linking to it does not add its subject to a publication scope."@en ;
-    dct:description "An identified reference to material outside the selected documentation content; linking to it does not add its subject to a publication scope."@en .
+    skos:definition "An identified reference to material addressed by a fragment rather than placed as a documentation subject, including an external repository resource or a retained binary image. Declaring the reference does not itself add a native RDF subject to the publication scope."@en ;
+    dct:description "An identified reference to material addressed by a fragment rather than placed as a documentation subject, including an external repository resource or a retained binary image. Declaring the reference does not itself add a native RDF subject to the publication scope."@en .
 
 ga:Revision a owl:Class ;
     rdfs:label "Assembled dataset revision"@en ;
@@ -239,7 +239,7 @@ ga:BinaryAsset a owl:Class ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "A retained publication artifact represented by ordered base64 chunks, an output route, a byte count, and a SHA-256 digest."@en ;
     dct:description "A retained publication artifact represented by ordered base64 chunks, an output route, a byte count, and a SHA-256 digest."@en ;
-    skos:scopeNote "Binary assets are explicitly selected through ga:asset and are not placeholder fragments. Publication verifies decoded size and SHA-256 digest before committing the output."@en ;
+    skos:scopeNote "Binary assets include collected images and generated publication artifacts. Fragments and collected references can identify them through ga:asset; publication plans select assets required by scoped content. They are not placeholder fragments. Publication verifies decoded size, SHA-256 digest and supported image content before committing the output."@en ;
     owl:disjointWith ga:Fragment .
 
 # Resource relationships
@@ -686,12 +686,13 @@ ga:chunk a owl:ObjectProperty ;
     rdfs:range rdfs:Resource .
 
 ga:asset a owl:ObjectProperty ;
-    rdfs:label "Artifact selected by a publication plan"@en ;
+    rdfs:label "Retained binary asset"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Identifies a retained binary artifact explicitly selected by a publication plan for emission alongside its rendered documentation."@en ;
-    dct:description "Identifies a retained binary artifact explicitly selected by a publication plan for emission alongside its rendered documentation."@en ;
-    rdfs:domain ga:Plan ;
-    rdfs:range ga:BinaryAsset .
+    skos:definition "Identifies a retained binary artifact referenced by a documentation fragment or collected reference, or selected by a publication plan for emission alongside rendered documentation."@en ;
+    dct:description "Identifies a retained binary artifact referenced by a documentation fragment or collected reference, or selected by a publication plan for emission alongside rendered documentation."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:BinaryAsset ;
+    skos:scopeNote "A fragment or reference can identify an image before publication planning. A plan selects the retained assets needed by its scoped content. Referencing an asset does not classify its owner as a publication plan and does not authorize network access during rendering."@en .
 
 ga:head a owl:ObjectProperty ;
     rdfs:label "Committed contribution head"@en ;

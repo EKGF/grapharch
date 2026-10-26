@@ -162,3 +162,19 @@ async fn collected_dataset_uses_declared_property_kinds() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn retained_asset_references_do_not_classify_authored_fragments_as_plans()
+-> Result<()> {
+    let store = ontology()?;
+    assert!(
+        ask(
+            &store,
+            "ga:asset rdfs:domain rdfs:Resource ; rdfs:range ga:BinaryAsset"
+        )?,
+        "asset references are also emitted on authored fragments and \
+         collected references"
+    );
+    assert!(!ask(&store, "ga:asset rdfs:domain ga:Plan")?);
+    Ok(())
+}

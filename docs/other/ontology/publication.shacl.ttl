@@ -115,3 +115,10 @@ ga:ShowcaseShape a sh:NodeShape ; sh:targetClass ga:Showcase ; sh:nodeKind sh:IR
     sh:property [ sh:path ga:previewArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:pdfArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:datasetArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+# Asset references also occur on authored fragments and collected references.
+ga:AssetReferenceShape a sh:NodeShape ;
+    rdfs:label "Retained asset reference"@en ;
+    rdfs:comment "Requires asset links on authored fragments, collected references and publication plans to identify retained binary assets with IRIs."@en ;
+    sh:targetSubjectsOf ga:asset ;
+    sh:property [ sh:path ga:asset ; sh:nodeKind sh:IRI ; sh:class ga:BinaryAsset ] .
