@@ -9,7 +9,11 @@ use {
 };
 
 /// A Markdown-file collector supporting frontmatter and plain Markdown bodies.
-pub struct MarkdownFile(FileInput, Option<PathBuf>);
+pub struct MarkdownFile(
+    FileInput,
+    Option<PathBuf>,
+    Option<(String, String)>,
+);
 /// A SPARQL-file collector that documents statements without executing them.
 pub struct SparqlFile(FileInput);
 
@@ -31,10 +35,19 @@ struct Hints {
 }
 
 impl MarkdownFile {
+    pub(super) fn supplied(
+        input: FileInput,
+        website: bool,
+        hints: Option<(String, String)>,
+    ) -> Self {
+        Self(input, website.then(PathBuf::new), hints)
+    }
+
     /// Configure one collector instance and source file.
     pub fn new(project: &str, collector: &str, path: PathBuf) -> Result<Self> {
         Ok(Self(
             FileInput::new(project, collector, path)?,
+            None,
             None,
         ))
     }
@@ -51,6 +64,7 @@ impl MarkdownFile {
         Ok(Self(
             FileInput::new(project, collector, path)?,
             Some(root),
+            None,
         ))
     }
 
@@ -77,7 +91,7 @@ impl Collector for MarkdownFile {
     async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
         let (source, mut revision) = self.0.authored().await?;
         let normalized = source.replace("\r\n", "\n");
-        let (frontmatter, body) =
+        let (mut frontmatter, body) =
             if let Some(rest) = normalized.strip_prefix("---\n") {
                 let Some(end) = rest.find("\n---\n") else {
                     bail!(
@@ -93,6 +107,24 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
+        if let Some((title, route)) = &self.2 {
+            ensure!(
+                frontmatter
+                    .title
+                    .as_ref()
+                    .is_none_or(|value| value == title),
+                "conflicting Markdown title hints"
+            );
+            if let Some(value) = &frontmatter.page.permalink {
+                ensure!(
+                    super::page::route(self.0.source()?, Some(value))? ==
+                        super::page::route(self.0.source()?, Some(route))?,
+                    "conflicting Markdown route hints"
+                );
+            }
+            frontmatter.title = Some(title.clone());
+            frontmatter.page.permalink = Some(route.clone());
+        }
         let mut subject = frontmatter
             .grapharch
             .subject

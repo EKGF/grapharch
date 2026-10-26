@@ -17,6 +17,9 @@ pub(super) struct FileInput {
     pub project:   NamedNode,
     pub collector: NamedNode,
     pub path:      PathBuf,
+    supplied:      Option<(String, String)>,
+    source_uri:    Option<String>,
+    fragment:      Option<NamedNode>,
 }
 
 impl FileInput {
@@ -25,10 +28,36 @@ impl FileInput {
             project: NamedNode::new(project)?,
             collector: NamedNode::new(collector)?,
             path,
+            supplied: None,
+            source_uri: None,
+            fragment: None,
         })
     }
 
+    pub(super) fn supplied(
+        project: &str,
+        collector: &str,
+        path: PathBuf,
+        source: String,
+        fragment: NamedNode,
+        body: String,
+        revision: String,
+    ) -> Result<Self> {
+        ensure!(
+            body.len() as u64 <= MAX_AUTHORED_BYTES,
+            "authored Git blob exceeds byte budget"
+        );
+        let mut input = Self::new(project, collector, path)?;
+        input.supplied = Some((body, revision));
+        input.source_uri = Some(source);
+        input.fragment = Some(fragment);
+        Ok(input)
+    }
+
     pub fn source(&self) -> Result<&str> {
+        if let Some(source) = &self.source_uri {
+            return Ok(source);
+        }
         self.path.to_str().ok_or_else(|| {
             anyhow::anyhow!(
                 "source path is not UTF-8: {}",
@@ -46,6 +75,9 @@ impl FileInput {
     }
 
     pub fn fragment_id(&self) -> NamedNode {
+        if let Some(fragment) = &self.fragment {
+            return fragment.clone();
+        }
         identity("fragment", &[
             self.project.as_str(),
             self.collector.as_str(),
@@ -54,6 +86,9 @@ impl FileInput {
     }
 
     pub async fn authored(&self) -> Result<(String, String)> {
+        if let Some(supplied) = &self.supplied {
+            return Ok(supplied.clone());
+        }
         let mut file =
             File::open(&self.path).await?.take(MAX_AUTHORED_BYTES + 1);
         // bounded: a single authored fragment file, at most MAX_AUTHORED_BYTES

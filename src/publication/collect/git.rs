@@ -1,4 +1,5 @@
-//! Repository discovery and Git provenance. RDF syntax remains a per-file job.
+//! Repository discovery and Git provenance. Source syntax remains a specialised
+//! per-file job.
 use {
     super::{
         Collector,
@@ -17,7 +18,9 @@ use {
     },
 };
 
+mod blob;
 pub(crate) mod hints;
+pub use blob::{GitMarkdownFile, PinnedGitBlob};
 
 pub struct DiscoveredRepository {
     pub scan:    RepositoryScan,
@@ -30,6 +33,7 @@ pub struct RepositoryScan {
     pub commit:     String,
     pub files:      Vec<Arc<dyn Collector>>,
     pub provenance: Arc<dyn Collector>,
+    revision:       Arc<Revision>,
 }
 
 #[derive(Clone)]
@@ -99,7 +103,8 @@ pub async fn local_repository(
         root,
         commit: revision.commit.clone(),
         files: Vec::new(),
-        provenance: Arc::new(revision),
+        provenance: Arc::new(revision.clone()),
+        revision: Arc::new(revision),
     })
 }
 
@@ -324,7 +329,8 @@ fn scan_remote_selected(
             root: path,
             commit: revision.commit.clone(),
             files,
-            provenance: Arc::new(revision),
+            provenance: Arc::new(revision.clone()),
+            revision: Arc::new(revision),
         },
         discovered,
     ))

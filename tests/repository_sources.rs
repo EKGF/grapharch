@@ -249,3 +249,175 @@ async fn local_working_tree_and_cached_remote_feed_the_same_family_pipeline()
     assert!(html.contains("Example ontology"));
     Ok(())
 }
+
+#[tokio::test]
+async fn pinned_git_markdown_reads_develop_and_never_falls_back_to_main()
+-> anyhow::Result<()> {
+    use {
+        grapharch::publication::{
+            collect::{
+                Collector,
+                git::{GitMarkdownFile, remote_repository},
+            },
+            dataset::Dataset,
+            view::RevisionView,
+            writer::GraphWriter,
+        },
+        oxrdf::NamedNode,
+    };
+    let source = repository()?;
+    std::fs::write(
+        source.path().join("README.md"),
+        "---\ntitle: Main trap\npermalink: /\n---\n# MAIN MUST NOT BE \
+         COLLECTED\n",
+    )?;
+    std::fs::write(
+        source.path().join("main-only.md"),
+        "Never fall back here",
+    )?;
+    git(source.path(), &[
+        "add",
+        "README.md",
+        "main-only.md",
+    ])?;
+    git(source.path(), &[
+        "commit",
+        "-m",
+        "Main-only content",
+    ])?;
+    git(source.path(), &["checkout", "-b", "develop"])?;
+    std::fs::remove_file(source.path().join("main-only.md"))?;
+    std::fs::write(
+        source.path().join("README.md"),
+        "---\ntitle: Develop guide\npermalink: /\n---\n# Develop revision \
+         one\n",
+    )?;
+    std::fs::write(
+        source.path().join("plain.md"),
+        "# Native Markdown body\n",
+    )?;
+    git(source.path(), &["add", "-A"])?;
+    git(source.path(), &["commit", "-m", "Develop guide"])?;
+    let remote = tempfile::tempdir()?;
+    git(source.path(), &[
+        "clone",
+        "--bare",
+        ".",
+        remote.path().to_str().unwrap(),
+    ])?;
+    let url = url::Url::from_directory_path(remote.path())
+        .unwrap()
+        .to_string();
+    let cache = tempfile::tempdir()?;
+    let first =
+        remote_repository(&url, "develop", cache.path(), "urn:test:project")
+            .await?;
+    let blob = first.blob(std::path::Path::new("README.md")).await?;
+    assert!(
+        remote_repository(
+            &url,
+            "missing-branch",
+            cache.path(),
+            "urn:test:project"
+        )
+        .await
+        .is_err()
+    );
+    assert!(!first.root.join("README.md").exists());
+    assert!(
+        first
+            .blob(std::path::Path::new("main-only.md"))
+            .await
+            .is_err()
+    );
+    assert!(
+        first
+            .blob(std::path::Path::new("../README.md"))
+            .await
+            .is_err()
+    );
+    assert!(blob.bytes(1).await.is_err());
+    std::fs::write(
+        source.path().join("README.md"),
+        "---\ntitle: Develop guide\npermalink: /\n---\n# Develop revision \
+         two\n",
+    )?;
+    git(source.path(), &[
+        "commit",
+        "-am",
+        "Update develop",
+    ])?;
+    git(source.path(), &[
+        "push",
+        remote.path().to_str().unwrap(),
+        "develop",
+    ])?;
+    let second =
+        remote_repository(&url, "develop", cache.path(), "urn:test:project")
+            .await?;
+    assert_eq!(first.root, second.root);
+    assert_ne!(first.commit, second.commit);
+    assert!(
+        String::from_utf8(blob.bytes(65536).await?)?.contains("revision one")
+    );
+    assert!(
+        String::from_utf8(
+            second
+                .blob(std::path::Path::new("README.md"))
+                .await?
+                .bytes(65536)
+                .await?
+        )?
+        .contains("revision two")
+    );
+    let dataset = Dataset::memory()?;
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 4, 4 * 1024 * 1024)?;
+    first.provenance.collect(&writer).await?;
+    GitMarkdownFile::new(
+        blob.clone(),
+        "urn:markdown",
+        NamedNode::new("urn:guide")?,
+        true,
+    )?
+    .collect(&writer)
+    .await?;
+    let plain = first.blob(std::path::Path::new("plain.md")).await?;
+    GitMarkdownFile::new(
+        plain,
+        "urn:plain-markdown",
+        NamedNode::new("urn:plain-guide")?,
+        true,
+    )?
+    .with_page_hints("Source-owned page title".into(), "guide/".into())?
+    .collect(&writer)
+    .await?;
+    let snapshot = dataset.snapshot_for("urn:test:project").await?;
+    let view = RevisionView::new(dataset, snapshot);
+    assert!(
+        view.text(&NamedNode::new("urn:guide")?, "body")
+            .await?
+            .contains("revision one")
+    );
+    let mut provenance = view
+        .objects_by(
+            &NamedNode::new(blob.source())?,
+            &NamedNode::new("http://www.w3.org/ns/prov#wasDerivedFrom")?,
+        )
+        .await?;
+    assert!(provenance.next().await?.is_some());
+    assert!(blob.location().contains(&first.commit));
+    assert_eq!(
+        view.text(&NamedNode::new("urn:plain-guide")?, "route")
+            .await?,
+        "guide/"
+    );
+    assert!(
+        view.text(&NamedNode::new("urn:plain-guide")?, "body")
+            .await?
+            .contains("Native Markdown body")
+    );
+    drop(writer);
+    worker.await??;
+    Ok(())
+}
