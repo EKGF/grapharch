@@ -588,15 +588,11 @@ pub(super) async fn write(
     }
 
     for b in &books {
-        let nav = b.source.replace(".typ", "-navigation.json");
         let search = b.source.replace(".typ", "-search.json");
         let mut members = b.members.iter().copied().collect::<Vec<_>>();
         members.sort();
-        let local: HashMap<usize, usize> =
-            members.iter().enumerate().map(|(i, p)| (*p, i)).collect();
-        let navigation:Vec<_>=members.iter().map(|p|serde_json::json!({"title":catalog.pages[*p].title,"href":catalog.pages[*p].route,"parent":catalog.pages[*p].parent.and_then(|p|local.get(&p).copied())})).collect();
-        tokio::fs::write(stage.join(&nav), serde_json::to_vec(&navigation)?)
-            .await?;
+        let contents =
+            std::sync::Arc::new(pages::book_contents(&catalog, &members)?);
         let search_entries: Vec<_> = members
             .iter()
             .flat_map(|p| {
@@ -612,17 +608,17 @@ pub(super) async fn write(
             serde_json::to_vec(&search_entries)?,
         )
         .await?;
-        files.extend([nav.clone(), search.clone()]);
+        files.push(search.clone());
         if let Some(pdf) = &b.pdf {
             files.push(pdf.clone());
         }
         for p in &b.members {
             contexts.insert(*p, BookContext {
-                title:      b.title.clone(),
-                route:      b.html.clone(),
-                pdf:        b.pdf.clone(),
-                navigation: nav.clone(),
-                search:     search.clone(),
+                title:    b.title.clone(),
+                route:    b.html.clone(),
+                pdf:      b.pdf.clone(),
+                contents: contents.clone(),
+                search:   search.clone(),
             });
         }
     }

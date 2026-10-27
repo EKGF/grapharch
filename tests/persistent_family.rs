@@ -971,6 +971,23 @@ async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_
     for book in books {
         let pdf = book["pdf"].as_str().expect("book PDF");
         assert!(std::fs::read(p.directory.join(pdf))?.starts_with(b"%PDF-"));
+        let chapter = std::fs::read_to_string(
+            p.directory.join(book["html"].as_str().unwrap()),
+        )?;
+        assert!(
+            !chapter.contains("data-book-navigation"),
+            "book TOC must use the normal static specification contents"
+        );
+        assert!(chapter.contains("Table of Contents"));
+        let doc = scraper::Html::parse_document(&chapter);
+        let toc = doc
+            .select(&scraper::Selector::parse("#toc").unwrap())
+            .next()
+            .unwrap();
+        assert!(
+            toc.text().collect::<String>().contains("Classes"),
+            "ontology sections must be present before JavaScript runs"
+        );
         let typst = std::fs::read_to_string(
             p.directory.join(book["source"].as_str().unwrap()),
         )?;
@@ -1135,6 +1152,40 @@ async fn bookshelf_parent_boundary_and_incremental_book_reuse() -> Result<()> {
         p.directory.join(books[0]["source"].as_str().unwrap()),
     )?;
     assert!(text.contains("core term") && text.contains("extra term"));
+    let chapter = std::fs::read_to_string(
+        p.directory.join(books[0]["html"].as_str().unwrap()),
+    )?;
+    let doc = scraper::Html::parse_document(&chapter);
+    let toc = doc
+        .select(&scraper::Selector::parse("#toc").unwrap())
+        .next()
+        .unwrap();
+    let text = toc.text().collect::<String>();
+    assert!(
+        text.contains("core term") && text.contains("extra term"),
+        "normal TOC must include sections in all ontology chapters"
+    );
+    for link in toc.select(&scraper::Selector::parse("a[href]").unwrap()) {
+        let href = link.value().attr("href").unwrap();
+        let (route, anchor) = match href.split_once('#') {
+            Some(parts) => parts,
+            None => continue,
+        };
+        assert!(
+            !route.is_empty(),
+            "book TOC links must identify their ontology page"
+        );
+        let target = scraper::Html::parse_document(&std::fs::read_to_string(
+            p.directory.join(route),
+        )?);
+        assert!(
+            target
+                .select(&scraper::Selector::parse("[id]").unwrap())
+                .any(|e| e.value().id() == Some(anchor)),
+            "TOC anchor missing: {href}"
+        );
+    }
+
     std::fs::write(
         &path,
         format!(

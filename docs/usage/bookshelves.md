@@ -11,8 +11,10 @@ grapharch:
 
 A large family can be published as a collection of module books. Each book has
 its own specification, ontology chapters, and PDF. The bookshelf groups books
-by their declared parent modules. Inside a book, one contents tree shows its
-chapters and the current chapter's sections. Search on the bookshelf covers the
+by their declared parent modules. Inside a book, the normal specification table of contents shows its ontology
+chapters and their sections. It is present in the generated HTML, including
+sections in other chapters, before JavaScript runs. The shared specification
+controls provide collapse, expand, resize, and search. Search on the bookshelf covers the
 family; search inside a book covers that book.
 
 On an existing family target, replace the renderer setting and add optional PDF

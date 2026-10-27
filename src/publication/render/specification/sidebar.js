@@ -106,7 +106,7 @@
   addBranches(toc);
   const reveal = () => {
     const candidates = [...toc.querySelectorAll('a[href]')].filter(a => a.pathname === location.pathname);
-    const current = candidates.find(a => location.hash && a.hash === location.hash) || candidates.find(a => a.hasAttribute('data-book-chapter')) || candidates.find(a => !a.hash);
+    const current = candidates.find(a => location.hash && a.hash === location.hash) || candidates.find(a => !a.hash);
     toc.querySelectorAll('[aria-current]').forEach(a => a.removeAttribute('aria-current'));
     if (!current) return;
     current.setAttribute('aria-current', location.hash ? 'location' : 'page');
@@ -142,27 +142,6 @@
         familyTree.replaceChildren(root); addBranches(familyTree); reveal();
       } catch (error) { familyTree.textContent = `Family navigation unavailable: ${error.message}`; }
     });
-  }
-  const bookTree = toc.querySelector('[data-book-navigation]');
-  if (bookTree) {
-    void (async () => {
-      try {
-        const response=await fetch(bookTree.dataset.navigationIndex);
-        if (!response.ok) throw new Error(`Book contents HTTP ${response.status}`);
-        const pages=await response.json();
-        if (!Array.isArray(pages) || pages.length > 8192) throw new Error('Invalid book navigation index');
-        const root=document.createElement('ol'); const lists=[];
-        const local=bookTree.querySelector('[data-local-contents] > ol > li > ol');
-        pages.forEach((p,i)=>{
-          if (typeof p.title !== 'string' || typeof p.href !== 'string' || !/^[a-z0-9-]+\.html$/.test(p.href) || (p.parent!==null && (!Number.isInteger(p.parent)||p.parent<0||p.parent>=i))) throw new Error('Invalid book contents entry');
-          const li=document.createElement('li'); const a=document.createElement('a'); a.href=p.href; a.textContent=p.title; a.setAttribute('data-book-chapter',''); li.append(a);
-          const children=document.createElement('ol'); lists.push({li,children});
-          if(p.parent===null)root.append(li);else{const parent=lists[p.parent];if(!parent.children.parentNode)parent.li.append(parent.children);parent.children.append(li);}
-        });
-        if(local){const current=lists.find(item=>item.li.querySelector(':scope > a').pathname===location.pathname);if(current){for(const child of [...local.children])current.children.append(child);if(!current.children.parentNode)current.li.append(current.children);}}
-        bookTree.replaceChildren(root);addBranches(bookTree);reveal();bookTree.dataset.loaded='true';
-      } catch(error){const message=document.createElement('p');message.setAttribute('role','alert');message.textContent=`Book contents unavailable: ${error.message}`;bookTree.prepend(message);}
-    })();
   }
   let entries;
   let loading;

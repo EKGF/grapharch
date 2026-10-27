@@ -278,12 +278,44 @@ pub(in crate::publication::render) async fn write(
     write_catalog(plan, stage, mode, &catalog, None).await
 }
 
+pub(in crate::publication::render) fn book_contents(
+    catalog: &Catalog,
+    members: &[usize],
+) -> Result<String> {
+    let mut html = String::from("<ol>");
+    let has_ontology =
+        members.iter().any(|i| catalog.pages[*i].kind != "module");
+    for page in members
+        .iter()
+        .map(|i| &catalog.pages[*i])
+        .filter(|p| !has_ontology || p.kind != "module")
+    {
+        let entries = page
+            .contents
+            .strip_prefix("<ol>")
+            .and_then(|s| s.strip_suffix("</ol>"))
+            .ok_or_else(|| {
+                anyhow::anyhow!("invalid specification TOC structure")
+            })?;
+        html.push_str(&entries.replace(
+            "href=\"#",
+            &format!("href=\"{}#", html_escape(&page.route)),
+        ));
+        ensure!(
+            html.len() <= crate::publication::limits::REFERENCE_INDEX_BYTES,
+            "book table of contents exceeds byte budget"
+        );
+    }
+    html.push_str("</ol>");
+    Ok(html)
+}
+
 pub(in crate::publication::render) struct BookContext {
-    pub title:      String,
-    pub route:      String,
-    pub pdf:        Option<String>,
-    pub navigation: String,
-    pub search:     String,
+    pub title:    String,
+    pub route:    String,
+    pub pdf:      Option<String>,
+    pub contents: std::sync::Arc<String>,
+    pub search:   String,
 }
 pub(in crate::publication::render) async fn write_catalog(
     plan: &Plan,
@@ -376,28 +408,22 @@ pub(in crate::publication::render) async fn write_catalog(
                 );
             }
             let toc_title = if context.is_some() {
-                "Book contents"
+                "Table of Contents"
             } else {
                 "On this page"
             };
-            let contents = if let Some(context) = context {
-                format!(
-                    "<p class=\"book-contents-title\"><a \
-                     href=\"{}\">{}</a></p><div class=\"book-navigation\" \
-                     data-book-navigation data-navigation-index=\"{}\"><div \
-                     data-local-contents>{}</div></div>",
-                    html_escape(&context.route),
-                    html_escape(&context.title),
-                    html_escape(&context.navigation),
-                    p.contents
-                )
-            } else {
-                p.contents.clone()
-            };
+            let contents = context
+                .map(|book| book.contents.as_str())
+                .unwrap_or(&p.contents);
             let family_html: String = if books.is_some() {
-                "<p><a href=\"index.html\">Back to bookshelf</a></p>".into()
+                String::new()
             } else {
                 family_html.into()
+            };
+            let bookshelf_link = if context.is_some() {
+                "<p><a href=\"index.html\">Back to bookshelf</a></p>"
+            } else {
+                ""
             };
             next.write_all(
                 format!(
@@ -417,7 +443,8 @@ pub(in crate::publication::render) async fn write_catalog(
                      class=\"toc\" role=\"doc-toc\" \
                      aria-labelledby=\"toc-title\" \
                      data-search-index=\"{search_index}\"><h2 \
-                     id=\"toc-title\">{toc_title}</h2>{}{}{family_html}</nav>",
+                     id=\"toc-title\">{toc_title}</\
+                     h2>{bookshelf_link}{}{}{family_html}</nav>",
                     html_escape(plan.revision.as_str()),
                     html_escape(&p.title),
                     html_escape(&plan.title),
