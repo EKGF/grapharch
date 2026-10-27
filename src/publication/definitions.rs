@@ -17,6 +17,8 @@ pub enum Renderer {
     Specification,
     /// Component-sized standards pages with shared family navigation.
     SpecificationPages,
+    /// Module books with separate websites and PDFs.
+    Bookshelf,
     /// Typst source and PDF.
     Typst,
 }
@@ -28,6 +30,7 @@ impl Renderer {
             "website" => Ok(Self::Website),
             "specification" => Ok(Self::Specification),
             "specification-pages" => Ok(Self::SpecificationPages),
+            "bookshelf" => Ok(Self::Bookshelf),
             "typst" => Ok(Self::Typst),
             other => bail!("unsupported renderer {other}"),
         }

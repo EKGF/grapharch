@@ -25,7 +25,7 @@ ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
 ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("html" "website" "specification" "specification-pages" "typst") ] ;
+    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("html" "website" "specification" "specification-pages" "bookshelf" "typst") ] ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
@@ -58,7 +58,7 @@ ga:ContributionShape a sh:NodeShape ; sh:targetClass ga:Contribution ; sh:nodeKi
 # HTTP(S) schemes, calendar dates, front-matter placement, and metadata budgets.
 ga:SpecificationTargetShape a sh:NodeShape ; sh:targetClass ga:Target ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path ga:renderer ; sh:in ("specification" "specification-pages") ] ] ]
+        [ sh:not [ sh:property [ sh:path ga:renderer ; sh:in ("specification" "specification-pages" "bookshelf") ] ] ]
         [ sh:node ga:SpecificationMetadataShape ]
     ) .
 
@@ -139,3 +139,8 @@ ga:OntologyModuleShape a sh:NodeShape ; sh:targetClass ga:OntologyModule ; sh:no
 
 ga:ContentsDepthShape a sh:NodeShape ; sh:targetSubjectsOf ga:tocDepth ;
     sh:property [sh:path ga:tocDepth; sh:datatype xsd:integer; sh:minInclusive 1; sh:maxInclusive 8; sh:maxCount 1] .
+
+ga:BookPlanShape a sh:NodeShape ; sh:targetClass ga:BookPlan ;
+    sh:property [ sh:path ga:bookRoot ; sh:class ga:Placement ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:bookSubject ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:bookPlacement ; sh:class ga:Placement ; sh:minCount 1 ] .

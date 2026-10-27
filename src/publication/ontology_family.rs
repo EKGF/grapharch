@@ -419,7 +419,7 @@ async fn build(
     ensure!(
         matches!(
             view.text(&target, "renderer").await?.as_str(),
-            "specification" | "specification-pages"
+            "specification" | "specification-pages" | "bookshelf"
         ),
         "family target requires a specification renderer"
     );

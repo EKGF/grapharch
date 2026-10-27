@@ -16,7 +16,7 @@ use {
     uuid::Uuid,
 };
 
-const METADATA_LIMIT: u64 = 4 * 1024 * 1024;
+pub(super) const METADATA_LIMIT: u64 = 64 * 1024 * 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct Ticket {
@@ -239,7 +239,10 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
     } else {
         ensure!(
             manifest.files.len() <=
-                if manifest.renderer == "specification-pages" {
+                if matches!(
+                    manifest.renderer.as_str(),
+                    "specification-pages" | "bookshelf"
+                ) {
                     crate::publication::limits::PUBLICATION_FILES
                 } else {
                     260
@@ -253,23 +256,38 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 name.as_str(),
                 "index.html" | "style.css" | "main.typ" | "document.pdf"
             );
-            let page = manifest.renderer == "specification-pages" &&
-                (matches!(
-                    name.as_str(),
-                    "search-index.json" | "navigation.json"
-                ) || name
-                    .strip_prefix("section-")
-                    .and_then(|value| value.strip_suffix(".html"))
-                    .is_some_and(|hash| {
-                        hash.len() == 64 &&
-                            hash.bytes().all(|b| b.is_ascii_hexdigit())
+            let book = manifest.renderer == "bookshelf" &&
+                (name == "books.json" ||
+                    name.strip_prefix("book-").is_some_and(|s| {
+                        [".pdf", ".typ", "-navigation.json", "-search.json"]
+                            .iter()
+                            .any(|suffix| {
+                                s.strip_suffix(suffix).is_some_and(|hash| {
+                                    hash.len() == 64 &&
+                                        hash.bytes()
+                                            .all(|b| b.is_ascii_hexdigit())
+                                })
+                            })
                     }));
+            let page = matches!(
+                manifest.renderer.as_str(),
+                "specification-pages" | "bookshelf"
+            ) && (matches!(
+                name.as_str(),
+                "search-index.json" | "navigation.json"
+            ) || name
+                .strip_prefix("section-")
+                .and_then(|value| value.strip_suffix(".html"))
+                .is_some_and(|hash| {
+                    hash.len() == 64 &&
+                        hash.bytes().all(|b| b.is_ascii_hexdigit())
+                }));
             let image = name.starts_with("assets/") &&
                 [".svg", ".png", ".jpg", ".jpeg"]
                     .iter()
                     .any(|extension| name.ends_with(extension));
             ensure!(
-                (fixed || image || page) && names.insert(name.as_str()),
+                (fixed || image || page || book) && names.insert(name.as_str()),
                 "invalid publication artifact ownership"
             );
         }
@@ -468,6 +486,7 @@ mod recovery_tests {
             job:            Uuid::new_v4().to_string(),
             diagnostics:    Vec::new(),
             failure_mode:   Default::default(),
+            books:          Vec::new(),
             files:          vec!["index.html".into()], /* bounded: the
                                                         * fixture's single
                                                         * artifact. */
@@ -541,6 +560,7 @@ mod recovery_tests {
             renderer: "specification-pages".into(),
             job: "fixture".into(),
             files,
+            books: Vec::new(),
             failure_mode: Default::default(),
             diagnostics: Vec::new(),
         };

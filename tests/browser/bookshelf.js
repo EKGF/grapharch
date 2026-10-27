@@ -1,0 +1,33 @@
+async (page) => {
+  const assert=(condition,message)=>{if(!condition)throw new Error(message);};
+  const base='http://localhost:8875/specification/';
+  await page.setViewportSize({width:1440,height:1000});await page.goto(base);
+  const inventory=await (await page.request.get(`${base}books.json`)).json();
+  assert(inventory.books.length>50,'missing books');
+  assert(await page.locator('.book-shelf').count()>1,'books are not grouped into shelves');
+  assert(await page.locator('.book-grid').first().evaluate(e=>getComputedStyle(e).display==='grid'),'bookshelf grid stylesheet missing');
+  assert(!(await page.locator('.additional-books').getAttribute('open')),'additional ontologies should not crowd the main shelves');
+  await page.screenshot({path:'output/playwright/bookshelf-library.png'});
+  await page.keyboard.press('Control+k');await page.locator('#spec-search-query').fill('parties module');await page.locator('#spec-search-kind').selectOption('module');
+  const result=page.locator('#spec-search-results a').filter({hasText:/^parties module$/});await result.waitFor();await result.click();
+  await page.waitForFunction(()=>document.querySelector('[data-book-navigation]')?.dataset.loaded==='true');
+  assert((await page.locator('#toc-title').textContent())==='Book contents','book has the wrong navigation model');
+  assert(await page.locator('.family-navigation').count()===0,'old two-part family sidebar remains');
+  const book=inventory.books.find(b=>b.title==='parties module');
+  const href=await page.locator('a.pdf-download').getAttribute('href');assert(href===book.pdf,'PDF does not belong to the current book');
+  assert((await page.request.head(new URL(href,base).href)).ok(),'PDF download failed');
+  const chapter=page.locator('[data-book-navigation] a[data-book-chapter]').filter({hasText:/^Parties Ontology$/});await chapter.click();
+  await page.waitForFunction(()=>document.querySelector('[data-book-navigation]')?.dataset.loaded==='true');
+  assert(await page.locator('main h1').textContent()==='Parties Ontology','chapter selection failed');
+  assert((await page.locator('.family-breadcrumb').textContent()).includes('parties module'),'book breadcrumb missing');
+  assert(await page.locator('[data-book-navigation] a[aria-current]').count()>0,'active chapter is not expanded');
+  assert((await page.locator('[data-book-navigation]').textContent()).includes('Classes'),'current chapter sections missing');
+  assert(!(await page.locator('[data-book-navigation]').textContent()).includes('debt module'),'another book leaked into the contents');
+  await page.keyboard.press('Control+k');await page.locator('#spec-search-query').fill('party role');await page.locator('#spec-search-kind').selectOption('section');
+  await page.waitForFunction(()=>document.querySelector('#spec-search-results li')!==null);await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('spec-search').open);
+  await page.screenshot({path:'output/playwright/bookshelf-chapter.png'});
+  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile overflow');
+  await page.keyboard.press('Control+k');assert(await page.locator('#spec-search').isVisible(),'mobile search failed');
+  await page.screenshot({path:'output/playwright/bookshelf-mobile.png'});await page.keyboard.press('Escape');
+  return {books:inventory.books.length,shelves:true,chapterNavigation:true,bookPdf:true,search:true,mobile:true};
+}

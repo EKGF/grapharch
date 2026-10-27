@@ -916,3 +916,237 @@ async fn paginated_routing_never_treats_literal_prose_as_an_html_link()
         .await?;
     Ok(())
 }
+
+fn bookshelf_fixture() -> Result<Fixture> {
+    let f = Fixture::new()?;
+    let path = f.root.path().join("core.ttl");
+    let text = std::fs::read_to_string(&path)?;
+    std::fs::write(path,format!("{text}\n@prefix ga:<https://ekgf.org/ontology/grapharch#> .\n@prefix dct:<http://purl.org/dc/terms/> .\n<urn:series> a ga:OntologyModule;rdfs:label \"Example series\"@en;dct:abstract \"Two module books.\"@en;ga:moduleMember <urn:book:core>,<urn:book:extra> .\n<urn:book:core> a ga:OntologyModule;rdfs:label \"Core book\"@en;ga:moduleMember <https://example.org/core#> .\n<urn:book:extra> a ga:OntologyModule;rdfs:label \"Extra book\"@en;ga:moduleMember <https://example.org/extra#> .\n<https://example.org/core#Term> rdfs:subClassOf <https://example.org/extra#Term> ."))?;
+    let settings = f.definitions.path().join("project.ttl");
+    std::fs::write(
+        &settings,
+        std::fs::read_to_string(&settings)?.replace(
+            "ga:renderer \"specification\"",
+            "ga:renderer \"bookshelf\"",
+        ),
+    )?;
+    Ok(f)
+}
+
+#[tokio::test]
+async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_deletion()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = bookshelf_fixture()?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("kg.nq");
+    built.dataset.export(archive.clone()).await?;
+    std::fs::remove_dir_all(f.root.path())?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let publisher = Publisher::new(restored.clone()).with_book_workers(
+        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+        2,
+    )?;
+    let PublishOutcome::Published(p) =
+        publisher.render(&built.plan, output.path()).await?
+    else {
+        panic!("not published")
+    };
+    assert!(
+        std::fs::read_to_string(p.directory.join("style.css"))?
+            .contains(".book-grid{display:grid"),
+        "bookshelf layout stylesheet is missing"
+    );
+    let books: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        p.directory.join("books.json"),
+    )?)?;
+    let books = books["books"].as_array().unwrap();
+    assert_eq!(
+        books.len(),
+        2,
+        "parent module is a series, not a duplicated giant book"
+    );
+    for book in books {
+        let pdf = book["pdf"].as_str().expect("book PDF");
+        assert!(std::fs::read(p.directory.join(pdf))?.starts_with(b"%PDF-"));
+        let typst = std::fs::read_to_string(
+            p.directory.join(book["source"].as_str().unwrap()),
+        )?;
+        assert!(
+            typst.contains("#outline(title: [Contents], depth: 2)"),
+            "book contents list chapters and sections by default"
+        );
+        if book["title"] == "Core book" {
+            assert!(typst.contains("core term"));
+            assert!(!typst.contains("#text(\"extra term\")"));
+            assert!(
+                typst.contains("https://example.org/spec/section-"),
+                "cross-book PDF links go to the corresponding HTML chapter"
+            );
+        }
+    }
+    let html = std::fs::read_to_string(p.directory.join("index.html"))?;
+    assert!(html.contains("bookshelf"));
+    assert!(!html.contains("Browse this family"));
+    assert!(html.contains("Example series"));
+    let mut rows = restored
+        .select(format!(
+            "SELECT ?book WHERE {{ {} }}",
+            Dataset::logical_pattern(
+                &built.plan.snapshot,
+                &format!(
+                    "{} <https://ekgf.org/ontology/grapharch#bookPlan> ?book",
+                    built.plan.id
+                ),
+                0
+            )
+        ))
+        .await?;
+    let mut count = 0;
+    while rows.next().await?.is_some() {
+        count += 1;
+    }
+    assert_eq!(
+        count, 2,
+        "book boundaries are recorded in the resolved KG plan"
+    );
+    assert_eq!(p.manifest.books.len(), 2);
+    let mut operations=restored.select(format!("PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT ?book WHERE {{ GRAPH <urn:grapharch:publications> {{ ?book a ga:BookPublication ; <http://purl.org/dc/terms/isPartOf> <urn:grapharch:publication:{}> ; ga:inputRevision <{}> }} }}",p.manifest.job,p.manifest.input_revision)).await?;
+    let mut recorded = 0;
+    while operations.next().await?.is_some() {
+        recorded += 1;
+    }
+    assert_eq!(recorded, 2);
+    // An unchanged render must reuse verified PDFs rather than start workers.
+    let cached = Publisher::new(restored)
+        .with_book_workers(std::env::current_exe()?, 2)?;
+    let PublishOutcome::Published(p) =
+        cached.render(&built.plan, output.path()).await?
+    else {
+        panic!("not republished")
+    };
+    let reused: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        p.directory.join("books.json"),
+    )?)?;
+    assert!(
+        reused["books"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|b| b["reused"] == true)
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn bookshelf_worker_errors_obey_failure_policy_and_do_not_advertise_missing_pdfs()
+-> Result<()> {
+    use grapharch::publication::{
+        diagnostics::FailureMode,
+        render::{PublishOutcome, Publisher},
+    };
+    let f = bookshelf_fixture()?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let publisher = Publisher::new(built.dataset.clone())
+        .with_book_workers(std::env::current_exe()?, 2)?;
+    assert!(publisher.render(&built.plan, output.path()).await.is_err());
+    assert!(!output.path().join("specification").exists());
+    let PublishOutcome::Published(p) = publisher
+        .with_failure_mode(FailureMode::KeepGoing)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("not published")
+    };
+    assert_eq!(p.manifest.diagnostics.len(), 2);
+    let books: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        p.directory.join("books.json"),
+    )?)?;
+    for book in books["books"].as_array().unwrap() {
+        assert!(book["pdf"].is_null());
+        assert_eq!(book["status"], "failed");
+    }
+    assert!(
+        std::fs::read_to_string(p.directory.join("index.html"))?
+            .contains("PDF generation failed")
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn bookshelf_parent_boundary_and_incremental_book_reuse() -> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = bookshelf_fixture()?;
+    let dataset = Dataset::memory()?;
+    let first = f.build(dataset.clone()).await?;
+    let output = tempfile::tempdir()?;
+    let publisher = Publisher::new(dataset.clone()).with_book_workers(
+        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+        2,
+    )?;
+    publisher.render(&first.plan, output.path()).await?;
+    let path = f.root.path().join("core.ttl");
+    std::fs::write(
+        &path,
+        std::fs::read_to_string(&path)?.replace(
+            "A supplied definition.",
+            "An updated core definition.",
+        ),
+    )?;
+    let second = f.build(dataset.clone()).await?;
+    let PublishOutcome::Published(p) =
+        publisher.render(&second.plan, output.path()).await?
+    else {
+        panic!("not published")
+    };
+    let inventory: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        p.directory.join("books.json"),
+    )?)?;
+    for b in inventory["books"].as_array().unwrap() {
+        assert_eq!(
+            b["reused"],
+            b["title"] == "Extra book",
+            "only the changed book should compile again"
+        );
+    }
+    std::fs::write(
+        &path,
+        format!(
+            "{}\n<urn:series> ga:bookBoundary true .",
+            std::fs::read_to_string(&path)?
+        ),
+    )?;
+    let parent = f.build(dataset.clone()).await?;
+    let PublishOutcome::Published(p) =
+        publisher.render(&parent.plan, output.path()).await?
+    else {
+        panic!("not published")
+    };
+    let inventory: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        p.directory.join("books.json"),
+    )?)?;
+    let books = inventory["books"].as_array().unwrap();
+    assert_eq!(books.len(), 1);
+    assert_eq!(books[0]["title"], "Example series");
+    let text = std::fs::read_to_string(
+        p.directory.join(books[0]["source"].as_str().unwrap()),
+    )?;
+    assert!(text.contains("core term") && text.contains("extra term"));
+    std::fs::write(
+        &path,
+        format!(
+            "{}\n<urn:book:core> ga:bookBoundary true .",
+            std::fs::read_to_string(&path)?
+        ),
+    )?;
+    let error = f
+        .build(dataset)
+        .await
+        .err()
+        .expect("overlapping explicit boundaries must fail");
+    assert!(format!("{error:#}").contains("boundaries overlap"));
+    Ok(())
+}

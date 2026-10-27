@@ -84,6 +84,18 @@ impl BuildStoreOptions {
 /// dataset.
 #[derive(Subcommand)]
 pub enum PublicationCommand {
+    /// Compile one immutable book job without opening a KG.
+    #[command(hide = true)]
+    CompileBook {
+        #[arg(long)]
+        root:            PathBuf,
+        #[arg(long)]
+        main:            String,
+        #[arg(long)]
+        expected_engine: Option<String>,
+        #[arg(long)]
+        watch_parent:    bool,
+    },
     /// Collect a documentation tree and publish its logical topics as a
     /// website.
     BuildSite {
@@ -266,6 +278,28 @@ pub async fn run(
     mode: FailureMode,
 ) -> Result<()> {
     match command {
+        PublicationCommand::CompileBook {
+            root,
+            main,
+            expected_engine,
+            watch_parent,
+        } => {
+            if let Some(expected) = expected_engine {
+                ensure!(
+                    super::render::book_compiler_fingerprint() == *expected,
+                    "book worker compiler fingerprint mismatch"
+                );
+            }
+            if *watch_parent {
+                let mut parent_input = tokio::io::stdin();
+                tokio::select! {
+                    result=super::render::compile_book(root,main)=>{result?;std::process::exit(0);},
+                    _=parent_input.read_u8()=>{anyhow::bail!("book coordinator disconnected");}
+                }
+            } else {
+                super::render::compile_book(root, main).await?;
+            }
+        },
         PublicationCommand::VerifyGallery {
             json,
             backend,
@@ -407,6 +441,7 @@ pub async fn run(
                 .await?
             };
             let outcome = Publisher::new(built.dataset.clone())
+                .with_book_workers(std::env::current_exe()?, 2)?
                 .with_failure_mode(mode)
                 .render(&built.plan, output_root)
                 .await?;
@@ -419,12 +454,7 @@ pub async fn run(
                 .await?;
             if *json {
                 print_build_json(
-                    &publication.directory,
-                    publication
-                        .manifest
-                        .files
-                        .iter()
-                        .any(|file| file == "document.pdf"),
+                    &publication,
                     output_root,
                     &built.plan,
                     Some((built.ontology_count, built.term_count)),
@@ -459,6 +489,7 @@ pub async fn run(
             )
             .await?;
             let outcome = Publisher::new(built.dataset.clone())
+                .with_book_workers(std::env::current_exe()?, 2)?
                 .with_failure_mode(mode)
                 .render(&built.plan, output_root)
                 .await?;
@@ -470,14 +501,8 @@ pub async fn run(
                 .export(output_root.join("documentation.nq"))
                 .await?;
             if *json {
-                print_build_json(
-                    &publication.directory,
-                    false,
-                    output_root,
-                    &built.plan,
-                    None,
-                )
-                .await?;
+                print_build_json(&publication, output_root, &built.plan, None)
+                    .await?;
             } else {
                 println!("{}", publication.directory.display());
                 println!(
@@ -493,6 +518,7 @@ pub async fn run(
                 snapshot: NamedNode::new(snapshot)?,
             };
             match Publisher::new(dataset)
+                .with_book_workers(std::env::current_exe()?, 2)?
                 .with_failure_mode(mode)
                 .render(&plan, output_root)
                 .await?
@@ -712,14 +738,19 @@ async fn bounded_file(path: &PathBuf, limit: u64) -> Result<Vec<u8>> {
 /// Versioned result for CI consumers. Paths come from the completed
 /// publication, rather than assumptions about renderer destination layout.
 async fn print_build_json(
-    directory: &std::path::Path,
-    has_pdf: bool,
+    publication: &super::render::Publication,
     output_root: &std::path::Path,
     plan: &ResolvedPlan,
     counts: Option<(usize, usize)>,
 ) -> Result<()> {
+    let directory = &publication.directory;
     let publication_path = tokio::fs::canonicalize(directory).await?;
-    let pdf_path = if has_pdf {
+    let pdf_path = if publication
+        .manifest
+        .files
+        .iter()
+        .any(|file| file == "document.pdf")
+    {
         Some(tokio::fs::canonicalize(directory.join("document.pdf")).await?)
     } else {
         None
@@ -734,6 +765,12 @@ async fn print_build_json(
         "plan": plan.id.as_str(),
         "snapshot": plan.snapshot.as_str(),
     });
+    if !publication.manifest.books.is_empty() {
+        result["books_path"] = serde_json::to_value(
+            tokio::fs::canonicalize(directory.join("books.json")).await?,
+        )?;
+        result["book_count"] = publication.manifest.books.len().into();
+    }
     if let Some((ontologies, resources)) = counts {
         result["ontology_count"] = ontologies.into();
         result["resource_count"] = resources.into();

@@ -194,3 +194,6 @@ search index content is derived from the pinned plan. A failed index load is dis
 The single-page renderer indexes its document headings, including headings
 omitted from the visible contents by `ga:tocDepth`. Links remain usable with
 JavaScript disabled; collapse and search controls require JavaScript.
+
+For a library of module books, each with its own PDF and chapter navigation, use
+[the bookshelf renderer](bookshelves.md) instead of a family-wide specification.

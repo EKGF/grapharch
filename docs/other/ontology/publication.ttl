@@ -23,7 +23,7 @@
     dct:publisher <https://ekgf.org/> ;
     dct:license <https://spdx.org/licenses/MIT> ;
     dct:rights "Copyright (c) 2024-2025 Enterprise Knowledge Graph Forum, Object Management Group Inc. Distributed under the MIT license in the Grapharch repository."@en ;
-    dct:modified "2026-10-26"^^xsd:date ;
+    dct:modified "2026-10-27"^^xsd:date ;
     dct:language "en" ;
     vann:preferredNamespacePrefix "ga" ;
     vann:preferredNamespaceUri "https://ekgf.org/ontology/grapharch#" ;
@@ -779,7 +779,7 @@ ga:renderer a owl:DatatypeProperty ;
     dct:description "Records the renderer dispatch identifier selected for a target or recorded by a publication job."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:string ;
-    skos:scopeNote "Current dispatch values are html, website, specification, specification-pages, and typst. These are implementation identifiers rather than a closed OWL enumeration of all possible renderers."@en .
+    skos:scopeNote "Current dispatch values are html, website, specification, specification-pages, bookshelf, and typst. These are implementation identifiers rather than a closed OWL enumeration of all possible renderers."@en .
 
 ga:destination a owl:DatatypeProperty ;
     rdfs:label "Output destination"@en ;
@@ -1269,3 +1269,43 @@ ga:tocDepth a owl:DatatypeProperty ;
     dct:description "Sets a maximum heading depth for a specification contents sidebar and its PDF outline, allowing large families to list modules and ontologies without every vocabulary term."@en ;
     rdfs:domain rdfs:Resource ; rdfs:range xsd:integer ;
     skos:scopeNote "An integer from one to eight on a target or profile. A target value overrides its profile. When absent, HTML retains the full outline and PDF retains its default depth of three."@en .
+
+ga:BookPlan a owl:Class ; rdfs:label "Book plan"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A resolved publication unit grouping selected placements into one book against the publication plan's pinned input revision."@en ;
+    dct:description "A resolved publication unit grouping selected placements into one book against the publication plan's pinned input revision."@en .
+
+ga:bookPlan a owl:ObjectProperty ; rdfs:label "Book plan"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:Plan ;
+    rdfs:range ga:BookPlan ;
+    skos:definition "Links a resolved family plan to one of its module or standalone ontology books."@en ; dct:description "Links a resolved family plan to one of its module or standalone ontology books."@en .
+
+ga:bookRoot a owl:ObjectProperty ; rdfs:label "Book root"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:BookPlan ;
+    rdfs:range ga:Placement ;
+    skos:definition "Identifies the root placement of a resolved book."@en ; dct:description "Identifies the root placement of a resolved book."@en .
+
+ga:bookPlacement a owl:ObjectProperty ; rdfs:label "Book placement"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:BookPlan ;
+    rdfs:range ga:Placement ;
+    skos:definition "Includes a selected placement in exactly one resolved book."@en ; dct:description "Includes a selected placement in exactly one resolved book."@en .
+
+ga:bookSubject a owl:ObjectProperty ; rdfs:label "Book subject"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:BookPlan ;
+    rdfs:range rdfs:Resource ;
+    skos:definition "Identifies the module or ontology documented by a resolved book."@en ; dct:description "Identifies the module or ontology documented by a resolved book."@en .
+
+ga:bookBoundary a owl:DatatypeProperty ; rdfs:label "Book boundary"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:OntologyModule ;
+    rdfs:range xsd:boolean ;
+    skos:definition "Overrides automatic leaf-module book selection: true makes this module and its descendants one book; false treats it as a series."@en ; dct:description "Overrides automatic leaf-module book selection: true makes this module and its descendants one book; false treats it as a series."@en .
+
+ga:pdfWorkers a owl:DatatypeProperty ; rdfs:label "PDF workers"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:Target ;
+    rdfs:range xsd:integer ;
+    skos:definition "Sets the bounded number of child Grapharch processes compiling book PDFs, between one and eight."@en ; dct:description "Sets the bounded number of child Grapharch processes compiling book PDFs, between one and eight."@en .
+
+ga:pdfTocDepth a owl:DatatypeProperty ; rdfs:label "Book PDF contents depth"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:Target ; rdfs:range xsd:integer ;
+    skos:definition "Sets the maximum heading depth in book PDF contents, independently of HTML navigation depth; bookshelf books default to chapters and sections at depth two."@en ;
+    dct:description "Sets the maximum heading depth in book PDF contents, independently of HTML navigation depth; bookshelf books default to chapters and sections at depth two."@en .
+
+ga:BookPublication a owl:Class ; rdfs:label "Book publication operation"@en ; rdfs:subClassOf ga:Operation ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An observed per-book publication operation recording its resolved plan, pinned revision, execution outcome, and generated artifact provenance."@en ;
+    dct:description "An observed per-book publication operation recording its resolved plan, pinned revision, execution outcome, and generated artifact provenance."@en .
+ga:reused a owl:DatatypeProperty ; rdfs:label "Reused verified PDF"@en ; rdfs:domain ga:BookPublication ; rdfs:range xsd:boolean ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records whether this book operation reused a checksum-verified PDF with an unchanged effective compiler input fingerprint."@en ;
+    dct:description "Records whether this book operation reused a checksum-verified PDF with an unchanged effective compiler input fingerprint."@en .

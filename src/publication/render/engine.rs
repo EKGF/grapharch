@@ -65,6 +65,7 @@ impl Assets {
 struct DocumentWorld {
     root:   PathBuf,
     assets: Arc<Assets>,
+    main:   FileId,
 }
 
 impl World for DocumentWorld {
@@ -72,7 +73,7 @@ impl World for DocumentWorld {
 
     fn book(&self) -> &LazyHash<FontBook> { &self.assets.book }
 
-    fn main(&self) -> FileId { FileId::new(None, VirtualPath::new("main.typ")) }
+    fn main(&self) -> FileId { self.main }
 
     fn source(&self, id: FileId) -> std::result::Result<Source, FileError> {
         let path = self.root.join(id.vpath().as_rootless_path());
@@ -113,10 +114,23 @@ pub(super) async fn compile(
     assets: Arc<Assets>,
     slots: Arc<tokio::sync::Semaphore>,
 ) -> Result<Vec<u8>> {
+    compile_file(root, "main.typ".into(), assets, slots).await
+}
+
+pub(super) async fn compile_file(
+    root: PathBuf,
+    main: String,
+    assets: Arc<Assets>,
+    slots: Arc<tokio::sync::Semaphore>,
+) -> Result<Vec<u8>> {
     let permit = slots.acquire_owned().await?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
-        let world = DocumentWorld { root, assets };
+        let world = DocumentWorld {
+            root,
+            assets,
+            main: FileId::new(None, VirtualPath::new(main)),
+        };
         let started = std::time::Instant::now();
         let result = typst::compile::<PagedDocument>(&world);
         let document = result.output.map_err(|diagnostics| {

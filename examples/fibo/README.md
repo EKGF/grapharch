@@ -143,3 +143,42 @@ Serve `output/fibo-pages` with any static HTTP server. The paginated target does
 not compile a PDF. Each ontology has its own specification page; module pages and
 family navigation retain the declared hierarchy. Search and filter span the
 whole family through one shared title/identifier index.
+
+### Module bookshelf with separate PDFs
+
+```sh
+python3 examples/fibo/prepare.py \
+  --source ../fibo \
+  --output output/fibo-books/config \
+  --renderer bookshelf \
+  --base-url http://localhost:8875/specification/
+cargo run --release -- publication build-family \
+  --local-repository ../fibo \
+  --definitions output/fibo-books/config/publication.ttl \
+  --project urn:fibo-benchmark:project \
+  --target urn:fibo-benchmark:target \
+  --output-root output/fibo-books \
+  --concurrency 4 --json
+```
+
+The bookshelf groups module books under their declared parent series. Each book
+has its own PDF and ontology chapters; additional ontologies are kept in a
+separate catalogue group. `books.json` lists the individual results. The default
+pool uses two child CLI processes for PDF compilation, and unchanged verified
+PDFs are reused. Configure `ga:pdfWorkers` and `ga:pdfTocDepth` on the target or
+`ga:bookBoundary` on module resources to change the publication arrangement.
+
+This remains an extreme case: FIBO's Functional Entities module contains more
+than 9,000 documented resources and can produce thousands of PDF pages even
+when the family is split into books. A cold build requires substantially more
+resources than an ordinary ontology project. It is not part of default CI.
+
+On 27 October 2026, the same source commit produced 54 module books and 102
+additional ontology books, with 364 HTML pages. A full PDF build took 298.8
+seconds with two compiler workers; sampled aggregate process RSS peaked at
+8.73 GiB. An unchanged run regenerated HTML and metadata and verified/reused all
+156 PDFs in 95.7 seconds, peaking at 782 MiB aggregate process RSS. These are
+local observations on the machine described above, with warm source/filesystem
+caches; they are not installation-independent performance guarantees. Aggregate
+RSS sums the coordinator and descendants and can count shared mappings more
+than once. The largest module still produced approximately 4,000 PDF pages.

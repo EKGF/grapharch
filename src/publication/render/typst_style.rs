@@ -24,8 +24,10 @@ impl Style {
             "unsupported PDF presentation style {}",
             requested.as_deref().unwrap_or_default()
         );
-        let name = if plan.renderer == "specification" ||
-            requested.as_deref() == Some("specification")
+        let name = if matches!(
+            plan.renderer.as_str(),
+            "specification" | "bookshelf"
+        ) || requested.as_deref() == Some("specification")
         {
             "specification"
         } else {

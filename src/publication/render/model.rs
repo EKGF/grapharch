@@ -28,6 +28,28 @@ pub(super) struct Plan {
     pub images:      super::collected_images::Images,
 }
 
+/// Per-book result carried with its parent's atomic publication manifest.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BookPublication {
+    /// Resolved BookPlan identity.
+    pub plan:       String,
+    /// Module or ontology identity.
+    pub subject:    String,
+    /// Relative HTML entry point.
+    pub html:       String,
+    /// Relative PDF route when generation succeeded.
+    pub pdf:        Option<String>,
+    /// Execution state, ready or failed.
+    pub status:     String,
+    /// Whether a verified previously generated PDF was reused.
+    pub reused:     bool,
+    /// Fingerprint of the effective compiler input.
+    pub digest:     String,
+    /// SHA-256 of published PDF bytes.
+    pub pdf_digest: Option<String>,
+}
+
 /// Provenance and fixed artifact ownership for one completed publication.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -55,6 +77,9 @@ pub struct PublicationManifest {
     /// Files owned by this generation; bounded by the renderer's
     /// artifact budgets.
     pub files:          Vec<String>,
+    /// Results of independently rendered books, pinned to this publication.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub books:          Vec<BookPublication>,
     /// Execution policy used for this publication.
     #[serde(default)]
     pub failure_mode:   crate::publication::diagnostics::FailureMode,
@@ -146,7 +171,7 @@ impl Plan {
     pub fn is_html(&self) -> bool {
         matches!(
             self.renderer.as_str(),
-            "html" | "specification" | "specification-pages"
+            "html" | "specification" | "specification-pages" | "bookshelf"
         )
     }
 
@@ -218,6 +243,7 @@ impl Plan {
             renderer: self.renderer.clone(),
             job: job.into(),
             files,
+            books: Vec::new(),
             diagnostics: Vec::new(),
             failure_mode: Default::default(),
         }

@@ -17,6 +17,14 @@ pub(super) async fn begin(
     plan: &Plan,
     diagnostics: &[crate::publication::diagnostics::Diagnostic],
 ) -> Result<()> {
+    begin_book(file, plan, &plan.title, diagnostics).await
+}
+pub(super) async fn begin_book(
+    file: &mut BufWriter<File>,
+    plan: &Plan,
+    book_title: &str,
+    diagnostics: &[crate::publication::diagnostics::Diagnostic],
+) -> Result<()> {
     let mut authors = Vec::new();
     let mut rows = plan.source.objects(&plan.target, "author").await?;
     while let Some(row) = rows.next().await? {
@@ -69,7 +77,10 @@ pub(super) async fn begin(
     }
     let author = quote(&authors.join(", "));
     let mut front = String::new();
-    if plan.renderer == "specification" {
+    if matches!(
+        plan.renderer.as_str(),
+        "specification" | "bookshelf"
+    ) {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     }
     let style = super::typst_style::Style::read(plan).await?;
@@ -85,10 +96,10 @@ pub(super) async fn begin(
             plan.revision,
             plan.scope,
             plan.profile,
-            quote(&plan.title),
+            quote(book_title),
             quote(style.name),
             quote(&style.accent),
-            quote(&plan.title),
+            quote(book_title),
             quote(&publisher)
         )
         .as_bytes(),
@@ -148,7 +159,25 @@ pub(super) async fn begin(
             ));
         }
     }
-    let toc_depth = plan.toc_depth().await?.unwrap_or(3);
+    let toc_depth = if plan.renderer == "bookshelf" {
+        match plan.source.optional(&plan.target, "pdfTocDepth").await? {
+            None => 2,
+            Some(oxrdf::Term::Literal(value))
+                if value.datatype().as_str() ==
+                    "http://www.w3.org/2001/XMLSchema#integer" =>
+            {
+                let depth = value.value().parse::<usize>()?;
+                anyhow::ensure!(
+                    (1..=8).contains(&depth),
+                    "pdfTocDepth must be between one and eight"
+                );
+                depth
+            },
+            _ => anyhow::bail!("pdfTocDepth must be an xsd:integer"),
+        }
+    } else {
+        plan.toc_depth().await?.unwrap_or(3)
+    };
     file.write_all(
         format!(
             "\n#ga-cover(ga-publisher, ga-title, [{subtitle}], \

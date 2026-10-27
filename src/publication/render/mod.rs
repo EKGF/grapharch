@@ -1,5 +1,7 @@
 //! Static HTML and embedded Typst/PDF publication from immutable target plans.
 
+mod book_worker;
+mod bookshelf;
 mod callouts;
 mod collected_images;
 mod content;
@@ -17,7 +19,13 @@ mod typst;
 mod typst_markdown;
 mod typst_style;
 mod website;
-pub use model::PublicationManifest;
+pub(crate) async fn compile_book(root: &Path, main: &str) -> Result<()> {
+    book_worker::compile(root, main).await
+}
+pub use model::{BookPublication, PublicationManifest};
+pub(crate) fn book_compiler_fingerprint() -> String {
+    bookshelf::compiler_digest()
+}
 pub(crate) use model::title as page_title;
 use {
     crate::publication::{
@@ -60,20 +68,24 @@ pub enum PublishOutcome {
 /// assets.
 #[derive(Clone)]
 pub struct Publisher {
-    failure_mode:  FailureMode,
-    dataset:       Dataset,
-    session:       String,
-    sequence:      Arc<AtomicU64>,
-    coordination:  Arc<Mutex<()>>,
-    workers:       Arc<Semaphore>,
-    compile_slots: Arc<Semaphore>,
-    assets:        Arc<OnceCell<Arc<engine::Assets>>>,
+    book_executable: Option<PathBuf>,
+    book_jobs:       usize,
+    failure_mode:    FailureMode,
+    dataset:         Dataset,
+    session:         String,
+    sequence:        Arc<AtomicU64>,
+    coordination:    Arc<Mutex<()>>,
+    workers:         Arc<Semaphore>,
+    compile_slots:   Arc<Semaphore>,
+    assets:          Arc<OnceCell<Arc<engine::Assets>>>,
 }
 
 impl Publisher {
     /// Create a runtime for one shared dataset. Reuse it for editor previews.
     pub fn new(dataset: Dataset) -> Self {
         Self {
+            book_executable: None,
+            book_jobs: 2,
             failure_mode: FailureMode::FailFast,
             dataset,
             session: Uuid::new_v4().to_string(),
@@ -89,6 +101,25 @@ impl Publisher {
     pub fn with_failure_mode(mut self, mode: FailureMode) -> Self {
         self.failure_mode = mode;
         self
+    }
+
+    /// Choose the native CLI executable and bounded PDF worker count.
+    pub fn with_book_workers(
+        mut self,
+        executable: PathBuf,
+        jobs: usize,
+    ) -> Result<Self> {
+        ensure!(
+            executable.is_file(),
+            "book worker executable does not exist"
+        );
+        ensure!(
+            (1..=8).contains(&jobs),
+            "book workers must be between 1 and 8"
+        );
+        self.book_executable = Some(executable);
+        self.book_jobs = jobs;
+        Ok(self)
     }
 
     /// Schedule a render. Request order is assigned synchronously, before the
@@ -218,7 +249,24 @@ impl Publisher {
             } else {
                 None
             };
-            let diagnostics = if let Some((_, diagnostics)) = &page_files {
+            let book_files = if plan.renderer == "bookshelf" {
+                Some(
+                    Box::pin(bookshelf::write(
+                        plan,
+                        &stage.path,
+                        &destination,
+                        self.failure_mode,
+                        self.book_executable.as_deref(),
+                        self.book_jobs,
+                    ))
+                    .await?,
+                )
+            } else {
+                None
+            };
+            let diagnostics = if let Some((_, diagnostics)) = &book_files {
+                diagnostics.clone()
+            } else if let Some((_, diagnostics)) = &page_files {
                 diagnostics.clone()
             } else if website_files.is_some() {
                 Vec::new()
@@ -228,7 +276,7 @@ impl Publisher {
             if plan.is_html() {
                 let style = if matches!(
                     plan.renderer.as_str(),
-                    "specification" | "specification-pages"
+                    "specification" | "specification-pages" | "bookshelf"
                 ) {
                     specification::STYLE
                 } else {
@@ -236,7 +284,15 @@ impl Publisher {
                 };
                 tokio::fs::write(
                     stage.path.join("style.css"),
-                    format!("{style}\n{}", include_str!("callouts.css")),
+                    format!(
+                        "{style}\n{}\n{}",
+                        include_str!("callouts.css"),
+                        if plan.renderer == "bookshelf" {
+                            include_str!("bookshelf.css")
+                        } else {
+                            ""
+                        }
+                    ),
                 )
                 .await?;
             }
@@ -273,14 +329,21 @@ impl Publisher {
             if let Some((files, _)) = page_files {
                 manifest.files = files;
             }
+            if let Some((files, _)) = book_files {
+                manifest.files = files;
+                manifest.books =
+                    bookshelf::manifest_books(plan, &stage.path).await?;
+            }
             manifest.files.extend(image_files);
             manifest.diagnostics = diagnostics;
             manifest.failure_mode = self.failure_mode;
-            tokio::fs::write(
-                stage.path.join("manifest.yaml"),
-                serde_yaml::to_string(&manifest)?,
-            )
-            .await?;
+            let metadata = serde_yaml::to_string(&manifest)?;
+            ensure!(
+                metadata.len() as u64 <= files::METADATA_LIMIT,
+                "publication manifest exceeds byte budget"
+            );
+            tokio::fs::write(stage.path.join("manifest.yaml"), metadata)
+                .await?;
             if !files::promote(
                 stage.path.clone(),
                 destination.clone(),
@@ -299,5 +362,25 @@ impl Publisher {
         .await;
         stage.cleanup().await?;
         result
+    }
+}
+
+#[cfg(test)]
+mod future_budget_tests {
+    use super::*;
+    #[test]
+    fn publication_future_stays_within_the_stack_budget() -> Result<()> {
+        let publisher = Publisher::new(Dataset::memory()?);
+        let plan = ResolvedPlan {
+            id:       oxrdf::NamedNode::new("urn:test:plan")?,
+            snapshot: oxrdf::NamedNode::new("urn:test:snapshot")?,
+        };
+        let future = publisher.render(&plan, Path::new("unused"));
+        let bytes = std::mem::size_of_val(&future);
+        ensure!(
+            bytes < 64 * 1024,
+            "publication future uses {bytes} stack bytes"
+        );
+        Ok(())
     }
 }

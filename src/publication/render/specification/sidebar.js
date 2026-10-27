@@ -1,6 +1,7 @@
 (() => {
   const handle = document.getElementById('toc-resizer');
   const toc = document.getElementById('toc');
+  if (!handle || !toc) return;
   const root = document.documentElement;
   const desktop = matchMedia('(min-width: 1101px)');
   const key = 'grapharch:specification:toc-width';
@@ -85,7 +86,7 @@
   const addBranches = (container) => { for (const li of container.querySelectorAll('li')) {
     const children = li.querySelector(':scope > ol');
     const link = li.querySelector(':scope > a');
-    if (!children || !link) continue;
+    if (!children || !link || li.querySelector(':scope > .toc-toggle')) continue;
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'toc-toggle';
     button.setAttribute('aria-label', `Toggle ${link.textContent.trim()}`);
@@ -104,14 +105,15 @@
   }};
   addBranches(toc);
   const reveal = () => {
-    const current = [...toc.querySelectorAll('a[href]')].find(a => location.hash ? a.hash === location.hash && a.pathname === location.pathname : !a.hash && a.pathname === location.pathname);
+    const candidates = [...toc.querySelectorAll('a[href]')].filter(a => a.pathname === location.pathname);
+    const current = candidates.find(a => location.hash && a.hash === location.hash) || candidates.find(a => a.hasAttribute('data-book-chapter')) || candidates.find(a => !a.hash);
     toc.querySelectorAll('[aria-current]').forEach(a => a.removeAttribute('aria-current'));
     if (!current) return;
     current.setAttribute('aria-current', location.hash ? 'location' : 'page');
-    for (const branch of branches) if (branch.children.contains(current)) branch.set(true);
+    for (const branch of branches) if (branch.children.contains(current) || branch.li === current.closest('li')) branch.set(true);
   };
-  toc.querySelector('[data-toc-collapse]').addEventListener('click', () => { branches.forEach(b => b.set(false)); });
-  toc.querySelector('[data-toc-expand]').addEventListener('click', () => { branches.forEach(b => b.set(true)); });
+  toc.querySelector('[data-toc-collapse]')?.addEventListener('click', () => { branches.forEach(b => b.set(false)); });
+  toc.querySelector('[data-toc-expand]')?.addEventListener('click', () => { branches.forEach(b => b.set(true)); });
   addEventListener('hashchange', reveal);
   reveal();
   const familyTree = toc.querySelector('[data-family-tree]');
@@ -140,6 +142,27 @@
         familyTree.replaceChildren(root); addBranches(familyTree); reveal();
       } catch (error) { familyTree.textContent = `Family navigation unavailable: ${error.message}`; }
     });
+  }
+  const bookTree = toc.querySelector('[data-book-navigation]');
+  if (bookTree) {
+    void (async () => {
+      try {
+        const response=await fetch(bookTree.dataset.navigationIndex);
+        if (!response.ok) throw new Error(`Book contents HTTP ${response.status}`);
+        const pages=await response.json();
+        if (!Array.isArray(pages) || pages.length > 8192) throw new Error('Invalid book navigation index');
+        const root=document.createElement('ol'); const lists=[];
+        const local=bookTree.querySelector('[data-local-contents] > ol > li > ol');
+        pages.forEach((p,i)=>{
+          if (typeof p.title !== 'string' || typeof p.href !== 'string' || !/^[a-z0-9-]+\.html$/.test(p.href) || (p.parent!==null && (!Number.isInteger(p.parent)||p.parent<0||p.parent>=i))) throw new Error('Invalid book contents entry');
+          const li=document.createElement('li'); const a=document.createElement('a'); a.href=p.href; a.textContent=p.title; a.setAttribute('data-book-chapter',''); li.append(a);
+          const children=document.createElement('ol'); lists.push({li,children});
+          if(p.parent===null)root.append(li);else{const parent=lists[p.parent];if(!parent.children.parentNode)parent.li.append(parent.children);parent.children.append(li);}
+        });
+        if(local){const current=lists.find(item=>item.li.querySelector(':scope > a').pathname===location.pathname);if(current){for(const child of [...local.children])current.children.append(child);if(!current.children.parentNode)current.li.append(current.children);}}
+        bookTree.replaceChildren(root);addBranches(bookTree);reveal();bookTree.dataset.loaded='true';
+      } catch(error){const message=document.createElement('p');message.setAttribute('role','alert');message.textContent=`Book contents unavailable: ${error.message}`;bookTree.prepend(message);}
+    })();
   }
   let entries;
   let loading;

@@ -23,12 +23,14 @@ pub(super) const URL_FIELDS: &[(&str, &str, bool)] = &[
     ),
 ];
 
-pub(super) struct Header {
+pub(in crate::publication::render) struct Header {
     pub html:  String,
     pub color: String,
 }
 
-pub(super) async fn header(plan: &Plan) -> Result<Header> {
+pub(in crate::publication::render) async fn header(
+    plan: &Plan,
+) -> Result<Header> {
     let document_title = explicit_title(plan, &plan.target).await?;
     let subtitle = optional(plan, &plan.target, "subtitle")
         .await?

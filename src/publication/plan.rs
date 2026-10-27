@@ -1,6 +1,7 @@
 //! Resolve target-specific placements from reusable components and scoped
 //! content.
 
+mod books;
 mod constraints;
 use {
     super::{
@@ -100,7 +101,7 @@ impl TargetPlanner {
         let mut stream = writer
             .begin_stage(
                 project.as_str(),
-                "urn:grapharch:target-planner:v1",
+                "urn:grapharch:target-planner:v2",
                 target.as_str(),
                 self.revision.as_str(),
                 Stage::Plan,
@@ -161,6 +162,7 @@ impl TargetPlanner {
                 .await?,
             external:       self.external_references(&view).await?,
         };
+        let mut book_placements = Vec::new();
         let mut previous = None;
         while let Some(row) = placements.next().await? {
             let Term::NamedNode(placement) = &row["placement"] else {
@@ -173,11 +175,30 @@ impl TargetPlanner {
             );
             previous = Some(order);
             let component = view.node(placement, "component").await?;
-            self.entries(
+            let first = self
+                .entries(
+                    &selection,
+                    placement,
+                    &component,
+                    order,
+                    &mut stream,
+                )
+                .await?;
+            if renderer_kind == super::Renderer::Bookshelf &&
+                let Some(fragment) = first
+            {
+                book_placements.push((
+                    placement.clone(),
+                    component.clone(),
+                    fragment,
+                ));
+            }
+        }
+        if renderer_kind == super::Renderer::Bookshelf {
+            books::append(
                 &selection,
-                placement,
-                &component,
-                order,
+                &book_placements,
+                &self.dataset,
                 &mut stream,
             )
             .await?;
@@ -382,7 +403,7 @@ impl TargetPlanner {
         component: &NamedNode,
         order: u32,
         stream: &mut ContributionStream,
-    ) -> Result<()> {
+    ) -> Result<Option<NamedNode>> {
         let view = selection.view;
         let scope_snapshot = selection.scope_snapshot;
         let scope_plan = selection.scope_plan;
@@ -478,7 +499,7 @@ impl TargetPlanner {
                     .await?;
             }
         }
-        Ok(())
+        Ok(selected.first().map(|(_, fragment)| fragment.clone()))
     }
 
     async fn references(

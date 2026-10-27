@@ -98,7 +98,7 @@ def main() -> None:
     parser.add_argument("--source", type=Path, default=Path("../fibo"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--title", default="Financial Industry Business Ontology (FIBO)")
-    parser.add_argument("--renderer", choices=("specification", "specification-pages"), default="specification")
+    parser.add_argument("--renderer", choices=("specification", "specification-pages", "bookshelf"), default="specification")
     parser.add_argument("--base-url", default="http://localhost:8872/specification/")
     args = parser.parse_args()
     url = urllib.parse.urlsplit(args.base_url)

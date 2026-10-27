@@ -25,26 +25,26 @@ use {
 };
 
 #[derive(Serialize)]
-struct SearchEntry {
-    title:      String,
-    href:       String,
-    kind:       String,
-    context:    String,
-    identifier: String,
+pub(in crate::publication::render) struct SearchEntry {
+    pub(in crate::publication::render) title:      String,
+    pub(in crate::publication::render) href:       String,
+    pub(in crate::publication::render) kind:       String,
+    pub(in crate::publication::render) context:    String,
+    pub(in crate::publication::render) identifier: String,
 }
-struct Page {
-    title:    String,
-    route:    String,
-    kind:     String,
-    parent:   Option<usize>,
-    toc:      Toc,
-    contents: String,
+pub(in crate::publication::render) struct Page {
+    pub(in crate::publication::render) title:  String,
+    pub(in crate::publication::render) route:  String,
+    pub(in crate::publication::render) kind:   String,
+    pub(in crate::publication::render) parent: Option<usize>,
+    toc:                                       Toc,
+    contents:                                  String,
 }
-struct Catalog {
-    pages:      Vec<Page>,
-    owners:     HashMap<String, usize>,
-    placements: HashMap<String, usize>,
-    search:     Vec<SearchEntry>,
+pub(in crate::publication::render) struct Catalog {
+    pub(in crate::publication::render) pages:      Vec<Page>,
+    pub(in crate::publication::render) owners:     HashMap<String, usize>,
+    pub(in crate::publication::render) placements: HashMap<String, usize>,
+    pub(in crate::publication::render) search:     Vec<SearchEntry>,
 }
 
 impl Catalog {
@@ -121,7 +121,9 @@ async fn body(
         ))
     }
 }
-async fn catalog(plan: &Plan) -> Result<Catalog> {
+pub(in crate::publication::render) async fn catalog(
+    plan: &Plan,
+) -> Result<Catalog> {
     let mut catalog = Catalog {
         pages:      vec![Page {
             title:    plan.title.clone(),
@@ -273,6 +275,23 @@ pub(in crate::publication::render) async fn write(
     mode: FailureMode,
 ) -> Result<(Vec<String>, Vec<Diagnostic>)> {
     let catalog = catalog(plan).await?;
+    write_catalog(plan, stage, mode, &catalog, None).await
+}
+
+pub(in crate::publication::render) struct BookContext {
+    pub title:      String,
+    pub route:      String,
+    pub pdf:        Option<String>,
+    pub navigation: String,
+    pub search:     String,
+}
+pub(in crate::publication::render) async fn write_catalog(
+    plan: &Plan,
+    stage: &Path,
+    mode: FailureMode,
+    catalog: &Catalog,
+    books: Option<&HashMap<usize, BookContext>>,
+) -> Result<(Vec<String>, Vec<Diagnostic>)> {
     let header = metadata::header(plan).await?;
     let mut files = vec![
         "style.css".into(),
@@ -314,6 +333,9 @@ pub(in crate::publication::render) async fn write(
     let mut diagnostics = Vec::new();
     while let Some(entry) = entries.next(plan).await? {
         let page = catalog.placements[entry.placement.as_str()];
+        if books.is_some() && page == 0 {
+            continue;
+        }
         if current != Some(page) {
             if let Some(mut previous) = file.take() {
                 if section_open {
@@ -325,7 +347,58 @@ pub(in crate::publication::render) async fn write(
             files.push(p.route.clone());
             let mut next =
                 BufWriter::new(File::create(stage.join(&p.route)).await?);
-            let header_html = page_header(&header.html, &p.title)?;
+            let context = books.and_then(|books| books.get(&page));
+            let book_breadcrumb = context
+                .filter(|b| b.route != p.route)
+                .map(|b| {
+                    format!(
+                        "<a href=\"{}\">{}</a> / ",
+                        html_escape(&b.route),
+                        html_escape(&b.title)
+                    )
+                })
+                .unwrap_or_default();
+            let search_index = context
+                .map(|b| b.search.as_str())
+                .unwrap_or("search-index.json");
+            let mut header_html = page_header(
+                &header.html,
+                &p.title,
+                context.and_then(|b| b.pdf.as_deref()),
+            )?;
+            if context.is_some_and(|book| book.pdf.is_none()) {
+                header_html.push_str(
+                    "<aside class=\"markdown-alert markdown-alert-caution\" \
+                     role=\"alert\"><p>PDF generation failed. The HTML book \
+                     is available. See the <a \
+                     href=\"index.html#publication-diagnostics\">publication \
+                     diagnostics</a>.</p></aside>",
+                );
+            }
+            let toc_title = if context.is_some() {
+                "Book contents"
+            } else {
+                "On this page"
+            };
+            let contents = if let Some(context) = context {
+                format!(
+                    "<p class=\"book-contents-title\"><a \
+                     href=\"{}\">{}</a></p><div class=\"book-navigation\" \
+                     data-book-navigation data-navigation-index=\"{}\"><div \
+                     data-local-contents>{}</div></div>",
+                    html_escape(&context.route),
+                    html_escape(&context.title),
+                    html_escape(&context.navigation),
+                    p.contents
+                )
+            } else {
+                p.contents.clone()
+            };
+            let family_html: String = if books.is_some() {
+                "<p><a href=\"index.html\">Back to bookshelf</a></p>".into()
+            } else {
+                family_html.into()
+            };
             next.write_all(
                 format!(
                     "<!doctype html><html lang=\"en\"><head><meta \
@@ -339,11 +412,12 @@ pub(in crate::publication::render) async fn write(
                      class=\"skip-link\" href=\"#document\">Skip to \
                      document</a><main id=\"document\"><p \
                      class=\"family-breadcrumb\"><a \
-                     href=\"index.html\">{}</a> / {}</p>{header_html}<nav \
-                     id=\"toc\" class=\"toc\" role=\"doc-toc\" \
+                     href=\"index.html\">{}</a> / \
+                     {book_breadcrumb}{}</p>{header_html}<nav id=\"toc\" \
+                     class=\"toc\" role=\"doc-toc\" \
                      aria-labelledby=\"toc-title\" \
-                     data-search-index=\"search-index.json\"><h2 \
-                     id=\"toc-title\">On this page</h2>{}{}{family_html}</nav>",
+                     data-search-index=\"{search_index}\"><h2 \
+                     id=\"toc-title\">{toc_title}</h2>{}{}{family_html}</nav>",
                     html_escape(plan.revision.as_str()),
                     html_escape(&p.title),
                     html_escape(&plan.title),
@@ -351,7 +425,7 @@ pub(in crate::publication::render) async fn write(
                     html_escape(&plan.title),
                     html_escape(&p.title),
                     include_str!("navigation.html"),
-                    p.contents
+                    contents
                 )
                 .as_bytes(),
             )
@@ -388,7 +462,7 @@ pub(in crate::publication::render) async fn write(
             .await?;
         }
         let rendered = body(&entry, plan, &mut outline).await?;
-        let (routed, errors) = route_links(&rendered, &catalog, page)?;
+        let (routed, errors) = route_links(&rendered, catalog, page)?;
         for (reference, message) in errors {
             ensure!(mode == FailureMode::KeepGoing, "{message}");
             ensure!(
@@ -445,7 +519,11 @@ async fn end(file: &mut BufWriter<File>) -> Result<()> {
     Ok(())
 }
 
-fn page_header(header: &str, title: &str) -> Result<String> {
+pub(in crate::publication::render) fn page_header(
+    header: &str,
+    title: &str,
+    pdf: Option<&str>,
+) -> Result<String> {
     let mut document = scraper::Html::parse_fragment(header);
     let title_id = document
         .select(&scraper::Selector::parse("h1").unwrap())
@@ -463,7 +541,19 @@ fn page_header(header: &str, title: &str) -> Result<String> {
         anyhow::bail!("publication title must be text")
     };
     text.text = title.into();
-    document.tree.get_mut(pdf_id).unwrap().detach();
+    if let Some(pdf) = pdf {
+        let mut node = document.tree.get_mut(pdf_id).unwrap();
+        let scraper::Node::Element(element) = node.value() else {
+            unreachable!()
+        };
+        for (name, value) in element.attrs.iter_mut() {
+            if &*name.local == "href" {
+                *value = pdf.into();
+            }
+        }
+    } else {
+        document.tree.get_mut(pdf_id).unwrap().detach();
+    }
     Ok(document.root_element().inner_html())
 }
 

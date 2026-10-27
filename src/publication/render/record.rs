@@ -112,7 +112,129 @@ pub(super) async fn finish(
         },
         _ => Vec::new(),
     };
-    let quads = super::diagnostic_graph::quads(plan, job, &diagnostics)?;
+    let mut quads = super::diagnostic_graph::quads(plan, job, &diagnostics)?;
+    if let Ok(PublishOutcome::Published(publication)) = result {
+        for book in &publication.manifest.books {
+            let operation =
+                crate::publication::dataset::identity("book-publication", &[
+                    job, &book.plan,
+                ]);
+            let fields: [(NamedNode, Term); 9] = [
+                (
+                    NamedNode::new_unchecked(RDF_TYPE),
+                    term("BookPublication").into(),
+                ),
+                (
+                    NamedNode::new_unchecked(
+                        "http://purl.org/dc/terms/isPartOf",
+                    ),
+                    id.clone().into(),
+                ),
+                (
+                    NamedNode::new_unchecked(
+                        "http://www.w3.org/ns/prov#wasDerivedFrom",
+                    ),
+                    NamedNode::new(&book.plan)?.into(),
+                ),
+                (
+                    NamedNode::new_unchecked(
+                        "http://purl.org/dc/terms/subject",
+                    ),
+                    NamedNode::new(&book.subject)?.into(),
+                ),
+                (
+                    term("inputRevision"),
+                    plan.revision.clone().into(),
+                ),
+                (
+                    term("status"),
+                    Literal::new_simple_literal(
+                        if book.status == "ready" {
+                            "published"
+                        } else {
+                            "published-with-errors"
+                        },
+                    )
+                    .into(),
+                ),
+                (term("reused"), Literal::from(book.reused).into()),
+                (term("project"), plan.project.clone().into()),
+                (
+                    NamedNode::new_unchecked(
+                        "http://purl.org/dc/terms/identifier",
+                    ),
+                    Literal::new_simple_literal(&book.digest).into(),
+                ),
+            ];
+            for (predicate, object) in fields {
+                quads.push(Quad::new(
+                    operation.clone(),
+                    predicate,
+                    object,
+                    NamedNode::new_unchecked(GRAPH),
+                ));
+            }
+            for (route, digest) in [
+                (Some(book.html.as_str()), None),
+                (book.pdf.as_deref(), book.pdf_digest.as_deref()),
+            ] {
+                if let Some(route) = route {
+                    let artifact = crate::publication::dataset::identity(
+                        "book-artifact",
+                        &[job, &book.plan, route],
+                    );
+                    let location = url::Url::from_file_path(
+                        publication.directory.join(route),
+                    )
+                    .map_err(|_| {
+                        anyhow::anyhow!("invalid book artifact location")
+                    })?;
+                    for (s, p, o) in [
+                        (
+                            operation.clone(),
+                            NamedNode::new_unchecked(
+                                "http://www.w3.org/ns/prov#generated",
+                            ),
+                            artifact.clone(),
+                        ),
+                        (
+                            artifact.clone(),
+                            NamedNode::new_unchecked(RDF_TYPE),
+                            NamedNode::new_unchecked(
+                                "http://www.w3.org/ns/prov#Entity",
+                            ),
+                        ),
+                        (
+                            artifact.clone(),
+                            NamedNode::new_unchecked(
+                                "http://www.w3.org/ns/prov#atLocation",
+                            ),
+                            NamedNode::new(location.as_str())?,
+                        ),
+                    ] {
+                        quads.push(Quad::new(
+                            s,
+                            p,
+                            o,
+                            NamedNode::new_unchecked(GRAPH),
+                        ));
+                    }
+                    if let Some(digest) = digest {
+                        quads.push(Quad::new(
+                            artifact,
+                            NamedNode::new_unchecked(
+                                "http://purl.org/dc/terms/identifier",
+                            ),
+                            Literal::new_simple_literal(format!(
+                                "sha256:{digest}"
+                            )),
+                            NamedNode::new_unchecked(GRAPH),
+                        ));
+                    }
+                }
+            }
+        }
+    }
     plan.dataset
         .run(move |store| {
             let update = format!(
