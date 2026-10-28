@@ -76,6 +76,26 @@ class BuildActionTest(unittest.TestCase):
                 f"publication-path={publication.resolve()}\npdf-path={(output / 'spec.pdf').resolve()}\nkg-path={(output / 'documentation.nq').resolve()}\n",
             )
 
+    def test_html_and_bookshelf_reports_do_not_require_a_single_pdf(self):
+        for include_pdf_key in [True, False]:
+            with self.subTest(include_pdf_key=include_pdf_key), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                output = root / "build/my docs"
+                publication = output / "specification"
+                publication.mkdir(parents=True)
+                (publication / "index.html").write_text("spec")
+                (output / "documentation.nq").write_text("kg")
+                report = {"schema_version": 1, "publication_path": str(publication), "kg_path": str(output / "documentation.nq")}
+                if include_pdf_key:
+                    report["pdf_path"] = None
+                with patch.dict(os.environ, self.environment(root)), patch.object(build_action.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, json.dumps(report))):
+                    if include_pdf_key:
+                        self.assertEqual(build_action.main(), 0)
+                        self.assertIn("pdf-path=\n", (root / "outputs").read_text())
+                    else:
+                        with self.assertRaisesRegex(ValueError, "pdf_path"):
+                            build_action.main()
+
     def test_exact_failure_status_without_report_or_fallback(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -68,7 +68,12 @@ def main():
     outputs = {}
     output_root = Path(required("GRAPHARCH_OUTPUT")).resolve()
     for key in ["publication_path", "pdf_path", "kg_path"]:
-        value = report.get(key)
+        if key not in report:
+            raise ValueError(f"Publication report requires {key}")
+        value = report[key]
+        if key == "pdf_path" and value is None:
+            outputs["pdf-path"] = ""
+            continue
         if not isinstance(value, str) or not value:
             raise ValueError(f"Publication report requires {key}")
         if any(character in value for character in "\n\r\x00"):
