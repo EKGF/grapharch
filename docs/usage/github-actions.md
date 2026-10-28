@@ -13,10 +13,9 @@ Keep your publication configuration with your ontologies, then use one GraphArch
 step to build their specification website, PDF and documentation KG. The action
 installs and verifies an exact release before running the build.
 
-> [!IMPORTANT]
-> The first native release is still being prepared. These workflows require a
-> published release supporting the publication JSON report; `0.0.1` below is the
-> planned initial version, not a currently available download.
+GraphArch 0.1.0 includes paginated specifications, module bookshelves, and SKOS
+vocabulary documentation. Pin both the Action revision and the native binary
+version when upgrading.
 
 ## Build in one step
 
@@ -24,10 +23,10 @@ After checking out your repository, add this step:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: EKGF/grapharch@7f6703989bba63143c1c063cdd2052cf1821cebc
+- uses: EKGF/grapharch@v0.1.0
   id: docs
   with:
-    version: '0.0.1'
+    version: '0.1.0'
     source-kind: checkout
     source: .
     output: build/docs
@@ -47,7 +46,7 @@ locally.
 The step exposes `publication-path`, `pdf-path` and `kg-path` as absolute paths.
 The publication path is the website directory containing `index.html`. Use
 these outputs to upload artifacts or integrate your own deployment process.
-The KG archive is exposed separately. A failed build fails the step.
+The KG archive is exposed separately. `pdf-path` is empty for paginated or bookshelf publications without a single collection PDF; book PDFs remain inside the publication directory. A failed build fails the step.
 
 For installation alone, set `mode: install` and supply only `version`; the
 `grapharch` command is then available to subsequent steps. Both modes expose
@@ -69,15 +68,15 @@ permissions:
   id-token: write
 jobs:
   documentation:
-    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@92f22d5a653876e9dee1f50c4543a688ba8c9f97
+    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@v0.1.0
     with:
-      version: '0.0.1'
+      version: '0.1.0'
       source-kind: checkout
       source: .
       deploy: false
 ```
 
-Pin the reusable workflow to the reviewed commit that contains it. Its internal
+For an immutable pin, replace `v0.1.0` with the release commit SHA after reviewing it. Its internal
 GraphArch step is also pinned to a reviewed commit. The workflow reads the
 publication paths returned by the build; it does not recollect sources to
 assemble the deployment artifact.

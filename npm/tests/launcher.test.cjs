@@ -20,7 +20,7 @@ test('uses only the exact package/version binary; never a PATH fallback', () => 
   const root=mkdtempSync(join(tmpdir(),'grapharch-launcher-'));
   try {
     mkdirSync(join(root,'bin'));
-    writeFileSync(join(root,'package.json'),JSON.stringify({name:'@grapharch/cli-darwin-arm64',version:'0.0.1'}));
+    writeFileSync(join(root,'package.json'),JSON.stringify({name:'@grapharch/cli-darwin-arm64',version:require('../package.json').version}));
     writeFileSync(join(root,'bin/grapharch'),'fixture');chmodSync(join(root,'bin/grapharch'),0o755);
     const options={platform:'darwin',arch:'arm64',resolve:()=>join(root,'package.json')};
     assert.equal(resolveBinary(options),join(root,'bin/grapharch'));

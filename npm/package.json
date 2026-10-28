@@ -1,21 +1,38 @@
 {
   "name": "grapharch",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Generate documentation websites, specifications, and PDFs from a documentation knowledge graph",
   "license": "MIT",
   "homepage": "https://ekgf.github.io/grapharch/",
-  "repository": { "type": "git", "url": "git+https://github.com/EKGF/grapharch.git", "directory": "npm" },
-  "bin": { "grapharch": "bin/grapharch.cjs" },
-  "files": ["bin/", "lib/", "README.md", "LICENSE"],
-  "engines": { "node": ">=20" },
-  "scripts": { "test": "node --test tests/*.test.cjs" },
-  "optionalDependencies": {
-    "@grapharch/cli-linux-x64": "0.0.1",
-    "@grapharch/cli-linux-arm64": "0.0.1",
-    "@grapharch/cli-darwin-x64": "0.0.1",
-    "@grapharch/cli-darwin-arm64": "0.0.1",
-    "@grapharch/cli-win32-x64": "0.0.1",
-    "@grapharch/cli-win32-arm64": "0.0.1"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EKGF/grapharch.git",
+    "directory": "npm"
   },
-  "publishConfig": { "access": "public" }
+  "bin": {
+    "grapharch": "bin/grapharch.cjs"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.cjs"
+  },
+  "optionalDependencies": {
+    "@grapharch/cli-linux-x64": "0.1.0",
+    "@grapharch/cli-linux-arm64": "0.1.0",
+    "@grapharch/cli-darwin-x64": "0.1.0",
+    "@grapharch/cli-darwin-arm64": "0.1.0",
+    "@grapharch/cli-win32-x64": "0.1.0",
+    "@grapharch/cli-win32-arm64": "0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

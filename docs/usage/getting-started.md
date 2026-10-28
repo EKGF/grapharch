@@ -13,11 +13,8 @@ permalink: /usage/getting-started/
 Install a prebuilt GraphArch release, keep a small publication configuration in
 your project, and run the same command locally and in CI.
 
-> [!IMPORTANT]
-> Release binaries and package-manager packages are being prepared and are not
-> published yet. The commands below describe those installation channels; use
-> them once a release is listed. To evaluate the current development version,
-> follow [Build from source](#build-from-source).
+Standalone binaries are available from GitHub Releases. Package-manager channels
+remain subject to their separate publication status below.
 
 ## Install a prebuilt binary
 
@@ -26,7 +23,7 @@ Download the archive for your platform from
 adjacent SHA-256 checksum file. Verify the download, extract it, and put
 `grapharch` (or `grapharch.exe` on Windows) in a directory on your `PATH`.
 
-The planned release platforms are:
+The release platforms are:
 
 | System | CPU | Requirement |
 | --- | --- | --- |

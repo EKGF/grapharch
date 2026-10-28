@@ -1,6 +1,6 @@
 [package]
 name = "grapharch"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 description = "GraphArch is a tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as either a website or a PDF"

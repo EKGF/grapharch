@@ -17,10 +17,22 @@ Use a prebuilt release for normal use. Download the archive for your platform
 from [GitHub Releases](https://github.com/EKGF/grapharch/releases), extract it,
 and put `grapharch` (or `grapharch.exe`) on your `PATH`.
 
-> Release binaries and package-manager packages are being prepared and are not
-> published yet. The installation guide lists the intended channels and their
-> availability. [Build from source](#build-from-source) to try the current
-> development version.
+Standalone binaries are published on GitHub Releases. Package-manager channels
+have separate publication requirements; see the installation guide for their
+availability.
+
+To build in GitHub Actions:
+
+```yaml
+- uses: actions/checkout@v7
+- uses: EKGF/grapharch@v0.1.0
+  with:
+    version: '0.1.0'
+    source-kind: checkout
+```
+
+See [GitHub Actions](https://ekgf.github.io/grapharch/usage/github-actions/)
+for configuration and Pages publication.
 
 After installation:
 
