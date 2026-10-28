@@ -1232,7 +1232,7 @@ ga:headingDepth a owl:DatatypeProperty ;
     rdfs:domain ga:Fragment ;
     rdfs:range xsd:integer .
 
-ga:ReferenceSection skos:scopeNote "Use ga:sectionKind to select classes, properties, individuals, shapes, or other; dct:title supplies one English or untagged plain-text heading; ga:order supplies a distinct integer from 0 to 1000. Defaults are Classes (10), Properties (20), Named Individuals (30), Shapes (40), and Other Terms (50). Empty categories are omitted. Overrides rename and reorder categories without suppressing resources. Named individuals take precedence over other declared types; then classes, properties, shapes, and other terms."@en .
+ga:ReferenceSection skos:scopeNote "Use ga:sectionKind to select classes, properties, individuals, shapes, schemes, concepts, collections, or other; dct:title supplies one English or untagged plain-text heading; ga:order supplies a distinct integer from 0 to 1000. Defaults are Classes (10), Properties (20), Named Individuals (30), Shapes (40), Concept Schemes (41), Concepts (42), Collections (43), and Other Terms (50). Empty categories are omitted. Overrides rename and reorder categories without suppressing resources. SKOS schemes, concepts, and collections take precedence over other declared types; then named individuals, classes, properties, shapes, and other terms."@en .
 
 
 ga:OntologyModule a owl:Class ;

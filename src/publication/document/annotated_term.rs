@@ -354,6 +354,7 @@ impl Documentor for AnnotatedTermDocumentor {
             ))
             .await?;
         let mut label = Vec::new();
+        let mut preferred_labels = Vec::new();
         let mut definitions = Vec::new();
         let mut markdown_descriptions = Vec::new();
         let mut comments = Vec::new();
@@ -378,6 +379,9 @@ impl Documentor for AnnotatedTermDocumentor {
             let values = match predicate.as_str() {
                 "http://www.w3.org/2000/01/rdf-schema#label" => {
                     Some(&mut label)
+                },
+                "http://www.w3.org/2004/02/skos/core#prefLabel" => {
+                    Some(&mut preferred_labels)
                 },
                 super::description::MARKDOWN => {
                     Some(&mut markdown_descriptions)
@@ -482,6 +486,15 @@ impl Documentor for AnnotatedTermDocumentor {
                 "| {} | {value} |",
                 code(&self.compact(predicate))
             ));
+        }
+        ensure!(
+            preferred_labels.len() <= 1,
+            "{} has ambiguous skos:prefLabel annotations for {}",
+            self.subject,
+            self.language
+        );
+        if !preferred_labels.is_empty() {
+            label = preferred_labels;
         }
         let markdown = super::description::select(
             markdown_descriptions,
@@ -657,7 +670,7 @@ impl Documentor for AnnotatedTermDocumentor {
         hash.update([u8::from(self.source_annotations)]);
         hash.update(body.as_bytes());
         let revision = format!(
-            "annotated-term-v5:{}:{}",
+            "annotated-term-v6:{}:{}",
             self.language,
             hex::encode(hash.finalize())
         );

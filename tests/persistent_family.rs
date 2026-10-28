@@ -520,7 +520,7 @@ async fn family_reference_groups_terms_and_honors_source_heading_hints()
     assert!(index("Classes") < index("core term"));
     assert!(index("Properties") < index("Connects"));
     assert!(index("Shapes") < index("Validation"));
-    assert!(index("Other Terms") < index("A concept"));
+    assert!(index("Concepts") < index("A concept"));
     assert_eq!(
         headings
             .iter()
@@ -1199,5 +1199,175 @@ async fn bookshelf_parent_boundary_and_incremental_book_reuse() -> Result<()> {
         .err()
         .expect("overlapping explicit boundaries must fail");
     assert!(format!("{error:#}").contains("boundaries overlap"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn skos_taxonomy_is_documented_from_collected_kg_without_an_owl_ontology()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    f.configure(false)?;
+    tokio::fs::write(f.root.path().join("core.ttl"), r#"
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+<https://example.org/core#> a skos:ConceptScheme; skos:prefLabel "Business taxonomy"@en;
+ skos:definition "A source-defined taxonomy."@en;
+ sh:declare [sh:prefix "business";sh:namespace "https://example.org/core#"];
+ skos:hasTopConcept <https://example.org/core#Product> .
+<https://example.org/core#Product> a skos:Concept; skos:prefLabel "Product"@en;
+ skos:prefLabel "Produit"@fr; skos:altLabel "Offering"@en;
+ skos:definition "An offered product."@en; skos:inScheme <https://example.org/core#>;
+ skos:narrower <https://example.org/core#DataProduct> .
+<https://example.org/core#DataProduct> a skos:Concept; skos:prefLabel "Data product"@en;
+ skos:definition "A supplied data product definition."@en;
+ skos:broader <https://example.org/core#Product>; skos:inScheme <https://example.org/core#>;
+ skos:exactMatch <https://external.example/concept> .
+<https://example.org/core#Products> a skos:OrderedCollection;
+ skos:prefLabel "Product collection"@en;skos:definition "An ordered product collection."@en;
+ skos:memberList (<https://example.org/core#Product> <https://example.org/core#DataProduct>) .
+
+"#).await?;
+    tokio::fs::write(f.root.path().join("concepts.ttl"), r#"@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+<https://other.example/ExternalNamespace> a skos:Concept; skos:prefLabel "Cross namespace concept"@en;
+ skos:definition "A concept explicitly assigned to this scheme."@en; skos:inScheme <https://example.org/core#> ."#).await?;
+    let built = f.build(Dataset::memory()?).await?;
+    assert_eq!(built.term_count, 4);
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("taxonomy.nq");
+    built.dataset.export(archive.clone()).await?;
+    tokio::fs::remove_dir_all(f.root.path()).await?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(p) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("not published")
+    };
+    let html =
+        tokio::fs::read_to_string(p.directory.join("index.html")).await?;
+    let doc = scraper::Html::parse_document(&html);
+    let text = doc.root_element().text().collect::<String>();
+    for expected in [
+        "Business taxonomy",
+        "A source-defined taxonomy.",
+        "Cross namespace concept",
+        "Concepts",
+        "Collections",
+        "Product collection",
+        "Offering",
+        "skos:broader",
+        "skos:narrower",
+        "skos:inScheme",
+        "skos:memberList",
+        "skos:exactMatch",
+    ] {
+        assert!(
+            text.contains(expected),
+            "missing SKOS documentation: {expected}"
+        );
+    }
+    assert!(!text.contains("Missing source label"));
+    assert!(p.directory.join("document.pdf").is_file());
+    Ok(())
+}
+
+#[tokio::test]
+async fn skos_concepts_inside_an_owl_vocabulary_use_preferred_labels_and_sections()
+-> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    f.configure(false)?;
+    let path = f.root.path().join("core.ttl");
+    let source = tokio::fs::read_to_string(&path).await?;
+    tokio::fs::write(&path, format!(r#"{source}
+@prefix skos:<http://www.w3.org/2004/02/skos/core#> .
+<https://example.org/core#Scheme> a skos:ConceptScheme;skos:prefLabel "Embedded scheme"@en;skos:definition "An embedded scheme."@en .
+<https://example.org/core#Concept> a skos:Concept, owl:NamedIndividual;
+ rdfs:label "Legacy display label"@en;skos:prefLabel "Preferred concept"@en;
+ skos:definition "A concept in an OWL vocabulary."@en;skos:inScheme <https://example.org/core#Scheme> .
+"#)).await?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(p) = Publisher::new(built.dataset)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("not published")
+    };
+    let html =
+        tokio::fs::read_to_string(p.directory.join("index.html")).await?;
+    let doc = scraper::Html::parse_document(&html);
+    let headings = doc
+        .select(&scraper::Selector::parse("main h3,main h4").unwrap())
+        .map(|h| h.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert!(headings.iter().any(|h| h.ends_with("Concept Schemes§")));
+    assert!(headings.iter().any(|h| h.ends_with("Concepts§")));
+    assert!(headings.iter().any(|h| h.ends_with("Preferred concept§")));
+    assert!(!headings.iter().any(|h| h.contains("Legacy display label")));
+    tokio::fs::write(
+        &path,
+        format!(
+            "{}\n<https://example.org/core#Concept> skos:prefLabel \
+             \"Ambiguous name\"@en .",
+            tokio::fs::read_to_string(&path).await?
+        ),
+    )
+    .await?;
+    let error = f
+        .build(Dataset::memory()?)
+        .await
+        .err()
+        .expect("ambiguous preferred labels must fail");
+    assert!(format!("{error:#}").contains("ambiguous skos:prefLabel"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn standalone_skos_scheme_can_be_a_bookshelf_book() -> Result<()> {
+    use grapharch::publication::render::{PublishOutcome, Publisher};
+    let f = Fixture::new()?;
+    f.configure(false)?;
+    let path = f.root.path().join("core.ttl");
+    let source = tokio::fs::read_to_string(&path)
+        .await?
+        .replace(
+            "owl:Ontology",
+            "<http://www.w3.org/2004/02/skos/core#ConceptScheme>",
+        )
+        .replace(
+            "owl:Class",
+            "<http://www.w3.org/2004/02/skos/core#Concept>",
+        );
+    tokio::fs::write(path, source).await?;
+    let config = f.definitions.path().join("project.ttl");
+    let definitions = tokio::fs::read_to_string(&config).await?.replace(
+        "ga:renderer \"specification\"",
+        "ga:renderer \"bookshelf\"",
+    );
+    tokio::fs::write(config, definitions).await?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let publisher = Publisher::new(built.dataset).with_book_workers(
+        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+        1,
+    )?;
+    let PublishOutcome::Published(p) =
+        publisher.render(&built.plan, output.path()).await?
+    else {
+        panic!("not published")
+    };
+    assert_eq!(p.manifest.books.len(), 1);
+    let book = &p.manifest.books[0];
+    assert!(
+        p.directory
+            .join(book.pdf.as_ref().expect("taxonomy PDF"))
+            .is_file()
+    );
+    let html = tokio::fs::read_to_string(p.directory.join(&book.html)).await?;
+    assert!(html.contains("Concept scheme IRI / Namespace"));
+    assert!(html.contains("Concepts"));
     Ok(())
 }

@@ -35,6 +35,9 @@ impl Layout {
             ("properties", "Properties", 20),
             ("individuals", "Named Individuals", 30),
             ("shapes", "Shapes", 40),
+            ("schemes", "Concept Schemes", 41),
+            ("concepts", "Concepts", 42),
+            ("collections", "Collections", 43),
             ("other", "Other Terms", 50),
         ]
         .into_iter()
@@ -51,8 +54,8 @@ impl Layout {
                 )
             };
             ensure!(
-                seen.len() < 5,
-                "at most five reference section overrides are supported"
+                seen.len() < 8,
+                "at most eight reference section overrides are supported"
             );
             let kind = title(
                 view.optional(node, "sectionKind").await?.ok_or_else(|| {
@@ -147,7 +150,17 @@ impl Layout {
             let has = |iri: &str| kinds.contains(iri);
             // Punned individuals remain individuals and expose all their other
             // types in their reference entry; no duplicate anchors or terms.
-            let kind = if has("http://www.w3.org/2002/07/owl#NamedIndividual") {
+            let kind = if has(
+                "http://www.w3.org/2004/02/skos/core#ConceptScheme",
+            ) {
+                "schemes"
+            } else if has("http://www.w3.org/2004/02/skos/core#Concept") {
+                "concepts"
+            } else if has("http://www.w3.org/2004/02/skos/core#Collection") ||
+                has("http://www.w3.org/2004/02/skos/core#OrderedCollection")
+            {
+                "collections"
+            } else if has("http://www.w3.org/2002/07/owl#NamedIndividual") {
                 "individuals"
             } else if has("http://www.w3.org/2002/07/owl#Class") ||
                 has("http://www.w3.org/2000/01/rdf-schema#Class") ||

@@ -26,7 +26,7 @@ pub(super) async fn append(
         let module =
             selection.view.has_type(&subject, "OntologyModule").await?;
         let types = selection.view.pattern(
-            &format!("{subject} a <http://www.w3.org/2002/07/owl#Ontology>"),
+            &format!("{subject} a ?bookRootKind . VALUES ?bookRootKind {{ <http://www.w3.org/2002/07/owl#Ontology> <http://www.w3.org/2004/02/skos/core#ConceptScheme> }}"),
             0,
         );
         let mut rows = dataset

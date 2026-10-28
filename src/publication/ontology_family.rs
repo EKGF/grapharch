@@ -33,6 +33,7 @@ pub struct CollectedFamily {
 }
 struct Member {
     ontology:  NamedNode,
+    scheme:    bool,
     prefix:    String,
     title:     String,
     namespace: String,
@@ -506,18 +507,20 @@ async fn build(
     let mut prefixes = standard_prefixes();
     let mut members = Vec::new();
     let mut known = HashSet::new();
+    let collected_snapshot = snapshot.clone();
     for processor in sources {
         let snapshot = dataset
             .snapshot_for_processor(project, processor.as_str())
             .await?;
         let source = RevisionView::new(dataset.clone(), snapshot.clone());
-        let pattern = source.pattern(
-            "?ontology a <http://www.w3.org/2002/07/owl#Ontology>",
-            0,
+        let pattern = source.pattern("?ontology a ?rootKind", 0);
+        let owl = source.pattern(
+            "?owlRoot a <http://www.w3.org/2002/07/owl#Ontology>",
+            1,
         );
         let mut rows = dataset
             .select(format!(
-                "SELECT DISTINCT ?ontology WHERE {{ {pattern} }}"
+                "SELECT DISTINCT ?ontology ?rootKind WHERE {{ {pattern} FILTER(?rootKind = <http://www.w3.org/2002/07/owl#Ontology> || (?rootKind = <http://www.w3.org/2004/02/skos/core#ConceptScheme> && NOT EXISTS {{ {owl} }})) }}"
             ))
             .await?;
         let Some(row) = rows.next().await? else {
@@ -525,11 +528,17 @@ async fn build(
         };
         ensure!(
             rows.next().await?.is_none(),
-            "one source file must declare at most one ontology"
+            "one source file must declare at most one ontology or standalone \
+             concept scheme"
         );
         let Term::NamedNode(ontology) = &row["ontology"] else {
             anyhow::bail!("ontology must have a named identity")
         };
+        let scheme = row["rootKind"] ==
+            NamedNode::new_unchecked(
+                "http://www.w3.org/2004/02/skos/core#ConceptScheme",
+            )
+            .into();
         if !aliases.contains(ontology) {
             continue;
         }
@@ -571,12 +580,35 @@ async fn build(
             "family namespace prefix {prefix} is ambiguous"
         );
         prefixes.insert(namespace.clone(), prefix.clone());
+        // Scheme membership may span files. Read the pinned collected project,
+        // not only the declaration file, without reading generated fragments.
+        let (source, snapshot) = if scheme {
+            (view.clone(), collected_snapshot.clone())
+        } else {
+            (source, snapshot)
+        };
         let pattern = source.pattern("?subject a ?kind", 0);
+        let membership = source.pattern(
+            &format!(
+                "?subject <http://www.w3.org/2004/02/skos/core#inScheme> \
+                 {ontology}"
+            ),
+            1,
+        );
+        let top = source.pattern(
+            &format!(
+                "?subject <http://www.w3.org/2004/02/skos/core#topConceptOf> \
+                 {ontology}"
+            ),
+            2,
+        );
+        let has_top = source.pattern(&format!("{ontology} <http://www.w3.org/2004/02/skos/core#hasTopConcept> ?subject"), 3);
         let mut rows = dataset
             .select(format!(
                 "SELECT DISTINCT ?subject WHERE {{ {pattern} \
-                 FILTER(isIRI(?subject) && STRSTARTS(STR(?subject), {}) && \
-                 ?subject != {ontology}) }} ORDER BY ?subject",
+                 FILTER(isIRI(?subject) && (STRSTARTS(STR(?subject), {}) || \
+                 EXISTS {{ {membership} }} || EXISTS {{ {top} }} || EXISTS {{ \
+                 {has_top} }}) && ?subject != {ontology}) }} ORDER BY ?subject",
                 Literal::new_simple_literal(&namespace)
             ))
             .await?;
@@ -614,18 +646,14 @@ async fn build(
             }
             terms.push(subject.clone());
         }
-        let labels = english(
-            &source,
-            ontology,
-            "http://www.w3.org/2000/01/rdf-schema#label",
-        )
-        .await?;
+        let labels = vocabulary_labels(&source, ontology).await?;
         ensure!(
             labels.len() == 1 && !labels[0].trim().is_empty(),
             "ontology {ontology} requires one English label for its chapter \
              title"
         );
         members.push(Member {
+            scheme,
             ontology: ontology.clone(),
             prefix,
             title: labels[0].clone(),
@@ -687,7 +715,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v9:{snapshot}"),
+            &format!("family-v10:{snapshot}"),
             super::dataset::Stage::Document,
         )
         .await?;
@@ -857,18 +885,21 @@ async fn build(
             "section",
             order as u32 + 3,
         );
-        let comments = english(
+        let mut comments = english(
             &member.view,
             &member.ontology,
             "http://www.w3.org/2000/01/rdf-schema#comment",
         )
         .await?;
-        let labels = english(
-            &member.view,
-            &member.ontology,
-            "http://www.w3.org/2000/01/rdf-schema#label",
-        )
-        .await?;
+        for predicate in [
+            "http://www.w3.org/2004/02/skos/core#definition",
+            "http://purl.org/dc/terms/description",
+        ] {
+            comments.extend(
+                english(&member.view, &member.ontology, predicate).await?,
+            );
+        }
+        let labels = vocabulary_labels(&member.view, &member.ontology).await?;
         let description = match super::document::description::read(
             &member.view,
             &member.ontology,
@@ -881,14 +912,19 @@ async fn build(
         };
         let layout =
             reference::Layout::read(&member.view, &member.ontology).await?;
+        let root_label = if member.scheme {
+            "Concept scheme IRI"
+        } else {
+            "Ontology IRI"
+        };
         let identifiers = if member.ontology.as_str() == member.namespace {
             format!(
-                "| Ontology IRI / Namespace | `{}` |\n",
+                "| {root_label} / Namespace | `{}` |\n",
                 member.namespace
             )
         } else {
             format!(
-                "| Ontology IRI | `{}` |\n| Namespace | `{}` |\n",
+                "| {root_label} | `{}` |\n| Namespace | `{}` |\n",
                 member.ontology.as_str(),
                 member.namespace
             )
@@ -1052,6 +1088,31 @@ async fn build(
     );
     Ok((plan, ontology_count, term_count))
 }
+async fn vocabulary_labels(
+    view: &RevisionView,
+    subject: &NamedNode,
+) -> Result<Vec<String>> {
+    let preferred = english(
+        view,
+        subject,
+        "http://www.w3.org/2004/02/skos/core#prefLabel",
+    )
+    .await?;
+    ensure!(
+        preferred.len() <= 1,
+        "{subject} has ambiguous English skos:prefLabel annotations"
+    );
+    if !preferred.is_empty() {
+        return Ok(preferred);
+    }
+    english(
+        view,
+        subject,
+        "http://www.w3.org/2000/01/rdf-schema#label",
+    )
+    .await
+}
+
 async fn english(
     view: &RevisionView,
     subject: &NamedNode,
