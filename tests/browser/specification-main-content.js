@@ -14,7 +14,7 @@ async (page) => {
   assert(geometry.gap>=80 && geometry.gap<=96,`specification content gutter is ${geometry.gap}px; expected W3C-like breathing room`);
   const example = page.locator('#ex-comments');
   const marker = example.locator('.marker');
-  assert((await marker.innerText()).replace(/\s+/g,' ').trim()==='Example 1: Use of comments in N-Triples','numbered example caption is missing or altered');
+  assert((await marker.textContent()).replace(/\s+/g,' ').trim()==='Example 1: Use of comments in N-Triples','numbered example caption is missing or altered');
   assert(await marker.locator('a').evaluate(e=>getComputedStyle(e).opacity==='1'),'example number is hidden by heading-permalink styles');
   const box=await example.evaluate(e=>{const s=getComputedStyle(e);return {background:s.backgroundColor,border:s.borderLeftColor,width:parseFloat(s.borderLeftWidth)};});
   assert(box.background==='rgb(252, 250, 238)' && box.border==='rgb(224, 203, 82)' && box.width>=7,'example must have the reference pale-yellow box and gold accent');
