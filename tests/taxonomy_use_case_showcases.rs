@@ -84,8 +84,7 @@ async fn dedicated_skos_and_use_case_gallery_examples_are_executable()
     .await?;
     assert!(
         typst.contains(
-            "#block(breakable: true)[#heading(level: 1)[#text(\"Check \
-             identity\")"
+            "#ga-section(1)[#heading(level: 1)[#text(\"Check identity\")"
         ),
         "headings must share their fragment container with their body"
     );
