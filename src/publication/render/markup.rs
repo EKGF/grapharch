@@ -27,7 +27,9 @@ impl<'a> Markdown<'a> {
         );
         let options = crate::publication::markdown::options();
         // bounded: maps and events refer only to this capped fragment.
-        let mut events: Vec<_> = Parser::new_ext(body, options).collect();
+        let mut events = crate::publication::mermaid::events(
+            Parser::new_ext(body, options).collect(),
+        )?;
         let base_level = events
             .iter()
             .filter_map(|event| {

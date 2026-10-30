@@ -11,6 +11,7 @@ use {
             collect_all,
         },
         dataset::{Dataset, identity},
+        document::{Documentor, MermaidDocumentor},
         plan::{ResolvedPlan, TargetPlanner},
         term,
         view::RevisionView,
@@ -192,6 +193,13 @@ pub(crate) async fn bind(
     project: &str,
     target: &str,
 ) -> Result<()> {
+    MermaidDocumentor::new(
+        dataset.clone(),
+        dataset.snapshot_collected_for(project).await?,
+        project,
+    )?
+    .document(writer)
+    .await?;
     let snapshot = dataset.snapshot_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     let target = NamedNode::new(target)?;

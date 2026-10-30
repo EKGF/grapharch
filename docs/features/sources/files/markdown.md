@@ -70,6 +70,28 @@ Markers inside inline code or fenced code blocks remain literal source text:
 > Write the note here.
 ```
 
+## Mermaid flowcharts
+
+Fenced `mermaid` flowcharts become static SVG diagrams during the document
+stage. Website builds run this stage automatically. The diagram bytes stay in
+the documentation KG, so publishing works offline after the source files are
+removed. The same retained diagrams can be used in specification and PDF
+targets. Browser JavaScript and external diagram services are not required.
+
+```mermaid
+flowchart LR
+    Source[Source fragments] --> KG[(Documentation KG)]
+    KG --> Website[Website]
+    KG --> PDF[PDF document]
+```
+
+The current native subset supports flowcharts, including labelled nodes,
+subgraphs, and edges. Other Mermaid diagram types, interactive links, and
+initialization directives are rejected explicitly. Each diagram is limited to
+32 KiB of source, 128 nodes, 256 edges, and 32 subgraphs; each fragment may
+contain up to sixteen diagrams. Invalid or unsupported diagrams fail the build.
+Custom publication pipelines must run the Mermaid document stage before assembly.
+
 ## Frontmatter
 
 ```yaml

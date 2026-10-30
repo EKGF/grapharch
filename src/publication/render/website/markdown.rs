@@ -54,9 +54,10 @@ pub(super) fn render(
     page: &Page,
     catalog: &Catalog,
 ) -> Result<Content> {
-    let mut events: Vec<_> =
+    let mut events = crate::publication::mermaid::events(
         Parser::new_ext(body, crate::publication::markdown::options())
-            .collect();
+            .collect(),
+    )?;
     let headings = index(&events);
     let mut heading_index = 0;
     for event in &mut events {

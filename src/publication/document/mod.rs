@@ -2,6 +2,7 @@
 
 mod annotated_term;
 pub(crate) mod description;
+mod mermaid;
 mod resource;
 mod use_cases;
 use {
@@ -13,6 +14,7 @@ use {
 };
 pub use {
     annotated_term::AnnotatedTermDocumentor,
+    mermaid::MermaidDocumentor,
     use_cases::UseCaseDocumentor,
 };
 

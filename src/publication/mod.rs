@@ -12,6 +12,7 @@ mod gallery;
 pub mod governance;
 mod limits;
 mod markdown;
+mod mermaid;
 mod native_html;
 pub mod ontology_family;
 mod ontology_specification;
