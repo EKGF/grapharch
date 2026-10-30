@@ -141,12 +141,11 @@ impl MermaidDocumentor {
 
     async fn fragment(
         &self,
-        view: &RevisionView,
         fragment: &NamedNode,
+        body: &str,
         writer: &GraphWriter,
         assets: &mut BTreeSet<NamedNode>,
     ) -> Result<bool> {
-        let body = view.text(fragment, "body").await?;
         ensure!(
             body.len() <= 1024 * 1024,
             "Mermaid source fragment exceeds 1 MiB"
@@ -165,7 +164,7 @@ impl MermaidDocumentor {
             )
             .await?;
         let result = async {
-            let mut events = Parser::new_ext(&body, crate::publication::markdown::options());
+            let mut events = Parser::new_ext(body, crate::publication::markdown::options());
             let mut count = 0;
             while let Some(event) = events.next() {
                 if !matches!(event, Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(language))) if language.as_ref() == "mermaid") { continue; }
@@ -230,17 +229,18 @@ impl Documentor for MermaidDocumentor {
             RevisionView::new(self.dataset.clone(), self.snapshot.clone());
         let pattern = view.pattern(
             &format!(
-                "?fragment a {} ; {} \"text/markdown\"",
+                "?fragment a {} ; {} \"text/markdown\" ; {} ?body",
                 term("Fragment"),
-                term("format")
+                term("format"),
+                term("body")
             ),
             0,
         );
         let mut rows = self
             .dataset
             .select(format!(
-                "SELECT DISTINCT ?fragment WHERE {{ {pattern} }} ORDER BY \
-                 ?fragment"
+                "SELECT DISTINCT ?fragment ?body WHERE {{ {pattern} \
+                 FILTER(CONTAINS(?body, \"mermaid\")) }} ORDER BY ?fragment"
             ))
             .await?;
         // bounded: at most 8192 fragment identities and 256 retained assets.
@@ -256,7 +256,13 @@ impl Documentor for MermaidDocumentor {
             let Term::NamedNode(fragment) = &row["fragment"] else {
                 anyhow::bail!("Markdown fragment must be an IRI")
             };
-            if self.fragment(&view, fragment, writer, &mut assets).await? {
+            let Term::Literal(body) = &row["body"] else {
+                anyhow::bail!("Markdown body must be a literal")
+            };
+            if self
+                .fragment(fragment, body.value(), writer, &mut assets)
+                .await?
+            {
                 fragments.insert(fragment.clone());
             }
         }
