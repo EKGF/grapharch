@@ -850,6 +850,14 @@ ga:style a owl:DatatypeProperty ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:string .
 
+ga:preamble a owl:ObjectProperty ;
+    rdfs:label "Legal preamble"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a publication target to its complete legal-notices fragment, displayed as a disclosure in specification HTML and as dedicated PDF front matter."@en ;
+    dct:description "The linked fragment supplies its own title, body, source provenance, and HTML or Markdown format. Legal wording is retained as source content, independently of renderer styling."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:Fragment .
+
 ga:sectionKind a owl:DatatypeProperty ;
     rdfs:label "Publication section kind"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

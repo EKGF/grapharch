@@ -155,6 +155,17 @@ fn emit(element: ElementRef<'_>, diagnostics: &[Diagnostic]) -> Result<String> {
         },
         "sub" | "sup" => format!("#{tag}[{}]", children(element, diagnostics)?),
         "del" => format!("#strike[{}]", children(element, diagnostics)?),
+        "p" if element
+            .value()
+            .classes()
+            .any(|class| class == "section-title") =>
+        {
+            format!(
+                "#block(above: 14pt, below: 6pt, sticky: true)[#text(fill: \
+                 ga-accent, weight: \"semibold\")[{}]]\n",
+                children(element, diagnostics)?
+            )
+        },
         "p" => {
             format!(
                 "#block(above: 5pt, below: 5pt, breakable: true)[{}]\n",

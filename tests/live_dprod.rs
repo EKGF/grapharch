@@ -204,6 +204,11 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         repo.path().join("publication/grapharch.ttl"),
         definitions,
     )?;
+    std::fs::create_dir_all(repo.path().join("respec"))?;
+    std::fs::write(
+        repo.path().join("respec/template.html"),
+        r#"<details class="preamble-section"><summary>Preamble</summary><p>Remote develop legal terms, retained in full.</p><p class="section-title">LICENSES</p><p>Permission subject to these notices.</p></details>"#,
+    )?;
     git(repo.path(), &["add", "."])?;
     git(repo.path(), &[
         "commit",

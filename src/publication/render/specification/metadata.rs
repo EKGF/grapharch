@@ -158,6 +158,7 @@ pub(in crate::publication::render) async fn header(
         ));
     }
     html.push_str("</header>\n");
+    html.push_str(&super::super::preamble::html(plan).await?);
     Ok(Header { html, color: authority.color })
 }
 

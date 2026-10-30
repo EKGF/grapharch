@@ -176,6 +176,35 @@ single-document specification target when a book is wanted. The existing
 `specification` renderer still produces a single standards page and its PDF.
 A companion marketing or guide website remains a separate `website` target.
 
+## Legal preamble
+
+Link a specification or PDF target to a retained fragment with `ga:preamble`.
+The fragment's title supplies the disclosure label; its complete legal wording
+remains in the KG alongside its source provenance.
+
+```turtle
+ex:specification ga:preamble ex:legal-notices .
+ex:legal-notices a ga:Fragment ;
+    dct:title "Legal notices" ;
+    ga:subject ex:publication ;
+    ga:contribution ex:authored ;
+    ga:format "text/markdown" ;
+    ga:body "## Copyright\n\nCopyright © 2026 Example Authority.\n\n## Terms\n\nThe full source-owned legal terms go here." .
+```
+
+Specification HTML presents a keyboard-accessible disclosure, closed initially.
+The PDF includes the entire preamble on dedicated front-matter pages after the
+cover and before the contents. Its typography and accent follow the publication
+theme. It does not become a numbered technical chapter. HTML and Markdown
+fragments are supported; unsupported formats and missing legal fragments fail
+the publication rather than silently omitting the notices.
+
+For a ReSpec migration, `HtmlPreambleFile` collects the unique
+`details.preamble-section` block without running scripts or template code.
+The DPROD live showcase reads that block from `respec/template.html` in the same
+cached `develop` commit as its ontology and shapes. Its legal wording is not
+copied into GraphArch's repository.
+
 ## Contents navigation and search
 
 Both specification renderers provide collapsible contents branches, **Collapse

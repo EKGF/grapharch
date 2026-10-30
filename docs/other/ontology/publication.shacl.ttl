@@ -23,6 +23,7 @@ ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
     sh:or ( [ sh:property [ sh:path ga:traverse ; sh:maxCount 0 ] ] [ sh:property [ sh:path ga:maxDepth ; sh:minCount 1 ] ] ) .
 
 ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:preamble ; sh:nodeKind sh:IRI ; sh:class ga:Fragment ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:renderer ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("html" "website" "specification" "specification-pages" "bookshelf" "typst") ] ;

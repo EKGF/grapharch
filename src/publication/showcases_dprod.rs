@@ -627,6 +627,14 @@ pub(super) async fn collect_remote(
             }
         }
         collect_all(work, &writer, 4).await?;
+        super::collect::HtmlPreambleFile::from_git(
+            PROJECT,
+            "urn:dprod-showcase:collector:preamble",
+            &scan.blob(Path::new("respec/template.html")).await?,
+            &["urn:dprod-showcase:specification", "urn:dprod-showcase:pdf"],
+        )?
+        .collect(&writer)
+        .await?;
         let view = RevisionView::new(
             dataset.clone(),
             dataset.snapshot_for(PROJECT).await?,

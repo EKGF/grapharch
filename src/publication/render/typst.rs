@@ -178,11 +178,12 @@ pub(super) async fn begin_book(
     } else {
         plan.toc_depth().await?.unwrap_or(3)
     };
+    let legal = super::preamble::typst(plan, diagnostics).await?;
     file.write_all(
         format!(
             "\n#ga-cover(ga-publisher, ga-title, [{subtitle}], \
-             [{front}])\n#pagebreak()\n#outline(title: [Contents], depth: \
-             {toc_depth})\n#pagebreak()\n#counter(heading).update(0)\n"
+             [{front}])\n#pagebreak()\n{legal}#outline(title: [Contents], \
+             depth: {toc_depth})\n#pagebreak()\n#counter(heading).update(0)\n"
         )
         .as_bytes(),
     )

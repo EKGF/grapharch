@@ -11,6 +11,7 @@ mod markdown_images;
 mod markdown_structure;
 mod module_hints;
 pub(crate) mod page;
+mod preamble;
 pub(crate) mod published_artifact;
 mod rdf;
 mod source;
@@ -34,6 +35,7 @@ pub use {
         http_image_collectors,
         http_image_collectors_with_factory,
     },
+    preamble::HtmlPreambleFile,
     rdf::RdfFile,
     text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,
