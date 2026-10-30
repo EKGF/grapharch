@@ -115,7 +115,7 @@ impl Collector for HttpImage {
     }
 }
 
-pub(super) struct ImageAsset<'a> {
+pub(crate) struct ImageAsset<'a> {
     pub project:   &'a str,
     pub processor: &'a str,
     pub source:    &'a str,

@@ -1,7 +1,7 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
-<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
     ga:order 1 ; ga:kind "authored" ; ga:source "showcase/project.ttl" ;
@@ -27,3 +27,12 @@ ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and
 ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;
     dct:description "The latest default branch of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
     ga:order 6 ; ga:kind "ontology-family" ; ga:source "ekg-ontologies/showcase.yaml" .
+
+ex:skos a ga:Showcase;ga:slug "skos";dct:title "SKOS business data taxonomy";
+ dct:description "A native concept scheme, multilingual labels, hierarchy and mapping links, and ordered collection membership become a specification and PDF.";
+ ga:order 7;ga:kind "skos";ga:source "skos";
+ ga:previewPath "specification/index.html";ga:pdfPath "specification/document.pdf" .
+ex:use-cases a ga:Showcase;ga:slug "use-cases";dct:title "EKGF use-case trees";
+ dct:description "Actual RDF use-case instances, ownership and reuse links, personas and outcomes, with KG-generated neighborhood diagrams and a review PDF.";
+ ga:order 8;ga:kind "use-cases";ga:source "use-cases";
+ ga:previewPath "website/index.html";ga:pdfPath "review/document.pdf" .

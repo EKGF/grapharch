@@ -1,0 +1,5 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+<https://example.org/data-taxonomy/ReferenceData> a skos:Concept;
+ skos:prefLabel "Reference data"@en;skos:definition "Data used to classify or identify other data."@en;
+ skos:inScheme <https://example.org/data-taxonomy>;
+ skos:related <https://example.org/data-taxonomy/DataProduct> .

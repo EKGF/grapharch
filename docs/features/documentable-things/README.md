@@ -41,18 +41,18 @@ then GraphArch can detect the `LICENSE` file in the root of the repository.
 
 ## SKOS Concepts
 
-- [ ] Concept IRI and name
-- [ ] Concept Scheme
-- [ ] Concept
-- [ ] Collection
-- [ ] Concept Scheme
+- [x] Concept IRI and name
+- [x] Concept Scheme
+- [x] Concept
+- [x] Collection
+- [x] Ordered Collection
 
 ## EKGF Use Cases
 
 ### Use Case
 
-- [ ] Use Case IRI and name
-- [ ] Use Case Description
+- [x] Use Case IRI and name
+- [x] Use Case Description
 
 ### Persona
 

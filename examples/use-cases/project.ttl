@@ -1,0 +1,9 @@
+@prefix ga:<https://ekgf.org/ontology/grapharch#> .
+@prefix dct:<http://purl.org/dc/terms/> .
+<urn:use-cases:project> a ga:Project;dct:title "EKGF use-case trees";ga:target <urn:use-cases:website>,<urn:use-cases:pdf> .
+<urn:use-cases:scope> a ga:Scope .
+<urn:use-cases:profile> a ga:Profile;ga:style "reader" .
+<urn:use-cases:website> a ga:Target;dct:title "Customer insight: use cases and reusable capabilities";
+ ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer "html";ga:destination "website" .
+<urn:use-cases:pdf> a ga:Target;dct:title "EKGF use-case tree: review document";
+ ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer "typst";ga:destination "review" .

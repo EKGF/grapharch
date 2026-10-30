@@ -356,3 +356,12 @@ pub async fn dprod_remote(
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
     super::showcases_dprod::collect_remote(source, cache).await
 }
+
+/// Collect and plan the standalone native SKOS showcase.
+pub async fn skos(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    super::showcases_semantic::skos(source).await
+}
+/// Collect actual EKGF UseCase instances and generate their documentation.
+pub async fn use_cases(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    super::showcases_semantic::use_cases(source).await
+}

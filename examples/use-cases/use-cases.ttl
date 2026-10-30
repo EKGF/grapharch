@@ -1,0 +1,26 @@
+@prefix uc:<https://ekgf.org/ontology/use-case#> .
+@prefix persona:<https://ekgf.org/ontology/persona#> .
+@prefix outcome:<https://ekgf.org/ontology/outcome#> .
+@prefix story:<https://ekgf.org/ontology/story#> .
+@prefix concept:<https://ekgf.org/ontology/concept#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:<https://example.org/use-cases/> .
+ex:CustomerInsight a uc:UseCase;rdfs:label "Customer insight"@en;
+ rdfs:comment "Understand a fictional customer's situation using linked information."@en;
+ uc:hasStereoType uc:UseCaseStereoTypeBusinessCapabilityArea .
+ex:CustomerOverview a uc:UseCase;rdfs:label "Customer overview"@en;
+ rdfs:comment "Present a consolidated customer overview."@en;uc:isPartOf ex:CustomerInsight .
+ex:VerifyCustomer a uc:UseCase;rdfs:label "Verify customer"@en;
+ rdfs:comment "Review customer identity and risk evidence."@en;uc:isPartOf ex:CustomerInsight .
+ex:CheckIdentity a uc:UseCase;rdfs:label "Check identity"@en;
+ rdfs:comment "Check identity evidence before making a review decision."@en;uc:isPartOf ex:VerifyCustomer;
+ uc:involvesPersona ex:Analyst;uc:hasOutcome ex:VerifiedIdentity;uc:usesConcept ex:Customer .
+ex:AssessRisk a uc:UseCase;rdfs:label "Assess risk"@en;
+ rdfs:comment "Assess customer risk using evidence and reference information."@en;uc:isPartOf ex:VerifyCustomer .
+ex:ReferenceInformation a uc:UseCase;rdfs:label "Reference information"@en;
+ rdfs:comment "Provide reusable reference information without being owned by a consuming use case."@en;
+ uc:isUsedIn ex:CustomerOverview,ex:VerifyCustomer .
+ex:Analyst a persona:Persona;rdfs:label "Review analyst"@en;rdfs:comment "The persona reviewing customer evidence."@en .
+ex:VerifiedIdentity a outcome:Outcome;rdfs:label "Verified identity"@en;rdfs:comment "An identity decision supported by evidence."@en .
+ex:Customer a concept:Concept;rdfs:label "Customer"@en;rdfs:comment "The party being reviewed in this fictional example."@en .
+uc:UseCaseStereoTypeBusinessCapabilityArea rdfs:label "Business Capability Area"@en .

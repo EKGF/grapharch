@@ -22,6 +22,12 @@ struct Arguments {
     /// Generate a reference from the pinned native DPROD ontology and shapes.
     #[arg(long)]
     dprod:         bool,
+    /// Publish the native SKOS taxonomy showcase.
+    #[arg(long, conflicts_with_all = ["mixed", "specification", "w3c", "dprod", "use_cases"])]
+    skos:          bool,
+    /// Publish actual EKGF RDF use-case instances and their diagrams.
+    #[arg(long, conflicts_with_all = ["mixed", "specification", "w3c", "dprod"])]
+    use_cases:     bool,
     /// Continue with explicit diagnostic previews; exit nonzero on errors.
     #[arg(long, conflicts_with = "fail_fast")]
     keep_going:    bool,
@@ -35,7 +41,11 @@ struct Arguments {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let arguments = Arguments::parse();
-    let (dataset, plans) = if arguments.w3c {
+    let (dataset, plans) = if arguments.skos {
+        support::skos(Path::new("examples/skos")).await?
+    } else if arguments.use_cases {
+        support::use_cases(Path::new("examples/use-cases")).await?
+    } else if arguments.w3c {
         support::w3c(Path::new("examples/w3c-rdf12-n-triples")).await?
     } else if arguments.dprod {
         support::dprod(Path::new("examples/dprod")).await?
@@ -74,7 +84,11 @@ impl Arguments {
     fn output_root(self) -> PathBuf {
         self.output.unwrap_or_else(|| {
             PathBuf::from(
-                if self.w3c {
+                if self.skos {
+                    "output/pdf/grapharch-skos"
+                } else if self.use_cases {
+                    "output/pdf/grapharch-use-cases"
+                } else if self.w3c {
                     "output/pdf/grapharch-w3c-rdf12-n-triples"
                 } else if self.dprod {
                     "output/pdf/grapharch-dprod"

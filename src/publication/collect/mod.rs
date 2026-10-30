@@ -17,7 +17,6 @@ mod source;
 mod text_asset;
 mod w3c;
 
-pub(crate) use markdown_images::default_http_image_factory;
 use {
     super::writer::{ContributionStream, GraphWriter},
     anyhow::{Result, ensure},
@@ -38,6 +37,10 @@ pub use {
     rdf::RdfFile,
     text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,
+};
+pub(crate) use {
+    image::ImageAsset,
+    markdown_images::default_http_image_factory,
 };
 
 /// Stable ownership supplied by one specialized collector instance.

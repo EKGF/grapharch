@@ -1,0 +1,19 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <https://example.org/data-taxonomy/> .
+<https://example.org/data-taxonomy> a skos:ConceptScheme;
+ skos:prefLabel "Business data taxonomy"@en;
+ skos:definition "A fictional taxonomy demonstrating source-owned SKOS documentation."@en;
+ sh:declare [sh:prefix "data-taxonomy";sh:namespace "https://example.org/data-taxonomy/"];
+ skos:hasTopConcept ex:Product .
+ex:Product a skos:Concept;skos:prefLabel "Product"@en;skos:prefLabel "Produit"@fr;
+ skos:altLabel "Offering"@en;skos:definition "An offering delivered to a consumer."@en;
+ skos:inScheme <https://example.org/data-taxonomy>;skos:narrower ex:DataProduct .
+ex:DataProduct a skos:Concept;skos:prefLabel "Data product"@en;
+ skos:definition "A product that delivers data for a stated purpose."@en;
+ skos:broader ex:Product;skos:inScheme <https://example.org/data-taxonomy>;
+ skos:notation "DP";skos:scopeNote "Illustrative terminology, not a replacement for DPROD."@en;
+ skos:related ex:ReferenceData;skos:closeMatch <https://example.net/vocabulary/DataOffering> .
+ex:Portfolio a skos:OrderedCollection;skos:prefLabel "Example portfolio"@en;
+ skos:definition "An ordered selection of concepts for a fictional portfolio."@en;
+ skos:memberList (ex:DataProduct ex:ReferenceData) .

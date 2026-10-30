@@ -800,7 +800,7 @@ impl Documentor for AnnotatedTermDocumentor {
         Ok(())
     }
 }
-fn escape(text: &str) -> String {
+pub(super) fn escape(text: &str) -> String {
     let mut result = String::new();
     for c in text.chars() {
         if "\\`*_[]<>|".contains(c) {

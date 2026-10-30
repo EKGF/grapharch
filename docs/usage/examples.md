@@ -23,12 +23,16 @@ maintain a second implementation of collection or publication.
 | `specification/` | Authored RDF containing publication metadata and Markdown fragments | RDF collection, assembly, specification target plan | Standards-style HTML with nested numbered ToC, publisher front matter, abstract, status, and appendix |
 | `dprod/` | Pinned DPROD ontology, SHACL shapes, and dataset-schema Markdown from the DPROD repository | RDF and Markdown collection, 53 annotated-term fragments, assembly, three target plans | Specification HTML, companion website, review PDF, exported KG |
 | `ekg-ontologies/` | Latest default branch of a configured remote ontology repository; separate offline acceptance corpus | Parallel RDF collection and source-annotation documentation, explicit family membership, cross-ontology links | Family specification, PDF, exported KG with annotation-gap diagnostics |
+| `skos/` | Native SKOS Turtle, split across source files | Scheme recognition, preferred labels, concepts and ordered collections | Standards-style HTML, PDF, exported KG |
+| `use-cases/` | Actual EKGF UseCase instances in Turtle | Use-case documentor, ownership/reuse validation, retained SVG neighborhoods | Reader HTML, review PDF, exported KG |
 | `mixed-sources/` | Separate Markdown, SPARQL, OWL, and publication-definition files | Four specialized collectors scheduled concurrently, OWL class documentor, assembly, two target plans | Reader HTML, review PDF |
 
 From the repository root:
 
 ```bash
 cargo run --example publish_showcase
+cargo run --example publish_showcase -- --skos
+cargo run --example publish_showcase -- --use-cases
 cargo run --example publish_showcase -- --mixed
 cargo run --example publish_showcase -- --specification
 cargo run --example publish_showcase -- --dprod
@@ -94,7 +98,13 @@ files are unchanged copies pinned to a DPROD commit with checked digests. This i
 a [three-publication family](publication-families.md) and derivative reference preview, not a full migration of the DPROD specification
 or an official OMG publication.
 
-Standalone SKOS vocabularies and use-case trees still need their own fixtures.
+Dedicated `skos/` and `use-cases/` fixtures are now included in the gallery and
+its CI verification. The SKOS example has a standalone concept scheme, multilingual
+preferred labels, hierarchy/mapping links, and an ordered collection. The use-case
+example documents actual EKGF `UseCase` instances, with independent roots,
+ownership, cross-branch reuse, a persona, an outcome, and a referenced concept.
+Both have exported-KG restoration tests in `tests/taxonomy_use_case_showcases.rs`.
+See [Use-case trees](use-case-trees.md) for the vocabulary and diagram contract.
 
 ### Live DPROD gallery
 

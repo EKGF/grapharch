@@ -3,13 +3,17 @@
 mod annotated_term;
 pub(crate) mod description;
 mod resource;
-pub use annotated_term::AnnotatedTermDocumentor;
+mod use_cases;
 use {
     super::{dataset::Dataset, writer::GraphWriter},
     anyhow::Result,
     async_trait::async_trait,
     oxrdf::NamedNode,
     resource::ResourceDocumentor,
+};
+pub use {
+    annotated_term::AnnotatedTermDocumentor,
+    use_cases::UseCaseDocumentor,
 };
 
 /// A generator of semantic documentation fragments from collected RDF only.

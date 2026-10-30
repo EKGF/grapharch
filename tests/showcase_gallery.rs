@@ -112,7 +112,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         std::fs::read_to_string(publication.directory.join("index.html"))?;
     let document = scraper::Html::parse_document(&html);
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
-    assert_eq!(document.select(&cards).count(), 6);
+    assert_eq!(document.select(&cards).count(), 8);
     assert_eq!(
         document
             .select(
@@ -120,7 +120,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
                     .unwrap()
             )
             .count(),
-        6
+        8
     );
     for link in document.select(
         &scraper::Selector::parse(".showcase-card a[data-artifact]").unwrap(),

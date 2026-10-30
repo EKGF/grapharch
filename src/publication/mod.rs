@@ -20,6 +20,7 @@ pub mod render;
 pub mod scope;
 pub mod showcases;
 mod showcases_dprod;
+mod showcases_semantic;
 mod validation;
 pub mod view;
 pub mod website;

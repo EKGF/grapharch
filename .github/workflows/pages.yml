@@ -41,7 +41,7 @@ jobs:
       - name: Native build dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config libssl-dev
       - name: Verify self-documentation
-        run: cargo test --locked --test showcase_gallery --test specification_sidebar --test dprod_showcase --test w3c_specification --test self_documentation --test ontology_specification --test publication_ontology --test authority_governance --test ontology_family --test repository_sources
+        run: cargo test --locked --test showcase_gallery --test taxonomy_use_case_showcases --test specification_sidebar --test dprod_showcase --test w3c_specification --test self_documentation --test ontology_specification --test publication_ontology --test authority_governance --test ontology_family --test repository_sources
       - name: Reuse remote ontology repository cache
         uses: actions/cache@v6
         with:

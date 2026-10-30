@@ -305,6 +305,8 @@ async fn build_case(
             )
             .await?
         },
+        "skos" => showcases::skos(&source).await?,
+        "use-cases" => showcases::use_cases(&source).await?,
         "mixed" => showcases::mixed(&source).await?,
         "specification" => showcases::specification(&source).await?,
         "w3c" => showcases::w3c(&source).await?,

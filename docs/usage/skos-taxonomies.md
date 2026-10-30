@@ -74,3 +74,15 @@ renderers. A standalone scheme can form a book with its own PDF. Publication
 works from an exported and restored KG after deleting the original source
 files. This is vocabulary-reference documentation; it does not add a dedicated
 interactive taxonomy-tree renderer.
+
+## Dedicated showcase
+
+The [showcase gallery](../showcases.md) includes a standalone business-data
+taxonomy with a specification, PDF, and downloadable KG. Run it locally with:
+
+```sh
+cargo run --example publish_showcase -- --skos
+```
+
+Its self-contained Turtle is in
+[examples/skos](https://github.com/EKGF/grapharch/tree/main/examples/skos).
