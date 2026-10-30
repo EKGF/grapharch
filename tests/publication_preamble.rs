@@ -88,10 +88,12 @@ async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_la
         css.contains(".publication-preamble>summary"),
         "legal disclosure needs its own visual treatment"
     );
+    assert!(css.contains(".legal-content :is(p,li){text-align:justify;text-align-last:left}"));
     let typst =
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
     assert!(typst.contains("#let ga-legal-notices"));
+    assert!(typst.contains("set par(justify: true"));
     assert!(
         typst.find("#ga-legal-notices[").unwrap() <
             typst.find("#outline(").unwrap()

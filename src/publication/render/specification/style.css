@@ -20,7 +20,7 @@ p{margin:1rem 0}.head{position:relative;padding-bottom:1rem;border-bottom:1px so
 .publication-preamble[open]>summary{border-bottom:1px solid #d8e1eb}
 .publication-preamble .legal-content{padding:.3rem 1.3rem 1.3rem;font-size:.9rem;line-height:1.65}
 .legal-content :is(h2,h3,.section-title){margin:1.5rem 0 .65rem;font-size:1rem;font-weight:600;color:var(--authority-color);text-align:left}
-.legal-content p{max-width:75ch}
+.legal-content :is(p,li){text-align:justify;text-align-last:left}
 @media print{.publication-preamble>summary{display:none}.publication-preamble .legal-content{display:block!important}}
 .authority-banner{user-select:none;-webkit-user-select:none;cursor:default;position:fixed;top:0;left:0;z-index:1;writing-mode:vertical-rl;transform:rotate(180deg);padding:1.8rem .3rem;background:var(--authority-color);color:#fff;font-size:.95rem;letter-spacing:.03em}
 .toc{position:fixed;inset:0 auto 0 0;width:var(--toc-size);overflow:auto;padding:1.3rem 1.4rem 2rem 2.4rem;background:#f7f8f9;border-right:1px solid #b9c8d5;font-size:.95rem;line-height:1.25}
