@@ -241,7 +241,17 @@ pub(super) async fn entry(
         .await?;
     }
     if !entry.first {
-        file.write_all(b"#block(breakable: true)[").await?;
+        if let Some(markdown) = markdown &&
+            let Some(pulldown_cmark::Event::Start(
+                pulldown_cmark::Tag::Heading { level, .. },
+            )) = markdown.events.first()
+        {
+            let level = markdown.depth(*level) + markdown.component_depth;
+            file.write_all(format!("#ga-section({level})[").as_bytes())
+                .await?;
+        } else {
+            file.write_all(b"#block(breakable: true)[").await?;
+        }
     }
     for field in ["nativeAnchor", "headingAnchor"] {
         if let Some(oxrdf::Term::Literal(alias)) =
