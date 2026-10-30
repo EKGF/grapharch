@@ -54,6 +54,7 @@ async fn dedicated_skos_and_use_case_gallery_examples_are_executable()
     .await?;
     for text in [
         "Business data taxonomy",
+        "Explore the 1 vocabulary",
         "Concepts",
         "Collections",
         "Offering",

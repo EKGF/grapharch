@@ -715,7 +715,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v10:{snapshot}"),
+            &format!("family-v11:{snapshot}"),
             super::dataset::Stage::Document,
         )
         .await?;
@@ -768,18 +768,38 @@ async fn build(
             0,
         );
     }
+    let includes_schemes = members.iter().any(|member| member.scheme);
+    let (singular, plural, selection, column) = if includes_schemes {
+        (
+            "vocabulary",
+            "vocabularies",
+            "a vocabulary",
+            "Vocabulary",
+        )
+    } else {
+        (
+            "ontology",
+            "ontologies",
+            "an ontology",
+            "Ontology",
+        )
+    };
+    let noun = if ontology_count == 1 {
+        singular
+    } else {
+        plural
+    };
     let mut overview = format!(
-        "# {}\n\nExplore the {ontology_count} ontologies in this family. \
-         Select an ontology to read its vocabulary reference.\n\n",
+        "# {}\n\nExplore the {ontology_count} {noun} in this family. Select \
+         {selection} to read its vocabulary reference.\n\n",
         family_name[0]
     );
     let mut coverage = format!(
-        "{ontology_count} ontologies; {term_count} documented named \
-         resources. {missing} resources have no English source \
-         definition.\n\nMissing annotations are shown explicitly and recorded \
-         as KG diagnostics. No inferred definitions or external imports are \
-         added.\n\n| Ontology | Resources | Missing definitions |\n| --- | \
-         ---: | ---: |\n"
+        "{ontology_count} {noun}; {term_count} documented named resources. \
+         {missing} resources have no English source definition.\n\nMissing \
+         annotations are shown explicitly and recorded as KG diagnostics. No \
+         inferred definitions or external imports are added.\n\n| {column} | \
+         Resources | Missing definitions |\n| --- | ---: | ---: |\n"
     );
     if module_count > 0 {
         overview.push_str(&format!(

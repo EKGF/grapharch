@@ -142,13 +142,13 @@ impl Documentor for UseCaseDocumentor {
             ]);
             let diagram = svg::diagram(&tree, &id)?;
             let mut body = format!(
-                "{}\n\n![Use-case neighborhood for {}]({})\n\nSolid lines \
+                "![Use-case neighborhood for {}]({})\n\n{}\n\nSolid lines \
                  show ownership; dashed lines show reuse. The current use \
                  case is boxed.\n\n**Identifier:** `{}`\n\n**Ownership \
                  parent:** ",
-                description,
                 escape(&node.label),
                 asset.as_str(),
+                description,
                 id.as_str()
             );
             let mut references = std::collections::BTreeSet::new(); // bounded: at most the validated tree's 4096 subjects.
