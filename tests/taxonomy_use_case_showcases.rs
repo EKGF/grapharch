@@ -78,6 +78,22 @@ async fn dedicated_skos_and_use_case_gallery_examples_are_executable()
         assert!(cases.contains(text), "missing {text}");
     }
     assert!(cases.contains("<img"));
+    let typst = tokio::fs::read_to_string(
+        output.path().join("artifacts/use-cases/review/main.typ"),
+    )
+    .await?;
+    assert!(
+        typst.contains(
+            "#block(breakable: true)[#heading(level: 1)[#text(\"Check \
+             identity\")"
+        ),
+        "headings must share their fragment container with their body"
+    );
+    assert!(
+        typst.contains("#block(breakable: false)[#image("),
+        "standalone diagrams must remain atomic so preceding headings stay \
+         with them"
+    );
     Ok(())
 }
 

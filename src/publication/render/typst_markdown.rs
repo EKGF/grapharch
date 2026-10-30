@@ -42,7 +42,15 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         in_image = true;
                     },
                     Tag::Paragraph => {
-                        output.push_str("#block(breakable: true)[")
+                        let atomic =
+                            standalone_image(&markdown.events[index + 1..]);
+                        output.push_str(
+                            if atomic {
+                                "#block(breakable: false)["
+                            } else {
+                                "#block(breakable: true)["
+                            },
+                        );
                     },
                     Tag::Heading { level, id, .. } => {
                         heading = id.as_ref().map(ToString::to_string);
@@ -207,4 +215,42 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
         }
     }
     Ok(output)
+}
+
+// An image cannot split across pages. Its paragraph must not emit an empty
+// first fragment, which would strand a preceding sticky heading on that page.
+fn standalone_image(events: &[Event<'_>]) -> bool {
+    if !matches!(
+        events.first(),
+        Some(Event::Start(Tag::Image { .. }))
+    ) {
+        return false;
+    }
+    events
+        .iter()
+        .position(|event| matches!(event, Event::End(TagEnd::Image)))
+        .is_some_and(|end| {
+            matches!(
+                events.get(end + 1),
+                Some(Event::End(TagEnd::Paragraph))
+            )
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use {super::standalone_image, pulldown_cmark::Parser};
+
+    #[test]
+    fn only_image_only_paragraphs_are_atomic() {
+        for (body, expected) in [
+            ("![A diagram](diagram.svg)", true),
+            ("![A diagram](diagram.svg) and explanation", false),
+            ("![First](first.svg) ![Second](second.svg)", false),
+            ("ordinary paragraph", false),
+        ] {
+            let events: Vec<_> = Parser::new(body).collect();
+            assert_eq!(standalone_image(&events[1..]), expected, "{body}");
+        }
+    }
 }

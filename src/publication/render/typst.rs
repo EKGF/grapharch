@@ -218,6 +218,7 @@ pub(super) async fn entry(
             )
             .await?;
         }
+        file.write_all(b"#block(breakable: true)[").await?;
         let numbering = if matches!(
             entry.kind.as_str(),
             "glossary" | "references" | "abstract" | "status"
@@ -236,6 +237,9 @@ pub(super) async fn entry(
             .as_bytes(),
         )
         .await?;
+    }
+    if !entry.first {
+        file.write_all(b"#block(breakable: true)[").await?;
     }
     for field in ["nativeAnchor", "headingAnchor"] {
         if let Some(oxrdf::Term::Literal(alias)) =
@@ -263,14 +267,8 @@ pub(super) async fn entry(
             quote(code_language(&entry.format)?)
         )
     };
-    file.write_all(
-        format!(
-            "#block(breakable: true)[{body}]#label({})\n",
-            quote(anchor)
-        )
-        .as_bytes(),
-    )
-    .await?;
+    file.write_all(format!("{body}]#label({})\n", quote(anchor)).as_bytes())
+        .await?;
     Ok(())
 }
 
