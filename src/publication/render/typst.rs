@@ -219,7 +219,8 @@ pub(super) async fn entry(
             )
             .await?;
         }
-        file.write_all(b"#block(breakable: true)[").await?;
+        file.write_all(format!("#ga-section({})[", entry.depth).as_bytes())
+            .await?;
         let numbering = if matches!(
             entry.kind.as_str(),
             "glossary" | "references" | "abstract" | "status"

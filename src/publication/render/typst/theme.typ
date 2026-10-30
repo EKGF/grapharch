@@ -12,10 +12,13 @@
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 0.65em)
 #set heading(numbering: "1.1")
 #show heading: set block(sticky: true)
+// Space belongs to the fragment container: heading above-spacing collapses
+// when the heading is the first element of a breakable fragment block.
+#let ga-section(level, body) = block(above: if level == 1 { 28pt } else if level == 2 { 21pt } else { 16pt }, breakable: true, body)
 #show heading.where(level: 1): set text(size: if ga-specification { 19pt } else { 26pt }, weight: if ga-specification { "regular" } else { "bold" }, fill: ga-heading)
-#show heading.where(level: 1): set block(above: 24pt, below: 13pt)
+#show heading.where(level: 1): set block(above: 28pt, below: 16pt)
 #show heading.where(level: 2): set text(size: if ga-specification { 13pt } else { 16pt }, weight: "bold", fill: ga-heading)
-#show heading.where(level: 2): set block(above: 18pt, below: 9pt)
+#show heading.where(level: 2): set block(above: 21pt, below: 11pt)
 #show heading.where(level: 3): set text(size: 11.5pt, weight: "bold", fill: ga-heading)
 #show heading.where(level: 3): set block(above: 14pt, below: 7pt)
 #show heading.where(level: 4): set text(size: 10.5pt, weight: "bold", fill: ga-heading)
@@ -128,7 +131,6 @@
       set text(size: 8pt, fill: ga-muted)
       line(length: 100%, stroke: 0.5pt + ga-accent)
       v(5pt)
-      grid(columns: (1fr, auto), column-gutter: 15pt,
-        [#ga-running(ga-publisher, limit: 80)], [#text(fill: ga-accent, weight: "bold")[#counter(page).display("1 / 1", both: true)]])
+      align(right)[#text(fill: ga-accent, weight: "bold")[#counter(page).display("1 / 1", both: true)]]
     }
   })

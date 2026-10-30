@@ -109,6 +109,22 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
     );
     assert!(typst.contains("rotate(-90deg, reflow: true)"));
     assert!(typst.contains("#ga-cover("));
+    assert!(
+        typst.contains("#ga-section(1)["),
+        "component boundaries must carry heading space outside their fragment \
+         blocks"
+    );
+    let footer = typst
+        .split("footer: context {")
+        .nth(1)
+        .expect("running footer")
+        .split("  })")
+        .next()
+        .expect("footer body");
+    assert!(
+        !footer.contains("ga-publisher"),
+        "authority belongs in the header, not twice on each page"
+    );
     assert!(typst.contains("Editor's Draft"));
     assert!(typst.contains("Publication requirements"));
     let metadata = std::fs::read(publication.directory.join("document.pdf"))?;
