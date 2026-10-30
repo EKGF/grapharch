@@ -1318,3 +1318,57 @@ ga:BookPublication a owl:Class ; rdfs:label "Book publication operation"@en ; rd
 ga:reused a owl:DatatypeProperty ; rdfs:label "Reused verified PDF"@en ; rdfs:domain ga:BookPublication ; rdfs:range xsd:boolean ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Records whether this book operation reused a checksum-verified PDF with an unchanged effective compiler input fingerprint."@en ;
     dct:description "Records whether this book operation reused a checksum-verified PDF with an unchanged effective compiler input fingerprint."@en .
+
+
+ga:requiredSectionRole a owl:DatatypeProperty ;
+    rdfs:label "Required publication section role"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a semantic section role that must have nonempty selected content before a publication profile can be resolved."@en ;
+    dct:description "Identifies a semantic section role that must have nonempty selected content before a publication profile can be resolved."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:string .
+
+
+ga:sectionRole a owl:DatatypeProperty ;
+    rdfs:label "Publication section role"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the semantic purpose of a placement independently of its heading, numbering, layout, and source format."@en ;
+    dct:description "Records the semantic purpose of a placement independently of its heading, numbering, layout, and source format."@en ;
+    rdfs:domain ga:Placement ;
+    rdfs:range xsd:string .
+
+
+ga:requiredMetadata a owl:ObjectProperty ;
+    rdfs:label "Required publication metadata"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a predicate whose values must be supplied explicitly and nonempty on a target before its publication profile can be resolved."@en ;
+    dct:description "Identifies a predicate whose values must be supplied explicitly and nonempty on a target before its publication profile can be resolved."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range rdf:Property .
+
+
+ga:allowedPublicationStatus a owl:DatatypeProperty ;
+    rdfs:label "Allowed publication status"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies an explicit publication status accepted by a profile, allowing a release profile to reject draft and preview targets."@en ;
+    dct:description "Specifies an explicit publication status accepted by a profile, allowing a release profile to reject draft and preview targets."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:string .
+
+
+ga:releaseVersion a owl:DatatypeProperty ;
+    rdfs:label "Publication release version"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the explicitly assigned edition or release version of a publication independently of the version of its generator or source repository."@en ;
+    dct:description "Records the explicitly assigned edition or release version of a publication independently of the version of its generator or source repository."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:string .
+
+
+ga:documentNumber a owl:DatatypeProperty ;
+    rdfs:label "Assigned publication document number"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the document identifier assigned by the publishing authority to this particular standards publication or submission."@en ;
+    dct:description "Records the document identifier assigned by the publishing authority to this particular standards publication or submission."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:string .

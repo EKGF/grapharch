@@ -3,6 +3,7 @@
 
 mod books;
 mod constraints;
+mod requirements;
 use {
     super::{
         RDF_TYPE,
@@ -86,6 +87,22 @@ impl TargetPlanner {
         let profile = view.node(target, "profile").await?;
         let renderer = view.text(target, "renderer").await?;
         let renderer_kind = super::Renderer::parse(&renderer)?;
+        let mut requirements =
+            match requirements::Requirements::read(&view, &profile, target)
+                .await
+            {
+                Ok(requirements) => requirements,
+                Err(error) => {
+                    return Err(requirements::failure(
+                        writer,
+                        &project,
+                        target,
+                        &self.revision,
+                        error,
+                    )
+                    .await?)
+                },
+            };
         let destination = view.text(target, "destination").await?;
         let scope_plan =
             ScopeResolver::new(self.dataset.clone(), self.revision.clone())
@@ -182,6 +199,7 @@ impl TargetPlanner {
                     &component,
                     order,
                     &mut stream,
+                    &mut requirements,
                 )
                 .await?;
             if renderer_kind == super::Renderer::Bookshelf &&
@@ -193,6 +211,17 @@ impl TargetPlanner {
                     fragment,
                 ));
             }
+        }
+        if let Err(error) = requirements.finish() {
+            stream.abort().await?;
+            return Err(requirements::failure(
+                writer,
+                &project,
+                target,
+                &self.revision,
+                error,
+            )
+            .await?);
         }
         if renderer_kind == super::Renderer::Bookshelf {
             books::append(
@@ -403,6 +432,7 @@ impl TargetPlanner {
         component: &NamedNode,
         order: u32,
         stream: &mut ContributionStream,
+        requirements: &mut requirements::Requirements,
     ) -> Result<Option<NamedNode>> {
         let view = selection.view;
         let scope_snapshot = selection.scope_snapshot;
@@ -446,6 +476,7 @@ impl TargetPlanner {
             ));
         }
         selected.sort();
+        let role = requirements.role(view, placement).await?;
         let mut previous = None;
         let mut missing_order = false;
         for (count, (fragment_order, fragment)) in selected.iter().enumerate() {
@@ -461,6 +492,9 @@ impl TargetPlanner {
             );
             missing_order |= fragment_order.is_none();
             previous = fragment_order;
+            requirements
+                .selected(view, role.as_deref(), fragment)
+                .await?;
             self.references(selection, fragment).await?;
             let entry = identity("plan-entry", &[
                 plan.as_str(),

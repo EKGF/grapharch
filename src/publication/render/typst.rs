@@ -77,12 +77,29 @@ pub(super) async fn begin_book(
     }
     let author = quote(&authors.join(", "));
     let mut front = String::new();
+    let mut release = String::new();
+    for (field, label) in [
+        ("releaseVersion", "Version"),
+        ("documentNumber", "Document identifier"),
+    ] {
+        if let Some(value) = plan.source.optional(&plan.target, field).await? {
+            let oxrdf::Term::Literal(value) = value else {
+                anyhow::bail!("PDF {field} must be a literal")
+            };
+            release.push_str(&format!(
+                "#block(above: 5pt)[#strong[#text({})] #text({})]\n",
+                quote(&format!("{label}:")),
+                quote(value.value())
+            ));
+        }
+    }
     if matches!(
         plan.renderer.as_str(),
         "specification" | "bookshelf"
     ) {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     }
+    front.insert_str(0, &release);
     let style = super::typst_style::Style::read(plan).await?;
     file.write_all(
         format!(

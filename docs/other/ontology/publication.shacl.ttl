@@ -30,9 +30,13 @@ ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:requiredSectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:requiredMetadata ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:allowedPublicationStatus ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 16 ] ;
     sh:property [ sh:path ga:placement ; sh:nodeKind sh:IRI ; sh:class ga:Placement ] .
 
 ga:PlacementShape a sh:NodeShape ; sh:targetClass ga:Placement ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:sectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 1 ] ;
     sh:property [sh:path ga:parentPlacement; sh:nodeKind sh:IRI; sh:class ga:Placement; sh:maxCount 1] ;
     sh:property [ sh:path ga:component ; sh:nodeKind sh:IRI ; sh:class ga:Component ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:order ; sh:nodeKind sh:Literal ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .

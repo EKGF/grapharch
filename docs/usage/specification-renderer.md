@@ -176,6 +176,36 @@ single-document specification target when a book is wanted. The existing
 `specification` renderer still produces a single standards page and its PDF.
 A companion marketing or guide website remains a separate `website` target.
 
+## Standards publication requirements
+
+A profile can require semantic sections independently of their titles and
+numbering. The planner checks the sections selected for that target; content
+elsewhere in the KG, in a different profile, or excluded by scope does not count.
+
+```turtle
+ex:release-profile a ga:Profile ;
+    ga:requiredSectionRole "abstract", "scope", "conformance", "references",
+        "terms", "symbols", "namespaces", "acknowledgements", "model", "examples" ;
+    ga:requiredMetadata dct:title, ga:publisher, ga:preamble,
+        ga:publicationDate, ga:releaseVersion, ga:documentNumber ;
+    ga:allowedPublicationStatus "Formal Specification" .
+
+ex:scope-placement ga:sectionRole "scope" .
+```
+
+Section roles are explicit hints on placements, distinct from `ga:sectionKind`,
+which controls structural presentation. Required metadata is identified by its
+RDF predicate, including predicates from other vocabularies. Missing values and
+empty literals fail planning. An optional status allowlist prevents a preview
+from satisfying a release profile. Failures become KG diagnostics against the
+observed revision; no incomplete publication plan is promoted.
+
+Use separate draft and release profiles. Drafts can carry the full technical
+content while an authority-assigned document number or release notice is still
+unknown. Require those values in the release profile instead of inventing them.
+When supplied, `ga:releaseVersion` and `ga:documentNumber` appear in the
+specification header and PDF cover metadata.
+
 ## Legal preamble
 
 Link a specification or PDF target to a retained fragment with `ga:preamble`.

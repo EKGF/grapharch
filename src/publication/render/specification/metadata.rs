@@ -111,6 +111,17 @@ pub(in crate::publication::render) async fn header(
         parsed.format("%-d %B %Y")
     );
     let mut defaults = String::new();
+    for (field, label) in [
+        ("releaseVersion", "Version"),
+        ("documentNumber", "Document identifier"),
+    ] {
+        if let Some(value) = optional(plan, &plan.target, field).await? {
+            html.push_str(&format!(
+                "<dt>{label}:</dt><dd>{}</dd>",
+                html_escape(&value)
+            ));
+        }
+    }
     for &(field, label, required) in URL_FIELDS {
         match plan.source.optional(&plan.target, field).await? {
             Some(Term::NamedNode(url)) => {
