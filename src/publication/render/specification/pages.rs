@@ -517,9 +517,10 @@ pub(in crate::publication::render) async fn write_catalog(
         }
         file.write_all(
             format!(
-                "<div class=\"fragment\" id=\"{anchor}\" \
-                 data-fragment=\"{}\">{routed}</div>",
-                html_escape(entry.fragment.as_str())
+                "<div class=\"fragment\" id=\"{anchor}\" data-fragment=\"{}\" \
+                 data-format=\"{}\">{routed}</div>",
+                html_escape(entry.fragment.as_str()),
+                html_escape(&entry.format)
             )
             .as_bytes(),
         )

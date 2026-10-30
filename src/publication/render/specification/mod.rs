@@ -115,9 +115,10 @@ pub(super) async fn write(
         };
         file.write_all(
             format!(
-                "<div class=\"fragment\" id=\"{anchor}\" \
-                 data-fragment=\"{}\">{body}</div>\n",
-                html_escape(entry.fragment.as_str())
+                "<div class=\"fragment\" id=\"{anchor}\" data-fragment=\"{}\" \
+                 data-format=\"{}\">{body}</div>\n",
+                html_escape(entry.fragment.as_str()),
+                html_escape(&entry.format)
             )
             .as_bytes(),
         )

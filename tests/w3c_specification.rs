@@ -207,6 +207,38 @@ async fn rdf12_publication_preserves_modern_metadata_and_document_structure()
             .next()
             .is_some()
     );
+    let example = rendered
+        .select(
+            &scraper::Selector::parse(
+                ".fragment[data-format='text/html'] #ex-comments",
+            )
+            .unwrap(),
+        )
+        .next()
+        .expect("native fragments must retain their format for scoped styling");
+    let marker = example
+        .select(&scraper::Selector::parse(".marker").unwrap())
+        .next()
+        .unwrap()
+        .text()
+        .collect::<String>();
+    assert_eq!(
+        marker.split_whitespace().collect::<Vec<_>>().join(" "),
+        "Example 1: Use of comments in N-Triples"
+    );
+    assert!(
+        rendered
+            .select(
+                &scraper::Selector::parse(
+                    ".header-wrapper > a.self-link[href]"
+                )
+                .unwrap()
+            )
+            .next()
+            .is_some(),
+        "native heading permalink anchors must survive collection and KG \
+         restoration"
+    );
     let toc = rendered
         .select(&scraper::Selector::parse("#toc").unwrap())
         .next()
