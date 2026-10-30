@@ -240,7 +240,7 @@ impl Documentor for MermaidDocumentor {
             .dataset
             .select(format!(
                 "SELECT DISTINCT ?fragment ?body WHERE {{ {pattern} \
-                 FILTER(CONTAINS(?body, \"mermaid\")) }} ORDER BY ?fragment"
+                 FILTER(CONTAINS(?body, \"mermaid\")) }} LIMIT 8193"
             ))
             .await?;
         // bounded: at most 8192 fragment identities and 256 retained assets.
