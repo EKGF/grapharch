@@ -177,6 +177,9 @@ async fn toc(
         .into_iter()
         .map(str::to_owned)
         .collect();
+    if !plan.quality.is_empty() {
+        ids.insert("quality-issues".into());
+    }
     let mut links = Vec::new();
     while let Some(entry) = entries.next(plan).await? {
         if entry.first {
@@ -309,6 +312,12 @@ async fn toc(
                 });
             }
         }
+    }
+    if !plan.quality.is_empty() {
+        file.write_all(
+            toc.entry(1, "quality-issues", "Quality issues")?.as_bytes(),
+        )
+        .await?;
     }
     file.write_all(format!("{}</nav>\n", toc.finish()).as_bytes())
         .await?;

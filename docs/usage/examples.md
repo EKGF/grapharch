@@ -116,6 +116,24 @@ Git cache avoids cloning the complete repository again. Missing source files,
 invalid hints and unavailable sources stop the build; copied fixtures are never
 used as a replacement.
 
+The standards draft uses `publication/standards.ttl` in DPROD. Its source-owned
+placements select the formal prose and worked examples independently from the
+companion website. Required section roles check the actual selected fragments;
+collecting a file alone does not satisfy a requirement. Generated vocabulary
+groups are nested under the explicitly declared reference section.
+
+The comparison baseline is [OMG DPROD 1.0 beta 2](https://www.omg.org/spec/DPROD/1.0/Beta2/PDF).
+The draft sources cover scope, conformance, references, terms, symbols,
+namespaces, model explanations, data contracts, acknowledgements, and the
+publisher preface. They include eight core and seven contract examples, with
+separate machine-readable example files retained in the KG. Existing legal
+notices are collected without changing their wording. These are draft outputs,
+not a claim of OMG approval for 1.1.
+
+A separately registered release target requires an authority-assigned document
+identifier, release date, version URL, and formal approval status. The showcase
+publishes the three draft targets; it does not fill in missing release metadata.
+
 Repository links resolve to published companion pages where available, or to
 verified files at the same commit on GitHub. Images are collected into the
 publication KG, checked for supported content and size, and restored from that

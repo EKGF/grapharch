@@ -104,8 +104,9 @@ pub(super) async fn begin_book(
             .is_some())
     {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
+    } else {
+        front.insert_str(0, &release);
     }
-    front.insert_str(0, &release);
     file.write_all(
         format!(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \

@@ -58,6 +58,25 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
             &writer,
         )
         .await?;
+    let replacement = source.path().join("secondary.ttl");
+    tokio::fs::write(&replacement, "<urn:quality:missing> a <http://www.w3.org/2002/07/owl#Class> . <urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> \"Primary label\"@en ; <http://purl.org/dc/terms/description> \"Primary definition\"@en .").await?;
+    RdfFile::new(
+        "urn:specification:project",
+        "urn:quality:secondary",
+        replacement,
+    )?
+    .collect(&writer)
+    .await?;
+    let current_revision = Assembler::new(dataset.clone())
+        .assemble("urn:specification:project")
+        .await?;
+    let current = TargetPlanner::new(dataset.clone(), current_revision)
+        .resolve(
+            "urn:specification:project",
+            &oxrdf::NamedNode::new("urn:specification:target")?,
+            &writer,
+        )
+        .await?;
     drop(writer);
     worker.await??;
     let output = tempfile::tempdir()?;
@@ -66,6 +85,21 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     source.close()?;
+    let current_output = tempfile::tempdir()?;
+    let PublishOutcome::Published(corrected) = Publisher::new(restored.clone())
+        .render(&current, current_output.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    assert!(
+        !corrected
+            .manifest
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "competing-source-annotations"),
+        "resolved disagreements must disappear from the next report"
+    );
     let PublishOutcome::Published(publication) =
         Publisher::new(restored.clone())
             .render(&plan, output.path())
@@ -119,6 +153,10 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
     assert!(html.contains("Quality issues"));
+    assert!(
+        html.contains("href=\"#quality-issues\""),
+        "the addendum must be discoverable in the contents"
+    );
     assert!(
         html.contains("markdown-alert-warning"),
         "affected resources need an inline warning"

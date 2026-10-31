@@ -91,6 +91,10 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         .await?;
     }
     if !plan.quality.is_empty() {
+        ensure!(
+            !files.iter().any(|route| route == "quality-issues.html"),
+            "authored page conflicts with the quality report route"
+        );
         let mut file = tokio::io::BufWriter::new(
             tokio::fs::File::create(stage.join("quality-issues.html")).await?,
         );

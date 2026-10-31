@@ -166,7 +166,7 @@ async fn distinct_selected_markdown_annotations_are_preserved_for_review()
         source.path(),
         "Rich description.",
         "ex:Class ann:markdownDescription \"Conflicting English \
-         description.\"@en .",
+         description.\"@en . ex:Class <http://www.w3.org/2004/02/skos/core#prefLabel> \"Preferred one\"@en, \"Preferred two\"@en .",
     )?;
     let built = collect(source.path()).await?;
     let output = tempfile::tempdir()?;

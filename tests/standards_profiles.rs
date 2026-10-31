@@ -143,6 +143,11 @@ async fn release_identity_survives_source_removal_and_appears_in_html_and_pdf()
             content.contains("example/26-01-01") &&
                 content.contains("1.1 draft")
         );
+        assert_eq!(
+            content.matches("example/26-01-01").count(),
+            1,
+            "release identity must appear once in each header/cover"
+        );
     }
     assert!(
         tokio::fs::read(publication.directory.join("document.pdf"))

@@ -79,7 +79,10 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
         "ontology chapters must use their English names rather than namespace \
          prefixes"
     );
-    let sections = scraper::Selector::parse("main > section").unwrap();
+    let sections = scraper::Selector::parse(
+        "main > section:not(#quality-issues):not(#publication-diagnostics)",
+    )
+    .unwrap();
     assert!(
         doc.select(&sections)
             .next_back()
