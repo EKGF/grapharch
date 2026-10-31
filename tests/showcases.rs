@@ -91,8 +91,15 @@ async fn mixed_showcase_collects_native_sources_and_documents_owl_before_renderi
     for content in [&html, &typst] {
         assert!(content.contains("Authored guidance from a Markdown file"));
         assert!(content.contains("A governed collection of data"));
-        assert!(content.contains("SELECT ?product"));
     }
+    // Syntax spans and quoted Typst runs may split tokens in the serialized
+    // artifact. Compare the actual displayed query, including whitespace.
+    let document = scraper::Html::parse_document(&html);
+    let code = scraper::Selector::parse("code.language-sparql").unwrap();
+    assert!(document.select(&code).any(|block| {
+        block.text().collect::<String>() ==
+            include_str!("../examples/mixed-sources/query.rq")
+    }));
     assert!(
         tokio::fs::read(temp.path().join("review/document.pdf"))
             .await?
