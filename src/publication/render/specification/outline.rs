@@ -246,9 +246,7 @@ impl Toc {
 
 fn toc_label(label: &str) -> String {
     if let Some((number, text)) = label.split_once(' ') &&
-        number.chars().all(|c| {
-            c.is_ascii_digit() || c == '.' || c.is_ascii_uppercase()
-        })
+        is_section_number(number)
     {
         return format!(
             "<span class=\"toc-number\">{}</span> <span \
@@ -261,4 +259,44 @@ fn toc_label(label: &str) -> String {
         "<span class=\"toc-label\">{}</span>",
         html_escape(label)
     )
+}
+
+fn is_section_number(number: &str) -> bool {
+    let number = number.strip_suffix('.').unwrap_or(number);
+    let mut parts = number.split('.');
+    let Some(first) = parts.next() else {
+        return false
+    };
+    let numeric = |part: &str| {
+        !part.is_empty() && part.bytes().all(|c| c.is_ascii_digit())
+    };
+    (numeric(first) ||
+        (first.len() == 1 && first.as_bytes()[0].is_ascii_uppercase())) &&
+        parts.all(numeric)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::toc_label;
+
+    #[test]
+    fn acronyms_are_heading_text_not_section_numbers() {
+        for label in ["OMG Specifications", "RDF Concepts", "OWL classes"] {
+            assert_eq!(
+                toc_label(label),
+                format!("<span class=\"toc-label\">{label}</span>")
+            );
+        }
+        for label in [
+            "1. Scope",
+            "3.1 References",
+            "A. Acknowledgements",
+            "B.2 Details",
+        ] {
+            assert!(
+                toc_label(label).contains("class=\"toc-number\""),
+                "{label}"
+            );
+        }
+    }
 }
