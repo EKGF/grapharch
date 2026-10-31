@@ -115,6 +115,19 @@ impl PinnedGitBlob {
         .await?
     }
 
+    /// Retain one explicitly configured image from this pinned repository blob.
+    pub fn image_collector(
+        &self,
+        processor: &str,
+        asset: NamedNode,
+    ) -> Result<Arc<dyn Collector>> {
+        NamedNode::new(processor)?;
+        let mut image = GitImageFile::new(self.clone());
+        image.processor = processor.into();
+        image.id = asset;
+        Ok(Arc::new(image))
+    }
+
     pub fn rdf_collector(&self, processor: &str) -> Result<Arc<dyn Collector>> {
         NamedNode::new(processor)?;
         Ok(Arc::new(GitRdfFile {

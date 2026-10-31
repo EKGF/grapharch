@@ -75,3 +75,8 @@ table:has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th:first-child,table:ha
 .fragment[data-format="text/html"] pre code,.fragment[data-format="text/html"] .index code{color:inherit}
 
 @media(pointer:coarse){.toc-actions button{min-height:2.75rem}}
+
+.product-logo{float:right;width:100px;height:auto;max-height:100px;object-fit:contain;margin:0 0 1rem 1rem}
+.quality-evidence{margin:.75rem 0 1rem;padding:.75rem 1rem;border-left:3px solid #b9c8d5;background:#f7f8f9}.quality-evidence p{margin:.35rem 0}.quality-evidence a,.quality-issue-group li>strong{overflow-wrap:anywhere}
+
+@media(max-width:600px){.head:has(.product-logo) h1{clear:both}}

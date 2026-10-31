@@ -84,6 +84,20 @@ pub(in crate::publication::render) async fn header(
     } else {
         ""
     };
+    let product_logo =
+        match plan.source.optional(&plan.target, "productLogo").await? {
+            Some(Term::NamedNode(asset)) => {
+                format!(
+                    "<img class=\"product-logo\" src=\"{}\" alt=\"{}\" \
+                     width=\"100\">",
+                    html_escape(plan.images.asset_route(&asset)?),
+                    html_escape(&explicit_title(plan, &asset).await?),
+                )
+            },
+            None => String::new(),
+            _ => anyhow::bail!("productLogo must be an asset IRI"),
+        };
+    let logos = format!("{}{product_logo}", authority.logo);
     let banner = format!("{} {}", authority.short, status);
     let mut html = format!(
         "<div class=\"authority-banner\" aria-label=\"{}\">{}</div><header \
@@ -105,7 +119,7 @@ pub(in crate::publication::render) async fn header(
         html_escape(&banner),
         authority.color,
         html_escape(&authority.name),
-        authority.logo,
+        logos,
         html_escape(&document_title),
         html_escape(date.value()),
         parsed.format("%-d %B %Y")

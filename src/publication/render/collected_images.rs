@@ -162,6 +162,17 @@ impl Images {
         Ok(images)
     }
 
+    pub fn asset_route(&self, asset: &NamedNode) -> Result<&str> {
+        self.assets
+            .get(asset)
+            .map(|asset| asset.route.as_str())
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "product logo is absent from the pinned publication assets"
+                )
+            })
+    }
+
     pub fn link(&self, fragment: &NamedNode, original: &str) -> Option<&str> {
         self.references
             .get(&(fragment.clone(), original.into()))

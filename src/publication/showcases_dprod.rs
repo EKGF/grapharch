@@ -671,6 +671,12 @@ async fn collect_scan(
             let path = view.text(&definition, "sourcePath").await?;
             let blob = scan.blob(Path::new(&path)).await?;
             match kind.as_str() {
+                "image" => {
+                    work.push(blob.image_collector(
+                        definition.as_str(),
+                        view.node(&definition, "asset").await?,
+                    )?);
+                },
                 "code" => {
                     let fragment = view.node(&definition, "fragment").await?;
                     ensure!(

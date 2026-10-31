@@ -233,7 +233,8 @@ impl TargetPlanner {
             )
             .await?;
         }
-        self.assets(&selection, renderer_kind, &mut stream).await?;
+        self.assets(&selection, target, renderer_kind, &mut stream)
+            .await?;
         quality::append(
             &self.dataset,
             &view,
@@ -251,9 +252,22 @@ impl TargetPlanner {
     async fn assets(
         &self,
         selection: &Selection<'_>,
+        target: &NamedNode,
         renderer: super::Renderer,
         stream: &mut ContributionStream,
     ) -> Result<()> {
+        let product_logo =
+            match selection.view.optional(target, "productLogo").await? {
+                Some(Term::NamedNode(asset)) => {
+                    ensure!(
+                        selection.view.has_type(&asset, "BinaryAsset").await?,
+                        "productLogo must identify a retained BinaryAsset"
+                    );
+                    format!("{{ BIND({asset} AS ?asset) }} UNION ")
+                },
+                None => String::new(),
+                _ => bail!("productLogo must be an asset IRI"),
+            };
         let members = Dataset::logical_pattern(
             selection.scope_snapshot,
             &format!(
@@ -290,9 +304,9 @@ impl TargetPlanner {
             .view
             .pattern(&format!("?owner {} ?asset", term("asset")), 7);
         let candidates = format!(
-            "{{ {members} }} UNION {{ {scoped_subjects} {{ {direct} }} UNION \
-             {{ {fragment} {{ {attached} }} UNION {{ {derived} {inherited} }} \
-             }} }}"
+            "{product_logo}{{ {members} }} UNION {{ {scoped_subjects} {{ \
+             {direct} }} UNION {{ {fragment} {{ {attached} }} UNION {{ \
+             {derived} {inherited} }} }} }}"
         );
         let types = selection
             .view

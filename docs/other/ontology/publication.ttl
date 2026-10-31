@@ -1372,3 +1372,13 @@ ga:documentNumber a owl:DatatypeProperty ;
     dct:description "Records the document identifier assigned by the publishing authority to this particular standards publication or submission."@en ;
     rdfs:domain ga:Target ;
     rdfs:range xsd:string .
+
+
+ga:productLogo a owl:ObjectProperty ;
+    rdfs:label "Publication product logo"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the retained image asset representing the subject or product of a publication, independently of its publishing authority."@en ;
+    dct:description "Identifies the retained image asset representing the subject or product of a publication, independently of its publishing authority."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:BinaryAsset ;
+    skos:scopeNote "The specification header displays this image at 100 CSS pixels wide. The asset requires a nonempty dct:title for alternative text. PNG, JPEG and validated SVG bytes are retained in the documentation graph; renderers do not fetch the source image."@en .
