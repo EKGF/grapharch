@@ -8,13 +8,13 @@ grapharch:
 
 # Collectors
 
-A collector capability reads one specific kind of input and retains its content, hints, and
-provenance in the documentation KG. A build creates separate instances for
-individual files or queries; the RDF File Collector is one capability, not a
-different collector kind for each RDF ontology or each file. Local files and Git
-blobs use transport adapters for that capability. Documentation generators then describe the things in that
-collected graph. Renderers publish an assembled revision; collectors do not pick
-a website layout or a chapter order.
+A collector reads source content into GraphArch's documentation graph. Choose
+one for the input you have: a Markdown file, an RDF file, a SPARQL endpoint,
+or another supported source. The table below shows which documentable things
+each collector can supply.
+
+Documentation generation turns collected content into reference entries,
+explanations, and diagrams. Renderers present that content as websites or PDFs.
 
 ## Choose a collector
 
