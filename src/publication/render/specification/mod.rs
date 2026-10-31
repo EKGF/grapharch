@@ -138,6 +138,12 @@ pub(super) async fn write(
         )
         .await?;
     }
+    plan.provenance
+        .html(
+            &mut file,
+            &outline.component("appendix", "Document provenance", 1)?,
+        )
+        .await?;
     if !diagnostics.is_empty() {
         file.write_all(b"<section id=\"publication-diagnostics\"><h2>Publication diagnostics</h2><p>This draft contains unresolved documentation errors.</p><ol>").await?;
         for error in &diagnostics {
@@ -190,6 +196,7 @@ async fn toc(
     if !plan.quality.is_empty() {
         ids.insert("quality-issues".into());
     }
+    ids.insert(super::provenance::ID.into());
     let mut links = Vec::new();
     while let Some(entry) = entries.next(plan).await? {
         if entry.first {
@@ -334,6 +341,15 @@ async fn toc(
         )
         .await?;
     }
+    file.write_all(
+        toc.entry(
+            1,
+            super::provenance::ID,
+            &outline.component("appendix", "Document provenance", 1)?,
+        )?
+        .as_bytes(),
+    )
+    .await?;
     file.write_all(format!("{}</nav>\n", toc.finish()).as_bytes())
         .await?;
     Ok(diagnostics)

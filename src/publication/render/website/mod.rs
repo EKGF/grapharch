@@ -31,9 +31,10 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}",
+            "{}\n{}\n{}",
             include_str!("style.css"),
-            include_str!("../callouts.css")
+            include_str!("../callouts.css"),
+            include_str!("../provenance.css")
         ),
     )
     .await?;
@@ -114,6 +115,30 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         file.flush().await?;
         files.push("quality-issues.html".into());
     }
+    ensure!(
+        !files.iter().any(|route| route == "provenance.html"),
+        "authored page conflicts with provenance report route"
+    );
+    let mut provenance = tokio::io::BufWriter::new(
+        tokio::fs::File::create(stage.join("provenance.html")).await?,
+    );
+    use tokio::io::AsyncWriteExt;
+    provenance.write_all(b"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Document provenance</title><link rel=\"stylesheet\" href=\"style.css\"></head><body><main>").await?;
+    plan.provenance
+        .html(&mut provenance, "Document provenance")
+        .await?;
+    provenance
+        .write_all(
+            format!(
+                "<p><a href=\"./\">Documentation \
+                 home</a></p><footer>{}</footer></main></body></html>",
+                super::credit::HTML
+            )
+            .as_bytes(),
+        )
+        .await?;
+    provenance.flush().await?;
+    files.push("provenance.html".into());
     let mut assets = plan.assets().await?;
     let mut asset_bytes = 0u64;
     while let Some(row) = assets.next().await? {
@@ -254,7 +279,7 @@ async fn write_page(
 <body><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header"><a class="brand" href="{prefix}">{project_title}<span class="brand-version"><span class="visually-hidden">Version </span>{generator_version}</span><span class="brand-context">Documentation</span></a>{repository}</header>
 <div class="{layout}"><aside class="site-navigation" data-project="{project}" data-target="{target}"><details open><summary>Browse documentation</summary><nav aria-label="Documentation">{navigation}</nav></details></aside>
-<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}<footer>{generator_credit} · <a href="{prefix}">Documentation home</a></footer></main>
+<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}<footer>{generator_credit} · <a href="{prefix}provenance.html">Provenance</a> · <a href="{prefix}">Documentation home</a></footer></main>
 {page_outline}</div><script>{navigation_script}</script></body></html>"##,
             page_title = esc(&page.title),
             project_title = esc(project_title),

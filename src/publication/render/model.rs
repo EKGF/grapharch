@@ -28,6 +28,7 @@ pub(super) struct Plan {
     pub images:           super::collected_images::Images,
     pub quality_evidence: super::quality::EvidenceIndex,
     pub quality:          Vec<crate::publication::diagnostics::Diagnostic>,
+    pub provenance:       super::provenance::Provenance,
 }
 
 /// Per-book result carried with its parent's atomic publication manifest.
@@ -144,7 +145,9 @@ impl Plan {
             images: Default::default(),
             quality,
             quality_evidence,
+            provenance: Default::default(),
         };
+        plan.provenance = super::provenance::Provenance::read(&plan).await?;
         if plan.renderer != "website" {
             plan.index_links().await?;
         }

@@ -109,6 +109,10 @@ pub(super) async fn begin(
         previous = Some(placement.clone());
     }
     file.write_all(
+        b"<a href=\"#document-provenance\">Document provenance</a>\n",
+    )
+    .await?;
+    file.write_all(
         format!(
             "</nav></aside><main><header><p \
              class=\"subtitle\">{}</p><h1>{}</h1></header>\n",

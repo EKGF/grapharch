@@ -359,6 +359,7 @@ pub(super) async fn write(
                 .await?,
         );
         typst::end(&mut file, opened[i]).await?;
+        plan.provenance.typst(&mut file, None).await?;
         file.flush().await?;
     }
     let previous = old_inventory(directory).await?;

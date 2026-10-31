@@ -1,0 +1,6 @@
+.document-provenance{margin-top:3rem;padding-top:1rem;border-top:1px solid #d8dfe5}
+.document-provenance dl{display:grid;grid-template-columns:minmax(7rem,10rem) minmax(0,1fr);gap:.55rem 1rem;margin:1.5rem 0}
+.document-provenance dt{font-weight:600}.document-provenance dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.document-provenance code{font-size:.85em;overflow-wrap:anywhere;white-space:normal}
+.provenance-source{margin-top:2rem}.provenance-commits{padding-left:1.5rem}.provenance-commits li{margin:.8rem 0}.provenance-commits time{color:#596a78;font-size:.9em;margin-left:.5rem}
+@media(max-width:600px){.document-provenance dl{grid-template-columns:1fr;gap:.25rem}.document-provenance dd{margin-bottom:.65rem}.provenance-commits time{display:block;margin-left:0}}

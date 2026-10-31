@@ -233,6 +233,13 @@ pub(super) async fn write(
             &plan.quality_evidence,
         )
         .await?;
+        let count = entries.appendix + u32::from(!plan.quality.is_empty());
+        plan.provenance
+            .html(
+                &mut file,
+                &format!("{}. Document provenance", letter(count + 1)),
+            )
+            .await?;
         html::end(&mut file, false).await?;
     } else {
         typst::end(&mut file, previous.is_some()).await?;
@@ -296,6 +303,12 @@ pub(super) async fn write_typst(
         &plan.quality_evidence,
     )
     .await?;
+    plan.provenance
+        .typst(
+            &mut file,
+            Some(entries.appendix + u32::from(!plan.quality.is_empty())),
+        )
+        .await?;
     let errors = diagnostics
         .iter()
         .filter(|diagnostic| {
@@ -389,4 +402,20 @@ pub(super) async fn quality_appendix_title(plan: &Plan) -> Result<String> {
         .checked_add(1)
         .ok_or_else(|| anyhow::anyhow!("appendix count overflow"))?;
     Ok(format!("{}. Quality issues", letter(next)))
+}
+
+/// Closing provenance follows authored appendices and the optional quality
+/// report.
+pub(super) async fn provenance_appendix_title(plan: &Plan) -> Result<String> {
+    let quality = quality_appendix_title(plan).await?;
+    let (prefix, _) =
+        quality.split_once('.').expect("appendix title has prefix");
+    let mut next = 0u32;
+    for byte in prefix.bytes() {
+        next = next * 26 + u32::from(byte - b'A' + 1);
+    }
+    if !plan.quality.is_empty() {
+        next += 1;
+    }
+    Ok(format!("{}. Document provenance", letter(next)))
 }

@@ -21,6 +21,7 @@ use {
 mod blob;
 mod code;
 pub(crate) mod hints;
+mod provenance;
 pub use {
     blob::{GitMarkdownFile, PinnedGitBlob},
     code::GitCodeFile,
@@ -42,36 +43,29 @@ pub struct RepositoryScan {
 
 #[derive(Clone)]
 struct Revision {
-    project:      String,
-    origin:       String,
-    commit:       String,
-    author:       (String, String, i64),
-    committer:    (String, String, i64),
-    working_tree: bool,
+    project:        String,
+    origin:         String,
+    commit:         String,
+    history:        Vec<provenance::Commit>,
+    tags:           Vec<String>,
+    local_location: Option<String>,
+    working_tree:   bool,
 }
 impl Revision {
     fn read(
         project: &str,
         origin: String,
+        repository: &gix::Repository,
         commit: &gix::Commit<'_>,
         working_tree: bool,
     ) -> Result<Self> {
-        let a = commit.author()?;
-        let c = commit.committer()?;
         Ok(Self {
             project: project.into(),
             origin,
             commit: commit.id.to_string(),
-            author: (
-                a.name.to_string(),
-                a.email.to_string(),
-                a.time()?.seconds,
-            ),
-            committer: (
-                c.name.to_string(),
-                c.email.to_string(),
-                c.time()?.seconds,
-            ),
+            history: provenance::history(repository, commit)?,
+            tags: provenance::tags(repository, commit)?,
+            local_location: None,
             working_tree,
         })
     }
@@ -93,14 +87,28 @@ pub async fn local_repository(
             repo.workdir() == Some(input.as_path()),
             "local repository must name the checkout root"
         );
-        Revision::read(
+        let location = url::Url::from_directory_path(&input)
+            .map_err(|_| anyhow::anyhow!("invalid checkout URL"))?
+            .to_string();
+        let origin = match repo.try_find_remote("origin") {
+            Some(remote) => {
+                let remote = remote?;
+                let url = remote
+                    .url(gix::remote::Direction::Fetch)
+                    .context("origin remote has no fetch URL")?;
+                public_repository_url(&url.to_string())?.to_string()
+            },
+            None => location.clone(),
+        };
+        let mut revision = Revision::read(
             &project,
-            url::Url::from_directory_path(&input)
-                .map_err(|_| anyhow::anyhow!("invalid checkout URL"))?
-                .into(),
+            origin,
+            &repo,
             &repo.head_commit()?,
             true,
-        )
+        )?;
+        revision.local_location = Some(location);
+        Ok(revision)
     })
     .await??;
     Ok(RepositoryScan {
@@ -225,8 +233,9 @@ fn scan_remote_selected(
     let spec = format!("+{source}:refs/grapharch/source");
     let remote = repo
         .remote_at(url)?
+        .with_fetch_tags(gix::remote::fetch::Tags::Included)
         .with_refspecs([spec.as_str()], gix::remote::Direction::Fetch)?;
-    remote
+    let outcome = remote
         .connect(gix::remote::Direction::Fetch)?
         .prepare_fetch(gix::progress::Discard, Default::default())?
         .receive(gix::progress::Discard, &AtomicBool::new(false))
@@ -310,7 +319,27 @@ fn scan_remote_selected(
     let project = project
         .or_else(|| discovered.as_ref().map(|hints| hints.project.as_str()))
         .ok_or_else(|| anyhow::anyhow!("repository project is required"))?;
-    let revision = Revision::read(project, public_origin, &commit, false)?;
+    let mut revision =
+        Revision::read(project, public_origin, &repo, &commit, false)?;
+    // Use this fetch's advertisement, never tags left behind in the cache.
+    revision.tags.clear();
+    ensure!(
+        outcome.ref_map.remote_refs.len() <= 100_000,
+        "Git reference discovery exceeds limit"
+    );
+    for reference in &outcome.ref_map.remote_refs {
+        let (name, direct, peeled) = reference.unpack();
+        if let Some(name) = name.strip_prefix(b"refs/tags/") &&
+            peeled.or(direct) == Some(commit.id.as_ref())
+        {
+            ensure!(
+                revision.tags.len() < 64,
+                "Git commit exceeds tag limit"
+            );
+            revision.tags.push(std::str::from_utf8(name)?.to_owned());
+        }
+    }
+    revision.tags.sort();
     let mut files: Vec<Arc<dyn Collector>> = Vec::with_capacity(entries.len());
     for (relative, blob) in entries {
         let base = blob_url(url, &revision.commit, &relative)?;
@@ -490,153 +519,6 @@ impl Collector for GitRdfFile {
             ))
             .await?;
         Ok(revision)
-    }
-}
-#[async_trait]
-impl Collector for Revision {
-    fn identity(&self) -> Result<SourceIdentity<'_>> {
-        Ok(SourceIdentity {
-            project:   &self.project,
-            processor: "urn:grapharch:git-provenance",
-            source:    &self.origin,
-        })
-    }
-
-    async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
-        let commit = self.entity();
-        let prov = "http://www.w3.org/ns/prov#";
-        let repository = identity("git-repository", &[&self.origin]);
-        let mut data = vec![
-            Quad::new(
-                commit.clone(),
-                NamedNode::new(crate::publication::RDF_TYPE)?,
-                NamedNode::new(format!("{prov}Entity"))?,
-                GraphName::DefaultGraph,
-            ),
-            Quad::new(
-                repository.clone(),
-                NamedNode::new("http://purl.org/dc/terms/identifier")?,
-                Literal::new_simple_literal(&self.origin),
-                GraphName::DefaultGraph,
-            ),
-            Quad::new(
-                commit.clone(),
-                NamedNode::new("http://purl.org/dc/terms/identifier")?,
-                Literal::new_simple_literal(&self.commit),
-                GraphName::DefaultGraph,
-            ),
-            Quad::new(
-                commit.clone(),
-                NamedNode::new(format!("{prov}wasDerivedFrom"))?,
-                repository,
-                GraphName::DefaultGraph,
-            ),
-        ];
-        for (role, signature) in
-            [("author", &self.author), ("committer", &self.committer)]
-        {
-            let agent = identity("git-agent", &[&signature.0, &signature.1]);
-            let attribution =
-                identity("git-attribution", &[&self.commit, role]);
-            let role_iri =
-                NamedNode::new(format!("urn:grapharch:git-role:{role}"))?;
-            for (node, kind) in [
-                (&agent, "Person"),
-                (&attribution, "Attribution"),
-                (&role_iri, "Role"),
-            ] {
-                data.push(Quad::new(
-                    node.clone(),
-                    NamedNode::new(crate::publication::RDF_TYPE)?,
-                    NamedNode::new(format!("{prov}{kind}"))?,
-                    GraphName::DefaultGraph,
-                ));
-            }
-            let assertions: [(NamedNode, String, Term); 6] = [
-                (
-                    commit.clone(),
-                    format!("{prov}qualifiedAttribution"),
-                    attribution.clone().into(),
-                ),
-                (
-                    attribution.clone(),
-                    format!("{prov}agent"),
-                    agent.clone().into(),
-                ),
-                (
-                    attribution,
-                    format!("{prov}hadRole"),
-                    role_iri.clone().into(),
-                ),
-                (
-                    role_iri,
-                    "http://www.w3.org/2000/01/rdf-schema#label".into(),
-                    Literal::new_simple_literal(role).into(),
-                ),
-                (
-                    agent.clone(),
-                    "http://xmlns.com/foaf/0.1/name".into(),
-                    Literal::new_simple_literal(&signature.0).into(),
-                ),
-                (
-                    agent,
-                    "https://schema.org/email".into(),
-                    Literal::new_simple_literal(&signature.1).into(),
-                ),
-            ];
-            for (s, p, o) in assertions {
-                data.push(Quad::new(
-                    s,
-                    NamedNode::new(p)?,
-                    o,
-                    GraphName::DefaultGraph,
-                ));
-            }
-            let time = chrono::DateTime::from_timestamp(signature.2, 0)
-                .context("invalid Git timestamp")?
-                .to_rfc3339();
-            let predicate = if role == "author" {
-                "http://purl.org/dc/terms/created".into()
-            } else {
-                format!("{prov}generatedAtTime")
-            };
-            data.push(Quad::new(
-                commit.clone(),
-                NamedNode::new(predicate)?,
-                Literal::new_typed_literal(
-                    time,
-                    NamedNode::new(
-                        "http://www.w3.org/2001/XMLSchema#dateTime",
-                    )?,
-                ),
-                GraphName::DefaultGraph,
-            ));
-        }
-        if self.working_tree {
-            let working = identity("git-working-tree", &[&self.origin]);
-            data.push(Quad::new(
-                working.clone(),
-                NamedNode::new(format!("{prov}wasDerivedFrom"))?,
-                commit,
-                GraphName::DefaultGraph,
-            ));
-            data.push(Quad::new(
-                working,
-                NamedNode::new("http://www.w3.org/2000/01/rdf-schema#label")?,
-                Literal::new_simple_literal(
-                    "Working tree observed against HEAD; uncommitted files \
-                     are collected independently",
-                ),
-                GraphName::DefaultGraph,
-            ));
-        }
-        for quad in data {
-            stream.write(quad).await?;
-        }
-        Ok(format!(
-            "git-provenance-v1:{}:{}",
-            self.commit, self.working_tree
-        ))
     }
 }
 

@@ -486,3 +486,144 @@ async fn git_blob_collectors_preserve_and_normalize_native_module_hints()
     worker.await??;
     Ok(())
 }
+
+#[tokio::test]
+async fn provenance_keeps_five_recent_commits_and_only_current_exact_tags()
+-> anyhow::Result<()> {
+    use grapharch::publication::{
+        collect::git::{local_repository, remote_repository},
+        dataset::Dataset,
+        writer::GraphWriter,
+    };
+    let origin = repository()?;
+    for i in 1..7 {
+        git(origin.path(), &[
+            "-c",
+            &format!("user.name=Committer {i}"),
+            "commit",
+            "--allow-empty",
+            "-m",
+            &format!("Change {i}"),
+        ])?;
+    }
+    git(origin.path(), &[
+        "tag",
+        "-a",
+        "preview",
+        "-m",
+        "Annotated preview",
+    ])?;
+    git(origin.path(), &["tag", "lightweight"])?;
+    git(origin.path(), &["tag", "older", "HEAD~1"])?;
+    let cache = tempfile::tempdir()?;
+    let url = url::Url::from_directory_path(origin.path())
+        .unwrap()
+        .to_string();
+    let first =
+        remote_repository(&url, "main", cache.path(), "urn:test:project")
+            .await?;
+    let read = async |collector: &std::sync::Arc<
+        dyn grapharch::publication::collect::Collector,
+    >|
+           -> anyhow::Result<(usize, Vec<String>)> {
+        let dataset = Dataset::memory()?;
+        let (writer, worker) =
+            GraphWriter::spawn(dataset.clone(), 8, 1024 * 1024)?;
+        collector.collect(&writer).await?;
+        drop(writer);
+        worker.await??;
+        let mut rows = dataset.select("SELECT DISTINCT ?commit WHERE {GRAPH ?g {?commit <http://www.w3.org/ns/prov#generatedAtTime> ?time}}".into()).await?;
+        let mut count = 0;
+        while rows.next().await?.is_some() {
+            count += 1;
+        }
+        let mut rows = dataset.select("SELECT DISTINCT ?tag WHERE {GRAPH ?g {?commit <https://schema.org/version> ?tag}} ORDER BY ?tag".into()).await?;
+        let mut tags = Vec::new();
+        while let Some(row) = rows.next().await? {
+            tags.push(row["tag"].to_string());
+        }
+        Ok((count, tags))
+    };
+    let (count, tags) = read(&first.provenance).await?;
+    assert_eq!(count, 5);
+    assert_eq!(tags, ["\"lightweight\"", "\"preview\""]);
+    git(origin.path(), &[
+        "tag",
+        "-f",
+        "lightweight",
+        "HEAD~1",
+    ])?;
+    git(origin.path(), &["tag", "-d", "preview"])?;
+    let second =
+        remote_repository(&url, "main", cache.path(), "urn:test:project")
+            .await?;
+    assert_eq!(first.commit, second.commit);
+    assert!(
+        read(&second.provenance).await?.1.is_empty(),
+        "moving/deleted tags must not persist in cached provenance"
+    );
+    assert_eq!(
+        read(&first.provenance).await?.1,
+        tags,
+        "dispatched metadata stays pinned"
+    );
+    git(origin.path(), &[
+        "remote",
+        "add",
+        "origin",
+        "https://secret:password@github.com/example/ontology.git",
+    ])?;
+    let local = local_repository(origin.path(), "urn:test:project").await?;
+    let dataset = Dataset::memory()?;
+    let (writer, worker) = GraphWriter::spawn(dataset.clone(), 8, 1024 * 1024)?;
+    local.provenance.collect(&writer).await?;
+    drop(writer);
+    worker.await??;
+    let mut rows = dataset.select("SELECT ?url WHERE {GRAPH ?g {?repo <https://schema.org/codeRepository> ?url}}".into()).await?;
+    assert_eq!(
+        rows.next().await?.unwrap()["url"].to_string(),
+        "<https://github.com/example/ontology.git>"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn shallow_local_provenance_stops_at_the_recorded_shallow_boundary()
+-> anyhow::Result<()> {
+    use grapharch::publication::{
+        collect::git::local_repository,
+        dataset::Dataset,
+        writer::GraphWriter,
+    };
+    let origin = repository()?;
+    git(origin.path(), &[
+        "commit",
+        "--allow-empty",
+        "-m",
+        "Second commit",
+    ])?;
+    let checkout = tempfile::tempdir()?;
+    let url = url::Url::from_directory_path(origin.path())
+        .unwrap()
+        .to_string();
+    git(checkout.path(), &[
+        "clone",
+        "--depth=1",
+        &url,
+        "checkout",
+    ])?;
+    let scan = local_repository(
+        &checkout.path().join("checkout"),
+        "urn:test:project",
+    )
+    .await?;
+    let dataset = Dataset::memory()?;
+    let (writer, worker) = GraphWriter::spawn(dataset.clone(), 8, 1024 * 1024)?;
+    scan.provenance.collect(&writer).await?;
+    drop(writer);
+    worker.await??;
+    let mut rows = dataset.select("SELECT DISTINCT ?commit WHERE {GRAPH ?g {?commit <http://www.w3.org/ns/prov#generatedAtTime> ?time}}".into()).await?;
+    assert!(rows.next().await?.is_some());
+    assert!(rows.next().await?.is_none());
+    Ok(())
+}

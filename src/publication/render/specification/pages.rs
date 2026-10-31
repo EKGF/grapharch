@@ -263,6 +263,22 @@ pub(in crate::publication::render) async fn catalog(
         first_section,
         "paginated specification requires at least one section"
     );
+    catalog.anchor(super::super::provenance::ID.into(), 0)?;
+    let provenance_title =
+        super::super::content::provenance_appendix_title(plan).await?;
+    let home = &mut catalog.pages[0];
+    home.contents.push_str(&home.toc.entry(
+        1,
+        super::super::provenance::ID,
+        &provenance_title,
+    )?);
+    catalog.search.push(SearchEntry {
+        title:      "Document provenance".into(),
+        href:       format!("index.html#{}", super::super::provenance::ID),
+        kind:       "appendix".into(),
+        context:    plan.title.clone(),
+        identifier: String::new(),
+    });
     for p in &mut catalog.pages {
         p.contents.push_str(&p.toc.finish());
     }
@@ -552,6 +568,16 @@ async fn end(
             b"<p><a href=\"index.html#quality-issues\">Quality issues</a></p>",
         )
         .await?;
+    }
+    if home {
+        plan.provenance
+            .html(
+                file,
+                &super::super::content::provenance_appendix_title(plan).await?,
+            )
+            .await?;
+    } else {
+        file.write_all(b"<p><a href=\"index.html#document-provenance\">Document provenance</a></p>").await?;
     }
     file.write_all(
         format!(

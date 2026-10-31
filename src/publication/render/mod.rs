@@ -15,6 +15,7 @@ mod markup;
 mod model;
 mod native_typst;
 mod preamble;
+mod provenance;
 mod quality;
 mod record;
 mod specification;
@@ -288,8 +289,9 @@ impl Publisher {
                 tokio::fs::write(
                     stage.path.join("style.css"),
                     format!(
-                        "{style}\n{}\n{}",
+                        "{style}\n{}\n{}\n{}",
                         include_str!("callouts.css"),
+                        include_str!("provenance.css"),
                         if plan.renderer == "bookshelf" {
                             include_str!("bookshelf.css")
                         } else {
