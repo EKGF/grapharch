@@ -1,0 +1,24 @@
+EKGF identity
+
+The EKGF graph mark is reproduced from EKGF/mkdocs-material-ekgf,
+commit 878ff66685163772aadc41298316b6c30feeefcf,
+mkdocs_material_ekgf/partials/ekgf-logo.html.
+Copyright (c) 2026 EDMCouncil Inc., d/b/a Enterprise Data Management
+Association (EDMA). Licensed under CC BY-SA 4.0:
+https://creativecommons.org/licenses/by-sa/4.0/
+Source: https://github.com/EKGF/mkdocs-material-ekgf
+The graph mark itself is unchanged. Its surrounding HTML component is separate.
+
+The OMG Standards Development Organization logo is reproduced unmodified from
+EKGF/ekg-method, docs/assets/omg-sdo-logo.svg, under that repository's CC BY-SA 4.0 license. OMG names and logos identify the organization.
+Source: https://github.com/EKGF/ekg-method
+
+Roboto
+
+Roboto is reproduced unmodified from google/fonts, ofl/roboto/
+Roboto[wdth,wght].ttf. Copyright 2011 The Roboto Project Authors.
+Licensed under the SIL Open Font License 1.1; see OFL.txt beside this notice.
+Source: https://github.com/google/fonts/tree/main/ofl/roboto
+
+GraphArch's independently authored CSS and rendering code retain the project's
+MIT license. These identity and font assets have the separate licenses above.

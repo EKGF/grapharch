@@ -154,3 +154,19 @@ not performance measurements.
 The website renderer is static HTML and CSS, with accessible navigation and a
 responsive reading layout. Search, incremental watch builds, MDX execution, and
 automatic PDF books for this website remain separate work.
+
+
+## EKGF website presentation
+
+GraphArch's own documentation selects the EKGF website theme in its source
+publication profile:
+
+```turtle
+doc:profile a ga:Profile ; ga:style "ekgf" .
+```
+
+The theme uses the EKGF graph mark, OMG identity, indigo and orange palette,
+and locally bundled Roboto font. Its identity credits and font license ship
+with the generated website. It does not fetch fonts or logos while readers
+browse the site. Other websites retain their default presentation unless they
+select this theme; specification and PDF authority branding remain separate.

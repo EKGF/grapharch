@@ -5,6 +5,7 @@ mod catalog;
 mod gallery;
 mod markdown;
 mod repository;
+mod theme;
 use {
     super::{
         content::Entries,
@@ -19,10 +20,13 @@ use {
 struct Header {
     title:      String,
     repository: String,
+    theme:      theme::Theme,
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let catalog = Catalog::read(plan).await?;
+    let theme = theme::Theme::read(plan).await?;
+    let body_attribute = theme.body_attribute();
     let mut files = vec![
         "style.css".to_owned(),
         ".nojekyll".into(),
@@ -31,13 +35,15 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}",
+            "{}\n{}\n{}\n{}",
             include_str!("style.css"),
             include_str!("../callouts.css"),
-            include_str!("../provenance.css")
+            include_str!("../provenance.css"),
+            theme.css()
         ),
     )
     .await?;
+    theme.assets(stage, &mut files).await?;
     tokio::fs::write(stage.join(".nojekyll"), "").await?;
     tokio::fs::write(
         stage.join("404.html"),
@@ -49,8 +55,9 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     )
     .await?;
     let header = Header {
-        title:      title(&plan.source, &plan.project).await?,
+        title: title(&plan.source, &plan.project).await?,
         repository: repository::link(plan).await?,
+        theme,
     };
     let mut entries = Entries::new(plan).await?;
     // bounded: one page's selected fragments, never the complete site's bodies.
@@ -100,7 +107,17 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             tokio::fs::File::create(stage.join("quality-issues.html")).await?,
         );
         use tokio::io::AsyncWriteExt;
-        file.write_all(b"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Quality issues</title><link rel=\"stylesheet\" href=\"style.css\"></head><body><main>").await?;
+        file.write_all(
+            format!(
+                "<!doctype html><html lang=\"en\"><head><meta \
+                 charset=\"utf-8\"><meta name=\"viewport\" \
+                 content=\"width=device-width,initial-scale=1\"\
+                 ><title>Quality issues</title><link rel=\"stylesheet\" \
+                 href=\"style.css\"></head><body{body_attribute}><main>"
+            )
+            .as_bytes(),
+        )
+        .await?;
         super::quality::html(&mut file, &plan.quality, &plan.quality_evidence)
             .await?;
         file.write_all(
@@ -123,7 +140,18 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         tokio::fs::File::create(stage.join("provenance.html")).await?,
     );
     use tokio::io::AsyncWriteExt;
-    provenance.write_all(b"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Document provenance</title><link rel=\"stylesheet\" href=\"style.css\"></head><body><main>").await?;
+    provenance
+        .write_all(
+            format!(
+                "<!doctype html><html lang=\"en\"><head><meta \
+                 charset=\"utf-8\"><meta name=\"viewport\" \
+                 content=\"width=device-width,initial-scale=1\"\
+                 ><title>Document provenance</title><link rel=\"stylesheet\" \
+                 href=\"style.css\"></head><body{body_attribute}><main>"
+            )
+            .as_bytes(),
+        )
+        .await?;
     plan.provenance
         .html(&mut provenance, "Document provenance")
         .await?;
@@ -272,14 +300,18 @@ async fn write_page(
             )
         };
         let generator_credit = super::credit::HTML;
+        let organization_identity = header.theme.identity();
+        let header_links = header.theme.links(repository, &prefix);
+        let identity_attribution = header.theme.attribution(&prefix);
+        let body_attribute = header.theme.body_attribute();
         let generator_version = esc(env!("CARGO_PKG_VERSION"));
         let html = format!(
             r##"<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}"><link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
-<body><a class="skip-link" href="#main-content">Skip to content</a>
-<header class="site-header"><a class="brand" href="{prefix}">{project_title}<span class="brand-version"><span class="visually-hidden">Version </span>{generator_version}</span><span class="brand-context">Documentation</span></a>{repository}</header>
+<body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">{organization_identity}<a class="brand" href="{prefix}">{project_title}<span class="brand-version"><span class="visually-hidden">Version </span>{generator_version}</span><span class="brand-context">Documentation</span></a>{header_links}</header>
 <div class="{layout}"><aside class="site-navigation" data-project="{project}" data-target="{target}"><details open><summary>Browse documentation</summary><nav aria-label="Documentation">{navigation}</nav></details></aside>
-<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}<footer>{generator_credit} · <a href="{prefix}provenance.html">Provenance</a> · <a href="{prefix}">Documentation home</a></footer></main>
+<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}<footer>{generator_credit} · <a href="{prefix}provenance.html">Provenance</a> · <a href="{prefix}">Documentation home</a>{identity_attribution}</footer></main>
 {page_outline}</div><script>{navigation_script}</script></body></html>"##,
             page_title = esc(&page.title),
             project_title = esc(project_title),

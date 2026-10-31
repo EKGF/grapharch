@@ -1,0 +1,26 @@
+/* EKGF companion identity. Tokens follow the shared EKGF documentation theme;
+   the CSS is independent of MkDocs and applies only to opted-in websites. */
+@font-face{font-family:Roboto;src:url("brand/roboto.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+.theme-ekgf{--ink:#333338;--muted:#62626d;--line:#dedee4;--accent:#4051b5;--soft:#eef0fb;--paper:#fafafa;--chrome:#f4f4f5;--ekgf-orange:#ff6f00;font-family:Roboto,Arial,Helvetica,sans-serif;background:var(--paper);color:var(--ink);line-height:1.65}
+.theme-ekgf a:hover{color:#303f9f}
+.theme-ekgf :is(a,summary,button,input):focus-visible{outline-color:#b45309}
+.theme-ekgf .site-header{background:#fff;justify-content:flex-start;gap:1.5rem;box-shadow:0 1px 0 #ececf0}
+.ekgf-identity{display:inline-flex;align-items:center;gap:.5rem;color:#182130;text-decoration:none;font-size:1.25rem;font-weight:700;line-height:1;flex:none}
+.ekgf-identity svg{display:block;width:2.25rem;height:2.25rem;flex:none}
+.theme-ekgf .brand{font-size:1.2rem;font-weight:600;letter-spacing:-.025em;gap:.7rem;max-width:none}
+.theme-ekgf .brand-context{border-color:var(--line);font-size:.7rem;color:var(--muted)}
+.theme-ekgf .site-links{margin-left:auto;display:flex;align-items:center;gap:1rem;flex:none}.theme-ekgf .source-link{flex:none}.omg-identity{display:block;border-left:1px solid var(--line);padding-left:1rem;line-height:1}.omg-identity img{display:block;width:180px;height:auto}
+.theme-ekgf h1{font-size:2.4rem;font-weight:400;letter-spacing:-.025em;line-height:1.2}
+.theme-ekgf h2{font-weight:500;letter-spacing:-.015em}
+.theme-ekgf .site-navigation a[aria-current]{box-shadow:inset 3px 0 var(--ekgf-orange);background:var(--soft);color:var(--accent)}
+.theme-ekgf .site-navigation summary::before{color:#72727b}
+.theme-ekgf pre{background:var(--chrome);border-color:var(--line);border-radius:5px}
+.theme-ekgf .page-neighbors a,.theme-ekgf .showcase-card{background:#fff;border-radius:6px}
+.theme-ekgf .page-neighbors a:hover{border-color:#a8afd9;background:#f6f7fd}
+.theme-ekgf footer{border-color:var(--line);padding-top:1.25rem;color:var(--muted)}
+.theme-ekgf .showcase-open:hover{background:#303f9f;color:#fff}
+@media(max-width:760px){.theme-ekgf .site-header{gap:.85rem}.theme-ekgf h1{font-size:2rem}.theme-ekgf .brand{font-size:1.1rem}}
+@media(max-width:480px){.ekgf-identity span{display:none}.ekgf-identity svg{width:2rem;height:2rem}.theme-ekgf .site-header{gap:.75rem}.theme-ekgf .brand{gap:.4rem}}
+@media print{.ekgf-identity{display:none}.theme-ekgf{background:#fff}}
+
+@media(max-width:900px){.omg-identity{display:none}}
