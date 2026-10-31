@@ -220,3 +220,20 @@ async fn tag_names_are_specific_to_the_repository_even_for_the_same_commit()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn provenance_accepts_sanitized_ssh_and_git_transport_origins()
+-> Result<()> {
+    for origin in [
+        "ssh://git.example.org/ontology.git",
+        "git://git.example.org/ontology.git",
+    ] {
+        let evidence = EVIDENCE.replace(
+            "https://github.com/example/ontology>",
+            &format!("{origin}>"),
+        );
+        let (_, html) = render("specification", &evidence).await?;
+        assert!(html.contains(origin));
+    }
+    Ok(())
+}

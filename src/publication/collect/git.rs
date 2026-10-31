@@ -100,7 +100,19 @@ pub async fn local_repository(
                 let url = remote
                     .url(gix::remote::Direction::Fetch)
                     .context("origin remote has no fetch URL")?;
-                public_repository_url(&url.to_string())?.to_string()
+                let configured = url.to_string();
+                let public = if url.scheme == gix::url::Scheme::File &&
+                    !configured.starts_with("file:")
+                {
+                    let path = input.join(std::str::from_utf8(&url.path)?);
+                    public_repository_url(
+                        path.to_str()
+                            .context("local Git origin is not UTF-8")?,
+                    )?
+                } else {
+                    public_repository_url(&configured)?
+                };
+                public.to_string()
             },
             None => location.clone(),
         };

@@ -29,7 +29,7 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
         ensure!(
             matches!(
                 url::Url::parse(url.as_str())?.scheme(),
-                "https" | "http" | "file"
+                "https" | "http" | "file" | "ssh" | "git"
             ),
             "unsupported provenance repository URL"
         );

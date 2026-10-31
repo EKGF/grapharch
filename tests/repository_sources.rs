@@ -627,3 +627,42 @@ async fn shallow_local_provenance_stops_at_the_recorded_shallow_boundary()
     assert!(rows.next().await?.is_none());
     Ok(())
 }
+
+#[tokio::test]
+async fn local_origin_paths_are_resolved_from_the_checkout_not_the_process_directory()
+-> anyhow::Result<()> {
+    let checkout = repository()?;
+    let upstream = repository()?;
+    let relative = format!(
+        "../{}",
+        upstream.path().file_name().unwrap().to_str().unwrap()
+    );
+    git(checkout.path(), &[
+        "remote", "add", "origin", &relative,
+    ])?;
+    let scan = grapharch::publication::collect::git::local_repository(
+        checkout.path(),
+        "urn:test:project",
+    )
+    .await?;
+    let expected = url::Url::from_file_path(
+        tokio::fs::canonicalize(upstream.path()).await?,
+    )
+    .unwrap()
+    .to_string();
+    let dataset = grapharch::publication::dataset::Dataset::memory()?;
+    let (writer, worker) = grapharch::publication::writer::GraphWriter::spawn(
+        dataset.clone(),
+        8,
+        1024 * 1024,
+    )?;
+    scan.provenance.collect(&writer).await?;
+    drop(writer);
+    worker.await??;
+    let mut rows = dataset.select("SELECT ?url WHERE {GRAPH ?g {?repo <https://schema.org/codeRepository> ?url}}".into()).await?;
+    assert_eq!(
+        rows.next().await?.unwrap()["url"].to_string(),
+        format!("<{expected}>")
+    );
+    Ok(())
+}
