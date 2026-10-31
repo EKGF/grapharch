@@ -21,6 +21,79 @@ pub(super) fn executable(explicit: Option<&Path>) -> Result<PathBuf> {
     );
     Ok(path)
 }
+fn image_path(root: &Path) -> PathBuf {
+    root.join(format!(
+        ".grapharch-book-worker{}",
+        std::env::consts::EXE_SUFFIX
+    ))
+}
+
+/// The coordinator never opens its pinned executable for writing. Otherwise a
+/// concurrent fork can inherit that descriptor and make exec fail with ETXTBSY,
+/// even after the coordinator closes its own copy (Rust issue 114554).
+pub(super) async fn pin(
+    executable: &Path,
+    root: &Path,
+    expected_engine: &str,
+) -> Result<PathBuf> {
+    let mut child = Command::new(executable)
+        .args(["publication", "prepare-book-worker", "--root"])
+        .arg(root)
+        .arg("--expected-engine")
+        .arg(expected_engine)
+        .arg("--watch-parent")
+        .env("TOKIO_WORKER_THREADS", "1")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()?;
+    let stderr = child.stderr.take().ok_or_else(|| {
+        anyhow::anyhow!("missing worker preparation error pipe")
+    })?;
+    // bounded: worker diagnostics are capped independently of executable size.
+    let mut message = Vec::new();
+    let mut stderr = stderr.take(64 * 1024 + 1);
+    tokio::time::timeout(
+        std::time::Duration::from_secs(1800),
+        stderr.read_to_end(&mut message),
+    )
+    .await??;
+    ensure!(
+        message.len() <= 64 * 1024,
+        "worker preparation exceeded diagnostic byte budget"
+    );
+    let status = child.wait().await?;
+    ensure!(
+        status.success(),
+        "book worker preparation exited with {status}: {}",
+        String::from_utf8_lossy(&message)
+    );
+    Ok(image_path(root))
+}
+
+pub(super) async fn prepare(root: &Path) -> Result<()> {
+    let root = tokio::fs::canonicalize(root).await?;
+    ensure!(
+        tokio::fs::metadata(&root).await?.is_dir(),
+        "worker preparation root must be a directory"
+    );
+    let executable = std::env::current_exe()?;
+    let meta = tokio::fs::metadata(&executable).await?;
+    ensure!(
+        meta.is_file() && meta.len() <= 512 * 1024 * 1024,
+        "worker executable exceeds byte budget"
+    );
+    let worker = image_path(&root);
+    match tokio::fs::symlink_metadata(&worker).await {
+        Ok(_) => anyhow::bail!("worker image already exists"),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+        Err(error) => return Err(error.into()),
+    }
+    tokio::fs::copy(executable, worker).await?;
+    Ok(())
+}
+
 pub(super) async fn run(
     executable: &Path,
     root: &Path,

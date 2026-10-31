@@ -24,6 +24,9 @@ mod typst;
 mod typst_markdown;
 mod typst_style;
 mod website;
+pub(crate) async fn prepare_book_worker(root: &Path) -> Result<()> {
+    book_worker::prepare(root).await
+}
 pub(crate) async fn compile_book(root: &Path, main: &str) -> Result<()> {
     book_worker::compile(root, main).await
 }

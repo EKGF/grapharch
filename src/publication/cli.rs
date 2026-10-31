@@ -84,6 +84,16 @@ impl BuildStoreOptions {
 /// dataset.
 #[derive(Subcommand)]
 pub enum PublicationCommand {
+    /// Pin a worker executable in an isolated process without opening a KG.
+    #[command(hide = true)]
+    PrepareBookWorker {
+        #[arg(long)]
+        root:            PathBuf,
+        #[arg(long)]
+        expected_engine: Option<String>,
+        #[arg(long)]
+        watch_parent:    bool,
+    },
     /// Compile one immutable book job without opening a KG.
     #[command(hide = true)]
     CompileBook {
@@ -278,6 +288,27 @@ pub async fn run(
     mode: FailureMode,
 ) -> Result<()> {
     match command {
+        PublicationCommand::PrepareBookWorker {
+            root,
+            expected_engine,
+            watch_parent,
+        } => {
+            if let Some(expected) = expected_engine {
+                ensure!(
+                    super::render::book_compiler_fingerprint() == *expected,
+                    "book worker compiler fingerprint mismatch"
+                );
+            }
+            if *watch_parent {
+                let mut parent_input = tokio::io::stdin();
+                tokio::select! {
+                    result=super::render::prepare_book_worker(root)=>{result?;std::process::exit(0);},
+                    _=parent_input.read_u8()=>{anyhow::bail!("book coordinator disconnected");}
+                }
+            } else {
+                super::render::prepare_book_worker(root).await?;
+            }
+        },
         PublicationCommand::CompileBook {
             root,
             main,

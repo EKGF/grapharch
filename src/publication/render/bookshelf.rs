@@ -463,17 +463,7 @@ pub(super) async fn write(
     // Pin one executable image for this generation. Package upgrades or a
     // development rebuild must not change compilers halfway through a book set.
     let pinned_worker = if !pending.is_empty() {
-        let worker = stage.join(format!(
-            ".grapharch-book-worker{}",
-            std::env::consts::EXE_SUFFIX
-        ));
-        let meta = tokio::fs::metadata(&executable).await?;
-        ensure!(
-            meta.is_file() && meta.len() <= 512 * 1024 * 1024,
-            "worker executable exceeds byte budget"
-        );
-        tokio::fs::copy(&executable, &worker).await?;
-        Some(worker)
+        Some(book_worker::pin(&executable, stage, &compiler).await?)
     } else {
         None
     };
