@@ -609,7 +609,12 @@ async fn build(
             "namespace metadata cannot be empty"
         );
         ensure!(
-            !prefixes.values().any(|existing| existing == &prefix),
+            !prefixes
+                .iter()
+                .any(|(existing_namespace, existing_prefix)| {
+                    existing_prefix == &prefix &&
+                        existing_namespace != &namespace
+                }),
             "family namespace prefix {prefix} is ambiguous"
         );
         prefixes.insert(namespace.clone(), prefix.clone());

@@ -22,8 +22,8 @@ async fn http_family_showcase_renders_after_sources_disappear() -> Result<()> {
         let body = r##"@prefix owl:<http://www.w3.org/2002/07/owl#> .
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct:<http://purl.org/dc/terms/> .
-<https://example.org/terms/> a owl:Ontology; rdfs:label "Example ontology"@en; dct:description "Remote source example."@en .
-<https://example.org/terms/Thing> a owl:Class; rdfs:label "Example thing"@en; dct:description "A documented thing."@en; rdfs:isDefinedBy <https://example.org/terms/> ."##;
+<https://www.omg.org/spec/Commons/Classifiers/> a owl:Ontology; rdfs:label "Example ontology"@en; dct:description "Remote source example."@en .
+<https://www.omg.org/spec/Commons/Classifiers/Thing> a owl:Class; rdfs:label "Example thing"@en; dct:description "A documented thing."@en; rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Classifiers/> ."##;
         stream
             .write_all(
                 format!(
@@ -51,7 +51,7 @@ async fn http_family_showcase_renders_after_sources_disappear() -> Result<()> {
 <urn:http:family> a gov:Family; rdfs:label "HTTP family" .
 <urn:http:target> a ga:Target; dct:title "HTTP family"; dct:description "A remotely collected ontology reference."; rdfs:comment "Unofficial test preview."; ga:scope <urn:http:scope>; ga:profile <urn:http:profile>; ga:renderer "specification"; ga:destination "specification"; ga:publisher <urn:http:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
 <urn:http:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
-<https://example.org/terms/> gov:inFamily <urn:http:family>; sh:declare [sh:prefix "ex"; sh:namespace "https://example.org/terms/"] .
+<https://www.omg.org/spec/Commons/Classifiers/> gov:inFamily <urn:http:family>; sh:declare [sh:prefix "cmns-cls"; sh:namespace "https://www.omg.org/spec/Commons/Classifiers/"] .
 "##).await?;
     tokio::fs::write(
         source.path().join("showcase.yaml"),
