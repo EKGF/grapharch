@@ -19,8 +19,12 @@ use {
 };
 
 mod blob;
+mod code;
 pub(crate) mod hints;
-pub use blob::{GitMarkdownFile, PinnedGitBlob};
+pub use {
+    blob::{GitMarkdownFile, PinnedGitBlob},
+    code::GitCodeFile,
+};
 
 pub struct DiscoveredRepository {
     pub scan:    RepositoryScan,

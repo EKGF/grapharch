@@ -201,6 +201,17 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         definitions.push_str(" .\n");
     }
     std::fs::write(
+        repo.path().join("example.jsonld"),
+        "{\"title\":\"PINNED EXAMPLE SOURCE\"}",
+    )?;
+    definitions.push_str(r#"
+@prefix doc: <urn:dprod-showcase:> .
+doc:project ga:collector doc:source-code .
+doc:source-code a ga:Collector ; ga:kind "code" ; ga:sourcePath "example.jsonld" ; ga:source "example.jsonld" ; ga:format "application/ld+json" ; ga:subject doc:example ; ga:fragment doc:example-code .
+doc:component:example ga:fragment doc:example-code .
+doc:example ga:order 0 . doc:example-code ga:order 1 .
+"#);
+    std::fs::write(
         repo.path().join("publication/grapharch.ttl"),
         definitions,
     )?;
@@ -310,6 +321,17 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
             "SVG XML bytes must survive KG export/restore without rewriting"
         );
     }
+    let spec = tokio::fs::read_to_string(
+        output.path().join("specification/index.html"),
+    )
+    .await?;
+    assert!(
+        spec.contains("PINNED EXAMPLE SOURCE"),
+        "machine-readable example source must survive source deletion"
+    );
+    let typst =
+        tokio::fs::read_to_string(output.path().join("pdf/main.typ")).await?;
+    assert!(typst.contains("PINNED EXAMPLE SOURCE"));
     let site =
         std::fs::read_to_string(output.path().join("website/index.html"))?;
     assert!(site.contains("href=\"assets/image-"));

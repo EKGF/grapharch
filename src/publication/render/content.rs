@@ -296,6 +296,7 @@ pub(super) fn letter(mut number: u32) -> String {
 pub(super) fn code_language(format: &str) -> Result<&'static str> {
     match format {
         "text/plain" => Ok("text"),
+        "application/ld+json" | "application/json" => Ok("json"),
         "application/sparql-query" => Ok("sql"),
         "application/n-triples" | "text/turtle" => Ok("text"),
         _ => anyhow::bail!("unsupported fragment format {format}"),

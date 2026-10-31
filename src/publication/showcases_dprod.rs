@@ -554,6 +554,16 @@ pub(super) async fn collect_remote(
             let path = view.text(&definition, "sourcePath").await?;
             let blob = scan.blob(Path::new(&path)).await?;
             match kind.as_str() {
+                "code" => {
+                    work.push(Arc::new(super::collect::git::GitCodeFile::new(
+                        PROJECT,
+                        definition.as_str(),
+                        blob,
+                        view.node(&definition, "fragment").await?,
+                        view.node(&definition, "subject").await?,
+                        &view.text(&definition, "format").await?,
+                    )?));
+                },
                 "rdf" => {
                     subjects
                         .insert(path, view.node(&definition, "subject").await?);
