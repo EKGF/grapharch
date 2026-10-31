@@ -281,21 +281,7 @@ pub(super) async fn write_typst(
         .await?;
     }
     typst::end(&mut file, open).await?;
-    if !plan.quality.is_empty() {
-        file.write_all(b"#pagebreak()\n#heading(level: 1, numbering: none)[Quality issues]\n").await?;
-        for issue in &plan.quality {
-            file.write_all(
-                format!(
-                    "#block(above: \
-                     8pt)[#strong[#text({})]#linebreak()#text({})]\n",
-                    super::markup::quote(&issue.reference),
-                    super::markup::quote(&issue.message)
-                )
-                .as_bytes(),
-            )
-            .await?;
-        }
-    }
+    super::quality::typst(&mut file, &plan.quality, entries.appendix).await?;
     let errors = diagnostics
         .iter()
         .filter(|diagnostic| {

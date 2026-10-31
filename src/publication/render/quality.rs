@@ -6,6 +6,7 @@ use {
     },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
+    std::collections::BTreeMap,
     tokio::io::{AsyncWrite, AsyncWriteExt},
 };
 
@@ -75,26 +76,147 @@ pub(super) fn inline(
     result
 }
 
+struct Group<'a> {
+    title:  String,
+    issues: Vec<&'a Diagnostic>,
+}
+
+fn groups(issues: &[Diagnostic]) -> Vec<Group<'_>> {
+    // bounded: at most 1024 findings, grouped as references without cloning
+    // bodies.
+    let mut groups = BTreeMap::<&str, Group<'_>>::new();
+    for issue in issues {
+        let title = match issue.code.as_str() {
+            "competing-source-annotations" => "Competing source annotations",
+            "missing-source-definition" => "Missing English source definition",
+            "missing-source-label" => "Missing English source label",
+            _ => &issue.code,
+        };
+        groups
+            .entry(&issue.code)
+            .or_insert_with(|| {
+                Group { title: title.into(), issues: Vec::new() }
+            })
+            .issues
+            .push(issue);
+    }
+    groups.into_values().collect()
+}
+
+impl Group<'_> {
+    fn detail(&self, issue: &Diagnostic) -> bool { issue.message != self.title }
+}
+
 pub(super) async fn html(
     file: &mut (impl AsyncWrite + Unpin),
     issues: &[Diagnostic],
 ) -> Result<()> {
+    html_titled(file, issues, "Quality issues").await
+}
+
+pub(super) async fn html_titled(
+    file: &mut (impl AsyncWrite + Unpin),
+    issues: &[Diagnostic],
+    title: &str,
+) -> Result<()> {
     if issues.is_empty() {
         return Ok(())
     }
-    file.write_all(b"<section id=\"quality-issues\"><h2>Quality issues</h2><p>Review findings preserve competing source statements; they are not automatically RDF errors.</p><ol>").await?;
-    for issue in issues {
+    file.write_all(
+        format!(
+            "<section id=\"quality-issues\"><h2>{}</h2><p>Review findings \
+             preserve competing source statements; they are not automatically \
+             RDF errors.</p>",
+            super::markup::html_escape(title)
+        )
+        .as_bytes(),
+    )
+    .await?;
+    for group in groups(issues) {
         file.write_all(
             format!(
-                "<li><strong>{}</strong><pre>{}</pre></li>",
-                super::markup::html_escape(&issue.reference),
-                super::markup::html_escape(&issue.message)
+                "<section class=\"quality-issue-group\"><h3>{}</h3><ul>",
+                super::markup::html_escape(&group.title)
             )
             .as_bytes(),
         )
         .await?;
+        for issue in &group.issues {
+            file.write_all(
+                format!(
+                    "<li><strong>{}</strong>",
+                    super::markup::html_escape(&issue.reference)
+                )
+                .as_bytes(),
+            )
+            .await?;
+            if group.detail(issue) {
+                file.write_all(
+                    format!(
+                        "<pre>{}</pre>",
+                        super::markup::html_escape(&issue.message)
+                    )
+                    .as_bytes(),
+                )
+                .await?;
+            }
+            file.write_all(b"</li>").await?;
+        }
+        file.write_all(b"</ul></section>").await?;
     }
-    file.write_all(b"</ol></section>\n").await?;
+    file.write_all(b"</section>\n").await?;
+    Ok(())
+}
+
+pub(super) async fn typst(
+    file: &mut (impl AsyncWrite + Unpin),
+    issues: &[Diagnostic],
+    preceding_appendices: u32,
+) -> Result<()> {
+    if issues.is_empty() {
+        return Ok(())
+    }
+    file.write_all(
+        format!(
+            "#pagebreak()\n#[\n#set heading(numbering: \
+             \"A.1\")\n#counter(heading).update({preceding_appendices})\n#\
+             heading(level: 1)[Quality issues]\n"
+        )
+        .as_bytes(),
+    )
+    .await?;
+    for group in groups(issues) {
+        file.write_all(
+            format!(
+                "#heading(level: 2, numbering: none)[#text({})]\n",
+                super::markup::quote(&group.title)
+            )
+            .as_bytes(),
+        )
+        .await?;
+        for issue in &group.issues {
+            file.write_all(
+                format!(
+                    "#list([#text({})",
+                    super::markup::quote(&issue.reference)
+                )
+                .as_bytes(),
+            )
+            .await?;
+            if group.detail(issue) {
+                file.write_all(
+                    format!(
+                        "#linebreak()#text({})",
+                        super::markup::quote(&issue.message)
+                    )
+                    .as_bytes(),
+                )
+                .await?;
+            }
+            file.write_all(b"])\n").await?;
+        }
+    }
+    file.write_all(b"]\n").await?;
     Ok(())
 }
 

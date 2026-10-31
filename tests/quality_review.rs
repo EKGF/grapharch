@@ -152,6 +152,36 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     let html =
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
+    let document = scraper::Html::parse_document(&html);
+    let report = document
+        .select(&scraper::Selector::parse("#quality-issues").unwrap())
+        .next()
+        .unwrap();
+    assert_eq!(
+        report
+            .select(&scraper::Selector::parse("h2").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>(),
+        "B. Quality issues"
+    );
+    let groups = report
+        .select(&scraper::Selector::parse(".quality-issue-group").unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        groups.len(),
+        3,
+        "findings must be grouped by warning type"
+    );
+    assert!(groups.iter().any(|group| {
+        group
+            .select(&scraper::Selector::parse("h3").unwrap())
+            .any(|heading| {
+                heading.text().collect::<String>() ==
+                    "Missing English source definition"
+            })
+    }));
     assert!(html.contains("Quality issues"));
     assert!(
         html.contains("href=\"#quality-issues\""),
@@ -165,7 +195,16 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     let typst =
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
-    assert!(typst.contains("Quality issues"));
+    assert!(
+        typst.contains(
+            "#counter(heading).update(1)\n#heading(level: 1)[Quality issues]"
+        ),
+        "quality report must follow appendix A as appendix B"
+    );
+    assert!(typst.contains(
+        "#heading(level: 2, numbering: none)[#text(\"Missing English source \
+         definition\")]"
+    ));
     assert!(typst.contains("Alternate label"));
     assert!(typst.contains("#ga-callout(\"Warning\""));
     Ok(())

@@ -131,7 +131,10 @@ pub(super) async fn write(
     if !navigation {
         diagnostics = toc(&mut file, plan, mode).await?;
     }
-    super::quality::html(&mut file, &plan.quality).await?;
+    if !plan.quality.is_empty() {
+        let title = outline.component("appendix", "Quality issues", 1)?;
+        super::quality::html_titled(&mut file, &plan.quality, &title).await?;
+    }
     if !diagnostics.is_empty() {
         file.write_all(b"<section id=\"publication-diagnostics\"><h2>Publication diagnostics</h2><p>This draft contains unresolved documentation errors.</p><ol>").await?;
         for error in &diagnostics {
@@ -315,7 +318,12 @@ async fn toc(
     }
     if !plan.quality.is_empty() {
         file.write_all(
-            toc.entry(1, "quality-issues", "Quality issues")?.as_bytes(),
+            toc.entry(
+                1,
+                "quality-issues",
+                &outline.component("appendix", "Quality issues", 1)?,
+            )?
+            .as_bytes(),
         )
         .await?;
     }
