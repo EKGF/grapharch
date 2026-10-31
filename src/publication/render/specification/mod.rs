@@ -138,12 +138,6 @@ pub(super) async fn write(
         )
         .await?;
     }
-    plan.provenance
-        .html(
-            &mut file,
-            &outline.component("appendix", "Document provenance", 1)?,
-        )
-        .await?;
     if !diagnostics.is_empty() {
         file.write_all(b"<section id=\"publication-diagnostics\"><h2>Publication diagnostics</h2><p>This draft contains unresolved documentation errors.</p><ol>").await?;
         for error in &diagnostics {
@@ -160,6 +154,12 @@ pub(super) async fn write(
         }
         file.write_all(b"</ol></section>").await?;
     }
+    plan.provenance
+        .html(
+            &mut file,
+            &outline.component("appendix", "Document provenance", 1)?,
+        )
+        .await?;
     file.write_all(include_str!("search.html").as_bytes())
         .await?;
     file.write_all(

@@ -303,12 +303,6 @@ pub(super) async fn write_typst(
         &plan.quality_evidence,
     )
     .await?;
-    plan.provenance
-        .typst(
-            &mut file,
-            Some(entries.appendix + u32::from(!plan.quality.is_empty())),
-        )
-        .await?;
     let errors = diagnostics
         .iter()
         .filter(|diagnostic| {
@@ -336,6 +330,12 @@ pub(super) async fn write_typst(
             .await?;
         }
     }
+    plan.provenance
+        .typst(
+            &mut file,
+            Some(entries.appendix + u32::from(!plan.quality.is_empty())),
+        )
+        .await?;
     file.flush().await?;
     Ok(())
 }
@@ -362,6 +362,25 @@ pub(super) fn code_language(format: &str) -> Result<&'static str> {
 
 /// Number the report after the selected appendix placements, across pages.
 pub(super) async fn quality_appendix_title(plan: &Plan) -> Result<String> {
+    generated_appendix_title(plan, "Quality issues", 0).await
+}
+
+/// Closing provenance follows authored appendices and the optional quality
+/// report.
+pub(super) async fn provenance_appendix_title(plan: &Plan) -> Result<String> {
+    generated_appendix_title(
+        plan,
+        "Document provenance",
+        u32::from(!plan.quality.is_empty()),
+    )
+    .await
+}
+
+async fn generated_appendix_title(
+    plan: &Plan,
+    title: &str,
+    preceding_generated: u32,
+) -> Result<String> {
     let entries = crate::publication::dataset::Dataset::logical_pattern(
         &plan.handle.snapshot,
         &format!(
@@ -399,23 +418,7 @@ pub(super) async fn quality_appendix_title(plan: &Plan) -> Result<String> {
         "appendix count must be singular"
     );
     let next = count
-        .checked_add(1)
+        .checked_add(1 + preceding_generated)
         .ok_or_else(|| anyhow::anyhow!("appendix count overflow"))?;
-    Ok(format!("{}. Quality issues", letter(next)))
-}
-
-/// Closing provenance follows authored appendices and the optional quality
-/// report.
-pub(super) async fn provenance_appendix_title(plan: &Plan) -> Result<String> {
-    let quality = quality_appendix_title(plan).await?;
-    let (prefix, _) =
-        quality.split_once('.').expect("appendix title has prefix");
-    let mut next = 0u32;
-    for byte in prefix.bytes() {
-        next = next * 26 + u32::from(byte - b'A' + 1);
-    }
-    if !plan.quality.is_empty() {
-        next += 1;
-    }
-    Ok(format!("{}. Document provenance", letter(next)))
+    Ok(format!("{}. {title}", letter(next)))
 }

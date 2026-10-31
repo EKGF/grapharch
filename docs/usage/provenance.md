@@ -32,7 +32,9 @@ that a GitHub release exists, or that a standards body has approved the document
 ## Git sources
 
 [Repository Scanners](../collectors/repositories.md) retain provenance during
-collection. A remote branch such as `develop` is resolved to one commit for each
+collection. Website collection also discovers enclosing Git clones for the
+documentation directory and its publication definitions. Plain directories remain
+valid sources, while malformed Git metadata stops the build. A remote branch such as `develop` is resolved to one commit for each
 build. Fetches reuse the repository cache; the provenance records that build's
 resolved commit and tag associations. Moving or deleting a remote tag changes
 subsequent provenance without changing already collected revisions.

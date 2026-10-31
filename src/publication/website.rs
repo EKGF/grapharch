@@ -77,6 +77,22 @@ pub async fn collect_with_asset_factory(
             "urn:grapharch:website-definitions",
             definitions.clone(),
         )?)];
+        let mut repositories = Vec::new(); // bounded: source tree and definitions can name at most two enclosing clones.
+        for directory in [
+            source.as_path(),
+            definitions
+                .parent()
+                .expect("canonical definitions have a parent"),
+        ] {
+            if let Some(scan) =
+                super::collect::git::enclosing_repository(directory, project)
+                    .await? &&
+                !repositories.contains(&scan.root)
+            {
+                repositories.push(scan.root);
+                work.push(scan.provenance);
+            }
+        }
         for path in paths {
             if path == definitions {
                 continue;

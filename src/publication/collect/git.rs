@@ -64,7 +64,11 @@ impl Revision {
             origin,
             commit: commit.id.to_string(),
             history: provenance::history(repository, commit)?,
-            tags: provenance::tags(repository, commit)?,
+            tags: if working_tree {
+                provenance::tags(repository, commit)?
+            } else {
+                Vec::new()
+            },
             local_location: None,
             working_tree,
         })
@@ -118,6 +122,25 @@ pub async fn local_repository(
         provenance: Arc::new(revision.clone()),
         revision: Arc::new(revision),
     })
+}
+
+/// Discover the enclosing clone while preserving non-Git directory sources.
+/// A present but invalid `.git` entry is an error, rather than missing
+/// evidence.
+pub(crate) async fn enclosing_repository(
+    source: &Path,
+    project: &str,
+) -> Result<Option<RepositoryScan>> {
+    let mut directory = source;
+    loop {
+        if tokio::fs::try_exists(directory.join(".git")).await? {
+            return Ok(Some(local_repository(directory, project).await?));
+        }
+        let Some(parent) = directory.parent() else {
+            return Ok(None)
+        };
+        directory = parent;
+    }
 }
 
 /// Incrementally fetch one explicit ref into a persistent bare cache. Never

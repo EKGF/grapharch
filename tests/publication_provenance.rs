@@ -14,8 +14,8 @@ const EVIDENCE: &str = r#"
 @prefix schema: <https://schema.org/> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
-<urn:repo> a schema:SoftwareSourceCode ; schema:codeRepository <https://github.com/example/ontology> ; prov:hadMember <urn:commit:tip> .
-<urn:commit:tip> a prov:Entity ; dct:identifier "0123456789abcdef0123456789abcdef01234567" ; prov:wasDerivedFrom <urn:repo> ; prov:wasRevisionOf <urn:commit:previous> ; prov:generatedAtTime "2026-10-30T10:20:30Z" ; prov:qualifiedAttribution <urn:attribution:tip> ; schema:version "v1.1-preview" .
+<urn:repo> a schema:SoftwareSourceCode ; schema:codeRepository <https://github.com/example/ontology> ; prov:hadMember <urn:commit:tip> ; schema:version "v1.1-preview" .
+<urn:commit:tip> a prov:Entity ; dct:identifier "0123456789abcdef0123456789abcdef01234567" ; prov:wasDerivedFrom <urn:repo> ; prov:wasRevisionOf <urn:commit:previous> ; prov:generatedAtTime "2026-10-30T10:20:30Z" ; prov:qualifiedAttribution <urn:attribution:tip> .
 <urn:attribution:tip> prov:agent <urn:person:tip> ; prov:hadRole <urn:grapharch:git-role:committer> .
 <urn:person:tip> foaf:name "Recent Committer" ; schema:email "private@example.org" .
 <urn:commit:previous> a prov:Entity ; dct:identifier "abcdef0123456789abcdef0123456789abcdef01" ; prov:generatedAtTime "2026-10-29T09:00:00Z" ; prov:qualifiedAttribution <urn:attribution:previous> .
@@ -197,6 +197,26 @@ async fn provenance_follows_quality_and_preserves_explicit_operator_and_local_st
     assert!(
         html.find("id=\"quality-issues\"").unwrap() <
             html.find("id=\"document-provenance\"").unwrap()
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn tag_names_are_specific_to_the_repository_even_for_the_same_commit()
+-> Result<()> {
+    let evidence = format!("{}\n<urn:repo> <https://schema.org/version> \"source-one\" .\n<urn:second-repo> a <https://schema.org/SoftwareSourceCode> ; <https://schema.org/codeRepository> <https://github.com/example/second-source> ; <http://www.w3.org/ns/prov#hadMember> <urn:commit:tip> ; <https://schema.org/version> \"source-two\" .", EVIDENCE.replace(" ; schema:version \"v1.1-preview\"", ""));
+    let (_, html) = render("specification", &evidence).await?;
+    let document = scraper::Html::parse_document(&html);
+    let sources = document
+        .select(&scraper::Selector::parse(".provenance-source").unwrap())
+        .map(|s| s.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert_eq!(sources.len(), 2);
+    assert!(
+        sources[0].contains("source-one") && !sources[0].contains("source-two")
+    );
+    assert!(
+        sources[1].contains("source-two") && !sources[1].contains("source-one")
     );
     Ok(())
 }

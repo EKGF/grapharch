@@ -80,7 +80,8 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
          prefixes"
     );
     let sections = scraper::Selector::parse(
-        "main > section:not(#quality-issues):not(#publication-diagnostics)",
+        "main > section:not(#quality-issues):not(#publication-diagnostics):\
+         not(#document-provenance)",
     )
     .unwrap();
     assert!(
@@ -92,6 +93,15 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
             .contains("Documentation coverage"),
         "coverage belongs after the ontology reference, not in the opening \
          navigation"
+    );
+    assert_eq!(
+        doc.select(&scraper::Selector::parse("main > section").unwrap())
+            .next_back()
+            .unwrap()
+            .value()
+            .id(),
+        Some("document-provenance"),
+        "generation evidence closes the publication after coverage"
     );
     let overview_section = doc
         .select(&sections)

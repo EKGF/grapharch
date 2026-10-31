@@ -35,7 +35,7 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
         );
         let commit = literal(plan, node, &format!("{DCT}identifier")).await?;
         let tags =
-            literals(plan, node, &format!("{SCHEMA}version"), 64).await?;
+            literals(plan, repo, &format!("{SCHEMA}version"), 64).await?;
         let mut state =
             objects(plan, repo, &format!("{PROV}atLocation")).await?;
         let working_tree = state.next().await?.is_some();
@@ -46,8 +46,10 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
                 break;
             }
             let sha = literal(plan, &id, &format!("{DCT}identifier")).await?;
-            let time =
-                literal(plan, &id, &format!("{PROV}generatedAtTime")).await?;
+            let time = chrono::DateTime::parse_from_rfc3339(
+                &literal(plan, &id, &format!("{PROV}generatedAtTime")).await?,
+            )?
+            .with_timezone(&chrono::Utc);
             let p = plan.source.pattern(&format!("{id} <{PROV}qualifiedAttribution> ?a . ?a <{PROV}hadRole> <urn:grapharch:git-role:committer> ; <{PROV}agent> ?person . ?person <http://xmlns.com/foaf/0.1/name> ?name"), 0);
             let mut people = plan.dataset.select(format!("SELECT DISTINCT ?name WHERE {{ {p} GRAPH <urn:grapharch:control> {{ ?_attempt0 <https://ekgf.org/ontology/grapharch#collector> <urn:grapharch:git-provenance> }} }}")).await?;
             let person = people.next().await?.ok_or_else(|| {

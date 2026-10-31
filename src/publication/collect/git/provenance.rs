@@ -143,7 +143,7 @@ impl Collector for Revision {
         for tag in &self.tags {
             stream
                 .write(quad(
-                    self.entity(),
+                    repository.clone(),
                     "https://schema.org/version",
                     Literal::new_simple_literal(tag),
                 )?)
@@ -283,6 +283,6 @@ impl Collector for Revision {
             "{}:{}:{:?}:{:?}",
             self.commit, self.working_tree, self.tags, self.local_location
         );
-        Ok(identity("git-provenance-v2", &[&metadata]).into_string())
+        Ok(identity("git-provenance-v3", &[&metadata]).into_string())
     }
 }
