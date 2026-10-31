@@ -7,6 +7,7 @@ use {
 pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut output = String::new();
     let mut code = None;
+    let mut example = false;
     let mut heading = None;
     let mut table_head = false;
     let mut in_image = false;
@@ -78,6 +79,10 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             },
                             CodeBlockKind::Indented => "",
                         };
+                        example = matches!(kind, CodeBlockKind::Fenced(info) if info.split_whitespace().skip(1).any(|field| field == "example"));
+                        if example {
+                            output.push_str("#ga-example[");
+                        }
                         code = Some(String::new());
                         output.push_str(&format!(
                             "#raw(block: true, lang: {}, ",
@@ -166,7 +171,12 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push_str(&quote(&code.take().ok_or_else(
                             || anyhow::anyhow!("unbalanced code block"),
                         )?));
-                        output.push_str(")\n");
+                        output.push(')');
+                        if example {
+                            output.push(']');
+                            example = false;
+                        }
+                        output.push('\n');
                     },
                     TagEnd::List(_) | TagEnd::Table => output.push_str(")\n"),
                     TagEnd::Item => output.push_str("],"),

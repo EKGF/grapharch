@@ -10,3 +10,11 @@ blockquote[class*="markdown-alert-"]>p:last-child{margin-bottom:0}
 /* Task-list checkboxes are the list markers, including mixed/nested lists. */
 li.task-list-item{list-style-type:none;position:relative}
 li.task-list-item>input[type="checkbox"],li.task-list-item>p>input[type="checkbox"]{position:absolute;left:-1.55em;top:.4em;margin:0;width:1em;height:1em;accent-color:var(--accent,#1755a4);opacity:1}
+
+/* Authored code examples use document-wide numbering in reading order. */
+body{counter-reset:ga-example}
+figure.code-example{counter-increment:ga-example;margin:1.5em 0;padding:12px 16px;border:1px solid #dfce73;border-left:5px solid #b69a28;background:#fcfaee;color:inherit;break-inside:avoid}
+.code-example>figcaption{font-size:.9em;font-weight:600;color:#685415;margin:0 0 12px}
+.code-example .example-number::before{content:counter(ga-example)}
+.code-example pre{margin:0;border:0;background:#f8f8f8;padding:14px;overflow-x:auto}
+code .json-key{color:#835b0b}code .json-string{color:#35713f}code .json-number{color:#7c3f91}code .json-keyword{color:#345eac}

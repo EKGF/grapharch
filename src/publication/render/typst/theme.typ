@@ -25,19 +25,20 @@
 #show link: set text(fill: ga-accent)
 #show raw: set text(font: "DejaVu Sans Mono", size: 8.2pt, hyphenate: false)
 // Wrap code to the available measure; the quoted source remains unchanged.
-#let ga-code-text(value) = layout(size => {
+#let ga-code-text(value, lang: none) = layout(size => {
   let capacity = calc.max(1, calc.floor(size.width / measure(text("M")).width))
   for (index, line) in value.split("\n").enumerate() {
     if index > 0 { linebreak() }
     let clusters = line.clusters()
     for start in range(0, clusters.len(), step: capacity) {
       if start > 0 { linebreak() }
-      text(clusters.slice(start, calc.min(start + capacity, clusters.len())).join())
+      let piece = clusters.slice(start, calc.min(start + capacity, clusters.len())).join()
+      if lang in ("json", "jsonld", "json-ld") { raw(piece, lang: "json", block: false) } else { text(piece) }
     }
   }
 })
 #show raw.where(block: true): it => block(width: 100%, breakable: true, inset: (x: 10pt, y: 9pt), fill: ga-soft, stroke: (left: 2pt + ga-accent), radius: 3pt)[#set text(font: "DejaVu Sans Mono", size: 8.2pt)
-#ga-code-text(it.text)]
+#ga-code-text(it.text, lang: it.lang)]
 #show quote.where(block: true): it => block(width: 100%, breakable: true, inset: (x: 11pt, y: 8pt), fill: ga-soft, stroke: (left: 2pt + ga-accent))[#it.body]
 #let ga-table(columns: (), align: auto, has-header: true, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
   #set text(size: 8.5pt)
@@ -134,3 +135,11 @@
       align(right)[#text(fill: ga-accent, weight: "bold")[#counter(page).display("1 / 1", both: true)]]
     }
   })
+
+#let ga-example(body) = {
+  counter("ga-example").step()
+  block(width: 100%, breakable: true, above: 12pt, below: 12pt, inset: (x: 11pt, y: 9pt), fill: rgb("#fcfaee"), stroke: (left: 2pt + rgb("#b69a28")))[
+    #block(sticky: true, below: 6pt)[#text(size: 9pt, weight: "bold", fill: rgb("#685415"))[Example #context counter("ga-example").display()]]
+    #body
+  ]
+}

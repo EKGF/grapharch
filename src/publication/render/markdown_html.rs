@@ -1,4 +1,6 @@
 //! Shared presentation of semantic Markdown events after source validation.
+mod code;
+
 use {
     super::callouts,
     pulldown_cmark::{Event, Tag, TagEnd},
@@ -10,7 +12,7 @@ pub(super) fn events<'a>(
 ) -> impl Iterator<Item = Event<'a>> {
     // Bounded by the caller's per-fragment/page Markdown budget. Classify task
     // items structurally so nested and mixed lists retain their semantics.
-    let events: Vec<_> = events.collect();
+    let events = code::events(events.collect());
     let mut items = Vec::new();
     let mut tasks = HashSet::new();
     for (index, event) in events.iter().enumerate() {
@@ -51,4 +53,42 @@ pub(super) fn events<'a>(
             };
             std::iter::once(event).chain(title)
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::events,
+        pulldown_cmark::{Parser, html},
+    };
+
+    #[test]
+    fn marked_json_examples_retain_callouts_and_colored_tokens() {
+        let markdown = "```json example\n{\"title\": \"UK Bonds\", \
+                        \"active\": true}\n```\n\n> [!NOTE]\n> Two contexts \
+                        describe the same graph.\n";
+        let mut output = String::new();
+        html::push_html(
+            &mut output,
+            events(Parser::new_ext(
+                markdown,
+                crate::publication::markdown::options(),
+            )),
+        );
+        assert!(
+            output.contains("class=\"example code-example\""),
+            "{output}"
+        );
+        assert!(output.contains("class=\"json-key\""), "{output}");
+        assert!(
+            output.contains("class=\"json-string\""),
+            "{output}"
+        );
+        assert!(
+            output.contains("class=\"json-keyword\""),
+            "{output}"
+        );
+        assert!(output.contains("markdown-alert-note"), "{output}");
+        assert!(output.contains("callout-title"), "{output}");
+    }
 }

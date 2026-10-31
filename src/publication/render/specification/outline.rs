@@ -203,7 +203,10 @@ pub(super) fn markdown_html(
         }
     }
     let mut output = String::new();
-    pulldown_cmark::html::push_html(&mut output, events.into_iter());
+    pulldown_cmark::html::push_html(
+        &mut output,
+        super::super::markdown_html::events(events.into_iter()),
+    );
     Ok(output)
 }
 
