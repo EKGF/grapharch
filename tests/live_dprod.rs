@@ -8,11 +8,10 @@ use grapharch::publication::{dataset::Dataset, render::Publisher, showcases};
 async fn remote_develop_restores_and_publishes_three_targets()
 -> anyhow::Result<()> {
     let cache = std::path::Path::new("output/cache/git");
-    let (dataset, plans) = showcases::dprod_remote(
-        std::path::Path::new("examples/dprod/live.yaml"),
-        cache,
-    )
-    .await?;
+    let config = std::env::var("GRAPHARCH_DPROD_CONFIG")
+        .unwrap_or_else(|_| "examples/dprod/live.yaml".into());
+    let (dataset, plans) =
+        showcases::dprod_remote(std::path::Path::new(&config), cache).await?;
     let output = std::path::Path::new("output/live-dprod-acceptance");
     tokio::fs::create_dir_all(output).await?;
     let archive = output.join("documentation.nq");
@@ -26,6 +25,48 @@ async fn remote_develop_restores_and_publishes_three_targets()
         tokio::fs::read_to_string(output.join("specification/index.html"))
             .await?;
     assert!(html.contains("Data Product"));
+    for title in [
+        "Conformance",
+        "Normative references",
+        "Normative namespaces",
+        "Data Contracts",
+        "Provider Duties",
+        "Data Lineage",
+    ] {
+        assert!(
+            html.contains(title),
+            "missing formal content: {title}"
+        );
+    }
+    assert!(
+        !html.contains("Repository for the Data Products Ontology"),
+        "marketing README must not become formal specification content"
+    );
+    let (writer, worker) = grapharch::publication::writer::GraphWriter::spawn(
+        dataset.clone(),
+        8,
+        4 * 1024 * 1024,
+    )?;
+    let planner = grapharch::publication::plan::TargetPlanner::new(
+        dataset.clone(),
+        grapharch::publication::view::RevisionView::new(
+            dataset.clone(),
+            plans[0].snapshot.clone(),
+        )
+        .node(&plans[0].id, "inputRevision")
+        .await?,
+    );
+    let failure = planner
+        .resolve(
+            "urn:dprod-showcase:project",
+            &oxrdf::NamedNode::new("urn:dprod-showcase:release")?,
+            &writer,
+        )
+        .await
+        .expect_err("unapproved release must fail");
+    assert!(format!("{failure:#}").contains("required"));
+    drop(writer);
+    worker.await??;
     assert!(
         tokio::fs::read(output.join("pdf/document.pdf"))
             .await?
@@ -91,6 +132,13 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
             repo.path().join(target),
         )?;
     }
+    let ontology_path = repo.path().join("ontology/dprod/dprod-ontology.ttl");
+    let mut ontology = std::fs::read_to_string(&ontology_path)?;
+    ontology.push_str(r#"
+<https://www.omg.org/spec/DPROD/dprod/DataProduct> <http://www.w3.org/2004/02/skos/core#prefLabel> "Primary preferred label"@en, "Competing preferred label"@en ; <https://ekgf.org/ontology/annotation#markdownDescription> "Primary markdown explanation."@en, "Competing markdown explanation."@en .
+<https://www.omg.org/spec/DPROD/dprod/DataProduct> <http://www.w3.org/2002/07/owl#oneOf> (<https://example.org/retained-enumeration-member>) .
+"#);
+    std::fs::write(ontology_path, ontology)?;
     std::fs::write(
         repo.path().join("README.md"),
         "# Development documentation\n\nDEVELOP ONE\n\n![Fixture \
@@ -200,6 +248,54 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         }
         definitions.push_str(" .\n");
     }
+    std::fs::write(
+        repo.path().join("formal.md"),
+        "# Formal scope\n\nSOURCE OWNED FORMAL SCOPE\n",
+    )?;
+    definitions.push_str(r#"
+ex:project ga:collector ex:formal-source .
+ex:formal-source a ga:Collector ; ga:kind "markdown" ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
+ex:profile ga:requiredSectionRole "scope" .
+ex:pdf-profile ga:requiredSectionRole "scope" .
+"#);
+    for profile in ["profile", "pdf-profile"] {
+        for (key, title, kind, role, order) in [
+            ("abstract", "Abstract", "abstract", "abstract", 0),
+            (
+                "status",
+                "Status of This Document",
+                "status",
+                "status",
+                1,
+            ),
+            ("formal", "Formal scope", "section", "scope", 10),
+            (
+                "overview",
+                "Vocabulary reference",
+                "section",
+                "reference",
+                20,
+            ),
+            (
+                "example",
+                "Dataset example",
+                "section",
+                "example",
+                100,
+            ),
+        ] {
+            definitions.push_str(&format!(r#"
+ex:{profile} ga:placement <urn:dprod-showcase:{profile}:{key}> .
+<urn:dprod-showcase:{profile}:{key}> a ga:Placement ; ga:component <urn:dprod-showcase:component:{key}> ; ga:sectionKind "{kind}" ; ga:sectionRole "{role}" ; ga:order {order} .
+<urn:dprod-showcase:component:{key}> a ga:Component ; dct:title "{title}" ; ga:fragment ex:{key} .
+"#));
+        }
+    }
+    std::fs::write(repo.path().join("profile.ttl"), "<https://www.omg.org/spec/DPROD/dprod/> <http://purl.org/dc/terms/title> \"RELATED PROFILE TITLE\" .")?;
+    definitions.push_str(r#"
+ex:project ga:collector ex:related-profile .
+ex:related-profile a ga:Collector ; ga:kind "rdf" ; ga:sourcePath "profile.ttl" ; ga:source "profile.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
+"#);
     std::fs::write(
         repo.path().join("example.jsonld"),
         "{\"title\":\"PINNED EXAMPLE SOURCE\"}",
@@ -326,12 +422,23 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     )
     .await?;
     assert!(
+        !spec.contains("RELATED PROFILE TITLE"),
+        "header must use its designated ontology source"
+    );
+    assert!(
         spec.contains("PINNED EXAMPLE SOURCE"),
         "machine-readable example source must survive source deletion"
     );
     let typst =
         tokio::fs::read_to_string(output.path().join("pdf/main.typ")).await?;
     assert!(typst.contains("PINNED EXAMPLE SOURCE"));
+    assert!(spec.contains("retained-enumeration-member"));
+    assert!(spec.contains("SOURCE OWNED FORMAL SCOPE"));
+    assert!(typst.contains("SOURCE OWNED FORMAL SCOPE"));
+    assert!(
+        spec.find("SOURCE OWNED FORMAL SCOPE") <
+            spec.find("PINNED EXAMPLE SOURCE")
+    );
     let site =
         std::fs::read_to_string(output.path().join("website/index.html"))?;
     assert!(site.contains("href=\"assets/image-"));

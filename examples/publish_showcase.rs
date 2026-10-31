@@ -69,7 +69,12 @@ async fn main() -> anyhow::Result<()> {
         println!("{}", publication.directory.display());
         for diagnostic in &publication.manifest.diagnostics {
             eprintln!("{}: {}", diagnostic.code, diagnostic.message);
-            errors += 1;
+            if matches!(
+                diagnostic.severity,
+                grapharch::publication::diagnostics::Severity::Error
+            ) {
+                errors += 1;
+            }
         }
     }
     dataset.export(root.join("documentation.nq")).await?;

@@ -3,6 +3,7 @@
 
 mod books;
 mod constraints;
+mod quality;
 mod requirements;
 use {
     super::{
@@ -233,6 +234,15 @@ impl TargetPlanner {
             .await?;
         }
         self.assets(&selection, renderer_kind, &mut stream).await?;
+        quality::append(
+            &self.dataset,
+            &view,
+            &self.revision,
+            &project,
+            &plan,
+            &mut stream,
+        )
+        .await?;
         let receipt = stream.commit().await?;
         let snapshot = self.dataset.pin(&receipt).await?;
         Ok(ResolvedPlan { id: plan, snapshot })

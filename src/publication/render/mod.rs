@@ -5,6 +5,7 @@ mod bookshelf;
 mod callouts;
 mod collected_images;
 mod content;
+mod credit;
 mod diagnostic_graph;
 mod engine;
 mod files;
@@ -14,6 +15,7 @@ mod markup;
 mod model;
 mod native_typst;
 mod preamble;
+mod quality;
 mod record;
 mod specification;
 mod typst;
@@ -270,7 +272,7 @@ impl Publisher {
             } else if let Some((_, diagnostics)) = &page_files {
                 diagnostics.clone()
             } else if website_files.is_some() {
-                Vec::new()
+                plan.quality.clone()
             } else {
                 content::write(plan, &stage.path, self.failure_mode).await?
             };

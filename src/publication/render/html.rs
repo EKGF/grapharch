@@ -181,8 +181,14 @@ pub(super) async fn end(
     if has_entries {
         close(file).await?;
     }
-    file.write_all(b"<footer>Grapharch</footer></main></body></html>\n")
-        .await?;
+    file.write_all(
+        format!(
+            "<footer>{}</footer></main></body></html>\n",
+            super::credit::HTML
+        )
+        .as_bytes(),
+    )
+    .await?;
     Ok(())
 }
 

@@ -64,6 +64,18 @@ impl Entries {
         let placement = node(&row["placement"])?.clone();
         let component = node(&row["component"])?;
         let body = plan.source.text(&fragment, "body").await?;
+        let body = if !plan.quality.is_empty() &&
+            plan.source.text(&fragment, "format").await? == "text/markdown"
+        {
+            super::quality::inline(
+                &body,
+                &plan.source.node(&fragment, "subject").await?,
+                &fragment,
+                &plan.quality,
+            )
+        } else {
+            body
+        };
         ensure!(
             body.len() <= 1024 * 1024,
             "fragment exceeds the 1 MiB rendering budget"
@@ -137,6 +149,10 @@ pub(super) async fn write(
     stage: &Path,
     mode: crate::publication::diagnostics::FailureMode,
 ) -> Result<Vec<crate::publication::diagnostics::Diagnostic>> {
+    if plan.renderer == "typst" {
+        write_typst(plan, stage, &plan.quality).await?;
+        return Ok(plan.quality.clone());
+    }
     if plan.renderer == "specification" {
         return super::specification::write(plan, stage, mode).await;
     }
@@ -205,12 +221,16 @@ pub(super) async fn write(
         previous = Some(entry.placement.clone());
     }
     if plan.is_html() {
-        html::end(&mut file, previous.is_some()).await?;
+        if previous.is_some() {
+            html::close(&mut file).await?;
+        }
+        super::quality::html(&mut file, &plan.quality).await?;
+        html::end(&mut file, false).await?;
     } else {
         typst::end(&mut file, previous.is_some()).await?;
     }
     file.flush().await?;
-    Ok(Vec::new())
+    Ok(plan.quality.clone())
 }
 
 pub(super) async fn write_typst(
@@ -261,9 +281,19 @@ pub(super) async fn write_typst(
         .await?;
     }
     typst::end(&mut file, open).await?;
-    if !diagnostics.is_empty() {
+    super::quality::typst(&mut file, &plan.quality, entries.appendix).await?;
+    let errors = diagnostics
+        .iter()
+        .filter(|diagnostic| {
+            matches!(
+                diagnostic.severity,
+                crate::publication::diagnostics::Severity::Error
+            )
+        })
+        .collect::<Vec<_>>(); // bounded: publication diagnostic budget.
+    if !errors.is_empty() {
         file.write_all(b"#pagebreak()\n#heading(level: 1, numbering: none)[Publication diagnostics]\n").await?;
-        for error in diagnostics {
+        for error in errors {
             file.write_all(
                 format!(
                     "#block(above: \

@@ -93,14 +93,20 @@ pub(super) async fn begin_book(
             ));
         }
     }
+    let style = super::typst_style::Style::read(plan).await?;
     if matches!(
         plan.renderer.as_str(),
         "specification" | "bookshelf"
-    ) {
+    ) || (style.name == "specification" &&
+        plan.source
+            .optional(&plan.target, "publicationStatus")
+            .await?
+            .is_some())
+    {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
+    } else {
+        front.insert_str(0, &release);
     }
-    front.insert_str(0, &release);
-    let style = super::typst_style::Style::read(plan).await?;
     file.write_all(
         format!(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \
@@ -220,11 +226,14 @@ pub(super) async fn entry(
     if entry.first {
         if matches!(
             entry.kind.as_str(),
-            "appendix" | "glossary" | "references"
+            "appendix" | "glossary" | "references" | "preface"
         ) {
             file.write_all(b"#pagebreak(weak: true)\n").await?;
         }
         file.write_all(b"#[\n").await?;
+        if entry.kind == "preface" {
+            file.write_all(b"#set heading(numbering: none)\n").await?;
+        }
         if entry.kind == "appendix" {
             file.write_all(
                 format!(
@@ -240,7 +249,7 @@ pub(super) async fn entry(
             .await?;
         let numbering = if matches!(
             entry.kind.as_str(),
-            "glossary" | "references" | "abstract" | "status"
+            "glossary" | "references" | "abstract" | "status" | "preface"
         ) {
             ", numbering: none"
         } else {

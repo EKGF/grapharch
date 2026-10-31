@@ -1311,17 +1311,32 @@ async fn skos_concepts_inside_an_owl_vocabulary_use_preferred_labels_and_section
         &path,
         format!(
             "{}\n<https://example.org/core#Concept> skos:prefLabel \
-             \"Ambiguous name\"@en .",
+             \"Ambiguous name\"@en . <https://example.org/core#Scheme> skos:prefLabel \"Alternate scheme name\"@en .",
             tokio::fs::read_to_string(&path).await?
         ),
     )
     .await?;
-    let error = f
-        .build(Dataset::memory()?)
-        .await
-        .err()
-        .expect("ambiguous preferred labels must fail");
-    assert!(format!("{error:#}").contains("ambiguous skos:prefLabel"));
+    let reviewed = f.build(Dataset::memory()?).await?;
+    let review_output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) =
+        Publisher::new(reviewed.dataset)
+            .render(&reviewed.plan, review_output.path())
+            .await?
+    else {
+        panic!("publication required")
+    };
+    assert!(
+        publication.manifest.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "competing-source-annotations"
+        })
+    );
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    assert!(
+        html.contains("Ambiguous name") && html.contains("Preferred concept")
+    );
+    assert!(html.contains("Quality issues"));
     Ok(())
 }
 
