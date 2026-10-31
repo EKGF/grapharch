@@ -18,12 +18,12 @@ ontologies such as DPROD retain their own classes and properties; Grapharch link
 their resources to reusable fragments, logical components, publication targets,
 and recorded build results.
 
-The namespace is `https://ekgf.org/ontology/grapharch#`, conventionally written
-`ga:`. The current ontology is a **0.0.1 development draft**, maintained alongside
-the implementation. The version IRI is a development identifier; persistent
-namespace hosting and immutable release publication remain release work.
+The namespace is `https://ekgf.org/ontology/grapharch#`. The preferred prefix is
+`ga`. The ontology version is aligned with the GraphArch application release;
+its canonical [Turtle source](publication.ttl) declares the current version IRI
+and development status.
 
-- [Ontology in Turtle](publication.ttl): 30 classes and 116 properties, with English
+- [Ontology in Turtle](publication.ttl): classes and properties with English
   definitions, ontology membership, domains, ranges, scope notes, and RDF examples.
 - [Companion SHACL constraints](publication.shacl.ttl): structural constraints for
   project definitions and selected derived records.
@@ -32,8 +32,10 @@ namespace hosting and immutable release publication remain release work.
 
 ## The conceptual model
 
-A **Project** configures specialized **Collectors** and **Documentors**. Collectors
-read native sources; documentors generate fragments from already collected RDF.
+A **Project** configures collectors and documentation generators. Collectors
+read source content; documentation generators turn collected RDF into reusable
+fragments. The ontology calls these generators `ga:Documentor`. Renderers then
+present the selected fragments as HTML or PDF.
 Their **Contributions** retain source and processor provenance.
 
 A **Fragment** describes one or more identified subjects. A **Component** groups
@@ -87,6 +89,12 @@ registry's family identities, artifact references, explicit memberships, and
 aliases. Its first fixture publishes all 24 registered EKGF ontologies together.
 
 ## Maintenance
+
+`Cargo.toml` is the release-version source. After changing its package version,
+run `python3 packaging/distribute.py sync-version` to update both the ontology's
+version metadata and npm package versions. `python3 packaging/distribute.py check`
+rejects version drift before distribution. Synchronising these files does not
+publish a release or change the namespace.
 
 `tests/publication_ontology.rs` checks ontology metadata, term definitions,
 implementation vocabulary coverage, embedded RDF examples, and property kinds in

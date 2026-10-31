@@ -27,6 +27,15 @@ fn ask(store: &Store, pattern: &str) -> Result<bool> {
 }
 
 #[test]
+fn ontology_version_tracks_the_application_release() -> Result<()> {
+    let release = env!("CARGO_PKG_VERSION");
+    assert!(ask(&ontology()?, &format!(
+        "<https://ekgf.org/ontology/grapharch> owl:versionIRI <https://ekgf.org/ontology/grapharch/{release}> ; owl:versionInfo ?status . FILTER(STRSTARTS(STR(?status), '{release} '))"
+    ))?, "ontology version metadata must track Cargo.toml, including its draft status");
+    Ok(())
+}
+
+#[test]
 fn ontology_has_publication_metadata_and_human_definitions() -> Result<()> {
     let store = ontology()?;
     assert!(ask(

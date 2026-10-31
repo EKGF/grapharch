@@ -49,8 +49,30 @@ def sha256(path: Path) -> str:
     return result.hexdigest()
 
 
+def ontology_metadata() -> tuple[Path, str, str, str]:
+    path = ROOT / "docs/other/ontology/publication.ttl"
+    text = path.read_text()
+    iri = re.findall(r'^\s*owl:versionIRI <([^>]+)> ;$', text, re.MULTILINE)
+    info = re.findall(r'^\s*owl:versionInfo "([^"\n]+)" ;$', text, re.MULTILINE)
+    if len(iri) != 1 or len(info) != 1:
+        raise ValueError("ontology requires exactly one versionIRI and versionInfo")
+    if not re.fullmatch(
+        r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?: .*)?", info[0]
+    ):
+        raise ValueError("ontology versionInfo must start with a stable release version")
+    return path, text, iri[0], info[0]
+
+
 def check() -> None:
     expected = version()
+    _, _, ontology_iri, ontology_info = ontology_metadata()
+    if (
+        ontology_iri != f"https://ekgf.org/ontology/grapharch/{expected}"
+        or ontology_info.split(" ", 1)[0] != expected
+    ):
+        raise ValueError(
+            "ontology version differs from Cargo.toml; run packaging/distribute.py sync-version"
+        )
     manifest = json.loads((ROOT / "npm/package.json").read_text())
     if manifest["version"] != expected:
         raise ValueError(
@@ -71,11 +93,19 @@ def check() -> None:
 
 
 def sync_version() -> None:
+    expected = version()
+    ontology, text, old_iri, old_info = ontology_metadata()
+    suffix = old_info[len(old_info.split(" ", 1)[0]):]
+    text = text.replace(
+        f"owl:versionIRI <{old_iri}>",
+        f"owl:versionIRI <https://ekgf.org/ontology/grapharch/{expected}>",
+    ).replace(f'owl:versionInfo "{old_info}"', f'owl:versionInfo "{expected}{suffix}"')
+    ontology.write_text(text)
     path = ROOT / "npm/package.json"
     manifest = json.loads(path.read_text())
-    manifest["version"] = version()
+    manifest["version"] = expected
     manifest["optionalDependencies"] = {
-        f"@grapharch/cli-{p['key']}": version() for p in PLATFORMS
+        f"@grapharch/cli-{p['key']}": expected for p in PLATFORMS
     }
     path.write_text(json.dumps(manifest, indent=2) + "\n")
     check()

@@ -14,8 +14,8 @@
 
 <https://ekgf.org/ontology/grapharch> a owl:Ontology ;
     owl:imports <https://ekgf.org/ontology/artifact-governance#> ;
-    owl:versionIRI <https://ekgf.org/ontology/grapharch/0.0.1> ;
-    owl:versionInfo "0.0.1 — development draft" ;
+    owl:versionIRI <https://ekgf.org/ontology/grapharch/0.1.0> ;
+    owl:versionInfo "0.1.0 — development draft" ;
     dct:title "Grapharch documentation and publication ontology"@en ;
     rdfs:label "Grapharch documentation and publication ontology"@en ;
     dct:description "A vocabulary for collecting source contributions, generating reusable documentation fragments, assembling validated dataset revisions, resolving publication plans, and recording HTML and PDF publication results. It separates the identity of documented resources and logical components from target-specific arrangement and presentation."@en ;
@@ -31,7 +31,7 @@
     rdfs:seeAlso <https://ekgf.github.io/grapharch/ontology/>,
         <https://ekgf.github.io/grapharch/other/ontology/publication.shacl.ttl>,
         <https://github.com/EKGF/grapharch> ;
-    skos:scopeNote "This is the evolving publication-pipeline vocabulary. Earlier documentation.ttl and doc-component-categories.ttl files are prototype vocabularies, not imports or authoritative definitions of this contract. Version 0.0.1 is a development identifier; immutable releases and persistent namespace hosting remain release work."@en ;
+    skos:scopeNote "This is the evolving publication-pipeline vocabulary. Earlier documentation.ttl and doc-component-categories.ttl files are prototype vocabularies, not imports or authoritative definitions of this contract. The ontology version tracks the GraphArch application release; immutable releases and persistent namespace hosting remain release work."@en ;
     rdfs:comment "Domain and range declarations support RDF inference; they are not closed-world validation rules. Broad rdfs:Resource domains and ranges are intentional where properties are reused across resource kinds or identify arbitrary domain resources. Cardinalities, value sets, path safety, markup safety, size budgets, and lifecycle transitions are enforced by the companion SHACL shapes and Rust implementation. Embedded RDF examples illustrate individual relationships; they are not complete build configurations. The ontology imports the Artifact Governance Ontology for authority semantics. Grapharch does not fetch imports implicitly during a documentation build."@en .
 
 <https://ekgf.org/> rdfs:label "Enterprise Knowledge Graph Forum"@en .
