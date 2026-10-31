@@ -393,7 +393,8 @@ impl Plan {
                     "glossary" |
                     "references" |
                     "abstract" |
-                    "status"
+                    "status" |
+                    "preface"
             ),
             "unsupported section kind {kind}"
         );

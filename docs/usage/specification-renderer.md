@@ -256,3 +256,12 @@ JavaScript disabled; collapse and search controls require JavaScript.
 
 For a library of module books, each with its own PDF and chapter navigation, use
 [the bookshelf renderer](bookshelves.md) instead of a family-wide specification.
+
+## Publisher preface
+
+Use `ga:sectionKind "preface"` for unnumbered publisher background or introductory
+front matter. Its `ga:sectionRole` can be required by a standards profile just
+like a numbered section. The specification includes it in navigation without
+consuming a chapter number; the PDF starts it on a new page and keeps its
+component heading unnumbered. The legal preamble remains a separate front-matter
+fragment with its own presentation.

@@ -262,3 +262,49 @@ async fn independent_standards_pdf_preserves_publication_metadata() -> Result<()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn publisher_preface_is_unnumbered_in_specification_and_pdf() -> Result<()>
+{
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    std::fs::write(
+        &path,
+        format!(
+            "{}\nex:intro ga:sectionKind \"preface\" .\n",
+            include_str!("../examples/specification/project.ttl")
+        ),
+    )?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    std::fs::remove_file(path)?;
+    let out = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], out.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    let typst =
+        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    assert!(typst.contains(
+        "#heading(level: 1, numbering: none)[#text(\"Introduction\")]"
+    ));
+    assert!(
+        typst.contains(
+            "#[\n#set heading(numbering: \
+             none)\n#ga-section(1)[#heading(level: 1, numbering: \
+             none)[#text(\"Introduction\")]"
+        ),
+        "preface subheadings need scoped unnumbered typography"
+    );
+    let html =
+        std::fs::read_to_string(publication.directory.join("index.html"))?;
+    let html = scraper::Html::parse_document(&html);
+    let headings = scraper::Selector::parse("main h2").unwrap();
+    let heading = html
+        .select(&headings)
+        .find(|e| e.text().collect::<String>().contains("Introduction"))
+        .expect("preface heading");
+    assert!(!heading.text().collect::<String>().contains("1."));
+    Ok(())
+}

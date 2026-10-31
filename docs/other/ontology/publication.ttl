@@ -862,8 +862,8 @@ ga:preamble a owl:ObjectProperty ;
 ga:sectionKind a owl:DatatypeProperty ;
     rdfs:label "Publication section kind"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Records the structural role of a component, such as abstract, status, appendix, glossary, or references."@en ;
-    dct:description "Records the structural role of a component, such as abstract, status, appendix, glossary, or references."@en ;
+    skos:definition "Records the structural role of a component, such as abstract, status, preface, appendix, glossary, or references."@en ;
+    dct:description "Records the structural role of a component, such as abstract, status, preface, appendix, glossary, or references."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:string .
 

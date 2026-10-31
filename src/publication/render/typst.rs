@@ -225,11 +225,14 @@ pub(super) async fn entry(
     if entry.first {
         if matches!(
             entry.kind.as_str(),
-            "appendix" | "glossary" | "references"
+            "appendix" | "glossary" | "references" | "preface"
         ) {
             file.write_all(b"#pagebreak(weak: true)\n").await?;
         }
         file.write_all(b"#[\n").await?;
+        if entry.kind == "preface" {
+            file.write_all(b"#set heading(numbering: none)\n").await?;
+        }
         if entry.kind == "appendix" {
             file.write_all(
                 format!(
@@ -245,7 +248,7 @@ pub(super) async fn entry(
             .await?;
         let numbering = if matches!(
             entry.kind.as_str(),
-            "glossary" | "references" | "abstract" | "status"
+            "glossary" | "references" | "abstract" | "status" | "preface"
         ) {
             ", numbering: none"
         } else {
