@@ -101,11 +101,17 @@ pub(super) async fn sources(
         values.len() <= 32 * 1024,
         "selected term identities exceed query budget"
     );
-    let pattern = view.pattern("?subject a ?kind", 0);
+    let pattern = view.pattern("?subject ?definitionPredicate ?definition", 0);
     let mut rows = dataset
         .select(format!(
             "SELECT DISTINCT ?subject ?source WHERE {{ VALUES ?subject {{ \
-             {values} }} {pattern} GRAPH <{}> {{ ?_attempt0 {} ?source }} }} \
+             {values} }} VALUES ?definitionPredicate {{ \
+             <http://purl.org/dc/terms/description> \
+             <http://www.w3.org/2000/01/rdf-schema#comment> \
+             <http://www.w3.org/2004/02/skos/core#definition> \
+             <http://www.w3.org/ns/prov#definition> }} \
+             {pattern} FILTER(isLiteral(?definition) && \
+             (LANG(?definition) = \"\" || LCASE(LANG(?definition)) = \"en\")) GRAPH <{}> {{ ?_attempt0 {} ?source }} }} \
              ORDER BY ?subject ?source",
             crate::publication::dataset::CONTROL,
             term("source")
@@ -156,8 +162,16 @@ pub(super) fn attribution(
         "**Source namespace:** `{namespace}`\n\n**Definition sources:**\n"
     );
     for source in sources {
-        let escaped = source.replace('`', "\\`");
-        body.push_str(&format!("\n- `{escaped}`"));
+        match url::Url::parse(source) {
+            Ok(url) if matches!(url.scheme(), "http" | "https") => {
+                let link = url.as_str().replace('<', "%3C").replace('>', "%3E");
+                body.push_str(&format!("\n- <{link}>"));
+            },
+            _ => {
+                let escaped = source.replace('`', "\\`");
+                body.push_str(&format!("\n- `{escaped}`"));
+            },
+        }
     }
     vec![
         q(&fragment, "contribution", contribution.clone()),
@@ -176,4 +190,36 @@ pub(super) fn attribution(
         ),
         q(&fragment, "order", Literal::from(order)),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn http_definition_sources_are_clickable_and_local_sources_stay_literal() {
+        let id = NamedNode::new("urn:test").unwrap();
+        let sources = BTreeSet::from([
+            "https://example.org/vocab.rdf?version=1&language=en".into(),
+            "/tmp/definition.ttl".into(),
+        ]);
+        let quads = attribution(&id, &id, &id, &id, &sources, 0);
+        let body = quads
+            .iter()
+            .find(|quad| quad.predicate == term("body"))
+            .unwrap();
+        let Term::Literal(body) = &body.object else {
+            panic!("body literal required")
+        };
+        let mut html = String::new();
+        pulldown_cmark::html::push_html(
+            &mut html,
+            pulldown_cmark::Parser::new(body.value()),
+        );
+        assert!(html.contains(
+            "href=\"https://example.org/vocab.rdf?version=1&amp;language=en\""
+        ));
+        assert!(html.contains("<code>/tmp/definition.ttl</code>"));
+        assert!(!html.contains("href=\"/tmp"));
+    }
 }

@@ -25,17 +25,20 @@ async fn source(selected: &str) -> Result<tempfile::TempDir> {
     tokio::fs::write(root.path().join("external.ttl"), r#"
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 <https://example.org/external#Role> a <http://www.w3.org/2002/07/owl#Class> ; rdfs:label "External role"@en ; rdfs:comment "Original external role definition."@en ; rdfs:isDefinedBy <https://example.org/external> .
+<http://www.w3.org/ns/prov#wasDerivedFrom> a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .
 <https://example.org/external#Unselected> a <http://www.w3.org/2002/07/owl#Class> ; rdfs:label "Unselected external class"@en ; rdfs:comment "DO NOT PUBLISH THIS DEFINITION"@en .
 "#).await?;
     tokio::fs::write(root.path().join("properties.ttl"), r#"
-<http://www.w3.org/ns/prov#wasDerivedFrom> a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> ; <http://www.w3.org/2000/01/rdf-schema#label> "was derived from" ; <http://www.w3.org/ns/prov#definition> "Original PROV derivation definition."@en .
+<http://www.w3.org/ns/prov#wasDerivedFrom> <http://www.w3.org/2000/01/rdf-schema#label> "was derived from" ; <http://www.w3.org/ns/prov#definition> "Original PROV derivation definition."@en .
 "#).await?;
+    tokio::fs::write(root.path().join("typing-only.ttl"), "<https://example.org/external#Role> a <http://www.w3.org/2002/07/owl#Class> .").await?;
     tokio::fs::write(root.path().join("project.ttl"), format!(r##"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
-<urn:p> a ga:Project ; dct:title "Dependency test" ; ga:target <urn:site>, <urn:spec> ; ga:scope <urn:site-scope> ; ga:collector <urn:external>, <urn:properties> .
+<urn:p> a ga:Project ; dct:title "Dependency test" ; ga:target <urn:site>, <urn:spec> ; ga:scope <urn:site-scope> ; ga:collector <urn:external>, <urn:properties>, <urn:typing-only> .
 <urn:external> a ga:Collector ; ga:kind "rdf-file" ; ga:source "external.ttl" .
 <urn:properties> a ga:Collector ; ga:kind "rdf-file" ; ga:source "properties.ttl" .
+<urn:typing-only> a ga:Collector ; ga:kind "rdf-file" ; ga:source "typing-only.ttl" .
 <urn:site-scope> a ga:Scope . <urn:site-profile> a ga:Profile .
 <urn:site> a ga:Target ; dct:title "Site" ; ga:scope <urn:site-scope> ; ga:profile <urn:site-profile> ; ga:renderer "website" ; ga:destination "site" .
 <urn:spec-scope> a ga:Scope ; ga:include {selected} . <urn:spec-profile> a ga:Profile .
@@ -83,6 +86,10 @@ async fn explicitly_selected_reused_terms_survive_restoration() -> Result<()> {
         assert!(html.contains(expected), "missing {expected}");
     }
     assert!(!html.contains("DO NOT PUBLISH THIS DEFINITION"));
+    assert!(
+        !html.contains("typing-only.ttl"),
+        "a typing-only source must not receive definition credit"
+    );
     let document = scraper::Html::parse_document(&html);
     let local_links = scraper::Selector::parse("a[href^='#']").unwrap();
     let link = document
