@@ -26,7 +26,7 @@ See [Examples and showcases](usage/examples.md) for runnable commands, fixture
 coverage, and the limits of each demonstration.
 
 The [OMG Commons example](https://github.com/EKGF/grapharch/tree/main/examples/omg-commons) collects the published
-ontology library directly from OMG's RDF URLs. Its family overview links to an
+ontology library directly from OMG's RDF URLs. Its library overview links to an
 individual specification page for each ontology, with a combined PDF and exported
 KG. Unlike the Git repository examples, its source revisions are identified by
 URL and content digest.

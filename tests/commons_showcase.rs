@@ -142,6 +142,15 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
     assert!(html.contains("24 ontologies"));
+    assert!(
+        html.contains("Library overview") &&
+            html.contains("Browse this library")
+    );
+    assert!(!html.contains("Browse this family"));
+    let typst = tokio::fs::read_to_string(root.join("pdf/main.typ")).await?;
+    assert!(
+        typst.contains("Library overview") && typst.contains("in this library")
+    );
     assert!(html.contains("Roles and Compositions"));
     assert!(
         tokio::fs::read(root.join("pdf/document.pdf"))

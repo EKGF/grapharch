@@ -364,11 +364,29 @@ pub(in crate::publication::render) async fn write_catalog(
         serde_json::to_vec(&navigation)?,
     )
     .await?;
-    let family_html = "<details class=\"family-navigation\"><summary>Browse \
-                       this family</summary><p><a href=\"index.html\">Family \
-                       overview</a></p><div data-family-tree \
-                       data-navigation-index=\"navigation.json\"></div></\
-                       details>";
+    let terminology = crate::publication::collection::Terminology::read(
+        &plan.source,
+        &plan.profile,
+    )
+    .await?;
+    let collection_term = html_escape(terminology.singular());
+    let overview_title = html_escape(&terminology.overview());
+    let loading_label = html_escape(&format!(
+        "Loading {} navigation…",
+        terminology.singular()
+    ));
+    let error_label = html_escape(&format!(
+        "{} navigation unavailable",
+        terminology.title()
+    ));
+    let family_html = format!(
+        "<details class=\"family-navigation\"><summary>Browse this \
+         {collection_term}</summary><p><a \
+         href=\"index.html\">{overview_title}</a></p><div data-family-tree \
+         data-navigation-index=\"navigation.json\" \
+         data-loading-label=\"{loading_label}\" \
+         data-error-label=\"{error_label}\"></div></details>"
+    );
     let mut entries = Entries::new(plan).await?;
     let mut current = None;
     let mut section_open = false;
@@ -430,7 +448,7 @@ pub(in crate::publication::render) async fn write_catalog(
             let family_html: String = if books.is_some() {
                 String::new()
             } else {
-                family_html.into()
+                family_html.clone()
             };
             let bookshelf_link = if context.is_some() {
                 "<p><a href=\"index.html\">Back to bookshelf</a></p>"

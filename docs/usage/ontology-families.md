@@ -113,6 +113,30 @@ ontology source file must declare one named ontology. Each ontology needs one
 unambiguous English `rdfs:label` for its chapter title. Namespace and prefix hints
 use `sh:declare` and can be supplied separately without editing the source files.
 
+## Choose collection terminology
+
+A collection can be presented as a library, suite, portfolio, or another singular
+noun phrase. Set `ga:collectionTerm` on the collection selected by the publication
+profile:
+
+```turtle
+<urn:example:family> a artgov:Family ;
+    rdfs:label "Example Ontology Library"@en ;
+    ga:collectionTerm "library" .
+```
+
+This produces “Library overview”, “Browse this library”, and “in this library”
+consistently in generated content and navigation, including search results and
+PDF headings. The [OMG Commons showcase](https://github.com/EKGF/grapharch/tree/main/examples/omg-commons)
+uses this hint. Membership, ontology IRIs, the `artgov:Family` class and publication
+APIs keep their meanings; this is a presentation preference, not a new kind of
+ontology grouping.
+
+The default is `family`. Supply a plain string of at most 80 characters, beginning
+and ending with a letter or digit, with single spaces, hyphens or apostrophes
+inside. Multiword terms such as `ontology suite` are supported. GraphArch does not
+guess plural forms or indefinite articles.
+
 ## What readers see
 
 The opening overview provides ontology names, supplied descriptions, and quick

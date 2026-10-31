@@ -8,8 +8,10 @@ covering names, identifiers, roles, organizations, collections, dates, quantitie
 and units, and other reusable patterns.
 
 [`showcase.yaml`](showcase.yaml) declares every source and its RDF media type.
-[`project.ttl`](project.ttl) contains only publication settings, family membership,
-and the native ontology namespace/prefix declarations. No ontology files are
+[`project.ttl`](project.ttl) contains only publication settings, collection membership,
+and the native ontology namespace/prefix declarations. The collection annotates
+`ga:collectionTerm "library"`, so its overview, navigation, search and PDF use
+“library” consistently while retaining the existing collection identity and membership. No ontology files are
 copied into this repository. We found no official public Commons Git repository;
 using OMG's own published documents avoids treating a third-party mirror as the
 authoritative source.
@@ -21,7 +23,7 @@ committer for these published inputs. External `owl:imports` are recorded, not
 silently fetched: the declared list is the collection boundary. Network, syntax,
 and publication failures fail the showcase and CI.
 
-The output is an unofficial GraphArch documentation preview: a family overview,
+The output is an unofficial GraphArch documentation preview: a library overview,
 one specification HTML page per ontology, and a combined PDF. Source definitions,
 relationships and MIT notices are preserved. The preview does not claim OMG
 approval and does not replace the official Commons specification.

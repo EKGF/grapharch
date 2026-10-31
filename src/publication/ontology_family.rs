@@ -825,9 +825,13 @@ async fn build(
     } else {
         plural
     };
+    let terminology =
+        super::collection::Terminology::read(&view, &profile).await?;
+    let collection_term = terminology.singular();
     let mut overview = format!(
-        "# {}\n\nExplore the {ontology_count} {noun} in this family. Select \
-         {selection} to read its vocabulary reference.\n\n",
+        "# {}\n\nExplore the {ontology_count} {noun} in this \
+         {collection_term}. Select {selection} to read its vocabulary \
+         reference.\n\n",
         family_name[0]
     );
     let mut coverage = format!(
@@ -890,7 +894,7 @@ async fn build(
         &target,
         &profile,
         &family,
-        "Family overview",
+        &terminology.overview(),
         "section",
         2,
     );

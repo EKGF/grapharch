@@ -10,7 +10,7 @@
 ex:project a ga:Project; dct:title "OMG Commons Ontology Library"; ga:target ex:specification, ex:pdf .
 ex:scope a ga:Scope .
 ex:profile a ga:Profile; pub:publishesFamily ex:family .
-ex:family a gov:Family; rdfs:label "OMG Commons Ontology Library" .
+ex:family a gov:Family; rdfs:label "OMG Commons Ontology Library"; ga:collectionTerm "library" .
 ex:specification a ga:Target; dct:title "OMG Commons Ontology Library";
     dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units.";
     rdfs:comment "An unofficial GraphArch documentation preview of the ontology documents published by OMG. This generated publication is not an approved OMG specification. Source annotations and licenses are preserved; external imports are not fetched and no reasoning is performed. Each build records the source URLs and content digests in its documentation graph.";

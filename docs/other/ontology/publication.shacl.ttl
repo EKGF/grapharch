@@ -163,3 +163,10 @@ ga:ProductLogoShape a sh:NodeShape ; sh:targetObjectsOf ga:productLogo ;
     sh:nodeKind sh:IRI ; sh:class ga:BinaryAsset ;
     sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:minLength 1 ; sh:maxLength 4096 ] ;
     sh:property [ sh:path ga:format ; sh:in ("image/png" "image/jpeg" "image/svg+xml") ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:CollectionTermShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:collectionTerm ; sh:class artgov:Family ;
+    sh:property [ sh:path ga:collectionTerm ; sh:datatype xsd:string ;
+        sh:minLength 1 ; sh:maxLength 80 ; sh:maxCount 1 ;
+        sh:pattern "^[\\p{L}\\p{N}](?:[\\p{L}\\p{N} '-]*[\\p{L}\\p{N}])?$" ;
+        sh:not [ sh:pattern "  " ] ] .

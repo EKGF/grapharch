@@ -38,7 +38,7 @@ ex:use-cases a ga:Showcase;ga:slug "use-cases";dct:title "EKGF use-case trees";
  ga:previewPath "website/index.html";ga:pdfPath "review/document.pdf" .
 
 ex:commons a ga:Showcase; ga:slug "commons"; dct:title "OMG Commons Ontology Library";
-    dct:description "The published OMG Commons ontologies are collected directly from their authoritative RDF URLs and become a family overview, an individual specification page per ontology, and a PDF, with native terms and source content digests.";
+    dct:description "The published OMG Commons ontologies are collected directly from their authoritative RDF URLs and become a library overview, an individual specification page per ontology, and a PDF, with native terms and source content digests.";
     ga:order 9; ga:kind "ontology-family"; ga:source "omg-commons/showcase.yaml";
     ga:previewPath "specification/index.html"; ga:pdfPath "pdf/document.pdf" .
 
