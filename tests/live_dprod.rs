@@ -136,6 +136,7 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
     let ontology_path = repo.path().join("ontology/dprod/dprod-ontology.ttl");
     let mut ontology = std::fs::read_to_string(&ontology_path)?;
     ontology.push_str(r#"
+<https://www.omg.org/spec/DPROD/dprod/DataProduct> <http://www.w3.org/2004/02/skos/core#prefLabel> "Primary preferred label"@en, "Competing preferred label"@en ; <https://ekgf.org/ontology/annotation#markdownDescription> "Primary markdown explanation."@en, "Competing markdown explanation."@en .
 <https://www.omg.org/spec/DPROD/dprod/DataProduct> <http://www.w3.org/2002/07/owl#oneOf> (<https://example.org/retained-enumeration-member>) .
 "#);
     std::fs::write(ontology_path, ontology)?;

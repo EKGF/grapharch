@@ -53,7 +53,7 @@ pub(super) fn inline(
         .iter()
         .filter(|issue| issue.reference == subject.as_str())
     {
-        result.push_str("> [!WARNING]\n> Competing source annotations\n>\n");
+        result.push_str("> [!WARNING]\n> Source quality review\n>\n");
         for line in issue.message.lines() {
             result.push_str(">     ");
             result.push_str(line);

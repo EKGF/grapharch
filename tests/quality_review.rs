@@ -23,7 +23,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
         ),
     )
     .await?;
-    tokio::fs::write(&secondary, "<urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> \"Alternate label\"@en ; <http://purl.org/dc/terms/description> \"Alternate definition\"@en .").await?;
+    tokio::fs::write(&secondary, "<urn:quality:missing> a <http://www.w3.org/2002/07/owl#Class> . <urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> \"Alternate label\"@en ; <http://purl.org/dc/terms/description> \"Alternate definition\"@en .").await?;
     let dataset = Dataset::memory()?;
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
@@ -35,6 +35,19 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
             .collect(&writer)
             .await?;
     }
+    let documentor =
+        grapharch::publication::document::AnnotatedTermDocumentor::new(
+            dataset.clone(),
+            dataset.snapshot_for("urn:specification:project").await?,
+            "urn:specification:project",
+            oxrdf::NamedNode::new("urn:quality:missing")?,
+            "en",
+            std::sync::Arc::new(std::collections::BTreeMap::new()),
+            std::sync::Arc::new(std::collections::HashSet::new()),
+        )?
+        .with_source_annotations();
+    use grapharch::publication::document::Documentor;
+    documentor.document(&writer).await?;
     let revision = Assembler::new(dataset.clone())
         .assemble("urn:specification:project")
         .await?;
@@ -53,12 +66,21 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     source.close()?;
-    let PublishOutcome::Published(publication) = Publisher::new(restored)
-        .render(&plan, output.path())
-        .await?
+    let PublishOutcome::Published(publication) =
+        Publisher::new(restored.clone())
+            .render(&plan, output.path())
+            .await?
     else {
         panic!("publication required")
     };
+    assert!(
+        publication
+            .manifest
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "missing-source-definition"),
+        "existing documentor warnings must join the same addendum"
+    );
     let warnings: Vec<_> = publication
         .manifest
         .diagnostics
@@ -82,6 +104,17 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
             .iter()
             .any(|d| d.message.contains("Libellé français"))
     );
+    let mut statuses = restored.select("SELECT ?status WHERE { GRAPH <urn:grapharch:publications> { ?publication <https://ekgf.org/ontology/grapharch#status> ?status } }".into()).await?;
+    let mut reviewed = false;
+    while let Some(row) = statuses.next().await? {
+        assert_ne!(
+            row["status"].to_string(),
+            "\"published-with-errors\"",
+            "warnings must not mark a successful publication as an error"
+        );
+        reviewed |= row["status"].to_string() == "\"published-with-warnings\"";
+    }
+    assert!(reviewed);
     let html =
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;

@@ -488,7 +488,7 @@ impl Documentor for AnnotatedTermDocumentor {
             ));
         }
         ensure!(
-            preferred_labels.len() <= 1,
+            self.source_annotations || preferred_labels.len() <= 1,
             "{} has ambiguous skos:prefLabel annotations for {}",
             self.subject,
             self.language
@@ -496,11 +496,31 @@ impl Documentor for AnnotatedTermDocumentor {
         if !preferred_labels.is_empty() {
             label = preferred_labels;
         }
-        let markdown = super::description::select(
-            markdown_descriptions,
-            &self.subject,
-            &self.language,
-        )?;
+        let markdown = if self.source_annotations {
+            markdown_descriptions.sort();
+            markdown_descriptions.dedup();
+            let mut bodies = Vec::new(); // bounded: the 512-fact annotation budget above.
+            for body in markdown_descriptions {
+                if let Some(body) = super::description::select(
+                    vec![body],
+                    &self.subject,
+                    &self.language,
+                )? {
+                    bodies.push(body);
+                }
+            }
+            if bodies.is_empty() {
+                None
+            } else {
+                Some(bodies.join("\n\n---\n\n"))
+            }
+        } else {
+            super::description::select(
+                markdown_descriptions,
+                &self.subject,
+                &self.language,
+            )?
+        };
         if markdown.is_none() {
             notes.extend(comments);
         }
@@ -670,7 +690,7 @@ impl Documentor for AnnotatedTermDocumentor {
         hash.update([u8::from(self.source_annotations)]);
         hash.update(body.as_bytes());
         let revision = format!(
-            "annotated-term-v6:{}:{}",
+            "annotated-term-v7:{}:{}",
             self.language,
             hex::encode(hash.finalize())
         );
@@ -720,7 +740,7 @@ impl Documentor for AnnotatedTermDocumentor {
             (
                 contribution.clone(),
                 term("revision"),
-                Literal::new_simple_literal(revision).into(),
+                Literal::new_simple_literal(&revision).into(),
             ),
             (
                 fragment.clone(),
@@ -745,7 +765,7 @@ impl Documentor for AnnotatedTermDocumentor {
             (
                 fragment.clone(),
                 term("contribution"),
-                contribution.into(),
+                contribution.clone().into(),
             ),
         ];
         for (subject, predicate, object) in metadata {
@@ -778,7 +798,6 @@ impl Documentor for AnnotatedTermDocumentor {
                 ))
                 .await?;
         }
-        stream.complete().await?;
         if self.source_annotations {
             for (missing, code, message) in [
                 (
@@ -793,10 +812,39 @@ impl Documentor for AnnotatedTermDocumentor {
                 ),
             ] {
                 if missing {
-                    writer.record_diagnostic_at(crate::publication::diagnostics::SourceContext { project:self.project.as_str(),processor:processor.as_str(),source:self.subject.as_str(),stage:"document",input_revision:Some(&self.snapshot) },crate::publication::diagnostics::Diagnostic { severity: crate::publication::diagnostics::Severity::Warning, code: code.into(),message:message.into(),reference:self.subject.as_str().into(),source_fragment:Some(self.fragment_id().into_string()) }).await?;
+                    let context =
+                        crate::publication::diagnostic_graph::Context {
+                            graph:     NamedNode::new_unchecked(
+                                "urn:grapharch:quality",
+                            ),
+                            id:        contribution.clone(),
+                            project:   self.project.clone(),
+                            about:     self.subject.clone(),
+                            revision:  self.snapshot.clone(),
+                            processor: processor.clone(),
+                            source:    self.subject.as_str().into(),
+                        };
+                    let diagnostic = crate::publication::diagnostics::Diagnostic { severity: crate::publication::diagnostics::Severity::Warning, code: code.into(), message: message.into(), reference: self.subject.as_str().into(), source_fragment: Some(self.fragment_id().into_string()) };
+                    let job = identity("source-quality", &[
+                        self.subject.as_str(),
+                        code,
+                        &revision,
+                    ])
+                    .into_string();
+                    for quad in crate::publication::diagnostic_graph::quads(
+                        &context,
+                        &job,
+                        &[diagnostic],
+                    )?
+                    .into_iter()
+                    .filter(|q| q.predicate != term("diagnosticCount"))
+                    {
+                        stream.write(quad).await?;
+                    }
                 }
             }
         }
+        stream.complete().await?;
         Ok(())
     }
 }

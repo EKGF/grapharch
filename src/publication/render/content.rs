@@ -220,12 +220,16 @@ pub(super) async fn write(
         previous = Some(entry.placement.clone());
     }
     if plan.is_html() {
-        html::end(&mut file, previous.is_some()).await?;
+        if previous.is_some() {
+            html::close(&mut file).await?;
+        }
+        super::quality::html(&mut file, &plan.quality).await?;
+        html::end(&mut file, false).await?;
     } else {
         typst::end(&mut file, previous.is_some()).await?;
     }
     file.flush().await?;
-    Ok(Vec::new())
+    Ok(plan.quality.clone())
 }
 
 pub(super) async fn write_typst(
@@ -293,7 +297,12 @@ pub(super) async fn write_typst(
     }
     let errors = diagnostics
         .iter()
-        .filter(|diagnostic| diagnostic.code != "competing-source-annotations")
+        .filter(|diagnostic| {
+            matches!(
+                diagnostic.severity,
+                crate::publication::diagnostics::Severity::Error
+            )
+        })
         .collect::<Vec<_>>(); // bounded: publication diagnostic budget.
     if !errors.is_empty() {
         file.write_all(b"#pagebreak()\n#heading(level: 1, numbering: none)[Publication diagnostics]\n").await?;

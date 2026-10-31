@@ -271,7 +271,7 @@ impl Publisher {
             } else if let Some((_, diagnostics)) = &page_files {
                 diagnostics.clone()
             } else if website_files.is_some() {
-                Vec::new()
+                plan.quality.clone()
             } else {
                 content::write(plan, &stage.path, self.failure_mode).await?
             };

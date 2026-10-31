@@ -138,5 +138,92 @@ pub(super) async fn append(
                 .await?;
         }
     }
+    retain_source_warnings(dataset, revision, project, plan, stream, count)
+        .await
+}
+
+async fn retain_source_warnings(
+    dataset: &Dataset,
+    revision: &NamedNode,
+    project: &NamedNode,
+    plan: &NamedNode,
+    stream: &mut ContributionStream,
+    mut count: usize,
+) -> Result<()> {
+    let ga = "https://ekgf.org/ontology/grapharch#";
+    let view = RevisionView::new(dataset.clone(), revision.clone());
+    let findings = view.pattern(
+        &format!(
+            "?issue a <{ga}Diagnostic> ; <{ga}severity> \"warning\" ; \
+             <{ga}code> ?code ; <{ga}message> ?message ; \
+             <{ga}unresolvedReference> ?reference"
+        ),
+        0,
+    );
+    let fragment = view.pattern(
+        &format!("?issue <{ga}sourceFragment> ?fragment"),
+        1,
+    );
+    let mut rows = dataset
+        .select(format!(
+            "SELECT DISTINCT ?code ?message ?reference ?fragment WHERE {{ \
+             {findings} OPTIONAL {{ {fragment} }} }} ORDER BY ?reference \
+             ?code ?message LIMIT 1025"
+        ))
+        .await?;
+    while let Some(row) = rows.next().await? {
+        count += 1;
+        ensure!(
+            count <= 1024,
+            "publication exceeds 1024 quality issues"
+        );
+        let text = |name: &str| -> Result<String> {
+            match &row[name] {
+                Term::Literal(v) => Ok(v.value().into()),
+                _ => anyhow::bail!("diagnostic {name} must be a literal"),
+            }
+        };
+        let reference = text("reference")?;
+        let code = text("code")?;
+        let message = text("message")?;
+        let about =
+            NamedNode::new(&reference).unwrap_or_else(|_| project.clone());
+        let job = identity("retained-quality-issue", &[
+            revision.as_str(),
+            &reference,
+            &code,
+            &message,
+        ])
+        .into_string();
+        let context = Context {
+            graph: plan.clone(),
+            id: plan.clone(),
+            project: project.clone(),
+            about,
+            revision: revision.clone(),
+            processor: NamedNode::new_unchecked(
+                "urn:grapharch:quality-inspector",
+            ),
+            source: reference.clone(),
+        };
+        let source_fragment = match row.get("fragment") {
+            Some(Term::NamedNode(v)) => Some(v.as_str().into()),
+            None => None,
+            _ => anyhow::bail!("source fragment must be an IRI"),
+        };
+        let diagnostic = Diagnostic {
+            severity: Severity::Warning,
+            code,
+            message,
+            reference,
+            source_fragment,
+        };
+        for quad in diagnostic_graph::quads(&context, &job, &[diagnostic])?
+            .into_iter()
+            .filter(|q| q.predicate != term("diagnosticCount"))
+        {
+            stream.write(quad).await?;
+        }
+    }
     Ok(())
 }

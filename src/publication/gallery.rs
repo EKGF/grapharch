@@ -349,7 +349,14 @@ async fn build_case(
     let actual: Vec<_> = publications
         .iter()
         .flat_map(|publication| {
-            publication.manifest.diagnostics.iter().cloned()
+            publication
+                .manifest
+                .diagnostics
+                .iter()
+                .filter(|d| {
+                    matches!(d.severity, super::diagnostics::Severity::Error)
+                })
+                .cloned()
         })
         .collect();
     let codes: BTreeSet<_> =

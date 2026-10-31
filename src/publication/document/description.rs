@@ -23,22 +23,27 @@ pub(super) fn select(
 ) -> Result<Option<String>> {
     let values: BTreeSet<_> = values.into_iter().collect();
     ensure!(
-        values.len() <= 1,
-        "{subject} has multiple distinct markdownDescription values for \
-         {language}"
+        values.len() <= 64,
+        "{subject} exceeds rich annotation count budget for {language}"
     );
-    let value = values.into_iter().next();
-    if let Some(value) = &value {
+    if values.is_empty() {
+        return Ok(None)
+    }
+    let mut bytes = 0;
+    for value in &values {
         ensure!(
             !value.trim().is_empty(),
             "{subject} markdownDescription cannot be empty"
         );
+        bytes += value.len();
         ensure!(
-            value.len() <= 256 * 1024,
+            bytes <= 256 * 1024,
             "{subject} markdownDescription exceeds byte budget"
         );
     }
-    Ok(value)
+    Ok(Some(
+        values.into_iter().collect::<Vec<_>>().join("\n\n---\n\n"),
+    ))
 }
 
 pub(crate) async fn read(

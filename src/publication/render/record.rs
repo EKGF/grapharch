@@ -89,9 +89,18 @@ pub(super) async fn finish(
     let id = NamedNode::new(format!("urn:grapharch:publication:{job}"))?;
     let status = Literal::new_simple_literal(match result {
         Ok(PublishOutcome::Published(publication))
-            if !publication.manifest.diagnostics.is_empty() =>
+            if publication
+                .manifest
+                .diagnostics
+                .iter()
+                .any(|d| matches!(d.severity, Severity::Error)) =>
         {
             "published-with-errors"
+        },
+        Ok(PublishOutcome::Published(publication))
+            if !publication.manifest.diagnostics.is_empty() =>
+        {
+            "published-with-warnings"
         },
         Ok(PublishOutcome::Published(_)) => "published",
         Ok(PublishOutcome::Superseded) => "superseded",

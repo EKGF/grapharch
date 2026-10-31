@@ -159,7 +159,7 @@ async fn markdown_annotations_render_from_restored_kg_without_duplicate_definiti
 }
 
 #[tokio::test]
-async fn distinct_selected_markdown_annotations_fail_instead_of_arbitrary_selection()
+async fn distinct_selected_markdown_annotations_are_preserved_for_review()
 -> Result<()> {
     let source = tempfile::tempdir()?;
     sources(
@@ -168,11 +168,26 @@ async fn distinct_selected_markdown_annotations_fail_instead_of_arbitrary_select
         "ex:Class ann:markdownDescription \"Conflicting English \
          description.\"@en .",
     )?;
-    let error = collect(source.path())
-        .await
-        .err()
-        .expect("ambiguous rich descriptions must fail");
-    assert!(format!("{error:#}").contains("distinct markdownDescription"));
+    let built = collect(source.path()).await?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    assert!(html.contains("Rich description."));
+    assert!(html.contains("Conflicting English description."));
+    assert!(
+        publication
+            .manifest
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "competing-source-annotations")
+    );
     Ok(())
 }
 
