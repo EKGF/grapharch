@@ -1123,12 +1123,18 @@ async fn vocabulary_labels(
     if !preferred.is_empty() {
         return Ok(preferred);
     }
-    english(
-        view,
-        subject,
+    for predicate in [
         "http://www.w3.org/2000/01/rdf-schema#label",
-    )
-    .await
+        "http://www.w3.org/ns/shacl#name",
+        "http://purl.org/dc/terms/title",
+        "http://purl.org/dc/elements/1.1/title",
+    ] {
+        let labels = english(view, subject, predicate).await?;
+        if !labels.is_empty() {
+            return Ok(labels);
+        }
+    }
+    Ok(Vec::new())
 }
 
 async fn english(

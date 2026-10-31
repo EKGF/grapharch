@@ -419,3 +419,74 @@ async fn unsafe_links_and_empty_rich_annotations_are_rejected() -> Result<()> {
     assert!(format!("{error:#}").contains("unresolved or unsupported link"));
     Ok(())
 }
+
+#[tokio::test]
+async fn family_shape_annotation_counts_match_generated_reference_warnings()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    sources(
+        source.path(),
+        "A supplied description.",
+        r#"
+@prefix sh:<http://www.w3.org/ns/shacl#> .
+ex:Shape a sh:PropertyShape ; sh:name "Required profile"@en ; sh:description "Names the profile expected by this shape."@en ; sh:path ex:property .
+"#,
+    )?;
+    let built = collect(source.path()).await?;
+    let mut missing = built
+        .dataset
+        .select(
+            "PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT \
+             ?diagnostic WHERE { GRAPH ?graph { ?diagnostic ga:code ?code } \
+             FILTER(?code IN ('missing-source-label', \
+             'missing-source-definition')) }"
+                .into(),
+        )
+        .await?;
+    assert!(
+        missing.next().await?.is_none(),
+        "SHACL annotations must satisfy source annotation checks"
+    );
+    let mut bodies = built
+        .dataset
+        .select(
+            "PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT ?body \
+             WHERE { GRAPH ?graph { ?fragment ga:body ?body } \
+             FILTER(CONTAINS(?body, 'resources have no English source \
+             definition')) }"
+                .into(),
+        )
+        .await?;
+    let row = bodies
+        .next()
+        .await?
+        .expect("family source coverage summary");
+    assert!(
+        row["body"]
+            .to_string()
+            .contains("0 resources have no English source definition"),
+        "coverage count and per-resource warnings must use same supported \
+         predicates"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn family_ontology_title_can_use_dublin_core_without_rdfs_label()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    sources(source.path(), "A supplied description.", "")?;
+    let path = source.path().join("sources/vocab.ttl");
+    let original = tokio::fs::read_to_string(&path).await?;
+    tokio::fs::write(
+        &path,
+        original.replace(
+            "rdfs:label \"Example ontology\"@en",
+            "<http://purl.org/dc/terms/title> \"Example ontology\"@en",
+        ),
+    )
+    .await?;
+    let built = collect(source.path()).await?;
+    assert_eq!(built.ontology_count, 1);
+    Ok(())
+}

@@ -852,7 +852,7 @@ impl Documentor for AnnotatedTermDocumentor {
                             processor: processor.clone(),
                             source:    self.subject.as_str().into(),
                         };
-                    let diagnostic = crate::publication::diagnostics::Diagnostic { severity: crate::publication::diagnostics::Severity::Warning, code: code.into(), message: message.into(), reference: self.subject.as_str().into(), source_fragment: Some(self.fragment_id().into_string()) };
+                    let diagnostic = crate::publication::diagnostics::Diagnostic { severity: crate::publication::diagnostics::Severity::Warning, code: code.into(), message, reference: self.subject.as_str().into(), source_fragment: Some(self.fragment_id().into_string()) };
                     let job = identity("source-quality", &[
                         self.subject.as_str(),
                         code,
