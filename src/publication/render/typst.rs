@@ -93,14 +93,19 @@ pub(super) async fn begin_book(
             ));
         }
     }
+    let style = super::typst_style::Style::read(plan).await?;
     if matches!(
         plan.renderer.as_str(),
         "specification" | "bookshelf"
-    ) {
+    ) || (style.name == "specification" &&
+        plan.source
+            .optional(&plan.target, "publicationStatus")
+            .await?
+            .is_some())
+    {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     }
     front.insert_str(0, &release);
-    let style = super::typst_style::Style::read(plan).await?;
     file.write_all(
         format!(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \

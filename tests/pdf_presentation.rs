@@ -226,3 +226,39 @@ async fn long_authority_and_status_fit_the_pdf_ribbon() -> Result<()> {
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn independent_standards_pdf_preserves_publication_metadata() -> Result<()>
+{
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    let fixture = definitions::set_property(
+        include_str!("../examples/specification/project.ttl"),
+        "urn:specification:target",
+        "https://ekgf.org/ontology/grapharch#renderer",
+        definitions::literal("typst"),
+    )?;
+    let fixture =
+        format!("{fixture}\nex:profile ga:style \"specification\" .\n");
+    std::fs::write(&path, fixture)?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    std::fs::remove_file(path)?;
+    let out = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], out.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    let typst =
+        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    assert!(
+        typst.contains("Alex Example"),
+        "standalone standards PDF must retain its editor"
+    );
+    assert!(
+        typst.contains("https://example.org/spec/2026-10-24/"),
+        "standalone standards PDF must retain its version URL"
+    );
+    Ok(())
+}
