@@ -1,3 +1,6 @@
+#[path = "support/frontmatter.rs"]
+mod frontmatter;
+
 use {
     anyhow::Result,
     oxigraph::{io::RdfFormat, store::Store},
@@ -92,6 +95,14 @@ async fn documentable_guides_have_examples_with_source_and_generated_output()
         "docs/documentable-things/authored-documentation.md",
     )
     .await?;
-    assert!(markdown.starts_with("---\ntitle: Markdown pages and guides\n"));
+    #[derive(serde::Deserialize)]
+    struct Guide {
+        title: String,
+    }
+    let (metadata, _) = frontmatter::parse(&markdown)?;
+    assert_eq!(
+        serde_yaml::from_str::<Guide>(metadata)?.title,
+        "Markdown pages and guides"
+    );
     Ok(())
 }

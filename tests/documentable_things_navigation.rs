@@ -1,3 +1,6 @@
+#[path = "support/frontmatter.rs"]
+mod frontmatter;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -32,11 +35,7 @@ struct Page {
 async fn metadata(relative: &str) -> Result<(String, Page)> {
     let source =
         tokio::fs::read_to_string(Path::new("docs").join(relative)).await?;
-    let (frontmatter, _) = source
-        .strip_prefix("---\n")
-        .ok_or_else(|| anyhow::anyhow!("missing frontmatter: {relative}"))?
-        .split_once("\n---\n")
-        .ok_or_else(|| anyhow::anyhow!("unclosed frontmatter: {relative}"))?;
+    let (frontmatter, _) = frontmatter::parse(&source)?;
     Ok((
         frontmatter.into(),
         serde_yaml::from_str(frontmatter)?,

@@ -1,4 +1,7 @@
 //! Local feature-catalogue checks; no remote showcase sources are contacted.
+#[path = "support/frontmatter.rs"]
+mod frontmatter;
+
 use {
     anyhow::{Result, ensure},
     pulldown_cmark::{Event, Parser, Tag},
@@ -39,12 +42,7 @@ fn pages(root: &Path, result: &mut Vec<PathBuf>) -> Result<()> {
 }
 fn read(path: &Path) -> Result<(Page, String)> {
     let text = std::fs::read_to_string(path)?;
-    let body = text.strip_prefix("---\n").ok_or_else(|| {
-        anyhow::anyhow!("missing frontmatter: {}", path.display())
-    })?;
-    let (frontmatter, content) = body
-        .split_once("\n---\n")
-        .ok_or_else(|| anyhow::anyhow!("unterminated frontmatter"))?;
+    let (frontmatter, content) = frontmatter::parse(&text)?;
     Ok((serde_yaml::from_str(frontmatter)?, content.into()))
 }
 #[test]

@@ -1,3 +1,6 @@
+#[path = "support/frontmatter.rs"]
+mod frontmatter;
+
 use {
     anyhow::Result,
     pulldown_cmark::{Event, Parser, Tag},
@@ -34,11 +37,7 @@ async fn collectors_catalogue_has_unique_navigation_practical_examples_and_resol
     for (index, name) in PAGES.iter().enumerate() {
         let path = Path::new("docs/collectors").join(name);
         let source = tokio::fs::read_to_string(&path).await?;
-        let (frontmatter, body) = source
-            .strip_prefix("---\n")
-            .unwrap()
-            .split_once("\n---\n")
-            .unwrap();
+        let (frontmatter, body) = frontmatter::parse(&source)?;
         let metadata: Metadata = serde_yaml::from_str(frontmatter)?;
         assert!(
             titles.insert(metadata.title.clone()),
@@ -123,11 +122,7 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
             continue;
         }
         let original = tokio::fs::read_to_string(page.path()).await?;
-        let (frontmatter, _) = original
-            .strip_prefix("---\n")
-            .unwrap()
-            .split_once("\n---\n")
-            .unwrap();
+        let (frontmatter, _) = frontmatter::parse(&original)?;
         let metadata: Metadata = serde_yaml::from_str(frontmatter)?;
         let path = source.path().join("collectors").join(page.file_name());
         tokio::fs::create_dir_all(path.parent().unwrap()).await?;
