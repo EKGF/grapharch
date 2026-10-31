@@ -52,3 +52,5 @@ source:
       media_type: application/rdf+xml
     - url: https://www.omg.org/spec/Commons/TextDatatype.rdf
       media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime.rdf
+      media_type: application/rdf+xml

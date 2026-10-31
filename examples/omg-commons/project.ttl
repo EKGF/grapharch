@@ -54,3 +54,4 @@ ex:publisher a gov:Authority; rdfs:label "GraphArch showcases"; ga:shortName "Gr
 <https://www.omg.org/spec/Commons/SitesAndFacilities/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-sfc"; sh:namespace "https://www.omg.org/spec/Commons/SitesAndFacilities/" ] .
 <https://www.omg.org/spec/Commons/StructuredCollections/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-strcol"; sh:namespace "https://www.omg.org/spec/Commons/StructuredCollections/" ] .
 <https://www.omg.org/spec/Commons/TextDatatype/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-txt"; sh:namespace "https://www.omg.org/spec/Commons/TextDatatype/" ] .
+<https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-mdt"; sh:namespace "https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime/" ] .

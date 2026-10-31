@@ -103,7 +103,7 @@ async fn published_commons_inventory_uses_authoritative_urls_without_a_copied_co
         Some("rdf-urls")
     );
     let documents = config["source"]["documents"].as_sequence().unwrap();
-    assert_eq!(documents.len(), 23);
+    assert_eq!(documents.len(), 24);
     for document in documents {
         let url = document["url"].as_str().unwrap();
         assert!(
@@ -141,7 +141,7 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     let html =
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
-    assert!(html.contains("23 ontologies"));
+    assert!(html.contains("24 ontologies"));
     assert!(html.contains("Roles and Compositions"));
     assert!(
         tokio::fs::read(root.join("pdf/document.pdf"))

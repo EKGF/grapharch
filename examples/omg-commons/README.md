@@ -3,6 +3,7 @@
 This showcase collects the published [OMG Commons Ontology Library](https://www.omg.org/spec/Commons)
 from its authoritative RDF document URLs. It includes `AboutCommons.rdf` and the
 22 ontologies explicitly imported by the Commons 1.3 convenience ontology,
+plus the separately published mapping to OWL-Time,
 covering names, identifiers, roles, organizations, collections, dates, quantities
 and units, and other reusable patterns.
 
