@@ -178,6 +178,7 @@ async fn assemble(
 ) -> Result<Vec<ResolvedPlan>> {
     let collected = dataset.snapshot_for(PROJECT).await?;
     let view = RevisionView::new(dataset.clone(), collected.clone());
+    let targets = source_owned::targets(&view).await?;
     let roots = if matches!(authored, Authored::Configured { .. }) {
         source_owned::roots(&view).await?
     } else {
@@ -445,36 +446,32 @@ async fn assemble(
         ))
         .await?;
     if derive {
-        bindings
-            .write(quad(
-                &node("pdf"),
-                "publicationDate",
-                native_view
-                    .optional_by(
-                        &NamedNode::new(ontology)?,
-                        &NamedNode::new("http://purl.org/dc/terms/issued")?,
-                    )
+        let native = NamedNode::new(ontology)?;
+        for target in &targets {
+            if view.text(target, "renderer").await? != "typst" {
+                continue;
+            }
+            for (field, predicate) in [
+                (
+                    "publicationDate",
+                    "http://purl.org/dc/terms/issued",
+                ),
+                ("license", "http://purl.org/dc/terms/license"),
+            ] {
+                ensure!(
+                    view.optional(target, field).await?.is_none(),
+                    "derived native PDF metadata conflicts with source \
+                     settings for {target} {field}"
+                );
+                let value = native_view
+                    .optional_by(&native, &NamedNode::new(predicate)?)
                     .await?
                     .ok_or_else(|| {
-                        anyhow::anyhow!("DPROD source has no publication date")
-                    })?,
-            ))
-            .await?;
-        bindings
-            .write(quad(
-                &node("pdf"),
-                "license",
-                native_view
-                    .optional_by(
-                        &NamedNode::new(ontology)?,
-                        &NamedNode::new("http://purl.org/dc/terms/license")?,
-                    )
-                    .await?
-                    .ok_or_else(|| {
-                        anyhow::anyhow!("DPROD source has no license")
-                    })?,
-            ))
-            .await?;
+                        anyhow::anyhow!("DPROD source has no {predicate}")
+                    })?;
+                bindings.write(quad(target, field, value)).await?;
+            }
+        }
     }
     bindings.complete().await?;
     super::website::bind(dataset, writer, PROJECT, node("website").as_str())
@@ -482,7 +479,7 @@ async fn assemble(
     let revision = Assembler::new(dataset.clone()).assemble(PROJECT).await?;
     let planner = TargetPlanner::new(dataset.clone(), revision);
     let mut plans = Vec::new();
-    for target in [node("specification"), node("website"), node("pdf")] {
+    for target in targets {
         plans.push(planner.resolve(PROJECT, &target, writer).await?);
     }
     Ok(plans)
@@ -617,8 +614,13 @@ pub(super) async fn collect_remote(
     );
     let config: RemoteConfig = serde_yaml::from_slice(&bytes)?;
     ensure!(
-        config.r#ref == "develop",
-        "DPROD showcase must use develop"
+        config.r#ref == "develop" ||
+            (config.r#ref.len() == 40 &&
+                config
+                    .r#ref
+                    .bytes()
+                    .all(|byte| byte.is_ascii_hexdigit())),
+        "DPROD showcase must use develop or an exact Git commit"
     );
     let scan = super::collect::git::remote_repository(
         &config.repository,

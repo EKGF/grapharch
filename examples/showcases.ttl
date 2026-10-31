@@ -20,9 +20,9 @@ ex:rdf12 a ga:Showcase ; ga:slug "rdf12" ; dct:title "W3C RDF 1.2 N-Triples" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" ;
     ga:expectedDiagnostic "unresolved-native-reference" .
 ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and SHACL" ;
-    dct:description "The real DPROD vocabulary and shapes become 53 annotated term fragments, a standards-style reference, a companion website with stories and guides, and an independently planned review PDF." ;
+    dct:description "DPROD from the develop branch becomes a standards reference, companion guide, an EKGF community PDF and an OMG submission-preview PDF. Both editions share the same technical chapters and pinned source revision." ;
     ga:order 4 ; ga:kind "dprod" ; ga:source "dprod/live.yaml" ;
-    ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/document.pdf" .
+    ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/ekgf/document.pdf" .
 
 ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;
     dct:description "The latest default branch of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;

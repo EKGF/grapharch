@@ -7,7 +7,7 @@ use grapharch::publication::{dataset::Dataset, render::Publisher, showcases};
 #[tokio::test]
 #[ignore = "explicit remote develop acceptance; performs read-only network \
             collection"]
-async fn remote_develop_restores_and_publishes_three_targets()
+async fn remote_develop_restores_and_publishes_declared_targets()
 -> anyhow::Result<()> {
     let cache = std::path::Path::new("output/cache/git");
     let config = std::env::var("GRAPHARCH_DPROD_CONFIG")
@@ -22,7 +22,7 @@ async fn remote_develop_restores_and_publishes_three_targets()
     restored.import(archive).await?;
     let publications =
         showcases::publish(&Publisher::new(restored), &plans, output).await?;
-    assert_eq!(publications.len(), 3);
+    assert_eq!(publications.len(), 4);
     let html =
         tokio::fs::read_to_string(output.join("specification/index.html"))
             .await?;
@@ -70,12 +70,12 @@ async fn remote_develop_restores_and_publishes_three_targets()
             &writer,
         )
         .await
-        .expect_err("unapproved release must fail");
-    assert!(format!("{failure:#}").contains("required"));
+        .expect_err("unapproved release must not be an active publication");
+    assert!(format!("{failure:#}").contains("not registered"));
     drop(writer);
     worker.await??;
     assert!(
-        tokio::fs::read(output.join("pdf/document.pdf"))
+        tokio::fs::read(output.join("pdf/ekgf/document.pdf"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -329,6 +329,7 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
         "-m",
         "develop publication",
     ])?;
+    let first_commit = git(repo.path(), &["rev-parse", "HEAD"])?;
     let remote = tempfile::tempdir()?;
     let clone = std::process::Command::new("git")
         .args([
@@ -389,6 +390,34 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     let (updated, _) = showcases::dprod_remote(&config, cache.path()).await?;
     let mut rows=updated.select("SELECT ?body WHERE { GRAPH ?g { ?f <https://ekgf.org/ontology/grapharch#body> ?body } FILTER(CONTAINS(STR(?body),'DEVELOP TWO')) }".into()).await?;
     assert!(rows.next().await?.is_some());
+    // A CI build pins its own commit even after develop advances. Both
+    // editions must therefore resolve the exact supplied revision, not HEAD.
+    let pinned_config = output.path().join("pinned.yaml");
+    std::fs::write(
+        &pinned_config,
+        format!(
+            "repository: {}\nref: {first_commit}\ndefinitions: \
+             publication/grapharch.ttl\n",
+            remote.path().join("remote.git").display()
+        ),
+    )?;
+    let (pinned, pinned_plans) =
+        showcases::dprod_remote(&pinned_config, cache.path()).await?;
+    assert_eq!(pinned_plans.len(), 3);
+    let mut rows = pinned.select("SELECT ?body WHERE { GRAPH ?g { ?fragment <https://ekgf.org/ontology/grapharch#body> ?body } FILTER(CONTAINS(STR(?body), 'DEVELOP ONE') || CONTAINS(STR(?body), 'DEVELOP TWO')) }".into()).await?;
+    let mut observed_first = false;
+    while let Some(row) = rows.next().await? {
+        let oxrdf::Term::Literal(body) = &row["body"] else {
+            panic!("source text required")
+        };
+        observed_first |= body.value().contains("DEVELOP ONE");
+        assert!(
+            !body.value().contains("DEVELOP TWO"),
+            "pinned collection followed moving develop"
+        );
+    }
+    assert!(observed_first);
+    std::fs::remove_file(pinned_config)?;
     std::fs::remove_file(repo.path().join("badge.svg"))?;
     git(repo.path(), &["add", "-u"])?;
     git(repo.path(), &[

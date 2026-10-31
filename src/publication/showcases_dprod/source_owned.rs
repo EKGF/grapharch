@@ -176,3 +176,28 @@ pub(super) async fn legal_targets(view: &RevisionView) -> Result<Vec<String>> {
     ensure!(!result.is_empty(), "no legal publication targets");
     Ok(result)
 }
+
+/// Resolve the source's active publication targets, rather than selecting a
+/// fixed number of showcase outputs. A future formal-release template need not
+/// be registered as an active project target.
+pub(super) async fn targets(view: &RevisionView) -> Result<Vec<NamedNode>> {
+    // bounded: publication definitions may register at most16 targets.
+    let mut targets = Vec::new();
+    let mut rows = view.objects(&node("project"), "target").await?;
+    while let Some(row) = rows.next().await? {
+        ensure!(targets.len() < 16, "DPROD target budget exceeded");
+        let Term::NamedNode(target) = &row["value"] else {
+            anyhow::bail!("publication target must be an IRI")
+        };
+        targets.push(target.clone());
+    }
+    ensure!(
+        !targets.is_empty(),
+        "project has no active publication targets"
+    );
+    let primary = node("specification");
+    targets.sort_by(|a, b| {
+        (a != &primary, a.as_str()).cmp(&(b != &primary, b.as_str()))
+    });
+    Ok(targets)
+}

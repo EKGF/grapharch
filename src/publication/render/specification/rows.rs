@@ -7,6 +7,7 @@ use {
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
     std::collections::HashSet,
+    url::Url,
 };
 
 pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
@@ -37,6 +38,12 @@ pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
         return Ok(None);
     }
     fields.sort();
+    let publication_url = Url::parse(
+        plan.source
+            .node(&plan.target, "thisVersion")
+            .await?
+            .as_str(),
+    )?;
     let mut html = String::new();
     let mut seen = HashSet::new();
     for (_, row) in fields {
@@ -48,7 +55,10 @@ pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
                 body.len() <= 64 * 1024,
                 "custom metadata row exceeds 64 KiB"
             );
-            let fragment = native_html::read(&body, None, &mut |_| Ok(None))?;
+            let fragment =
+                native_html::read(&body, Some(&publication_url), &mut |_| {
+                    Ok(None)
+                })?;
             ensure!(
                 fragment.ids.is_empty() && fragment.headings.is_empty(),
                 "metadata rows cannot introduce document anchors or headings"

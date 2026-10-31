@@ -35,3 +35,12 @@ The **Multilingual code examples** showcase demonstrates Python, Bash, JavaScrip
 TypeScript, JSON, JSON-LD and SPARQL. Its HTML and PDF use the same offline syntax
 colours. See [Code examples and syntax colours](usage/code-highlighting.md) for
 fence names and practical Markdown examples.
+
+The DPROD showcase publishes two editions from the same pinned repository
+revision and technical chapters: the
+[EKGF community PDF](https://ekgf.github.io/grapharch/showcases/artifacts/dprod/pdf/ekgf/document.pdf)
+and the
+[OMG submission-preview PDF](https://ekgf.github.io/grapharch/showcases/artifacts/dprod/pdf/omg/document.pdf).
+Their publication profiles select different front matter and publisher branding.
+The submission preview does not claim OMG approval or an assigned OMG document
+number.
