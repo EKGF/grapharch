@@ -162,14 +162,12 @@ pub(super) async fn html_titled(
     )
     .await?;
     for group in groups(issues) {
+        let anchor = format!("quality-{}", group.code);
         file.write_all(
             format!(
-                "<section class=\"quality-issue-group\">{}<ul>",
-                super::markup::structural_heading(
-                    3,
-                    &group.title,
-                    &format!("quality-{}", group.code)
-                )
+                "<section class=\"quality-issue-group\" id=\"{}\">{}<ul>",
+                super::markup::html_escape(&anchor),
+                super::markup::structural_heading(3, &group.title, &anchor)
             )
             .as_bytes(),
         )

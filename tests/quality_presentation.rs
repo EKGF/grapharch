@@ -97,6 +97,22 @@ async fn competing_values_are_readable_after_kg_restore() -> anyhow::Result<()>
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
     let document = scraper::Html::parse_document(&html);
+    for link in document
+        .select(&scraper::Selector::parse("a.self-link[href^='#']").unwrap())
+    {
+        let target = link
+            .value()
+            .attr("href")
+            .unwrap()
+            .strip_prefix('#')
+            .unwrap();
+        assert!(
+            document
+                .select(&scraper::Selector::parse("[id]").unwrap())
+                .any(|node| node.value().attr("id") == Some(target)),
+            "self-link target must exist: {target}"
+        );
+    }
     let report = document
         .select(&scraper::Selector::parse("#quality-issues").unwrap())
         .next()
