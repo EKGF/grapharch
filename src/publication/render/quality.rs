@@ -131,7 +131,19 @@ fn groups(issues: &[Diagnostic]) -> Vec<Group<'_>> {
 }
 
 impl Group<'_> {
-    fn detail(&self, issue: &Diagnostic) -> bool { issue.message != self.title }
+    fn summary(&self) -> Option<&str> {
+        let first = self.issues.first()?;
+        (self.issues.len() > 1 &&
+            first.message != self.title &&
+            self.issues
+                .iter()
+                .all(|issue| issue.message == first.message))
+        .then_some(first.message.as_str())
+    }
+
+    fn detail(&self, issue: &Diagnostic) -> bool {
+        issue.message != self.title && self.summary().is_none()
+    }
 }
 
 pub(super) async fn html(
@@ -165,13 +177,21 @@ pub(super) async fn html_titled(
         let anchor = format!("quality-{}", group.code);
         file.write_all(
             format!(
-                "<section class=\"quality-issue-group\" id=\"{}\">{}<ul>",
+                "<section class=\"quality-issue-group\" id=\"{}\">{}",
                 super::markup::html_escape(&anchor),
                 super::markup::structural_heading(3, &group.title, &anchor)
             )
             .as_bytes(),
         )
         .await?;
+        if let Some(summary) = group.summary() {
+            file.write_all(
+                format!("<p>{}</p>", super::markup::html_escape(summary))
+                    .as_bytes(),
+            )
+            .await?;
+        }
+        file.write_all(b"<ul>").await?;
         for issue in &group.issues {
             file.write_all(
                 format!(
@@ -230,6 +250,13 @@ pub(super) async fn typst(
             .as_bytes(),
         )
         .await?;
+        if let Some(summary) = group.summary() {
+            file.write_all(
+                format!("#text({})\n", super::markup::quote(summary))
+                    .as_bytes(),
+            )
+            .await?;
+        }
         for issue in &group.issues {
             file.write_all(
                 format!(
@@ -264,6 +291,52 @@ pub(super) async fn typst(
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn missing_annotation_groups_explain_the_finding_once()
+    -> anyhow::Result<()> {
+        let message = "No English or language-neutral description found in \
+                       the collected sources.";
+        let issues = ["urn:subject:one", "urn:subject:two"].map(|reference| {
+            crate::publication::diagnostics::Diagnostic {
+                severity:
+                    crate::publication::diagnostics::Severity::Warning,
+                code:            "missing-source-definition".into(),
+                message:         message.into(),
+                reference:       reference.into(),
+                source_fragment: None,
+            }
+        });
+        let mut html = Vec::new();
+        super::html(
+            &mut html,
+            &issues,
+            &super::EvidenceIndex::default(),
+        )
+        .await?;
+        let html = String::from_utf8(html)?;
+        assert_eq!(
+            html.matches(message).count(),
+            1,
+            "shared explanation belongs above the resource list"
+        );
+        for reference in ["urn:subject:one", "urn:subject:two"] {
+            assert!(html.contains(reference));
+        }
+        let mut typst = Vec::new();
+        super::typst(
+            &mut typst,
+            &issues,
+            0,
+            &super::EvidenceIndex::default(),
+        )
+        .await?;
+        assert_eq!(
+            String::from_utf8(typst)?.matches(message).count(),
+            1
+        );
+        Ok(())
+    }
+
     #[test]
     fn source_documentor_callouts_are_not_repeated_by_rendering() {
         let subject = oxrdf::NamedNode::new_unchecked("urn:quality:subject");
