@@ -129,6 +129,24 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
     let html =
         tokio::fs::read_to_string(publications[0].directory.join("index.html"))
             .await?;
+    let document = scraper::Html::parse_document(&html);
+    let download = document
+        .select(&scraper::Selector::parse("a.pdf-download").unwrap())
+        .next()
+        .unwrap();
+    assert!(
+        download
+            .text()
+            .collect::<String>()
+            .contains("Specification PDF"),
+        "the attached reference PDF must be distinguished from named editions"
+    );
+    assert!(
+        download
+            .attr("aria-label")
+            .unwrap()
+            .contains("specification")
+    );
     for edition in ["ekgf", "omg"] {
         assert!(html.contains(&format!(
             "href=\"https://example.org/spec/pdf/{edition}/document.pdf\""

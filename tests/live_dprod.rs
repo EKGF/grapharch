@@ -14,7 +14,7 @@ async fn remote_develop_restores_and_publishes_declared_targets()
         .unwrap_or_else(|_| "examples/dprod/live.yaml".into());
     let (dataset, plans) =
         showcases::dprod_remote(std::path::Path::new(&config), cache).await?;
-    let output = std::path::Path::new("output/live-dprod-acceptance");
+    let output = std::path::Path::new("output/dprod-editions-acceptance");
     tokio::fs::create_dir_all(output).await?;
     let archive = output.join("documentation.nq");
     dataset.export(archive.clone()).await?;

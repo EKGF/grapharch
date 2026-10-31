@@ -106,15 +106,15 @@ pub(in crate::publication::render) async fn header(
          class=\"publication-status\">{status_html} <time \
          datetime=\"{}\">{}</time></p><a class=\"pdf-download\" \
          href=\"document.pdf\" type=\"application/pdf\" aria-label=\"Download \
-         PDF\"><svg aria-hidden=\"true\" focusable=\"false\" width=\"26\" \
-         height=\"30\" viewBox=\"0 0 28 32\"><path d=\"M5 1h13l8 8v22H5zM18 \
-         1v8h8\" fill=\"white\" stroke=\"currentColor\" \
-         stroke-width=\"1.5\"/><rect x=\"0\" y=\"17\" width=\"25\" \
-         height=\"12\" rx=\"2\" fill=\"#c62828\"/><text x=\"12.5\" y=\"26\" \
-         text-anchor=\"middle\" fill=\"white\" \
+         this specification as PDF\"><svg aria-hidden=\"true\" \
+         focusable=\"false\" width=\"26\" height=\"30\" viewBox=\"0 0 28 \
+         32\"><path d=\"M5 1h13l8 8v22H5zM18 1v8h8\" fill=\"white\" \
+         stroke=\"currentColor\" stroke-width=\"1.5\"/><rect x=\"0\" y=\"17\" \
+         width=\"25\" height=\"12\" rx=\"2\" fill=\"#c62828\"/><text \
+         x=\"12.5\" y=\"26\" text-anchor=\"middle\" fill=\"white\" \
          font-family=\"Arial,sans-serif\" font-weight=\"bold\" \
-         font-size=\"9\">PDF</text></svg><span>PDF</span></\
-         a>{metadata_open}<dl class=\"publication-metadata\">",
+         font-size=\"9\">PDF</text></svg><span>Specification \
+         PDF</span></a>{metadata_open}<dl class=\"publication-metadata\">",
         html_escape(&banner),
         html_escape(&banner),
         authority.color,
