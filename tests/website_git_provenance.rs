@@ -153,3 +153,29 @@ async fn malformed_enclosing_git_metadata_is_an_error_not_missing_provenance()
     );
     Ok(())
 }
+
+#[cfg(unix)]
+#[tokio::test]
+async fn dangling_git_metadata_is_an_error_not_an_untracked_directory()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    fixture(source.path()).await?;
+    tokio::fs::symlink(
+        "missing-git-directory",
+        source.path().join(".git"),
+    )
+    .await?;
+    let result = website::collect(
+        &source.path().join("docs"),
+        &source.path().join("project.ttl"),
+        "urn:site:project",
+        "urn:site:website",
+        2,
+    )
+    .await;
+    assert!(
+        result.is_err(),
+        "a dangling .git link is broken metadata, not an absent clone"
+    );
+    Ok(())
+}

@@ -133,8 +133,12 @@ pub(crate) async fn enclosing_repository(
 ) -> Result<Option<RepositoryScan>> {
     let mut directory = source;
     loop {
-        if tokio::fs::try_exists(directory.join(".git")).await? {
-            return Ok(Some(local_repository(directory, project).await?));
+        match tokio::fs::symlink_metadata(directory.join(".git")).await {
+            Ok(_) => {
+                return Ok(Some(local_repository(directory, project).await?))
+            },
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+            Err(error) => return Err(error.into()),
         }
         let Some(parent) = directory.parent() else {
             return Ok(None)
