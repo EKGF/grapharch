@@ -263,7 +263,7 @@ impl TargetPlanner {
                         selection.view.has_type(&asset, "BinaryAsset").await?,
                         "productLogo must identify a retained BinaryAsset"
                     );
-                    format!("{{ BIND({asset} AS ?asset) }} UNION ")
+                    format!("{{ FILTER(?asset = {asset}) }} UNION ")
                 },
                 None => String::new(),
                 _ => bail!("productLogo must be an asset IRI"),
@@ -311,11 +311,15 @@ impl TargetPlanner {
         let types = selection
             .view
             .pattern(&format!("?asset a {}", term("BinaryAsset")), 1);
+        // Correlate attachment paths with a typed asset before evaluating their
+        // independent snapshot-membership joins. The uncorrelated UNION can
+        // otherwise multiply unrelated contribution graphs before type
+        // filtering.
         let mut rows = self
             .dataset
             .select(format!(
-                "SELECT DISTINCT ?asset WHERE {{ {{ {candidates} }} {types} \
-                 }} ORDER BY ?asset"
+                "SELECT DISTINCT ?asset WHERE {{ {types} FILTER EXISTS {{ \
+                 {candidates} }} }} ORDER BY ?asset"
             ))
             .await?;
         let mut count = 0;
