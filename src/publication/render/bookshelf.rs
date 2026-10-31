@@ -462,10 +462,13 @@ pub(super) async fn write(
     );
     // Pin one executable image for this generation. Package upgrades or a
     // development rebuild must not change compilers halfway through a book set.
-    let pinned_worker = if !pending.is_empty() {
-        Some(book_worker::pin(&executable, stage, &compiler).await?)
+    let (pinned_worker, preparation_error) = if !pending.is_empty() {
+        match book_worker::pin(&executable, stage, &compiler).await {
+            Ok(worker) => (Some(worker), None),
+            Err(error) => (None, Some(format!("{error:#}"))),
+        }
     } else {
-        None
+        (None, None)
     };
     let executable = pinned_worker.as_ref().unwrap_or(&executable);
     let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
@@ -481,7 +484,11 @@ pub(super) async fn write(
             let root = stage.to_owned();
             let source = books[i].source.clone();
             let cancel = cancel_rx.clone();
+            let preparation_error = preparation_error.clone();
             running.spawn(async move {
+                if let Some(error) = preparation_error {
+                    return (i, Err(anyhow::anyhow!(error)));
+                }
                 (
                     i,
                     book_worker::run(
