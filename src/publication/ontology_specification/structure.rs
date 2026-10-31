@@ -64,6 +64,10 @@ pub(super) fn prefixes(
             "https://www.omg.org/spec/Commons/PartiesAndSituations/".into(),
             "cmns-pts".into(),
         ),
+        (
+            "https://www.omg.org/spec/Commons/RolesAndCompositions/".into(),
+            "cmns-rlcmp".into(),
+        ),
         (namespace[0].clone(), namespace[1].clone()),
         (
             "http://www.w3.org/2002/07/owl#".into(),
@@ -88,4 +92,17 @@ pub(super) fn prefixes(
             "skos".into(),
         ),
     ]))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn reused_commons_role_terms_have_readable_identifiers() {
+        let prefixes = super::prefixes(&["urn:example:".into(), "ex".into()]);
+        assert_eq!(
+            prefixes
+                .get("https://www.omg.org/spec/Commons/RolesAndCompositions/"),
+            Some(&"cmns-rlcmp".to_owned())
+        );
+    }
 }
