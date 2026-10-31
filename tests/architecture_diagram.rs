@@ -1,14 +1,10 @@
+use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag, TagEnd};
+
 #[test]
 fn architecture_diagram_remains_legible_in_a_documentation_column() {
     let markdown = include_str!("../docs/other/architecture/README.md");
-    let code = markdown
-        .split("```mermaid\n")
-        .nth(1)
-        .expect("architecture diagram")
-        .split("```")
-        .next()
-        .unwrap();
-    let parsed = mermaid_rs_renderer::parse_mermaid_strict(code).unwrap();
+    let code = diagram(markdown);
+    let parsed = mermaid_rs_renderer::parse_mermaid_strict(&code).unwrap();
     let options = mermaid_rs_renderer::RenderOptions::default();
     let layout = mermaid_rs_renderer::compute_layout(
         &parsed.graph,
@@ -56,4 +52,53 @@ fn architecture_diagram_remains_legible_in_a_documentation_column() {
         labels >= 6,
         "diagram retains its stages and shared dataset"
     );
+}
+
+fn diagram(markdown: &str) -> String {
+    let mut body = None;
+    for event in Parser::new(markdown) {
+        match event {
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(language)))
+                if language.split_whitespace().next() == Some("mermaid") =>
+            {
+                body = Some(String::new());
+            },
+            Event::Text(text) => {
+                if let Some(body) = &mut body {
+                    body.push_str(&text);
+                }
+            },
+            Event::End(TagEnd::CodeBlock) if body.is_some() => {
+                return body.expect("selected Mermaid code block")
+            },
+            _ => {},
+        }
+    }
+    panic!("architecture diagram")
+}
+
+#[test]
+fn diagram_extraction_accepts_lf_and_windows_crlf_markdown() {
+    for newline in ["\n", "\r\n"] {
+        let markdown = [
+            "# Architecture",
+            "",
+            "```mermaid",
+            "flowchart TB",
+            "A --> B",
+            "```",
+            "",
+        ]
+        .join(newline);
+        let code = diagram(&markdown);
+        assert_eq!(code, "flowchart TB\nA --> B\n");
+    }
+}
+
+#[test]
+fn diagram_extraction_uses_markdown_fences_instead_of_text_delimiters() {
+    let markdown = "Inline ` ```mermaid ` is not a diagram.\n\n```text\nnot a \
+                    diagram\n```\n\n~~~mermaid title=Architecture\nflowchart \
+                    TB\nA --> B\n~~~\n";
+    assert_eq!(diagram(markdown), "flowchart TB\nA --> B\n");
 }
