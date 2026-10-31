@@ -9,6 +9,43 @@ grapharch:
 
 # Ontology families and modules
 
+## Example: group two vocabularies into a module
+
+Declare the two ontologies in their own RDF source files, then add this module
+membership to the family's RDF:
+
+```turtle
+@prefix ex: <https://example.org/vocabularies/> .
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+ex:Commerce a ga:OntologyModule ;
+    dct:title "Commerce"@en ;
+    dct:hasPart ex:Customers, ex:Products .
+```
+
+Given a configured family containing these two vocabularies, this declaration
+groups them into **Commerce**. A bookshelf publication can give that module a
+book with **Customers** and **Products** chapters and its own PDF. The declaration
+above describes membership; the [family workflow](../usage/ontology-families.md)
+supplies the registry and target configuration.
+
+For an existing family, inspect
+[the EKGF source repository](https://github.com/EKGF/ekg-ontologies) and open the
+[generated family reference](https://ekgf.github.io/grapharch/showcases/artifacts/ekgf/spec/develop/index.html).
+Choose an ontology from the overview, then follow a reference into another
+ontology. [Bookshelves](../usage/bookshelves.md) explains the modular output option.
+
+## Supporting collectors
+
+The [RDF File Collector](../collectors/rdf-files.md) retains family registry and
+module assertions. [Local and remote repository scanners](../collectors/repositories.md)
+discover the member source files and dispatch RDF-file collectors. An explicit
+[SPARQL Endpoint Collector](../collectors/sparql-endpoints.md) can supply the
+same assertions from a service. Family discovery uses the collected declarations
+to determine membership; a directory name alone is not membership evidence.
+
+## Recognised families
+
 A family publication documents several selected vocabularies together. Each
 vocabulary keeps its identity, namespace, terms, and source provenance. Family
 membership is declared through the Artifact Governance registry: a family has

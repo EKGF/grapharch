@@ -1,6 +1,6 @@
 ---
 title: Showcase gallery
-nav_order: 4
+nav_order: 6
 permalink: /showcases/
 grapharch:
   subject: urn:grapharch:docs:topic:showcase-gallery

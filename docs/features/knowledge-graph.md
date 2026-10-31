@@ -48,4 +48,4 @@ administrative archive, not automatically a filtered public data download.
 A local persistent store supports repeated builds. A compatible transactional
 RDF4J service can also hold the documentation KG. This requires stronger
 isolation guarantees than an ordinary SPARQL query/update service; see
-[SPARQL services](../usage/sparql-endpoints.md) before choosing that backend.
+[SPARQL endpoints](../usage/sparql-endpoints.md) before choosing that backend.

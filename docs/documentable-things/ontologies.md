@@ -9,10 +9,52 @@ grapharch:
 
 # Ontologies and RDF resources
 
-RDF collectors retain assertions and named-graph identity from supported RDF
-serializations. The ontology publication pipelines recognise explicit
+The [RDF File Collector](../collectors/rdf-files.md) reads RDF files and retains
+their assertions and named-graph identity. The ontology publication pipelines recognise explicit
 `owl:Ontology` declarations and document named resources associated with the
 selected vocabulary.
+
+## Example: a customer vocabulary
+
+```turtle
+@prefix ex: <https://example.org/customer#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://example.org/customer> a owl:Ontology ;
+    rdfs:label "Customer vocabulary"@en .
+
+ex:Customer a owl:Class ;
+    rdfs:isDefinedBy <https://example.org/customer> ;
+    rdfs:label "Customer"@en ;
+    skos:definition "A person or organisation receiving our products."@en .
+```
+
+When this vocabulary is selected for publication, **Customer** gets a class
+reference entry with its definition and IRI. Adding labelled properties and
+named individuals supplies entries in their respective sections. This is a
+source example; the [family workflow](../usage/ontology-families.md) adds the
+namespace, membership, and publication configuration.
+
+For a real vocabulary, compare
+[DPROD's sources](https://github.com/EKGF/dprod/tree/develop/ontology)
+with its [generated specification](https://ekgf.github.io/grapharch/showcases/artifacts/dprod/specification/index.html).
+Look at the **DataProduct** class and its links to related resources.
+
+## Supporting collectors
+
+| Source | Collector or discovery path |
+|---|---|
+| An RDF file on disk | [RDF File Collector](../collectors/rdf-files.md) |
+| RDF files in a local or remote Git repository | [Repository scanners](../collectors/repositories.md), which select the specialised RDF-file collectors |
+| RDF returned by a configured query | [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md) |
+
+These collectors retain RDF. The ontology documentation stage recognises the
+declared resource types and turns the selected vocabulary into reference
+entries. Reading RDF and generating those entries are separate steps.
+
+## Recognised resources
 
 The family reference recognises these resource categories:
 

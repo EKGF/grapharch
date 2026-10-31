@@ -9,6 +9,47 @@ grapharch:
 
 # EKGF use-case trees
 
+## Example: ownership and reuse
+
+```turtle
+@prefix uc: <https://ekgf.org/ontology/use-case#> .
+@prefix ex: <https://example.org/use-cases/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:CustomerInsight a uc:UseCase ;
+    rdfs:label "Customer insight"@en ;
+    rdfs:comment "Understand a customer's situation."@en .
+ex:CustomerOverview a uc:UseCase ;
+    rdfs:label "Customer overview"@en ;
+    rdfs:comment "Present a consolidated customer overview."@en ;
+    uc:isPartOf ex:CustomerInsight .
+ex:ReferenceInformation a uc:UseCase ;
+    rdfs:label "Reference information"@en ;
+    rdfs:comment "Supply reusable reference information."@en ;
+    uc:isUsedIn ex:CustomerOverview .
+```
+
+**Customer overview** belongs to **Customer insight**. **Reference information**
+is reused by the overview without becoming its child. The generated reference
+shows these distinct relationships and a neighborhood diagram for each case.
+
+Compare the [complete source](https://github.com/EKGF/grapharch/blob/main/examples/use-cases/use-cases.ttl)
+with the [generated use-case guide](https://ekgf.github.io/grapharch/showcases/artifacts/use-cases/website/index.html)
+and [PDF](https://ekgf.github.io/grapharch/showcases/artifacts/use-cases/review/document.pdf).
+Open **Customer overview** and follow its ownership and reuse links.
+
+## Supporting collectors
+
+The [RDF File Collector](../collectors/rdf-files.md) retains the native use-case
+assertions. [Repository scanners](../collectors/repositories.md) and the
+[SPARQL Endpoint Collector](../collectors/sparql-endpoints.md) are other ways to
+supply RDF. The **use-case documentation generator** then recognises explicitly typed EKGF
+Use Case instances and generates their documentation and diagrams. The runnable
+example below wires that generator into its publication; collecting an RDF
+file alone does not select that publication workflow.
+
+## Run the complete example
+
 The [showcase gallery](../showcases.md) includes fictional RDF instances of
 `https://ekgf.org/ontology/use-case#UseCase`. It documents actual use cases,
 rather than the classes and properties defining the Use Case Ontology.
@@ -27,8 +68,7 @@ it is newer than the 0.1.0 binary release.
 
 ## Semantic relationships
 
-The RDF-file collector retains native assertions. The reusable Rust
-`UseCaseDocumentor` discovers explicit `ekg-use-case:UseCase` instances from a
+The RDF-file collector retains native assertions. The reusable use-case documentation generator discovers explicit `ekg-use-case:UseCase` instances from a
 pinned collected revision and emits fragments and SVG assets into the KG.
 Renderers read the resolved plan, generated fragments, and retained assets.
 They never reopen the source RDF or invoke Python to draw diagrams.
@@ -66,6 +106,6 @@ The layout is independently implemented in Rust, using the old
 as a presentation reference. No catalog content or Python code is copied.
 
 The example-specific runner wires a reader target and a PDF target to generated
-fragments, as the other executable examples do. The documentor is reusable;
+fragments, as the other executable examples do. The documentation generator is reusable;
 this does not add a general `build-use-cases` CLI command or a complete
 persona/story/workflow documentation engine.

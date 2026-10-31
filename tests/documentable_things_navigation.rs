@@ -9,7 +9,7 @@ use {
     std::path::Path,
 };
 
-const CATALOGUE_PAGES: [&str; 8] = [
+const CATALOGUE_PAGES: [&str; 10] = [
     "documentable-things/README.md",
     "documentable-things/authored-documentation.md",
     "documentable-things/ontologies.md",
@@ -18,6 +18,8 @@ const CATALOGUE_PAGES: [&str; 8] = [
     "documentable-things/published-specifications.md",
     "usage/skos-taxonomies.md",
     "usage/use-case-trees.md",
+    "documentable-things/sparql-queries.md",
+    "documentable-things/legal-preambles.md",
 ];
 
 #[derive(Deserialize)]
@@ -100,8 +102,8 @@ async fn collected_navigation_separates_documentable_types_from_usage_without_li
         "---\ntitle: Home\npermalink: /\nnav_exclude: true\n---\n# Home\n",
     )
     .await?;
-    // bounded: ten metadata-only pages exercise the real collector/navigation
-    // renderer.
+    // bounded: twelve metadata-only pages exercise the real
+    // collector/navigation renderer.
     for relative in CATALOGUE_PAGES
         .iter()
         .copied()

@@ -7,10 +7,10 @@ grapharch:
   subject: urn:grapharch:docs:topic:sparql-endpoints
 ---
 
-# Collect and publish with SPARQL services
+# Collect and publish with SPARQL endpoints
 
 GraphArch can collect ontologies, SHACL shapes, and other RDF from an existing
-SPARQL service. The service providing source material and the service storing
+SPARQL endpoint. The endpoint providing source material and the endpoint storing
 the documentation KG are independent choices.
 
 ## Collect RDF from an endpoint
@@ -58,14 +58,14 @@ grapharch publication build-family --sparql-sources family-sources.yaml \
 ```
 
 Source queries run concurrently with the configured collection concurrency.
-GraphArch does not automatically fetch ontology imports or query other services.
+GraphArch does not automatically fetch ontology imports or query other endpoints.
 An endpoint query produces an observed result revision; it does not claim that
-independent queries all observed the source service at the same instant.
+independent queries all observed the source endpoint at the same instant.
 
-## Store the documentation KG in a service
+## Store the documentation KG through an endpoint
 
 A writable documentation KG needs stronger guarantees than ordinary SPARQL
-Query and Update provide. GraphArch currently accepts a service implementing
+Query and Update provide. GraphArch currently accepts an endpoint implementing
 RDF4J HTTP transactions with **verified SERIALIZABLE isolation**. A standard
 query/update-only endpoint is a collection source, but cannot serve as this KG
 backend.
@@ -102,7 +102,7 @@ to a unique probe graph and never clears existing application graphs.
 
 Contribution promotion, assembly, snapshots, and archive restoration retain
 transactional isolation. A pinned revision references immutable contribution
-graphs retained in the service; renderers read that revision rather than source
+graphs retained in the store; renderers read that revision rather than source
 files or changing contribution heads. Exports preserve private control metadata
 and named graph contexts, allowing restoration into an empty backend. Treat a
 whole-KG export as an administrative archive, not a filtered public RDF download.

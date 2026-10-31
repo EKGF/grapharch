@@ -16,7 +16,7 @@ permalink: /other/architecture/deliverables/
 Build on the existing Rust implementation to turn heterogeneous sources into a
 shared, queryable documentation dataset, then publish independently from that
 dataset. Support embedded Oxigraph, either in memory or on disk, and an external
-SPARQL service through the same stage interfaces.
+SPARQL endpoint through the same stage interfaces.
 
 The first usable release produces DPROD specification HTML, a reader-oriented
 static website, and a Typst PDF from the same graph revision. Each is a separate
@@ -131,7 +131,7 @@ unless verified for the chosen toolchain.
 |---|---|---|
 | Embedded Oxigraph, in memory | Small projects, local previews, GitHub Actions jobs | Stages share one store in one process. Explicit dataset export/import carries state across processes or CI jobs. |
 | Embedded Oxigraph, on disk | Local projects needing persistent incremental work | Independent invocations reopen the same dataset. |
-| External SPARQL service | Existing managed stores and shared documentation infrastructure | Query and update services address the same logical dataset; stages use the backend abstraction. |
+| External SPARQL endpoint | Existing managed stores and shared documentation infrastructure | Query and update services address the same logical dataset; stages use the backend abstraction. |
 
 Persistent and external modes must support publication after restarting
 Grapharch, without rereading the original sources. In-memory mode has the same
@@ -347,7 +347,7 @@ query/export/import operations, independent stage commands, and orchestration.
 - Persistent stores can be closed, reopened, queried, and published; in-memory
   pipelines can export/import a dataset to resume in another process.
 - The same backend contract tests pass for embedded modes and a real external
-  SPARQL service, including query/update URL configuration and permissions.
+  SPARQL endpoint, including query/update URL configuration and permissions.
 - Repeating each unchanged stage does not duplicate fragments, plans, or content
   revisions, or change their identities.
 - Changed and deleted source content updates the relevant contributions.

@@ -1,6 +1,6 @@
 ---
 title: Features
-nav_order: 3
+nav_order: 4
 permalink: /features/
 grapharch:
   subject: urn:grapharch:docs:topic:features
@@ -17,7 +17,7 @@ library of module books.
 
 | Feature | What it gives your project |
 | --- | --- |
-| [Collect existing sources](sources/README.md) | Read Markdown, RDF files, repository content, and selected results from SPARQL services. |
+| [Collect existing sources](sources/README.md) | Read Markdown, RDF files, repository content, and selected results from SPARQL endpoints. |
 | [Reusable content and hints](content-and-hints.md) | Connect explanations to stable subjects and arrange them differently for each publication. |
 | [Queryable documentation graph](knowledge-graph.md) | Inspect the content, relationships, provenance, and exact revision behind a publication. |
 | [Websites and PDFs](targets/README.md) | Publish final static HTML and typeset documents from the same collected knowledge. |
@@ -31,7 +31,7 @@ The [Documentable Things catalogue](../documentable-things/README.md) describes
 how GraphArch recognises authored content, ontologies, ontology families,
 constraints, taxonomies, and use-case trees. Source location and documentable
 subject are separate choices: an ontology can live in a file, a repository, or
-a SPARQL service.
+a SPARQL endpoint.
 
 ## See the result before configuring it
 

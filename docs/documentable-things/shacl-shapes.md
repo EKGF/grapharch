@@ -9,6 +9,45 @@ grapharch:
 
 # SHACL shapes
 
+## Example: require one customer name
+
+```turtle
+@prefix ex: <https://example.org/customer#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:CustomerShape a sh:NodeShape ;
+    rdfs:label "Customer shape"@en ;
+    rdfs:comment "Describes the required name of a customer."@en ;
+    sh:targetClass ex:Customer ;
+    sh:property [
+        sh:path ex:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] .
+```
+
+The generated **Customer shape** entry documents its target class and the
+nested constraint: one string value for `ex:name`. Readers can inspect the
+rule without interpreting a blank-node identifier. This documents the rule;
+it does not claim that any customer data has passed validation.
+
+Compare [DPROD's shape sources](https://github.com/EKGF/dprod/tree/develop/ontology)
+with the **SHACL shapes** sections in its
+[generated specification](https://ekgf.github.io/grapharch/showcases/artifacts/dprod/specification/index.html).
+
+## Supporting collectors
+
+The [RDF File Collector](../collectors/rdf-files.md) retains shape assertions
+from a file. [Repository scanners](../collectors/repositories.md) discover RDF
+files, and the [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md)
+can collect shape assertions returned by an explicit query. The reference
+documentation stage then recognises `sh:NodeShape` and `sh:PropertyShape`.
+
+## Recognised constraints
+
 The RDF documentation stages recognise explicitly typed `sh:NodeShape` and
 `sh:PropertyShape` resources. Named shapes have reference entries with their
 source labels, descriptions, identifiers, and retained constraint statements.

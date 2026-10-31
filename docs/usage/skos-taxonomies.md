@@ -9,8 +9,10 @@ grapharch:
 
 # SKOS taxonomies
 
-RDF-file, local Git, remote Git, and SPARQL collectors retain SKOS assertions in
-the documentation KG with their normal source provenance. A taxonomy does not
+The [RDF File Collector](../collectors/rdf-files.md) and
+[SPARQL Endpoint Collector](../collectors/sparql-endpoints.md) retain SKOS
+assertions with source provenance. [Repository scanners](../collectors/repositories.md)
+discover RDF files in local or remote Git sources. A taxonomy does not
 need an invented OWL ontology declaration. Register its `skos:ConceptScheme` as
 a vocabulary in a publication family and use the normal
 [`publication build-family` workflow](ontology-families.md).
@@ -38,6 +40,25 @@ Namespace metadata can also live in the publication definitions. Publication
 settings, authority, license, scope, and family registration work as they do for
 ontology publications. The existing command and JSON counters retain their
 ontology-oriented names when a selected vocabulary is a concept scheme.
+
+## See the input and the result
+
+In the runnable example, **Data product** is narrower than **Product**, has an
+external mapping, and belongs to an ordered portfolio.
+Compare the [Turtle source files](https://github.com/EKGF/grapharch/tree/main/examples/skos/sources)
+with the [generated taxonomy reference](https://ekgf.github.io/grapharch/showcases/artifacts/skos/specification/index.html)
+and [PDF](https://ekgf.github.io/grapharch/showcases/artifacts/skos/specification/document.pdf).
+Open **Concepts** for the definitions and hierarchy links, then **Collections**
+for the retained portfolio order.
+
+## Supporting collectors
+
+The [RDF File Collector](../collectors/rdf-files.md) reads SKOS assertions.
+[Repository scanners](../collectors/repositories.md) discover RDF files;
+the [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md) can supply
+assertions from a configured query. Vocabulary recognition then selects declared
+schemes, concepts, and collections for documentation. There is no separate
+SKOS file format or a collector that infers a taxonomy from arbitrary text.
 
 ## Reference content
 

@@ -9,6 +9,38 @@ grapharch:
 
 # Published specifications
 
+## Example: preserve a published section and example
+
+```html
+<section id="introduction">
+  <h2>Introduction</h2>
+  <p>This document describes the exchange format.</p>
+  <aside class="example" id="example-triple">
+    <div class="marker">Example 1: A triple</div>
+    <pre>&lt;urn:customer:1&gt; &lt;urn:name&gt; "Ada" .</pre>
+  </aside>
+</section>
+```
+
+This illustrates the static HTML structures in a published specification, not
+a complete input document. GraphArch retains supported sections, anchors, and
+examples from the full published snapshot, then publishes a new specification
+and PDF from the collected graph.
+
+Compare the [complete N-Triples input snapshot](https://github.com/EKGF/grapharch/blob/main/examples/w3c-rdf12-n-triples/source.html)
+with the [generated specification](https://ekgf.github.io/grapharch/showcases/artifacts/rdf12/specification/index.html)
+and [PDF](https://ekgf.github.io/grapharch/showcases/artifacts/rdf12/specification/document.pdf).
+Look at **Introduction** and the numbered examples in **N-Triples Language**.
+
+## Supporting collectors
+
+The [Published W3C Specification Collector](../collectors/published-specifications.md)
+reads supported published HTML. The [Legal Preamble Collector](../collectors/legal-preambles.md)
+separately reads a supported legal disclosure, such as DPROD's preamble. Neither
+requires executing the original website generator.
+
+## Recognised published content
+
 A specialised collector reads a pinned snapshot of a published W3C
 specification. It retains publication metadata, sections, headings, anchors,
 links, examples, and supported static HTML content as documentation graph

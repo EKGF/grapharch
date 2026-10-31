@@ -14,6 +14,9 @@ collectors for particular inputs, so a publication can combine authored prose
 with RDF resources and other supported constructs. Collecting content does not
 choose its chapter, page, or publication status; those are publication decisions.
 
+The [Collectors catalogue](../../collectors/README.md) maps each current collector
+to its inputs, supported documentable things, practical examples, and entry points.
+
 ## Available source paths
 
 | Source | What is collected |
@@ -21,7 +24,7 @@ choose its chapter, page, or publication status; those are publication decisions
 | [Markdown](files/markdown.md) | Authored explanations, headings, code examples, frontmatter, and supported images or diagrams. |
 | [RDF files](files/rdf.md) | Native statements and annotations that describe resources such as ontologies, constraints, and taxonomies. |
 | [Git repositories](endpoints/git-repo.md) | Existing local checkouts or a selected remote revision, with file and commit provenance. |
-| [SPARQL services](endpoints/sparql.md) | RDF returned by explicitly configured `CONSTRUCT` or `DESCRIBE` queries. |
+| [SPARQL endpoints](endpoints/sparql.md) | RDF returned by explicitly configured `CONSTRUCT` or `DESCRIBE` queries. |
 
 There is also a specialised collector for supported structures in an
 already-published W3C/ReSpec HTML specification. It reads the published document
