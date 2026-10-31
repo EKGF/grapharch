@@ -1,7 +1,7 @@
 ---
 title: Repository Scanners
-parent: Collectors
-nav_order: 7
+parent: Usage
+nav_order: 14
 permalink: /collectors/repositories/
 grapharch:
   subject: urn:grapharch:docs:collectors:repositories
@@ -52,7 +52,7 @@ Family discovery does not automatically import every Markdown, image, code file,
 or HTML template: those require the appropriate workflow and specialised jobs.
 Configured Git Markdown, code, image, and legal collectors read pinned blobs with
 commit and blob provenance. See [Markdown](markdown-files.md) and
-[assets and code](assets-and-code.md) for those separate paths.
+[images](images.md) and [code examples](code-examples.md) for those separate paths.
 
 ## Collect one RDF file from Git
 

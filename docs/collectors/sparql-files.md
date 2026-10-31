@@ -1,7 +1,7 @@
 ---
 title: SPARQL File Collector
 parent: Collectors
-nav_order: 3
+nav_order: 4
 permalink: /collectors/sparql-files/
 grapharch:
   subject: urn:grapharch:docs:collectors:sparql-files

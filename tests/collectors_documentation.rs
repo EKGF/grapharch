@@ -14,8 +14,9 @@ const PAGES: &[&str] = &[
     "sparql-endpoints.md",
     "published-specifications.md",
     "legal-preambles.md",
-    "repositories.md",
-    "assets-and-code.md",
+    "images.md",
+    "code-examples.md",
+    "text-downloads.md",
 ];
 
 #[derive(Deserialize)]
@@ -110,19 +111,25 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
         "---\ntitle: Home\npermalink: /\nnav_exclude: true\n---\n# Home\n",
     )
     .await?;
-    // bounded: ten metadata-only pages exercise actual collection/navigation
-    // without the live showcase gallery or external source repositories.
-    for name in PAGES {
-        let original =
-            tokio::fs::read_to_string(Path::new("docs/collectors").join(name))
-                .await?;
+    // Stream the actual directory so a new sidebar page cannot escape the
+    // catalogue comparison by being omitted from the fixture's page list.
+    let mut pages = tokio::fs::read_dir("docs/collectors").await?;
+    while let Some(page) = pages.next_entry().await? {
+        if page
+            .path()
+            .extension()
+            .is_none_or(|extension| extension != "md")
+        {
+            continue;
+        }
+        let original = tokio::fs::read_to_string(page.path()).await?;
         let (frontmatter, _) = original
             .strip_prefix("---\n")
             .unwrap()
             .split_once("\n---\n")
             .unwrap();
         let metadata: Metadata = serde_yaml::from_str(frontmatter)?;
-        let path = source.path().join("collectors").join(name);
+        let path = source.path().join("collectors").join(page.file_name());
         tokio::fs::create_dir_all(path.parent().unwrap()).await?;
         tokio::fs::write(
             path,
@@ -130,6 +137,11 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
         )
         .await?;
     }
+    tokio::fs::write(
+        source.path().join("usage.md"),
+        "---\ntitle: Usage\npermalink: /usage/\n---\n# Usage\n",
+    )
+    .await?;
     let built = website::collect(
         source.path(),
         &source.path().join("grapharch.ttl"),
@@ -162,6 +174,35 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
         })
         .expect("Collectors needs a top-level navigation group");
     let links = Selector::parse("li a").unwrap();
-    assert_eq!(catalogue.select(&links).count(), PAGES.len());
+    let actual: Vec<_> = catalogue
+        .select(&links)
+        .map(|link| link.text().collect::<String>())
+        .filter(|title| title != "Collectors")
+        .collect();
+    let index = tokio::fs::read_to_string("docs/collectors/README.md").await?;
+    let expected: Vec<_> = index
+        .lines()
+        .filter_map(|line| line.strip_prefix("| ["))
+        .map(|line| line.split_once("](").unwrap().0.to_owned())
+        .collect();
+    assert_eq!(
+        actual, expected,
+        "each collector in the catalogue needs its own matching sidebar entry"
+    );
+    let usage = document
+        .select(
+            &Selector::parse(".site-navigation nav > ul > li > details")
+                .unwrap(),
+        )
+        .find(|group| {
+            group
+                .select(&summary)
+                .next()
+                .is_some_and(|link| link.text().collect::<String>() == "Usage")
+        })
+        .expect("repository discovery belongs in Usage");
+    assert!(usage.select(&links).any(|link| {
+        link.text().collect::<String>() == "Repository Scanners"
+    }));
     Ok(())
 }

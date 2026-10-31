@@ -1,7 +1,7 @@
 ---
 title: Published W3C Specification Collector
 parent: Collectors
-nav_order: 5
+nav_order: 6
 permalink: /collectors/published-specifications/
 grapharch:
   subject: urn:grapharch:docs:collectors:published-specifications

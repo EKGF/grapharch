@@ -59,7 +59,7 @@ The [Markdown File Collector](../collectors/markdown-files.md) reads a Markdown
 file and its frontmatter. Website discovery and the
 [repository scanners](../collectors/repositories.md) select Markdown files for
 their specialised collectors. Supporting images use the
-[asset collectors](../collectors/assets-and-code.md).
+[Image Collector](../collectors/images.md).
 
 Documented queries are a separate kind of source: the
 [SPARQL File Collector](../collectors/sparql-files.md) reads a query file and its

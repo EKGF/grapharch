@@ -1,7 +1,7 @@
 ---
 title: Markdown File Collector
 parent: Collectors
-nav_order: 2
+nav_order: 3
 permalink: /collectors/markdown-files/
 grapharch:
   subject: urn:grapharch:docs:collectors:markdown-files
@@ -53,6 +53,6 @@ grapharch publication collect --store output/kg \
 
 `MarkdownFile::in_site` adds page hints for a website; `GitMarkdownFile` reads a
 pinned repository blob and resolves repository-relative references. Retained
-images use [separate image collectors](assets-and-code.md). A local Markdown
+images use the [Image Collector](images.md). A local Markdown
 fragment's image handling and a pinned Git page's relative-file resolution are
 distinct entry points; do not assume every arbitrary path is fetched.

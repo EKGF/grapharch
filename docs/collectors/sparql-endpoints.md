@@ -1,7 +1,7 @@
 ---
 title: SPARQL Endpoint Collector
 parent: Collectors
-nav_order: 4
+nav_order: 5
 permalink: /collectors/sparql-endpoints/
 grapharch:
   subject: urn:grapharch:docs:collectors:sparql-endpoints

@@ -1,7 +1,7 @@
 ---
 title: RDF URL Collector
 parent: Collectors
-nav_order: 10
+nav_order: 2
 permalink: /collectors/rdf-urls/
 grapharch:
   subject: urn:grapharch:docs:collectors:rdf-urls

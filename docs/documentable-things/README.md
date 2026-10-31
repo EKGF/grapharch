@@ -35,7 +35,7 @@ a file, a Git repository, or a SPARQL endpoint.
 
 | Documentable thing | Supporting collectors |
 |---|---|
-| Markdown pages and guides | [Markdown File Collector](../collectors/markdown-files.md), with [asset collectors](../collectors/assets-and-code.md) for images |
+| Markdown pages and guides | [Markdown File Collector](../collectors/markdown-files.md), with the [Image Collector](../collectors/images.md) for images |
 | Ontologies, SHACL shapes, SKOS taxonomies, and EKGF use cases | [RDF File Collector](../collectors/rdf-files.md) or [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md); [repository scanners](../collectors/repositories.md) discover and dispatch file collectors |
 | Ontology families and modules | [RDF File Collector](../collectors/rdf-files.md) or [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md), retaining explicit family registry and module declarations |
 | Published W3C specifications | [Published W3C Specification Collector](../collectors/published-specifications.md) |

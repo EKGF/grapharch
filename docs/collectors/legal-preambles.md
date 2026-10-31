@@ -1,7 +1,7 @@
 ---
 title: Legal Preamble Collector
 parent: Collectors
-nav_order: 6
+nav_order: 7
 permalink: /collectors/legal-preambles/
 grapharch:
   subject: urn:grapharch:docs:collectors:legal-preambles
