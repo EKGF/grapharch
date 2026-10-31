@@ -6,12 +6,45 @@ use {
         view::RevisionView,
         website,
     },
-    oxrdf::NamedNode,
+    oxrdf::{Literal, NamedNode},
     tokio::{
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     },
 };
+
+fn git_source_dependency(source: &str) -> String {
+    format!(
+        r#"<urn:deps:git-source> a ga:Collector; ga:kind "git-rdf-file"; ga:source {}; ga:sourcePath "ontology.ttl"; ga:gitRef "main" ."#,
+        Literal::new_simple_literal(source)
+    )
+}
+
+#[test]
+fn configured_git_source_literals_preserve_windows_paths() -> Result<()> {
+    let path = r"C:\Users\RUNNER~1\AppData\Local\Temp\repository";
+    let source = format!(
+        "@prefix ga:<https://ekgf.org/ontology/grapharch#> .\n{}",
+        git_source_dependency(path)
+    );
+    let quads = oxrdfio::RdfParser::from_format(oxrdfio::RdfFormat::Turtle)
+        .for_slice(source.as_bytes());
+    let mut observed = false;
+    for quad in quads {
+        let quad = quad?;
+        if quad.predicate.as_str() ==
+            "https://ekgf.org/ontology/grapharch#source"
+        {
+            assert_eq!(
+                quad.object,
+                Literal::new_simple_literal(path).into()
+            );
+            observed = true;
+        }
+    }
+    assert!(observed);
+    Ok(())
+}
 
 async fn serve(
     body: Vec<u8>,
@@ -96,9 +129,9 @@ async fn configured_local_git_and_http_rdf_are_native_sources_before_publication
     site(root.path(), &format!(r#"
 <urn:deps:project> ga:collector <urn:deps:local-source>, <urn:deps:git-source>, <urn:deps:url-source> .
 <urn:deps:local-source> a ga:Collector; ga:kind "rdf-file"; ga:source "local.ttl" .
-<urn:deps:git-source> a ga:Collector; ga:kind "git-rdf-file"; ga:source "{}"; ga:sourcePath "ontology.ttl"; ga:gitRef "main" .
+{}
 <urn:deps:url-source> a ga:Collector; ga:kind "rdf-url"; ga:source "{url}"; ga:format "text/turtle" .
-"#, git.path().display())).await?;
+"#, git_source_dependency(git.path().to_str().unwrap()))).await?;
     let built = website::collect(
         root.path(),
         &root.path().join("project.ttl"),
