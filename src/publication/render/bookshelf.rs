@@ -772,12 +772,29 @@ async fn catalogue(
         "<details><summary>About this \
          publication</summary>{publication_details}</details>"
     );
-    if !diagnostics.is_empty() {
+    let warnings = diagnostics
+        .iter()
+        .filter(|diagnostic| matches!(diagnostic.severity, Severity::Warning))
+        .cloned()
+        .collect::<Vec<_>>(); // bounded: the publication diagnostic limit is 1024.
+    let mut quality_html = Vec::new(); // bounded: the same diagnostic and message budgets as the shared report.
+    super::quality::html(
+        &mut quality_html,
+        &warnings,
+        &plan.quality_evidence,
+    )
+    .await?;
+    details.push_str(std::str::from_utf8(&quality_html)?);
+    let errors = diagnostics
+        .iter()
+        .filter(|diagnostic| matches!(diagnostic.severity, Severity::Error))
+        .collect::<Vec<_>>(); // bounded: the publication diagnostic limit is 1024.
+    if !errors.is_empty() {
         details.push_str(
             "<section id=\"publication-diagnostics\"><h2>Publication \
              diagnostics</h2><ol>",
         );
-        for error in diagnostics {
+        for error in errors {
             details.push_str(&format!(
                 "<li><strong>{}</strong>: \
                  {}<details><summary>Details</summary><pre>{}</pre></\

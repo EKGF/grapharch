@@ -30,10 +30,20 @@ contribution and included in the same report.
 ## What reviewers see
 
 An affected Markdown resource description receives a warning callout containing
-the competing statements. Specifications and PDFs include a **Quality issues**
-addendum. Companion websites provide a separate report linked from their
-footers. Paginated specifications link to the report on their overview page.
-Rich descriptions are all retained; GraphArch does not choose one as the truth.
+the competing statements. Specifications and PDFs include **Quality issues** as
+a separate numbered appendix. If Acknowledgements is appendix A, the quality
+report becomes appendix B and has its own entry in the contents.
+
+The report groups findings by warning type, such as **Missing English source
+definition**, and lists the affected resources underneath each heading. For
+competing annotations, each resource also retains the alternative statements
+and their sources. This lets reviewers address one kind of issue across the
+publication without reading the same warning repeatedly.
+
+Companion websites provide a separate report linked from their footers.
+Paginated specifications link to the report on their overview page. Rich
+descriptions and different versions of the truth are all retained; GraphArch
+does not choose one as the truth.
 
 A publication renders the findings pinned to its plan. Exporting the KG,
 removing the source files, and rendering the restored graph retains the report.

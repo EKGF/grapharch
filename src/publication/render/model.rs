@@ -13,20 +13,21 @@ use {
 };
 
 pub(super) struct Plan {
-    pub dataset:     Dataset,
-    pub handle:      ResolvedPlan,
-    pub source:      RevisionView,
-    pub project:     NamedNode,
-    pub target:      NamedNode,
-    pub revision:    NamedNode,
-    pub scope:       NamedNode,
-    pub profile:     NamedNode,
-    pub renderer:    String,
-    pub destination: String,
-    pub title:       String,
-    link_index:      HashMap<NamedNode, String>,
-    pub images:      super::collected_images::Images,
-    pub quality:     Vec<crate::publication::diagnostics::Diagnostic>,
+    pub dataset:          Dataset,
+    pub handle:           ResolvedPlan,
+    pub source:           RevisionView,
+    pub project:          NamedNode,
+    pub target:           NamedNode,
+    pub revision:         NamedNode,
+    pub scope:            NamedNode,
+    pub profile:          NamedNode,
+    pub renderer:         String,
+    pub destination:      String,
+    pub title:            String,
+    link_index:           HashMap<NamedNode, String>,
+    pub images:           super::collected_images::Images,
+    pub quality_evidence: super::quality::EvidenceIndex,
+    pub quality:          Vec<crate::publication::diagnostics::Diagnostic>,
 }
 
 /// Per-book result carried with its parent's atomic publication manifest.
@@ -125,7 +126,8 @@ impl Plan {
             "plan does not match its pinned target definition"
         );
         let title = title(&source, &target).await?;
-        let quality = super::quality::read(&view, &handle.id).await?;
+        let (quality, quality_evidence) =
+            super::quality::read(&view, &handle.id, &dataset).await?;
         let mut plan = Self {
             dataset,
             handle,
@@ -141,6 +143,7 @@ impl Plan {
             link_index: HashMap::new(),
             images: Default::default(),
             quality,
+            quality_evidence,
         };
         if plan.renderer != "website" {
             plan.index_links().await?;

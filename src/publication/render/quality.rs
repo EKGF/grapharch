@@ -1,4 +1,7 @@
 //! Pinned, nonfatal review findings shared by publication formats.
+mod evidence;
+mod presentation;
+pub(super) use evidence::EvidenceIndex;
 use {
     crate::publication::{
         diagnostics::{Diagnostic, Severity},
@@ -13,8 +16,10 @@ use {
 pub(super) async fn read(
     view: &RevisionView,
     plan: &NamedNode,
-) -> Result<Vec<Diagnostic>> {
+    dataset: &crate::publication::dataset::Dataset,
+) -> Result<(Vec<Diagnostic>, EvidenceIndex)> {
     let mut rows = view.objects(plan, "diagnostic").await?;
+    let mut identities = BTreeMap::new(); // bounded: 1024 diagnostic identities.
     let mut result = Vec::new(); // bounded: 1024 pinned review findings.
     while let Some(row) = rows.next().await? {
         ensure!(
@@ -33,20 +38,31 @@ pub(super) async fn read(
             None => None,
             _ => anyhow::bail!("quality source fragment must be an IRI"),
         };
-        result.push(Diagnostic {
+        let issue = Diagnostic {
             severity: Severity::Warning,
             code: view.text(id, "code").await?,
             message: view.text(id, "message").await?,
             reference: view.text(id, "unresolvedReference").await?,
             source_fragment,
-        });
+        };
+        identities.insert(id.clone(), evidence::key(&issue));
+        result.push(issue);
     }
     result.sort_by(|a, b| {
         a.reference
             .cmp(&b.reference)
             .then(a.message.cmp(&b.message))
     });
-    Ok(result)
+    let evidence =
+        EvidenceIndex::read(dataset, view, plan, &identities).await?;
+    for issue in &result {
+        ensure!(
+            issue.code != "competing-source-annotations" ||
+                !evidence.get(issue).is_empty(),
+            "competing annotation diagnostic has no structured evidence"
+        );
+    }
+    Ok((result, evidence))
 }
 
 pub(super) fn inline(
@@ -54,6 +70,7 @@ pub(super) fn inline(
     subject: &NamedNode,
     fragment: &NamedNode,
     issues: &[Diagnostic],
+    evidence: &EvidenceIndex,
 ) -> String {
     let mut result = String::new();
     for issue in issues.iter().filter(|issue| {
@@ -65,10 +82,15 @@ pub(super) fn inline(
                 Some(fragment.as_str()))
     }) {
         result.push_str("> [!WARNING]\n> Source quality review\n>\n");
-        for line in issue.message.lines() {
-            result.push_str(">     ");
-            result.push_str(line);
-            result.push('\n');
+        let entries = evidence.get(issue);
+        if entries.is_empty() {
+            for line in issue.message.lines() {
+                result.push_str("> ");
+                result.push_str(&super::markup::html_escape(line));
+                result.push('\n');
+            }
+        } else {
+            result.push_str(&presentation::markdown(entries));
         }
         result.push('\n');
     }
@@ -77,6 +99,7 @@ pub(super) fn inline(
 }
 
 struct Group<'a> {
+    code:   String,
     title:  String,
     issues: Vec<&'a Diagnostic>,
 }
@@ -95,7 +118,11 @@ fn groups(issues: &[Diagnostic]) -> Vec<Group<'_>> {
         groups
             .entry(&issue.code)
             .or_insert_with(|| {
-                Group { title: title.into(), issues: Vec::new() }
+                Group {
+                    code:   issue.code.clone(),
+                    title:  title.into(),
+                    issues: Vec::new(),
+                }
             })
             .issues
             .push(issue);
@@ -110,24 +137,26 @@ impl Group<'_> {
 pub(super) async fn html(
     file: &mut (impl AsyncWrite + Unpin),
     issues: &[Diagnostic],
+    evidence: &EvidenceIndex,
 ) -> Result<()> {
-    html_titled(file, issues, "Quality issues").await
+    html_titled(file, issues, "Quality issues", evidence).await
 }
 
 pub(super) async fn html_titled(
     file: &mut (impl AsyncWrite + Unpin),
     issues: &[Diagnostic],
     title: &str,
+    evidence: &EvidenceIndex,
 ) -> Result<()> {
     if issues.is_empty() {
         return Ok(())
     }
     file.write_all(
         format!(
-            "<section id=\"quality-issues\"><h2>{}</h2><p>Review findings \
-             preserve competing source statements; they are not automatically \
-             RDF errors.</p>",
-            super::markup::html_escape(title)
+            "<section id=\"quality-issues\">{}<p>Review findings preserve \
+             competing source statements; they are not automatically RDF \
+             errors.</p>",
+            super::markup::structural_heading(2, title, "quality-issues")
         )
         .as_bytes(),
     )
@@ -135,8 +164,12 @@ pub(super) async fn html_titled(
     for group in groups(issues) {
         file.write_all(
             format!(
-                "<section class=\"quality-issue-group\"><h3>{}</h3><ul>",
-                super::markup::html_escape(&group.title)
+                "<section class=\"quality-issue-group\">{}<ul>",
+                super::markup::structural_heading(
+                    3,
+                    &group.title,
+                    &format!("quality-{}", group.code)
+                )
             )
             .as_bytes(),
         )
@@ -150,10 +183,14 @@ pub(super) async fn html_titled(
                 .as_bytes(),
             )
             .await?;
-            if group.detail(issue) {
+            let entries = evidence.get(issue);
+            if !entries.is_empty() {
+                file.write_all(presentation::html(entries).as_bytes())
+                    .await?;
+            } else if group.detail(issue) {
                 file.write_all(
                     format!(
-                        "<pre>{}</pre>",
+                        "<p>{}</p>",
                         super::markup::html_escape(&issue.message)
                     )
                     .as_bytes(),
@@ -172,6 +209,7 @@ pub(super) async fn typst(
     file: &mut (impl AsyncWrite + Unpin),
     issues: &[Diagnostic],
     preceding_appendices: u32,
+    evidence: &EvidenceIndex,
 ) -> Result<()> {
     if issues.is_empty() {
         return Ok(())
@@ -198,12 +236,18 @@ pub(super) async fn typst(
             file.write_all(
                 format!(
                     "#list([#text({})",
-                    super::markup::quote(&issue.reference)
+                    super::markup::quote(&presentation::wrappable(
+                        &issue.reference
+                    ))
                 )
                 .as_bytes(),
             )
             .await?;
-            if group.detail(issue) {
+            let entries = evidence.get(issue);
+            if !entries.is_empty() {
+                file.write_all(presentation::typst(entries).as_bytes())
+                    .await?;
+            } else if group.detail(issue) {
                 file.write_all(
                     format!(
                         "#linebreak()#text({})",
@@ -238,7 +282,8 @@ mod tests {
                 body,
                 &subject,
                 &oxrdf::NamedNode::new_unchecked("urn:quality:fragment"),
-                &[issue]
+                &[issue],
+                &super::EvidenceIndex::default()
             ),
             body
         );

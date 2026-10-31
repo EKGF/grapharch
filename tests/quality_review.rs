@@ -169,7 +169,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
             .unwrap()
             .text()
             .collect::<String>(),
-        "B. Quality issues"
+        "B. Quality issues§"
     );
     let groups = report
         .select(&scraper::Selector::parse(".quality-issue-group").unwrap())
@@ -184,7 +184,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
             .select(&scraper::Selector::parse("h3").unwrap())
             .any(|heading| {
                 heading.text().collect::<String>() ==
-                    "Missing English source definition"
+                    "Missing English source definition§"
             })
     }));
     assert!(html.contains("Quality issues"));

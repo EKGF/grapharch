@@ -100,7 +100,8 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         );
         use tokio::io::AsyncWriteExt;
         file.write_all(b"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Quality issues</title><link rel=\"stylesheet\" href=\"style.css\"></head><body><main>").await?;
-        super::quality::html(&mut file, &plan.quality).await?;
+        super::quality::html(&mut file, &plan.quality, &plan.quality_evidence)
+            .await?;
         file.write_all(
             format!(
                 "<p><a href=\"./\">Documentation \
@@ -246,11 +247,12 @@ async fn write_page(
             )
         };
         let generator_credit = super::credit::HTML;
+        let generator_version = esc(env!("CARGO_PKG_VERSION"));
         let html = format!(
             r##"<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}"><link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body><a class="skip-link" href="#main-content">Skip to content</a>
-<header class="site-header"><a class="brand" href="{prefix}">{project_title}<span>Documentation</span></a>{repository}</header>
+<header class="site-header"><a class="brand" href="{prefix}">{project_title}<span class="brand-version"><span class="visually-hidden">Version </span>{generator_version}</span><span class="brand-context">Documentation</span></a>{repository}</header>
 <div class="{layout}"><aside class="site-navigation" data-project="{project}" data-target="{target}"><details open><summary>Browse documentation</summary><nav aria-label="Documentation">{navigation}</nav></details></aside>
 <main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}<footer>{generator_credit} · <a href="{prefix}">Documentation home</a></footer></main>
 {page_outline}</div><script>{navigation_script}</script></body></html>"##,

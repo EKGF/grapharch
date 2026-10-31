@@ -93,7 +93,7 @@ pub(super) async fn append(
                 message.len() <= 256 * 1024,
                 "quality issue exceeds message byte budget"
             );
-            provenance.push(origin);
+            provenance.push((row["value"].clone(), origin));
         }
         let job = identity("quality-issue", &[
             revision.as_str(),
@@ -127,7 +127,54 @@ pub(super) async fn append(
             stream.write(quad).await?;
         }
         let id = NamedNode::new(format!("urn:grapharch:diagnostic:{job}:0"))?;
-        for origin in provenance {
+        for (value, origin) in provenance {
+            let statement = identity("quality-statement", &[
+                revision.as_str(),
+                subject.as_str(),
+                &predicate.to_string(),
+                &value.to_string(),
+                &origin.to_string(),
+            ]);
+            for (predicate, object) in [
+                (
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                    Term::NamedNode(NamedNode::new_unchecked(
+                        "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement",
+                    )),
+                ),
+                (
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject",
+                    Term::NamedNode(subject.clone()),
+                ),
+                (
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate",
+                    predicate.clone(),
+                ),
+                (
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#object",
+                    value,
+                ),
+                ("http://purl.org/dc/terms/source", origin.clone()),
+            ] {
+                stream
+                    .write(Quad::new(
+                        statement.clone(),
+                        NamedNode::new_unchecked(predicate),
+                        object,
+                        plan.clone(),
+                    ))
+                    .await?;
+            }
+            stream
+                .write(Quad::new(
+                    id.clone(),
+                    NamedNode::new_unchecked(
+                        "http://www.w3.org/ns/prov#wasDerivedFrom",
+                    ),
+                    statement,
+                    plan.clone(),
+                ))
+                .await?;
             stream
                 .write(Quad::new(
                     id.clone(),

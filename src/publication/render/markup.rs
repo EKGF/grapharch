@@ -282,3 +282,62 @@ pub(super) fn heading_level(logical: usize) -> (usize, String) {
     };
     (logical.min(6), attributes)
 }
+
+/// Emit the same escaped, linked heading for authored and generated sections.
+pub(super) fn structural_heading(
+    logical_level: usize,
+    title: &str,
+    anchor: &str,
+) -> String {
+    assert!(
+        logical_level > 0,
+        "structural heading level must be positive"
+    );
+    let (level, attributes) = heading_level(logical_level);
+    format!(
+        "<h{level}{attributes}>{}{}</h{level}>",
+        html_escape(title),
+        permalink(anchor)
+    )
+}
+
+/// A single permalink implementation keeps structural and prose headings
+/// aligned.
+pub(super) fn permalink(anchor: &str) -> String {
+    format!(
+        "<a class=\"self-link\" href=\"#{}\" aria-label=\"Link to this \
+         section\">§</a>",
+        html_escape(anchor)
+    )
+}
+
+#[cfg(test)]
+mod structural_heading_tests {
+    #[test]
+    fn title_anchor_and_deep_heading_levels_keep_their_semantics() {
+        let html = super::structural_heading(8, "Title <em>&", "section\"<&");
+        let document = scraper::Html::parse_fragment(&html);
+        let heading = document
+            .select(&scraper::Selector::parse("h6").unwrap())
+            .next()
+            .unwrap();
+        assert_eq!(heading.value().attr("role"), Some("heading"));
+        assert_eq!(heading.value().attr("aria-level"), Some("8"));
+        assert_eq!(heading.text().collect::<String>(), "Title <em>&§");
+        assert!(
+            heading
+                .select(&scraper::Selector::parse("em").unwrap())
+                .next()
+                .is_none()
+        );
+        let link = heading
+            .select(&scraper::Selector::parse("a.self-link").unwrap())
+            .next()
+            .unwrap();
+        assert_eq!(link.value().attr("href"), Some("#section\"<&"));
+        assert_eq!(
+            link.value().attr("aria-label"),
+            Some("Link to this section")
+        );
+    }
+}

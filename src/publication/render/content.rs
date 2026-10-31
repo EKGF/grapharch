@@ -72,6 +72,7 @@ impl Entries {
                 &plan.source.node(&fragment, "subject").await?,
                 &fragment,
                 &plan.quality,
+                &plan.quality_evidence,
             )
         } else {
             body
@@ -224,7 +225,14 @@ pub(super) async fn write(
         if previous.is_some() {
             html::close(&mut file).await?;
         }
-        super::quality::html(&mut file, &plan.quality).await?;
+        let title = format!("{}. Quality issues", letter(entries.appendix + 1));
+        super::quality::html_titled(
+            &mut file,
+            &plan.quality,
+            &title,
+            &plan.quality_evidence,
+        )
+        .await?;
         html::end(&mut file, false).await?;
     } else {
         typst::end(&mut file, previous.is_some()).await?;
@@ -281,7 +289,13 @@ pub(super) async fn write_typst(
         .await?;
     }
     typst::end(&mut file, open).await?;
-    super::quality::typst(&mut file, &plan.quality, entries.appendix).await?;
+    super::quality::typst(
+        &mut file,
+        &plan.quality,
+        entries.appendix,
+        &plan.quality_evidence,
+    )
+    .await?;
     let errors = diagnostics
         .iter()
         .filter(|diagnostic| {
@@ -331,4 +345,48 @@ pub(super) fn code_language(format: &str) -> Result<&'static str> {
         "application/n-triples" | "text/turtle" => Ok("text"),
         _ => anyhow::bail!("unsupported fragment format {format}"),
     }
+}
+
+/// Number the report after the selected appendix placements, across pages.
+pub(super) async fn quality_appendix_title(plan: &Plan) -> Result<String> {
+    let entries = crate::publication::dataset::Dataset::logical_pattern(
+        &plan.handle.snapshot,
+        &format!(
+            "{} {} ?entry . ?entry {} ?placement",
+            plan.handle.id,
+            crate::publication::term("entry"),
+            crate::publication::term("placement")
+        ),
+        0,
+    );
+    let kinds = plan.source.pattern(
+        &format!(
+            "?placement {} \"appendix\"",
+            crate::publication::term("sectionKind")
+        ),
+        1,
+    );
+    let mut rows = plan
+        .dataset
+        .select(format!(
+            "SELECT (COUNT(DISTINCT ?placement) AS ?count) WHERE {{ {entries} \
+             {kinds} }}"
+        ))
+        .await?;
+    let row = rows
+        .next()
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("appendix count missing"))?;
+    let oxrdf::Term::Literal(value) = &row["count"] else {
+        anyhow::bail!("appendix count must be a literal")
+    };
+    let count = value.value().parse::<u32>()?;
+    ensure!(
+        rows.next().await?.is_none(),
+        "appendix count must be singular"
+    );
+    let next = count
+        .checked_add(1)
+        .ok_or_else(|| anyhow::anyhow!("appendix count overflow"))?;
+    Ok(format!("{}. Quality issues", letter(next)))
 }

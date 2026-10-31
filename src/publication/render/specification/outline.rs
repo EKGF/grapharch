@@ -1,7 +1,7 @@
 use {
     super::super::{
         content::letter,
-        markup::{Markdown, html_escape},
+        markup::{Markdown, html_escape, permalink},
     },
     anyhow::{Result, ensure},
     pulldown_cmark::{Event, Tag, TagEnd},
@@ -205,14 +205,6 @@ pub(super) fn markdown_html(
     let mut output = String::new();
     pulldown_cmark::html::push_html(&mut output, events.into_iter());
     Ok(output)
-}
-
-pub(super) fn permalink(id: &str) -> String {
-    format!(
-        "<a class=\"self-link\" href=\"#{}\" aria-label=\"Link to this \
-         section\">§</a>",
-        html_escape(id)
-    )
 }
 
 pub(super) struct Toc {

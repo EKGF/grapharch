@@ -4,12 +4,12 @@ use {
     super::{
         super::{
             content::{Entries, Entry, code_language},
-            markup::{Markdown, html_escape},
+            markup::{Markdown, html_escape, structural_heading},
             model::Plan,
         },
         metadata,
         native,
-        outline::{Outline, Toc, markdown_html, permalink},
+        outline::{Outline, Toc, markdown_html},
     },
     crate::publication::{
         diagnostics::{Diagnostic, FailureMode, Severity},
@@ -472,10 +472,9 @@ pub(in crate::publication::render) async fn write_catalog(
             let label = outline.component(&entry.kind, &entry.title, 1)?;
             file.write_all(
                 format!(
-                    "<section id=\"{id}\" data-page-body=\"{}\"><h2>{}{}</h2>",
+                    "<section id=\"{id}\" data-page-body=\"{}\">{}",
                     html_escape(&entry.title),
-                    html_escape(&label),
-                    permalink(&id)
+                    structural_heading(2, &label, &id)
                 )
                 .as_bytes(),
             )
@@ -539,8 +538,15 @@ async fn end(
     plan: &Plan,
     home: bool,
 ) -> Result<()> {
-    if home {
-        super::super::quality::html(file, &plan.quality).await?;
+    if home && !plan.quality.is_empty() {
+        let title = super::super::content::quality_appendix_title(plan).await?;
+        super::super::quality::html_titled(
+            file,
+            &plan.quality,
+            &title,
+            &plan.quality_evidence,
+        )
+        .await?;
     } else if !plan.quality.is_empty() {
         file.write_all(
             b"<p><a href=\"index.html#quality-issues\">Quality issues</a></p>",

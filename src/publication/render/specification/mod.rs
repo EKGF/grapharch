@@ -11,7 +11,7 @@ mod rows;
 use {
     super::{
         content::{Entries, Entry, code_language},
-        markup::{Markdown, heading_level, html_escape},
+        markup::{Markdown, html_escape, structural_heading},
         model::Plan,
     },
     crate::publication::{
@@ -19,7 +19,7 @@ use {
         native_html,
     },
     anyhow::{Result, ensure},
-    outline::{Outline, Toc, headings, markdown_html, permalink},
+    outline::{Outline, Toc, headings, markdown_html},
     std::{collections::HashSet, path::Path},
     tokio::{
         fs::File,
@@ -76,15 +76,12 @@ pub(super) async fn write(
                 navigation = true;
             }
             let id = plan.anchor(&entry.placement, None);
-            let (level, aria) = heading_level(entry.depth + 1);
             let search_kind = pages::kind(&entry, plan).await?;
             file.write_all(
                 format!(
                     "<section id=\"{id}\" \
-                     data-search-kind=\"{search_kind}\"><h{level}{aria}>{}{}</\
-                     h{level}>\n",
-                    html_escape(&label),
-                    permalink(&id)
+                     data-search-kind=\"{search_kind}\">{}\n",
+                    structural_heading(entry.depth + 1, &label, &id)
                 )
                 .as_bytes(),
             )
@@ -133,7 +130,13 @@ pub(super) async fn write(
     }
     if !plan.quality.is_empty() {
         let title = outline.component("appendix", "Quality issues", 1)?;
-        super::quality::html_titled(&mut file, &plan.quality, &title).await?;
+        super::quality::html_titled(
+            &mut file,
+            &plan.quality,
+            &title,
+            &plan.quality_evidence,
+        )
+        .await?;
     }
     if !diagnostics.is_empty() {
         file.write_all(b"<section id=\"publication-diagnostics\"><h2>Publication diagnostics</h2><p>This draft contains unresolved documentation errors.</p><ol>").await?;
