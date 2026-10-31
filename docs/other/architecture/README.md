@@ -13,13 +13,13 @@ The delivery contract is [the architecture and deliverables specification](deliv
 It defines five stages sharing one RDF dataset:
 
 ```mermaid
-flowchart LR
-    C[Collect: specialized source adapters] --> D[(Shared RDF dataset)]
-    D --> G[Document: specialized fragment generators]
+flowchart TB
+    C[Collect sources] --> D[(Shared RDF dataset)]
+    D --> G[Document subjects]
     G --> D
-    D --> A[Assemble: validated revision]
-    A --> P[Resolve target scope and profile]
-    P --> R[Render HTML or Typst/PDF]
+    D --> A[Assemble revision]
+    A --> P[Resolve target plan]
+    P --> R[Render HTML or PDF]
 ```
 
 Subjects, authored and generated fragments, provenance, and instructions have
@@ -51,7 +51,7 @@ interfaces. External KG connections must demonstrate SERIALIZABLE isolation
 using a predicate-range/phantom conflict probe; standard SPARQL Query/Update
 endpoints alone are rejected as writable KG backends. Generic endpoints remain
 supported collection sources through specialized CONSTRUCT/DESCRIBE collectors.
-See [SPARQL services](../../usage/sparql-endpoints.md) for configuration and
+See [SPARQL endpoints](../../usage/sparql-endpoints.md) for configuration and
 protocol limits. Backend support requires consistency and failure contract tests,
 not merely successful query execution.
 
