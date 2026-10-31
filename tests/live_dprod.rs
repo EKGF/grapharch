@@ -201,6 +201,49 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         definitions.push_str(" .\n");
     }
     std::fs::write(
+        repo.path().join("formal.md"),
+        "# Formal scope\n\nSOURCE OWNED FORMAL SCOPE\n",
+    )?;
+    definitions.push_str(r#"
+ex:project ga:collector ex:formal-source .
+ex:formal-source a ga:Collector ; ga:kind "markdown" ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
+ex:profile ga:requiredSectionRole "scope" .
+ex:pdf-profile ga:requiredSectionRole "scope" .
+"#);
+    for profile in ["profile", "pdf-profile"] {
+        for (key, title, kind, role, order) in [
+            ("abstract", "Abstract", "abstract", "abstract", 0),
+            (
+                "status",
+                "Status of This Document",
+                "status",
+                "status",
+                1,
+            ),
+            ("formal", "Formal scope", "section", "scope", 10),
+            (
+                "overview",
+                "Vocabulary reference",
+                "section",
+                "reference",
+                20,
+            ),
+            (
+                "example",
+                "Dataset example",
+                "section",
+                "example",
+                100,
+            ),
+        ] {
+            definitions.push_str(&format!(r#"
+ex:{profile} ga:placement <urn:dprod-showcase:{profile}:{key}> .
+<urn:dprod-showcase:{profile}:{key}> a ga:Placement ; ga:component <urn:dprod-showcase:component:{key}> ; ga:sectionKind "{kind}" ; ga:sectionRole "{role}" ; ga:order {order} .
+<urn:dprod-showcase:component:{key}> a ga:Component ; dct:title "{title}" ; ga:fragment ex:{key} .
+"#));
+        }
+    }
+    std::fs::write(
         repo.path().join("example.jsonld"),
         "{\"title\":\"PINNED EXAMPLE SOURCE\"}",
     )?;
@@ -332,6 +375,12 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     let typst =
         tokio::fs::read_to_string(output.path().join("pdf/main.typ")).await?;
     assert!(typst.contains("PINNED EXAMPLE SOURCE"));
+    assert!(spec.contains("SOURCE OWNED FORMAL SCOPE"));
+    assert!(typst.contains("SOURCE OWNED FORMAL SCOPE"));
+    assert!(
+        spec.find("SOURCE OWNED FORMAL SCOPE") <
+            spec.find("PINNED EXAMPLE SOURCE")
+    );
     let site =
         std::fs::read_to_string(output.path().join("website/index.html"))?;
     assert!(site.contains("href=\"assets/image-"));

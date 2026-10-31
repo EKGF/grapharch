@@ -19,6 +19,13 @@ use {
         sync::Arc,
     },
 };
+mod source_owned;
+
+enum Authored {
+    Fixture(Vec<(String, String, String, NamedNode)>),
+    Configured(Vec<NamedNode>),
+}
+
 const PROJECT: &str = "urn:dprod-showcase:project";
 const BASE: &str = "urn:dprod-showcase:";
 const GROUPS: [(&str, &str, &str); 6] = [
@@ -136,7 +143,7 @@ async fn build(
     assemble(
         dataset,
         writer,
-        markdown,
+        Authored::Fixture(markdown),
         "https://www.omg.org/spec/DPROD/dprod/",
         "https://www.omg.org/spec/DPROD/shapes/",
         false,
@@ -146,13 +153,18 @@ async fn build(
 async fn assemble(
     dataset: &Dataset,
     writer: &GraphWriter,
-    markdown: Vec<(String, String, String, NamedNode)>,
+    authored: Authored,
     ontology: &str,
     shapes: &str,
     derive: bool,
 ) -> Result<Vec<ResolvedPlan>> {
     let collected = dataset.snapshot_for(PROJECT).await?;
     let view = RevisionView::new(dataset.clone(), collected.clone());
+    let roots = if matches!(authored, Authored::Configured(_)) {
+        source_owned::roots(&view).await?
+    } else {
+        Vec::new()
+    };
     let prefixes = Arc::new(BTreeMap::from([
         (ontology.into(), "dprod".into()),
         (shapes.into(), "dprod-shapes".into()),
@@ -200,17 +212,17 @@ async fn assemble(
             let Term::NamedNode(subject) = &row["subject"] else {
                 anyhow::bail!("DPROD reference terms require named identities")
             };
-            ensure!(
-                known.insert(subject.clone()),
-                "term appears in multiple reference categories"
-            );
-            subjects.push(subject.clone());
+            if known.insert(subject.clone()) {
+                ensure!(
+                    known.len() <= 16384,
+                    "DPROD reference resource budget exceeded"
+                );
+                subjects.push(subject.clone());
+            }
         }
-        ensure!(
-            !subjects.is_empty(),
-            "DPROD fixture has no {title}"
-        );
-        groups.push((key, title, subjects));
+        if !subjects.is_empty() {
+            groups.push((key, title, subjects));
+        }
     }
     let known = Arc::new(known);
     let mut bindings = writer
@@ -286,23 +298,42 @@ async fn assemble(
         }
     }
     let mut order = 0u32;
-    for (key, title, kind, fragment) in &markdown[..3] {
-        place(&mut bindings, key, title, kind, order).await?;
-        order += 1;
-        let subject = view.node(fragment, "subject").await?;
-        bindings
-            .write(quad(&node("scope"), "include", subject))
-            .await?;
-        bindings
-            .write(quad(
-                &node(&format!("component:{key}")),
-                "fragment",
-                fragment.clone(),
-            ))
-            .await?;
+    if let Authored::Configured(fragments) = &authored {
+        for fragment in fragments {
+            bindings
+                .write(quad(
+                    &node("scope"),
+                    "include",
+                    view.node(fragment, "subject").await?,
+                ))
+                .await?;
+        }
+    }
+    if let Authored::Fixture(markdown) = &authored {
+        for (key, title, kind, fragment) in &markdown[..3] {
+            place(&mut bindings, key, title, kind, order).await?;
+            order += 1;
+            let subject = view.node(fragment, "subject").await?;
+            bindings
+                .write(quad(&node("scope"), "include", subject))
+                .await?;
+            bindings
+                .write(quad(
+                    &node(&format!("component:{key}")),
+                    "fragment",
+                    fragment.clone(),
+                ))
+                .await?;
+        }
     }
     for (key, title, subjects) in groups {
-        place(&mut bindings, key, title, "section", order).await?;
+        if roots.is_empty() {
+            place(&mut bindings, key, title, "section", order).await?;
+        } else {
+            for root in &roots {
+                root.place(&mut bindings, key, title, order + 1).await?;
+            }
+        }
         order += 1;
         for (position, subject) in subjects.into_iter().enumerate() {
             let documentor = AnnotatedTermDocumentor::new(
@@ -334,22 +365,24 @@ async fn assemble(
                 .await?;
         }
     }
-    let (key, title, kind, fragment) = &markdown[3];
-    place(&mut bindings, key, title, kind, order).await?;
-    bindings
-        .write(quad(
-            &node("scope"),
-            "include",
-            view.node(fragment, "subject").await?,
-        ))
-        .await?;
-    bindings
-        .write(quad(
-            &node(&format!("component:{key}")),
-            "fragment",
-            fragment.clone(),
-        ))
-        .await?;
+    if let Authored::Fixture(markdown) = &authored {
+        let (key, title, kind, fragment) = &markdown[3];
+        place(&mut bindings, key, title, kind, order).await?;
+        bindings
+            .write(quad(
+                &node("scope"),
+                "include",
+                view.node(fragment, "subject").await?,
+            ))
+            .await?;
+        bindings
+            .write(quad(
+                &node(&format!("component:{key}")),
+                "fragment",
+                fragment.clone(),
+            ))
+            .await?;
+    }
     let date = view
         .optional_by(
             &NamedNode::new(ontology)?,
@@ -543,7 +576,7 @@ pub(super) async fn collect_remote(
         }
         definitions.sort_by_key(ToString::to_string);
         let mut work = Vec::<Arc<dyn Collector>>::new();
-        let mut markdown = BTreeMap::new();
+        let mut fragments = HashSet::new();
         let mut subjects = BTreeMap::new();
         let mut images = HashSet::new();
         for definition in definitions {
@@ -555,6 +588,11 @@ pub(super) async fn collect_remote(
             let blob = scan.blob(Path::new(&path)).await?;
             match kind.as_str() {
                 "code" => {
+                    let fragment = view.node(&definition, "fragment").await?;
+                    ensure!(
+                        fragments.insert(fragment),
+                        "duplicate authored fragment"
+                    );
                     work.push(Arc::new(super::collect::git::GitCodeFile::new(
                         PROJECT,
                         definition.as_str(),
@@ -571,26 +609,6 @@ pub(super) async fn collect_remote(
                 },
                 "markdown" | "markdown-page" => {
                     let fragment = view.node(&definition, "fragment").await?;
-                    let key = view
-                        .optional_by(
-                            &definition,
-                            &NamedNode::new_unchecked(
-                                "http://purl.org/dc/terms/identifier",
-                            ),
-                        )
-                        .await?
-                        .and_then(|v| {
-                            if let Term::Literal(v) = v {
-                                Some(v.value().to_owned())
-                            } else {
-                                None
-                            }
-                        })
-                        .ok_or_else(|| {
-                            anyhow::anyhow!(
-                                "Markdown collector has no slot identifier"
-                            )
-                        })?;
                     let mut collector =
                         super::collect::git::GitMarkdownFile::new(
                             blob,
@@ -628,8 +646,8 @@ pub(super) async fn collect_remote(
                         }
                     }
                     ensure!(
-                        markdown.insert(key, fragment).is_none(),
-                        "duplicate Markdown slot"
+                        fragments.insert(fragment),
+                        "duplicate authored fragment"
                     );
                     work.push(Arc::new(collector));
                 },
@@ -645,41 +663,6 @@ pub(super) async fn collect_remote(
         )?
         .collect(&writer)
         .await?;
-        let view = RevisionView::new(
-            dataset.clone(),
-            dataset.snapshot_for(PROJECT).await?,
-        );
-        let mut authored = Vec::new();
-        for (key, kind) in [
-            ("abstract", "abstract"),
-            ("status", "status"),
-            ("overview", "section"),
-            ("example", "section"),
-        ] {
-            let fragment = markdown.remove(key).ok_or_else(|| {
-                anyhow::anyhow!("missing source-owned Markdown slot {key}")
-            })?;
-            let title = view
-                .optional_by(
-                    &fragment,
-                    &NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
-                )
-                .await?
-                .ok_or_else(|| anyhow::anyhow!("Markdown title missing"))?;
-            let Term::Literal(title) = title else {
-                anyhow::bail!("title must be literal")
-            };
-            authored.push((
-                key.into(),
-                title.value().into(),
-                kind.into(),
-                fragment,
-            ));
-        }
-        ensure!(
-            markdown.is_empty(),
-            "unsupported additional DPROD Markdown slots"
-        );
         let ontology = subjects
             .get("ontology/dprod/dprod-ontology.ttl")
             .ok_or_else(|| anyhow::anyhow!("ontology hint missing"))?;
@@ -689,7 +672,7 @@ pub(super) async fn collect_remote(
         assemble(
             &dataset,
             &writer,
-            authored,
+            Authored::Configured(fragments.into_iter().collect()),
             ontology.as_str(),
             shapes.as_str(),
             true,
