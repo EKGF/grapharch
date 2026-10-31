@@ -5,6 +5,7 @@ mod bookshelf;
 mod callouts;
 mod collected_images;
 mod content;
+mod credit;
 mod diagnostic_graph;
 mod engine;
 mod files;
