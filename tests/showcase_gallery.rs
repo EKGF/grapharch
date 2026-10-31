@@ -51,16 +51,47 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     // dedicated Commons test covers HTTP locally, and Docs CI verifies OMG.
     let commons = source.path().join("examples/omg-commons");
     let commons_sources = tempfile::tempdir()?;
-    std::fs::write(
-        commons_sources.path().join("ontology.ttl"),
+    let corpus = String::from(
         r#"
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct: <http://purl.org/dc/terms/> .
-<https://www.omg.org/spec/Commons/Classifiers/> a owl:Ontology ; rdfs:label "Synthetic offline ontology"@en ; dct:description "Gallery fixture, not copied upstream content."@en .
 <https://www.omg.org/spec/Commons/Classifiers/Fixture> a owl:Class ; rdfs:label "Synthetic fixture"@en ; dct:description "An offline test resource."@en ; rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Classifiers/> .
 "#,
-    )?;
+    );
+    // bounded: the fixed authored showcase registry has 24 ontology members.
+    let mut members = std::collections::BTreeSet::new();
+    let definitions = std::fs::read(commons.join("project.ttl"))?;
+    for quad in oxrdfio::RdfParser::from_format(oxrdfio::RdfFormat::Turtle)
+        .for_slice(&definitions)
+    {
+        let quad = quad?;
+        if quad.predicate.as_str() ==
+            "https://ekgf.org/ontology/artifact-governance#inFamily" &&
+            quad.object.to_string() == "<urn:omg-commons:family>"
+        {
+            members.insert(quad.subject.to_string());
+        }
+    }
+    assert!(!members.is_empty());
+    for (index, member) in members.iter().enumerate() {
+        let mut body = if member ==
+            "<https://www.omg.org/spec/Commons/Classifiers/>"
+        {
+            corpus.clone()
+        } else {
+            String::from("@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix dct: <http://purl.org/dc/terms/> .\n")
+        };
+        body.push_str(&format!(
+            "{member} a owl:Ontology ; rdfs:label \"Synthetic offline \
+             ontology {index}\"@en ; dct:description \"Gallery fixture, not \
+             copied upstream content.\"@en .\n"
+        ));
+        std::fs::write(
+            commons_sources.path().join(format!("ontology-{index}.ttl")),
+            body,
+        )?;
+    }
     let commons_repository = tempfile::tempdir()?;
     let (url, commit) = family_repository::bare_copy(
         commons_sources.path(),
