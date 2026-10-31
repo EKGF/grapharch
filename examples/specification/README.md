@@ -1,7 +1,7 @@
 # Authority-branded specification showcase
 
 `project.ttl` supplies the document fragments, placements, publication metadata,
-and reusable EKGF `ga:Authority`. The logo is an embedded PNG capture of the
+and reusable EKGF `<https://ekgf.org/ontology/artifact-governance#Authority>`. The logo is an embedded PNG capture of the
 existing symbol from `ekgf-website/public/ekgf-logo-symbol.svg` in the sibling EKGF
 website repository (HEAD observed as `95cf8f3a93407d127fae83fb4d570df78989ad2b`).
 No invented logo or W3C mark is substituted for EKGF.

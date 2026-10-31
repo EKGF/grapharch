@@ -112,8 +112,7 @@ impl RevisionView {
             )
         } else if class == "Authority" {
             format!(
-                "VALUES ?class {{ {} <{}> }}",
-                term(class),
+                "VALUES ?class {{ <{}> }}",
                 super::governance::AUTHORITY
             )
         } else {

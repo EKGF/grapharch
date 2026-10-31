@@ -36,6 +36,35 @@ fn ontology_version_tracks_the_application_release() -> Result<()> {
 }
 
 #[test]
+fn publishing_authorities_reuse_the_imported_governance_class_directly()
+-> Result<()> {
+    let store = ontology()?;
+    assert!(
+        !ask(&store, "ga:Authority ?predicate ?object")?,
+        "GraphArch must not declare a duplicate Authority class or \
+         equivalence alias"
+    );
+    assert!(ask(&store, "<https://ekgf.org/ontology/grapharch> owl:imports <https://ekgf.org/ontology/artifact-governance#> . ga:publisher rdfs:range <https://ekgf.org/ontology/artifact-governance#Authority> . VALUES ?property { ga:shortName ga:accentColor ga:logo } ?property rdfs:domain <https://ekgf.org/ontology/artifact-governance#Authority>")?);
+    assert!(!ask(&store, "VALUES ?property { ga:shortName ga:accentColor ga:logo } FILTER NOT EXISTS { ?property rdfs:domain <https://ekgf.org/ontology/artifact-governance#Authority> }")?, "every authority-specific property must use the canonical domain");
+    assert!(
+        !ask(&store, "?subject ?predicate ga:Authority")?,
+        "ontology properties must refer directly to the imported class"
+    );
+    store.load_from_reader(
+        RdfFormat::Turtle,
+        include_bytes!("../docs/other/ontology/publication.shacl.ttl")
+            .as_slice(),
+    )?;
+    assert!(ask(&store, "ga:AuthorityShape <http://www.w3.org/ns/shacl#targetClass> <https://ekgf.org/ontology/artifact-governance#Authority>")?);
+    assert!(ask(&store, "?shape <http://www.w3.org/ns/shacl#path> ga:publisher ; <http://www.w3.org/ns/shacl#class> <https://ekgf.org/ontology/artifact-governance#Authority>")?);
+    assert!(
+        !ask(&store, "?subject ?predicate ga:Authority")?,
+        "SHACL must not accept the removed class alias"
+    );
+    Ok(())
+}
+
+#[test]
 fn ontology_has_publication_metadata_and_human_definitions() -> Result<()> {
     let store = ontology()?;
     assert!(ask(

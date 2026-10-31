@@ -67,18 +67,51 @@ async fn canonical_governance_authority_renders_as_a_role_with_a_distinct_player
     Ok(())
 }
 
+#[tokio::test]
+async fn grapharch_authority_alias_is_rejected() -> Result<()> {
+    let fixture =
+        std::fs::read_to_string("examples/specification/project.ttl")?;
+    let fixture = definitions::edit_quads(&fixture, |quads| {
+        for quad in quads {
+            if quad.predicate.as_str() ==
+                "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" &&
+                matches!(quad.object.to_string().as_str(),
+                    "<https://ekgf.org/ontology/grapharch#Authority>" |
+                    "<https://ekgf.org/ontology/artifact-governance#Authority>")
+            {
+                quad.object = definitions::iri(
+                    "https://ekgf.org/ontology/grapharch#Authority",
+                )?;
+            }
+        }
+        Ok(())
+    })?;
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    std::fs::write(&path, fixture)?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    let output = tempfile::tempdir()?;
+    let failure =
+        showcases::publish(&Publisher::new(dataset), &plans, output.path())
+            .await
+            .err()
+            .expect("obsolete ga:Authority must be rejected");
+    assert!(format!("{failure:#}").contains("Authority"));
+    Ok(())
+}
+
 #[test]
-fn grapharch_authority_is_equivalent_to_the_governance_role() -> Result<()> {
+fn publication_imports_authority_without_redeclaring_an_alias() -> Result<()> {
     use oxigraph::{io::RdfFormat, sparql::QueryResults, store::Store};
     let store = Store::new()?;
     store.load_from_reader(
         RdfFormat::Turtle,
         include_bytes!("../docs/other/ontology/publication.ttl").as_slice(),
     )?;
-    let QueryResults::Boolean(aligned) = oxigraph::sparql::SparqlEvaluator::new().parse_query("ASK { <https://ekgf.org/ontology/grapharch#Authority> <http://www.w3.org/2002/07/owl#equivalentClass> <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole> }")?.on_store(&store).execute()? else { panic!("ASK required") };
+    let QueryResults::Boolean(imported) = oxigraph::sparql::SparqlEvaluator::new().parse_query("ASK { ?ontology <http://www.w3.org/2002/07/owl#imports> <https://ekgf.org/ontology/artifact-governance#> FILTER NOT EXISTS { <https://ekgf.org/ontology/grapharch#Authority> ?predicate ?object } }")?.on_store(&store).execute()? else { panic!("ASK required") };
     assert!(
-        aligned,
-        "Authority must reuse the governance role semantics"
+        imported,
+        "reuse the imported role directly without a Grapharch alias"
     );
     Ok(())
 }

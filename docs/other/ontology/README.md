@@ -53,11 +53,13 @@ assets. A **PublicationJob** records rendering against that pinned plan.
 
 ## Meaning and validation
 
-OWL and RDFS declarations describe meaning and support inference. They do not
-reject missing properties or unsafe paths. SHACL and Rust validation enforce
-cardinalities, supported values, safety checks, resource budgets, and lifecycle
-rules. The SHACL file covers part of the runtime contract; passing those shapes
-alone does not guarantee a successful build.
+OWL and RDFS define the vocabulary's classes, properties, and logical
+relationships. The companion SHACL shapes express constraints on publication
+definitions, such as required properties and allowed values.
+
+For example, a collector definition must supply exactly one `ga:kind` and one
+`ga:source`. These requirements are expressed in `ga:CollectorShape` in the
+[SHACL file](publication.shacl.ttl).
 
 Domains and ranges stay broad where a property is deliberately shared. For
 example, `ga:subject` can identify any domain resource. A narrow domain would
@@ -78,10 +80,10 @@ record execution provenance and are not portable public download links.
 
 ## Governance alignment and ontology families
 
-`ga:Authority` has the same meaning as `artgov:Authority` from the Artifact
-Governance Ontology: it is a party role, distinct from its organization. The
-ontology imports that governance vocabulary and declares the class equivalence.
-Grapharch uses the registered EKGF and W3C authority identities rather than
+GraphArch directly reuses `artgov:Authority` from the imported Artifact
+Governance Ontology. It is a party role, distinct from the organization or other
+party playing that role. `ga:publisher` points to an instance of that class.
+GraphArch uses the registered EKGF and W3C authority identities rather than
 constructing them from URLs.
 
 The [ontology-family pipeline](../../usage/ontology-families.md) uses the same

@@ -22,7 +22,7 @@ const DEFINITIONS: &str = r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:test:family> a gov:Family ; rdfs:label "Example family"@en .
 <urn:test:reference> a gov:Reference ; gov:inFamily <urn:test:family> ; gov:refersTo <https://example.org/vocab/> .
 <https://example.org/vocab/> sh:declare [sh:prefix "ex" ; sh:namespace "https://example.org/vocab/"] .
-<urn:test:authority> a ga:Authority ; rdfs:label "Example Standards Council" ; ga:shortName "EX" .
+<urn:test:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; rdfs:label "Example Standards Council" ; ga:shortName "EX" .
 <urn:test:target> a ga:Target ; dct:title "Rich ontology reference" ; dct:description "A Markdown annotation test." ; rdfs:comment "Test preview." ;
  ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer "specification" ; ga:destination "specification" ;
  ga:publisher <urn:test:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec/> ; ga:latestVersion <https://example.org/spec/> ."#;

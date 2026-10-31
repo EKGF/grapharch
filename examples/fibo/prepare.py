@@ -79,7 +79,7 @@ def prepare(source: Path, output: Path, title: str, base_url: str, renderer: str
     ga:thisVersion <{base_url}>; ga:latestVersion <{base_url}>;
     ga:license <https://opensource.org/licenses/MIT>;
     ga:publisher <urn:fibo-benchmark:authority> .
-<urn:fibo-benchmark:authority> a ga:Authority; rdfs:label "EDM Association";
+<urn:fibo-benchmark:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>; rdfs:label "EDM Association";
     ga:shortName "EDM Association"; ga:accentColor "#2b5f9f" .
 '''
     output.mkdir(parents=True, exist_ok=True)

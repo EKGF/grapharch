@@ -70,7 +70,7 @@ ga:SpecificationTargetShape a sh:NodeShape ; sh:targetClass ga:Target ;
 
 ga:SpecificationMetadataShape a sh:NodeShape ;
     sh:property [ sh:path <http://purl.org/dc/terms/title> ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:publisher ; sh:nodeKind sh:IRI ; sh:or ( [ sh:class ga:Authority ] [ sh:class artgov:Authority ] ) ; sh:node ga:AuthorityShape ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:publisher ; sh:nodeKind sh:IRI ; sh:class artgov:Authority ; sh:node ga:AuthorityShape ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:publicationStatus ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:publicationDate ; sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:thisVersion ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
@@ -88,7 +88,7 @@ ga:SpecificationIdentityShape a sh:NodeShape ;
     sh:property [ sh:path ga:url ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:affiliation ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:maxCount 1 ] .
 
-ga:AuthorityShape a sh:NodeShape ; sh:targetClass ga:Authority, artgov:Authority ;
+ga:AuthorityShape a sh:NodeShape ; sh:targetClass artgov:Authority ;
     sh:property [ sh:path rdfs:label ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
     sh:property [ sh:path <https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy> ; sh:nodeKind sh:IRI ] ;
     sh:or ( [ sh:property [ sh:path ga:shortName ; sh:minCount 1 ] ] [ sh:property [ sh:path artgov:authorityAcronym ; sh:minCount 1 ] ] ) ;

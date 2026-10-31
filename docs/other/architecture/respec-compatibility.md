@@ -25,7 +25,7 @@ reference fixtures or incorporating upstream material.
 ## Publication authority and rendering engine are separate choices
 
 A target selects a renderer and a profile. `ga:publisher` selects a reusable
-`ga:Authority`: name, short name, logo, homepage, and accent color. W3C, EKGF, OMG,
+`artgov:Authority`: name, short name, logo, homepage, and accent color. W3C, EKGF, OMG,
 EDMA, and other authorities use the same mechanism. An authority change must not
 require a renderer fork or rewriting document bodies. Actual status and process
 text remain explicit graph content, independent of visual branding.
@@ -42,7 +42,7 @@ All upstream source links below are pinned to the reviewed revision.
 
 | ReSpec feature/reference | Grapharch equivalent | Current evidence and gaps |
 | --- | --- | --- |
-| [`w3c/headers.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/w3c/headers.js): title, subtitle, versions, status, date, editors, logos, other links | Target metadata plus `ga:Authority` | Authored and published-document fixtures render these fields. Branding replacement is tested. Editor/author/former-editor roles, ordered metadata rows, disclosure details, ORCID links, contributor notes, and explicit person ordering are supported; full header-link coverage, labels, and all status combinations remain incomplete. |
+| [`w3c/headers.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/w3c/headers.js): title, subtitle, versions, status, date, editors, logos, other links | Target metadata plus `artgov:Authority` | Authored and published-document fixtures render these fields. Branding replacement is tested. Editor/author/former-editor roles, ordered metadata rows, disclosure details, ORCID links, contributor notes, and explicit person ordering are supported; full header-link coverage, labels, and all status combinations remain incomplete. |
 | [`core/structure.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/structure.js), `tests/spec/core/structure-spec.js` | Profile placements, numbered outline, ToC, native aliases | Nested headings, appendices, abstract/status front matter, and native anchor resolution are tested. `maxTocLevel`, `noTOC`, unusual introductory sections, and complete numbering parity remain open. |
 | [`core/dfn.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/dfn.js), `core/link-to-dfn.js`, `core/dfn-panel.js` | Identified terms and graph references | Published `dfn` resources and their native markup are collected. Alias/plural resolution, automatic linking, cross-spec indexes, and definition panels are not implemented. |
 | [`core/biblio.js`](https://github.com/speced/respec/blob/4b35fa2b43891577773e50968e700e6145d12baf/src/core/biblio.js), `core/render-biblio.js` | Bibliographic resources and reference components | Published reference lists are preserved, including native anchors. ReSpec citation syntax, `localBiblio`, bibliography lookup, and automatic normative/informative classification are not implemented. |

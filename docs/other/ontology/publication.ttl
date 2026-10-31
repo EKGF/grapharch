@@ -31,8 +31,8 @@
     rdfs:seeAlso <https://ekgf.github.io/grapharch/ontology/>,
         <https://ekgf.github.io/grapharch/other/ontology/publication.shacl.ttl>,
         <https://github.com/EKGF/grapharch> ;
-    skos:scopeNote "This is the evolving publication-pipeline vocabulary. Earlier documentation.ttl and doc-component-categories.ttl files are prototype vocabularies, not imports or authoritative definitions of this contract. The ontology version tracks the GraphArch application release; immutable releases and persistent namespace hosting remain release work."@en ;
-    rdfs:comment "Domain and range declarations support RDF inference; they are not closed-world validation rules. Broad rdfs:Resource domains and ranges are intentional where properties are reused across resource kinds or identify arbitrary domain resources. Cardinalities, value sets, path safety, markup safety, size budgets, and lifecycle transitions are enforced by the companion SHACL shapes and Rust implementation. Embedded RDF examples illustrate individual relationships; they are not complete build configurations. The ontology imports the Artifact Governance Ontology for authority semantics. Grapharch does not fetch imports implicitly during a documentation build."@en .
+    skos:scopeNote "This ontology describes GraphArch publication settings and documentation records. Its version tracks the GraphArch application release."@en ;
+    rdfs:comment "OWL and RDFS define the vocabulary's classes, properties, and logical relationships. The companion SHACL shapes express constraints on publication definitions, such as required properties and allowed values. Broad rdfs:Resource domains and ranges allow properties to describe resources from other vocabularies. RDF examples illustrate individual relationships. Publishing authorities use artgov:Authority directly from the imported Artifact Governance Ontology."@en .
 
 <https://ekgf.org/> rdfs:label "Enterprise Knowledge Graph Forum"@en .
 
@@ -155,15 +155,6 @@ ga:Entry a owl:Class ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "A resolved occurrence of one fragment within a component placement in a publication plan, preserving placement and fragment order."@en ;
     dct:description "A resolved occurrence of one fragment within a component placement in a publication plan, preserving placement and fragment order."@en .
-
-ga:Authority a owl:Class ;
-    rdfs:label "Publishing authority"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A governance role responsible for semantic artifacts or their publication namespaces, distinct from the party playing that role and reusable across publication targets."@en ;
-    dct:description "A governance role responsible for semantic artifacts or their publication namespaces, distinct from the party playing that role and reusable across publication targets."@en ;
-    owl:equivalentClass artgov:Authority ;
-    rdfs:subClassOf cmns-pts:PartyRole ;
-    skos:scopeNote "Authority has the meaning defined by the Artifact Governance Ontology in EKGF/ekg-ontologies. Reuse its registered UUIDv4 authority identities. Link the distinct organization or other party with cmns-rlcmp:isPlayedBy. Names, hosts, and URLs are metadata, not authority identity keys. The player may be unknown. Display names use rdfs:label; canonical abbreviations use artgov:authorityAcronym."@en .
 
 ga:Section a owl:Class ;
     rdfs:label "Specification section"@en ;
@@ -451,7 +442,7 @@ ga:publisher a owl:ObjectProperty ;
     skos:definition "Identifies the publishing authority responsible for a specification target."@en ;
     dct:description "Identifies the publishing authority responsible for a specification target."@en ;
     rdfs:domain ga:Target ;
-    rdfs:range ga:Authority .
+    rdfs:range artgov:Authority .
 
 ga:thisVersion a owl:ObjectProperty ;
     rdfs:label "This published document version"@en ;
@@ -924,7 +915,7 @@ ga:shortName a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Records the abbreviated name of a publishing authority used in compact publication labels."@en ;
     dct:description "Records the abbreviated name of a publishing authority used in compact publication labels."@en ;
-    rdfs:domain ga:Authority ;
+    rdfs:domain artgov:Authority ;
     rdfs:range xsd:string ;
     owl:equivalentProperty artgov:authorityAcronym .
 
@@ -933,7 +924,7 @@ ga:accentColor a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Specifies the six-digit hexadecimal RGB color used for authority accents in a rendered publication."@en ;
     dct:description "Specifies the six-digit hexadecimal RGB color used for authority accents in a rendered publication."@en ;
-    rdfs:domain ga:Authority ;
+    rdfs:domain artgov:Authority ;
     rdfs:range xsd:string ;
     skos:scopeNote "The current renderer requires a value matching #[0-9A-Fa-f]{6}."@en .
 
@@ -942,7 +933,7 @@ ga:logo a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Contains the embedded PNG data URL used as the publishing authority logo without requiring a network fetch at render time."@en ;
     dct:description "Contains the embedded PNG data URL used as the publishing authority logo without requiring a network fetch at render time."@en ;
-    rdfs:domain ga:Authority ;
+    rdfs:domain artgov:Authority ;
     rdfs:range xsd:string ;
     skos:scopeNote "The current renderer accepts data:image/png;base64, values and validates image content and size. The literal is a data URL, not an RDF link to a logo resource."@en .
 

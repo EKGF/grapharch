@@ -54,7 +54,7 @@ fn configuration(
  ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>;
  ga:license <https://creativecommons.org/publicdomain/zero/1.0/>; ga:publicationStatus "Draft";
  ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>; ga:publisher <urn:example:authority> .
-<urn:example:authority> a ga:Authority; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en; ga:shortName "Example" .
+<urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en; ga:shortName "Example" .
 "#,
     )?;
     Ok(path)

@@ -44,7 +44,7 @@ A specification target requires these graph assertions:
 | Predicate | Value |
 | --- | --- |
 | `dcterms:title` | Nonempty document title |
-| `ga:publisher` | Authority role IRI, typed `artgov:Authority` or its equivalent `ga:Authority`, with an English `rdfs:label` |
+| `ga:publisher` | Authority role IRI, typed `artgov:Authority`, with an English `rdfs:label` |
 | `ga:publicationStatus` | Nonempty publisher-defined status, such as `Editor's Draft` |
 | `ga:publicationDate` | Valid calendar date in `YYYY-MM-DD` form, typed `xsd:date` |
 | `ga:thisVersion` | Absolute HTTP(S) IRI identifying this document version |
@@ -66,8 +66,7 @@ invalid publication does not replace the last successful generation.
 
 ## Reusable authorities
 
-An authority node denotes a governance role, typed `artgov:Authority` or its
-equivalent `ga:Authority`. It requires an English `rdfs:label` and an abbreviation
+An authority node denotes a governance role, typed `artgov:Authority`. It requires an English `rdfs:label` and an abbreviation
 using `artgov:authorityAcronym` or the equivalent `ga:shortName`. Its player is a
 distinct party linked through Commons `isPlayedBy`, when known. Reuse the UUIDs
 in the EKGF authority registry; hosts and URLs do not determine identity.

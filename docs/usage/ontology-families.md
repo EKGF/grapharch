@@ -166,8 +166,8 @@ losing content.
 
 ### Publishing authority
 
-Your publishing authority is configurable. `ga:Authority` is equivalent to the
-Artifact Governance `Authority`, a Commons party role. Its organization is a
+Your publishing authority is configurable. Use `artgov:Authority` from the
+Artifact Governance ontology directly; it denotes a Commons party role. Its organization is a
 separate resource linked with `cmns-rlcmp:isPlayedBy`. Display names come from
 English `rdfs:label`; acronyms use `artgov:authorityAcronym` or its equivalent
 `ga:shortName`. Conflicting values fail validation.
