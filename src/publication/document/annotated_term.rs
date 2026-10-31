@@ -389,7 +389,8 @@ impl Documentor for AnnotatedTermDocumentor {
                 "http://purl.org/dc/terms/description" => {
                     Some(&mut definitions)
                 },
-                "http://www.w3.org/2004/02/skos/core#definition" => {
+                "http://www.w3.org/2004/02/skos/core#definition" |
+                "http://www.w3.org/ns/prov#definition" => {
                     if self.source_annotations {
                         Some(&mut definitions)
                     } else {

@@ -3,9 +3,11 @@
 
 mod authored;
 mod blank_nodes;
+pub(crate) mod configured;
 mod endpoint;
 pub mod git;
 mod hashing_reader;
+mod http_rdf;
 mod image;
 mod markdown_images;
 mod markdown_structure;
@@ -28,6 +30,7 @@ use {
 pub use {
     authored::{MarkdownFile, SparqlFile},
     endpoint::{SparqlEndpointSource, SparqlSourceConfig},
+    http_rdf::RdfUrl,
     image::HttpImage,
     markdown_images::{
         AssetCollectorFactory,

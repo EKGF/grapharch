@@ -20,6 +20,7 @@ explanations, and diagrams. Renderers present that content as websites or PDFs.
 
 | Collector | Input | Documentable things it supports |
 |---|---|---|
+| [RDF URL Collector](rdf-urls.md) | An explicit HTTP(S) RDF document URL and declared media type | Ontology resources, SHACL shapes, SKOS vocabularies, EKGF use cases and publication hints |
 | [RDF File Collector](rdf-files.md) | Turtle, RDF/XML and other supported RDF serializations | Ontology resources, families and modules, SHACL shapes, SKOS vocabularies, EKGF use cases, publication hints |
 | [Markdown File Collector](markdown-files.md) | Markdown with optional YAML frontmatter | Pages, guides, sections, fenced examples, supported images and Mermaid flowcharts |
 | [SPARQL File Collector](sparql-files.md) | Authored SPARQL text | [Query or statement fragments](../documentable-things/sparql-queries.md); the query is not executed |

@@ -8,6 +8,7 @@ use {
 const PAGES: &[&str] = &[
     "README.md",
     "rdf-files.md",
+    "rdf-urls.md",
     "markdown-files.md",
     "sparql-files.md",
     "sparql-endpoints.md",
@@ -109,7 +110,7 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
         "---\ntitle: Home\npermalink: /\nnav_exclude: true\n---\n# Home\n",
     )
     .await?;
-    // bounded: nine metadata-only pages exercise actual collection/navigation
+    // bounded: ten metadata-only pages exercise actual collection/navigation
     // without the live showcase gallery or external source repositories.
     for name in PAGES {
         let original =

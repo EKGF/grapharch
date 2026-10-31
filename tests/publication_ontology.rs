@@ -65,6 +65,21 @@ fn publishing_authorities_reuse_the_imported_governance_class_directly()
 }
 
 #[test]
+fn git_revision_hint_has_public_metadata_and_collector_constraints()
+-> Result<()> {
+    let store = ontology()?;
+    assert!(ask(&store, "ga:gitRef a owl:DatatypeProperty ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:Collector ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition ; skos:example ?example . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40 && CONTAINS(STR(?example), 'HEAD'))")?, "the Git revision hint needs a complete source-owned vocabulary definition");
+    store.load_from_reader(
+        RdfFormat::Turtle,
+        include_bytes!("../docs/other/ontology/publication.shacl.ttl")
+            .as_slice(),
+    )?;
+    assert!(ask(&store, "ga:CollectorShape <http://www.w3.org/ns/shacl#property> ?shape . ?shape <http://www.w3.org/ns/shacl#path> ga:gitRef ; <http://www.w3.org/ns/shacl#datatype> <http://www.w3.org/2001/XMLSchema#string> ; <http://www.w3.org/ns/shacl#minLength> 1 ; <http://www.w3.org/ns/shacl#maxCount> 1")?, "CollectorShape must constrain optional Git revision hints");
+    assert!(ask(&store, "ga:CollectorShape <http://www.w3.org/ns/shacl#or> ?choices . ?choices <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?choice . ?choice <http://www.w3.org/ns/shacl#property> ?ref, ?path . ?ref <http://www.w3.org/ns/shacl#path> ga:gitRef ; <http://www.w3.org/ns/shacl#minCount> 1 . ?path <http://www.w3.org/ns/shacl#path> ga:sourcePath ; <http://www.w3.org/ns/shacl#minCount> 1")?, "configured Git RDF files require a revision and source path");
+    Ok(())
+}
+
+#[test]
 fn ontology_has_publication_metadata_and_human_definitions() -> Result<()> {
     let store = ontology()?;
     assert!(ask(

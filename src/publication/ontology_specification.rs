@@ -18,13 +18,13 @@ use {
         writer::GraphWriter,
     },
     anyhow::{Result, ensure},
-    oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
-    std::{
-        collections::{BTreeMap, HashSet},
-        path::Path,
-        sync::Arc,
-    },
+    oxrdf::{Literal, NamedNode, Term},
+    std::{collections::HashSet, path::Path, sync::Arc},
 };
+
+mod dependencies;
+mod structure;
+use structure::{placement, q};
 
 pub(crate) async fn collect(
     root: &Path,
@@ -124,41 +124,7 @@ async fn build(
         };
         namespace_values.push(value.value().to_owned());
     }
-    let prefixes = Arc::new(BTreeMap::from([
-        (
-            "https://ekgf.org/ontology/artifact-governance#".into(),
-            "artgov".into(),
-        ),
-        (
-            "https://www.omg.org/spec/Commons/PartiesAndSituations/".into(),
-            "cmns-pts".into(),
-        ),
-        (
-            namespace_values[0].clone(),
-            namespace_values[1].clone(),
-        ),
-        (
-            "http://www.w3.org/2002/07/owl#".into(),
-            "owl".into(),
-        ),
-        (
-            "http://www.w3.org/2000/01/rdf-schema#".into(),
-            "rdfs".into(),
-        ),
-        (
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#".into(),
-            "rdf".into(),
-        ),
-        (
-            "http://www.w3.org/2001/XMLSchema#".into(),
-            "xsd".into(),
-        ),
-        ("http://purl.org/dc/terms/".into(), "dct".into()),
-        (
-            "http://www.w3.org/2004/02/skos/core#".into(),
-            "skos".into(),
-        ),
-    ]));
+    let prefixes = structure::prefixes(&namespace_values);
     let mut groups = Vec::new();
     let mut known = HashSet::new();
     for (kind, title) in [
@@ -194,6 +160,19 @@ async fn build(
         !known.is_empty(),
         "ontology specification has no defined terms"
     );
+    let collected_snapshot = dataset.snapshot_collected_for(project).await?;
+    let collected_view =
+        RevisionView::new(dataset.clone(), collected_snapshot.clone());
+    let external =
+        dependencies::selected(dataset, &collected_view, &scope, &known)
+            .await?;
+    let attribution =
+        dependencies::sources(dataset, &collected_view, &external).await?;
+    let external_set: HashSet<_> = external.iter().cloned().collect();
+    known.extend(external.iter().cloned());
+    if !external.is_empty() {
+        groups.push(("ReusedVocabulary", "Reused vocabulary", external));
+    }
     let known = Arc::new(known);
     let owner = identity("ontology-bindings", &[project, target.as_str()]);
     let mut stream = writer
@@ -309,21 +288,40 @@ async fn build(
         for (order, subject) in terms.into_iter().enumerate() {
             let documentor = AnnotatedTermDocumentor::new(
                 dataset.clone(),
-                source_snapshot.clone(),
+                if external_set.contains(&subject) {
+                    collected_snapshot.clone()
+                } else {
+                    source_snapshot.clone()
+                },
                 project,
                 subject.clone(),
                 "en",
                 prefixes.clone(),
                 known.clone(),
             )?;
+            let documentor = if external_set.contains(&subject) {
+                documentor.with_source_annotations()
+            } else {
+                documentor
+            };
             documentor.document(writer).await?;
+            if let Some(sources) = attribution.get(&subject) {
+                write.extend(dependencies::attribution(
+                    target,
+                    &component,
+                    &contribution,
+                    &subject,
+                    sources,
+                    order as u32 * 2 + 1,
+                ));
+            }
             write.extend([
                 q(&scope, "include", subject),
                 q(&component, "fragment", documentor.fragment_id()),
                 q(
                     &documentor.fragment_id(),
                     "order",
-                    Literal::from(order as u32),
+                    Literal::from(order as u32 * 2),
                 ),
             ]);
         }
@@ -362,48 +360,4 @@ async fn build(
     )?));
     collect_all(work, writer, 4).await?;
     Ok(())
-}
-fn q(subject: &NamedNode, field: &str, object: impl Into<Term>) -> Quad {
-    Quad::new(
-        subject.clone(),
-        if field == "type" {
-            NamedNode::new_unchecked(super::RDF_TYPE)
-        } else {
-            term(field)
-        },
-        object,
-        GraphName::DefaultGraph,
-    )
-}
-fn placement(
-    quads: &mut Vec<Quad>,
-    target: &NamedNode,
-    profile: &NamedNode,
-    component: &NamedNode,
-    title: &str,
-    kind: &str,
-    order: u32,
-) {
-    let placement = identity("ontology-placement", &[
-        target.as_str(),
-        component.as_str(),
-    ]);
-    quads.extend([
-        q(profile, "placement", placement.clone()),
-        q(&placement, "type", term("Placement")),
-        q(&placement, "component", component.clone()),
-        q(&placement, "order", Literal::from(order)),
-        q(
-            &placement,
-            "sectionKind",
-            Literal::new_simple_literal(kind),
-        ),
-        q(component, "type", term("Component")),
-    ]);
-    quads.push(Quad::new(
-        component.clone(),
-        NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
-        Literal::new_simple_literal(title),
-        GraphName::DefaultGraph,
-    ));
 }

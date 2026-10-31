@@ -53,3 +53,36 @@ or HTML template: those require the appropriate workflow and specialised jobs.
 Configured Git Markdown, code, image, and legal collectors read pinned blobs with
 commit and blob provenance. See [Markdown](markdown-files.md) and
 [assets and code](assets-and-code.md) for those separate paths.
+
+## Collect one RDF file from Git
+
+A website project can explicitly collect one RDF file from a remote repository
+without discovering and documenting every vocabulary in that repository:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
+<urn:example:docs> ga:collector <urn:example:governance-source> .
+
+<urn:example:governance-source> a ga:Collector ;
+    ga:kind "git-rdf-file" ;
+    ga:source "https://github.com/EKGF/ekg-ontologies.git" ;
+    ga:sourcePath "ekgf-artifact-governance.ttl" ;
+    ga:gitRef "HEAD" .
+```
+
+This configuration fragment belongs in the surrounding project's publication
+definitions. It uses the configured-source path of the
+[website build](../usage/self-hosting.md), not a separate new CLI collection kind.
+
+`ga:source` names the repository. `ga:sourcePath` selects one regular RDF blob
+using a relative path without traversal. `ga:gitRef` is required: use `HEAD`
+for the latest fetched default-branch commit, a branch or tag name, or a full
+commit ID for an immutable selection. The collected graph retains the concrete
+observed commit and blob provenance even when the requested reference can move.
+Cached Git data avoids cloning the whole repository again on each run.
+
+The collector retains RDF assertions; it does not rewrite imported terms into
+GraphArch's namespace. Documentation scope and profiles select the terms and
+arrange their reference entries. To read a publisher's RDF download instead, use
+the [RDF URL Collector](rdf-urls.md).

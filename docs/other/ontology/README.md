@@ -90,6 +90,23 @@ The [ontology-family pipeline](../../usage/ontology-families.md) uses the same
 registry's family identities, artifact references, explicit memberships, and
 aliases. Its first fixture publishes all 24 registered EKGF ontologies together.
 
+## Reused vocabularies in the specification
+
+The GraphArch specification also documents selected terms from the vocabularies
+it uses. These terms retain their original IRIs and definitions:
+
+| Vocabulary | Selected terms | Use in GraphArch |
+|---|---|---|
+| Artifact Governance | `artgov:Authority`, `artgov:authorityAcronym` | Publishing authorities and their abbreviations |
+| OMG Commons | `cmns-pts:PartyRole`, `cmns-rlcmp:isPlayedBy` | Distinguishing an authority role from the organisation playing it |
+| Dublin Core Terms | `dct:title`, `dct:description`, `dct:source`, `dct:identifier` | Titles, explanations, source attribution, and identifiers |
+| PROV-O | `prov:Entity`, `prov:wasDerivedFrom`, `prov:atLocation` | Source provenance in the exported documentation graph |
+
+The [publication definitions](https://github.com/EKGF/grapharch/blob/main/docs/grapharch.ttl) identify the upstream RDF
+sources and select these terms with `ga:include`. The generated reference gives
+the original definitions and their sources alongside GraphArch's own terms.
+Selecting a term for documentation is separate from declaring an ontology import.
+
 ## Maintenance
 
 `Cargo.toml` is the release-version source. After changing its package version,

@@ -109,6 +109,15 @@ pub async fn collect_with_asset_factory(
         .await?;
         collect_all(images, &writer, concurrency).await?;
 
+        super::collect::configured::collect(
+            &source,
+            &dataset,
+            &writer,
+            project,
+            concurrency,
+        )
+        .await?;
+
         super::ontology_specification::collect(
             &source, &dataset, &writer, project,
         )

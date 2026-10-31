@@ -11,6 +11,12 @@ ga:ProjectShape a sh:NodeShape ; sh:targetClass ga:Project ; sh:nodeKind sh:IRI 
     sh:property [ sh:path ga:collector ; sh:nodeKind sh:IRI ; sh:class ga:Collector ] .
 
 ga:CollectorShape a sh:NodeShape ; sh:targetClass ga:Collector ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:gitRef ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ga:kind ; sh:hasValue "git-rdf-file" ] ] ]
+        [ sh:property [ sh:path ga:gitRef ; sh:minCount 1 ] ;
+          sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ]
+    ) ;
     sh:property [ sh:path ga:kind ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] .
 

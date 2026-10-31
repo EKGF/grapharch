@@ -754,6 +754,15 @@ ga:source a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     skos:scopeNote "This property is a literal in the current contract, even when the string resembles an IRI. Its interpretation is specific to the configured processor."@en .
 
+ga:gitRef a owl:DatatypeProperty ;
+    rdfs:label "Git revision reference"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
+    dct:description "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
+    rdfs:domain ga:Collector ;
+    rdfs:range xsd:string ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:governance-source> a ga:Collector ;\n    ga:kind \"git-rdf-file\" ;\n    ga:source \"https://github.com/EKGF/ekg-ontologies.git\" ;\n    ga:sourcePath \"ekgf-artifact-governance.ttl\" ;\n    ga:gitRef \"HEAD\" ."@en .
+
 ga:maxDepth a owl:DatatypeProperty ;
     rdfs:label "Maximum traversal depth"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
