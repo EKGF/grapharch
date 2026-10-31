@@ -1,5 +1,7 @@
 #[path = "support/definitions.rs"]
 mod definitions;
+#[path = "support/dprod_header.rs"]
+mod dprod_header;
 
 use grapharch::publication::{dataset::Dataset, render::Publisher, showcases};
 #[tokio::test]
@@ -24,6 +26,11 @@ async fn remote_develop_restores_and_publishes_three_targets()
     let html =
         tokio::fs::read_to_string(output.join("specification/index.html"))
             .await?;
+    dprod_header::assert_restored_metadata(
+        &html,
+        &output.join("specification"),
+    )
+    .await?;
     assert!(html.contains("Data Product"));
     for title in [
         "Conformance",
