@@ -115,7 +115,7 @@ pub(super) fn render(
     let mut html = String::new();
     pulldown_cmark::html::push_html(
         &mut html,
-        super::super::markdown_html::events(events.into_iter()),
+        super::super::markdown_html::events(events.into_iter())?,
     );
     // Table wrappers keep narrow screens readable without page-wide overflow.
     html = html

@@ -184,7 +184,7 @@ impl<'a> Markdown<'a> {
         level as usize - self.base_level + self.heading_depth
     }
 
-    pub fn html(&self) -> String {
+    pub fn html(&self) -> Result<String> {
         let events = self.events.iter().cloned().map(|event| {
             match event {
                 Event::Start(Tag::Heading { level, id, classes, attrs }) => {
@@ -219,9 +219,9 @@ impl<'a> Markdown<'a> {
         let mut output = String::new();
         pulldown_cmark::html::push_html(
             &mut output,
-            super::markdown_html::events(events),
+            super::markdown_html::events(events)?,
         );
-        output
+        Ok(output)
     }
 }
 

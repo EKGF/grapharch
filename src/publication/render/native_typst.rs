@@ -88,7 +88,7 @@ fn emit(element: ElementRef<'_>, diagnostics: &[Diagnostic]) -> Result<String> {
                 )
                 .find_map(|class| class.strip_prefix("language-"))
                 .unwrap_or("");
-            super::code::typst(&text, language)
+            super::code::typst(&text, language)?
         },
         "table" => table(element, diagnostics)?,
         "ul" | "ol" => {

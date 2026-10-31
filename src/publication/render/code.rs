@@ -1,6 +1,7 @@
 //! One offline syntax engine and palette for HTML and PDF code blocks.
 use {
     super::markup::{html_escape, quote},
+    anyhow::{Context, Result},
     std::sync::LazyLock,
     syntect::{
         easy::HighlightLines,
@@ -64,7 +65,11 @@ fn canonical(language: &str) -> &str {
     }
 }
 
-fn runs(source: &str, language: &str, mut emit: impl FnMut(&str, Color)) {
+fn runs(
+    source: &str,
+    language: &str,
+    mut emit: impl FnMut(&str, Color),
+) -> Result<()> {
     let language = language.to_ascii_lowercase();
     let language = canonical(&language);
     let syntaxes = if language == "sparql" {
@@ -75,7 +80,7 @@ fn runs(source: &str, language: &str, mut emit: impl FnMut(&str, Color)) {
     let token = if language == "sparql" { "rq" } else { language };
     let Some(syntax) = syntaxes.find_syntax_by_token(token) else {
         emit(source, THEME.settings.foreground.unwrap());
-        return;
+        return Ok(());
     };
     let mut highlighter = HighlightLines::new(syntax, &THEME);
     // Bounded by the validated fragment budget. Keep lexical state across
@@ -84,7 +89,7 @@ fn runs(source: &str, language: &str, mut emit: impl FnMut(&str, Color)) {
     for line in source.split_inclusive('\n') {
         for (style, text) in highlighter
             .highlight_line(line.trim_end_matches('\n'), syntaxes)
-            .expect("bundled syntax highlighting failed")
+            .with_context(|| format!("highlighting {language} code"))?
         {
             emit(text, style.foreground);
         }
@@ -92,9 +97,10 @@ fn runs(source: &str, language: &str, mut emit: impl FnMut(&str, Color)) {
             emit("\n", THEME.settings.foreground.unwrap());
         }
     }
+    Ok(())
 }
 
-pub(super) fn html(source: &str, language: &str) -> String {
+pub(super) fn html(source: &str, language: &str) -> Result<String> {
     let mut body = String::new();
     runs(source, language, |text, color| {
         body.push_str(&format!(
@@ -104,14 +110,14 @@ pub(super) fn html(source: &str, language: &str) -> String {
             color.b,
             html_escape(text)
         ));
-    });
-    format!(
+    })?;
+    Ok(format!(
         "<pre><code class=\"language-{}\">{body}</code></pre>",
         html_escape(language)
-    )
+    ))
 }
 
-pub(super) fn typst(source: &str, language: &str) -> String {
+pub(super) fn typst(source: &str, language: &str) -> Result<String> {
     let mut output = String::from("#ga-code((");
     runs(source, language, |text, color| {
         output.push_str(&format!(
@@ -121,9 +127,9 @@ pub(super) fn typst(source: &str, language: &str) -> String {
             color.g,
             color.b
         ));
-    });
+    })?;
     output.push_str("))");
-    output
+    Ok(output)
 }
 
 #[cfg(test)]
@@ -167,7 +173,8 @@ mod tests {
                 runs(source, language, |text, color| {
                     restored.push_str(text);
                     colors.insert((color.r, color.g, color.b));
-                });
+                })
+                .unwrap();
                 assert_eq!(restored, source, "{language}");
                 assert!(
                     colors.len() >= 3,
@@ -190,7 +197,8 @@ mod tests {
                     colors.push(color);
                 }
             },
-        );
+        )
+        .unwrap();
         assert_eq!(colors.len(), 3);
         assert!(colors.iter().all(|color| color == &colors[0]));
     }

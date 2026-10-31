@@ -45,7 +45,7 @@ impl Preamble {
                 let mut html = String::new();
                 pulldown_cmark::html::push_html(
                     &mut html,
-                    super::markdown_html::events(markdown.events.into_iter()),
+                    super::markdown_html::events(markdown.events.into_iter())?,
                 );
                 html
             },

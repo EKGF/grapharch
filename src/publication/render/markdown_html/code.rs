@@ -2,7 +2,9 @@
 //! role.
 use pulldown_cmark::{CodeBlockKind, Event, Tag, TagEnd};
 
-pub(super) fn events<'a>(input: Vec<Event<'a>>) -> Vec<Event<'a>> {
+pub(super) fn events<'a>(
+    input: Vec<Event<'a>>,
+) -> anyhow::Result<Vec<Event<'a>>> {
     // bounded: input and output represent a single capped Markdown fragment.
     let mut output = Vec::new();
     let mut input = input.into_iter();
@@ -24,7 +26,7 @@ pub(super) fn events<'a>(input: Vec<Event<'a>>) -> Vec<Event<'a>> {
                 source.push_str(&text)
             }
         }
-        let code = super::super::code::html(&source, language);
+        let code = super::super::code::html(&source, language)?;
         let html = if example {
             let caption = "<figure class=\"example code-example\"><figcaption \
                            class=\"marker\">Example <span \
@@ -35,7 +37,7 @@ pub(super) fn events<'a>(input: Vec<Event<'a>>) -> Vec<Event<'a>> {
         };
         output.push(Event::Html(html.into()));
     }
-    output
+    Ok(output)
 }
 
 #[cfg(test)]
@@ -81,6 +83,7 @@ mod tests {
             pulldown_cmark::html::push_html(
                 &mut html,
                 super::events(pulldown_cmark::Parser::new(&markdown).collect())
+                    .unwrap()
                     .into_iter(),
             );
             let document = scraper::Html::parse_fragment(&html);
@@ -109,7 +112,7 @@ mod tests {
             "{\"invalidEscape\": \"\\東京\", \"unfinished\": \"",
             "{\"value\": -1.25e+3, \"nothing\": null}\n",
         ] {
-            let html = super::super::super::code::html(source, "json");
+            let html = super::super::super::code::html(source, "json").unwrap();
             let document = scraper::Html::parse_fragment(&html);
             let code = document
                 .select(&scraper::Selector::parse("code").unwrap())

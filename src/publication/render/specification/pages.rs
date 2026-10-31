@@ -114,10 +114,7 @@ async fn body(
                 .await?;
         markdown_html(&markdown, outline)
     } else {
-        Ok(super::super::code::html(
-            &entry.body,
-            code_language(&entry.format)?,
-        ))
+        super::super::code::html(&entry.body, code_language(&entry.format)?)
     }
 }
 pub(in crate::publication::render) async fn catalog(

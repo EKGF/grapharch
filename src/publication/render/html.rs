@@ -158,9 +158,9 @@ pub(super) async fn entry(
         .await?;
     }
     let body = if let Some(markdown) = markdown {
-        markdown.html()
+        markdown.html()?
     } else {
-        super::code::html(&entry.body, code_language(&entry.format)?)
+        super::code::html(&entry.body, code_language(&entry.format)?)?
     };
     file.write_all(
         format!(

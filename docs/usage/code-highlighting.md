@@ -49,7 +49,7 @@ SELECT ?dataset $title WHERE {
 }
 ```
 
-See the [multilingual code showcase](../../showcases/) for complete Python, Bash,
+See the [multilingual code showcase](../showcases.md) for complete Python, Bash,
 JavaScript, TypeScript, JSON, JSON-LD and SPARQL examples with a matching PDF.
 Its [publication definition](https://github.com/EKGF/grapharch/tree/main/examples/code-highlighting)
 also demonstrates fenced Markdown stored in an RDF documentation fragment.

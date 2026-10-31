@@ -9,10 +9,10 @@ use {
 
 pub(super) fn events<'a>(
     events: impl Iterator<Item = Event<'a>>,
-) -> impl Iterator<Item = Event<'a>> {
+) -> anyhow::Result<impl Iterator<Item = Event<'a>>> {
     // Bounded by the caller's per-fragment/page Markdown budget. Classify task
     // items structurally so nested and mixed lists retain their semantics.
-    let events = code::events(events.collect());
+    let events = code::events(events.collect())?;
     let mut items = Vec::new();
     let mut tasks = HashSet::new();
     for (index, event) in events.iter().enumerate() {
@@ -29,7 +29,7 @@ pub(super) fn events<'a>(
             _ => {},
         }
     }
-    events
+    Ok(events
         .into_iter()
         .enumerate()
         .flat_map(move |(index, event)| {
@@ -52,7 +52,7 @@ pub(super) fn events<'a>(
                 event
             };
             std::iter::once(event).chain(title)
-        })
+        }))
 }
 
 #[cfg(test)]
@@ -73,7 +73,8 @@ mod tests {
             events(Parser::new_ext(
                 markdown,
                 crate::publication::markdown::options(),
-            )),
+            ))
+            .unwrap(),
         );
         assert!(
             output.contains("class=\"example code-example\""),

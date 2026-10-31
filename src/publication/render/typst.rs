@@ -299,7 +299,7 @@ pub(super) async fn entry(
     } else if let Some(markdown) = markdown {
         typst_markdown::convert(markdown)?
     } else {
-        super::code::typst(&entry.body, code_language(&entry.format)?)
+        super::code::typst(&entry.body, code_language(&entry.format)?)?
     };
     file.write_all(format!("{body}]#label({})\n", quote(anchor)).as_bytes())
         .await?;

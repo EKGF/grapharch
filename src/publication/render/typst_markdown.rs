@@ -171,7 +171,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                                 anyhow::anyhow!("unbalanced code block")
                             })?,
                             code_language,
-                        ));
+                        )?);
                         if example {
                             output.push(']');
                             example = false;
