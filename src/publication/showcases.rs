@@ -16,6 +16,7 @@ use {
         plan::{ResolvedPlan, TargetPlanner},
         render::{Publication, PublishOutcome, Publisher},
         term,
+        view::RevisionView,
         writer::GraphWriter,
     },
     anyhow::{Result, bail},
@@ -39,10 +40,12 @@ pub async fn verify_gallery(
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FamilyShowcase {
-    definitions: Option<std::path::PathBuf>,
-    project:     Option<String>,
-    target:      Option<String>,
-    source:      FamilyShowcaseSource,
+    definitions:        Option<std::path::PathBuf>,
+    project:            Option<String>,
+    target:             Option<String>,
+    source:             FamilyShowcaseSource,
+    #[serde(default)]
+    additional_targets: Vec<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -111,7 +114,7 @@ pub async fn family(
             4,
         )
         .await?;
-        return Ok((built.dataset, vec![built.plan]));
+        return family_targets(built, &config.additional_targets).await;
     }
     let FamilyShowcaseSource::Git { url, reference, config: hints_path } =
         config.source
@@ -177,7 +180,48 @@ pub async fn family(
             )
         },
     };
-    Ok((built.dataset, vec![built.plan]))
+    family_targets(built, &config.additional_targets).await
+}
+
+async fn family_targets(
+    built: super::ontology_family::CollectedFamily,
+    additional: &[String],
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    anyhow::ensure!(
+        additional.len() <= 8,
+        "family showcase exceeds eight additional targets"
+    );
+    let view =
+        RevisionView::new(built.dataset.clone(), built.plan.snapshot.clone());
+    let project = view.node(&built.plan.id, "project").await?;
+    let revision = view.node(&built.plan.id, "inputRevision").await?;
+    let (writer, worker) =
+        GraphWriter::spawn(built.dataset.clone(), 8, 4 * 1024 * 1024)?;
+    // bounded: primary publication plus at most eight explicit targets.
+    let mut plans = vec![built.plan];
+    let result = async {
+        let planner = TargetPlanner::new(built.dataset.clone(), revision);
+        for target in additional {
+            let plan = planner
+                .resolve(
+                    project.as_str(),
+                    &NamedNode::new(target)?,
+                    &writer,
+                )
+                .await?;
+            anyhow::ensure!(
+                !plans.iter().any(|existing| existing.id == plan.id),
+                "duplicate family showcase target"
+            );
+            plans.push(plan);
+        }
+        anyhow::Ok(())
+    }
+    .await;
+    drop(writer);
+    worker.await??;
+    result?;
+    Ok((built.dataset, plans))
 }
 
 /// Collect the pinned native DPROD ontology, shapes, and authored fragments.

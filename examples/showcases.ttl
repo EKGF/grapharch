@@ -1,7 +1,7 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
-<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
     ga:order 1 ; ga:kind "authored" ; ga:source "showcase/project.ttl" ;
@@ -36,3 +36,8 @@ ex:use-cases a ga:Showcase;ga:slug "use-cases";dct:title "EKGF use-case trees";
  dct:description "Actual RDF use-case instances, ownership and reuse links, personas and outcomes, with KG-generated neighborhood diagrams and a review PDF.";
  ga:order 8;ga:kind "use-cases";ga:source "use-cases";
  ga:previewPath "website/index.html";ga:pdfPath "review/document.pdf" .
+
+ex:commons a ga:Showcase; ga:slug "commons"; dct:title "OMG Commons Ontology Library";
+    dct:description "The published OMG Commons ontologies are collected directly from their authoritative RDF URLs and become a family overview, an individual specification page per ontology, and a PDF, with native terms and source content digests.";
+    ga:order 9; ga:kind "ontology-family"; ga:source "omg-commons/showcase.yaml";
+    ga:previewPath "specification/index.html"; ga:pdfPath "pdf/document.pdf" .

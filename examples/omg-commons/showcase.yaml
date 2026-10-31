@@ -1,0 +1,54 @@
+definitions: project.ttl
+project: urn:omg-commons:project
+target: urn:omg-commons:specification
+additional_targets:
+  - urn:omg-commons:pdf
+source:
+  kind: rdf-urls
+  documents:
+    - url: https://www.omg.org/spec/Commons/AboutCommons.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/AnnotationVocabulary.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/BusinessAuthorizations.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Classifiers.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/CodesAndCodeSets.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Collections.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/ContextualDesignators.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/ContextualIdentifiers.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/DatesAndTimes.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Designators.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Documents.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Identifiers.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Languages.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Locations.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/Organizations.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/PartiesAndSituations.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/QuantitiesAndUnits.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/RegistrationAuthorities.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/RegulatoryAgencies.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/RolesAndCompositions.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/SitesAndFacilities.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/StructuredCollections.rdf
+      media_type: application/rdf+xml
+    - url: https://www.omg.org/spec/Commons/TextDatatype.rdf
+      media_type: application/rdf+xml

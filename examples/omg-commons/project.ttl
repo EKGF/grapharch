@@ -1,0 +1,56 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix gov: <https://ekgf.org/ontology/artifact-governance#> .
+@prefix pub: <https://ekgf.org/ontology/artifact-publication#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <urn:omg-commons:> .
+
+# Publication arrangement only. Ontology content is collected from OMG URLs.
+ex:project a ga:Project; dct:title "OMG Commons Ontology Library"; ga:target ex:specification, ex:pdf .
+ex:scope a ga:Scope .
+ex:profile a ga:Profile; pub:publishesFamily ex:family .
+ex:family a gov:Family; rdfs:label "OMG Commons Ontology Library" .
+ex:specification a ga:Target; dct:title "OMG Commons Ontology Library";
+    dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units.";
+    rdfs:comment "An unofficial GraphArch documentation preview of the ontology documents published by OMG. This generated publication is not an approved OMG specification. Source annotations and licenses are preserved; external imports are not fetched and no reasoning is performed. Each build records the source URLs and content digests in its documentation graph.";
+    ga:scope ex:scope; ga:profile ex:profile; ga:renderer "specification-pages"; ga:destination "specification";
+    ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
+    ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>;
+    ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/commons/specification/>; ga:latestVersion <https://www.omg.org/spec/Commons>;
+    ga:license <https://opensource.org/licenses/MIT> .
+ex:pdf a ga:Target; dct:title "OMG Commons Ontology Library";
+    dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units.";
+    rdfs:comment "An unofficial GraphArch documentation preview of the ontology documents published by OMG. This generated publication is not an approved OMG specification. Source annotations and licenses are preserved; external imports are not fetched and no reasoning is performed. Each build records the source URLs and content digests in its documentation graph.";
+    ga:scope ex:scope; ga:profile ex:profile; ga:renderer "specification"; ga:destination "pdf";
+    ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
+    ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>;
+    ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/commons/specification/>; ga:latestVersion <https://www.omg.org/spec/Commons>;
+    ga:license <https://opensource.org/licenses/MIT> .
+ex:publisher a gov:Authority; rdfs:label "GraphArch showcases"; ga:shortName "GraphArch";
+    ga:accentColor "#2b5f9f"; ga:url "https://ekgf.github.io/grapharch/" .
+
+# Prefixes and ontology IRIs are those declared in OMG's RDF/XML documents.
+<https://www.omg.org/spec/Commons/AboutCommons/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-abt"; sh:namespace "https://www.omg.org/spec/Commons/AboutCommons/" ] .
+<https://www.omg.org/spec/Commons/AnnotationVocabulary/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-av"; sh:namespace "https://www.omg.org/spec/Commons/AnnotationVocabulary/" ] .
+<https://www.omg.org/spec/Commons/BusinessAuthorizations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-bauth"; sh:namespace "https://www.omg.org/spec/Commons/BusinessAuthorizations/" ] .
+<https://www.omg.org/spec/Commons/Classifiers/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-cls"; sh:namespace "https://www.omg.org/spec/Commons/Classifiers/" ] .
+<https://www.omg.org/spec/Commons/CodesAndCodeSets/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-cds"; sh:namespace "https://www.omg.org/spec/Commons/CodesAndCodeSets/" ] .
+<https://www.omg.org/spec/Commons/Collections/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-col"; sh:namespace "https://www.omg.org/spec/Commons/Collections/" ] .
+<https://www.omg.org/spec/Commons/ContextualDesignators/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-cxtdsg"; sh:namespace "https://www.omg.org/spec/Commons/ContextualDesignators/" ] .
+<https://www.omg.org/spec/Commons/ContextualIdentifiers/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-cxtid"; sh:namespace "https://www.omg.org/spec/Commons/ContextualIdentifiers/" ] .
+<https://www.omg.org/spec/Commons/DatesAndTimes/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-dt"; sh:namespace "https://www.omg.org/spec/Commons/DatesAndTimes/" ] .
+<https://www.omg.org/spec/Commons/Designators/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-dsg"; sh:namespace "https://www.omg.org/spec/Commons/Designators/" ] .
+<https://www.omg.org/spec/Commons/Documents/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-doc"; sh:namespace "https://www.omg.org/spec/Commons/Documents/" ] .
+<https://www.omg.org/spec/Commons/Identifiers/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-id"; sh:namespace "https://www.omg.org/spec/Commons/Identifiers/" ] .
+<https://www.omg.org/spec/Commons/Languages/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-lang"; sh:namespace "https://www.omg.org/spec/Commons/Languages/" ] .
+<https://www.omg.org/spec/Commons/Locations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-loc"; sh:namespace "https://www.omg.org/spec/Commons/Locations/" ] .
+<https://www.omg.org/spec/Commons/Organizations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-org"; sh:namespace "https://www.omg.org/spec/Commons/Organizations/" ] .
+<https://www.omg.org/spec/Commons/PartiesAndSituations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-pts"; sh:namespace "https://www.omg.org/spec/Commons/PartiesAndSituations/" ] .
+<https://www.omg.org/spec/Commons/QuantitiesAndUnits/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-qtu"; sh:namespace "https://www.omg.org/spec/Commons/QuantitiesAndUnits/" ] .
+<https://www.omg.org/spec/Commons/RegistrationAuthorities/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-ra"; sh:namespace "https://www.omg.org/spec/Commons/RegistrationAuthorities/" ] .
+<https://www.omg.org/spec/Commons/RegulatoryAgencies/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-rga"; sh:namespace "https://www.omg.org/spec/Commons/RegulatoryAgencies/" ] .
+<https://www.omg.org/spec/Commons/RolesAndCompositions/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-rlcmp"; sh:namespace "https://www.omg.org/spec/Commons/RolesAndCompositions/" ] .
+<https://www.omg.org/spec/Commons/SitesAndFacilities/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-sfc"; sh:namespace "https://www.omg.org/spec/Commons/SitesAndFacilities/" ] .
+<https://www.omg.org/spec/Commons/StructuredCollections/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-strcol"; sh:namespace "https://www.omg.org/spec/Commons/StructuredCollections/" ] .
+<https://www.omg.org/spec/Commons/TextDatatype/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-txt"; sh:namespace "https://www.omg.org/spec/Commons/TextDatatype/" ] .
