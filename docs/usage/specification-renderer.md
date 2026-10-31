@@ -37,6 +37,48 @@ local `style.css` and an ownership manifest. The output root also contains the
 exported KG. See `examples/specification/project.ttl` and the
 [showcase catalog](examples.md).
 
+## Document reused vocabulary
+
+An ontology specification can include selected classes and properties from the
+vocabularies it uses. For a website project with an existing `ga:ontologySource`
+target, add an explicit source collector and select the reused terms in that
+target's scope. For example, these additions include Dublin Core's title and
+description properties:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <urn:example:> .
+
+ex:project ga:collector ex:dublin-core-source .
+ex:dublin-core-source a ga:Collector ;
+    ga:kind "rdf-url" ;
+    ga:source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.rdf" ;
+    ga:format "application/rdf+xml" .
+ex:ontology-spec ga:ontologySource "vocabulary.ttl" ;
+    ga:scope ex:ontology-scope .
+ex:ontology-scope a ga:Scope ;
+    ga:include dct:title, dct:description .
+```
+
+This extends the project's existing definitions; its target still needs the
+publication metadata below. Build the site with its normal
+[`publication build-site` command](self-hosting.md#build-the-site).
+
+The specification documents the selected terms in **Reused vocabulary**, with
+their original IRIs, native definitions, and definition-source links. References
+from the local vocabulary link to those entries. The same content appears in the
+PDF and can be rendered from the exported KG.
+
+The [RDF URL Collector](../collectors/rdf-urls.md) handles this example's source.
+Use [configured repository sources](../collectors/repositories.md#collect-one-rdf-file-from-git)
+for a Git branch, tag, or commit, or an explicit local RDF-file collector.
+An `owl:imports` declaration states an ontology dependency; `ga:include` selects
+terms to document. See the
+[GraphArch ontology](../other/ontology/README.md#reused-vocabularies-in-the-specification)
+for a complete example using Artifact Governance, OMG Commons, Dublin Core,
+and PROV-O.
+
 ## Publication metadata
 
 A specification target requires these graph assertions:
@@ -59,10 +101,8 @@ If any person in a role has an order, every person in that role must have a dist
 nonnegative `xsd:integer` order. Published W3C collection records source order.
 At most 64 people per role are accepted. Text fields and URLs have a 4096-byte runtime limit.
 
-Publication metadata is validated by the renderer before artifact promotion.
-The SHACL definitions document conditional specification requirements; the Rust
-assembly validator does not yet execute all of these SHACL constraints. An
-invalid publication does not replace the last successful generation.
+Publication metadata is validated before publishing. An invalid publication
+does not replace the last successful generation.
 
 ## Reusable authorities
 
