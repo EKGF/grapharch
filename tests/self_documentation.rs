@@ -24,6 +24,18 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         &root.join("examples"),
         &sources.path().join("examples"),
     )?;
+    // This acceptance verifies our own site and native vocabulary from a
+    // restored KG. Live upstream terms and gallery cases have separate gates;
+    // an unrelated upstream outage must not change this fixture's inputs.
+    let definitions = docs.join("grapharch.ttl");
+    std::fs::write(
+        &definitions,
+        definitions_fixture::edit_definitions(
+            &std::fs::read_to_string(&definitions)?,
+            &["showcasesSource", "collector", "include"],
+            None,
+        )?,
+    )?;
     let built = recorded_images::collect_site(
         &docs,
         &docs.join("grapharch.ttl"),
@@ -155,7 +167,7 @@ fn setup(source: &Path, home: &str) -> Result<()> {
         source.join("grapharch.ttl"),
         definitions_fixture::edit_definitions(
             include_str!("../docs/grapharch.ttl"),
-            &["ontologySource", "showcasesSource"],
+            &["ontologySource", "showcasesSource", "collector", "include"],
             None,
         )?,
     )?;
@@ -403,7 +415,7 @@ async fn repository_link_and_icon_follow_pinned_project_metadata() -> Result<()>
     setup(source.path(), "Repository metadata")?;
     let definitions = definitions_fixture::edit_definitions(
         include_str!("../docs/grapharch.ttl"),
-        &["ontologySource", "showcasesSource"],
+        &["ontologySource", "showcasesSource", "collector", "include"],
         Some((
             "urn:grapharch:docs",
             "https://github.com/example/another-project",

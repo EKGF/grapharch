@@ -46,13 +46,45 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         family.join("showcase.yaml"),
         serde_yaml::to_string(&config)?,
     )?;
+    // The published Commons configuration remains live HTTP. This transport-
+    // independent gallery acceptance uses a tiny synthetic repository; the
+    // dedicated Commons test covers HTTP locally, and Docs CI verifies OMG.
+    let commons = source.path().join("examples/omg-commons");
+    let commons_sources = tempfile::tempdir()?;
+    std::fs::write(
+        commons_sources.path().join("ontology.ttl"),
+        r#"
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+<https://www.omg.org/spec/Commons/Classifiers/> a owl:Ontology ; rdfs:label "Synthetic offline ontology"@en ; dct:description "Gallery fixture, not copied upstream content."@en .
+<https://www.omg.org/spec/Commons/Classifiers/Fixture> a owl:Class ; rdfs:label "Synthetic fixture"@en ; dct:description "An offline test resource."@en ; rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Classifiers/> .
+"#,
+    )?;
+    let commons_repository = tempfile::tempdir()?;
+    let (url, commit) = family_repository::bare_copy(
+        commons_sources.path(),
+        commons_repository.path(),
+    )?;
+    let mut config: serde_yaml::Value = serde_yaml::from_str(
+        &std::fs::read_to_string(commons.join("showcase.yaml"))?,
+    )?;
+    let transport = config["source"].as_mapping_mut().expect("source mapping");
+    transport.clear();
+    transport.insert("kind".into(), "git".into());
+    transport.insert("url".into(), url.into());
+    transport.insert("ref".into(), commit.into());
+    std::fs::write(
+        commons.join("showcase.yaml"),
+        serde_yaml::to_string(&config)?,
+    )?;
     let docs = source.path().join("docs");
     std::fs::create_dir(&docs)?;
     std::fs::write(
         docs.join("grapharch.ttl"),
         definitions::edit_definitions(
             include_str!("../docs/grapharch.ttl"),
-            &["ontologySource"],
+            &["ontologySource", "collector", "include"],
             None,
         )?,
     )?;

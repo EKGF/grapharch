@@ -10,7 +10,7 @@ fn docs(root: &Path) -> Result<std::path::PathBuf> {
         docs.join("grapharch.ttl"),
         definitions::edit_definitions(
             include_str!("../docs/grapharch.ttl"),
-            &["ontologySource"],
+            &["ontologySource", "collector", "include"],
             None,
         )?,
     )?;
@@ -31,6 +31,29 @@ fn registry(root: &Path, cases: &str) -> Result<()> {
              <urn:case:first>,<urn:case:second> .\n{cases}"
         ),
     )?;
+    Ok(())
+}
+
+#[test]
+fn reduced_gallery_fixture_does_not_activate_external_collectors() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let docs = docs(root.path())?;
+    let bytes = std::fs::read(docs.join("grapharch.ttl"))?;
+    let mut active = false;
+    for quad in oxrdfio::RdfParser::from_format(oxrdfio::RdfFormat::Turtle)
+        .for_slice(&bytes)
+    {
+        let quad = quad?;
+        active |= quad.subject.to_string() == "<urn:grapharch:docs>" &&
+            quad.predicate.as_str() ==
+                "https://ekgf.org/ontology/grapharch#collector";
+    }
+    assert!(
+        !active,
+        "reduced gallery fixture must not run unrelated remote ontology \
+         dependencies"
+    );
     Ok(())
 }
 
