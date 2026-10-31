@@ -131,3 +131,31 @@ fn json(source: &str) -> String {
     }
     output
 }
+
+#[cfg(test)]
+mod tests {
+    use super::json;
+
+    #[test]
+    fn highlighting_preserves_unicode_escape_text_and_inert_markup() {
+        for source in [
+            r#"{"label": "Bønds 東京", "markup": "<script>& </code>", "escaped": "\\\""}"#,
+            "{\"invalidEscape\": \"\\東京\", \"unfinished\": \"",
+            "{\"value\": -1.25e+3, \"nothing\": null}\n",
+        ] {
+            let html = format!("<pre><code>{}</code></pre>", json(source));
+            let document = scraper::Html::parse_fragment(&html);
+            let code = document
+                .select(&scraper::Selector::parse("code").unwrap())
+                .next()
+                .unwrap();
+            assert_eq!(code.text().collect::<String>(), source);
+            assert!(
+                document
+                    .select(&scraper::Selector::parse("script").unwrap())
+                    .next()
+                    .is_none()
+            );
+        }
+    }
+}

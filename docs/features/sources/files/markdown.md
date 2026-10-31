@@ -64,3 +64,23 @@ navigation independently of the file's physical location. See
 The current pipeline does not execute MDX components or embedded scripts. Raw
 HTML in Markdown is rejected. Mermaid support is a defined flowchart subset,
 not a claim to support every Mermaid diagram type.
+
+## Examples and notes
+
+Give a fenced code block its language for syntax highlighting. Add `example`
+after the language to publish it as a numbered example in specifications,
+companion websites, and PDFs:
+
+````markdown
+```json example
+{"title": "UK Bonds", "type": "DataProduct"}
+```
+
+> [!NOTE]
+> Both JSON-LD contexts describe the same graph.
+````
+
+Examples have a pale yellow panel and an example number. Notes use a labelled,
+colored callout. Keep a blank, unquoted line between separate note blocks so
+that Markdown treats them as two notes. JSON and JSON-LD fences receive static
+syntax highlighting; the supplied code is preserved and never executed.
