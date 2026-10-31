@@ -263,12 +263,12 @@ impl TargetPlanner {
                         selection.view.has_type(&asset, "BinaryAsset").await?,
                         "productLogo must identify a retained BinaryAsset"
                     );
-                    format!("{{ FILTER(?asset = {asset}) }} UNION ")
+                    format!("{{ BIND({asset} AS ?asset) }} UNION ")
                 },
                 None => String::new(),
                 _ => bail!("productLogo must be an asset IRI"),
             };
-        let members = Dataset::logical_pattern(
+        let members = Self::asset_assertion(
             selection.scope_snapshot,
             &format!(
                 "{} {} ?asset",
@@ -277,51 +277,59 @@ impl TargetPlanner {
             ),
             0,
         );
-        let scoped_subjects = Dataset::logical_pattern(
+        let edges = Self::asset_assertion(
+            &self.revision,
+            &format!("?owner {} ?asset", term("asset")),
+            1,
+        );
+        let direct = Self::asset_assertion(
+            selection.scope_snapshot,
+            &format!(
+                "{} {} ?owner",
+                selection.scope_plan,
+                term("member")
+            ),
+            2,
+        );
+        let fragment = Self::asset_assertion(
+            &self.revision,
+            &format!("?owner {} ?selected", term("subject")),
+            3,
+        );
+        let selected = Self::asset_assertion(
             selection.scope_snapshot,
             &format!(
                 "{} {} ?selected",
                 selection.scope_plan,
                 term("member")
             ),
-            2,
-        );
-        let direct = selection
-            .view
-            .pattern(&format!("?selected {} ?asset", term("asset")), 3);
-        let fragment = selection.view.pattern(
-            &format!("?fragment {} ?selected", term("subject")),
             4,
         );
-        let attached = selection
-            .view
-            .pattern(&format!("?fragment {} ?asset", term("asset")), 5);
-        let derived = selection.view.pattern(
+        let derived = Self::asset_assertion(
+            &self.revision,
             &format!("?fragment {} ?owner", term("derivedFrom")),
+            5,
+        );
+        let fragment_subject = Self::asset_assertion(
+            &self.revision,
+            &format!("?fragment {} ?selected", term("subject")),
             6,
         );
-        let inherited = selection
-            .view
-            .pattern(&format!("?owner {} ?asset", term("asset")), 7);
-        let candidates = format!(
-            "{product_logo}{{ {members} }} UNION {{ {scoped_subjects} {{ \
-             {direct} }} UNION {{ {fragment} {{ {attached} }} UNION {{ \
-             {derived} {inherited} }} }} }}"
+        let types = Self::asset_assertion(
+            &self.revision,
+            &format!("?asset a {}", term("BinaryAsset")),
+            7,
         );
-        let types = selection
-            .view
-            .pattern(&format!("?asset a {}", term("BinaryAsset")), 1);
-        // Correlate attachment paths with a typed asset before evaluating their
-        // independent snapshot-membership joins. The uncorrelated UNION can
-        // otherwise multiply unrelated contribution graphs before type
-        // filtering.
-        let mut rows = self
-            .dataset
-            .select(format!(
-                "SELECT DISTINCT ?asset WHERE {{ {types} FILTER EXISTS {{ \
-                 {candidates} }} }} ORDER BY ?asset"
-            ))
-            .await?;
+        // Start with real attachment assertions. Snapshot membership is a
+        // correlated existence check, never a source-head Cartesian product.
+        let query = format!(
+            "SELECT DISTINCT ?asset WHERE {{ {{ {product_logo} {{ {members} \
+             }} UNION {{ {edges} FILTER EXISTS {{ {{ {direct} }} UNION {{ \
+             {fragment} {selected} }} UNION {{ {derived} {fragment_subject} \
+             {selected} }} }} }} }} FILTER EXISTS {{ {types} }} }} ORDER BY \
+             ?asset"
+        );
+        let mut rows = self.dataset.select(query).await?;
         let mut count = 0;
         while let Some(row) = rows.next().await? {
             let Term::NamedNode(asset) = &row["asset"] else {
@@ -349,6 +357,25 @@ impl TargetPlanner {
                 .await?;
         }
         Ok(())
+    }
+
+    fn asset_assertion(
+        snapshot: &NamedNode,
+        assertion: &str,
+        index: u16,
+    ) -> String {
+        format!(
+            "GRAPH ?_asset_physical{index} {{ {assertion} }} FILTER EXISTS {{ \
+             GRAPH <{}> {{ ?_asset_physical{index} {} ?_asset_attempt{index} \
+             ; {} ?_asset_original{index} . ?_asset_version{index} {} \
+             ?_asset_attempt{index} }} GRAPH {snapshot} {{ \
+             ?_asset_owner{index} {} ?_asset_version{index} }} }}",
+            super::dataset::CONTROL,
+            term("attempt"),
+            term("original"),
+            term("data"),
+            term("head")
+        )
     }
 
     async fn documented_subjects(
