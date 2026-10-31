@@ -34,11 +34,28 @@ the competing statements. Specifications and PDFs include **Quality issues** as
 a separate numbered appendix. If Acknowledgements is appendix A, the quality
 report becomes appendix B and has its own entry in the contents.
 
-The report groups findings by warning type, such as **Missing English source
-definition**, and lists the affected resources underneath each heading. For
+The report groups findings by warning type, such as **No description found**,
+and lists the affected resources underneath each heading. For
 competing annotations, each resource also retains the alternative statements
 and their sources. This lets reviewers address one kind of issue across the
 publication without reading the same warning repeatedly.
+
+Missing-annotation warnings refer to the collected annotations selected for that
+resource, not to one unspecified file. For example: **No English or
+language-neutral label or description found in the collected sources.** A label
+without a language tag is accepted, as is an English label. A Dutch-only label
+does not satisfy an English publication. Missing labels and descriptions remain
+separate machine-readable diagnostic codes, while a resource missing both gets
+one concise inline warning. These findings do not mean the RDF is invalid.
+
+Source references recognise `rdfs:label`, `skos:prefLabel`, and `sh:name` as
+names; `dct:title` or the older `dc:title` supplies a name when no label is
+available. Preferred SKOS labels take precedence over general labels. Plain
+source descriptions can use `dct:description`, `dc:description`, `sh:description`,
+`skos:definition`, `prov:definition`, or `rdfs:comment`; the EKGF
+`markdownDescription` annotation supplies rich explanatory documentation.
+Prefix spellings such as `dct:` and `dcterms:` make no difference when they
+expand to the same predicate IRI.
 
 Companion websites provide a separate report linked from their footers.
 Paginated specifications link to the report on their overview page. Rich

@@ -111,8 +111,8 @@ fn groups(issues: &[Diagnostic]) -> Vec<Group<'_>> {
     for issue in issues {
         let title = match issue.code.as_str() {
             "competing-source-annotations" => "Competing source annotations",
-            "missing-source-definition" => "Missing English source definition",
-            "missing-source-label" => "Missing English source label",
+            "missing-source-definition" => "No description found",
+            "missing-source-label" => "No label found",
             _ => &issue.code,
         };
         groups

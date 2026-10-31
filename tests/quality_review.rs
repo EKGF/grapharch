@@ -183,8 +183,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
         group
             .select(&scraper::Selector::parse("h3").unwrap())
             .any(|heading| {
-                heading.text().collect::<String>() ==
-                    "Missing English source definition§"
+                heading.text().collect::<String>() == "No description found§"
             })
     }));
     assert!(html.contains("Quality issues"));
@@ -207,8 +206,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
         "quality report must follow appendix A as appendix B"
     );
     assert!(typst.contains(
-        "#heading(level: 2, numbering: none)[#text(\"Missing English source \
-         definition\")]"
+        "#heading(level: 2, numbering: none)[#text(\"No description found\")]"
     ));
     assert!(typst.contains("Alternate label"));
     assert!(typst.contains("#ga-callout(\"Warning\""));

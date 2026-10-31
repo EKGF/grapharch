@@ -632,11 +632,9 @@ async fn build(
                     .await?;
             let mut descriptions = Vec::new();
             if rich.is_none() {
-                for property in [
-                    "http://www.w3.org/2000/01/rdf-schema#comment",
-                    "http://purl.org/dc/terms/description",
-                    "http://www.w3.org/2004/02/skos/core#definition",
-                ] {
+                for property in
+                    super::document::description::SOURCE_DESCRIPTIONS
+                {
                     descriptions
                         .extend(english(&source, subject, property).await?);
                 }

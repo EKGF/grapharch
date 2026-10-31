@@ -115,8 +115,14 @@ impl Evidence {
             "http://www.w3.org/2004/02/skos/core#prefLabel" => {
                 "Preferred label"
             },
-            "http://purl.org/dc/terms/title" => "Title",
-            "http://purl.org/dc/terms/description" => "Description",
+            "http://purl.org/dc/terms/title" |
+            "http://purl.org/dc/elements/1.1/title" => "Title",
+            "http://www.w3.org/ns/shacl#name" => "Shape name",
+            "http://purl.org/dc/terms/description" |
+            "http://purl.org/dc/elements/1.1/description" => "Description",
+            "http://www.w3.org/ns/shacl#description" => "Shape description",
+            "http://www.w3.org/ns/prov#definition" => "Definition",
+            "http://www.w3.org/2000/01/rdf-schema#comment" => "Comment",
             "http://www.w3.org/2004/02/skos/core#definition" => "Definition",
             "https://ekgf.org/ontology/annotation#markdownDescription" => {
                 "Explanatory documentation"

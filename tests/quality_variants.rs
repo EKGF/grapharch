@@ -192,7 +192,7 @@ async fn bookshelf_quality_groups_are_separate_from_execution_failures()
                 !execution
                     .text()
                     .collect::<String>()
-                    .contains("Missing English source definition")
+                    .contains("No description found")
             );
             assert!(
                 !execution

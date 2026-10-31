@@ -10,6 +10,38 @@ use {
 pub(crate) const MARKDOWN: &str =
     "https://ekgf.org/ontology/annotation#markdownDescription";
 
+/// Plain-text annotations accepted by source-reference documentation.
+pub(crate) const SOURCE_DESCRIPTIONS: [&str; 6] = [
+    "http://purl.org/dc/terms/description",
+    "http://purl.org/dc/elements/1.1/description",
+    "http://www.w3.org/2000/01/rdf-schema#comment",
+    "http://www.w3.org/2004/02/skos/core#definition",
+    "http://www.w3.org/ns/prov#definition",
+    "http://www.w3.org/ns/shacl#description",
+];
+
+pub(super) fn missing_annotations(
+    label: bool,
+    description: bool,
+    language: &str,
+) -> Option<String> {
+    let missing = match (label, description) {
+        (true, true) => "label or description",
+        (true, false) => "label",
+        (false, true) => "description",
+        (false, false) => return None,
+    };
+    let language = if language.eq_ignore_ascii_case("en") {
+        "English".into()
+    } else {
+        format!("'{language}'")
+    };
+    Some(format!(
+        "No {language} or language-neutral {missing} found in the collected \
+         sources."
+    ))
+}
+
 pub(super) fn selected(value: &Literal, language: &str) -> bool {
     value
         .language()

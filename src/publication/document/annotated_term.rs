@@ -355,6 +355,8 @@ impl Documentor for AnnotatedTermDocumentor {
             .await?;
         let mut label = Vec::new();
         let mut preferred_labels = Vec::new();
+        let mut shape_names = Vec::new();
+        let mut titles = Vec::new();
         let mut definitions = Vec::new();
         let mut markdown_descriptions = Vec::new();
         let mut comments = Vec::new();
@@ -383,6 +385,17 @@ impl Documentor for AnnotatedTermDocumentor {
                 "http://www.w3.org/2004/02/skos/core#prefLabel" => {
                     Some(&mut preferred_labels)
                 },
+                "http://www.w3.org/ns/shacl#name"
+                    if self.source_annotations =>
+                {
+                    Some(&mut shape_names)
+                },
+                "http://purl.org/dc/terms/title" |
+                "http://purl.org/dc/elements/1.1/title"
+                    if self.source_annotations =>
+                {
+                    Some(&mut titles)
+                },
                 super::description::MARKDOWN => {
                     Some(&mut markdown_descriptions)
                 },
@@ -390,7 +403,9 @@ impl Documentor for AnnotatedTermDocumentor {
                     Some(&mut definitions)
                 },
                 "http://www.w3.org/2004/02/skos/core#definition" |
-                "http://www.w3.org/ns/prov#definition" => {
+                "http://www.w3.org/ns/prov#definition" |
+                "http://www.w3.org/ns/shacl#description" |
+                "http://purl.org/dc/elements/1.1/description" => {
                     if self.source_annotations {
                         Some(&mut definitions)
                     } else {
@@ -496,6 +511,12 @@ impl Documentor for AnnotatedTermDocumentor {
         );
         if !preferred_labels.is_empty() {
             label = preferred_labels;
+        } else if label.is_empty() {
+            label = if shape_names.is_empty() {
+                titles
+            } else {
+                shape_names
+            };
         }
         let markdown = if self.source_annotations {
             markdown_descriptions.sort();
@@ -572,20 +593,16 @@ impl Documentor for AnnotatedTermDocumentor {
                     .join("\n\n")
             },
         };
-        let mut gaps = Vec::new();
-        if self.source_annotations && missing_label {
-            gaps.push("Missing source label.");
-        }
-        if self.source_annotations && missing_definition {
-            gaps.push(
-                "Missing source definition. This source declares the resource \
-                 without an English definition.",
-            );
-        }
-        let gaps = if gaps.is_empty() {
-            String::new()
+        let gaps = if self.source_annotations {
+            super::description::missing_annotations(
+                missing_label,
+                missing_definition,
+                &self.language,
+            )
+            .map(|message| format!("\n\n> [!WARNING]\n> {message}\n"))
+            .unwrap_or_default()
         } else {
-            format!("\n\n> [!WARNING]\n> {}\n", gaps.join(" "))
+            String::new()
         };
         let individual = types.iter().any(|(iri, _)| {
             iri.as_str() == "http://www.w3.org/2002/07/owl#NamedIndividual"
@@ -804,12 +821,22 @@ impl Documentor for AnnotatedTermDocumentor {
                 (
                     missing_label,
                     "missing-source-label",
-                    "Missing English source label",
+                    super::description::missing_annotations(
+                        true,
+                        false,
+                        &self.language,
+                    )
+                    .unwrap(),
                 ),
                 (
                     missing_definition,
                     "missing-source-definition",
-                    "Missing English source definition",
+                    super::description::missing_annotations(
+                        false,
+                        true,
+                        &self.language,
+                    )
+                    .unwrap(),
                 ),
             ] {
                 if missing {

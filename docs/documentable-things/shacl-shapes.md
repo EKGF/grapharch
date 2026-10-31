@@ -18,8 +18,8 @@ grapharch:
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 ex:CustomerShape a sh:NodeShape ;
-    rdfs:label "Customer shape"@en ;
-    rdfs:comment "Describes the required name of a customer."@en ;
+    sh:name "Customer shape"@en ;
+    sh:description "Describes the required name of a customer."@en ;
     sh:targetClass ex:Customer ;
     sh:property [
         sh:path ex:name ;
@@ -52,6 +52,21 @@ The RDF documentation stages recognise explicitly typed `sh:NodeShape` and
 `sh:PropertyShape` resources. Named shapes have reference entries with their
 source labels, descriptions, identifiers, and retained constraint statements.
 They can be documented alongside the ontology they constrain.
+
+`sh:name` and `sh:description` supply the shape's display name and description.
+These describe the shape itself; a property shape's name does not replace the
+canonical label of the property identified by `sh:path`. `skos:prefLabel`,
+`rdfs:label`, Dublin Core titles/descriptions, and source comments are also
+recognised when supplied.
+
+Every retained SHACL predicate can be displayed as an RDF fact; documentation
+is not limited to a whitelist of constraint predicates. Core constraints,
+SPARQL constraints, and additional SHACL predicates retain their source IRIs
+and values. This includes targets, messages and severity, property paths,
+logical combinations and lists, ordering/grouping, and rule expressions.
+Showing these statements does not claim that GraphArch executes each SHACL
+extension. In particular, a target class is presented as `sh:targetClass`, not
+as an inferred `rdfs:domain`.
 
 A property's path, datatype, class, node kind, cardinality, allowed values, and
 other supplied constraint statements remain RDF facts. Nested anonymous shapes,
