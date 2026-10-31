@@ -6,7 +6,7 @@ rust-version = "1.88"
 description = "GraphArch is a tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as either a website or a PDF"
 authors = ["Jacobus Geluk <jacobus.geluk@ekgf.org>"]
 license = "MIT"
-include = ["/src/**", "/docs/other/ontology/*.ttl", "/packaging/licenses/*.txt", "/Cargo.toml", "/Cargo.lock", "/LICENSE", "/README.md"]
+include = ["/src/**", "/docs/other/ontology/*.ttl", "/packaging/licenses/*.txt", "/build.rs", "/Cargo.toml", "/Cargo.lock", "/LICENSE", "/README.md"]
 repository = "https://github.com/ekgf/grapharch"
 homepage = "https://ekgf.github.io/grapharch/"
 
@@ -41,6 +41,7 @@ lazy_static = "1.5.0"
 const_format = "0.2.34"
 clap = { version = "4.5.32", features = ["derive"] }
 clap-verbosity-flag = { version = "3.0.2", features = ["tracing"] }
+syntect = { version = "5.2.0", default-features = false, features = ["parsing", "regex-fancy", "yaml-load"] }
 typst = "0.13.1"
 typst-pdf = "0.13.1"
 chrono = "0.4"
@@ -63,3 +64,6 @@ pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }.zip"
 bin-dir = "{ bin }{ binary-ext }"
 pkg-fmt = "zip"
 disabled-strategies = ["quick-install", "compile"]
+
+[build-dependencies]
+syntect = { version = "5.2.0", default-features = false, features = ["parsing", "regex-fancy", "yaml-load"] }

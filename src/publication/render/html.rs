@@ -160,11 +160,7 @@ pub(super) async fn entry(
     let body = if let Some(markdown) = markdown {
         markdown.html()
     } else {
-        format!(
-            "<pre><code class=\"language-{}\">{}</code></pre>",
-            code_language(&entry.format)?,
-            html_escape(&entry.body)
-        )
+        super::code::html(&entry.body, code_language(&entry.format)?)
     };
     file.write_all(
         format!(

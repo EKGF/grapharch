@@ -52,7 +52,7 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     );
     assert!(typst.contains("#let ga-accent = rgb(\"#116659\")"));
     assert!(typst.contains("Liberation Sans"));
-    assert!(typst.contains("#let ga-code-text(value) = layout(size =>"));
+    assert!(typst.contains("#let ga-code(runs) = block("));
     assert!(typst.contains("let capacity = calc.max(1"));
     assert!(
         typst.contains(&long_iri),

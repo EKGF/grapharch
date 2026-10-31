@@ -77,7 +77,18 @@ fn emit(element: ElementRef<'_>, diagnostics: &[Diagnostic]) -> Result<String> {
     let mut out = match tag {
         "pre" => {
             let text = element.text().collect::<String>();
-            format!("#raw({}, block: true)\n", quote(&text))
+            let language = element
+                .value()
+                .classes()
+                .chain(
+                    element
+                        .children()
+                        .filter_map(ElementRef::wrap)
+                        .flat_map(|child| child.value().classes()),
+                )
+                .find_map(|class| class.strip_prefix("language-"))
+                .unwrap_or("");
+            super::code::typst(&text, language)
         },
         "table" => table(element, diagnostics)?,
         "ul" | "ol" => {

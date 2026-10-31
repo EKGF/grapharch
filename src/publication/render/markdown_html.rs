@@ -79,13 +79,8 @@ mod tests {
             output.contains("class=\"example code-example\""),
             "{output}"
         );
-        assert!(output.contains("class=\"json-key\""), "{output}");
         assert!(
-            output.contains("class=\"json-string\""),
-            "{output}"
-        );
-        assert!(
-            output.contains("class=\"json-keyword\""),
+            output.matches("style=\"color:#").count() > 3,
             "{output}"
         );
         assert!(output.contains("markdown-alert-note"), "{output}");

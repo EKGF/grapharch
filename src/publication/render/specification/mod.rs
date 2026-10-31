@@ -104,11 +104,7 @@ pub(super) async fn write(
         } else if let Some(markdown) = markdown(&entry, plan, &anchor).await? {
             markdown_html(&markdown, &mut outline)?
         } else {
-            format!(
-                "<pre><code class=\"language-{}\">{}</code></pre>",
-                code_language(&entry.format)?,
-                html_escape(&entry.body)
-            )
+            super::code::html(&entry.body, code_language(&entry.format)?)
         };
         file.write_all(
             format!(

@@ -30,3 +30,8 @@ ontology library directly from OMG's RDF URLs. Its family overview links to an
 individual specification page for each ontology, with a combined PDF and exported
 KG. Unlike the Git repository examples, its source revisions are identified by
 URL and content digest.
+
+The **Multilingual code examples** showcase demonstrates Python, Bash, JavaScript,
+TypeScript, JSON, JSON-LD and SPARQL. Its HTML and PDF use the same offline syntax
+colours. See [Code examples and syntax colours](usage/code-highlighting.md) for
+fence names and practical Markdown examples.

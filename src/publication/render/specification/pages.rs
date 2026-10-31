@@ -114,10 +114,9 @@ async fn body(
                 .await?;
         markdown_html(&markdown, outline)
     } else {
-        Ok(format!(
-            "<pre><code class=\"language-{}\">{}</code></pre>",
+        Ok(super::super::code::html(
+            &entry.body,
             code_language(&entry.format)?,
-            html_escape(&entry.body)
         ))
     }
 }

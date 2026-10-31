@@ -150,7 +150,7 @@ async fn markdown_annotations_render_from_restored_kg_without_duplicate_definiti
     assert!(typst.contains("#heading(level: 3)"));
     assert!(typst.contains("#strong["));
     assert!(typst.contains("#list("));
-    assert!(typst.contains("#raw(block: true, lang: \"turtle\""));
+    assert!(typst.contains("#ga-code(("));
     assert!(
         std::fs::read(publication.directory.join("document.pdf"))?
             .starts_with(b"%PDF-")

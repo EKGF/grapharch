@@ -1,7 +1,7 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
-<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
     ga:order 1 ; ga:kind "authored" ; ga:source "showcase/project.ttl" ;
@@ -41,3 +41,8 @@ ex:commons a ga:Showcase; ga:slug "commons"; dct:title "OMG Commons Ontology Lib
     dct:description "The published OMG Commons ontologies are collected directly from their authoritative RDF URLs and become a family overview, an individual specification page per ontology, and a PDF, with native terms and source content digests.";
     ga:order 9; ga:kind "ontology-family"; ga:source "omg-commons/showcase.yaml";
     ga:previewPath "specification/index.html"; ga:pdfPath "pdf/document.pdf" .
+
+ex:code-highlighting a ga:Showcase ; ga:slug "code-highlighting" ; dct:title "Multilingual code examples" ;
+    dct:description "Python, Bash, JavaScript, TypeScript, JSON, JSON-LD and SPARQL examples share offline syntax colours in the specification and PDF, with source text retained in the documentation graph." ;
+    ga:order 10 ; ga:kind "specification" ; ga:source "code-highlighting/project.ttl" ;
+    ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" .

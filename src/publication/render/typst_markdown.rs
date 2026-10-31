@@ -7,6 +7,7 @@ use {
 pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut output = String::new();
     let mut code = None;
+    let mut code_language = "";
     let mut example = false;
     let mut heading = None;
     let mut table_head = false;
@@ -84,10 +85,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             output.push_str("#ga-example[");
                         }
                         code = Some(String::new());
-                        output.push_str(&format!(
-                            "#raw(block: true, lang: {}, ",
-                            quote(lang)
-                        ));
+                        code_language = lang;
                     },
                     Tag::List(None) => output.push_str("#list("),
                     Tag::List(Some(start)) => {
@@ -168,10 +166,12 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push('\n');
                     },
                     TagEnd::CodeBlock => {
-                        output.push_str(&quote(&code.take().ok_or_else(
-                            || anyhow::anyhow!("unbalanced code block"),
-                        )?));
-                        output.push(')');
+                        output.push_str(&super::code::typst(
+                            &code.take().ok_or_else(|| {
+                                anyhow::anyhow!("unbalanced code block")
+                            })?,
+                            code_language,
+                        ));
                         if example {
                             output.push(']');
                             example = false;

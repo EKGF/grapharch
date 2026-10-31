@@ -354,7 +354,7 @@ pub(super) fn code_language(format: &str) -> Result<&'static str> {
     match format {
         "text/plain" => Ok("text"),
         "application/ld+json" | "application/json" => Ok("json"),
-        "application/sparql-query" => Ok("sql"),
+        "application/sparql-query" => Ok("sparql"),
         "application/n-triples" | "text/turtle" => Ok("text"),
         _ => anyhow::bail!("unsupported fragment format {format}"),
     }

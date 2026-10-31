@@ -24,21 +24,34 @@
 #show heading.where(level: 4): set text(size: 10.5pt, weight: "bold", fill: ga-heading)
 #show link: set text(fill: ga-accent)
 #show raw: set text(font: "DejaVu Sans Mono", size: 8.2pt, hyphenate: false)
-// Wrap code to the available measure; the quoted source remains unchanged.
-#let ga-code-text(value, lang: none) = layout(size => {
-  let capacity = calc.max(1, calc.floor(size.width / measure(text("M")).width))
-  for (index, line) in value.split("\n").enumerate() {
-    if index > 0 { linebreak() }
-    let clusters = line.clusters()
-    for start in range(0, clusters.len(), step: capacity) {
-      if start > 0 { linebreak() }
-      let piece = clusters.slice(start, calc.min(start + capacity, clusters.len())).join()
-      if lang in ("json", "jsonld", "json-ld") { raw(piece, lang: "json", block: false) } else { text(piece) }
+// Already highlighted runs share HTML's palette. Wrap grapheme clusters without
+// re-tokenising sliced strings, preserving multiline lexical context.
+#let ga-code(runs) = block(width: 100%, breakable: true, inset: (x: 10pt, y: 9pt), fill: ga-soft, stroke: (left: 2pt + ga-accent), radius: 3pt)[
+  #set text(font: "DejaVu Sans Mono", size: 8.2pt, ligatures: false)
+  #layout(size => {
+    let capacity = calc.max(1, calc.floor(size.width / measure(text("M")).width))
+    let column = 0
+    for (value, color) in runs {
+      let piece = ""
+      for cluster in value.clusters() {
+        if cluster in ("\n", "\r\n") {
+          text(fill: color, piece); piece = ""
+          linebreak(); column = 0
+        } else {
+          if column >= capacity {
+            text(fill: color, piece); piece = ""
+            linebreak(); column = 0
+          }
+          if cluster == "\t" {
+            let count = 4 - calc.rem(column, 4)
+            piece += " " * count; column += count
+          } else { piece += cluster; column += 1 }
+        }
+      }
+      text(fill: color, piece)
     }
-  }
-})
-#show raw.where(block: true): it => block(width: 100%, breakable: true, inset: (x: 10pt, y: 9pt), fill: ga-soft, stroke: (left: 2pt + ga-accent), radius: 3pt)[#set text(font: "DejaVu Sans Mono", size: 8.2pt)
-#ga-code-text(it.text, lang: it.lang)]
+  })
+]
 #show quote.where(block: true): it => block(width: 100%, breakable: true, inset: (x: 11pt, y: 8pt), fill: ga-soft, stroke: (left: 2pt + ga-accent))[#it.body]
 #let ga-table(columns: (), align: auto, has-header: true, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
   #set text(size: 8.5pt)

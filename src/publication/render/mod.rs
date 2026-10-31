@@ -3,6 +3,7 @@
 mod book_worker;
 mod bookshelf;
 mod callouts;
+mod code;
 mod collected_images;
 mod content;
 mod credit;
