@@ -14,6 +14,7 @@ mod markup;
 mod model;
 mod native_typst;
 mod preamble;
+mod quality;
 mod record;
 mod specification;
 mod typst;

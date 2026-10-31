@@ -26,6 +26,7 @@ pub(super) struct Plan {
     pub title:       String,
     link_index:      HashMap<NamedNode, String>,
     pub images:      super::collected_images::Images,
+    pub quality:     Vec<crate::publication::diagnostics::Diagnostic>,
 }
 
 /// Per-book result carried with its parent's atomic publication manifest.
@@ -124,6 +125,7 @@ impl Plan {
             "plan does not match its pinned target definition"
         );
         let title = title(&source, &target).await?;
+        let quality = super::quality::read(&view, &handle.id).await?;
         let mut plan = Self {
             dataset,
             handle,
@@ -138,6 +140,7 @@ impl Plan {
             title,
             link_index: HashMap::new(),
             images: Default::default(),
+            quality,
         };
         if plan.renderer != "website" {
             plan.index_links().await?;

@@ -131,6 +131,7 @@ pub(super) async fn write(
     if !navigation {
         diagnostics = toc(&mut file, plan, mode).await?;
     }
+    super::quality::html(&mut file, &plan.quality).await?;
     if !diagnostics.is_empty() {
         file.write_all(b"<section id=\"publication-diagnostics\"><h2>Publication diagnostics</h2><p>This draft contains unresolved documentation errors.</p><ol>").await?;
         for error in &diagnostics {
@@ -154,6 +155,7 @@ pub(super) async fn write(
         .await?;
     file.write_all(b"</script></body></html>\n").await?;
     file.flush().await?;
+    diagnostics.extend(plan.quality.clone());
     super::content::write_typst(plan, stage, &diagnostics).await?;
     Ok(diagnostics)
 }
