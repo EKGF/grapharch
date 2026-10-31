@@ -1,128 +1,66 @@
 ---
-title: Markdown File
-layout: default
-parent: File
-nav_order: 2
+title: Markdown and diagrams
+parent: Collect existing sources
+nav_order: 1
+permalink: /features/sources/files/markdown/
 grapharch:
   subject: urn:grapharch:docs:topic:features:sources:files:markdown
-permalink: /features/sources/files/markdown/
 ---
 
-# Markdown files
+# Author explanations in Markdown
 
-Grapharch supports **GitHub-flavoured Markdown (GFM)** for authored documentation,
-including tables, task-list checkboxes, strikethrough, and GitHub-style callouts.
-Headings, paragraphs, links, emphasis, lists, and fenced code blocks are supported
-as well. The same parser configuration is used for collection and rendering.
+GraphArch supports GitHub-flavoured Markdown for authored documentation:
+headings, links, emphasis, lists, fenced code, tables, strikethrough, task-list
+checkboxes, and GitHub-style callouts. Website frontmatter supplies topic titles,
+stable subjects, navigation order, parents, and permalinks.
 
-Each Markdown-file collector reads one source. YAML frontmatter supplies a title,
-a stable logical identity, and publication hints. Sections become topics and
-ordered documentation fragments in the KG; fenced code blocks also become
-queryable examples. Renderers publish those collected fragments from a pinned
-revision.
+## Keep normal Markdown readable
 
-## Task lists
+- [x] Completed tasks retain their checked state.
+- [ ] Incomplete tasks remain unchecked.
 
-Use `- [ ]` for an incomplete task and `- [x]` for a completed task:
-
-- [x] Collect Markdown and frontmatter into the documentation KG.
-- [x] Render checked and unchecked task states.
-- [ ] Add more examples to your documentation.
-  - [ ] Include a nested task when useful.
-
-The generated website preserves the completion state and uses the checkbox as
-the list marker.
-
-## Tables and strikethrough
-
-| Construct | Syntax | Result |
-| --- | --- | --- |
-| Emphasis | `**important**` | **important** |
-| Strikethrough | `~~superseded~~` | ~~superseded~~ |
-| Inline code | Backticks around source text | `grapharch` |
-
-## Callouts
+| Construct | Source example |
+| --- | --- |
+| Emphasis | `**Important**` |
+| Strikethrough | `~~Superseded~~` |
+| Fenced code | A language-labelled source example |
 
 Start a blockquote with `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or
-`[!CAUTION]`. Grapharch renders the type as a labelled callout rather than
-printing the marker.
+`[!CAUTION]` to create a labelled callout. Markers inside code stay literal.
 
 > [!NOTE]
-> This page is collected into the KG and rendered by Grapharch itself.
+> The documentation you are reading is collected into a KG and published by
+> GraphArch itself.
 
-> [!TIP]
-> Give documents stable identities in frontmatter so files can move without
-> changing their logical identity.
+## Include retained images and diagrams
 
-> [!IMPORTANT]
-> Local links and heading references must resolve in the selected publication.
+Supported PNG, JPEG, and SVG images are collected into the KG. Explicit Markdown
+file collection accepts HTTPS image URLs; repository sources also resolve
+relative images at the selected Git revision. Rendering restored content does
+not reopen the source image or contact its host. Supply meaningful alternative
+text; unsafe SVG content, unsupported URLs, and oversized assets fail explicitly.
 
-> [!WARNING]
-> A failed build preserves the previous complete publication.
-
-> [!CAUTION]
-> Removing a topic can invalidate links from other documentation fragments.
-
-Markers inside inline code or fenced code blocks remain literal source text:
-
-```markdown
-> [!NOTE]
-> Write the note here.
-```
-
-## Mermaid flowcharts
-
-Fenced `mermaid` flowcharts become static SVG diagrams during the document
-stage. Website builds run this stage automatically. The diagram bytes stay in
-the documentation KG, so publishing works offline after the source files are
-removed. The same retained diagrams can be used in specification and PDF
-targets. Browser JavaScript and external diagram services are not required.
+Fenced Mermaid **flowcharts** become static SVG diagrams during the document
+stage. That subset supports labelled nodes, subgraphs, and edges. Other Mermaid
+diagram types, interactive links, and initialization directives are rejected.
+The same retained diagram can appear in HTML and PDF without a browser-side
+diagram service.
 
 ```mermaid
 flowchart LR
-    Source[Source fragments] --> KG[(Documentation KG)]
+    Sources[Authored and structured sources] --> KG[(Documentation graph)]
     KG --> Website[Website]
-    KG --> PDF[PDF document]
+    KG --> Document[PDF document]
 ```
 
-The current native subset supports flowcharts, including labelled nodes,
-subgraphs, and edges. Other Mermaid diagram types, interactive links, and
-initialization directives are rejected explicitly. Each diagram is limited to
-32 KiB of source, 128 nodes, 256 edges, and 32 subgraphs; each fragment may
-contain up to sixteen diagrams. Invalid or unsupported diagrams fail the build.
-Custom publication pipelines must run the Mermaid document stage before assembly.
+## Give content a stable identity
 
-## Frontmatter
+Use a `grapharch.subject` hint in frontmatter to identify the documented subject.
+Website-specific fields such as `parent`, `nav_order`, and `permalink` control
+navigation independently of the file's physical location. See
+[reusable content and hints](../../content-and-hints.md) and the
+[website build guide](../../../usage/self-hosting.md).
 
-```yaml
----
-title: Example topic
-parent: Usage
-nav_order: 2
-permalink: /usage/example/
-grapharch:
-  subject: urn:example:documentation:topic
----
-```
-
-See [Self-hosted documentation](../../../usage/self-hosting.md) for a complete
-website build and the relationship between source files, logical topics, and
-publication pages.
-
-## Images
-
-PNG, JPEG, and SVG images at HTTPS URLs are collected into the documentation
-graph. Shared URLs create one image input per project batch. The website,
-specification, and PDF use those retained bytes, so rendering an exported graph
-does not contact the image host or reopen the original Markdown files.
-
-Images need alternative text. Active SVG content, unsafe URLs, oversized images,
-and content that disagrees with its declared format are rejected. Repository
-sources also resolve relative images against the selected Git revision.
-
-## Current boundaries
-
-The current pipeline does not execute MDX or embedded scripts. Raw HTML in
-Markdown and uncollected local images are rejected. Ordinary Markdown-file images require HTTPS URLs; relative images need a
-repository source. These boundaries are explicit; unsupported content fails the
-build.
+The current pipeline does not execute MDX components or embedded scripts. Raw
+HTML in Markdown is rejected. Mermaid support is a defined flowchart subset,
+not a claim to support every Mermaid diagram type.

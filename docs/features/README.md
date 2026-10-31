@@ -1,51 +1,41 @@
 ---
 title: Features
-layout: default
 nav_order: 3
 permalink: /features/
 grapharch:
   subject: urn:grapharch:docs:topic:features
 ---
 
-# Grapharch feature scope
+# Publish documentation from the knowledge you maintain
 
-This catalog describes the intended product scope. See the
-[implementation status](../other/status.md) for working capabilities and remaining
-delivery work.
+GraphArch turns authored explanations and structured RDF sources into connected
+websites and review documents. Maintain the content once, then choose how each
+audience should read it: a specification, a companion website, a PDF, or a
+library of module books.
 
-## General Features
+## What GraphArch does
 
-- [**Ontology Precision**](./general/ontology-precision.md):
-  GraphArch emphasizes governance and precision in documenting ontologies,
-  schemas, and their relationships. It aims to deliver librarian-level
-  accuracy of definitions, domain ownership, and control for enterprise data management.
-- [**Business-Oriented Profiling**](./general/business-oriented-profiling.md):
-  GraphArch offers capabilities for graph database endpoint analysis that
-  can be particularly useful for business users to understand and describe
-  their data in their own terms.
-- [**Flexible Output Formats**](./general/flexible-output-formats.md):
-  Documentation can be generated as user-friendly websites or professionally
-  formatted PDF reports.
-- [**Onboard Graph Engine**](./general/onboard-graph-engine.md):
-  The tool includes [OxiGraph](https://github.com/oxigraph/oxigraph),
-  a graph database that can be used to generate data for further documentation,
-  integrating both input options seamlessly.
+| Feature | What it gives your project |
+| --- | --- |
+| [Collect existing sources](sources/README.md) | Read Markdown, RDF files, repository content, and selected results from SPARQL services. |
+| [Reusable content and hints](content-and-hints.md) | Connect explanations to stable subjects and arrange them differently for each publication. |
+| [Queryable documentation graph](knowledge-graph.md) | Inspect the content, relationships, provenance, and exact revision behind a publication. |
+| [Websites and PDFs](targets/README.md) | Publish final static HTML and typeset documents from the same collected knowledge. |
+| [Quality review](quality-review.md) | Show competing annotations and missing descriptions to reviewers without discarding source statements. |
+| [Local builds and CI](workflow.md) | Use the same CLI locally and in automation, with explicit failures and ownership of generated files. |
+| [Extend GraphArch](extensibility.md) | Add focused adapters and publication styles without making every source or output follow one format. |
 
+## Choose what to document
 
-## Sources & Formats
+The [Documentable Things catalogue](../documentable-things/README.md) describes
+how GraphArch recognises authored content, ontologies, ontology families,
+constraints, taxonomies, and use-case trees. Source location and documentable
+subject are separate choices: an ontology can live in a file, a repository, or
+a SPARQL service.
 
-See [Formats](./formats/README.md)
+## See the result before configuring it
 
-## Targets
-
-Grapharch renders final publication artifacts from the documentation KG:
-
-- [HTML and CSS](./targets/html.md): static documentation websites and reader
-  layouts generated directly by Rust.
-- [Specifications](../usage/specification-renderer.md): standards-style HTML
-  with a paired PDF from the same pinned plan.
-- [PDF via Typst](./targets/typst.md): document-oriented output with pagination,
-  a table of contents, references, and appendices.
-
-Each target has its own scope and arrangement while reusing logical fragments
-from the same graph revision.
+Browse the [showcase gallery](../showcases.md) for generated publications, then
+follow [Getting started](../usage/getting-started.md) to install the CLI and
+choose a publication guide. These pages describe implemented capabilities;
+new source types and richer specialist interfaces require further development.

@@ -1,44 +1,42 @@
 ---
-title: Git Repository
-layout: default
-parent: Endpoint
+title: Git repositories
+parent: Collect existing sources
 nav_order: 3
+permalink: /features/sources/endpoints/git-repo/
 grapharch:
   subject: urn:grapharch:docs:topic:features:sources:endpoints:git-repo
-permalink: /features/sources/endpoints/git-repo/
 ---
 
-# Source — Git repository
+# Read a repository without copying it into your documentation project
 
-Use a local checkout or a remote Git repository as the source for an ontology
-family publication:
+An ontology-family build can read an existing local checkout or a selected
+revision of a remote Git repository. Source content remains in its owning
+repository; generated publications go into the chosen output directory.
 
-- **Local working tree:** read an existing clone directly, including uncommitted
-  edits, without copying or changing the checkout.
-- **Remote Git repository:** fetch an explicit branch, tag ref, or commit into a
-  reusable bare cache, then read RDF blobs directly without a checkout.
+## Local checkout or remote revision
 
-The cache lives under the system temporary directory in `grapharch-git-cache`.
-`--git-cache` can select a persistent location. Entries are keyed by repository
-URL and locked during fetch; subsequent runs fetch incrementally. A build pins
-one commit before dispatching its independent RDF file collectors. Network,
-missing-ref, parsing, and metadata errors fail the build; cached state is never
-silently substituted for a failed fetch.
+- **Local checkout:** read the existing working tree, including uncommitted
+  changes, without changing it.
+- **Remote repository:** select a branch, tag, or commit, resolve it once, and
+  collect files from that exact revision.
 
-See [ontology family source commands](../../../usage/ontology-families.md).
+Remote builds use a reusable cache and incremental fetching. `--git-cache`
+selects a persistent cache location when needed. A failed fetch or missing ref
+is an error; a cached older revision is not silently substituted.
 
-## Git provenance
+Independent RDF files are collected separately. Repository-owned publication
+hints can identify the family, its publisher, and the requested output, avoiding
+a second copy of that configuration in the tool's repository. Configure
+submodules as separate sources.
 
-The KG retains the observed commit identifier, separate author and committer
-identities, and their timestamps using PROV, Dublin Core, FOAF, and Schema.org.
-Each remote RDF file records its commit and immutable source location. Local
-working-tree provenance records HEAD as its basis, while collected file hashes
-identify actual input contents. HEAD is not presented as the exact content of
-uncommitted files.
+## Keep the source revision visible
 
-Current provenance describes the selected commit. Per-file last-change history,
-blame, contributor statistics, and automatic release notes are future consumers
-of the same cached Git object database.
+The KG retains commit identity, author and committer attribution, timestamps,
+and immutable source-file locations. A remote build records the selected
+commit. Local working-tree provenance identifies HEAD as its basis while content
+hashes identify the files actually read; uncommitted content is not described as
+identical to HEAD.
 
-Supported RDF formats are Turtle, RDF/XML, N-Triples, N-Quads, TriG, and N3.
-Configure submodules as separate repository sources.
+See the [ontology-family source commands](../../../usage/ontology-families.md)
+for local and remote configuration and the
+[publication workflow](../../workflow.md) for CI use.

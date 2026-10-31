@@ -1,26 +1,47 @@
 ---
-title: PDF via Typst
-layout: default
-parent: Targets
-nav_order: 1
+title: PDF documents
+parent: Websites and PDFs
+nav_order: 2
+permalink: /features/targets/typst/
 grapharch:
   subject: urn:grapharch:docs:topic:features:targets:typst
-permalink: /features/targets/typst/
 ---
 
-# Target &mdash; PDF via Typst
+# Publish a document, not a screenshot of a website
 
-GraphArch generates a PDF and its editable [Typst](https://typst.app/) source from the same pinned documentation graph as the website. No separate typesetting installation is required.
+GraphArch generates a typeset PDF and editable Typst source from the selected
+content in the documentation KG. No separate typesetting installation is
+required. A PDF can share a specification's content or use an independently
+planned reading order for review.
 
-## Presentation
+## Document structure and presentation
 
-A PDF paired with a specification uses a standards document layout and the publisher's accent colour. A standalone PDF uses the `ga:style` on its publication profile: `"specification"` selects the standards layout, while `"reader"` selects the companion site's slate and teal palette. The default for a standalone PDF is `"reader"`. Unsupported styles are errors.
+The specification presentation follows the publisher's accent colour and
+includes publication metadata. The reader presentation uses the companion
+site's slate and teal palette. Documents support a cover, linked contents,
+running headings, page numbers, tables with repeated headers, code, retained
+images and diagrams, Markdown alerts, references, and appendices.
 
-Both presentations include a title page, linked contents, running section headings, page numbers, readable code blocks, repeated table headers, and themed GitHub Markdown alerts. Supplied subtitles, publication status, dates, authors, references, appendices, and diagnostic sections remain part of the publication. GraphArch does not invent missing descriptions or publication metadata.
+Legal notices can occupy their own styled front-matter pages. A publisher
+preface is distinct from the legal preamble and ordinary numbered chapters.
+Quality findings are grouped by warning type in a separate numbered appendix.
+Supplied content and release metadata remain source-owned; a layout is not
+proof of standards approval.
 
-The PDF renderer reads the resolved plan and its pinned graph revision. Regenerating the website and PDF together keeps their content tied to the same source revision.
+## Match the publication to its size
 
-## Links
+A small reference can have one PDF. A large ontology family can use
+[bookshelf publication](../../usage/bookshelves.md) to create module books with
+separate PDFs and chapter navigation. Unchanged book PDFs can be reused after
+their input fingerprints and checksums are verified.
 
-- [Typst](https://typst.app/)
-- [Typst documentation](https://typst.app/docs/)
+PDF compilation can be substantially slower than HTML generation for large or
+complex documents. Book boundaries and contents depth help keep the result
+usable; they do not make a very large ontology small.
+
+Dedicated taxonomist-oriented print layouts are not currently supplied. SKOS
+content can appear in the existing resource-reference documents; a specialist
+hierarchical or alphabetical taxonomy edition requires further renderer work.
+
+See [publication families](../../usage/publication-families.md) to separate a
+specification, companion site, and review PDF.

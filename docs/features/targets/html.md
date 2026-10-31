@@ -1,48 +1,49 @@
 ---
-title: HTML and CSS
-parent: Targets
+title: Static HTML websites
+parent: Websites and PDFs
 nav_order: 1
 permalink: /features/targets/html/
 grapharch:
   subject: urn:grapharch:docs:topic:features:targets:html
 ---
 
-# HTML and CSS
+# Publish final HTML and CSS
 
-Grapharch's built-in Rust renderers generate final HTML and CSS directly from a
-pinned documentation graph and publication plan. The generated files are ready
-for static hosting, including GitHub Pages.
+GraphArch's built-in renderers produce final static files from a pinned
+publication plan and documentation graph. Deploy the output directory to
+GitHub Pages or another static host. There is no additional Jekyll, MkDocs,
+Sphinx, or JavaScript-framework build step.
 
-## Documentation websites
+## Companion documentation
 
-The `website` renderer arranges selected logical topic fragments into pages.
-Navigation, breadcrumbs, page contents, and previous/next links are generated
-from KG metadata. Local links and heading references must resolve.
+The companion website arranges logical topics into pages, with navigation,
+breadcrumbs, page contents, previous/next links, and source-repository links.
+Metadata determines the hierarchy and URLs, so authors can reorganise files
+without making filenames the site's information architecture.
 
-Grapharch's own documentation is a working example. See
-[Self-hosted documentation](../../usage/self-hosting.md) for the build command,
-frontmatter, graph model, and integration tests.
+The [website guide](../../usage/self-hosting.md) explains the build command and
+frontmatter. GraphArch's own documentation exercises this publication path.
 
-## Single-document HTML
+## Standards references
 
-The `html` renderer produces a single document with a table of contents and a
-reader-oriented layout. A publication profile controls component placement and
-ordering independently of source filenames.
+The specification style supplies numbered sections, appendices, publisher
+branding, publication metadata, and a linked PDF of the same specification.
+Its contents sidebar supports resizing, collapsing branches, and search/filter
+controls. A paginated specification divides a large reference into smaller pages
+with shared navigation and search indexes.
 
-## Formal specifications
+For families with declared modules, the bookshelf style provides an entry point
+for separate module books. It avoids forcing every ontology and term into one
+giant page. See [specifications](../../usage/specification-renderer.md) and
+[bookshelves](../../usage/bookshelves.md).
 
-The `specification` renderer produces a familiar standards-style document with
-authority branding, publication metadata, numbered sections, references, and
-appendices. It also produces a paired PDF from the same plan, linked through a
-PDF download icon.
+Current taxonomy support is an RDF resource reference with SKOS relationships.
+A specialist taxonomy browser with hierarchy and A–Z views is a separate future
+presentation, not an existing feature of these layouts.
 
-See [Specification renderer](../../usage/specification-renderer.md).
+## Reliable generation
 
-## Publish the generated files
-
-Serve the target's output directory with a static HTTP server or deploy it to a
-static host. Grapharch stages the complete generation and promotes it atomically;
-a failed generation preserves the previous publication.
-
-Markdown is an authored input format. The HTML publication path does not require
-Jekyll, MkDocs, Sphinx, a JavaScript framework, or an additional generator.
+GraphArch stages output before promotion and preserves the previous complete
+publication if generation fails. A target owns its output directory and
+manifest; unowned files are not silently overwritten. The generation credit
+identifies and links the GraphArch version used.

@@ -1,13 +1,13 @@
 ---
 title: EKGF use-case trees
-parent: Usage
-nav_order: 13
+parent: Documentable Things
+nav_order: 6
 permalink: /usage/use-case-trees/
 grapharch:
   subject: urn:grapharch:docs:topic:usage:use-case-trees
 ---
 
-# Document actual EKGF use cases
+# EKGF use-case trees
 
 The [showcase gallery](../showcases.md) includes fictional RDF instances of
 `https://ekgf.org/ontology/use-case#UseCase`. It documents actual use cases,

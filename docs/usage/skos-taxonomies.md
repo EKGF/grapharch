@@ -1,13 +1,13 @@
 ---
 title: SKOS taxonomies
-parent: Usage
-nav_order: 12
+parent: Documentable Things
+nav_order: 5
 permalink: /usage/skos-taxonomies/
 grapharch:
   subject: urn:grapharch:docs:topic:usage:skos-taxonomies
 ---
 
-# Document a SKOS taxonomy
+# SKOS taxonomies
 
 RDF-file, local Git, remote Git, and SPARQL collectors retain SKOS assertions in
 the documentation KG with their normal source provenance. A taxonomy does not
@@ -46,8 +46,10 @@ sections. Ordered collections retain their RDF member-list order. The standard
 `ga:referenceSection` hints can rename or reorder these sections using the kinds
 `schemes`, `concepts`, and `collections`.
 
-English `skos:prefLabel` takes precedence over `rdfs:label`. Conflicting preferred
-labels fail documentation. Definitions, alternative and hidden labels,
+English `skos:prefLabel` takes precedence over `rdfs:label`. Ordinary reference
+entries retain competing annotations for [quality review](quality-review.md).
+A standalone vocabulary's heading metadata must currently be unambiguous.
+Definitions, alternative and hidden labels,
 notations, notes, examples, hierarchy links, scheme membership, collections,
 and mappings remain source assertions in the KG. Reference entries show retained
 facts and link to other documented resources. Markdown descriptions use the
@@ -73,7 +75,9 @@ Taxonomies use the specification, paginated specification, and bookshelf
 renderers. A standalone scheme can form a book with its own PDF. Publication
 works from an exported and restored KG after deleting the original source
 files. This is vocabulary-reference documentation; it does not add a dedicated
-interactive taxonomy-tree renderer.
+taxonomy browsing or print renderer: interactive tree navigation, a specialist
+A–Z index, and taxonomy-specific print layouts are not part of this current
+reference presentation.
 
 ## Dedicated showcase
 

@@ -1,5 +1,5 @@
 ---
-title: Ontology families
+title: Publish an ontology family
 parent: Usage
 nav_order: 7
 permalink: /usage/ontology-families/

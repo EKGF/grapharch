@@ -25,3 +25,7 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 The `publication` commands provide the current publishing workflows. See
 [Getting started](getting-started.md) for prebuilt installation options, current
 release availability, and the contributor-only source-build path.
+
+For the kinds of things GraphArch currently recognises, browse
+[Documentable Things](../documentable-things/README.md). That catalogue is
+separate from the source, CI, and publishing workflows collected here.
