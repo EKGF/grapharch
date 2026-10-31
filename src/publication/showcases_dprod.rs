@@ -385,6 +385,11 @@ async fn assemble(
                 prefixes.clone(),
                 known.clone(),
             )?;
+            let documentor = if derive {
+                documentor.with_source_annotations()
+            } else {
+                documentor
+            };
             documentor.document(writer).await?;
             bindings
                 .write(quad(&node("scope"), "include", subject))

@@ -133,6 +133,12 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
             repo.path().join(target),
         )?;
     }
+    let ontology_path = repo.path().join("ontology/dprod/dprod-ontology.ttl");
+    let mut ontology = std::fs::read_to_string(&ontology_path)?;
+    ontology.push_str(r#"
+<https://www.omg.org/spec/DPROD/dprod/DataProduct> <http://www.w3.org/2002/07/owl#oneOf> (<https://example.org/retained-enumeration-member>) .
+"#);
+    std::fs::write(ontology_path, ontology)?;
     std::fs::write(
         repo.path().join("README.md"),
         "# Development documentation\n\nDEVELOP ONE\n\n![Fixture \
@@ -426,6 +432,7 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     let typst =
         tokio::fs::read_to_string(output.path().join("pdf/main.typ")).await?;
     assert!(typst.contains("PINNED EXAMPLE SOURCE"));
+    assert!(spec.contains("retained-enumeration-member"));
     assert!(spec.contains("SOURCE OWNED FORMAL SCOPE"));
     assert!(typst.contains("SOURCE OWNED FORMAL SCOPE"));
     assert!(
