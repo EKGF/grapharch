@@ -27,12 +27,17 @@ pub(super) async fn read(
             view.text(id, "severity").await? == "warning",
             "quality diagnostics must be warnings"
         );
+        let source_fragment = match view.optional(id, "sourceFragment").await? {
+            Some(Term::NamedNode(fragment)) => Some(fragment.into_string()),
+            None => None,
+            _ => anyhow::bail!("quality source fragment must be an IRI"),
+        };
         result.push(Diagnostic {
-            severity:        Severity::Warning,
-            code:            view.text(id, "code").await?,
-            message:         view.text(id, "message").await?,
-            reference:       view.text(id, "unresolvedReference").await?,
-            source_fragment: None,
+            severity: Severity::Warning,
+            code: view.text(id, "code").await?,
+            message: view.text(id, "message").await?,
+            reference: view.text(id, "unresolvedReference").await?,
+            source_fragment,
         });
     }
     result.sort_by(|a, b| {
@@ -46,13 +51,18 @@ pub(super) async fn read(
 pub(super) fn inline(
     body: &str,
     subject: &NamedNode,
+    fragment: &NamedNode,
     issues: &[Diagnostic],
 ) -> String {
     let mut result = String::new();
-    for issue in issues
-        .iter()
-        .filter(|issue| issue.reference == subject.as_str())
-    {
+    for issue in issues.iter().filter(|issue| {
+        issue.reference == subject.as_str() &&
+            !(matches!(
+                issue.code.as_str(),
+                "missing-source-label" | "missing-source-definition"
+            ) && issue.source_fragment.as_deref() ==
+                Some(fragment.as_str()))
+    }) {
         result.push_str("> [!WARNING]\n> Source quality review\n>\n");
         for line in issue.message.lines() {
             result.push_str(">     ");
@@ -86,4 +96,29 @@ pub(super) async fn html(
     }
     file.write_all(b"</ol></section>\n").await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn source_documentor_callouts_are_not_repeated_by_rendering() {
+        let subject = oxrdf::NamedNode::new_unchecked("urn:quality:subject");
+        let body = "> [!WARNING]\n> Missing source definition.\n";
+        let issue = crate::publication::diagnostics::Diagnostic {
+            severity:        crate::publication::diagnostics::Severity::Warning,
+            code:            "missing-source-definition".into(),
+            message:         "Missing source definition.".into(),
+            reference:       subject.as_str().into(),
+            source_fragment: Some("urn:quality:fragment".into()),
+        };
+        assert_eq!(
+            super::inline(
+                body,
+                &subject,
+                &oxrdf::NamedNode::new_unchecked("urn:quality:fragment"),
+                &[issue]
+            ),
+            body
+        );
+    }
 }

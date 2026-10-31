@@ -63,8 +63,7 @@ async fn remote_develop_restores_and_publishes_three_targets()
             &writer,
         )
         .await
-        .err()
-        .expect("unapproved release must fail");
+        .expect_err("unapproved release must fail");
     assert!(format!("{failure:#}").contains("required"));
     drop(writer);
     worker.await??;

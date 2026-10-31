@@ -70,6 +70,7 @@ impl Entries {
             super::quality::inline(
                 &body,
                 &plan.source.node(&fragment, "subject").await?,
+                &fragment,
                 &plan.quality,
             )
         } else {
