@@ -54,6 +54,14 @@ pub enum FamilySource<'a> {
         cache:     &'a Path,
     },
     Sparql(&'a [SparqlFamilyCollector]),
+    RdfUrls(&'a [RdfUrlFamilyCollector]),
+}
+/// One explicitly selected native RDF document published over HTTP(S).
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RdfUrlFamilyCollector {
+    pub url:        String,
+    pub media_type: String,
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -206,7 +214,7 @@ pub async fn collect_discovered_from(
                  identities"
             )
         },
-        FamilySource::Sparql(_) => {
+        FamilySource::Sparql(_) | FamilySource::RdfUrls(_) => {
             anyhow::bail!(
                 "SPARQL sources require explicit publication definitions"
             )
@@ -264,6 +272,31 @@ async fn collect_from_optional(
             FamilySource::PreparedRepository(scan) => {
                 let mut inputs = scan.files;
                 inputs.push(scan.provenance);
+                inputs
+            },
+            FamilySource::RdfUrls(configs) => {
+                ensure!(
+                    !configs.is_empty() && configs.len() <= 4096,
+                    "family RDF URL sources require between 1 and 4096 \
+                     documents"
+                );
+                // bounded: explicit source inventory, capped at 4096 documents.
+                let mut inputs: Vec<Arc<dyn Collector>> = Vec::new();
+                let mut seen = HashSet::new();
+                for config in configs {
+                    ensure!(
+                        seen.insert(config.url.as_str()),
+                        "duplicate family RDF URL source"
+                    );
+                    let collector =
+                        identity("family-rdf-url", &[project, &config.url]);
+                    inputs.push(Arc::new(super::collect::RdfUrl::new(
+                        project,
+                        collector.as_str(),
+                        &config.url,
+                        &config.media_type,
+                    )?));
+                }
                 inputs
             },
             FamilySource::Sparql(configs) => {

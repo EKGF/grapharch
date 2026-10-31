@@ -48,6 +48,9 @@ struct FamilyShowcase {
 #[derive(serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 enum FamilyShowcaseSource {
+    RdfUrls {
+        documents: Vec<super::ontology_family::RdfUrlFamilyCollector>,
+    },
     Git {
         url:       String,
         config:    Option<std::path::PathBuf>,
@@ -81,8 +84,40 @@ pub async fn family(
         "family showcase configuration exceeds 64 KiB"
     );
     let config: FamilyShowcase = serde_yaml::from_slice(&bytes)?;
+    if let FamilyShowcaseSource::RdfUrls { documents } = config.source {
+        let (Some(path), Some(project), Some(target)) =
+            (config.definitions, config.project, config.target)
+        else {
+            anyhow::bail!(
+                "RDF URL family requires definitions, project and target"
+            );
+        };
+        ensure!(
+            path.components()
+                .all(|part| matches!(part, Component::Normal(_))),
+            "family definitions must be relative beneath configuration"
+        );
+        let definitions = tokio::fs::canonicalize(root.join(path)).await?;
+        ensure!(
+            definitions.starts_with(root),
+            "family definitions escape configuration directory"
+        );
+        let built = super::ontology_family::collect_from(
+            Dataset::memory()?,
+            super::ontology_family::FamilySource::RdfUrls(&documents),
+            &definitions,
+            &project,
+            &target,
+            4,
+        )
+        .await?;
+        return Ok((built.dataset, vec![built.plan]));
+    }
     let FamilyShowcaseSource::Git { url, reference, config: hints_path } =
-        config.source;
+        config.source
+    else {
+        unreachable!()
+    };
     ensure!(
         !reference.is_empty() &&
             reference.len() <= 1024 &&
