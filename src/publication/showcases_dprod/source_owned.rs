@@ -154,3 +154,25 @@ impl ReferenceRoot {
         Ok(())
     }
 }
+
+pub(super) async fn legal_targets(view: &RevisionView) -> Result<Vec<String>> {
+    // bounded: at most 16 registered targets.
+    let mut result = Vec::new();
+    let mut rows = view.objects(&node("project"), "target").await?;
+    let mut count = 0;
+    while let Some(row) = rows.next().await? {
+        count += 1;
+        ensure!(count <= 16, "DPROD target budget exceeded");
+        let Term::NamedNode(target) = &row["value"] else {
+            anyhow::bail!("target must be an IRI")
+        };
+        if matches!(
+            view.text(target, "renderer").await?.as_str(),
+            "specification" | "typst"
+        ) {
+            result.push(target.as_str().to_owned());
+        }
+    }
+    ensure!(!result.is_empty(), "no legal publication targets");
+    Ok(result)
+}

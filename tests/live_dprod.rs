@@ -8,11 +8,10 @@ use grapharch::publication::{dataset::Dataset, render::Publisher, showcases};
 async fn remote_develop_restores_and_publishes_three_targets()
 -> anyhow::Result<()> {
     let cache = std::path::Path::new("output/cache/git");
-    let (dataset, plans) = showcases::dprod_remote(
-        std::path::Path::new("examples/dprod/live.yaml"),
-        cache,
-    )
-    .await?;
+    let config = std::env::var("GRAPHARCH_DPROD_CONFIG")
+        .unwrap_or_else(|_| "examples/dprod/live.yaml".into());
+    let (dataset, plans) =
+        showcases::dprod_remote(std::path::Path::new(&config), cache).await?;
     let output = std::path::Path::new("output/live-dprod-acceptance");
     tokio::fs::create_dir_all(output).await?;
     let archive = output.join("documentation.nq");
@@ -26,6 +25,49 @@ async fn remote_develop_restores_and_publishes_three_targets()
         tokio::fs::read_to_string(output.join("specification/index.html"))
             .await?;
     assert!(html.contains("Data Product"));
+    for title in [
+        "Conformance",
+        "Normative references",
+        "Normative namespaces",
+        "Data Contracts",
+        "Provider Duties",
+        "Data Lineage",
+    ] {
+        assert!(
+            html.contains(title),
+            "missing formal content: {title}"
+        );
+    }
+    assert!(
+        !html.contains("Repository for the Data Products Ontology"),
+        "marketing README must not become formal specification content"
+    );
+    let (writer, worker) = grapharch::publication::writer::GraphWriter::spawn(
+        dataset.clone(),
+        8,
+        4 * 1024 * 1024,
+    )?;
+    let planner = grapharch::publication::plan::TargetPlanner::new(
+        dataset.clone(),
+        grapharch::publication::view::RevisionView::new(
+            dataset.clone(),
+            plans[0].snapshot.clone(),
+        )
+        .node(&plans[0].id, "inputRevision")
+        .await?,
+    );
+    let failure = planner
+        .resolve(
+            "urn:dprod-showcase:project",
+            &oxrdf::NamedNode::new("urn:dprod-showcase:release")?,
+            &writer,
+        )
+        .await
+        .err()
+        .expect("unapproved release must fail");
+    assert!(format!("{failure:#}").contains("required"));
+    drop(writer);
+    worker.await??;
     assert!(
         tokio::fs::read(output.join("pdf/document.pdf"))
             .await?
@@ -243,6 +285,11 @@ ex:{profile} ga:placement <urn:dprod-showcase:{profile}:{key}> .
 "#));
         }
     }
+    std::fs::write(repo.path().join("profile.ttl"), "<https://www.omg.org/spec/DPROD/dprod/> <http://purl.org/dc/terms/title> \"RELATED PROFILE TITLE\" .")?;
+    definitions.push_str(r#"
+ex:project ga:collector ex:related-profile .
+ex:related-profile a ga:Collector ; ga:kind "rdf" ; ga:sourcePath "profile.ttl" ; ga:source "profile.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
+"#);
     std::fs::write(
         repo.path().join("example.jsonld"),
         "{\"title\":\"PINNED EXAMPLE SOURCE\"}",
@@ -368,6 +415,10 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
         output.path().join("specification/index.html"),
     )
     .await?;
+    assert!(
+        !spec.contains("RELATED PROFILE TITLE"),
+        "header must use its designated ontology source"
+    );
     assert!(
         spec.contains("PINNED EXAMPLE SOURCE"),
         "machine-readable example source must survive source deletion"
