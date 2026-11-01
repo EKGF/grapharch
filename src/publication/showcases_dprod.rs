@@ -268,6 +268,37 @@ async fn assemble(
             groups.push((key, title, subjects));
         }
     }
+    let skos =
+        super::document::skos::SchemeArrangement::read(dataset, &view, &known)
+            .await?;
+    let mut arranged_groups = Vec::new();
+    for (key, title, subjects) in groups {
+        if key == "concepts" {
+            continue;
+        }
+        let mut arranged = Vec::new();
+        for subject in subjects {
+            if skos.is_concept(&subject) {
+                continue;
+            }
+            arranged.push(subject.clone());
+            if skos.is_scheme(&subject) {
+                arranged.extend(skos.canonical_members(&subject));
+            }
+        }
+        if !arranged.is_empty() {
+            arranged_groups.push((key, title, arranged));
+        }
+    }
+    let unassigned = skos.unassigned();
+    if !unassigned.is_empty() {
+        arranged_groups.push((
+            "concepts",
+            "Concepts without a documented scheme",
+            unassigned,
+        ));
+    }
+    let groups = arranged_groups;
     let known = Arc::new(known);
     let mut bindings = writer
         .begin_stage(
@@ -390,7 +421,8 @@ async fn assemble(
                 prefixes.clone(),
                 known.clone(),
             )?
-            .with_ontology_context(NamedNode::new(ontology)?);
+            .with_ontology_context(NamedNode::new(ontology)?)
+            .with_arrangement(skos.decoration(&subject, 1));
             let documentor = if derive {
                 documentor.with_source_annotations()
             } else {

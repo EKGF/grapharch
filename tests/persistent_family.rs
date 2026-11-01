@@ -1300,11 +1300,11 @@ async fn skos_concepts_inside_an_owl_vocabulary_use_preferred_labels_and_section
         tokio::fs::read_to_string(p.directory.join("index.html")).await?;
     let doc = scraper::Html::parse_document(&html);
     let headings = doc
-        .select(&scraper::Selector::parse("main h3,main h4").unwrap())
+        .select(&scraper::Selector::parse("main h3,main h4,main h5").unwrap())
         .map(|h| h.text().collect::<String>())
         .collect::<Vec<_>>();
     assert!(headings.iter().any(|h| h.ends_with("Concept Schemes§")));
-    assert!(headings.iter().any(|h| h.ends_with("Concepts§")));
+    assert!(!headings.iter().any(|h| h.ends_with("Concepts§")));
     assert!(headings.iter().any(|h| h.ends_with("Preferred concept§")));
     assert!(!headings.iter().any(|h| h.contains("Legacy display label")));
     tokio::fs::write(

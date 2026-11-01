@@ -729,6 +729,9 @@ async fn build(
     let ontology_count = members.len();
     let term_count = members.iter().map(|m| m.terms.len()).sum();
     let missing: usize = members.iter().map(|m| m.missing).sum();
+    let skos =
+        super::document::skos::SchemeArrangement::read(dataset, &view, &known)
+            .await?;
     let prefixes = Arc::new(prefixes);
     let known = Arc::new(known);
     let owner = identity("family-bindings", &[project, target.as_str()]);
@@ -989,14 +992,39 @@ async fn build(
                 member.namespace
             )
         };
+        if member.scheme {
+            let decoration = skos.decoration(&member.ontology, 1);
+            data.extend(decoration.diagnostics(
+                &super::diagnostic_graph::Context {
+                    graph:     NamedNode::new_unchecked(
+                        "urn:grapharch:quality",
+                    ),
+                    id:        contribution.clone(),
+                    project:   NamedNode::new(project)?,
+                    about:     member.ontology.clone(),
+                    revision:  snapshot.clone(),
+                    processor: identity("family-bindings", &[
+                        project,
+                        target.as_str(),
+                    ]),
+                    source:    member.ontology.as_str().into(),
+                },
+            )?);
+        }
+        let scheme_navigation = if member.scheme {
+            skos.decoration(&member.ontology, 1).body
+        } else {
+            String::new()
+        };
         let introduction = format!(
             "## {}\n\n{}\n\n| Identifier | Value |\n| --- | --- |\n{}| Prefix \
-             | `{}` |\n\n{}\n",
+             | `{}` |\n\n{}{}\n",
             layout.overview,
             labels.join("; "),
             identifiers,
             member.prefix,
-            description
+            description,
+            scheme_navigation
         );
         fragment(
             &mut data,
@@ -1008,8 +1036,47 @@ async fn build(
             0,
         );
         let groups = layout.group(dataset, &member.view, &member.terms).await?;
-        let mut position = 1u32;
+        let mut arranged_groups = Vec::new();
         for (section, terms) in groups {
+            if section.kind == "concepts" {
+                let (unassigned, assigned): (Vec<_>, Vec<_>) =
+                    terms.into_iter().partition(|subject| {
+                        skos.canonical_scheme(subject).is_none()
+                    });
+                let assigned = assigned
+                    .into_iter()
+                    .filter(|subject| {
+                        skos.canonical_scheme(subject) == Some(&member.ontology)
+                    })
+                    .collect::<Vec<_>>();
+                if !assigned.is_empty() {
+                    arranged_groups.push((section.clone(), assigned));
+                }
+                if !unassigned.is_empty() {
+                    let mut unassigned_section = section;
+                    unassigned_section.kind = "unassigned-concepts".into();
+                    unassigned_section.title =
+                        "Concepts without a documented scheme".into();
+                    arranged_groups.push((unassigned_section, unassigned));
+                }
+                continue;
+            }
+            let mut arranged = Vec::new();
+            for subject in terms {
+                if skos.is_concept(&subject) {
+                    continue;
+                }
+                arranged.push(subject.clone());
+                if skos.is_scheme(&subject) {
+                    arranged.extend(skos.canonical_members(&subject));
+                }
+            }
+            if !arranged.is_empty() {
+                arranged_groups.push((section, arranged));
+            }
+        }
+        let mut position = 1u32;
+        for (section, terms) in arranged_groups {
             let id = identity("family-reference-section", &[
                 target.as_str(),
                 member.ontology.as_str(),
@@ -1105,17 +1172,28 @@ async fn build(
                     member.snapshot.clone(),
                     subject.clone(),
                     (!member.scheme).then(|| member.ontology.clone()),
+                    skos.decoration(
+                        subject,
+                        if member.scheme &&
+                            skos.canonical_scheme(subject) ==
+                                Some(&member.ontology)
+                        {
+                            1
+                        } else {
+                            2
+                        },
+                    ),
                 )
             })
         })
         .collect::<Vec<_>>();
     let term_processor =
         AnnotatedTermDocumentor::processor_identity(project, "en");
-    for (_, subject, _) in &jobs {
+    for (_, subject, _, _) in &jobs {
         managed.add(term_processor.as_str(), subject.as_str(), true)?;
     }
     futures::stream::iter(jobs.into_iter().map(
-        |(snapshot, subject, ontology)| {
+        |(snapshot, subject, ontology, arrangement)| {
             let dataset = dataset.clone();
             let prefixes = prefixes.clone();
             let known = known.clone();
@@ -1123,7 +1201,8 @@ async fn build(
                 let documentor = AnnotatedTermDocumentor::new(
                     dataset, snapshot, project, subject, "en", prefixes, known,
                 )?
-                .with_family_reference();
+                .with_family_reference()
+                .with_arrangement(arrangement);
                 let documentor = if let Some(ontology) = ontology {
                     documentor.with_ontology_context(ontology)
                 } else {

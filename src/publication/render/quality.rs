@@ -113,6 +113,8 @@ fn groups(issues: &[Diagnostic]) -> Vec<Group<'_>> {
             "competing-source-annotations" => "Competing source annotations",
             "missing-source-definition" => "No description found",
             "missing-source-label" => "No label found",
+            "skos-hierarchy-cycle" => "Concept hierarchy cycles",
+            "skos-hierarchy-depth" => "Concept hierarchy display depth",
             _ => &issue.code,
         };
         groups

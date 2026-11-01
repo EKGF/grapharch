@@ -31,6 +31,7 @@ pub struct AnnotatedTermDocumentor {
     documented:         Arc<HashSet<NamedNode>>,
     source_annotations: bool,
     family_reference:   bool,
+    arrangement:        super::skos::Decoration,
     ontology_context:   Option<NamedNode>,
 }
 impl AnnotatedTermDocumentor {
@@ -61,6 +62,7 @@ impl AnnotatedTermDocumentor {
             documented,
             source_annotations: false,
             family_reference: false,
+            arrangement: super::skos::Decoration::default(),
             ontology_context: None,
         })
     }
@@ -76,6 +78,14 @@ impl AnnotatedTermDocumentor {
     pub(crate) fn with_family_reference(mut self) -> Self {
         self.source_annotations = true;
         self.family_reference = true;
+        self
+    }
+
+    pub(crate) fn with_arrangement(
+        mut self,
+        arrangement: super::skos::Decoration,
+    ) -> Self {
+        self.arrangement = arrangement;
         self
     }
 
@@ -632,7 +642,11 @@ impl Documentor for AnnotatedTermDocumentor {
             Some(body) => {
                 super::description::nested(
                     &body,
-                    if self.family_reference { 4 } else { 3 },
+                    self.arrangement
+                        .depth
+                        .unwrap_or(if self.family_reference { 2 } else { 1 })
+                        as usize +
+                        2,
                 )?
             },
             None => {
@@ -725,7 +739,13 @@ impl Documentor for AnnotatedTermDocumentor {
         let body = format!(
             "{} {}\n\n{label_line}{individual_summary}\n\n{}{}\n\n**IRI:** \
              {}\n\n{}\n\n| RDF predicate | Value |\n| --- | --- |\n{}\n",
-            if self.family_reference { "###" } else { "##" },
+            "#".repeat(
+                self.arrangement
+                    .depth
+                    .unwrap_or(if self.family_reference { 2 } else { 1 })
+                    as usize +
+                    1
+            ),
             escape(&heading),
             definition_text,
             gaps,
@@ -738,6 +758,7 @@ impl Documentor for AnnotatedTermDocumentor {
             facts.join("\n")
         );
         let mut body = body;
+        body.push_str(&self.arrangement.body);
         for example in examples {
             let width = example
                 .split(|c| c != '`')
@@ -846,12 +867,12 @@ impl Documentor for AnnotatedTermDocumentor {
                 ))
                 .await?;
         }
-        if self.family_reference {
+        if self.family_reference || self.arrangement.depth.is_some() {
             stream
                 .write(Quad::new(
                     fragment.clone(),
                     term("headingDepth"),
-                    Literal::from(2u32),
+                    Literal::from(self.arrangement.depth.unwrap_or(2u32)),
                     GraphName::DefaultGraph,
                 ))
                 .await?;
@@ -866,29 +887,42 @@ impl Documentor for AnnotatedTermDocumentor {
                 ))
                 .await?;
         }
-        if self.source_annotations {
-            for (missing, code, message) in [
-                (
-                    missing_label,
-                    "missing-source-label",
-                    super::description::missing_annotations(
-                        true,
-                        false,
-                        &self.language,
+        if self.source_annotations || !self.arrangement.warnings.is_empty() {
+            for (missing, code, message) in
+                [
+                    (
+                        missing_label,
+                        "missing-source-label",
+                        super::description::missing_annotations(
+                            true,
+                            false,
+                            &self.language,
+                        )
+                        .unwrap(),
+                    ),
+                    (
+                        missing_definition,
+                        "missing-source-definition",
+                        super::description::missing_annotations(
+                            false,
+                            true,
+                            &self.language,
+                        )
+                        .unwrap(),
+                    ),
+                ]
+                .into_iter()
+                .map(|(missing, code, message)| {
+                    (
+                        missing && self.source_annotations,
+                        code.to_owned(),
+                        message,
                     )
-                    .unwrap(),
-                ),
-                (
-                    missing_definition,
-                    "missing-source-definition",
-                    super::description::missing_annotations(
-                        false,
-                        true,
-                        &self.language,
-                    )
-                    .unwrap(),
-                ),
-            ] {
+                })
+                .chain(self.arrangement.warnings.iter().map(
+                    |(code, message)| (true, code.clone(), message.clone()),
+                ))
+            {
                 if missing {
                     let context =
                         crate::publication::diagnostic_graph::Context {
@@ -902,10 +936,10 @@ impl Documentor for AnnotatedTermDocumentor {
                             processor: processor.clone(),
                             source:    self.subject.as_str().into(),
                         };
-                    let diagnostic = crate::publication::diagnostics::Diagnostic { severity: crate::publication::diagnostics::Severity::Warning, code: code.into(), message, reference: self.subject.as_str().into(), source_fragment: Some(self.fragment_id().into_string()) };
+                    let diagnostic = crate::publication::diagnostics::Diagnostic { severity: crate::publication::diagnostics::Severity::Warning, code: code.clone(), message, reference: self.subject.as_str().into(), source_fragment: Some(self.fragment_id().into_string()) };
                     let job = identity("source-quality", &[
                         self.subject.as_str(),
-                        code,
+                        &code,
                         &revision,
                     ])
                     .into_string();

@@ -5,6 +5,7 @@ pub(crate) mod description;
 mod mermaid;
 pub(crate) mod namespace_bindings;
 mod resource;
+pub(crate) mod skos;
 mod use_cases;
 use {
     super::{dataset::Dataset, writer::GraphWriter},

@@ -62,10 +62,22 @@ SKOS file format or a collector that infers a taxonomy from arbitrary text.
 
 ## Reference content
 
-SKOS resources have **Concept Schemes**, **Concepts**, and **Collections**
-sections. Ordered collections retain their RDF member-list order. The standard
-`ga:referenceSection` hints can rename or reorder these sections using the kinds
-`schemes`, `concepts`, and `collections`.
+Concepts appear inside their **Concept Scheme** in the HTML reference, table of
+contents, and PDF. Membership comes from explicit `skos:inScheme`,
+`skos:topConceptOf`, or `skos:hasTopConcept` statements. The scheme includes linked
+navigation using the asserted `skos:broader` and `skos:narrower` relationships.
+GraphArch does not assign scheme membership from a broader-concept relationship.
+
+A concept can belong to several schemes. It is listed in each, with one complete
+reference entry and links from the other schemes. Concepts without a documented
+scheme have a separate section. Hierarchy cycles appear as review warnings in
+the scheme and the quality appendix; navigation links retain the repeated
+concept without recursively expanding the cycle.
+
+Ordered **Collections** retain their RDF member-list order. The
+`ga:referenceSection` hints can rename or reorder the scheme and collection
+sections using the kinds `schemes` and `collections`; `concepts` controls the
+standalone scheme's concept section.
 
 English `skos:prefLabel` takes precedence over `rdfs:label`. Ordinary reference
 entries retain competing annotations for [quality review](quality-review.md).

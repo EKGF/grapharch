@@ -5,6 +5,7 @@ pub(super) struct Layout {
     pub overview: String,
     sections:     Vec<Section>,
 }
+#[derive(Clone)]
 pub(super) struct Section {
     pub kind:  String,
     pub title: String,
