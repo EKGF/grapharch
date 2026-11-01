@@ -541,6 +541,7 @@ async fn build(
     let mut members = Vec::new();
     let mut known = HashSet::new();
     let mut scheme_terms = HashSet::new(); // bounded: FAMILY_RESOURCES shared terms.
+    let mut term_memberships = 0usize;
     let collected_snapshot = snapshot.clone();
     for processor in sources {
         let snapshot = dataset
@@ -591,6 +592,10 @@ async fn build(
             ensure!(
                 known.insert(ontology.clone()),
                 "family ontology is declared in multiple source files"
+            );
+            ensure!(
+                known.len() <= super::limits::FAMILY_RESOURCES,
+                "family exceeds vocabulary resource budget"
             );
             let declaration=view.pattern(&format!("{ontology} <http://www.w3.org/ns/shacl#declare> ?declaration . ?declaration <http://www.w3.org/ns/shacl#prefix> ?prefix ; <http://www.w3.org/ns/shacl#namespace> ?namespace"),0);
             let mut names = dataset
@@ -688,6 +693,11 @@ async fn build(
                     known.len() <= super::limits::FAMILY_RESOURCES,
                     "family exceeds {}-resource publication budget",
                     super::limits::FAMILY_RESOURCES
+                );
+                term_memberships += 1;
+                ensure!(
+                    term_memberships <= super::limits::SOURCE_TYPE_ASSERTIONS,
+                    "family exceeds vocabulary membership budget"
                 );
                 let rich =
                     super::document::description::read(&source, subject, "en")
