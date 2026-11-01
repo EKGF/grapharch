@@ -70,6 +70,22 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
                 "EKGF identity must use the actual graph mark"
             );
             assert!(home.contains("class=\"theme-ekgf\""));
+            let provenance = tokio::fs::read_to_string(
+                publication.directory.join("provenance.html"),
+            )
+            .await?;
+            let report = scraper::Html::parse_document(&provenance);
+            assert!(
+                report
+                    .select(
+                        &scraper::Selector::parse("body > footer.ekgf-footer")
+                            .unwrap()
+                    )
+                    .next()
+                    .is_some(),
+                "Generated reports share the community footer"
+            );
+
             let footer = document
                 .select(
                     &scraper::Selector::parse("body > footer.ekgf-footer")

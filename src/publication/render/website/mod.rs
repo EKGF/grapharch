@@ -27,6 +27,20 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let catalog = Catalog::read(plan).await?;
     let theme = theme::Theme::read(plan).await?;
     let body_attribute = theme.body_attribute();
+    let community_footer = theme.community_footer("");
+    let report_end = if community_footer.is_empty() {
+        format!(
+            "<p><a href=\"./\">Documentation \
+             home</a></p><footer>{}</footer></main></body></html>",
+            super::credit::HTML
+        )
+    } else {
+        format!(
+            "<p><a href=\"./\">Documentation \
+             home</a></p></main>{community_footer}</body></html>"
+        )
+    };
+
     let mut files = vec![
         "style.css".to_owned(),
         ".nojekyll".into(),
@@ -120,15 +134,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         .await?;
         super::quality::html(&mut file, &plan.quality, &plan.quality_evidence)
             .await?;
-        file.write_all(
-            format!(
-                "<p><a href=\"./\">Documentation \
-                 home</a></p><footer>{}</footer></main></body></html>",
-                super::credit::HTML
-            )
-            .as_bytes(),
-        )
-        .await?;
+        file.write_all(report_end.as_bytes()).await?;
         file.flush().await?;
         files.push("quality-issues.html".into());
     }
@@ -155,16 +161,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     plan.provenance
         .html(&mut provenance, "Document provenance")
         .await?;
-    provenance
-        .write_all(
-            format!(
-                "<p><a href=\"./\">Documentation \
-                 home</a></p><footer>{}</footer></main></body></html>",
-                super::credit::HTML
-            )
-            .as_bytes(),
-        )
-        .await?;
+    provenance.write_all(report_end.as_bytes()).await?;
     provenance.flush().await?;
     files.push("provenance.html".into());
     let mut assets = plan.assets().await?;
