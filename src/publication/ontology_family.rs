@@ -556,149 +556,163 @@ async fn build(
                 "SELECT DISTINCT ?ontology ?rootKind WHERE {{ {pattern} FILTER(?rootKind = <http://www.w3.org/2002/07/owl#Ontology> || (?rootKind = <http://www.w3.org/2004/02/skos/core#ConceptScheme> && NOT EXISTS {{ {owl} }})) }}"
             ))
             .await?;
-        let Some(row) = rows.next().await? else {
-            continue;
-        };
-        ensure!(
-            rows.next().await?.is_none(),
-            "one source file must declare at most one ontology or standalone \
-             concept scheme"
-        );
-        let Term::NamedNode(ontology) = &row["ontology"] else {
-            anyhow::bail!("ontology must have a named identity")
-        };
-        let scheme = row["rootKind"] ==
-            NamedNode::new_unchecked(
-                "http://www.w3.org/2004/02/skos/core#ConceptScheme",
-            )
-            .into();
-        if !aliases.contains(ontology) {
-            continue;
-        }
-        ensure!(
-            known.insert(ontology.clone()),
-            "family ontology is declared in multiple source files"
-        );
-        let declaration=view.pattern(&format!("{ontology} <http://www.w3.org/ns/shacl#declare> ?declaration . ?declaration <http://www.w3.org/ns/shacl#prefix> ?prefix ; <http://www.w3.org/ns/shacl#namespace> ?namespace"),0);
-        let mut names = dataset
-            .select(format!(
-                "SELECT DISTINCT ?prefix ?namespace WHERE {{ {declaration} }}"
-            ))
-            .await?;
-        let row = names.next().await?.ok_or_else(|| {
-            anyhow::anyhow!(
-                "ontology {ontology} requires explicit sh:declare namespace \
-                 metadata"
-            )
-        })?;
-        ensure!(
-            names.next().await?.is_none(),
-            "ontology namespace declaration is ambiguous"
-        );
-        let (Term::Literal(prefix), Term::Literal(namespace)) =
-            (&row["prefix"], &row["namespace"])
-        else {
-            anyhow::bail!("namespace metadata must be literal")
-        };
-        let (prefix, namespace) = (
-            prefix.value().to_owned(),
-            namespace.value().to_owned(),
-        );
-        ensure!(
-            !prefix.is_empty() && !namespace.is_empty(),
-            "namespace metadata cannot be empty"
-        );
-        ensure!(
-            !prefixes
-                .iter()
-                .any(|(existing_namespace, existing_prefix)| {
-                    existing_prefix == &prefix &&
-                        existing_namespace != &namespace
-                }),
-            "family namespace prefix {prefix} is ambiguous"
-        );
-        prefixes.insert(namespace.clone(), prefix.clone());
-        // Scheme membership may span files. Read the pinned collected project,
-        // not only the declaration file, without reading generated fragments.
-        let (source, snapshot) = if scheme {
-            (view.clone(), collected_snapshot.clone())
-        } else {
-            (source, snapshot)
-        };
-        let pattern = source.pattern("?subject a ?kind", 0);
-        let membership = source.pattern(
-            &format!(
-                "?subject <http://www.w3.org/2004/02/skos/core#inScheme> \
-                 {ontology}"
-            ),
-            1,
-        );
-        let top = source.pattern(
-            &format!(
+        let mut roots = 0usize;
+        let mut ontologies = 0usize;
+        while let Some(row) = rows.next().await? {
+            roots += 1;
+            ensure!(
+                roots <= super::limits::FAMILY_RESOURCES,
+                "source exceeds vocabulary root budget"
+            );
+            let Term::NamedNode(ontology) = &row["ontology"] else {
+                anyhow::bail!("ontology must have a named identity")
+            };
+            let scheme = row["rootKind"] ==
+                NamedNode::new_unchecked(
+                    "http://www.w3.org/2004/02/skos/core#ConceptScheme",
+                )
+                .into();
+            if !scheme {
+                ontologies += 1;
+                ensure!(
+                    ontologies <= 1,
+                    "one source file must declare at most one ontology"
+                );
+            }
+            if !aliases.contains(ontology) {
+                continue;
+            }
+            ensure!(
+                known.insert(ontology.clone()),
+                "family ontology is declared in multiple source files"
+            );
+            let declaration=view.pattern(&format!("{ontology} <http://www.w3.org/ns/shacl#declare> ?declaration . ?declaration <http://www.w3.org/ns/shacl#prefix> ?prefix ; <http://www.w3.org/ns/shacl#namespace> ?namespace"),0);
+            let mut names = dataset
+                .select(format!(
+                    "SELECT DISTINCT ?prefix ?namespace WHERE {{ \
+                     {declaration} }}"
+                ))
+                .await?;
+            let row = names.next().await?.ok_or_else(|| {
+                anyhow::anyhow!(
+                    "ontology {ontology} requires explicit sh:declare \
+                     namespace metadata"
+                )
+            })?;
+            ensure!(
+                names.next().await?.is_none(),
+                "ontology namespace declaration is ambiguous"
+            );
+            let (Term::Literal(prefix), Term::Literal(namespace)) =
+                (&row["prefix"], &row["namespace"])
+            else {
+                anyhow::bail!("namespace metadata must be literal")
+            };
+            let (prefix, namespace) = (
+                prefix.value().to_owned(),
+                namespace.value().to_owned(),
+            );
+            ensure!(
+                !prefix.is_empty() && !namespace.is_empty(),
+                "namespace metadata cannot be empty"
+            );
+            ensure!(
+                !prefixes.iter().any(
+                    |(existing_namespace, existing_prefix)| {
+                        existing_prefix == &prefix &&
+                            existing_namespace != &namespace
+                    }
+                ),
+                "family namespace prefix {prefix} is ambiguous"
+            );
+            prefixes.insert(namespace.clone(), prefix.clone());
+            // Scheme membership may span files. Read the pinned collected
+            // project, not only the declaration file, without reading generated
+            // fragments.
+            let (source, snapshot) = if scheme {
+                (view.clone(), collected_snapshot.clone())
+            } else {
+                (source.clone(), snapshot.clone())
+            };
+            let pattern = source.pattern("?subject a ?kind", 0);
+            let membership = source.pattern(
+                &format!(
+                    "?subject <http://www.w3.org/2004/02/skos/core#inScheme> \
+                     {ontology}"
+                ),
+                1,
+            );
+            let top = source.pattern(
+                &format!(
                 "?subject <http://www.w3.org/2004/02/skos/core#topConceptOf> \
                  {ontology}"
             ),
-            2,
-        );
-        let has_top = source.pattern(&format!("{ontology} <http://www.w3.org/2004/02/skos/core#hasTopConcept> ?subject"), 3);
-        let mut rows = dataset
-            .select(format!(
-                "SELECT DISTINCT ?subject WHERE {{ {pattern} \
-                 FILTER(isIRI(?subject) && (STRSTARTS(STR(?subject), {}) || \
-                 EXISTS {{ {membership} }} || EXISTS {{ {top} }} || EXISTS {{ \
-                 {has_top} }}) && ?subject != {ontology}) }} ORDER BY ?subject",
-                Literal::new_simple_literal(&namespace)
-            ))
-            .await?;
-        let mut terms = Vec::new();
-        let mut missing = 0;
-        while let Some(row) = rows.next().await? {
-            let Term::NamedNode(subject) = &row["subject"] else {
-                anyhow::bail!("family terms require named identities")
-            };
-            ensure!(
-                known.insert(subject.clone()),
-                "resource belongs to multiple source namespaces: {subject}"
+                2,
             );
-            ensure!(
-                known.len() <= super::limits::FAMILY_RESOURCES,
-                "family exceeds {}-resource publication budget",
-                super::limits::FAMILY_RESOURCES
-            );
-            let rich =
-                super::document::description::read(&source, subject, "en")
-                    .await?;
-            let mut descriptions = Vec::new();
-            if rich.is_none() {
-                for property in
-                    super::document::description::SOURCE_DESCRIPTIONS
-                {
-                    descriptions
-                        .extend(english(&source, subject, property).await?);
+            let has_top = source.pattern(&format!("{ontology} <http://www.w3.org/2004/02/skos/core#hasTopConcept> ?subject"), 3);
+            let mut rows = dataset
+                .select(format!(
+                    "SELECT DISTINCT ?subject WHERE {{ {pattern} \
+                     FILTER(isIRI(?subject) && (STRSTARTS(STR(?subject), {}) \
+                     || EXISTS {{ {membership} }} || EXISTS {{ {top} }} || \
+                     EXISTS {{ {has_top} }}) && ?subject != {ontology}) }} \
+                     ORDER BY ?subject",
+                    Literal::new_simple_literal(&namespace)
+                ))
+                .await?;
+            let mut terms = Vec::new();
+            let mut missing = 0;
+            while let Some(row) = rows.next().await? {
+                let Term::NamedNode(subject) = &row["subject"] else {
+                    anyhow::bail!("family terms require named identities")
+                };
+                if aliases.contains(subject) {
+                    continue;
                 }
+                ensure!(
+                    known.insert(subject.clone()) || scheme,
+                    "resource belongs to multiple source namespaces: {subject}"
+                );
+                ensure!(
+                    known.len() <= super::limits::FAMILY_RESOURCES,
+                    "family exceeds {}-resource publication budget",
+                    super::limits::FAMILY_RESOURCES
+                );
+                let rich =
+                    super::document::description::read(&source, subject, "en")
+                        .await?;
+                let mut descriptions = Vec::new();
+                if rich.is_none() {
+                    for property in
+                        super::document::description::SOURCE_DESCRIPTIONS
+                    {
+                        descriptions
+                            .extend(english(&source, subject, property).await?);
+                    }
+                }
+                if rich.is_none() && descriptions.is_empty() {
+                    missing += 1;
+                }
+                terms.push(subject.clone());
             }
-            if rich.is_none() && descriptions.is_empty() {
-                missing += 1;
-            }
-            terms.push(subject.clone());
+            let labels = vocabulary_labels(&source, ontology).await?;
+            ensure!(
+                labels.len() == 1 && !labels[0].trim().is_empty(),
+                "ontology {ontology} requires one English label for its \
+                 chapter title"
+            );
+            members.push(Member {
+                scheme,
+                ontology: ontology.clone(),
+                prefix,
+                title: labels[0].clone(),
+                namespace,
+                view: source,
+                snapshot,
+                terms,
+                missing,
+            });
         }
-        let labels = vocabulary_labels(&source, ontology).await?;
-        ensure!(
-            labels.len() == 1 && !labels[0].trim().is_empty(),
-            "ontology {ontology} requires one English label for its chapter \
-             title"
-        );
-        members.push(Member {
-            scheme,
-            ontology: ontology.clone(),
-            prefix,
-            title: labels[0].clone(),
-            namespace,
-            view: source,
-            snapshot,
-            terms,
-            missing,
-        });
     }
     for (reference, aliases) in references {
         let loaded = members
@@ -720,14 +734,16 @@ async fn build(
         !members.is_empty(),
         "no registered family ontology was found in the supplied sources"
     );
-    members.sort_by(|a, b| a.prefix.cmp(&b.prefix));
+    members.sort_by(|a, b| {
+        a.prefix.cmp(&b.prefix).then(a.ontology.cmp(&b.ontology))
+    });
     let chapters = modules::chapters(dataset, &view, &members).await?;
     let module_count = chapters
         .iter()
         .filter(|chapter| chapter.module_body.is_some())
         .count();
     let ontology_count = members.len();
-    let term_count = members.iter().map(|m| m.terms.len()).sum();
+    let term_count = known.len() - members.len();
     let missing: usize = members.iter().map(|m| m.missing).sum();
     let skos =
         super::document::skos::SchemeArrangement::read(dataset, &view, &known)
@@ -910,6 +926,9 @@ async fn build(
         &overview,
         0,
     );
+    // bounded: each selected resource has one canonical full entry, even when
+    // several registered SKOS schemes share its namespace and membership.
+    let mut placed_terms = HashSet::new();
     for (order, chapter) in chapters.iter().enumerate() {
         if let Some(body) = &chapter.module_body {
             component(
@@ -1077,6 +1096,13 @@ async fn build(
         }
         let mut position = 1u32;
         for (section, terms) in arranged_groups {
+            let terms = terms
+                .into_iter()
+                .filter(|subject| placed_terms.insert(subject.clone()))
+                .collect::<Vec<_>>();
+            if terms.is_empty() {
+                continue;
+            }
             let id = identity("family-reference-section", &[
                 target.as_str(),
                 member.ontology.as_str(),
@@ -1164,29 +1190,31 @@ async fn build(
         stream.write(quad).await?;
     }
     stream.complete().await?;
-    let jobs = members
+    let root_schemes = members
         .iter()
-        .flat_map(|member| {
-            member.terms.iter().map(|subject| {
-                (
-                    member.snapshot.clone(),
-                    subject.clone(),
-                    (!member.scheme).then(|| member.ontology.clone()),
-                    skos.decoration(
-                        subject,
-                        if member.scheme &&
-                            skos.canonical_scheme(subject) ==
-                                Some(&member.ontology)
-                        {
-                            1
-                        } else {
-                            2
-                        },
-                    ),
-                )
-            })
-        })
-        .collect::<Vec<_>>();
+        .filter(|member| member.scheme)
+        .map(|member| member.ontology.clone())
+        .collect::<HashSet<_>>();
+    let mut scheduled = HashSet::new();
+    let mut jobs = Vec::new(); // bounded: one job per placed FAMILY_RESOURCES subject.
+    for member in &members {
+        for subject in &member.terms {
+            if !placed_terms.contains(subject) ||
+                !scheduled.insert(subject.clone())
+            {
+                continue;
+            }
+            let root_member = skos
+                .canonical_scheme(subject)
+                .is_some_and(|scheme| root_schemes.contains(scheme));
+            jobs.push((
+                member.snapshot.clone(),
+                subject.clone(),
+                (!member.scheme).then(|| member.ontology.clone()),
+                skos.decoration(subject, if root_member { 1 } else { 2 }),
+            ));
+        }
+    }
     let term_processor =
         AnnotatedTermDocumentor::processor_identity(project, "en");
     for (_, subject, _, _) in &jobs {

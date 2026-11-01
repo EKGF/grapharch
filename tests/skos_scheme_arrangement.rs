@@ -140,3 +140,60 @@ dprod:CycleB a skos:Concept; rdfs:label "Cycle B"@en; dct:description "Second co
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn skos_schemes_can_share_a_source_namespace_and_concept_without_duplicate_entries()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    copy_tree(Path::new("examples/skos"), source.path()).await?;
+    let project = source.path().join("project.ttl");
+    let mut definitions = tokio::fs::read_to_string(&project).await?;
+    definitions.push_str(
+        "\n<https://example.org/data-taxonomy-review> gov:inFamily \
+         <urn:skos:family> .\n",
+    );
+    tokio::fs::write(project, definitions).await?;
+    let path = source.path().join("sources/taxonomy.ttl");
+    let mut rdf = tokio::fs::read_to_string(&path).await?;
+    rdf.push_str(r#"
+<https://example.org/data-taxonomy-review> a skos:ConceptScheme;
+ skos:prefLabel "Review taxonomy"@en;skos:definition "A second scheme sharing concepts."@en;
+ sh:declare [sh:prefix "data-taxonomy";sh:namespace "https://example.org/data-taxonomy/"];
+ skos:hasTopConcept ex:Product .
+ex:Unassigned a skos:Concept;skos:prefLabel "Unassigned concept"@en;
+ skos:definition "A concept without asserted scheme membership."@en;skos:broader ex:Product .
+"#);
+    tokio::fs::write(path, rdf).await?;
+    let (dataset, plans) = showcases::skos(source.path()).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("kg.nq");
+    dataset.export(archive.clone()).await?;
+    source.close()?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    showcases::publish(&Publisher::new(restored), &plans, output.path())
+        .await?;
+    let html = tokio::fs::read_to_string(
+        output.path().join("specification/index.html"),
+    )
+    .await?;
+    let doc = Html::parse_document(&html);
+    let headings = doc
+        .select(&Selector::parse("main h2,main h3,main h4,main h5").unwrap())
+        .map(|h| h.text().collect::<String>())
+        .collect::<Vec<_>>();
+    for label in ["Product§", "Unassigned concept§"] {
+        assert_eq!(
+            headings
+                .iter()
+                .filter(|heading| heading.ends_with(label))
+                .count(),
+            1,
+            "one complete reference entry per concept: {headings:?}"
+        );
+    }
+    assert!(html.contains("Review taxonomy"));
+    assert!(html.contains("reference entry in another scheme"));
+    assert!(html.contains("Concepts without a documented scheme"));
+    Ok(())
+}
