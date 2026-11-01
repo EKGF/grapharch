@@ -12,3 +12,5 @@ main{min-width:0;padding:36px 0 20px}.breadcrumbs{display:flex;flex-wrap:wrap;al
 @media(min-width:1151px){.site-layout.gallery-layout{grid-template-columns:260px minmax(0,1fr)}}.gallery-layout main>article>p{max-width:800px}
 
 .brand{min-width:0;max-width:calc(100% - 52px);flex-wrap:wrap;column-gap:.75rem;row-gap:.15rem;line-height:1.25}.brand-version{display:inline-block;max-width:100%;padding:.1rem .45rem;border:1px solid var(--line);border-radius:.35rem;background:var(--chrome);color:var(--muted);font-size:.75rem;font-weight:550;font-variant-numeric:tabular-nums;letter-spacing:.01em;line-height:1.5;overflow-wrap:anywhere}.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}@media(max-width:480px){.brand{column-gap:.5rem}.brand-context{display:none}.brand-version{padding:.08rem .35rem}}
+
+.showcase-pdf{display:inline-flex;align-items:center;gap:.4rem;max-width:100%;overflow-wrap:anywhere}.showcase-pdf svg{flex-shrink:0}.showcase-actions .showcase-pdf{flex-basis:100%}

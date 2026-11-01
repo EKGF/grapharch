@@ -73,6 +73,7 @@ pub(super) async fn render(
             String::new()
         };
         let mut alternatives = BTreeMap::new();
+        let mut pdfs = BTreeMap::new();
         let mut outputs = plan.source.objects(id, "outputArtifact").await?;
         while let Some(row) = outputs.next().await? {
             let Term::NamedNode(output) = &row["value"] else {
@@ -85,18 +86,46 @@ pub(super) async fn render(
                 alternatives.len() < 32 && !alternatives.contains_key(&order),
                 "showcase outputs have ambiguous order or exceed budget"
             );
+            let output_title = title(&plan.source, output).await?;
+            if artifact.route.ends_with(".pdf") {
+                pdfs.insert(
+                    order,
+                    (artifact.route.clone(), output_title.clone()),
+                );
+            }
             alternatives.insert(
                 order,
                 format!(
                     "<li><a data-artifact href=\"{prefix}{}\">{}</a></li>",
                     esc(&artifact.route),
-                    esc(&title(&plan.source, output).await?)
+                    esc(&output_title)
                 ),
             );
         }
+        ensure!(
+            !pdfs.is_empty(),
+            "showcase must expose its PDF output"
+        );
+        ensure!(
+            pdfs.values().any(|(route, _)| route == &pdf.route),
+            "primary showcase PDF must be a declared output"
+        );
+        let multiple = pdfs.len() > 1;
+        let downloads = pdfs
+            .into_values()
+            .map(|(route, title)| {
+                let label = if multiple { title.as_str() } else { "PDF" };
+                super::super::pdf_download::link(
+                    &format!("{prefix}{route}"),
+                    label,
+                    "showcase-pdf",
+                )
+                .replacen("<a ", "<a data-artifact ", 1)
+            })
+            .collect::<String>();
         let alternatives = alternatives.into_values().collect::<String>();
-        cards.insert(order, format!(r#"<article class="showcase-card" data-showcase="{id}"><div class="showcase-preview"><iframe sandbox="" loading="lazy" tabindex="-1" title="Preview of {name}" src="{prefix}{preview}"></iframe></div><div class="showcase-info"><h2>{name}</h2><p>{description}</p>{badge}<div class="showcase-actions"><a data-artifact class="showcase-open" href="{prefix}{preview}">Open HTML</a><a data-artifact href="{prefix}{pdf}">PDF</a><a data-artifact href="{prefix}{dataset}" download>Download KG</a></div><details><summary>All publication outputs</summary><ul>{alternatives}</ul></details></div></article>"#,
-            id=esc(id.as_str()), name=esc(&name), description=esc(&description), preview=esc(&preview.route), pdf=esc(&pdf.route), dataset=esc(&dataset.route)));
+        cards.insert(order, format!(r#"<article class="showcase-card" data-showcase="{id}"><div class="showcase-preview"><iframe sandbox="" loading="lazy" tabindex="-1" title="Preview of {name}" src="{prefix}{preview}"></iframe></div><div class="showcase-info"><h2>{name}</h2><p>{description}</p>{badge}<div class="showcase-actions"><a data-artifact class="showcase-open" href="{prefix}{preview}">Open HTML</a>{downloads}<a data-artifact href="{prefix}{dataset}" download>Download KG</a></div><details><summary>All publication outputs</summary><ul>{alternatives}</ul></details></div></article>"#,
+            id=esc(id.as_str()), name=esc(&name), description=esc(&description), preview=esc(&preview.route), dataset=esc(&dataset.route)));
     }
     Ok(format!(
         "<div class=\"showcase-gallery\">{}</div>",

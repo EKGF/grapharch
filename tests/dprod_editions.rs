@@ -145,7 +145,16 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
         download
             .attr("aria-label")
             .unwrap()
+            .to_lowercase()
             .contains("specification")
+    );
+    assert_eq!(
+        document
+            .select(&scraper::Selector::parse("a.pdf-download").unwrap())
+            .count(),
+        3,
+        "both named editions must have visible PDF download controls \
+         alongside the attached reference"
     );
     for edition in ["ekgf", "omg"] {
         assert!(html.contains(&format!(

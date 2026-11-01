@@ -210,6 +210,30 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             assert!(std::fs::read(path)?.starts_with(b"%PDF-"));
         }
     }
+    for card in document.select(&cards) {
+        let actions =
+            scraper::Selector::parse(".showcase-actions a[href$='.pdf']")
+                .unwrap();
+        let outputs =
+            scraper::Selector::parse("details a[href$='.pdf']").unwrap();
+        let visible = card.select(&actions).collect::<Vec<_>>();
+        let all = card.select(&outputs).collect::<Vec<_>>();
+        assert_eq!(
+            visible.len(),
+            all.len(),
+            "every PDF edition must be visible on {}",
+            card.value().attr("data-showcase").unwrap()
+        );
+        if all.len() > 1 {
+            for link in visible {
+                assert_ne!(
+                    link.text().collect::<String>(),
+                    "PDF",
+                    "multiple PDFs need distinct titles"
+                );
+            }
+        }
+    }
     assert!(html.contains("artifacts/dprod/"));
     assert!(html.contains("DPROD: native ontology and SHACL"));
     assert!(!html.contains("artifacts/rdf11/"));

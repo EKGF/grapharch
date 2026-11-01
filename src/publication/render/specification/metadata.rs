@@ -97,6 +97,15 @@ pub(in crate::publication::render) async fn header(
             None => String::new(),
             _ => anyhow::bail!("productLogo must be an asset IRI"),
         };
+    let ordered_rows = super::rows::render(plan).await?;
+    let downloads = super::super::pdf_download::metadata_links(
+        ordered_rows.as_deref().unwrap_or_default(),
+    );
+    let attached_pdf = super::super::pdf_download::link(
+        "document.pdf",
+        "Specification PDF",
+        "pdf-download",
+    );
     let logos = format!("{}{product_logo}", authority.logo);
     let banner = format!("{} {}", authority.short, status);
     let mut html = format!(
@@ -104,17 +113,9 @@ pub(in crate::publication::render) async fn header(
          class=\"head\" style=\"--authority-color:{}\" \
          data-authority=\"{}\">{}<h1>{}</h1>{subtitle}<p \
          class=\"publication-status\">{status_html} <time \
-         datetime=\"{}\">{}</time></p><a class=\"pdf-download\" \
-         href=\"document.pdf\" type=\"application/pdf\" aria-label=\"Download \
-         this specification as PDF\"><svg aria-hidden=\"true\" \
-         focusable=\"false\" width=\"26\" height=\"30\" viewBox=\"0 0 28 \
-         32\"><path d=\"M5 1h13l8 8v22H5zM18 1v8h8\" fill=\"white\" \
-         stroke=\"currentColor\" stroke-width=\"1.5\"/><rect x=\"0\" y=\"17\" \
-         width=\"25\" height=\"12\" rx=\"2\" fill=\"#c62828\"/><text \
-         x=\"12.5\" y=\"26\" text-anchor=\"middle\" fill=\"white\" \
-         font-family=\"Arial,sans-serif\" font-weight=\"bold\" \
-         font-size=\"9\">PDF</text></svg><span>Specification \
-         PDF</span></a>{metadata_open}<dl class=\"publication-metadata\">",
+         datetime=\"{}\">{}</time></\
+         p>{attached_pdf}{downloads}{metadata_open}<dl \
+         class=\"publication-metadata\">",
         html_escape(&banner),
         html_escape(&banner),
         authority.color,
@@ -148,7 +149,7 @@ pub(in crate::publication::render) async fn header(
             _ => anyhow::bail!("{field} must be an HTTP(S) IRI"),
         }
     }
-    if let Some(rows) = super::rows::render(plan).await? {
+    if let Some(rows) = ordered_rows {
         html.push_str(&rows);
     } else {
         html.push_str(&defaults);
