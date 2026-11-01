@@ -11,10 +11,10 @@ use {
 };
 
 // Immutable bundled language assets, independent of publication inputs.
-static SPARQL: LazyLock<SyntaxSet> = LazyLock::new(|| {
+static LINKED_DATA: LazyLock<SyntaxSet> = LazyLock::new(|| {
     syntect::dumps::from_binary(include_bytes!(concat!(
         env!("OUT_DIR"),
-        "/sparql.packdump"
+        "/linked-data.packdump"
     )))
 });
 static THEME: LazyLock<Theme> = LazyLock::new(|| {
@@ -61,6 +61,7 @@ fn canonical(language: &str) -> &str {
         "ts" => "typescript",
         "jsonld" | "json-ld" => "json",
         "rq" => "sparql",
+        "ttl" | "rdf-turtle" => "turtle",
         language => language,
     }
 }
@@ -72,12 +73,16 @@ fn runs(
 ) -> Result<()> {
     let language = language.to_ascii_lowercase();
     let language = canonical(&language);
-    let syntaxes = if language == "sparql" {
-        &*SPARQL
+    let syntaxes = if matches!(language, "sparql" | "turtle") {
+        &*LINKED_DATA
     } else {
         &*typst::text::RAW_SYNTAXES
     };
-    let token = if language == "sparql" { "rq" } else { language };
+    let token = match language {
+        "sparql" => "rq",
+        "turtle" => "ttl",
+        language => language,
+    };
     let Some(syntax) = syntaxes.find_syntax_by_token(token) else {
         emit(source, THEME.settings.foreground.unwrap());
         return Ok(());
@@ -159,6 +164,11 @@ mod tests {
                 &["json", "jsonld", "json-ld"][..],
                 "{\"@context\": {\"name\": \"https://schema.org/name\"}, \
                  \"active\": true}\n",
+            ),
+            (
+                &["turtle", "ttl", "rdf-turtle"][..],
+                "@prefix ex: <https://example.org/> .\n# comment\nex:dataset \
+                 a ex:Dataset ; ex:label \"Bønds\"@en ; ex:count 42 .\n",
             ),
             (
                 &["sparql", "rq"][..],

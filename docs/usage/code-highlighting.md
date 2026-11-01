@@ -29,6 +29,7 @@ print(Path("data").name)
 | TypeScript | `typescript`, `ts` |
 | JSON | `json` |
 | JSON-LD | `json-ld`, `jsonld` |
+| Turtle | `turtle`, `ttl`, `rdf-turtle` |
 | SPARQL | `sparql`, `rq` |
 
 ## JSON-LD and SPARQL
@@ -50,7 +51,7 @@ SELECT ?dataset $title WHERE {
 ```
 
 See the [multilingual code showcase](../showcases.md) for complete Python, Bash,
-JavaScript, TypeScript, JSON, JSON-LD and SPARQL examples with a matching PDF.
+JavaScript, TypeScript, JSON, JSON-LD, Turtle and SPARQL examples with a matching PDF.
 Its [publication definition](https://github.com/EKGF/grapharch/tree/main/examples/code-highlighting)
 also demonstrates fenced Markdown stored in an RDF documentation fragment.
 
@@ -68,5 +69,5 @@ language controls presentation and does not validate the code.
 Highlighting works offline: the generated website needs no syntax-highlighting
 script or external service, and the PDF needs no additional Typst package. The
 engine uses [Syntect](https://docs.rs/syntect/5.2.0/syntect/) and the syntax bundle
-already used by Typst; SPARQL uses the bundled
+already used by Typst; SPARQL and Turtle use the bundled
 [LinkedData grammar](https://github.com/blake-regalia/linked-data.syntaxes/releases/tag/v1.0.4).

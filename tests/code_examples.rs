@@ -107,6 +107,7 @@ async fn multilingual_showcase_renders_from_restored_graph_without_sources()
         "json",
         "json-ld",
         "sparql",
+        "turtle",
     ] {
         let selector =
             scraper::Selector::parse(&format!("code.language-{language}"))
@@ -148,10 +149,18 @@ async fn multilingual_showcase_renders_from_restored_graph_without_sources()
         .collect::<String>();
     assert!(sparql.contains("SELECT ?dataset $title WHERE {"));
     assert!(sparql.contains("<http://purl.org/dc/terms/>"));
+    let turtle = doc
+        .select(&select("code.language-turtle"))
+        .next()
+        .unwrap()
+        .text()
+        .collect::<String>();
+    assert!(turtle.contains("ex:label \"UK Bonds\"@en ;"));
+    assert!(turtle.contains("ex:count 42 ;"));
     let typst =
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
-    assert_eq!(typst.matches("#ga-example[#ga-code((").count(), 7);
+    assert_eq!(typst.matches("#ga-example[#ga-code((").count(), 8);
     assert!(typst.contains("$title"));
     assert!(
         tokio::fs::metadata(publication.directory.join("document.pdf"))
