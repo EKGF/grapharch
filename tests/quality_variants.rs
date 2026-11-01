@@ -156,7 +156,7 @@ async fn bookshelf(failed_worker: bool) -> Result<String> {
     restored.import(archive).await?;
     source.close()?;
     let executable = if failed_worker {
-        std::path::PathBuf::from("/usr/bin/false")
+        std::env::current_exe()?
     } else {
         std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch"))
     };
