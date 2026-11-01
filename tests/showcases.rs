@@ -156,7 +156,7 @@ async fn specification_renders_publication_metadata_and_numbered_navigation_from
     assert!(html.contains("&lt;example&gt;"));
     assert!(html.contains("rel=\"license\""));
     assert!(html.contains("href=\"document.pdf\""));
-    assert!(html.contains("aria-label=\"Download PDF\""));
+    assert!(html.contains("aria-label=\"Download this specification as PDF\""));
     assert!(
         publications[0]
             .manifest
