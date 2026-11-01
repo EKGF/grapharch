@@ -132,3 +132,28 @@ async fn bookshelf_search_uses_the_same_collection_hint() -> Result<()> {
     assert!(!search.contains("Family overview"));
     Ok(())
 }
+
+#[tokio::test]
+async fn ontology_reference_explains_missing_definition_origin_after_restore()
+-> Result<()> {
+    let (output, html) = render(None, "specification").await?;
+    assert!(html.contains("rdfs:isDefinedBy"));
+    assert!(html.contains("Not declared in collected sources."));
+    let typst =
+        tokio::fs::read_to_string(output.path().join("reference/main.typ"))
+            .await?;
+    assert!(typst.contains("Not declared in collected sources."));
+    if let Some(directory) = std::env::var_os("GRAPHARCH_DEFINED_BY_REVIEW") {
+        let directory = std::path::PathBuf::from(directory);
+        tokio::fs::create_dir_all(&directory).await?;
+        for filename in ["index.html", "style.css", "main.typ", "document.pdf"]
+        {
+            tokio::fs::copy(
+                output.path().join("reference").join(filename),
+                directory.join(filename),
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}
