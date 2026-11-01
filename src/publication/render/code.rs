@@ -28,16 +28,36 @@ static THEME: LazyLock<Theme> = LazyLock::new(|| {
         }
     }
     for (selector, color) in [
+        (
+            "string, source.json string, source.rq string, source.ttl string, \
+             string.unquoted.iri",
+            Color { r: 20, g: 107, b: 54, a: 255 },
+        ),
+        (
+            "constant.numeric, meta.numeric, source.json constant.numeric",
+            Color { r: 154, g: 77, b: 0, a: 255 },
+        ),
+        (
+            "constant.language, source.json constant.language",
+            Color { r: 0, g: 90, b: 156, a: 255 },
+        ),
+        ("variable.other.readwrite.prefixed-name", Color {
+            r: 0,
+            g: 90,
+            b: 156,
+            a: 255,
+        }),
+        ("comment", Color { r: 91, g: 101, b: 117, a: 255 }),
         ("meta.mapping.key.json string", Color {
-            r: 131,
-            g: 91,
-            b: 11,
+            r: 104,
+            g: 54,
+            b: 181,
             a: 255,
         }),
         ("source.rq variable", Color {
-            r: 103,
-            g: 52,
-            b: 141,
+            r: 104,
+            g: 54,
+            b: 181,
             a: 255,
         }),
     ] {
@@ -191,6 +211,56 @@ mod tests {
                     "{language}: no meaningful lexical colouring"
                 );
             }
+        }
+    }
+    #[test]
+    fn json_keys_and_string_values_have_distinct_accessible_colours() {
+        let mut key = None;
+        let mut value = None;
+        runs(
+            "{\"title\": \"UK Bonds\", \"count\": 42}",
+            "json",
+            |token, color| {
+                if token.contains("title") {
+                    key = Some(color);
+                }
+                if token.contains("Bonds") {
+                    value = Some(color);
+                }
+            },
+        )
+        .unwrap();
+        let key = key.expect("JSON key token");
+        let value = value.expect("JSON string value token");
+        assert!(
+            key.b > key.r && key.r > key.g,
+            "keys need a saturated purple distinct from green values: {key:?}"
+        );
+        assert!(
+            value.g > value.r && value.g > value.b,
+            "string values need a distinct green: {value:?}"
+        );
+        fn luminance(color: Color) -> f64 {
+            let linear = |component: u8| {
+                let value = f64::from(component) / 255.0;
+                if value <= 0.04045 {
+                    value / 12.92
+                } else {
+                    ((value + 0.055) / 1.055).powf(2.4)
+                }
+            };
+            0.2126 * linear(color.r) +
+                0.7152 * linear(color.g) +
+                0.0722 * linear(color.b)
+        }
+        let background = Color { r: 243, g: 246, b: 251, a: 255 };
+        for color in [key, value] {
+            let contrast =
+                (luminance(background) + 0.05) / (luminance(color) + 0.05);
+            assert!(
+                contrast >= 4.5,
+                "normal code text needs readable contrast: {contrast}"
+            );
         }
     }
     #[test]
