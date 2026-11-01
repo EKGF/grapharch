@@ -15,6 +15,7 @@ mod markdown_html;
 mod markup;
 mod model;
 mod native_typst;
+mod people;
 mod preamble;
 mod provenance;
 mod quality;

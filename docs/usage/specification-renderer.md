@@ -96,7 +96,12 @@ Optional target predicates are `ga:previousVersion`, `ga:editorDraft`, `ga:edito
 `ga:author`, `ga:formerEditor`, `ga:license`, and `ga:copyright`. Editors are IRIs with `dcterms:title`, optional
 `ga:affiliation`, and optional `ga:url` literals. A publisher may also have a
 `ga:url` literal. Metadata links require absolute HTTP(S) URLs without credentials.
-People are sorted by title and IRI unless explicit `ga:order` values are supplied.
+People are sorted by family name, then full name and IRI, unless explicit
+`ga:order` values are supplied. Supply `schema:familyName` (Schema.org HTTP or
+HTTPS namespace) or `foaf:familyName` for compound surnames and names whose order
+cannot be inferred from the display label. Without that metadata, Grapharch uses
+the last word before any comma-separated role suffix. Sorting is case-insensitive;
+a person's displayed name and role are unchanged. HTML and PDF use the same order.
 If any person in a role has an order, every person in that role must have a distinct
 nonnegative `xsd:integer` order. Published W3C collection records source order.
 At most 64 people per role are accepted. Text fields and URLs have a 4096-byte runtime limit.

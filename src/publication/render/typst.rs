@@ -25,16 +25,11 @@ pub(super) async fn begin_book(
     book_title: &str,
     diagnostics: &[crate::publication::diagnostics::Diagnostic],
 ) -> Result<()> {
-    let mut authors = Vec::new();
-    let mut rows = plan.source.objects(&plan.target, "author").await?;
-    while let Some(row) = rows.next().await? {
-        anyhow::ensure!(authors.len() < 64, "PDF author budget exceeded");
-        if let oxrdf::Term::NamedNode(person) = &row["value"] {
-            authors.push(title(&plan.source, person).await?);
-        } else {
-            anyhow::bail!("PDF author must be an IRI");
-        }
-    }
+    let mut authors = super::people::read(plan, "author")
+        .await?
+        .into_iter()
+        .map(|person| person.name)
+        .collect::<Vec<_>>();
     let publisher =
         match plan.source.optional(&plan.target, "publisher").await? {
             Some(oxrdf::Term::NamedNode(publisher)) => {

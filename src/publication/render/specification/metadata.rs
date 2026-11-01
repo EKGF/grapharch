@@ -195,16 +195,9 @@ pub(super) async fn people(
     label: Option<&str>,
 ) -> Result<String> {
     let mut editors = Vec::new();
-    let mut rows = plan.source.objects(&plan.target, role).await?;
-    while let Some(row) = rows.next().await? {
-        ensure!(
-            editors.len() < 64,
-            "specification exceeds 64 people in one role"
-        );
-        let Term::NamedNode(editor) = &row["value"] else {
-            anyhow::bail!("publication person must be an IRI")
-        };
-        let name = explicit_title(plan, editor).await?;
+    for person in super::super::people::read(plan, role).await? {
+        let editor = &person.id;
+        let name = person.name;
         let display = if let Some(url) = optional(plan, editor, "url").await? {
             link(&url, &name)?
         } else {
@@ -229,28 +222,8 @@ pub(super) async fn people(
                 link(orcid.as_str(), "ORCID")?
             ));
         }
-        let order = plan
-            .source
-            .optional(editor, "order")
-            .await?
-            .map(|value| {
-                crate::publication::validation::unsigned(&value, "person order")
-            })
-            .transpose()?;
-        editors.push((order, name, editor.to_string(), display));
+        editors.push(display);
     }
-    if editors.iter().any(|(order, _, _, _)| order.is_some()) {
-        ensure!(
-            editors.iter().all(|(order, _, _, _)| order.is_some()),
-            "all people in an ordered role require an explicit order"
-        );
-        let mut orders = std::collections::HashSet::new();
-        ensure!(
-            editors.iter().all(|(order, _, _, _)| orders.insert(*order)),
-            "people in a role require distinct orders"
-        );
-    }
-    editors.sort();
     let mut html = String::new();
     if !editors.is_empty() {
         let heading = label.map(str::to_owned).unwrap_or_else(|| {
@@ -260,14 +233,14 @@ pub(super) async fn people(
             )
         });
         html.push_str(&format!("<dt>{}</dt>", html_escape(&heading)));
-        for (_, _, _, display) in editors {
+        for display in editors {
             html.push_str(&format!("<dd>{display}</dd>"));
         }
     }
     Ok(html)
 }
 
-pub(super) async fn explicit_title(
+pub(in crate::publication::render) async fn explicit_title(
     plan: &Plan,
     node: &NamedNode,
 ) -> Result<String> {
