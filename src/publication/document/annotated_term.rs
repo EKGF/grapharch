@@ -286,12 +286,16 @@ impl AnnotatedTermDocumentor {
     }
 
     fn compact(&self, iri: &NamedNode) -> String {
-        for (namespace, prefix) in self.prefixes.iter() {
-            if let Some(local) = iri.as_str().strip_prefix(namespace) {
-                return format!("{prefix}:{local}");
-            }
-        }
-        iri.as_str().into()
+        self.prefixes
+            .iter()
+            .filter_map(|(namespace, prefix)| {
+                iri.as_str()
+                    .strip_prefix(namespace)
+                    .map(|local| (namespace.len(), prefix, local))
+            })
+            .max_by_key(|(length, _, _)| *length)
+            .map(|(_, prefix, local)| format!("{prefix}:{local}"))
+            .unwrap_or_else(|| iri.as_str().into())
     }
 
     async fn union(

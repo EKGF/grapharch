@@ -195,7 +195,7 @@ async fn assemble(
         },
         Authored::Fixture(_) => view.clone(),
     };
-    let prefixes = Arc::new(BTreeMap::from([
+    let prefixes = BTreeMap::from([
         (ontology.into(), "dprod".into()),
         (shapes.into(), "dprod-shapes".into()),
         (
@@ -226,7 +226,11 @@ async fn assemble(
             "http://www.w3.org/ns/odrl/2/".into(),
             "odrl".into(),
         ),
-    ]));
+    ]);
+    let prefixes = Arc::new(
+        super::document::namespace_bindings::read(dataset, &view, prefixes)
+            .await?,
+    );
     let mut groups = Vec::new();
     let mut known = HashSet::new();
     for (key, title, class) in GROUPS {

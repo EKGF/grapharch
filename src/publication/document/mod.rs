@@ -3,6 +3,7 @@
 mod annotated_term;
 pub(crate) mod description;
 mod mermaid;
+pub(crate) mod namespace_bindings;
 mod resource;
 mod use_cases;
 use {
