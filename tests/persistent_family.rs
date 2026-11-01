@@ -520,7 +520,7 @@ async fn family_reference_groups_terms_and_honors_source_heading_hints()
     assert!(index("Classes") < index("core term"));
     assert!(index("Properties") < index("Connects"));
     assert!(index("Shapes") < index("Validation"));
-    assert!(index("Concepts") < index("A concept"));
+    assert!(index("Concepts without a documented scheme") < index("A concept"));
     assert_eq!(
         headings
             .iter()
