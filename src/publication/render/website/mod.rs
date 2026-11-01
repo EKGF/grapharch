@@ -303,6 +303,18 @@ async fn write_page(
         let organization_identity = header.theme.identity();
         let header_links = header.theme.links(repository, &prefix);
         let identity_attribution = header.theme.attribution(&prefix);
+        let community_footer = header.theme.community_footer(&prefix);
+        let article_footer = if community_footer.is_empty() {
+            format!(
+                "<footer>{generator_credit} · <a \
+                 href=\"{prefix}provenance.html\">Provenance</a> · <a \
+                 href=\"{prefix}\">Documentation \
+                 home</a>{identity_attribution}</footer>"
+            )
+        } else {
+            String::new()
+        };
+
         let body_attribute = header.theme.body_attribute();
         let generator_version = esc(env!("CARGO_PKG_VERSION"));
         let html = format!(
@@ -311,8 +323,8 @@ async fn write_page(
 <body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">{organization_identity}<a class="brand" href="{prefix}">{project_title}<span class="brand-version"><span class="visually-hidden">Version </span>{generator_version}</span><span class="brand-context">Documentation</span></a>{header_links}</header>
 <div class="{layout}"><aside class="site-navigation" data-project="{project}" data-target="{target}"><details open><summary>Browse documentation</summary><nav aria-label="Documentation">{navigation}</nav></details></aside>
-<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}<footer>{generator_credit} · <a href="{prefix}provenance.html">Provenance</a> · <a href="{prefix}">Documentation home</a>{identity_attribution}</footer></main>
-{page_outline}</div><script>{navigation_script}</script></body></html>"##,
+<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}{article_footer}</main>
+{page_outline}</div>{community_footer}<script>{navigation_script}</script></body></html>"##,
             page_title = esc(&page.title),
             project_title = esc(project_title),
             revision = esc(plan.revision.as_str()),

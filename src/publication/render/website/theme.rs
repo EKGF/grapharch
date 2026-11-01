@@ -56,7 +56,16 @@ impl Theme {
         if self == Self::Default {
             return repository.into();
         }
-        format!("<div class=\"site-links\">{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
+        format!("<div class=\"site-links\"><nav class=\"ekgf-header-navigation\" aria-label=\"EKGF\"><a href=\"https://ekgf.org/about/\">About</a><a href=\"https://ekgf.org/resources/\">Resources</a><a href=\"https://ekgf.org/contact/\">Contact</a></nav>{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
+    }
+
+    pub fn community_footer(self, prefix: &str) -> String {
+        if self == Self::Default {
+            return String::new();
+        }
+        include_str!("community_footer.html")
+            .replace("{prefix}", prefix)
+            .replace("{generator_credit}", super::super::credit::HTML)
     }
 
     pub fn attribution(self, prefix: &str) -> String {
