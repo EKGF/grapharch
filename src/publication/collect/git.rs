@@ -413,6 +413,11 @@ pub(super) fn supported(path: &Path) -> bool {
     })
 }
 fn public_repository_url(repository: &str) -> Result<url::Url> {
+    let path = Path::new(repository);
+    if path.is_absolute() {
+        return url::Url::from_file_path(path.canonicalize()?)
+            .map_err(|_| anyhow::anyhow!("invalid local repository URL"));
+    }
     let remote = gix::url::parse(repository)?;
     let mut url = match remote.scheme {
         gix::url::Scheme::Ssh => {
@@ -574,6 +579,19 @@ mod tests {
         assert_eq!(
             public.to_file_path().unwrap().canonicalize()?,
             path.canonicalize()?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn absolute_native_repository_paths_are_not_parsed_as_git_urls()
+    -> anyhow::Result<()> {
+        let root = tempfile::tempdir()?;
+        let native = root.path().canonicalize()?;
+        let public = super::public_repository_url(native.to_str().unwrap())?;
+        assert_eq!(
+            public.to_file_path().unwrap().canonicalize()?,
+            native
         );
         Ok(())
     }
