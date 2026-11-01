@@ -285,3 +285,27 @@ sh:zeroOrMorePath <urn:zero> ; sh:oneOrMorePath <urn:one> ; sh:zeroOrOnePath <ur
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn plain_annotation_line_wrapping_does_not_become_pdf_word_spacing()
+-> Result<()> {
+    let (wrapped, _) = document(
+        &[
+            "<urn:test:resource> rdfs:label \"Duty state\" ; rdfs:comment \
+             \"\"\"Value is any skos:Concept. The state machine is\n    one \
+             possible interpretation. Implementations are free to use a \
+             different\n    state vocabulary.\"\"\"@en .",
+        ],
+        "en",
+    )
+    .await?;
+    assert!(
+        wrapped.contains(
+            "The state machine is one possible interpretation. \
+             Implementations are free to use a different state vocabulary."
+        ),
+        "source formatting whitespace must not become visible multi-space \
+         gaps in prose"
+    );
+    Ok(())
+}

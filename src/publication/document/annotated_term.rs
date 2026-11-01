@@ -878,13 +878,16 @@ impl Documentor for AnnotatedTermDocumentor {
 }
 pub(super) fn escape(text: &str) -> String {
     let mut result = String::new();
-    for c in text.chars() {
-        if "\\`*_[]<>|".contains(c) {
-            result.push('\\');
-        }
-        if c == '\n' || c == '\r' {
+    // Annotation literals are plain prose: source indentation and line wrapping
+    // are not significant. Preserve the original literal in the collected RDF.
+    for word in text.split_ascii_whitespace() {
+        if !result.is_empty() {
             result.push(' ');
-        } else {
+        }
+        for c in word.chars() {
+            if "\\`*_[]<>|".contains(c) {
+                result.push('\\');
+            }
             result.push(c);
         }
     }
