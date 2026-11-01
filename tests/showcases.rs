@@ -98,7 +98,9 @@ async fn mixed_showcase_collects_native_sources_and_documents_owl_before_renderi
     let code = scraper::Selector::parse("code.language-sparql").unwrap();
     assert!(document.select(&code).any(|block| {
         block.text().collect::<String>() ==
-            include_str!("../examples/mixed-sources/query.rq")
+            specification_assertions::html_newlines(include_str!(
+                "../examples/mixed-sources/query.rq"
+            ))
     }));
     assert!(
         tokio::fs::read(temp.path().join("review/document.pdf"))

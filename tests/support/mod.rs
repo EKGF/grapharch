@@ -1,3 +1,8 @@
+/// Normalize only the newline transformation required by HTML parsing.
+pub fn html_newlines(source: &str) -> String {
+    source.replace("\r\n", "\n").replace('\r', "\n")
+}
+
 /// Specifications may execute only GraphArch's own sidebar interaction code.
 /// Scripts originating in authored or collected source content remain
 /// forbidden.
@@ -26,7 +31,7 @@ fn assert_scripts_against(html: &str, trusted: &str) {
         scripts[0].text().collect::<String>().trim(),
         // HTML parsing normalizes CRLF and CR to LF before script execution.
         // Compare the same program after that specified transformation.
-        trusted.replace("\r\n", "\n").replace('\r', "\n").trim()
+        html_newlines(trusted).trim()
     );
 }
 
@@ -54,4 +59,27 @@ fn extra_script_is_rejected() {
 #[should_panic]
 fn modified_script_is_rejected() {
     assert_scripts_against("<script>untrusted();</script>", "trusted();");
+}
+
+#[test]
+fn displayed_code_preserves_whitespace_after_html_newline_normalization() {
+    for newline in ["\n", "\r\n", "\r"] {
+        let source = format!(
+            "SELECT * WHERE {{{newline}  ?subject ?predicate ?object \
+             .{newline}}}{newline}"
+        );
+        let document =
+            scraper::Html::parse_fragment(&format!("<code>{source}</code>"));
+        let displayed = document
+            .select(&scraper::Selector::parse("code").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>();
+        assert_eq!(displayed, html_newlines(&source));
+        assert!(
+            displayed.contains("\n  ?subject"),
+            "indentation is significant"
+        );
+    }
 }
