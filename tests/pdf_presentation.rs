@@ -53,6 +53,15 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     assert!(typst.contains("#let ga-accent = rgb(\"#116659\")"));
     assert!(typst.contains("Liberation Sans"));
     assert!(
+        typst.contains("#par[#text("),
+        "Markdown prose must be real paragraphs so paragraph spacing applies"
+    );
+    assert!(
+        !typst.contains("#block(breakable: true)[#text("),
+        "inline-only blocks bypass paragraph spacing"
+    );
+
+    assert!(
         typst.contains("#set par(justify: true, leading:"),
         "body paragraphs must align to both margins"
     );

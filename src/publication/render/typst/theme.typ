@@ -8,8 +8,8 @@
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
 #set text(font: "Liberation Sans", size: if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: true)
 #set par(justify: true, leading: 0.7em, spacing: 0.8em)
-#set list(indent: 1.2em, body-indent: 0.5em, spacing: 0.65em)
-#set enum(indent: 1.5em, body-indent: 0.5em, spacing: 0.65em)
+#set list(indent: 1.2em, body-indent: 0.5em, spacing: 0.8em)
+#set enum(indent: 1.5em, body-indent: 0.5em, spacing: 0.8em)
 #set heading(numbering: "1.1")
 #show heading: set block(sticky: true)
 #show heading: set par(justify: false)

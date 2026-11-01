@@ -50,7 +50,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             if atomic {
                                 "#block(breakable: false)["
                             } else {
-                                "#block(breakable: true)["
+                                "#par["
                             },
                         );
                     },
