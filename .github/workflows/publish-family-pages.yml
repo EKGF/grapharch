@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: EKGF/grapharch@bc3e7320449d20f131c0541e86e73c0a660b33cb
+      - uses: EKGF/grapharch@66ed09a7af5301c4e48617fe43403b9b51d5d2d1
         id: grapharch
         with:
           version: ${{ inputs.version }}
