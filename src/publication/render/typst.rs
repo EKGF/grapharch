@@ -224,10 +224,11 @@ pub(super) async fn entry(
     diagnostics: &[crate::publication::diagnostics::Diagnostic],
 ) -> Result<()> {
     if entry.first {
-        if matches!(
-            entry.kind.as_str(),
-            "appendix" | "glossary" | "references" | "preface"
-        ) {
+        // Page breaks must precede the fragment's layout container. Typst
+        // forbids page breaks inside a heading show rule in that container.
+        if entry.depth == 1 &&
+            !matches!(entry.kind.as_str(), "abstract" | "status")
+        {
             file.write_all(b"#pagebreak(weak: true)\n").await?;
         }
         file.write_all(b"#[\n").await?;

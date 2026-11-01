@@ -52,6 +52,19 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     );
     assert!(typst.contains("#let ga-accent = rgb(\"#116659\")"));
     assert!(typst.contains("Liberation Sans"));
+    assert!(
+        typst.contains("#set par(justify: true, leading:"),
+        "body paragraphs must align to both margins"
+    );
+    assert!(
+        typst.contains("#pagebreak(weak: true)\n#[\n#ga-section(1)["),
+        "numbered chapter headings start a fresh page without blank duplicates"
+    );
+    assert!(typst.contains("#show heading: set par(justify: false)"));
+    assert!(
+        typst.contains("#set par(justify: false, leading: 0.55em"),
+        "tables must retain compact, unjustified cells"
+    );
     assert!(typst.contains("#let ga-code(runs) = block("));
     assert!(typst.contains("let capacity = calc.max(1"));
     assert!(

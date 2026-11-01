@@ -95,6 +95,16 @@ async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_la
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
     assert!(typst.contains("#let ga-legal-notices"));
+    assert!(
+        typst.contains(
+            "set text(font: \"Libertinus Serif\", size: 9pt, fill: ga-muted)"
+        ),
+        "legal fine print must have distinct readable typography"
+    );
+    assert!(
+        typst.contains("#text(font: \"Liberation Sans\", size: 8.5pt"),
+        "legal section labels remain distinct from legal body text"
+    );
     assert!(typst.contains("set par(justify: true"));
     assert!(
         typst.find("#ga-legal-notices[").unwrap() <

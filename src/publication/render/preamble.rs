@@ -80,13 +80,13 @@ pub(super) async fn typst(
     Ok(format!(
         r##"
 #let ga-legal-notices(body) = {{
-  set text(size: 9pt, fill: rgb("#374151"))
-  set par(justify: true, leading: 0.65em, spacing: 0.9em)
-  show heading: it => block(above: 1.5em, below: 0.7em, sticky: true)[#text(fill: ga-accent, weight: "semibold")[#it.body]]
+  set text(font: "Libertinus Serif", size: 9pt, fill: ga-muted)
+  set par(justify: true, leading: 0.5em, spacing: 0.75em)
+  show heading: it => block(above: 1.5em, below: 0.7em, sticky: true)[#text(font: "Liberation Sans", size: 8.5pt, fill: ga-muted, weight: "semibold")[#it.body]]
   block(width: 100%, inset: (bottom: 14pt), stroke: (bottom: 1.5pt + ga-accent))[
     #text(size: 9pt, tracking: 1pt, fill: ga-accent)[LEGAL NOTICES]
     #v(8pt)
-    #text(size: 24pt, weight: "bold")[#text({title})]
+    #text(font: "Liberation Sans", size: 21pt, weight: "bold")[#text({title})]
   ]
   v(14pt)
   body

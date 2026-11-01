@@ -6,12 +6,13 @@
 #let ga-soft = ga-accent.lighten(94%)
 #let ga-heading = if ga-specification { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
-#set text(font: "Liberation Sans", size: if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: false)
-#set par(justify: false, leading: 0.7em, spacing: 0.8em)
+#set text(font: "Liberation Sans", size: if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: true)
+#set par(justify: true, leading: 0.7em, spacing: 0.8em)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 0.65em)
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 0.65em)
 #set heading(numbering: "1.1")
 #show heading: set block(sticky: true)
+#show heading: set par(justify: false)
 // Space belongs to the fragment container: heading above-spacing collapses
 // when the heading is the first element of a breakable fragment block.
 #let ga-section(level, body) = block(inset: (top: if level == 1 { 22pt } else if level == 2 { 16pt } else { 12pt }), above: 0pt, breakable: true, body)
@@ -27,7 +28,8 @@
 // Already highlighted runs share HTML's palette. Wrap grapheme clusters without
 // re-tokenising sliced strings, preserving multiline lexical context.
 #let ga-code(runs) = block(width: 100%, breakable: true, inset: (x: 10pt, y: 9pt), fill: ga-soft, stroke: (left: 2pt + ga-accent), radius: 3pt)[
-  #set text(font: "DejaVu Sans Mono", size: 8.2pt, ligatures: false)
+  #set text(font: "DejaVu Sans Mono", size: 8.2pt, ligatures: false, hyphenate: false)
+  #set par(justify: false)
   #layout(size => {
     let capacity = calc.max(1, calc.floor(size.width / measure(text("M")).width))
     let column = 0
@@ -55,7 +57,7 @@
 #show quote.where(block: true): it => block(width: 100%, breakable: true, inset: (x: 11pt, y: 8pt), fill: ga-soft, stroke: (left: 2pt + ga-accent))[#it.body]
 #let ga-table(columns: (), align: auto, has-header: true, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
   #set text(size: 8.5pt)
-  #set par(leading: 0.55em, spacing: 0.4em)
+  #set par(justify: false, leading: 0.55em, spacing: 0.4em)
   #table(columns: columns, align: align, inset: (x: 7pt, y: 6pt),
     stroke: if ga-specification { 0.4pt + ga-line } else { (x: none, y: 0.4pt + ga-line) },
     fill: (x, y) => if has-header and y == 0 { ga-soft }, ..cells)
@@ -81,6 +83,7 @@
   ]
   v(13mm)
   block(width: 100%)[#set par(leading: 0.4em)
+    #set par(justify: false)
     #text(size: if ga-specification { 34pt } else { 40pt }, weight: "bold", fill: ga-heading)[#text(title)]
   ]
   subtitle
@@ -90,7 +93,7 @@
     v(9mm)
     block(width: 100%, inset: (x: 6mm, y: 5mm), fill: ga-soft, radius: (top-right: 4mm, bottom-left: 4mm))[
       #set text(size: 9pt)
-      #set par(leading: 0.6em, spacing: 0.7em)
+      #set par(justify: false, leading: 0.6em, spacing: 0.7em)
       #front
     ]
   }
