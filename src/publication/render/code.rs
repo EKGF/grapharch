@@ -2,7 +2,7 @@
 use {
     super::markup::{html_escape, quote},
     anyhow::{Context, Result},
-    std::sync::LazyLock,
+    std::{borrow::Cow, sync::LazyLock},
     syntect::{
         easy::HighlightLines,
         highlighting::{Color, StyleModifier, Theme, ThemeItem},
@@ -91,6 +91,15 @@ fn runs(
     language: &str,
     mut emit: impl FnMut(&str, Color),
 ) -> Result<()> {
+    // Normalize before splitting coloured runs: tags between CR and LF would
+    // otherwise make HTML parse them as two separate line breaks. Both output
+    // formats display the same lines; collected source bytes remain unchanged.
+    let normalized = if source.contains('\r') {
+        Cow::Owned(source.replace("\r\n", "\n").replace('\r', "\n"))
+    } else {
+        Cow::Borrowed(source)
+    };
+    let source = normalized.as_ref();
     let language = language.to_ascii_lowercase();
     let language = canonical(&language);
     let syntaxes = if matches!(language, "sparql" | "turtle") {
@@ -160,6 +169,36 @@ pub(super) fn typst(source: &str, language: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn highlighted_code_normalizes_display_line_endings_before_styling() {
+        let expected = "SELECT ?s WHERE {\n  ?s ?p \"value\" .\n}\n";
+        for newline in ["\n", "\r\n", "\r"] {
+            let source = expected.replace('\n', newline);
+            let rendered = html(&source, "sparql").unwrap();
+            let document = scraper::Html::parse_fragment(&rendered);
+            let selector = scraper::Selector::parse("code").unwrap();
+            let displayed = document
+                .select(&selector)
+                .next()
+                .unwrap()
+                .text()
+                .collect::<String>();
+            assert_eq!(
+                displayed, expected,
+                "HTML style boundaries must not duplicate line breaks for \
+                 {newline:?}"
+            );
+            let mut pdf_text = String::new();
+            runs(&source, "sparql", |text, _| {
+                pdf_text.push_str(text)
+            })
+            .unwrap();
+            assert_eq!(
+                pdf_text, expected,
+                "HTML and PDF share the same displayed source"
+            );
+        }
+    }
     #[test]
     fn all_aliases_use_a_real_grammar_and_preserve_every_character() {
         for (aliases, source) in [
