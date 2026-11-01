@@ -540,6 +540,7 @@ async fn build(
     let mut prefixes = standard_prefixes();
     let mut members = Vec::new();
     let mut known = HashSet::new();
+    let mut scheme_terms = HashSet::new(); // bounded: FAMILY_RESOURCES shared terms.
     let collected_snapshot = snapshot.clone();
     for processor in sources {
         let snapshot = dataset
@@ -548,12 +549,16 @@ async fn build(
         let source = RevisionView::new(dataset.clone(), snapshot.clone());
         let pattern = source.pattern("?ontology a ?rootKind", 0);
         let owl = source.pattern(
-            "?owlRoot a <http://www.w3.org/2002/07/owl#Ontology>",
+            "?ontology a <http://www.w3.org/2002/07/owl#Ontology>",
             1,
+        );
+        let scheme_type = source.pattern(
+            "?ontology a <http://www.w3.org/2004/02/skos/core#ConceptScheme>",
+            2,
         );
         let mut rows = dataset
             .select(format!(
-                "SELECT DISTINCT ?ontology ?rootKind WHERE {{ {pattern} FILTER(?rootKind = <http://www.w3.org/2002/07/owl#Ontology> || (?rootKind = <http://www.w3.org/2004/02/skos/core#ConceptScheme> && NOT EXISTS {{ {owl} }})) }}"
+                "SELECT DISTINCT ?ontology ?rootKind ?scheme WHERE {{ {pattern} FILTER(?rootKind = <http://www.w3.org/2002/07/owl#Ontology> || (?rootKind = <http://www.w3.org/2004/02/skos/core#ConceptScheme> && NOT EXISTS {{ {owl} }})) BIND(EXISTS {{ {scheme_type} }} AS ?scheme) }}"
             ))
             .await?;
         let mut roots = 0usize;
@@ -567,12 +572,13 @@ async fn build(
             let Term::NamedNode(ontology) = &row["ontology"] else {
                 anyhow::bail!("ontology must have a named identity")
             };
-            let scheme = row["rootKind"] ==
+            let scheme = row["scheme"] == Literal::from(true).into();
+            if row["rootKind"] ==
                 NamedNode::new_unchecked(
-                    "http://www.w3.org/2004/02/skos/core#ConceptScheme",
+                    "http://www.w3.org/2002/07/owl#Ontology",
                 )
-                .into();
-            if !scheme {
+                .into()
+            {
                 ontologies += 1;
                 ensure!(
                     ontologies <= 1,
@@ -670,9 +676,14 @@ async fn build(
                     continue;
                 }
                 ensure!(
-                    known.insert(subject.clone()) || scheme,
+                    known.insert(subject.clone()) ||
+                        scheme ||
+                        scheme_terms.contains(subject),
                     "resource belongs to multiple source namespaces: {subject}"
                 );
+                if scheme {
+                    scheme_terms.insert(subject.clone());
+                }
                 ensure!(
                     known.len() <= super::limits::FAMILY_RESOURCES,
                     "family exceeds {}-resource publication budget",
