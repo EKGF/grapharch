@@ -1100,30 +1100,39 @@ async fn build(
     let jobs = members
         .iter()
         .flat_map(|member| {
-            member
-                .terms
-                .iter()
-                .map(|subject| (member.snapshot.clone(), subject.clone()))
+            member.terms.iter().map(|subject| {
+                (
+                    member.snapshot.clone(),
+                    subject.clone(),
+                    (!member.scheme).then(|| member.ontology.clone()),
+                )
+            })
         })
         .collect::<Vec<_>>();
     let term_processor =
         AnnotatedTermDocumentor::processor_identity(project, "en");
-    for (_, subject) in &jobs {
+    for (_, subject, _) in &jobs {
         managed.add(term_processor.as_str(), subject.as_str(), true)?;
     }
-    futures::stream::iter(jobs.into_iter().map(|(snapshot, subject)| {
-        let dataset = dataset.clone();
-        let prefixes = prefixes.clone();
-        let known = known.clone();
-        async move {
-            AnnotatedTermDocumentor::new(
-                dataset, snapshot, project, subject, "en", prefixes, known,
-            )?
-            .with_family_reference()
-            .document(writer)
-            .await
-        }
-    }))
+    futures::stream::iter(jobs.into_iter().map(
+        |(snapshot, subject, ontology)| {
+            let dataset = dataset.clone();
+            let prefixes = prefixes.clone();
+            let known = known.clone();
+            async move {
+                let documentor = AnnotatedTermDocumentor::new(
+                    dataset, snapshot, project, subject, "en", prefixes, known,
+                )?
+                .with_family_reference();
+                let documentor = if let Some(ontology) = ontology {
+                    documentor.with_ontology_context(ontology)
+                } else {
+                    documentor
+                };
+                documentor.document(writer).await
+            }
+        },
+    ))
     .buffer_unordered(concurrency)
     .try_collect::<Vec<_>>()
     .await?;

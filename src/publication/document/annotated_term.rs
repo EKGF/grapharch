@@ -31,6 +31,7 @@ pub struct AnnotatedTermDocumentor {
     documented:         Arc<HashSet<NamedNode>>,
     source_annotations: bool,
     family_reference:   bool,
+    ontology_context:   Option<NamedNode>,
 }
 impl AnnotatedTermDocumentor {
     pub(crate) fn processor_identity(
@@ -60,6 +61,7 @@ impl AnnotatedTermDocumentor {
             documented,
             source_annotations: false,
             family_reference: false,
+            ontology_context: None,
         })
     }
 
@@ -74,6 +76,13 @@ impl AnnotatedTermDocumentor {
     pub(crate) fn with_family_reference(mut self) -> Self {
         self.source_annotations = true;
         self.family_reference = true;
+        self
+    }
+
+    /// Identify the ontology whose reference contains this term. Source RDF is
+    /// retained; this context only removes redundant presentation metadata.
+    pub fn with_ontology_context(mut self, ontology: NamedNode) -> Self {
+        self.ontology_context = Some(ontology);
         self
     }
 
@@ -362,6 +371,7 @@ impl Documentor for AnnotatedTermDocumentor {
         let mut comments = Vec::new();
         let mut notes = Vec::new();
         let mut facts = Vec::new();
+        let mut defining_sources = Vec::new(); // bounded: shared 512-fact term limit.
         let mut types = Vec::new();
         let mut references = HashSet::new();
         let mut hash = Sha256::new();
@@ -378,6 +388,12 @@ impl Documentor for AnnotatedTermDocumentor {
             };
             let value = &row["object"];
             hash.update(format!("{predicate} {value}\n"));
+            if predicate.as_str() ==
+                "http://www.w3.org/2000/01/rdf-schema#isDefinedBy"
+            {
+                defining_sources.push(value.clone());
+                continue;
+            }
             let values = match predicate.as_str() {
                 "http://www.w3.org/2000/01/rdf-schema#label" => {
                     Some(&mut label)
@@ -502,6 +518,36 @@ impl Documentor for AnnotatedTermDocumentor {
                 "| {} | {value} |",
                 code(&self.compact(predicate))
             ));
+        }
+        let defined_by = NamedNode::new_unchecked(
+            "http://www.w3.org/2000/01/rdf-schema#isDefinedBy",
+        );
+        if defining_sources.is_empty() && self.ontology_context.is_some() {
+            facts.push(format!(
+                "| {} | Not declared in collected sources. |",
+                code(&self.compact(&defined_by))
+            ));
+        } else if !self.ontology_context.as_ref().is_some_and(|ontology| {
+            !defining_sources.is_empty() &&
+                defining_sources
+                    .iter()
+                    .all(|value| value == &Term::NamedNode(ontology.clone()))
+        }) {
+            for value in &defining_sources {
+                let value = self
+                    .source_value(
+                        &view,
+                        value,
+                        &mut references,
+                        &mut HashSet::new(),
+                        0,
+                    )
+                    .await?;
+                facts.push(format!(
+                    "| {} | {value} |",
+                    code(&self.compact(&defined_by))
+                ));
+            }
         }
         ensure!(
             self.source_annotations || preferred_labels.len() <= 1,

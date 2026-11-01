@@ -385,7 +385,8 @@ async fn assemble(
                 "en",
                 prefixes.clone(),
                 known.clone(),
-            )?;
+            )?
+            .with_ontology_context(NamedNode::new(ontology)?);
             let documentor = if derive {
                 documentor.with_source_annotations()
             } else {

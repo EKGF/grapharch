@@ -302,7 +302,7 @@ async fn build(
             let documentor = if external_set.contains(&subject) {
                 documentor.with_source_annotations()
             } else {
-                documentor
+                documentor.with_ontology_context(ontology.clone())
             };
             documentor.document(writer).await?;
             if let Some(sources) = attribution.get(&subject) {
