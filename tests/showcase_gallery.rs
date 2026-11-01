@@ -4,6 +4,9 @@ mod definitions;
 #[path = "support/family_repository.rs"]
 mod family_repository;
 
+#[path = "support/dprod_repository.rs"]
+mod dprod_repository;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -109,6 +112,11 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         commons.join("showcase.yaml"),
         serde_yaml::to_string(&config)?,
     )?;
+    let dprod_repository = tempfile::tempdir()?;
+    dprod_repository::configure(
+        &source.path().join("examples/dprod"),
+        dprod_repository.path(),
+    )?;
     let docs = source.path().join("docs");
     std::fs::create_dir(&docs)?;
     std::fs::write(
@@ -163,6 +171,8 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     built.dataset.export(archive.clone()).await?;
     std::fs::remove_dir_all(source.path())?;
     std::fs::remove_dir_all(repository.path())?;
+    std::fs::remove_dir_all(commons_repository.path())?;
+    std::fs::remove_dir_all(dprod_repository.path())?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
