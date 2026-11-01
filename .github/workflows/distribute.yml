@@ -110,7 +110,7 @@ jobs:
           command: build
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          rust-toolchain: nightly
+          rust-toolchain: nightly-2026-10-30
           args: --release --locked --bindings bin --strip --auditwheel check --out dist/wheels
           before-script-linux: |
             yum install -y clang-devel || { printf 'Cannot install libclang\n' >&2; exit 1; }
