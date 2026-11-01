@@ -57,6 +57,14 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
         "Markdown prose must be real paragraphs so paragraph spacing applies"
     );
     assert!(
+        typst.contains("leading: 0.7em, spacing: 1.3em"),
+        "paragraph gaps must exceed line leading"
+    );
+    assert!(
+        typst.contains("body-indent: 0.5em, spacing: 1em"),
+        "list items need distinct breathing room"
+    );
+    assert!(
         !typst.contains("#block(breakable: true)[#text("),
         "inline-only blocks bypass paragraph spacing"
     );
