@@ -238,7 +238,8 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     assert!(html.contains("DPROD: native ontology and SHACL"));
     assert!(!html.contains("artifacts/rdf11/"));
     assert!(!html.contains("W3C RDF 1.1 N-Triples"));
-    assert!(html.contains("expected source diagnostic"));
+    assert!(html.contains("1 known issue in the source document"));
+    assert!(!html.contains("expected source diagnostic"));
     Ok(())
 }
 

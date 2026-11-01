@@ -64,14 +64,7 @@ pub(super) async fn render(
         );
         let count: u32 =
             plan.source.text(id, "diagnosticCount").await?.parse()?;
-        let badge = if count > 0 {
-            format!(
-                "<span class=\"showcase-diagnostic\">{count} expected source \
-                 diagnostic</span>"
-            )
-        } else {
-            String::new()
-        };
+        let badge = diagnostic_badge(count);
         let mut alternatives = BTreeMap::new();
         let mut pdfs = BTreeMap::new();
         let mut outputs = plan.source.objects(id, "outputArtifact").await?;
@@ -131,4 +124,33 @@ pub(super) async fn render(
         "<div class=\"showcase-gallery\">{}</div>",
         cards.into_values().collect::<String>()
     ))
+}
+
+fn diagnostic_badge(count: u32) -> String {
+    if count == 0 {
+        return String::new();
+    }
+    let noun = if count == 1 { "issue" } else { "issues" };
+    format!(
+        "<span class=\"showcase-diagnostic\">{count} known {noun} in the \
+         source document</span>"
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::diagnostic_badge;
+
+    #[test]
+    fn known_source_issue_badge_has_clear_singular_and_plural_labels() {
+        assert!(
+            diagnostic_badge(1)
+                .contains("1 known issue in the source document")
+        );
+        assert!(
+            diagnostic_badge(2)
+                .contains("2 known issues in the source document")
+        );
+        assert!(diagnostic_badge(0).is_empty());
+    }
 }
