@@ -134,10 +134,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         neighbors
     };
     let page_outline = if project_page { "" } else { page_outline };
+    let prepaint = header.theme.prepaint();
     let body_attribute = header.theme.body_attribute();
     format!(
         r##"<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}"><link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">{header_content}</header>
 <div class="{layout}">{navigation_panel}

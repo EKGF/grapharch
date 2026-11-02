@@ -1,0 +1,37 @@
+/* Community websites share one accessible color scheme controller. */
+.color-scheme-toggle{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:10px;border:0;border-radius:6px;background:transparent;color:var(--ink);cursor:pointer}
+.color-scheme-toggle:hover{background:var(--soft)}.color-scheme-toggle svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.color-scheme-toggle .theme-sun{display:none}
+html[data-color-scheme="dark"]{color-scheme:dark;background:#141419}
+html[data-color-scheme="light"]{color-scheme:light}
+html[data-color-scheme="dark"] .theme-ekgf{--ink:#e4e4e7;--muted:#b4b4bf;--line:#42424d;--accent:#a8b2ff;--soft:#292c43;--paper:#141419;--chrome:#202027;--ekgf-orange:#ffad66;background:var(--paper);color:var(--ink)}
+html[data-color-scheme="dark"] .theme-moon{display:none}html[data-color-scheme="dark"] .color-scheme-toggle .theme-sun{display:block}
+html[data-color-scheme="dark"] .theme-ekgf a:hover{color:#c4cbff}
+html[data-color-scheme="dark"] .theme-ekgf .site-header{background:#141419f5}
+html[data-color-scheme="dark"] .ekgf-identity,html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a{color:var(--ink)}
+html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a:hover,html[data-color-scheme="dark"] .community-menu>nav{background:var(--chrome)}
+html[data-color-scheme="dark"] .project-identity-row{border-color:var(--line)}
+html[data-color-scheme="dark"] .project-identity-row .brand-version{background:var(--chrome)}
+/* Keep the actual unmodified OMG logo readable, including its small lettering. */
+html[data-color-scheme="dark"] .omg-identity{background:#fff;border-radius:4px;opacity:1}
+html[data-color-scheme="dark"] .theme-ekgf .ekgf-footer,html[data-color-scheme="dark"] .project-navigation{background:var(--chrome)}
+html[data-color-scheme="dark"] .theme-ekgf .page-neighbors a,html[data-color-scheme="dark"] .theme-ekgf .showcase-card,html[data-color-scheme="dark"] .project-card{background:var(--chrome)}
+html[data-color-scheme="dark"] .theme-ekgf .page-neighbors a:hover{background:var(--soft);border-color:var(--accent)}
+html[data-color-scheme="dark"] .project-hero{background:linear-gradient(135deg,#252944,var(--paper) 75%)}
+html[data-color-scheme="dark"] .project-hero .project-actions>a{background:#5865c9;color:#fff}
+html[data-color-scheme="dark"] .project-hero .project-actions>a+a{background:var(--chrome);color:var(--ink)}
+html[data-color-scheme="dark"] .theme-ekgf .showcase-open{background:#5865c9;color:#fff}
+html[data-color-scheme="dark"] .document-provenance{border-color:var(--line)}
+html[data-color-scheme="dark"] .provenance-commits time{color:var(--muted)}
+html[data-color-scheme="dark"] blockquote.markdown-alert-note{--callout-color:#8ec8ff;--callout-background:#172a3d}
+html[data-color-scheme="dark"] blockquote.markdown-alert-tip{--callout-color:#8bdfb0;--callout-background:#162e22}
+html[data-color-scheme="dark"] blockquote.markdown-alert-important{--callout-color:#d1b1ff;--callout-background:#2b203c}
+html[data-color-scheme="dark"] blockquote.markdown-alert-warning{--callout-color:#efcf7d;--callout-background:#342b17}
+html[data-color-scheme="dark"] blockquote.markdown-alert-caution{--callout-color:#ffaaaa;--callout-background:#3a2024}
+html[data-color-scheme="dark"] .showcase-diagnostic{color:#efcf7d;background:#342b17;border-color:#85703a}
+/* Syntax colors remain shared with PDF. Their light panels retain their tested
+   contrast; prose and inline code use the selected dark scheme. */
+html[data-color-scheme="dark"] .theme-ekgf pre,html[data-color-scheme="dark"] .code-example pre{background:#e9edf5;color:#182b35;border-color:#626879;color-scheme:light}
+html[data-color-scheme="dark"] figure.code-example{background:#342e1e;border-color:#8d783f}
+html[data-color-scheme="dark"] .code-example>figcaption{color:#efcf7d}
+@media print{.color-scheme-toggle{display:none}html[data-color-scheme="dark"]{color-scheme:light;background:#fff}html[data-color-scheme="dark"] .theme-ekgf{--ink:#182b35;--muted:#526670;--line:#dce5e5;--accent:#116659;--soft:#edf4f1;--paper:#fff;--chrome:#f7f9f8;background:#fff;color:var(--ink)}}

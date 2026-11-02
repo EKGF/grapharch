@@ -49,7 +49,7 @@
 (() => {
   const menu = document.querySelector('.community-menu');
   if (!menu) return;
-  const compact = matchMedia('(max-width:1050px)');
+  const compact = matchMedia('(max-width:1150px)');
   const resize = () => { menu.open = !compact.matches; };
   resize();
   compact.addEventListener('change', resize);

@@ -36,15 +36,34 @@ impl Theme {
     pub fn css(self) -> &'static str {
         match self {
             Self::Default => "",
-            Self::Ekgf => include_str!("ekgf.css"),
+            Self::Ekgf => {
+                concat!(
+                    include_str!("ekgf.css"),
+                    "\n",
+                    include_str!("color_scheme.css")
+                )
+            },
             Self::EkgfProject => {
                 concat!(
                     include_str!("ekgf.css"),
                     "\n",
-                    include_str!("project.css")
+                    include_str!("project.css"),
+                    "\n",
+                    include_str!("color_scheme.css")
                 )
             },
         }
+    }
+
+    pub fn prepaint(self) -> String {
+        if !self.community() {
+            return String::new();
+        }
+        format!(
+            "<meta name=\"color-scheme\" content=\"light dark\"><script \
+             data-color-scheme-controller>{}</script>",
+            include_str!("color_scheme.js")
+        )
     }
 
     pub fn body_attribute(self) -> &'static str {
@@ -75,7 +94,7 @@ impl Theme {
         if self == Self::Default {
             return repository.into();
         }
-        format!("<details class=\"community-menu\" open><summary aria-label=\"Toggle community navigation\">Menu</summary><nav class=\"ekgf-header-navigation\" aria-label=\"EKGF\"><a href=\"https://ekgf.org/about/\">About</a><a href=\"https://ekgf.org/quadrants/\">Quadrants</a><a href=\"https://ekgf.org/resources/\">Resources</a><a href=\"https://ekgf.org/membership/\">Membership</a><a href=\"https://ekgf.org/contact/\">Contact</a>{project_links}</nav></details><div class=\"site-links\">{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
+        format!("<details class=\"community-menu\" open><summary aria-label=\"Toggle community navigation\">Menu</summary><nav class=\"ekgf-header-navigation\" aria-label=\"EKGF\"><a href=\"https://ekgf.org/about/\">About</a><a href=\"https://ekgf.org/quadrants/\">Quadrants</a><a href=\"https://ekgf.org/resources/\">Resources</a><a href=\"https://ekgf.org/membership/\">Membership</a><a href=\"https://ekgf.org/contact/\">Contact</a>{project_links}</nav></details><div class=\"site-links\"><button class=\"color-scheme-toggle\" type=\"button\" aria-label=\"Dark theme\" aria-pressed=\"false\" title=\"Use dark theme\"><svg class=\"theme-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20.5 13.3A8.5 8.5 0 0 1 10.7 3.5 8.5 8.5 0 1 0 20.5 13.3Z\"/></svg><svg class=\"theme-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5\"/></svg></button>{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
     }
 
     pub fn community_footer(self, prefix: &str) -> String {
