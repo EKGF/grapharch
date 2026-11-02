@@ -5,6 +5,7 @@ mod catalog;
 mod gallery;
 mod header_links;
 mod markdown;
+mod project;
 mod repository;
 mod shell;
 mod theme;

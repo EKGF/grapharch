@@ -6,6 +6,7 @@ use {super::super::model::Plan, anyhow::Result, oxrdf::Term, std::path::Path};
 pub(super) enum Theme {
     Default,
     Ekgf,
+    EkgfProject,
 }
 
 impl Theme {
@@ -16,6 +17,7 @@ impl Theme {
                 match style.value() {
                     "reader" => Ok(Self::Default),
                     "ekgf" => Ok(Self::Ekgf),
+                    "ekgf-project" => Ok(Self::EkgfProject),
                     value => {
                         anyhow::bail!(
                             "unsupported website presentation style {value}"
@@ -27,10 +29,21 @@ impl Theme {
         }
     }
 
+    pub fn project(self) -> bool { self == Self::EkgfProject }
+
+    pub fn community(self) -> bool { self != Self::Default }
+
     pub fn css(self) -> &'static str {
         match self {
             Self::Default => "",
             Self::Ekgf => include_str!("ekgf.css"),
+            Self::EkgfProject => {
+                concat!(
+                    include_str!("ekgf.css"),
+                    "\n",
+                    include_str!("project.css")
+                )
+            },
         }
     }
 
@@ -38,6 +51,7 @@ impl Theme {
         match self {
             Self::Default => "",
             Self::Ekgf => " class=\"theme-ekgf\"",
+            Self::EkgfProject => " class=\"theme-ekgf project-website\"",
         }
     }
 

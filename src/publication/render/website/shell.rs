@@ -32,7 +32,10 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         outline: page_outline,
         ..
     } = page;
-    let layout = if page.report {
+    let project_page = header.theme.project() && !page.report;
+    let layout = if project_page {
+        "project-layout"
+    } else if page.report {
         "site-layout report-layout"
     } else if gallery.is_empty() {
         "site-layout"
@@ -60,7 +63,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         esc(project_title),
         esc(env!("CARGO_PKG_VERSION"))
     );
-    let header_content = if header.theme == super::theme::Theme::Ekgf {
+    let header_content = if header.theme.community() {
         format!(
             "<div class=\"community-header-row\"\
              >{organization_identity}{header_links}</div><div \
@@ -90,23 +93,57 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
              topics\">{previous_next}</nav>"
         )
     };
+    let navigation_panel = if project_page {
+        format!(
+            "<nav class=\"project-navigation\" \
+             aria-label=\"Project\">{navigation}</nav>"
+        )
+    } else {
+        format!(
+            "<aside class=\"site-navigation\" data-project=\"{}\" \
+             data-target=\"{}\"><details open><summary>Browse \
+             documentation</summary><nav \
+             aria-label=\"Documentation\">{navigation}</nav></details></aside>",
+            esc(plan.project.as_str()),
+            esc(plan.target.as_str())
+        )
+    };
+    let body = if project_page {
+        super::project::sections(page.body)
+    } else {
+        page.body.into()
+    };
+    let trail = if project_page {
+        String::new()
+    } else {
+        format!(
+            "<div class=\"breadcrumbs\"><a href=\"{prefix}\">Docs</a><span \
+             aria-hidden=\"true\">/</span>{breadcrumbs}<span>{}</span></div>",
+            esc(page.title)
+        )
+    };
+    let neighbors = if project_page {
+        String::new()
+    } else {
+        neighbors
+    };
+    let page_outline = if project_page { "" } else { page_outline };
     let body_attribute = header.theme.body_attribute();
     format!(
         r##"<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}"><link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">{header_content}</header>
-<div class="{layout}"><aside class="site-navigation" data-project="{project}" data-target="{target}"><details open><summary>Browse documentation</summary><nav aria-label="Documentation">{navigation}</nav></details></aside>
-<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article>{neighbors}{quality_link}{article_footer}</main>
+<div class="{layout}">{navigation_panel}
+<main id="main-content" tabindex="-1">{trail}<article>{heading}{body}{gallery}</article>{neighbors}{quality_link}{article_footer}</main>
 {page_outline}</div>{community_footer}<script>{navigation_script}</script></body></html>"##,
         page_title = esc(page.title),
         project_title = esc(project_title),
         revision = esc(plan.revision.as_str()),
         target = esc(plan.target.as_str()),
-        project = esc(plan.project.as_str()),
         navigation_script = include_str!("nav.js"),
         id = esc(page.id),
         fragment_count = page.fragment_count,
-        body = page.body,
+        body = body,
     )
 }
