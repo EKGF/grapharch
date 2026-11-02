@@ -114,10 +114,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         )
     };
     let body = if project_page {
-        super::project::sections(page.body)
+        super::project::sections(&format!("{heading}{}", page.body))
     } else {
         page.body.into()
     };
+    let heading = if project_page { "" } else { heading };
     let trail = if project_page {
         String::new()
     } else {

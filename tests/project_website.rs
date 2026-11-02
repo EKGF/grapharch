@@ -32,7 +32,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     tokio::fs::write(
         input.path().join("guide.md"),
         "---\ntitle: Guide\npermalink: /guide/\ngrapharch:\n  subject: \
-         urn:guide\n---\n# Guide\n\n[Home](index.md)\n",
+         urn:guide\n---\n[Home](index.md)\n",
     )
     .await?;
     let collected = website::collect(
@@ -70,6 +70,11 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     assert_eq!(count(".project-identity-row"), 0);
     assert_eq!(count(".project-section"), 2);
     assert_eq!(count(".project-card"), 2);
+    assert_eq!(count(".project-hero .project-actions"), 1);
+    assert_eq!(
+        count(".project-actions a[href=\"https://example.org/intro\"]"),
+        0
+    );
     assert_eq!(
         count(".site-navigation, .page-outline, .breadcrumbs, .page-neighbors"),
         0
@@ -80,5 +85,12 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     )
     .await?;
     assert!(nested.contains("href=\"../\""));
+    let guide = scraper::Html::parse_document(&nested);
+    assert_eq!(
+        guide
+            .select(&scraper::Selector::parse(".project-hero h1").unwrap())
+            .count(),
+        1
+    );
     Ok(())
 }

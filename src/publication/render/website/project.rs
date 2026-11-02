@@ -42,7 +42,16 @@ pub(super) fn sections(body: &str) -> String {
             },
             _ => {},
         }
-        output.push_str(&element.html());
+        let html = element.html();
+        if !section && action_paragraph(element) {
+            output.push_str(&html.replacen(
+                "<p>",
+                "<p class=\"project-actions\">",
+                1,
+            ));
+        } else {
+            output.push_str(&html);
+        }
     }
     if card {
         output.push_str("</div>");
@@ -55,4 +64,22 @@ pub(super) fn sections(body: &str) -> String {
         },
     );
     output
+}
+
+// A paragraph consisting solely of links is a call-to-action row. An ordinary
+// introductory sentence containing an inline link remains normal prose.
+fn action_paragraph(element: ElementRef<'_>) -> bool {
+    element.value().name() == "p" &&
+        element
+            .children()
+            .any(|node| ElementRef::wrap(node).is_some()) &&
+        element.children().all(|node| {
+            if let Some(child) = ElementRef::wrap(node) {
+                child.value().name() == "a"
+            } else {
+                node.value()
+                    .as_text()
+                    .is_some_and(|text| text.trim().is_empty())
+            }
+        })
 }
