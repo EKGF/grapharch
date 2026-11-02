@@ -1402,3 +1402,11 @@ ga:headerLink a owl:ObjectProperty ;
     skos:scopeNote "Entries use dct:title, ga:url and distinct ga:order values. Relative URLs resolve from the website root. Up to sixteen project entries are supported."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range rdfs:Resource .
+
+ga:advertised a owl:DatatypeProperty ;
+    rdfs:label "Advertised publication"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether a publication version is included in its inventory's reader-facing listing; unadvertised versions can remain routable."@en ;
+    dct:description "States whether a publication version is included in its inventory's reader-facing listing; unadvertised versions can remain routable."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#Version> ;
+    rdfs:range xsd:boolean .

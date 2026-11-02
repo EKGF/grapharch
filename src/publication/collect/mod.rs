@@ -27,6 +27,11 @@ use {
     std::sync::Arc,
     tokio::task::JoinSet,
 };
+pub(crate) use {
+    authored::GeneratedPage,
+    image::ImageAsset,
+    markdown_images::default_http_image_factory,
+};
 pub use {
     authored::{MarkdownFile, SparqlFile},
     endpoint::{SparqlEndpointSource, SparqlSourceConfig},
@@ -42,10 +47,6 @@ pub use {
     rdf::RdfFile,
     text_asset::TextAssetFile,
     w3c::W3cSpecificationFile,
-};
-pub(crate) use {
-    image::ImageAsset,
-    markdown_images::default_http_image_factory,
 };
 
 /// Stable ownership supplied by one specialized collector instance.

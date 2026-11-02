@@ -218,6 +218,8 @@ pub(crate) async fn bind(
     project: &str,
     target: &str,
 ) -> Result<()> {
+    super::document::publication_inventory::document(dataset, project, writer)
+        .await?;
     MermaidDocumentor::new(
         dataset.clone(),
         dataset.snapshot_collected_for(project).await?,

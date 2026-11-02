@@ -176,3 +176,8 @@ ga:HeaderNavigationShape a sh:NodeShape ;
     sh:property [ sh:path dct:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:Literal ] ;
     sh:property [ sh:path ga:url ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
     sh:property [ sh:path ga:order ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] .
+
+ga:PublicationInventoryVisibilityShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:advertised ;
+    sh:property [ sh:path ga:advertised ; sh:datatype xsd:boolean ;
+        sh:minCount 1 ; sh:maxCount 1 ] .

@@ -195,6 +195,12 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         files.len() <= 512,
         "website exceeds 512-artifact budget"
     );
+    if let Some(job) = crate::publication::document::publication_inventory::model::configured_job(&plan.dataset, &plan.source, &plan.project).await? {
+        ensure!(!files.iter().any(|path| path == "publication-versions.json"), "publication inventory artifact collides with authored content");
+        let inventory = crate::publication::document::publication_inventory::model::Inventory::read(&plan.dataset, &plan.source, &job.subject).await?;
+        tokio::fs::write(stage.join("publication-versions.json"), serde_json::to_vec_pretty(&inventory)?).await?;
+        files.push("publication-versions.json".into());
+    }
     Ok(files)
 }
 

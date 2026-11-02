@@ -36,7 +36,39 @@ struct Hints {
     showcase_gallery: bool,
 }
 
+pub(crate) struct GeneratedPage<'a> {
+    pub source:   &'a str,
+    pub id:       &'a NamedNode,
+    pub path:     &'a str,
+    pub title:    &'a str,
+    pub route:    &'a str,
+    pub body:     String,
+    pub revision: String,
+}
+
 impl MarkdownFile {
+    /// Materialize generated Markdown without touching an original source file.
+    pub(crate) fn generated(
+        project: &str,
+        processor: &str,
+        page: GeneratedPage<'_>,
+    ) -> Result<Self> {
+        let input = FileInput::supplied(
+            project,
+            processor,
+            PathBuf::from(page.path),
+            page.source.into(),
+            page.id.clone(),
+            page.body,
+            page.revision,
+        )?;
+        Ok(Self::supplied(
+            input,
+            true,
+            Some((page.title.into(), page.route.into())),
+        ))
+    }
+
     pub(super) fn supplied(
         input: FileInput,
         website: bool,

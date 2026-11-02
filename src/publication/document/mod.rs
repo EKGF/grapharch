@@ -4,6 +4,7 @@ mod annotated_term;
 pub(crate) mod description;
 mod mermaid;
 pub(crate) mod namespace_bindings;
+pub(crate) mod publication_inventory;
 mod resource;
 pub(crate) mod skos;
 mod use_cases;
