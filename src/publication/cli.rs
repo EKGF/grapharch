@@ -106,6 +106,15 @@ pub enum PublicationCommand {
         #[arg(long)]
         watch_parent:    bool,
     },
+    /// Assemble static website/specification artifacts for deployment.
+    PackageSite {
+        #[arg(long)]
+        config:      PathBuf,
+        #[arg(long)]
+        output_root: PathBuf,
+        #[arg(long)]
+        mount:       Option<String>,
+    },
     /// Collect a documentation tree and publish its logical topics as a
     /// website.
     BuildSite {
@@ -330,6 +339,12 @@ pub async fn run(
             } else {
                 super::render::compile_book(root, main).await?;
             }
+        },
+        PublicationCommand::PackageSite { config, output_root, mount } => {
+            let package =
+                super::hosting::package(config, output_root, mount.as_deref())
+                    .await?;
+            println!("{}", package.display());
         },
         PublicationCommand::VerifyGallery {
             json,

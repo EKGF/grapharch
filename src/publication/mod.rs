@@ -11,6 +11,7 @@ pub mod diagnostics;
 pub mod document;
 mod gallery;
 pub mod governance;
+pub mod hosting;
 mod limits;
 mod markdown;
 mod mermaid;
