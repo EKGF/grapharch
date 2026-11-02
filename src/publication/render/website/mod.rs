@@ -5,6 +5,7 @@ mod catalog;
 mod gallery;
 mod markdown;
 mod repository;
+mod shell;
 mod theme;
 use {
     super::{
@@ -26,21 +27,6 @@ struct Header {
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let catalog = Catalog::read(plan).await?;
     let theme = theme::Theme::read(plan).await?;
-    let body_attribute = theme.body_attribute();
-    let community_footer = theme.community_footer("");
-    let report_end = if community_footer.is_empty() {
-        format!(
-            "<p><a href=\"./\">Documentation \
-             home</a></p><footer>{}</footer></main></body></html>",
-            super::credit::HTML
-        )
-    } else {
-        format!(
-            "<p><a href=\"./\">Documentation \
-             home</a></p></main>{community_footer}</body></html>"
-        )
-    };
-
     let mut files = vec![
         "style.css".to_owned(),
         ".nojekyll".into(),
@@ -117,52 +103,49 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             !files.iter().any(|route| route == "quality-issues.html"),
             "authored page conflicts with the quality report route"
         );
-        let mut file = tokio::io::BufWriter::new(
-            tokio::fs::File::create(stage.join("quality-issues.html")).await?,
-        );
-        use tokio::io::AsyncWriteExt;
-        file.write_all(
-            format!(
-                "<!doctype html><html lang=\"en\"><head><meta \
-                 charset=\"utf-8\"><meta name=\"viewport\" \
-                 content=\"width=device-width,initial-scale=1\"\
-                 ><title>Quality issues</title><link rel=\"stylesheet\" \
-                 href=\"style.css\"></head><body{body_attribute}><main>"
-            )
-            .as_bytes(),
+        // bounded: quality evidence is already limited by the publication
+        // diagnostic budget.
+        let mut body = Vec::new();
+        super::quality::html_heading(
+            &mut body,
+            &plan.quality,
+            "Quality issues",
+            &plan.quality_evidence,
+            1,
         )
         .await?;
-        super::quality::html(&mut file, &plan.quality, &plan.quality_evidence)
-            .await?;
-        file.write_all(report_end.as_bytes()).await?;
-        file.flush().await?;
+        write_report(
+            plan,
+            stage,
+            &catalog,
+            &header,
+            "quality-issues",
+            "Quality issues",
+            &body,
+        )
+        .await?;
         files.push("quality-issues.html".into());
     }
     ensure!(
         !files.iter().any(|route| route == "provenance.html"),
         "authored page conflicts with provenance report route"
     );
-    let mut provenance = tokio::io::BufWriter::new(
-        tokio::fs::File::create(stage.join("provenance.html")).await?,
-    );
-    use tokio::io::AsyncWriteExt;
-    provenance
-        .write_all(
-            format!(
-                "<!doctype html><html lang=\"en\"><head><meta \
-                 charset=\"utf-8\"><meta name=\"viewport\" \
-                 content=\"width=device-width,initial-scale=1\"\
-                 ><title>Document provenance</title><link rel=\"stylesheet\" \
-                 href=\"style.css\"></head><body{body_attribute}><main>"
-            )
-            .as_bytes(),
-        )
-        .await?;
+    // bounded: provenance has at most 128 repositories and five recent commits
+    // each.
+    let mut body = Vec::new();
     plan.provenance
-        .html(&mut provenance, "Document provenance")
+        .html_heading(&mut body, "Document provenance", 1)
         .await?;
-    provenance.write_all(report_end.as_bytes()).await?;
-    provenance.flush().await?;
+    write_report(
+        plan,
+        stage,
+        &catalog,
+        &header,
+        "provenance",
+        "Document provenance",
+        &body,
+    )
+    .await?;
     files.push("provenance.html".into());
     let mut assets = plan.assets().await?;
     let mut asset_bytes = 0u64;
@@ -222,8 +205,6 @@ async fn write_page(
     fragments: &[oxrdf::NamedNode],
     files: &mut Vec<String>,
 ) -> Result<()> {
-    let project_title = &header.title;
-    let repository = &header.repository;
     let page = catalog.page(id)?;
     let path = if page.asset {
         page.route.clone()
@@ -267,11 +248,6 @@ async fn write_page(
                  page\"><strong>On this page</strong>{outline}</nav></aside>"
             )
         };
-        let layout = if gallery.is_empty() {
-            "site-layout"
-        } else {
-            "site-layout gallery-layout"
-        };
         let mut breadcrumbs = String::new();
         for ancestor in catalog.ancestors(id)? {
             breadcrumbs.push_str(&format!(
@@ -288,52 +264,55 @@ async fn write_page(
         } else {
             format!("<h1>{}</h1>", esc(&page.title))
         };
-        let quality_link = if plan.quality.is_empty() {
-            String::new()
-        } else {
-            format!(
-                "<p><a href=\"{prefix}quality-issues.html\">Quality \
-                 issues</a></p>"
-            )
-        };
-        let generator_credit = super::credit::HTML;
-        let organization_identity = header.theme.identity();
-        let header_links = header.theme.links(repository, &prefix);
-        let identity_attribution = header.theme.attribution(&prefix);
-        let community_footer = header.theme.community_footer(&prefix);
-        let article_footer = if community_footer.is_empty() {
-            format!(
-                "<footer>{generator_credit} · <a \
-                 href=\"{prefix}provenance.html\">Provenance</a> · <a \
-                 href=\"{prefix}\">Documentation \
-                 home</a>{identity_attribution}</footer>"
-            )
-        } else {
-            String::new()
-        };
-
-        let body_attribute = header.theme.body_attribute();
-        let generator_version = esc(env!("CARGO_PKG_VERSION"));
-        let html = format!(
-            r##"<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}"><link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
-<body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
-<header class="site-header">{organization_identity}<a class="brand" href="{prefix}">{project_title}<span class="brand-version"><span class="visually-hidden">Version </span>{generator_version}</span><span class="brand-context">Documentation</span></a>{header_links}</header>
-<div class="{layout}"><aside class="site-navigation" data-project="{project}" data-target="{target}"><details open><summary>Browse documentation</summary><nav aria-label="Documentation">{navigation}</nav></details></aside>
-<main id="main-content" tabindex="-1"><div class="breadcrumbs"><a href="{prefix}">Docs</a><span aria-hidden="true">/</span>{breadcrumbs}<span>{page_title}</span></div><article>{heading}{body}{gallery}</article><nav class="page-neighbors" aria-label="Adjacent topics">{previous_next}</nav>{quality_link}{article_footer}</main>
-{page_outline}</div>{community_footer}<script>{navigation_script}</script></body></html>"##,
-            page_title = esc(&page.title),
-            project_title = esc(project_title),
-            revision = esc(plan.revision.as_str()),
-            target = esc(plan.target.as_str()),
-            project = esc(plan.project.as_str()),
-            navigation_script = include_str!("nav.js"),
-            id = esc(id.as_str()),
-            fragment_count = fragments.len(),
-            body = content.html,
-        );
+        let html = shell::render(plan, header, shell::Page {
+            report:         false,
+            title:          &page.title,
+            id:             id.as_str(),
+            fragment_count: fragments.len(),
+            prefix:         &prefix,
+            navigation:     &navigation,
+            breadcrumbs:    &breadcrumbs,
+            heading:        &heading,
+            body:           &content.html,
+            gallery:        &gallery,
+            previous_next:  &previous_next,
+            outline:        &page_outline,
+        });
         tokio::fs::write(output, html).await?;
     }
     files.push(path);
+    Ok(())
+}
+
+async fn write_report(
+    plan: &Plan,
+    stage: &Path,
+    catalog: &Catalog,
+    header: &Header,
+    slug: &str,
+    title: &str,
+    body: &[u8],
+) -> Result<()> {
+    let id = crate::publication::dataset::identity("website-report", &[
+        plan.target.as_str(),
+        slug,
+    ]);
+    let navigation = catalog.report_navigation(&id, "./");
+    let content = std::str::from_utf8(body)?;
+    let html = shell::render(plan, header, shell::Page {
+        report: true,
+        title,
+        id: id.as_str(),
+        fragment_count: 0,
+        prefix: "./",
+        navigation: &navigation,
+        breadcrumbs: "",
+        heading: "",
+        body: content,
+        gallery: "",
+        previous_next: "",
+        outline: "",
+    });
+    tokio::fs::write(stage.join(format!("{slug}.html")), html).await?;
     Ok(())
 }

@@ -162,6 +162,16 @@ pub(super) async fn html_titled(
     title: &str,
     evidence: &EvidenceIndex,
 ) -> Result<()> {
+    html_heading(file, issues, title, evidence, 2).await
+}
+
+pub(super) async fn html_heading(
+    file: &mut (impl AsyncWrite + Unpin),
+    issues: &[Diagnostic],
+    title: &str,
+    evidence: &EvidenceIndex,
+    level: usize,
+) -> Result<()> {
     if issues.is_empty() {
         return Ok(())
     }
@@ -170,7 +180,7 @@ pub(super) async fn html_titled(
             "<section id=\"quality-issues\">{}<p>Review findings preserve \
              competing source statements; they are not automatically RDF \
              errors.</p>",
-            super::markup::structural_heading(2, title, "quality-issues")
+            super::markup::structural_heading(level, title, "quality-issues")
         )
         .as_bytes(),
     )
@@ -181,7 +191,11 @@ pub(super) async fn html_titled(
             format!(
                 "<section class=\"quality-issue-group\" id=\"{}\">{}",
                 super::markup::html_escape(&anchor),
-                super::markup::structural_heading(3, &group.title, &anchor)
+                super::markup::structural_heading(
+                    level + 1,
+                    &group.title,
+                    &anchor
+                )
             )
             .as_bytes(),
         )

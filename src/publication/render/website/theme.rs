@@ -63,6 +63,7 @@ impl Theme {
         if self == Self::Default {
             return String::new();
         }
+        let prefix = if prefix.is_empty() { "./" } else { prefix };
         include_str!("community_footer.html")
             .replace("{prefix}", prefix)
             .replace("{generator_credit}", super::super::credit::HTML)

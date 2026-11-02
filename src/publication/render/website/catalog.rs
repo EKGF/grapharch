@@ -362,6 +362,14 @@ impl Catalog {
         Ok(self.nav_level(None, active, prefix, &ancestors))
     }
 
+    pub fn report_navigation(
+        &self,
+        active: &NamedNode,
+        prefix: &str,
+    ) -> String {
+        self.nav_level(None, active, prefix, &HashSet::new())
+    }
+
     fn nav_level(
         &self,
         parent: Option<&NamedNode>,
