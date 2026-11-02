@@ -52,11 +52,16 @@ impl Theme {
         )
     }
 
-    pub fn links(self, repository: &str, prefix: &str) -> String {
+    pub fn links(
+        self,
+        repository: &str,
+        prefix: &str,
+        project_links: &str,
+    ) -> String {
         if self == Self::Default {
             return repository.into();
         }
-        format!("<div class=\"site-links\"><nav class=\"ekgf-header-navigation\" aria-label=\"EKGF\"><a href=\"https://ekgf.org/about/\">About</a><a href=\"https://ekgf.org/resources/\">Resources</a><a href=\"https://ekgf.org/contact/\">Contact</a></nav>{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
+        format!("<details class=\"community-menu\" open><summary aria-label=\"Toggle community navigation\">Menu</summary><nav class=\"ekgf-header-navigation\" aria-label=\"EKGF\"><a href=\"https://ekgf.org/about/\">About</a><a href=\"https://ekgf.org/quadrants/\">Quadrants</a><a href=\"https://ekgf.org/resources/\">Resources</a><a href=\"https://ekgf.org/membership/\">Membership</a><a href=\"https://ekgf.org/contact/\">Contact</a>{project_links}</nav></details><div class=\"site-links\">{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
     }
 
     pub fn community_footer(self, prefix: &str) -> String {

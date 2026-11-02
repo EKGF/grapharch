@@ -170,3 +170,9 @@ ga:CollectionTermShape a sh:NodeShape ;
         sh:minLength 1 ; sh:maxLength 80 ; sh:maxCount 1 ;
         sh:pattern "^[\\p{L}\\p{N}](?:[\\p{L}\\p{N} '-]*[\\p{L}\\p{N}])?$" ;
         sh:not [ sh:pattern "  " ] ] .
+
+ga:HeaderNavigationShape a sh:NodeShape ;
+    sh:targetObjectsOf ga:headerLink ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path dct:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:Literal ] ;
+    sh:property [ sh:path ga:url ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+    sh:property [ sh:path ga:order ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] .

@@ -43,3 +43,18 @@
   addEventListener('pageshow', event => { if (event.persisted) restore(); });
   save();
 })();
+
+(() => {
+  const menu = document.querySelector('.community-menu');
+  if (!menu) return;
+  const compact = matchMedia('(max-width:1050px)');
+  const resize = () => { menu.open = !compact.matches; };
+  resize();
+  compact.addEventListener('change', resize);
+  menu.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && compact.matches) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();

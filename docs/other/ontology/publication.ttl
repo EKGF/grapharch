@@ -1392,3 +1392,13 @@ ga:collectionTerm a owl:AnnotationProperty ;
     rdfs:domain artgov:Family ; rdfs:range xsd:string ;
     skos:scopeNote "Set this annotation on the collection selected by artpub:publishesFamily. The default is family. Values such as library, collection or ontology suite change presentation without changing collection identity or membership. Use a plain singular noun phrase of at most 80 characters; plural and indefinite-article forms are not inferred."@en ;
     skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> . <urn:example:collection> ga:collectionTerm \"library\" ." .
+
+# Website navigation is authored in the source graph, independently of UI code.
+ga:headerLink a owl:ObjectProperty ;
+    rdfs:label "Website header link"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a website profile to an ordered navigation entry with a title, URL and order."@en ;
+    dct:description "Links a website profile to an ordered navigation entry with a title, URL and order."@en ;
+    skos:scopeNote "Entries use dct:title, ga:url and distinct ga:order values. Relative URLs resolve from the website root. Up to sixteen project entries are supported."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range rdfs:Resource .

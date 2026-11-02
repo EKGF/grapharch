@@ -3,6 +3,7 @@
 mod artifact;
 mod catalog;
 mod gallery;
+mod header_links;
 mod markdown;
 mod repository;
 mod shell;
@@ -22,6 +23,7 @@ struct Header {
     title:      String,
     repository: String,
     theme:      theme::Theme,
+    links:      header_links::Links,
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
@@ -58,6 +60,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         title: title(&plan.source, &plan.project).await?,
         repository: repository::link(plan).await?,
         theme,
+        links: header_links::Links::read(plan).await?,
     };
     let mut entries = Entries::new(plan).await?;
     // bounded: one page's selected fragments, never the complete site's bodies.
