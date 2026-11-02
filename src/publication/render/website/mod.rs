@@ -5,6 +5,7 @@ mod catalog;
 mod gallery;
 mod header_links;
 mod markdown;
+mod metadata;
 mod project;
 mod repository;
 mod shell;
@@ -25,6 +26,7 @@ struct Header {
     repository: String,
     theme:      theme::Theme,
     links:      header_links::Links,
+    metadata:   metadata::Metadata,
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
@@ -62,7 +64,9 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         repository: repository::link(plan).await?,
         theme,
         links: header_links::Links::read(plan).await?,
+        metadata: metadata::Metadata::read(plan).await?,
     };
+    header.metadata.indexes(stage, &catalog, &mut files).await?;
     let mut entries = Entries::new(plan).await?;
     // bounded: one page's selected fragments, never the complete site's bodies.
     let mut body = String::new();
@@ -274,7 +278,10 @@ async fn write_page(
         } else {
             format!("<h1>{}</h1>", esc(&page.title))
         };
+        let extra_head =
+            header.metadata.head(plan, &header.title, page).await?;
         let html = shell::render(plan, header, shell::Page {
+            extra_head:     &extra_head,
             report:         false,
             title:          &page.title,
             id:             id.as_str(),
@@ -311,6 +318,7 @@ async fn write_report(
     let content = std::str::from_utf8(body)?;
     let html = shell::render(plan, header, shell::Page {
         report: true,
+        extra_head: "<meta name=\"robots\" content=\"noindex,follow\">",
         title,
         id: id.as_str(),
         fragment_count: 0,

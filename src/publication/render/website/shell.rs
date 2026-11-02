@@ -6,6 +6,7 @@ use super::{
 
 pub(super) struct Page<'a> {
     pub report:         bool,
+    pub extra_head:     &'a str,
     pub title:          &'a str,
     pub id:             &'a str,
     pub fragment_count: usize,
@@ -138,12 +139,13 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     let body_attribute = header.theme.body_attribute();
     format!(
         r##"<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">{header_content}</header>
 <div class="{layout}">{navigation_panel}
 <main id="main-content" tabindex="-1">{trail}<article>{heading}{body}{gallery}</article>{neighbors}{quality_link}{article_footer}</main>
 {page_outline}</div>{community_footer}<script>{navigation_script}</script></body></html>"##,
+        extra_head = page.extra_head,
         page_title = esc(page.title),
         project_title = esc(project_title),
         revision = esc(plan.revision.as_str()),

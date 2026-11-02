@@ -21,11 +21,12 @@ pub struct SparqlFile(FileInput);
 
 #[derive(Default, Deserialize)]
 struct Frontmatter {
-    title:     Option<String>,
+    title:       Option<String>,
+    description: Option<String>,
     #[serde(default)]
-    grapharch: Hints,
+    grapharch:   Hints,
     #[serde(flatten)]
-    page:      super::page::PageHints,
+    page:        super::page::PageHints,
 }
 
 #[derive(Default, Deserialize)]
@@ -172,7 +173,7 @@ impl Collector for MarkdownFile {
             let fragment =
                 subject.clone().unwrap_or_else(|| self.fragment_id());
             let source = super::page::source_path(root, &self.0.path)?;
-            revision = format!("site-page-v7:{source}:{revision}");
+            revision = format!("site-page-v8:{source}:{revision}");
             subject = Some(fragment.clone());
             metadata.extend(super::markdown_structure::describe(
                 &self.0, &fragment, body,
@@ -187,6 +188,20 @@ impl Collector for MarkdownFile {
                     fragment.clone(),
                     NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
                     Literal::new_simple_literal(title),
+                    oxrdf::GraphName::DefaultGraph,
+                ));
+            }
+            if let Some(description) = &frontmatter.description {
+                anyhow::ensure!(
+                    !description.trim().is_empty() && description.len() <= 2048,
+                    "page description must contain 1–2048 bytes"
+                );
+                metadata.push(oxrdf::Quad::new(
+                    fragment.clone(),
+                    NamedNode::new_unchecked(
+                        "http://purl.org/dc/terms/description",
+                    ),
+                    Literal::new_simple_literal(description),
                     oxrdf::GraphName::DefaultGraph,
                 ));
             }

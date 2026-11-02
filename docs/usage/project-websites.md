@@ -61,3 +61,28 @@ The DPROD pilot keeps its project content in
 Its existing live specification-version service remains separate: replacing a
 server-rendered deployment inventory requires an explicit source and freshness
 policy, rather than hardcoding a snapshot of active branches in Markdown.
+
+## Search metadata
+
+Use a short `description` in each Markdown page's frontmatter. The collector
+records it as `dct:description` in the documentation graph; HTML renders it as
+the search description and Open Graph description. Page titles supply the Open
+Graph title and the project title supplies the site name.
+
+For a public website, give its target an absolute directory IRI:
+
+```turtle
+<urn:example:website> ga:thisVersion <https://example.org/project/> .
+```
+
+The renderer combines that base with each page's route to emit canonical and
+Open Graph URLs, `sitemap.xml`, and `robots.txt`. Canonicals deliberately retain
+the configured public domain when the same artifact is deployed as a preview.
+Only visible HTML pages enter the sitemap. Hidden pages and generated provenance
+or quality reports use `noindex,follow`; assets are omitted. No modification dates
+are invented. Invalid canonical bases fail publication.
+
+When a project is mounted below an existing domain (for example `/project/`),
+the domain's root `robots.txt` must reference the generated sitemap. Crawlers
+read robots rules at the origin root; the project's nested copy does not replace
+that host configuration.

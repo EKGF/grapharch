@@ -239,7 +239,12 @@ impl Catalog {
         ensure!(
             !matches!(
                 artifact.as_str(),
-                "style.css" | "manifest.yaml" | "404.html" | ".nojekyll"
+                "style.css" |
+                    "manifest.yaml" |
+                    "404.html" |
+                    ".nojekyll" |
+                    "sitemap.xml" |
+                    "robots.txt"
             ),
             "website route collides with reserved artifact {artifact}"
         );
