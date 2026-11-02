@@ -9,6 +9,7 @@ async fn static_package_preserves_spec_assets_and_routes_versions_without_a_fram
     tokio::fs::create_dir_all(input.path().join("archive/1.0/assets")).await?;
     for (path, text) in [
         ("site/index.html", "Project home"),
+        ("site/404.html", "Page not found"),
         ("site/guide/index.html", "Guide"),
         ("site/.nojekyll", ""),
         ("spec/index.html", "Current specification"),
@@ -51,6 +52,14 @@ async fn static_package_preserves_spec_assets_and_routes_versions_without_a_fram
         &tokio::fs::read(package.join("config.json")).await?,
     )?;
     assert_eq!(routes["version"], 3);
+    assert_eq!(
+        routes["routes"].as_array().unwrap().last().unwrap()["status"],
+        404
+    );
+    assert_eq!(
+        routes["routes"].as_array().unwrap().last().unwrap()["dest"],
+        "/dprod/404.html"
+    );
     let routes = routes["routes"].as_array().unwrap();
     assert!(routes.iter().any(|route| {
         route["src"] == "^/dprod/guide/$" &&

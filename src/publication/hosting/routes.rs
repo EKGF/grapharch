@@ -198,5 +198,13 @@ pub(super) async fn configuration(
             }));
         }
     }
+    if files.contains("404.html") {
+        routes.push(Route::Source(Source {
+            src: "^/.*$".into(),
+            dest: Some(url(mount, "404.html")),
+            status: Some(404),
+            ..Source::default()
+        }));
+    }
     Ok(Output { version: 3, routes })
 }
