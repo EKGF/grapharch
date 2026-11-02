@@ -121,12 +121,26 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         .collect();
     assert_eq!(
         scripts.len(),
-        1,
-        "only renderer navigation code may execute"
+        2,
+        "only renderer color-scheme and navigation controls may execute"
     );
-    assert_eq!(scripts[0].value().attrs().count(), 0);
+    assert!(
+        scripts[0]
+            .value()
+            .attr("data-color-scheme-controller")
+            .is_some()
+    );
+    assert_eq!(scripts[0].value().attrs().count(), 1);
     assert_eq!(
         scripts[0].text().collect::<String>().trim(),
+        include_str!("../src/publication/render/website/color_scheme.js")
+            .replace("\r\n", "\n")
+            .replace('\r', "\n")
+            .trim()
+    );
+    assert_eq!(scripts[1].value().attrs().count(), 0);
+    assert_eq!(
+        scripts[1].text().collect::<String>().trim(),
         include_str!("../src/publication/render/website/nav.js")
             .replace("\r\n", "\n")
             .replace('\r', "\n")
