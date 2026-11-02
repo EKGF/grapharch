@@ -77,9 +77,10 @@ struct Record {
     label:      Option<String>,
     url:        Option<String>,
     advertised: Option<bool>,
+    order:      Option<u32>,
 }
 impl Record {
-    fn finish(self) -> Result<Version> {
+    fn finish(self) -> Result<(Option<u32>, Version)> {
         ensure!(
             self.kind,
             "publication inventory member must be a doap:Version"
@@ -101,13 +102,25 @@ impl Record {
             })?,
         };
         value.validate()?;
-        Ok(value)
+        Ok((self.order, value))
     }
 
     fn field(&mut self, predicate: &NamedNode, object: &Term) -> Result<()> {
         if predicate.as_str() == crate::publication::RDF_TYPE {
             self.kind |=
                 object == &NamedNode::new(format!("{DOAP}Version"))?.into();
+            return Ok(());
+        }
+        if predicate == &term("order") {
+            let value = crate::publication::validation::unsigned(
+                object,
+                "publication version order",
+            )?;
+            ensure!(
+                self.order.is_none_or(|old| old == value),
+                "conflicting publication version order"
+            );
+            self.order = Some(value);
             return Ok(());
         }
         if predicate == &term("advertised") {
@@ -182,9 +195,10 @@ impl Inventory {
                 "SELECT DISTINCT ?version ?predicate ?object WHERE {{ \
                  {members} OPTIONAL {{ {fields} FILTER(?predicate \
                  IN(<{DCT}identifier>,<{DCT}title>,<{DOAP}branch>,\
-                 <{DCAT}accessURL>,{},<{}>)) }} }} ORDER BY ?version \
+                 <{DCAT}accessURL>,{},{},<{}>)) }} }} ORDER BY ?version \
                  ?predicate ?object",
                 term("advertised"),
+                term("order"),
                 crate::publication::RDF_TYPE
             ))
             .await?;
@@ -223,7 +237,12 @@ impl Inventory {
             !versions.is_empty(),
             "publication inventory cannot be empty"
         );
-        versions.sort_by(|a, b| a.branch.cmp(&b.branch));
+        versions.sort_by(|a, b| {
+            (a.0.unwrap_or(u32::MAX), &a.1.branch)
+                .cmp(&(b.0.unwrap_or(u32::MAX), &b.1.branch))
+        });
+        let versions: Vec<Version> =
+            versions.into_iter().map(|(_, version)| version).collect(); // bounded: capped inventory above.
         let mut slugs = std::collections::HashSet::new(); // bounded: the capped versions above.
         ensure!(
             versions.iter().all(|v| slugs.insert(v.slug.clone())),

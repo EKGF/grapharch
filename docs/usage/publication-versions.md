@@ -16,7 +16,10 @@ remain routable.
 Represent versions with `doap:Version`, a title, branch, identifier and
 `dcat:accessURL`. `ga:advertised` explicitly selects which versions readers see.
 The inventory's `dct:modified` records when it was observed, not when the
-specification was authored.
+specification was authored. Optional `ga:order` values place canonical releases
+and development versions before previews; versions without an explicit order
+follow alphabetically by branch. The page shows a readable UTC observation time
+below the version-list heading.
 
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
@@ -30,7 +33,7 @@ specification was authored.
     dct:title "Develop (latest)" ; dct:identifier "develop" ;
     doap:branch "develop" ;
     dcat:accessURL <https://example.org/spec/develop/> ;
-    ga:advertised true .
+    ga:advertised true ; ga:order 1 .
 
 <urn:example:versions-page> a ga:Documentor ;
     ga:project <urn:example:project> ; ga:kind "publication-inventory" ;

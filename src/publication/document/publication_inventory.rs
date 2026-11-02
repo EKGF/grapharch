@@ -37,14 +37,17 @@ pub(crate) async fn document(
         return Ok(())
     };
     let inventory = Inventory::read(dataset, &view, &job.subject).await?;
+    let observed =
+        chrono::DateTime::parse_from_rfc3339(&inventory.observed_at)?
+            .with_timezone(&chrono::Utc)
+            .format("%-d %B %Y at %H:%M UTC")
+            .to_string();
     let mut body = format!(
         "---\nnav_order: {}\n---\n# {}\n\nSelect a published specification or \
-         a current preview.\n\nInventory captured at {}. Only verified \
-         open-review branches are advertised; existing unlisted preview URLs \
-         remain routable.\n\n## Available versions\n\n",
+         a current preview.\n\n## Available versions\n\nLast checked {}.\n\n",
         job.order,
         markdown_text(&job.title),
-        markdown_text(&inventory.observed_at)
+        observed
     );
     for version in inventory
         .versions
