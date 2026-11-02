@@ -63,7 +63,12 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         esc(project_title),
         esc(env!("CARGO_PKG_VERSION"))
     );
-    let header_content = if header.theme.community() {
+    let header_content = if header.theme.project() {
+        format!(
+            "<div class=\"community-header-row\"\
+             >{organization_identity}{header_links}</div>"
+        )
+    } else if header.theme.community() {
         format!(
             "<div class=\"community-header-row\"\
              >{organization_identity}{header_links}</div><div \

@@ -67,6 +67,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
             .count()
     };
     assert_eq!(count(".project-hero"), 1);
+    assert_eq!(count(".project-identity-row"), 0);
     assert_eq!(count(".project-section"), 2);
     assert_eq!(count(".project-card"), 2);
     assert_eq!(

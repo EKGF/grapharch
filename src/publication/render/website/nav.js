@@ -1,6 +1,8 @@
 (() => {
   "use strict";
   const sidebar = document.querySelector('.site-navigation');
+  // Project landing pages intentionally have no documentation rail.
+  if (!sidebar) return;
   const navigation = sidebar.querySelector('nav');
   const browse = sidebar.querySelector(':scope > details');
   const branches = [...navigation.querySelectorAll('details[data-id]')];

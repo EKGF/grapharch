@@ -26,3 +26,5 @@
 .project-navigation>ul{max-width:1100px;margin:auto;padding:0;display:flex;list-style:none;gap:1.5rem;flex-wrap:wrap;font-size:.9rem}
 .project-navigation a{color:var(--muted);text-decoration:none}
 .project-navigation a[aria-current]{color:var(--accent);font-weight:650}
+.project-hero p:first-child:not(:has(a)){font-size:.85rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.project-website .site-header{min-height:80px}
