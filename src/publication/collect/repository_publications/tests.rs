@@ -3,6 +3,7 @@ use super::api::{Deployment, PullRequest, discover};
 #[test]
 fn open_same_repository_previews_are_advertised_but_old_routes_survive() {
     let deployments = serde_json::from_value::<Vec<Deployment>>(serde_json::json!([
+        {"url":"manual.vercel.app","created":1},
         {"url":"old.vercel.app","created":1,"meta":{"githubCommitRef":"feature/new"}},
         {"url":"new.vercel.app","created":2,"meta":{"githubCommitRef":"feature/new"}},
         {"url":"merged.vercel.app","created":2,"meta":{"githubCommitRef":"feature/merged"}},

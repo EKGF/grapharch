@@ -12,7 +12,7 @@ use {
 pub(super) struct Deployment {
     url:     String,
     created: u64,
-    meta:    Metadata,
+    meta:    Option<Metadata>,
 }
 #[derive(Deserialize)]
 struct Metadata {
@@ -202,7 +202,11 @@ pub(super) fn discover(
         .collect(); // bounded: input page budgets.
     let mut latest = BTreeMap::<String, Deployment>::new(); // bounded: input page budgets.
     for deployment in deployments {
-        let Some(branch) = deployment.meta.branch.as_ref() else {
+        let Some(branch) = deployment
+            .meta
+            .as_ref()
+            .and_then(|meta| meta.branch.as_ref())
+        else {
             continue
         }; // Manual deployments have no repository branch.
         if reserved.contains(branch) {
