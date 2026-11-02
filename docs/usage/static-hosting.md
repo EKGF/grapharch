@@ -30,6 +30,8 @@ file_aliases:
   - path: spec/contracts/profile/
     target: spec/profile.ttl
     content_type: text/turtle
+inventory: ../output/website/site/publication-versions.json
+version_path: spec
 ```
 
 Paths to input artifact trees resolve relative to this YAML file. Publication
@@ -52,3 +54,8 @@ the host's project prefix.
 Packaging rejects existing output, path collisions, path traversal, symlinks,
 private Git/environment files, and artifacts exceeding the file or byte limits.
 It does not silently overwrite a successful deployment package.
+
+The optional version inventory routes every observed remote version, including
+unadvertised previews. `version_path` configures its URL namespace; locally
+materialized version directories always take precedence. The inventory must
+contain an RFC 3339 observation timestamp and distinct safe version slugs.

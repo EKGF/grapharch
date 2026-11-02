@@ -27,7 +27,7 @@ async fn static_package_preserves_spec_assets_and_routes_versions_without_a_fram
     }
     tokio::fs::write(input.path().join("inventory.json"), r#"{"observed_at":"2026-11-02T12:00:00Z","versions":[{"slug":"develop","branch":"develop","label":"Develop","url":"https://example.org/dprod/spec/develop/","advertised":true},{"slug":"main","branch":"main","label":"Frozen","url":"https://example.org/dprod/spec/main/","advertised":true},{"slug":"old-preview","branch":"old/preview","label":"Old preview","url":"https://immutable.vercel.app/dprod/spec/","advertised":false}]}"#).await?;
     let config = input.path().join("hosting.yml");
-    tokio::fs::write(&config, "version: 1\nmount: /dprod\nsite: site\nstatic_trees:\n  - source: spec\n    destination: spec\n  - source: archive\n    destination: spec/archive\ndirectory_aliases:\n  - path: spec/develop\n    target: spec\n  - path: spec/main\n    target: spec/archive/1.0\nfile_aliases:\n  - path: spec/contracts/profile/\n    target: spec/profile.ttl\n    content_type: text/turtle\ninventory: inventory.json\n").await?;
+    tokio::fs::write(&config, "version: 1\nmount: /dprod\nsite: site\nstatic_trees:\n  - source: spec\n    destination: spec\n  - source: archive\n    destination: spec/archive\ndirectory_aliases:\n  - path: spec/develop\n    target: spec\n  - path: spec/main\n    target: spec/archive/1.0\nfile_aliases:\n  - path: spec/contracts/profile/\n    target: spec/profile.ttl\n    content_type: text/turtle\ninventory: inventory.json\nversion_path: spec\n").await?;
     let output = tempfile::tempdir()?;
     let package = hosting::package(&config, output.path(), None).await?;
     assert_eq!(
@@ -106,5 +106,37 @@ async fn package_rejects_colliding_or_escaping_publication_paths() -> Result<()>
                 .await?
         );
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn package_supports_generic_version_paths_and_root_artifact_aliases()
+-> Result<()> {
+    let input = tempfile::tempdir()?;
+    tokio::fs::create_dir_all(input.path().join("site/manual")).await?;
+    tokio::fs::write(input.path().join("site/index.html"), "Home").await?;
+    tokio::fs::write(
+        input.path().join("site/manual/index.html"),
+        "Manual",
+    )
+    .await?;
+    tokio::fs::write(input.path().join("inventory.json"), r#"{"observed_at":"2026-11-02T12:00:00Z","versions":[{"slug":"old","branch":"old","label":"Old","url":"https://example.org/manual/","advertised":false}]}"#).await?;
+    let config = input.path().join("hosting.yml");
+    tokio::fs::write(
+        &config,
+        "version: 1\nmount: /project\nsite: site\ndirectory_aliases:\n  - \
+         path: copy\n    target: manual\ninventory: \
+         inventory.json\nversion_path: editions\n",
+    )
+    .await?;
+    let output = tempfile::tempdir()?;
+    let package = hosting::package(&config, output.path(), Some("/")).await?;
+    assert_eq!(
+        tokio::fs::read(package.join("static/copy/index.html")).await?,
+        b"Manual"
+    );
+    let text = tokio::fs::read_to_string(package.join("config.json")).await?;
+    assert!(text.contains("^/editions/old/(.*)$"));
+    assert!(!text.contains("/spec/"));
     Ok(())
 }

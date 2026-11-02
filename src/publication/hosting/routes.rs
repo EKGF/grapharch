@@ -86,6 +86,10 @@ pub(super) async fn configuration(
         let path = super::relative(alias.path.trim_end_matches('/'))?;
         let target = super::relative(&alias.target)?;
         ensure!(
+            !path.is_empty() && !target.is_empty(),
+            "file aliases must name nonempty paths"
+        );
+        ensure!(
             files.contains(&target),
             "file alias target was not packaged: {target}"
         );
@@ -123,6 +127,16 @@ pub(super) async fn configuration(
     }
     routes.push(Route::Handler { handle: "filesystem" });
     if let Some(path) = &settings.inventory {
+        let version_path = super::relative(
+            settings
+                .version_path
+                .as_deref()
+                .context("inventory requires version_path")?,
+        )?;
+        ensure!(
+            !version_path.is_empty(),
+            "version_path must be nonempty"
+        );
         let path = parent.join(path);
         ensure!(
             tokio::fs::metadata(&path).await?.len() <= 4 * 1024 * 1024,
@@ -157,12 +171,13 @@ pub(super) async fn configuration(
                     base.password().is_none() &&
                     base.query().is_none() &&
                     base.fragment().is_none() &&
-                    base.path().ends_with('/'),
+                    base.path().ends_with('/') &&
+                    !version.url.contains('$'),
                 "version URL must be an HTTP(S) directory without \
                  credentials/query/fragment"
             );
             // A locally materialized version always takes precedence.
-            let path = format!("spec/{slug}/");
+            let path = format!("{version_path}/{slug}/");
             if files.contains(&format!("{path}index.html")) {
                 continue;
             }

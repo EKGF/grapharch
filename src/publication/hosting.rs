@@ -20,6 +20,7 @@ struct Configuration {
     #[serde(default)]
     file_aliases:      Vec<FileAlias>,
     inventory:         Option<PathBuf>,
+    version_path:      Option<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -138,7 +139,9 @@ async fn assemble(
         let (source, prefix) = trees
             .iter()
             .filter(|(_, prefix)| {
-                target == *prefix || target.starts_with(&format!("{prefix}/"))
+                prefix.is_empty() ||
+                    target == *prefix ||
+                    target.starts_with(&format!("{prefix}/"))
             })
             .max_by_key(|(_, prefix)| prefix.len())
             .context("directory alias does not select an input tree")?;
