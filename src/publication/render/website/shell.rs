@@ -48,9 +48,9 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     };
     let generator_credit = super::super::credit::HTML;
     let organization_identity = header.theme.identity();
-    let header_links = header.theme.links(repository, &prefix);
-    let identity_attribution = header.theme.attribution(&prefix);
-    let community_footer = header.theme.community_footer(&prefix);
+    let header_links = header.theme.links(repository, prefix);
+    let identity_attribution = header.theme.attribution(prefix);
+    let community_footer = header.theme.community_footer(prefix);
     let article_footer = if community_footer.is_empty() {
         format!(
             "<footer>{generator_credit} · <a \

@@ -543,7 +543,12 @@ async fn generation_credit_is_in_the_footer_not_the_navigation() -> Result<()> {
         .select(&scraper::Selector::parse("a").unwrap())
         .find(|link| link.text().collect::<String>() == "Documentation home")
         .expect("the documentation home link must remain in the footer");
-    assert_eq!(home.value().attr("href"), Some(""));
+    assert_eq!(
+        url::Url::parse("https://example.org/docs/index.html")?
+            .join(home.value().attr("href").unwrap())?
+            .as_str(),
+        "https://example.org/docs/"
+    );
     assert_eq!(
         credit.text().collect::<String>(),
         format!("Grapharch {}", env!("CARGO_PKG_VERSION"))
