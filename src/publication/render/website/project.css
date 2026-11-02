@@ -21,10 +21,12 @@
 .project-card p:last-child{margin-bottom:0}
 .project-card a{overflow-wrap:anywhere}
 .project-website .project-credits{max-width:1100px;margin:auto;padding:1.5rem}
-@media(max-width:760px){.project-hero{padding:4rem 1.25rem}.project-section{padding:3rem 1.25rem}.project-section:has(.project-card)>.project-container{grid-template-columns:1fr}.project-hero p{font-size:1.1rem}.project-card{padding:1.3rem}}
+@media(max-width:760px){.project-hero{padding:4rem 1.25rem}.project-section{padding:3rem 1.25rem}.project-section:has(.project-card)>.project-container{grid-template-columns:minmax(0,1fr)}.project-hero p{font-size:1.1rem}.project-card{padding:1.3rem}}
 .project-navigation{padding:.6rem 1.5rem;border-bottom:1px solid var(--line);background:#fff}
 .project-navigation>ul{max-width:1100px;margin:auto;padding:0;display:flex;list-style:none;gap:1.5rem;flex-wrap:wrap;font-size:.9rem}
 .project-navigation a{color:var(--muted);text-decoration:none}
 .project-navigation a[aria-current]{color:var(--accent);font-weight:650}
 .project-hero p:first-child:not(:has(a)){font-size:.85rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
 .project-website .site-header{min-height:80px}
+
+.project-section:has(.project-card)>.project-container>*{min-width:0}

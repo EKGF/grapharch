@@ -9,7 +9,8 @@ html[data-color-scheme="dark"] .theme-moon{display:none}html[data-color-scheme="
 html[data-color-scheme="dark"] .theme-ekgf a:hover{color:#c4cbff}
 html[data-color-scheme="dark"] .theme-ekgf .site-header{background:#141419f5}
 html[data-color-scheme="dark"] .ekgf-identity,html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a{color:var(--ink)}
-html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a:hover,html[data-color-scheme="dark"] .community-menu>nav{background:var(--chrome)}
+html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a:hover{background:var(--chrome)}
+@media(max-width:1150px){html[data-color-scheme="dark"] .community-menu>nav{background:var(--chrome)}}
 html[data-color-scheme="dark"] .project-identity-row{border-color:var(--line)}
 html[data-color-scheme="dark"] .project-identity-row .brand-version{background:var(--chrome)}
 /* Keep the actual unmodified OMG logo readable, including its small lettering. */
