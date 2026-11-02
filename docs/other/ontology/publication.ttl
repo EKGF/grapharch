@@ -1410,3 +1410,17 @@ ga:advertised a owl:DatatypeProperty ;
     dct:description "States whether a publication version is included in its inventory's reader-facing listing; unadvertised versions can remain routable."@en ;
     rdfs:domain <http://usefulinc.com/ns/doap#Version> ;
     rdfs:range xsd:boolean .
+
+ga:publicationPath a owl:DatatypeProperty ;
+    rdfs:label "publication path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    dct:description "Relative directory URL containing a specification in each repository deployment."@en ;
+    skos:definition "Relative directory URL containing a specification in each repository deployment."@en ;
+    rdfs:domain ga:Collector ; rdfs:range xsd:string .
+
+ga:unlistedBranchPrefix a owl:DatatypeProperty ;
+    rdfs:label "unlisted branch prefix"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    dct:description "A repository branch prefix retained for routing but omitted from the advertised publication list."@en ;
+    skos:definition "A repository branch prefix retained for routing but omitted from the advertised publication list."@en ;
+    rdfs:domain ga:Collector ; rdfs:range xsd:string .

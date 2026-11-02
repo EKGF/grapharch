@@ -181,3 +181,10 @@ ga:PublicationInventoryVisibilityShape a sh:NodeShape ;
     sh:targetSubjectsOf ga:advertised ;
     sh:property [ sh:path ga:advertised ; sh:datatype xsd:boolean ;
         sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:PublicationInventoryCollectorShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:publicationPath ;
+    sh:property [ sh:path ga:publicationPath ; sh:datatype xsd:string ;
+        sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:unlistedBranchPrefix ; sh:datatype xsd:string ;
+        sh:maxCount 16 ] .

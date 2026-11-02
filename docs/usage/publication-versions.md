@@ -48,3 +48,30 @@ and every known version's slug, branch, label, specification URL and advertised
 flag. Static hosting configuration can preserve unadvertised preview links using
 that manifest. Invalid metadata, ambiguous slugs and incomplete records fail the
 build; they do not produce a deceptively shortened listing.
+
+For GitHub repositories deployed on Vercel, configure the repository publication
+collector to capture open pull requests and ready deployments during collection:
+
+```turtle
+<urn:example:project> ga:collector <urn:example:versions-collector> .
+<urn:example:versions-collector> a ga:Collector ;
+    ga:kind "repository-publications" ;
+    ga:source "https://github.com/example/project" ;
+    ga:subject <urn:example:inventory> ;
+    ga:publicationPath "project/spec/" ;
+    ga:unlistedBranchPrefix "dependabot/" .
+```
+
+The build requires `GITHUB_TOKEN` with repository pull-request read access and
+`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` with deployment read access.
+Credentials remain in request headers. Source-defined canonical versions such
+as `main` and `develop` retain their configured titles and URLs. Other branches
+use the newest ready deployment's immutable URL; only open pull requests from
+the same repository are advertised. Closed, merged and explicitly unlisted
+branches remain in the routing manifest while their deployments exist.
+
+Each API is paginated with a 1,000-record budget and 2 MiB per response page.
+Authentication failures, malformed records, exhausted budgets and colliding
+branch slugs fail collection. A failed refresh must leave the previous complete
+publication deployed. This is a build-time snapshot: schedule refreshes and show
+the recorded observation time instead of promising live deployment discovery.

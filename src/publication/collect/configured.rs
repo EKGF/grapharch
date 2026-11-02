@@ -45,6 +45,7 @@ pub(crate) async fn collect(
         let kind = view.text(processor, "kind").await?;
         let source = view.text(processor, "source").await?;
         let collector: Arc<dyn Collector> = match kind.as_str() {
+            "repository-publications" => Arc::new(super::repository_publications::RepositoryPublications::configured(project, processor, &source, &view).await?),
             "rdf-file" => {
                 let relative = Path::new(&source);
                 ensure!(

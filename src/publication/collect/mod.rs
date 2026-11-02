@@ -16,6 +16,7 @@ pub(crate) mod page;
 mod preamble;
 pub(crate) mod published_artifact;
 mod rdf;
+mod repository_publications;
 mod source;
 mod text_asset;
 mod w3c;

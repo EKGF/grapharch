@@ -30,6 +30,7 @@ explanations, and diagrams. Renderers present that content as websites or PDFs.
 | [Image Collector](images.md) | Supported PNG, JPEG, or SVG images | Retained illustrations and product logos |
 | [Code Example Collector](code-examples.md) | An explicitly selected code file | Code examples published without execution |
 | [Text Download Collector](text-downloads.md) | UTF-8 download files | Source-relative website downloads |
+| [Repository Publication Collector](repository-publications.md) | GitHub pull requests and Vercel deployment metadata | Publication version-selection pages and preserved specification routes |
 
 [Repository Scanners](repositories.md) discover local files or pinned Git blobs
 and dispatch the matching file collectors. They provide discovery and source

@@ -52,9 +52,9 @@ pub(crate) async fn document(
         .filter(|version| version.advertised)
     {
         body.push_str(&format!(
-            "### {}\n\nBranch: `{}`\n\n[Open specification]({})\n\n",
+            "### {}\n\nBranch: {}\n\n[Open specification](<{}>)\n\n",
             markdown_text(&version.label),
-            version.branch.replace('`', "\\`"),
+            markdown_text(&version.branch),
             version.url
         ));
     }

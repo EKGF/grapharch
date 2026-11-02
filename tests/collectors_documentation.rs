@@ -20,6 +20,7 @@ const PAGES: &[&str] = &[
     "images.md",
     "code-examples.md",
     "text-downloads.md",
+    "repository-publications.md",
 ];
 
 #[derive(Deserialize)]
