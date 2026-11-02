@@ -106,3 +106,44 @@ async fn ekgf_header_uses_community_row_and_source_owned_project_links()
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn project_header_rejects_missing_titles_and_unsafe_urls() -> Result<()> {
+    for entry in [
+        "ga:url \"https://example.org/\"; ga:order 1",
+        "dct:title \"Unsafe\"; ga:url \"javascript:alert(1)\"; ga:order 1",
+        "dct:title \"Traversal\"; ga:url \"../elsewhere/\"; ga:order 1",
+    ] {
+        let source = tempfile::tempdir()?;
+        let definitions = source.path().join("project.ttl");
+        tokio::fs::write(&definitions, format!(r#"
+@prefix ga: <https://ekgf.org/ontology/grapharch#> . @prefix dct: <http://purl.org/dc/terms/> .
+<urn:project> a ga:Project; dct:title "Header"; ga:scope <urn:scope>; ga:target <urn:target> .
+<urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "ekgf"; ga:headerLink <urn:link> .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:link> {entry} .
+"#)).await?;
+        tokio::fs::write(
+            source.path().join("index.md"),
+            "---\ntitle: Home\npermalink: /\n---\n# Home\n",
+        )
+        .await?;
+        let collected = website::collect(
+            source.path(),
+            &definitions,
+            "urn:project",
+            "urn:target",
+            2,
+        )
+        .await?;
+        let output = tempfile::tempdir()?;
+        assert!(
+            Publisher::new(collected.dataset)
+                .render(&collected.plan, output.path())
+                .await
+                .is_err(),
+            "invalid header entry accepted: {entry}"
+        );
+    }
+    Ok(())
+}

@@ -1,11 +1,8 @@
 //! Ordered project navigation from the publication's pinned profile.
 use {
-    super::super::{
-        markup::html_escape,
-        model::{Plan, title},
-    },
+    super::super::{markup::html_escape, model::Plan},
     anyhow::{Result, ensure},
-    oxrdf::Term,
+    oxrdf::{NamedNode, Term},
 };
 
 pub(super) struct Links(Vec<(u32, String, String)>);
@@ -23,7 +20,18 @@ impl Links {
             let Term::NamedNode(link) = &row["value"] else {
                 anyhow::bail!("header link must be an identified resource")
             };
-            let label = title(&plan.source, link).await?;
+            let predicate =
+                NamedNode::new_unchecked("http://purl.org/dc/terms/title");
+            let Some(Term::Literal(label)) =
+                plan.source.optional_by(link, &predicate).await?
+            else {
+                anyhow::bail!("header link requires a title literal");
+            };
+            let label = label.value().to_owned();
+            ensure!(
+                !label.trim().is_empty(),
+                "header link title must not be empty"
+            );
             let url = plan.source.text(link, "url").await?;
             ensure!(
                 !url.is_empty() && !url.chars().any(char::is_control),
