@@ -22,7 +22,7 @@
 .project-card a{overflow-wrap:anywhere}
 .project-website .project-credits{max-width:1100px;margin:auto;padding:1.5rem}
 @media(max-width:760px){.project-hero{padding:4rem 1.25rem}.project-section{padding:3rem 1.25rem}.project-section:has(.project-card)>.project-container{grid-template-columns:minmax(0,1fr)}.project-hero p{font-size:1.1rem}.project-card{padding:1.3rem}}
-.project-navigation{padding:.6rem 1.5rem;border-bottom:1px solid var(--line);background:#fff}
+.project-navigation{padding:.6rem 40px;border-bottom:1px solid var(--line);background:#fff}
 .project-navigation>ul{max-width:1100px;margin:auto;padding:0;display:flex;align-items:baseline;list-style:none;gap:1.5rem;flex-wrap:wrap;font-size:.9rem}
 .project-navigation>ul>li{margin:0}
 .project-navigation a{color:var(--muted);text-decoration:none}
@@ -31,3 +31,8 @@
 .project-website .site-header{min-height:80px}
 
 .project-section:has(.project-card)>.project-container>*{min-width:0}
+
+/* Both navigation rows share the project content column. */
+.project-website .community-header-row{max-width:1180px}
+@media(max-width:1150px){.project-navigation{padding-inline:28px}}
+@media(max-width:760px){.project-navigation{padding-inline:20px}}

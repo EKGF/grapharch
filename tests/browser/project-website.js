@@ -3,12 +3,28 @@ async (page) => {
   page.on('pageerror', error => errors.push(error.message));
   const check = (condition, message) => { if (!condition) throw new Error(message); };
   const home = page.url();
-  for (const width of [1440, 1000, 390]) {
+  for (const width of [1920, 1440, 1000, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(home);
     check(await page.locator('.project-hero').count() === 1, 'Project hero missing');
     check(await page.locator('.site-navigation').count() === 0, 'Documentation rail leaked into project layout');
     check(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `Project overflows at ${width}`);
+    if (width > 1150) {
+      const community = await page.locator('.ekgf-identity span,.community-menu nav a').evaluateAll(nodes => nodes.map(node => {
+        const marker = document.createElement('span');
+        marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0';
+        node.append(marker);
+        const baseline = marker.getBoundingClientRect().top;
+        marker.remove();
+        return baseline;
+      }));
+      check(Math.max(...community) - Math.min(...community) < 1, `Community wordmark and links have different baselines at ${width}`);
+    }
+    const rowEdges = await page.evaluate(() => ({
+      community: document.querySelector('.ekgf-identity').getBoundingClientRect().left,
+      project: document.querySelector('.project-navigation>ul').getBoundingClientRect().left,
+    }));
+    check(Math.abs(rowEdges.community - rowEdges.project) < 1, `Header rows have different left edges at ${width}`);
     const navigation = await page.locator('.project-navigation>ul').evaluate(list => {
       return [...list.children].map(item => {
         const anchor = item.querySelector('a');
@@ -28,7 +44,7 @@ async (page) => {
       baselines.push(item.baseline);
       rows.set(row, baselines);
     }
-    if (width === 1440) check(rows.size === 1, 'Desktop project navigation unexpectedly wraps');
+    if (width >= 1440) check(rows.size === 1, 'Desktop project navigation unexpectedly wraps');
     for (const baselines of rows.values()) {
       check(Math.max(...baselines) - Math.min(...baselines) < 1, `Project navigation baselines differ at ${width}`);
     }

@@ -61,3 +61,6 @@
 @media(max-width:480px){.community-header-row .ekgf-identity span{display:inline}.community-header-row .omg-identity{display:none}.community-header-row .ekgf-identity svg{width:26px;height:26px}.community-header-row .site-links{gap:0}.community-menu>nav{left:12px;right:12px}.project-identity-row .brand-context{display:inline}.theme-ekgf .project-identity-row .brand{max-width:100%}}
 @media print{.community-header-row,.project-identity-row{display:none}}
 @media(max-width:1150px){.community-menu{flex:none}.community-menu:not([open])>nav{display:none}}
+
+/* Share the text baseline while keeping icon controls vertically centered. */
+@media(min-width:1151px){.community-header-row{align-items:baseline;padding-block:20px}.community-header-row .ekgf-identity{align-items:baseline}.community-header-row .ekgf-identity svg,.community-header-row .site-links{align-self:center}}
