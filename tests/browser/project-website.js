@@ -3,12 +3,35 @@ async (page) => {
   page.on('pageerror', error => errors.push(error.message));
   const check = (condition, message) => { if (!condition) throw new Error(message); };
   const home = page.url();
-  for (const width of [1440, 390]) {
+  for (const width of [1440, 1000, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(home);
     check(await page.locator('.project-hero').count() === 1, 'Project hero missing');
     check(await page.locator('.site-navigation').count() === 0, 'Documentation rail leaked into project layout');
     check(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `Project overflows at ${width}`);
+    const navigation = await page.locator('.project-navigation>ul').evaluate(list => {
+      return [...list.children].map(item => {
+        const anchor = item.querySelector('a');
+        const marker = document.createElement('span');
+        marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0';
+        anchor.append(marker);
+        const baseline = marker.getBoundingClientRect().top;
+        marker.remove();
+        return { baseline, top: item.getBoundingClientRect().top, margin: getComputedStyle(item).marginTop };
+      });
+    });
+    check(navigation.every(item => item.margin === '0px'), 'Prose list spacing leaked into project navigation');
+    const rows = new Map();
+    for (const item of navigation) {
+      const row = Math.round(item.top);
+      const baselines = rows.get(row) || [];
+      baselines.push(item.baseline);
+      rows.set(row, baselines);
+    }
+    if (width === 1440) check(rows.size === 1, 'Desktop project navigation unexpectedly wraps');
+    for (const baselines of rows.values()) {
+      check(Math.max(...baselines) - Math.min(...baselines) < 1, `Project navigation baselines differ at ${width}`);
+    }
     const menu = page.locator('.community-menu');
     if (width === 390) {
       check(!await menu.evaluate(node => node.open), 'Mobile community menu should start closed');
