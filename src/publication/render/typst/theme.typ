@@ -5,19 +5,19 @@
 #let ga-muted = rgb("#526670")
 #let ga-line = rgb("#dce5e5")
 #let ga-soft = ga-accent.lighten(94%)
-#let ga-heading = if ga-specification { ga-accent } else { ga-ink }
+#let ga-heading = if ga-specification or ga-overview { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
-#set text(font: "Liberation Sans", size: if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: true)
-#set par(justify: true, leading: 0.7em, spacing: 1.3em)
+#set text(font: "Liberation Sans", size: if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: true)
+#set par(justify: not ga-overview, leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 1em)
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 1em)
-#set heading(numbering: "1.1")
+#set heading(numbering: if ga-overview { none } else { "1.1" })
 #show heading: set block(sticky: true)
 #show heading: set par(justify: false)
 // Space belongs to the fragment container: heading above-spacing collapses
 // when the heading is the first element of a breakable fragment block.
 #let ga-section(level, body) = block(inset: (top: if level == 1 { 22pt } else if level == 2 { 16pt } else { 12pt }), above: 0pt, breakable: true, body)
-#show heading.where(level: 1): set text(size: if ga-specification { 19pt } else { 26pt }, weight: if ga-specification { "regular" } else { "bold" }, fill: ga-heading)
+#show heading.where(level: 1): set text(size: if ga-overview { 31pt } else if ga-specification { 19pt } else { 26pt }, weight: if ga-specification { "regular" } else { "bold" }, fill: ga-heading)
 #show heading.where(level: 1): set block(above: 28pt, below: 16pt)
 #show heading.where(level: 2): set text(size: if ga-specification { 13pt } else { 16pt }, weight: "bold", fill: ga-heading)
 #show heading.where(level: 2): set block(above: 21pt, below: 11pt)
@@ -181,12 +181,3 @@
   ]
 }
 
-// Editorial overview: a calm reading measure and prominent chapter openings.
-#if ga-overview {
-  set text(size: 11pt)
-  set par(justify: false, leading: 0.8em, spacing: 1.3em)
-  set heading(numbering: none)
-  show heading.where(level: 1): set text(size: 31pt, weight: "bold", fill: ga-accent)
-  show heading.where(level: 1): set block(below: 20pt)
-  show heading.where(level: 2): set text(size: 16pt, fill: ga-ink)
-}

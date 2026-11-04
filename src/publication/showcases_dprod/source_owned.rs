@@ -34,6 +34,12 @@ pub(super) async fn roots(view: &RevisionView) -> Result<Vec<ReferenceRoot>> {
             continue;
         }
         let profile = view.node(target, "profile").await?;
+        // Editorial overviews deliberately exclude the technical catalogue.
+        if view.optional(&profile, "style").await? ==
+            Some(Literal::new_simple_literal("overview").into())
+        {
+            continue;
+        }
         if result
             .iter()
             .any(|root: &ReferenceRoot| root.profile == profile)
@@ -170,7 +176,12 @@ pub(super) async fn legal_targets(view: &RevisionView) -> Result<Vec<String>> {
             view.text(target, "renderer").await?.as_str(),
             "specification" | "typst"
         ) {
-            result.push(target.as_str().to_owned());
+            let profile = view.node(target, "profile").await?;
+            if view.optional(&profile, "style").await? !=
+                Some(Literal::new_simple_literal("overview").into())
+            {
+                result.push(target.as_str().to_owned());
+            }
         }
     }
     ensure!(!result.is_empty(), "no legal publication targets");
@@ -200,4 +211,52 @@ pub(super) async fn targets(view: &RevisionView) -> Result<Vec<NamedNode>> {
         (a != &primary, a.as_str()).cmp(&(b != &primary, b.as_str()))
     });
     Ok(targets)
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn editorial_overview_does_not_require_a_reference_catalogue()
+    -> anyhow::Result<()> {
+        use crate::publication::{
+            collect::{Collector, RdfFile},
+            dataset::Dataset,
+            view::RevisionView,
+            writer::GraphWriter,
+        };
+        let source = tempfile::tempdir()?;
+        let path = source.path().join("targets.ttl");
+        tokio::fs::write(
+            &path,
+            r#"
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix ex: <urn:dprod-showcase:> .
+ex:project ga:target ex:spec, ex:overview .
+ex:spec ga:renderer "specification"; ga:profile ex:spec-profile .
+ex:spec-profile ga:placement ex:reference .
+ex:reference ga:sectionRole "reference"; ga:order 1 .
+ex:overview ga:renderer "typst"; ga:profile ex:overview-profile .
+ex:overview-profile ga:style "overview" .
+"#,
+        )
+        .await?;
+        let dataset = Dataset::memory()?;
+        let (writer, worker) =
+            GraphWriter::spawn(dataset.clone(), 8, 1024 * 1024)?;
+        RdfFile::new(super::super::PROJECT, "urn:fixture", path)?
+            .collect(&writer)
+            .await?;
+        let view = RevisionView::new(
+            dataset.clone(),
+            dataset.snapshot_for(super::super::PROJECT).await?,
+        );
+        let result = super::roots(&view).await;
+        drop(writer);
+        worker.await??;
+        assert_eq!(result?.len(), 1);
+        assert_eq!(super::legal_targets(&view).await?, vec![
+            "urn:dprod-showcase:spec"
+        ]);
+        Ok(())
+    }
 }

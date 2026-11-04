@@ -357,6 +357,14 @@ async fn assemble(
                 .await?;
         }
     }
+    // bounded: one scope per explicitly registered target (at most16).
+    let mut asset_scopes = Vec::new();
+    for target in &targets {
+        let scope = view.node(target, "scope").await?;
+        if !asset_scopes.contains(&scope) {
+            asset_scopes.push(scope);
+        }
+    }
     let mut assets = dataset
         .select(format!(
             "SELECT DISTINCT ?asset WHERE {{ {} }}",
@@ -367,9 +375,9 @@ async fn assemble(
         let Term::NamedNode(asset) = &row["asset"] else {
             anyhow::bail!("image asset must be IRI")
         };
-        for scope in [node("scope"), node("website-scope")] {
+        for scope in &asset_scopes {
             bindings
-                .write(quad(&scope, "include", asset.clone()))
+                .write(quad(scope, "include", asset.clone()))
                 .await?;
         }
     }

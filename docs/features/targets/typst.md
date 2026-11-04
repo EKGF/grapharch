@@ -28,6 +28,17 @@ Quality findings are grouped by warning type in a separate numbered appendix.
 Supplied content and release metadata remain source-owned; a layout is not
 proof of standards approval.
 
+## Publish an audience overview
+
+Select `ga:style "overview"` on a PDF profile for an editorial introduction:
+a prominent cover, indigo accent, orange cover marker, larger chapter openings,
+and a more relaxed reading measure. Choose a separate scope and placements for
+purpose, concepts, adoption, and selected examples. The same sources can supply
+a website and a guide without putting the full technical reference in both.
+
+An overview is a community explanation, not an approval or release declaration.
+Its provenance section still records the source revision and generator.
+
 ## Match the publication to its size
 
 A small reference can have one PDF. A large ontology family can use

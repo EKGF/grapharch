@@ -95,7 +95,9 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
         "Markdown prose must be real paragraphs so paragraph spacing applies"
     );
     assert!(
-        typst.contains("leading: 0.7em, spacing: 1.3em"),
+        typst.contains(
+            "leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em"
+        ),
         "paragraph gaps must exceed line leading"
     );
     assert!(
@@ -108,7 +110,7 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     );
 
     assert!(
-        typst.contains("#set par(justify: true, leading:"),
+        typst.contains("#set par(justify: not ga-overview, leading:"),
         "body paragraphs must align to both margins"
     );
     assert!(
