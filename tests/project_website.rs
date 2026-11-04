@@ -23,10 +23,12 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     tokio::fs::write(
         input.path().join("index.md"),
         "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: urn:home\n  \
-         panel_sections: [benefits]\n---\n# Example project\n\nAn \
-         introduction.\n\n[Get started](guide.md)\n\n## Benefits\n\n### First \
-         benefit\n\nA source-owned explanation.\n\n### Second \
-         benefit\n\nAnother explanation.\n\n## Next steps\n\n[Read the \
+         panel_sections: [benefits]\n  feature_sections: [benefits]\n  \
+         card_icons:\n    first-benefit: {name: network, tone: primary}\n    \
+         second-benefit: {name: shield, tone: accent}\n---\n# Example \
+         project\n\nAn introduction.\n\n[Get started](guide.md)\n\n## \
+         Benefits\n\n### First benefit\n\nA source-owned explanation.\n\n### \
+         Second benefit\n\nAnother explanation.\n\n## Next steps\n\n[Read the \
          guide](guide.md)\n",
     )
     .await?;
@@ -74,6 +76,13 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     assert_eq!(count(".project-section-panel h2#benefits"), 1);
     assert_eq!(count(".project-section-panel h2#next-steps"), 0);
     assert_eq!(count(".project-card"), 2);
+    assert_eq!(count(".project-section-features h2#benefits"), 1);
+    assert_eq!(
+        count(".project-card-icon[aria-hidden=\"true\"]"),
+        2
+    );
+    assert_eq!(count(".project-card-icon-primary svg"), 1);
+    assert_eq!(count(".project-card-icon-accent svg"), 1);
     assert_eq!(count(".project-hero .project-actions"), 1);
     assert_eq!(
         count(".project-actions a[href=\"https://example.org/intro\"]"),
@@ -95,6 +104,45 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
             .select(&scraper::Selector::parse(".project-hero h1").unwrap())
             .count(),
         1
+    );
+    if let Ok(destination) = std::env::var("GRAPHARCH_CARD_REVIEW") {
+        tokio::fs::create_dir_all(&destination).await?;
+        let mut files = tokio::fs::read_dir(&publication.directory).await?;
+        while let Some(file) = files.next_entry().await? {
+            if file.file_type().await?.is_file() {
+                tokio::fs::copy(
+                    file.path(),
+                    std::path::Path::new(&destination).join(file.file_name()),
+                )
+                .await?;
+            }
+        }
+        tokio::fs::create_dir_all(
+            std::path::Path::new(&destination).join("brand"),
+        )
+        .await?;
+        let mut files =
+            tokio::fs::read_dir(publication.directory.join("brand")).await?;
+        while let Some(file) = files.next_entry().await? {
+            tokio::fs::copy(
+                file.path(),
+                std::path::Path::new(&destination)
+                    .join("brand")
+                    .join(file.file_name()),
+            )
+            .await?;
+        }
+    }
+    let styles =
+        tokio::fs::read_to_string(publication.directory.join("style.css"))
+            .await?;
+    assert!(styles.contains(".project-section-features h2{text-align:center"));
+    assert!(
+        tokio::fs::read_to_string(
+            publication.directory.join("brand/LUCIDE-LICENSE.txt")
+        )
+        .await?
+        .contains("ISC License")
     );
     Ok(())
 }
@@ -127,5 +175,63 @@ async fn unknown_panel_heading_fails_instead_of_silently_styling_another_section
         format!("{error:#}")
             .contains("missing-heading is not a level-two page heading")
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn invalid_feature_card_hints_fail_publication() -> Result<()> {
+    for (hint, expected) in [
+        (
+            "feature_sections: [missing]",
+            "feature section missing",
+        ),
+        (
+            "card_icons:\n    benefit: {name: absent, tone: primary}",
+            "unsupported card icon absent",
+        ),
+        (
+            "card_icons:\n    benefit: {name: network, tone: absent}",
+            "unsupported icon tone absent",
+        ),
+        (
+            "card_icons:\n    missing: {name: network, tone: primary}",
+            "card icon missing",
+        ),
+    ] {
+        let input = tempfile::tempdir()?;
+        let settings = input.path().join("project.ttl");
+        tokio::fs::write(&settings, r#"
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+<urn:p> a ga:Project; dct:title "Project"; ga:scope <urn:s>; ga:target <urn:t> .
+<urn:s> a ga:Scope .
+<urn:profile> a ga:Profile; ga:style "ekgf-project" .
+<urn:t> a ga:Target; dct:title "Website"; ga:scope <urn:s>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+"#).await?;
+        tokio::fs::write(
+            input.path().join("index.md"),
+            format!(
+                "---\ntitle: Project\npermalink: /\ngrapharch:\n  subject: \
+                 urn:home\n  {hint}\n---\n# Project\n\n## Benefits\n\n### \
+                 Benefit\n\nText.\n"
+            ),
+        )
+        .await?;
+        let collected =
+            website::collect(input.path(), &settings, "urn:p", "urn:t", 2)
+                .await?;
+        let output = tempfile::tempdir()?;
+        let error = match Publisher::new(collected.dataset)
+            .render(&collected.plan, output.path())
+            .await
+        {
+            Err(error) => error,
+            Ok(_) => panic!("invalid hint must fail"),
+        };
+        assert!(
+            format!("{error:#}").contains(expected),
+            "{error:#}"
+        );
+    }
     Ok(())
 }

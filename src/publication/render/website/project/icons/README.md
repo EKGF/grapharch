@@ -1,0 +1,1 @@
+Icons from lucide-react 0.562.0, https://github.com/lucide-icons/lucide. SVG elements faithfully exported from the React icon nodes; only React keys omitted. ISC and Feather MIT notices retained in LICENSE.

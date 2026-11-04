@@ -41,3 +41,16 @@
 .project-section-panel p{font-size:1.125rem;line-height:1.625;margin-bottom:1rem}
 .project-section-panel p:last-child{margin-bottom:0}
 @media(max-width:760px){.project-section-panel>.project-container{padding:1.5rem}.project-hero p{line-height:1.625}}
+
+/* Explicit feature sections use the publication's shared card presentation. */
+.project-section-features>.project-container{max-width:64rem;gap:1.5rem}
+.project-section-features h2{text-align:center;font-size:1.875rem;line-height:2.25rem;font-weight:700;margin-bottom:1rem}
+.project-section-features .project-card{padding:1.5rem;border-radius:.75rem;box-shadow:0 1px 3px #0000001a,0 1px 2px #0000000f}
+.project-section-features .project-card h3{font-size:1rem;line-height:1.25rem;font-weight:600;letter-spacing:0;margin:0 0 .75rem}
+.project-section-features .project-card p{color:var(--muted);font-size:1rem;line-height:1.5rem}
+.project-card-icon{display:block;width:2.5rem;height:2.5rem;margin:0 0 1rem}
+.project-card-icon svg{display:block;width:100%;height:100%}
+.project-card-icon-primary{color:var(--accent)}
+.project-card-icon-accent{color:#ff6f00}
+html[data-color-scheme="dark"] .project-card-icon-accent{color:#ff9b4d}
+@media(max-width:760px){.project-section-features .project-card{padding:1.5rem}}

@@ -40,6 +40,17 @@ struct Hints {
     showcase_gallery: bool,
     #[serde(default)]
     panel_sections:   Vec<String>,
+    #[serde(default)]
+    feature_sections: Vec<String>,
+    #[serde(default)]
+    card_icons:       BTreeMap<String, CardIcon>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CardIcon {
+    name: String,
+    tone: String,
 }
 
 pub(crate) struct GeneratedPage<'a> {
@@ -233,6 +244,43 @@ impl Collector for MarkdownFile {
                     "panelSection",
                     Literal::new_simple_literal(anchor),
                 ));
+            }
+            ensure!(
+                frontmatter.grapharch.feature_sections.len() <= 32,
+                "page exceeds 32 feature sections"
+            );
+            for anchor in &frontmatter.grapharch.feature_sections {
+                metadata.push(input.quad(
+                    &fragment,
+                    "featureSection",
+                    Literal::new_simple_literal(anchor),
+                ));
+            }
+            ensure!(
+                frontmatter.grapharch.card_icons.len() <= 128,
+                "page exceeds 128 card icons"
+            );
+            for (anchor, icon) in &frontmatter.grapharch.card_icons {
+                let binding = crate::publication::dataset::identity(
+                    "card-presentation",
+                    &[fragment.as_str(), anchor],
+                );
+                metadata.push(input.quad(
+                    &fragment,
+                    "cardPresentation",
+                    binding.clone(),
+                ));
+                for (predicate, value) in [
+                    ("headingAnchor", anchor.as_str()),
+                    ("iconName", icon.name.as_str()),
+                    ("iconTone", icon.tone.as_str()),
+                ] {
+                    metadata.push(input.quad(
+                        &binding,
+                        predicate,
+                        Literal::new_simple_literal(value),
+                    ));
+                }
             }
             if frontmatter.grapharch.showcase_gallery {
                 metadata.push(input.quad(

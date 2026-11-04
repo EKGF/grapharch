@@ -7,6 +7,9 @@ use {
     scraper::{ElementRef, Html},
 };
 
+mod presentation;
+pub(super) use presentation::Presentation;
+
 pub(super) async fn panels(
     plan: &Plan,
     page: &NamedNode,
@@ -37,7 +40,11 @@ pub(super) async fn panels(
 }
 
 /// Group the already rendered Markdown; no authored HTML or source-file access.
-pub(super) fn sections(body: &str, panels: &[String]) -> String {
+pub(super) fn sections(
+    body: &str,
+    panels: &[String],
+    presentation: &Presentation,
+) -> String {
     let fragment = Html::parse_fragment(body);
     let mut output = String::from(
         "<div class=\"project-hero\"><div class=\"project-container\">",
@@ -75,6 +82,17 @@ pub(super) fn sections(body: &str, panels: &[String]) -> String {
                          class=\"project-container\">"
                     },
                 );
+                if element.value().attr("id").is_some_and(|id| {
+                    presentation.features.iter().any(|anchor| anchor == id)
+                }) {
+                    let marker = output
+                        .rfind("<section class=\"project-section")
+                        .unwrap();
+                    output.insert_str(
+                        marker + "<section class=\"project-section".len(),
+                        " project-section-features",
+                    );
+                }
                 section = true;
             },
             "h3" if section => {
@@ -82,6 +100,18 @@ pub(super) fn sections(body: &str, panels: &[String]) -> String {
                     output.push_str("</div>");
                 }
                 output.push_str("<div class=\"project-card\">");
+                if let Some((name, tone)) = element
+                    .value()
+                    .attr("id")
+                    .and_then(|id| presentation.icons.get(id))
+                {
+                    output.push_str(&format!(
+                        "<span class=\"project-card-icon \
+                         project-card-icon-{tone}\" \
+                         aria-hidden=\"true\">{}</span>",
+                        presentation::icon_svg(name).expect("validated icon")
+                    ));
+                }
                 card = true;
             },
             _ => {},

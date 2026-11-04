@@ -126,9 +126,9 @@ impl Theme {
             return Ok(());
         }
         tokio::fs::create_dir_all(stage.join("brand")).await?;
-        // bounded: four fixed, bundled identity/font assets, under 600 KiB
-        // combined.
-        let assets: [(&str, &[u8]); 4] = [
+        // bounded: five fixed, bundled identity/font/license assets, under 600
+        // KiB combined.
+        let assets: [(&str, &[u8]); 5] = [
             (
                 "brand/roboto.ttf",
                 include_bytes!("brand/roboto.ttf"),
@@ -138,6 +138,10 @@ impl Theme {
                 include_bytes!("brand/omg-logo.svg"),
             ),
             ("brand/OFL.txt", include_bytes!("brand/OFL.txt")),
+            (
+                "brand/LUCIDE-LICENSE.txt",
+                include_bytes!("project/icons/LICENSE"),
+            ),
             (
                 "brand/NOTICE.txt",
                 include_bytes!("brand/NOTICE.txt"),

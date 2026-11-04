@@ -281,6 +281,25 @@ async fn write_page(
         let extra_head =
             header.metadata.head(plan, &header.title, page).await?;
         let panels = project::panels(plan, id).await?;
+        let presentation = project::Presentation::read(plan, id).await?;
+        for anchor in &presentation.features {
+            ensure!(
+                content
+                    .headings
+                    .iter()
+                    .any(|h| h.level == 2 && h.anchor == *anchor),
+                "feature section {anchor} is not a level-two heading"
+            );
+        }
+        for anchor in presentation.icons.keys() {
+            ensure!(
+                content
+                    .headings
+                    .iter()
+                    .any(|h| h.level == 3 && h.anchor == *anchor),
+                "card icon {anchor} is not a level-three heading"
+            );
+        }
         for anchor in &panels {
             ensure!(
                 content.headings.iter().any(|heading| {
@@ -291,6 +310,7 @@ async fn write_page(
         }
         let html = shell::render(plan, header, shell::Page {
             panels:         &panels,
+            presentation:   &presentation,
             extra_head:     &extra_head,
             report:         false,
             title:          &page.title,
@@ -329,6 +349,7 @@ async fn write_report(
     let html = shell::render(plan, header, shell::Page {
         report: true,
         panels: &[],
+        presentation: &project::Presentation::default(),
         extra_head: "<meta name=\"robots\" content=\"noindex,follow\">",
         title,
         id: id.as_str(),

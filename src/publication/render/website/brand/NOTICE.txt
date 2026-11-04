@@ -22,3 +22,5 @@ Source: https://github.com/google/fonts/tree/main/ofl/roboto
 
 GraphArch's independently authored CSS and rendering code retain the project's
 MIT license. These identity and font assets have the separate licenses above.
+
+Optional project card icons: Lucide 0.562.0 (ISC, with Feather MIT portions). Full notice: LUCIDE-LICENSE.txt. Source: https://github.com/lucide-icons/lucide.

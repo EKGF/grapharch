@@ -94,3 +94,26 @@ When a project is mounted below an existing domain (for example `/project/`),
 the domain's root `robots.txt` must reference the generated sitemap. Crawlers
 read robots rules at the origin root; the project's nested copy does not replace
 that host configuration.
+
+## Feature cards
+
+Keep card prose in Markdown and select its presentation in the same frontmatter:
+
+```yaml
+grapharch:
+  feature_sections: [benefits]
+  card_icons:
+    one-shared-source: {name: network, tone: primary}
+```
+
+`feature_sections` selects level-two headings for centered section titles and
+restrained feature cards. `card_icons` maps level-three heading anchors to
+optional decorative icons. Available names are `network`, `file-json`,
+`git-branch`, and `shield`; tones are `primary` and `accent`. Unknown names,
+tones, or heading anchors fail publication. The source prose is unchanged and
+can be reused in a PDF without importing website decorations.
+
+Equivalent RDF uses `ga:featureSection "benefits"` and `ga:cardPresentation`
+with `ga:headingAnchor`, `ga:iconName`, and `ga:iconTone`. The collected hints
+remain in the KG, so rendering does not reopen the Markdown file. Lucide icon
+license notices are retained with the generated website's identity credits.
