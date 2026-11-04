@@ -7,9 +7,9 @@
 .project-container{max-width:1100px;margin:auto}
 .project-hero .project-container{max-width:56rem}
 .project-hero h1{font-size:4.5rem;font-weight:900;letter-spacing:-.05em;line-height:1;margin:0 0 1.5rem}
-.project-hero p{font-size:1.5rem;line-height:2rem;color:var(--muted);margin:0 auto 1.7rem;max-width:56rem}
-.project-hero .project-actions{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
-.project-hero .project-actions>a{display:inline-block;background:var(--accent);color:#fff;padding:.65rem 1.2rem;border-radius:.3rem;text-decoration:none;font-size:1rem;font-weight:550}
+.project-hero p{font-size:1.5rem;line-height:2rem;color:var(--muted);margin:0 auto 2.5rem;max-width:56rem}
+.project-hero .project-actions{margin-bottom:0;display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.project-hero .project-actions>a{display:inline-block;background:var(--accent);color:#fff;padding:.75rem 1.5rem;border-radius:.3rem;text-decoration:none;font-size:.875rem;line-height:1.25rem;font-weight:550}
 .project-hero .project-actions>a+a{background:#fff;color:var(--ink);border:1px solid var(--line)}
 .project-section{border-bottom:1px solid var(--line);padding:5rem 1.5rem}
 .project-section h2{border:0;margin:0 0 2rem;padding:0;font-size:2rem;letter-spacing:-.025em}
@@ -27,7 +27,7 @@
 .project-navigation>ul>li{margin:0}
 .project-navigation a{color:var(--muted);text-decoration:none}
 .project-navigation a[aria-current]{color:var(--accent);font-weight:650}
-.project-hero p:first-child:not(:has(a)){font-size:.85rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.project-hero p:first-child:not(:has(a)){font-size:.875rem;line-height:1.25rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem}
 .project-website .site-header{min-height:80px}
 
 .project-section:has(.project-card)>.project-container>*{min-width:0}
