@@ -28,6 +28,14 @@ start sections; level-three headings within a section start cards. Deeper headin
 code examples, notes, links, tables, and images keep their normal meaning.
 No HTML, JSX, or project-specific renderer code is required in the source repo.
 
+A page can select a section as a bordered overview panel using its generated
+heading anchor. For example, `grapharch: {subject: urn:example:home,
+panel_sections: [what-is-this-project]}` presents `## What is this project?` as a
+panel. The same hint can be supplied as
+`<urn:example:home> ga:panelSection "what-is-this-project"` in RDF. Only the named
+sections receive this treatment; headings, links, and source content keep their
+meaning. A missing heading or invalid anchor fails publication.
+
 ```markdown
 ---
 title: Example project

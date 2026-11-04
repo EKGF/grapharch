@@ -35,6 +35,8 @@ struct Hints {
     subject:          Option<String>,
     #[serde(default)]
     showcase_gallery: bool,
+    #[serde(default)]
+    panel_sections:   Vec<String>,
 }
 
 pub(crate) struct GeneratedPage<'a> {
@@ -203,6 +205,17 @@ impl Collector for MarkdownFile {
                     ),
                     Literal::new_simple_literal(description),
                     oxrdf::GraphName::DefaultGraph,
+                ));
+            }
+            ensure!(
+                frontmatter.grapharch.panel_sections.len() <= 32,
+                "page exceeds 32 panel sections"
+            );
+            for anchor in &frontmatter.grapharch.panel_sections {
+                metadata.push(self.0.quad(
+                    &fragment,
+                    "panelSection",
+                    Literal::new_simple_literal(anchor),
                 ));
             }
             if frontmatter.grapharch.showcase_gallery {

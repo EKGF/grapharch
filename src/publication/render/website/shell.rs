@@ -6,6 +6,7 @@ use super::{
 
 pub(super) struct Page<'a> {
     pub report:         bool,
+    pub panels:         &'a [String],
     pub extra_head:     &'a str,
     pub title:          &'a str,
     pub id:             &'a str,
@@ -115,7 +116,10 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         )
     };
     let body = if project_page {
-        super::project::sections(&format!("{heading}{}", page.body))
+        super::project::sections(
+            &format!("{heading}{}", page.body),
+            page.panels,
+        )
     } else {
         page.body.into()
     };

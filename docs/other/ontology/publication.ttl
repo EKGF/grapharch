@@ -1424,3 +1424,11 @@ ga:unlistedBranchPrefix a owl:DatatypeProperty ;
     dct:description "A repository branch prefix retained for routing but omitted from the advertised publication list."@en ;
     skos:definition "A repository branch prefix retained for routing but omitted from the advertised publication list."@en ;
     rdfs:domain ga:Collector ; rdfs:range xsd:string .
+
+
+ga:panelSection a owl:DatatypeProperty ;
+    rdfs:label "panel section"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects a level-two heading anchor whose section is presented as an overview panel on a project website page."@en ;
+    dct:description "Selects a level-two heading anchor whose section is presented as an overview panel on a project website page."@en ;
+    rdfs:domain ga:Page ; rdfs:range xsd:string .

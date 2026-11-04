@@ -1,9 +1,43 @@
 //! Semantic project landing-page sections derived from ordinary Markdown
 //! headings.
-use scraper::{ElementRef, Html};
+use {
+    super::super::model::Plan,
+    anyhow::{Result, ensure},
+    oxrdf::{NamedNode, Term},
+    scraper::{ElementRef, Html},
+};
+
+pub(super) async fn panels(
+    plan: &Plan,
+    page: &NamedNode,
+) -> Result<Vec<String>> {
+    // bounded: one page can select at most 32 section panels.
+    let mut panels = Vec::new();
+    let mut rows = plan.source.objects(page, "panelSection").await?;
+    while let Some(row) = rows.next().await? {
+        ensure!(
+            panels.len() < 32,
+            "page exceeds 32 panel sections"
+        );
+        let Term::Literal(value) = &row["value"] else {
+            anyhow::bail!("panel section must be a heading anchor literal")
+        };
+        let anchor = value.value();
+        ensure!(
+            !anchor.is_empty() &&
+                anchor.len() <= 128 &&
+                anchor
+                    .chars()
+                    .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_')),
+            "invalid panel section anchor {anchor}"
+        );
+        panels.push(anchor.to_owned());
+    }
+    Ok(panels)
+}
 
 /// Group the already rendered Markdown; no authored HTML or source-file access.
-pub(super) fn sections(body: &str) -> String {
+pub(super) fn sections(body: &str, panels: &[String]) -> String {
     let fragment = Html::parse_fragment(body);
     let mut output = String::from(
         "<div class=\"project-hero\"><div class=\"project-container\">",
@@ -27,9 +61,19 @@ pub(super) fn sections(body: &str) -> String {
                         "</div></div>"
                     },
                 );
+                let panel = element
+                    .value()
+                    .attr("id")
+                    .is_some_and(|id| panels.iter().any(|anchor| anchor == id));
                 output.push_str(
-                    "<section class=\"project-section\"><div \
-                     class=\"project-container\">",
+                    if panel {
+                        "<section class=\"project-section \
+                         project-section-panel\"><div \
+                         class=\"project-container\">"
+                    } else {
+                        "<section class=\"project-section\"><div \
+                         class=\"project-container\">"
+                    },
                 );
                 section = true;
             },

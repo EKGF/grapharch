@@ -188,3 +188,10 @@ ga:PublicationInventoryCollectorShape a sh:NodeShape ;
         sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:unlistedBranchPrefix ; sh:datatype xsd:string ;
         sh:maxCount 16 ] .
+
+
+ga:PagePanelSectionShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:panelSection ;
+    sh:property [ sh:path ga:panelSection ; sh:datatype xsd:string ;
+        sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ;
+        sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .

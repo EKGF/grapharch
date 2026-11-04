@@ -280,7 +280,17 @@ async fn write_page(
         };
         let extra_head =
             header.metadata.head(plan, &header.title, page).await?;
+        let panels = project::panels(plan, id).await?;
+        for anchor in &panels {
+            ensure!(
+                content.headings.iter().any(|heading| {
+                    heading.level == 2 && heading.anchor == *anchor
+                }),
+                "panel section {anchor} is not a level-two page heading"
+            );
+        }
         let html = shell::render(plan, header, shell::Page {
+            panels:         &panels,
             extra_head:     &extra_head,
             report:         false,
             title:          &page.title,
@@ -318,6 +328,7 @@ async fn write_report(
     let content = std::str::from_utf8(body)?;
     let html = shell::render(plan, header, shell::Page {
         report: true,
+        panels: &[],
         extra_head: "<meta name=\"robots\" content=\"noindex,follow\">",
         title,
         id: id.as_str(),

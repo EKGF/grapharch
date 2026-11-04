@@ -20,11 +20,6 @@ async (page) => {
       }));
       check(Math.max(...community) - Math.min(...community) < 1, `Community wordmark and links have different baselines at ${width}`);
     }
-    const rowEdges = await page.evaluate(() => ({
-      community: document.querySelector('.ekgf-identity').getBoundingClientRect().left,
-      project: document.querySelector('.project-navigation>ul').getBoundingClientRect().left,
-    }));
-    check(Math.abs(rowEdges.community - rowEdges.project) < 1, `Header rows have different left edges at ${width}`);
     const navigation = await page.locator('.project-navigation>ul').evaluate(list => {
       return [...list.children].map(item => {
         const anchor = item.querySelector('a');

@@ -22,11 +22,12 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
 "#).await?;
     tokio::fs::write(
         input.path().join("index.md"),
-        "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: \
-         urn:home\n---\n# Example project\n\nAn introduction.\n\n[Get \
-         started](guide.md)\n\n## Benefits\n\n### First benefit\n\nA \
-         source-owned explanation.\n\n### Second benefit\n\nAnother \
-         explanation.\n\n## Next steps\n\n[Read the guide](guide.md)\n",
+        "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: urn:home\n  \
+         panel_sections: [benefits]\n---\n# Example project\n\nAn \
+         introduction.\n\n[Get started](guide.md)\n\n## Benefits\n\n### First \
+         benefit\n\nA source-owned explanation.\n\n### Second \
+         benefit\n\nAnother explanation.\n\n## Next steps\n\n[Read the \
+         guide](guide.md)\n",
     )
     .await?;
     tokio::fs::write(
@@ -69,6 +70,9 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     assert_eq!(count(".project-hero"), 1);
     assert_eq!(count(".project-identity-row"), 0);
     assert_eq!(count(".project-section"), 2);
+    assert_eq!(count(".project-section-panel"), 1);
+    assert_eq!(count(".project-section-panel h2#benefits"), 1);
+    assert_eq!(count(".project-section-panel h2#next-steps"), 0);
     assert_eq!(count(".project-card"), 2);
     assert_eq!(count(".project-hero .project-actions"), 1);
     assert_eq!(
@@ -91,6 +95,37 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
             .select(&scraper::Selector::parse(".project-hero h1").unwrap())
             .count(),
         1
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn unknown_panel_heading_fails_instead_of_silently_styling_another_section()
+-> Result<()> {
+    let input = tempfile::tempdir()?;
+    let settings = input.path().join("project.ttl");
+    tokio::fs::write(&settings, r#"
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+<urn:p> a ga:Project; dct:title "Project"; ga:scope <urn:s>; ga:target <urn:t> .
+<urn:s> a ga:Scope .
+<urn:profile> a ga:Profile; ga:style "ekgf-project" .
+<urn:t> a ga:Target; dct:title "Website"; ga:scope <urn:s>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+"#).await?;
+    tokio::fs::write(input.path().join("index.md"), "---\ntitle: Project\npermalink: /\ngrapharch:\n  subject: urn:home\n  panel_sections: [missing-heading]\n---\n# Project\n\n## Existing heading\n\nText.\n").await?;
+    let collected =
+        website::collect(input.path(), &settings, "urn:p", "urn:t", 2).await?;
+    let output = tempfile::tempdir()?;
+    let error = match Publisher::new(collected.dataset)
+        .render(&collected.plan, output.path())
+        .await
+    {
+        Err(error) => error,
+        Ok(_) => panic!("unknown panel heading must fail publication"),
+    };
+    assert!(
+        format!("{error:#}")
+            .contains("missing-heading is not a level-two page heading")
     );
     Ok(())
 }

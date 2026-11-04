@@ -3,15 +3,15 @@
 .project-website .project-layout{display:block;max-width:none;padding:0}
 .project-website main{padding:0;max-width:none;min-width:0}
 .project-website main>article{max-width:none}
-.project-hero{padding:7rem 1.5rem;background:linear-gradient(135deg,#4051b50d,#fff 75%);border-bottom:1px solid var(--line);text-align:center}
+.project-hero{padding:9rem 1.5rem;background:linear-gradient(135deg,#4051b50d,#fff 75%);border-bottom:1px solid var(--line);text-align:center}
 .project-container{max-width:1100px;margin:auto}
-.project-hero .project-container{max-width:900px}
-.project-hero h1{font-size:clamp(2.5rem,5vw,4.5rem);font-weight:850;letter-spacing:-.045em;line-height:1.1;margin:0 0 1.5rem}
-.project-hero p{font-size:1.25rem;color:var(--muted);margin:0 auto 1.7rem;max-width:850px}
+.project-hero .project-container{max-width:56rem}
+.project-hero h1{font-size:4.5rem;font-weight:900;letter-spacing:-.05em;line-height:1;margin:0 0 1.5rem}
+.project-hero p{font-size:1.5rem;line-height:2rem;color:var(--muted);margin:0 auto 1.7rem;max-width:56rem}
 .project-hero .project-actions{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
 .project-hero .project-actions>a{display:inline-block;background:var(--accent);color:#fff;padding:.65rem 1.2rem;border-radius:.3rem;text-decoration:none;font-size:1rem;font-weight:550}
 .project-hero .project-actions>a+a{background:#fff;color:var(--ink);border:1px solid var(--line)}
-.project-section{border-bottom:1px solid var(--line);padding:4.5rem 1.5rem}
+.project-section{border-bottom:1px solid var(--line);padding:5rem 1.5rem}
 .project-section h2{border:0;margin:0 0 2rem;padding:0;font-size:2rem;letter-spacing:-.025em}
 .project-section p{margin:0 0 1.3rem;line-height:1.75}
 .project-section h3{margin:0 0 .8rem;padding:0;font-size:1.3rem}
@@ -21,7 +21,7 @@
 .project-card p:last-child{margin-bottom:0}
 .project-card a{overflow-wrap:anywhere}
 .project-website .project-credits{max-width:1100px;margin:auto;padding:1.5rem}
-@media(max-width:760px){.project-hero{padding:4rem 1.25rem}.project-section{padding:3rem 1.25rem}.project-section:has(.project-card)>.project-container{grid-template-columns:minmax(0,1fr)}.project-hero p{font-size:1.1rem}.project-card{padding:1.3rem}}
+@media(max-width:760px){.project-hero h1{font-size:3rem}.project-hero{padding:4rem 1.25rem}.project-section{padding:3rem 1.25rem}.project-section:has(.project-card)>.project-container{grid-template-columns:minmax(0,1fr)}.project-hero p{font-size:1.1rem}.project-card{padding:1.3rem}}
 .project-navigation{padding:.6rem 40px;border-bottom:1px solid var(--line);background:#fff}
 .project-navigation>ul{max-width:1100px;margin:auto;padding:0;display:flex;align-items:baseline;list-style:none;gap:1.5rem;flex-wrap:wrap;font-size:.9rem}
 .project-navigation>ul>li{margin:0}
@@ -32,7 +32,12 @@
 
 .project-section:has(.project-card)>.project-container>*{min-width:0}
 
-/* Both navigation rows share the project content column. */
-.project-website .community-header-row{max-width:1180px}
 @media(max-width:1150px){.project-navigation{padding-inline:28px}}
 @media(max-width:760px){.project-navigation{padding-inline:20px}}
+
+/* Source-selected overview panels preserve ordinary section headings and prose. */
+.project-section-panel>.project-container{max-width:56rem;padding:2rem;border:1px solid var(--line);border-radius:.75rem;background:linear-gradient(135deg,#4051b50d,#303f9f0d)}
+.project-section-panel h2{font-size:1.5rem;line-height:2rem;font-weight:700;margin-bottom:1rem}
+.project-section-panel p{font-size:1.125rem;line-height:1.625;margin-bottom:1rem}
+.project-section-panel p:last-child{margin-bottom:0}
+@media(max-width:760px){.project-section-panel>.project-container{padding:1.5rem}.project-hero p{line-height:1.625}}
