@@ -1440,3 +1440,11 @@ ga:qualityScope a owl:DatatypeProperty ;
     dct:description "Selects whether a publication profile reports findings for all collected resources or only resources in its selected scope."@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     rdfs:domain ga:Profile ; rdfs:range xsd:string .
+
+
+ga:showProvenance a owl:DatatypeProperty ;
+    rdfs:label "Show PDF provenance"@en ;
+    skos:definition "Controls the visible provenance appendix in a PDF publication. Omission defaults to true; false retains audit data while omitting the appendix."@en ;
+    dct:description "Controls the visible provenance appendix in a PDF publication. Omission defaults to true; false retains audit data while omitting the appendix."@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    rdfs:domain ga:Profile ; rdfs:range xsd:boolean .

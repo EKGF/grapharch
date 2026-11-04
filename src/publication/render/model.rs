@@ -154,6 +154,27 @@ impl Plan {
         Ok(plan)
     }
 
+    pub async fn show_pdf_provenance(&self) -> Result<bool> {
+        match self
+            .source
+            .optional(&self.profile, "showProvenance")
+            .await?
+        {
+            None => Ok(true),
+            Some(Term::Literal(value))
+                if value == oxrdf::Literal::from(true) =>
+            {
+                Ok(true)
+            },
+            Some(Term::Literal(value))
+                if value == oxrdf::Literal::from(false) =>
+            {
+                Ok(false)
+            },
+            _ => anyhow::bail!("profile showProvenance must be true or false"),
+        }
+    }
+
     pub async fn toc_depth(&self) -> Result<Option<usize>> {
         let value = match self.source.optional(&self.target, "tocDepth").await?
         {

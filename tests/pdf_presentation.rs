@@ -21,6 +21,12 @@ async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
         "https://ekgf.org/ontology/grapharch#style",
         definitions::literal("overview"),
     )?;
+    let fixture = definitions::set_property(
+        &fixture,
+        "urn:showcase:spec-profile",
+        "https://ekgf.org/ontology/grapharch#showProvenance",
+        oxrdf::Literal::from(false).into(),
+    )?;
     tokio::fs::write(&path, fixture).await?;
     let (dataset, plans) = showcases::authored(&path).await?;
     let archive = source.path().join("source.nq");
@@ -38,6 +44,8 @@ async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
     let typst =
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
+    assert!(!typst.contains("Document provenance"));
+    assert!(!typst.contains("Recent committers"));
     assert!(typst.contains("#let ga-style = \"overview\""));
     assert!(typst.contains("#let ga-overview = ga-style == \"overview\""));
     assert!(
@@ -89,6 +97,7 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
          profile"
     );
     assert!(typst.contains("#let ga-accent = rgb(\"#116659\")"));
+    assert!(typst.contains("Document provenance"));
     assert!(typst.contains("Liberation Sans"));
     assert!(
         typst.contains("#par[#text("),

@@ -199,3 +199,7 @@ ga:PagePanelSectionShape a sh:NodeShape ;
 
 ga:QualityScopeShape a sh:NodeShape ; sh:targetSubjectsOf ga:qualityScope ;
     sh:property [ sh:path ga:qualityScope ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:in ("all" "selected") ] .
+
+
+ga:ShowProvenanceShape a sh:NodeShape ; sh:targetSubjectsOf ga:showProvenance ;
+    sh:property [ sh:path ga:showProvenance ; sh:datatype xsd:boolean ; sh:maxCount 1 ] .

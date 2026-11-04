@@ -78,3 +78,11 @@ Authentication failures, malformed records, exhausted budgets and colliding
 branch slugs fail collection. A failed refresh must leave the previous complete
 publication deployed. This is a build-time snapshot: schedule refreshes and show
 the recorded observation time instead of promising live deployment discovery.
+
+
+For an audience-facing PDF that should omit its visible audit appendix, set
+`ga:showProvenance false` on that target's publication profile. The default is
+`true`. This controls the PDF presentation only: collected provenance and the
+publication manifest remain available for audit, and other profiles retain their
+appendices. Keep human acknowledgments in authored content; recent Git activity
+is not a substitute for collective authorship credits.

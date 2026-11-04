@@ -330,12 +330,14 @@ pub(super) async fn write_typst(
             .await?;
         }
     }
-    plan.provenance
-        .typst(
-            &mut file,
-            Some(entries.appendix + u32::from(!plan.quality.is_empty())),
-        )
-        .await?;
+    if plan.show_pdf_provenance().await? {
+        plan.provenance
+            .typst(
+                &mut file,
+                Some(entries.appendix + u32::from(!plan.quality.is_empty())),
+            )
+            .await?;
+    }
     file.flush().await?;
     Ok(())
 }
