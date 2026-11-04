@@ -232,3 +232,23 @@ fn retained_asset_references_do_not_classify_authored_fragments_as_plans()
     assert!(!ask(&store, "ga:asset rdfs:domain ga:Plan")?);
     Ok(())
 }
+
+#[test]
+fn heading_anchor_presentation_reuses_one_canonical_term_definition()
+-> Result<()> {
+    let store = ontology()?;
+    for predicate in ["rdfs:label", "skos:definition", "dct:description"] {
+        assert!(
+            !ask(
+                &store,
+                &format!(
+                    "ga:headingAnchor {predicate} ?first, ?second . \
+                     FILTER(lang(?first) = 'en' && lang(?second) = 'en' && \
+                     ?first != ?second)"
+                )
+            )?,
+            "headingAnchor must have one canonical English {predicate}"
+        );
+    }
+    Ok(())
+}
