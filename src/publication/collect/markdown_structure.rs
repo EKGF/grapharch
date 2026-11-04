@@ -5,13 +5,39 @@ use {
     anyhow::{Result, ensure},
     oxrdf::{Literal, NamedNode, Quad},
     pulldown_cmark::{Event, Parser, Tag, TagEnd},
-    std::collections::HashMap,
+    std::collections::{BTreeMap, HashMap, HashSet},
 };
+
+pub(super) fn fragment_hints(
+    hints: &BTreeMap<String, String>,
+    whole: &NamedNode,
+) -> Result<BTreeMap<String, NamedNode>> {
+    ensure!(
+        hints.len() <= 1024,
+        "Markdown exceeds 1024 fragment hints"
+    );
+    let mut fragments = BTreeMap::new(); // bounded: at most 1024 source hints.
+    let mut seen = HashSet::new(); // bounded: at most 1024 source hints.
+    for (anchor, iri) in hints {
+        let fragment = NamedNode::new(iri)?;
+        ensure!(
+            &fragment != whole,
+            "section fragment must be distinct from the whole fragment"
+        );
+        ensure!(
+            seen.insert(fragment.clone()),
+            "duplicate Markdown fragment IRI {fragment}"
+        );
+        fragments.insert(anchor.clone(), fragment);
+    }
+    Ok(fragments)
+}
 
 pub(super) fn describe(
     input: &FileInput,
     page: &NamedNode,
     body: &str,
+    fragments: &BTreeMap<String, NamedNode>,
 ) -> Result<Vec<Quad>> {
     let events: Vec<_> =
         Parser::new_ext(body, crate::publication::markdown::options())
@@ -57,6 +83,12 @@ pub(super) fn describe(
         sections.len() <= 1024,
         "Markdown document exceeds 1024-topic budget"
     );
+    for anchor in fragments.keys() {
+        ensure!(
+            sections.iter().any(|section| &section.3 == anchor),
+            "missing Markdown section anchor {anchor}"
+        );
+    }
     let mut output = Vec::new();
     let mut parents: Vec<(usize, NamedNode)> = Vec::new();
     for (index, (start, title, level, slug)) in sections.iter().enumerate() {
@@ -68,7 +100,10 @@ pub(super) fn describe(
             if *level == 0 { "preamble" } else { "heading" },
             slug,
         ]);
-        let fragment = identity("topic-fragment", &[topic.as_str()]);
+        let fragment = fragments
+            .get(slug)
+            .cloned()
+            .unwrap_or_else(|| identity("topic-fragment", &[topic.as_str()]));
         let text = &body[*start..end];
         output.extend([
             input.quad(page, "topic", topic.clone()),

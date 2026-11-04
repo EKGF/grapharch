@@ -74,6 +74,18 @@ impl FileInput {
         })
     }
 
+    pub fn select_fragment(&self, fragment: NamedNode) -> Result<Self> {
+        ensure!(
+            self.fragment
+                .as_ref()
+                .is_none_or(|existing| existing == &fragment),
+            "conflicting Markdown fragment hints"
+        );
+        let mut selected = self.clone();
+        selected.fragment = Some(fragment);
+        Ok(selected)
+    }
+
     pub fn fragment_id(&self) -> NamedNode {
         if let Some(fragment) = &self.fragment {
             return fragment.clone();

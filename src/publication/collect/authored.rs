@@ -5,7 +5,7 @@ use {
     async_trait::async_trait,
     oxrdf::NamedNode,
     serde::Deserialize,
-    std::path::PathBuf,
+    std::{collections::BTreeMap, path::PathBuf},
 };
 
 /// A Markdown-file collector supporting frontmatter and plain Markdown bodies.
@@ -33,6 +33,9 @@ struct Frontmatter {
 #[serde(deny_unknown_fields)]
 struct Hints {
     subject:          Option<String>,
+    fragment:         Option<String>,
+    #[serde(default)]
+    fragments:        BTreeMap<String, String>,
     #[serde(default)]
     showcase_gallery: bool,
     #[serde(default)]
@@ -146,6 +149,16 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
+        let input = match &frontmatter.grapharch.fragment {
+            Some(fragment) => {
+                self.0.select_fragment(NamedNode::new(fragment)?)?
+            },
+            None => self.0.clone(),
+        };
+        let fragments = super::markdown_structure::fragment_hints(
+            &frontmatter.grapharch.fragments,
+            &input.fragment_id(),
+        )?;
         if let Some((title, route)) = &self.2 {
             ensure!(
                 frontmatter
@@ -156,8 +169,8 @@ impl Collector for MarkdownFile {
             );
             if let Some(value) = &frontmatter.page.permalink {
                 ensure!(
-                    super::page::route(self.0.source()?, Some(value))? ==
-                        super::page::route(self.0.source()?, Some(route))?,
+                    super::page::route(input.source()?, Some(value))? ==
+                        super::page::route(input.source()?, Some(route))?,
                     "conflicting Markdown route hints"
                 );
             }
@@ -170,18 +183,21 @@ impl Collector for MarkdownFile {
             .map(NamedNode::new)
             .transpose()?;
         let mut metadata = Vec::new();
+        if self.1.is_some() || !fragments.is_empty() {
+            let page = subject.clone().unwrap_or_else(|| input.fragment_id());
+            metadata.extend(super::markdown_structure::describe(
+                &input, &page, body, &fragments,
+            )?);
+        }
         if let Some(root) = &self.1 {
             use oxrdf::Literal;
             let fragment =
-                subject.clone().unwrap_or_else(|| self.fragment_id());
-            let source = super::page::source_path(root, &self.0.path)?;
+                subject.clone().unwrap_or_else(|| input.fragment_id());
+            let source = super::page::source_path(root, &input.path)?;
             revision = format!("site-page-v8:{source}:{revision}");
             subject = Some(fragment.clone());
-            metadata.extend(super::markdown_structure::describe(
-                &self.0, &fragment, body,
-            )?);
-            metadata.push(self.0.quad(
-                &self.fragment_id(),
+            metadata.push(input.quad(
+                &input.fragment_id(),
                 "partOf",
                 fragment.clone(),
             ));
@@ -212,31 +228,31 @@ impl Collector for MarkdownFile {
                 "page exceeds 32 panel sections"
             );
             for anchor in &frontmatter.grapharch.panel_sections {
-                metadata.push(self.0.quad(
+                metadata.push(input.quad(
                     &fragment,
                     "panelSection",
                     Literal::new_simple_literal(anchor),
                 ));
             }
             if frontmatter.grapharch.showcase_gallery {
-                metadata.push(self.0.quad(
+                metadata.push(input.quad(
                     &fragment,
                     "showcaseGallery",
                     Literal::from(true),
                 ));
             }
             metadata.extend([
-                self.0.quad(
+                input.quad(
                     &fragment,
                     "type",
                     crate::publication::term("Page"),
                 ),
-                self.0.quad(
+                input.quad(
                     &fragment,
                     "sourcePath",
                     Literal::new_simple_literal(&source),
                 ),
-                self.0.quad(
+                input.quad(
                     &fragment,
                     "route",
                     Literal::new_simple_literal(super::page::route(
@@ -244,19 +260,19 @@ impl Collector for MarkdownFile {
                         frontmatter.page.permalink.as_deref(),
                     )?),
                 ),
-                self.0.quad(
+                input.quad(
                     &fragment,
                     "navigationOrder",
                     Literal::from(frontmatter.page.nav_order.unwrap_or(999)),
                 ),
-                self.0.quad(
+                input.quad(
                     &fragment,
                     "navigationHidden",
                     Literal::from(frontmatter.page.nav_exclude),
                 ),
             ]);
             if let Some(parent) = &frontmatter.page.parent {
-                metadata.push(self.0.quad(
+                metadata.push(input.quad(
                     &fragment,
                     "parentTitle",
                     Literal::new_simple_literal(parent),
@@ -269,13 +285,13 @@ impl Collector for MarkdownFile {
             );
         }
         if self.3 {
-            let images = super::markdown_images::describe(&self.0, body)?;
+            let images = super::markdown_images::describe(&input, body)?;
             if !images.is_empty() {
                 revision = format!("markdown-http-images-v1:{revision}");
             }
             metadata.extend(images);
         }
-        let mut quads = self.0.description(
+        let mut quads = input.description(
             body,
             "text/markdown",
             subject,
