@@ -6,6 +6,7 @@ async (page) => {
   for (const width of [1920, 1440, 1000, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(home);
+    await page.evaluate(() => document.fonts.ready);
     check(await page.locator('.project-hero').count() === 1, 'Project hero missing');
     check(await page.locator('.site-navigation').count() === 0, 'Documentation rail leaked into project layout');
     check(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `Project overflows at ${width}`);
@@ -55,6 +56,7 @@ async (page) => {
     await page.locator('.project-navigation').getByRole('link', { name: 'Get Started', exact: true }).click();
     check(new URL(page.url()).pathname.endsWith('/adopt/'), 'Relative project navigation failed');
     check(await page.locator('code.language-json span').count() > 0, 'JSON example lost highlighting');
+    await page.evaluate(() => document.fonts.ready);
     check(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `Guide overflows at ${width}`);
   }
   check(errors.length === 0, `Uncaught browser errors: ${errors.join('; ')}`);
