@@ -18,9 +18,9 @@ impl Style {
                 _ => anyhow::bail!("PDF profile style must be a literal"),
             };
         ensure!(
-            requested
-                .as_deref()
-                .is_none_or(|v| matches!(v, "specification" | "reader")),
+            requested.as_deref().is_none_or(|v| {
+                matches!(v, "specification" | "reader" | "overview")
+            }),
             "unsupported PDF presentation style {}",
             requested.as_deref().unwrap_or_default()
         );
@@ -30,10 +30,14 @@ impl Style {
         ) || requested.as_deref() == Some("specification")
         {
             "specification"
+        } else if requested.as_deref() == Some("overview") {
+            "overview"
         } else {
             "reader"
         };
-        let mut accent = if name == "reader" {
+        let mut accent = if name == "overview" {
+            "#4949b5".into()
+        } else if name == "reader" {
             "#116659".into()
         } else {
             "#005a9c".into()

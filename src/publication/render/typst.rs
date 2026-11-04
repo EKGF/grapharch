@@ -135,7 +135,7 @@ pub(super) async fn begin_book(
         None => String::new(),
         _ => anyhow::bail!("publication subtitle must be a literal"),
     };
-    if style.name == "reader" {
+    if matches!(style.name, "reader" | "overview") {
         if let Some(value) = plan
             .source
             .optional_by(

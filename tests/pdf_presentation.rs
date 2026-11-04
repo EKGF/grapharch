@@ -11,6 +11,44 @@ use {
 };
 
 #[tokio::test]
+async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    let fixture = definitions::set_property(
+        include_str!("../examples/showcase/project.ttl"),
+        "urn:showcase:spec-profile",
+        "https://ekgf.org/ontology/grapharch#style",
+        definitions::literal("overview"),
+    )?;
+    tokio::fs::write(&path, fixture).await?;
+    let (dataset, plans) = showcases::authored(&path).await?;
+    let archive = source.path().join("source.nq");
+    dataset.export(archive.clone()).await?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    source.close()?;
+    let out = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&plans[2], out.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    let typst =
+        tokio::fs::read_to_string(publication.directory.join("main.typ"))
+            .await?;
+    assert!(typst.contains("#let ga-style = \"overview\""));
+    assert!(typst.contains("#let ga-overview = ga-style == \"overview\""));
+    assert!(
+        tokio::fs::read(publication.directory.join("document.pdf"))
+            .await?
+            .starts_with(b"%PDF-")
+    );
+    Ok(())
+}
+
+#[tokio::test]
 async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     let source = tempfile::tempdir()?;
     let path = source.path().join("project.ttl");

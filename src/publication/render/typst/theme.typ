@@ -1,4 +1,5 @@
 // Presentation components shared by all generated content. No source text is evaluated.
+#let ga-overview = ga-style == "overview"
 #let ga-specification = ga-style == "specification"
 #let ga-ink = rgb("#182b35")
 #let ga-muted = rgb("#526670")
@@ -77,6 +78,25 @@
   ]
 }
 #let ga-cover(publisher, title, subtitle, front) = {
+  if ga-overview {
+    set par(justify: false)
+    v(8mm)
+    text(size: 10pt, weight: "bold", fill: ga-accent, tracking: 1.3pt, publisher)
+    v(30mm)
+    rect(width: 24mm, height: 2mm, fill: rgb("#ff9900"), stroke: none)
+    v(9mm)
+    text(size: 43pt, weight: "bold", fill: ga-ink, title)
+    v(7mm)
+    subtitle
+    v(12mm)
+    block(width: 100%, inset: 7mm, fill: ga-soft, radius: 4mm)[
+      #set text(size: 10pt)
+      #set par(justify: false, spacing: 0.8em)
+      #front
+    ]
+    v(1fr)
+    text(size: 9pt, fill: ga-muted)[A practical introduction]
+  } else {
   v(12mm)
   block(width: 100%, inset: (bottom: 6mm), stroke: (bottom: 0.6pt + ga-accent))[
     #text(size: 9pt, weight: "bold", fill: ga-accent, tracking: 0.9pt)[#text(publisher)]
@@ -96,6 +116,7 @@
       #set par(justify: false, leading: 0.6em, spacing: 0.7em)
       #front
     ]
+  }
   }
 }
 #set page(paper: "a4", margin: (left: 23mm, right: 23mm, top: 25mm, bottom: 23mm),
@@ -158,4 +179,14 @@
     #block(sticky: true, below: 6pt)[#text(size: 9pt, weight: "bold", fill: rgb("#685415"))[Example #context counter("ga-example").display()]]
     #body
   ]
+}
+
+// Editorial overview: a calm reading measure and prominent chapter openings.
+#if ga-overview {
+  set text(size: 11pt)
+  set par(justify: false, leading: 0.8em, spacing: 1.3em)
+  set heading(numbering: none)
+  show heading.where(level: 1): set text(size: 31pt, weight: "bold", fill: ga-accent)
+  show heading.where(level: 1): set block(below: 20pt)
+  show heading.where(level: 2): set text(size: 16pt, fill: ga-ink)
 }
