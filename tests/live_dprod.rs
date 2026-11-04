@@ -22,7 +22,15 @@ async fn remote_develop_restores_and_publishes_declared_targets()
     restored.import(archive).await?;
     let publications =
         showcases::publish(&Publisher::new(restored), &plans, output).await?;
-    assert_eq!(publications.len(), 4);
+    assert_eq!(publications.len(), 5);
+    let overview =
+        tokio::fs::read_to_string(output.join("pdf/overview/main.typ")).await?;
+    assert!(overview.contains("DPROD: the bigger picture"));
+    assert!(overview.contains("A product in practice"));
+    assert!(
+        !overview.contains("RDF predicate"),
+        "audience overview must exclude the technical catalogue"
+    );
     let html =
         tokio::fs::read_to_string(output.join("specification/index.html"))
             .await?;

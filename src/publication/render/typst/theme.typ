@@ -7,7 +7,7 @@
 #let ga-soft = ga-accent.lighten(94%)
 #let ga-heading = if ga-specification or ga-overview { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
-#set text(font: "Liberation Sans", size: if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: true)
+#set text(font: "Liberation Sans", size: if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
 #set par(justify: not ga-overview, leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 1em)
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 1em)
@@ -55,7 +55,10 @@
     }
   })
 ]
-#show quote.where(block: true): it => block(width: 100%, breakable: true, inset: (x: 11pt, y: 8pt), fill: ga-soft, stroke: (left: 2pt + ga-accent))[#it.body]
+#show quote.where(block: true): it => block(width: 100%, breakable: true, above: 12pt, below: 12pt, inset: (x: if ga-overview { 16pt } else { 11pt }, y: if ga-overview { 13pt } else { 8pt }), fill: ga-soft, stroke: (left: 2pt + if ga-overview { rgb("#ff9900") } else { ga-accent }))[
+  #set text(size: if ga-overview { 14pt } else { 10.5pt })
+  #it.body
+]
 #let ga-table(columns: (), align: auto, has-header: true, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
   #set text(size: 8.5pt)
   #set par(justify: false, leading: 0.55em, spacing: 0.4em)

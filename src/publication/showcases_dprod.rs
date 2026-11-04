@@ -503,6 +503,15 @@ async fn assemble(
                 ),
                 ("license", "http://purl.org/dc/terms/license"),
             ] {
+                let profile = view.node(target, "profile").await?;
+                if field == "publicationDate" &&
+                    view.optional(&profile, "style").await? ==
+                        Some(
+                            Literal::new_simple_literal("overview").into(),
+                        )
+                {
+                    continue;
+                }
                 ensure!(
                     view.optional(target, field).await?.is_none(),
                     "derived native PDF metadata conflicts with source \
