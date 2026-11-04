@@ -222,10 +222,7 @@ async fn collect_at(
             .await?;
         }
     }
-    ensure!(
-        work.len() <= 128,
-        "showcase gallery exceeds 128-artifact budget"
-    );
+    validate_artifact_count(work.len())?;
     tracing::debug!(
         elapsed_ms = build_started.elapsed().as_millis(),
         "all showcase artifacts built"
@@ -583,3 +580,18 @@ fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
     ensure!(!cases.is_empty(), "showcase registry is empty");
     Ok(cases)
 }
+
+fn validate_artifact_count(count: usize) -> Result<()> {
+    // Bounded: at most 16 registered cases can retain up to 512 aggregate
+    // outputs, including ontology library pages and multiple PDF editions.
+    // The independent 512 MiB retained-byte budget also remains enforced.
+    ensure!(
+        count <= 512,
+        "showcase gallery exceeds 512-artifact budget"
+    );
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "gallery_tests.rs"]
+mod tests;
