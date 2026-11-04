@@ -18,9 +18,11 @@ pub(super) async fn append(
     revision: &NamedNode,
     project: &NamedNode,
     plan: &NamedNode,
+    selected: Option<(&NamedNode, &NamedNode)>,
     stream: &mut ContributionStream,
 ) -> Result<()> {
     let pattern = view.pattern("?subject ?predicate ?value", 0);
+    let selection = selection_pattern(dataset, selected, "?subject");
     let fields = [
         "http://www.w3.org/2000/01/rdf-schema#label",
         "http://www.w3.org/2004/02/skos/core#prefLabel",
@@ -43,7 +45,7 @@ pub(super) async fn append(
     let mut groups = dataset
         .select(format!(
             "SELECT ?subject ?predicate ?language ?datatype WHERE {{ \
-             {pattern} {source} VALUES ?predicate {{ {fields} }} \
+             {pattern} {source} {selection} VALUES ?predicate {{ {fields} }} \
              FILTER(isIRI(?subject) && isLiteral(?value)) \
              BIND(LCASE(LANG(?value)) AS ?language) BIND(DATATYPE(?value) AS \
              ?datatype) }} GROUP BY ?subject ?predicate ?language ?datatype \
@@ -190,8 +192,10 @@ pub(super) async fn append(
                 .await?;
         }
     }
-    retain_source_warnings(dataset, revision, project, plan, stream, count)
-        .await
+    retain_source_warnings(
+        dataset, revision, project, plan, selected, stream, count,
+    )
+    .await
 }
 
 async fn retain_source_warnings(
@@ -199,6 +203,7 @@ async fn retain_source_warnings(
     revision: &NamedNode,
     project: &NamedNode,
     plan: &NamedNode,
+    selected: Option<(&NamedNode, &NamedNode)>,
     stream: &mut ContributionStream,
     mut count: usize,
 ) -> Result<()> {
@@ -216,11 +221,13 @@ async fn retain_source_warnings(
         &format!("?issue <{ga}sourceFragment> ?fragment"),
         1,
     );
+    let selection = selection_pattern(dataset, selected, "?selectedSubject");
     let mut rows = dataset
         .select(format!(
             "SELECT DISTINCT ?code ?message ?reference ?fragment WHERE {{ \
-             {findings} OPTIONAL {{ {fragment} }} }} ORDER BY ?reference \
-             ?code ?message LIMIT 1025"
+             {findings} BIND(IRI(?reference) AS ?selectedSubject) {selection} \
+             OPTIONAL {{ {fragment} }} }} ORDER BY ?reference ?code ?message \
+             LIMIT 1025"
         ))
         .await?;
     while let Some(row) = rows.next().await? {
@@ -278,4 +285,24 @@ async fn retain_source_warnings(
         }
     }
     Ok(())
+}
+
+fn selection_pattern(
+    dataset: &Dataset,
+    selected: Option<(&NamedNode, &NamedNode)>,
+    subject: &str,
+) -> String {
+    match selected {
+        Some((snapshot, scope)) => {
+            let view = RevisionView::new(dataset.clone(), snapshot.clone());
+            format!(
+                "FILTER EXISTS {{ {} }}",
+                view.pattern(
+                    &format!("{scope} {} {subject}", term("member")),
+                    90
+                )
+            )
+        },
+        None => String::new(),
+    }
 }

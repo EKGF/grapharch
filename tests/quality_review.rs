@@ -212,3 +212,64 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     assert!(typst.contains("#ga-callout(\"Warning\""));
     Ok(())
 }
+
+#[tokio::test]
+async fn selected_quality_scope_excludes_unpublished_resources()
+-> anyhow::Result<()> {
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("source.ttl");
+    tokio::fs::write(&path, format!(r#"{}
+<urn:specification:profile> <https://ekgf.org/ontology/grapharch#qualityScope> "selected" .
+<urn:unselected> <http://www.w3.org/2000/01/rdf-schema#label> "One"@en, "Two"@en .
+<urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> "Chosen one"@en, "Chosen two"@en .
+"#, include_str!("../examples/specification/project.ttl"))).await?;
+    let dataset = Dataset::memory()?;
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
+    RdfFile::new(
+        "urn:specification:project",
+        "urn:quality:source",
+        path,
+    )?
+    .collect(&writer)
+    .await?;
+    let revision = Assembler::new(dataset.clone())
+        .assemble("urn:specification:project")
+        .await?;
+    let plan = TargetPlanner::new(dataset.clone(), revision)
+        .resolve(
+            "urn:specification:project",
+            &oxrdf::NamedNode::new("urn:specification:target")?,
+            &writer,
+        )
+        .await?;
+    drop(writer);
+    worker.await??;
+    let archive = source.path().join("source.nq");
+    dataset.export(archive.clone()).await?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    source.close()?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&plan, output.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    assert!(
+        publication
+            .manifest
+            .diagnostics
+            .iter()
+            .any(|d| d.reference == "urn:specification:subject")
+    );
+    assert!(
+        !publication
+            .manifest
+            .diagnostics
+            .iter()
+            .any(|d| d.reference == "urn:unselected")
+    );
+    Ok(())
+}

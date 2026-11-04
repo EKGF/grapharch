@@ -235,12 +235,23 @@ impl TargetPlanner {
         }
         self.assets(&selection, target, renderer_kind, &mut stream)
             .await?;
+        let selected_quality = match view
+            .optional(&profile, "qualityScope")
+            .await?
+        {
+            None => false,
+            Some(Term::Literal(value)) if value.value() == "all" => false,
+            Some(Term::Literal(value)) if value.value() == "selected" => true,
+            _ => bail!("profile qualityScope must be all or selected"),
+        };
         quality::append(
             &self.dataset,
             &view,
             &self.revision,
             &project,
             &plan,
+            selected_quality
+                .then_some((selection.scope_snapshot, selection.scope_plan)),
             &mut stream,
         )
         .await?;

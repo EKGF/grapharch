@@ -195,3 +195,7 @@ ga:PagePanelSectionShape a sh:NodeShape ;
     sh:property [ sh:path ga:panelSection ; sh:datatype xsd:string ;
         sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ;
         sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .
+
+
+ga:QualityScopeShape a sh:NodeShape ; sh:targetSubjectsOf ga:qualityScope ;
+    sh:property [ sh:path ga:qualityScope ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:in ("all" "selected") ] .

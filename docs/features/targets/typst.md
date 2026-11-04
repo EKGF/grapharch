@@ -38,6 +38,9 @@ a website and a guide without putting the full technical reference in both.
 
 An overview is a community explanation, not an approval or release declaration.
 Its provenance section still records the source revision and generator.
+An independently scoped guide can set `ga:qualityScope "selected"` on its profile
+to report findings for the resources it selects. The default, `"all"`, retains
+project-wide findings. Original diagnostics stay in the documentation KG.
 
 ## Match the publication to its size
 
