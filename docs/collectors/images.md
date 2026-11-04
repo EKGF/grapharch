@@ -31,6 +31,29 @@ Repository Markdown can resolve a relative path such as
 the retained bytes without fetching the image again. Supply meaningful
 alternative text. SVG validation rejects active content and external references.
 
+## Use source-local images
+
+A local website source tree can keep illustrations beside its canonical Markdown:
+
+```markdown
+![Product lifecycle](assets/lifecycle.svg)
+```
+
+The website collector discovers SVG, PNG, and JPEG files beneath the documentation
+root and retains them as bounded binary assets. Relative Markdown image paths
+resolve from the Markdown file's directory; their canonical paths must stay
+inside that root. Missing files, paths escaping the root, query strings, and
+fragment identifiers fail explicitly. The same source file can supply website
+and PDF profiles, including selected section fragments, without fetching an
+absolute production URL. Rendering reads the validated bytes from the pinned KG.
+
+A standalone local `MarkdownFile` uses its parent directory as the image root.
+Embedders collecting standalone inputs can retain a corresponding image with
+`LocalImageFile::new(project, root, path).await?`; the full website pipeline
+schedules discovered images automatically. HTTPS requests keep their independent
+collector and asset-factory behavior. Every image uses the existing 2 MiB,
+dimension, and SVG-content limits.
+
 ## Configure a product logo
 
 The DPROD showcase's source-owned publication definitions demonstrate an

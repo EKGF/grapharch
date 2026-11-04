@@ -9,6 +9,7 @@ pub mod git;
 mod hashing_reader;
 mod http_rdf;
 mod image;
+mod local_image;
 mod markdown_images;
 mod markdown_structure;
 mod module_hints;
@@ -38,6 +39,7 @@ pub use {
     endpoint::{SparqlEndpointSource, SparqlSourceConfig},
     http_rdf::RdfUrl,
     image::HttpImage,
+    local_image::LocalImageFile,
     markdown_images::{
         AssetCollectorFactory,
         HttpImageRequest,

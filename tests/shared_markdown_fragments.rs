@@ -47,8 +47,18 @@ async fn one_canonical_edit_updates_html_and_pdf_from_shared_restored_fragments(
         let input = tempfile::tempdir()?;
         let settings = input.path().join("project.ttl");
         tokio::fs::write(&settings, DEFINITIONS).await?;
-        tokio::fs::write(input.path().join("index.md"), source(sentence))
-            .await?;
+        tokio::fs::write(
+            input.path().join("index.md"),
+            source(sentence).replace(
+                sentence,
+                &format!(
+                    "{sentence}\n\n![Shared illustration](assets/model.svg)"
+                ),
+            ),
+        )
+        .await?;
+        tokio::fs::create_dir(input.path().join("assets")).await?;
+        tokio::fs::write(input.path().join("assets/model.svg"), r##"<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60"><rect width="120" height="60" fill="#4949b5"/></svg>"##).await?;
         let collected = website::collect(
             input.path(),
             &settings,
@@ -105,6 +115,12 @@ async fn one_canonical_edit_updates_html_and_pdf_from_shared_restored_fragments(
             assert!(
                 body.contains(sentence),
                 "{file} did not use the canonical fragment"
+            );
+            assert!(
+                publication.manifest.files.iter().any(|path| {
+                    path.starts_with("assets/") && path.ends_with(".svg")
+                }),
+                "{file} must retain its local image"
             );
             if file == "main.typ" {
                 assert!(!body.contains("Additional website-only detail."));
@@ -194,5 +210,46 @@ async fn standalone_and_website_collectors_keep_the_same_fragment_identities()
     }
     drop(writer);
     worker.await??;
+    Ok(())
+}
+
+#[tokio::test]
+async fn local_markdown_images_reject_missing_and_escaping_paths() -> Result<()>
+{
+    for destination in ["assets/missing.svg", "../outside.svg"] {
+        let parent = tempfile::tempdir()?;
+        let root = parent.path().join("site");
+        tokio::fs::create_dir(&root).await?;
+        tokio::fs::write(
+            parent.path().join("outside.svg"),
+            r#"<svg xmlns="http://www.w3.org/2000/svg"/>"#,
+        )
+        .await?;
+        let settings = root.join("project.ttl");
+        tokio::fs::write(&settings, DEFINITIONS).await?;
+        tokio::fs::write(
+            root.join("index.md"),
+            source(&format!("![Invalid image]({destination})")),
+        )
+        .await?;
+        let result =
+            website::collect(&root, &settings, "urn:project", "urn:site", 2)
+                .await;
+        let error = match result {
+            Ok(_) => panic!("invalid local image must fail"),
+            Err(error) => error,
+        };
+        let message = format!("{error:#}");
+        assert!(
+            message.contains(
+                if destination.starts_with("..") {
+                    "escapes documentation root"
+                } else {
+                    "local Markdown image"
+                }
+            ),
+            "{message}"
+        );
+    }
     Ok(())
 }

@@ -1,13 +1,14 @@
 //! Describe image requests in source fragments, then schedule distinct image
 //! inputs after the Markdown batch has completed. No source file is reopened.
 use {
-    super::{Collector, HttpImage, source::FileInput},
+    super::{Collector, HttpImage, LocalImageFile, source::FileInput},
     crate::publication::{dataset::Dataset, term, view::RevisionView},
     anyhow::{Result, ensure},
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
     pulldown_cmark::{Event, Parser, Tag},
     std::{
         collections::{BTreeMap, BTreeSet},
+        path::Path,
         sync::Arc,
     },
 };
@@ -35,7 +36,11 @@ pub(crate) fn default_http_image_factory(
     Ok(Arc::new(HttpImage::new(project, &request.url)?))
 }
 
-pub(super) fn describe(input: &FileInput, body: &str) -> Result<Vec<Quad>> {
+pub(super) async fn describe(
+    input: &FileInput,
+    root: Option<&Path>,
+    body: &str,
+) -> Result<Vec<Quad>> {
     let mut seen = BTreeSet::new();
     let mut metadata = Vec::new();
     for event in Parser::new_ext(body, crate::publication::markdown::options())
@@ -54,24 +59,44 @@ pub(super) fn describe(input: &FileInput, body: &str) -> Result<Vec<Quad>> {
             dest_url.len() <= 4096,
             "Markdown image URL exceeds byte budget"
         );
-        let image = HttpImage::new(input.project.as_str(), &dest_url)?;
+        let (asset, url) = match url::Url::parse(&dest_url) {
+            Ok(_) => {
+                (
+                    HttpImage::new(input.project.as_str(), &dest_url)?.id(),
+                    dest_url.to_string(),
+                )
+            },
+            Err(url::ParseError::RelativeUrlWithoutBase) => {
+                let image = LocalImageFile::reference(
+                    input.project.as_str(),
+                    root,
+                    &input.path,
+                    &dest_url,
+                )
+                .await?;
+                let asset = image.id();
+                let url = asset.as_str().to_owned();
+                (asset, url)
+            },
+            Err(error) => return Err(error.into()),
+        };
         let reference = crate::publication::dataset::identity(
             "markdown-image-reference",
             &[input.fragment_id().as_str(), &dest_url],
         );
         metadata.extend([
-            input.quad(&input.fragment_id(), "asset", image.id()),
+            input.quad(&input.fragment_id(), "asset", asset.clone()),
             input.quad(
                 &input.fragment_id(),
                 "reference",
                 reference.clone(),
             ),
             input.quad(&reference, "type", term("ExternalReference")),
-            input.quad(&reference, "asset", image.id()),
+            input.quad(&reference, "asset", asset.clone()),
             input.quad(
                 &reference,
                 "url",
-                Literal::new_simple_literal(dest_url.as_ref()),
+                Literal::new_simple_literal(&url),
             ),
             Quad::new(
                 reference,

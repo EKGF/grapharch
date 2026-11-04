@@ -333,7 +333,12 @@ impl Collector for MarkdownFile {
             );
         }
         if self.3 {
-            let images = super::markdown_images::describe(&input, body)?;
+            let images = super::markdown_images::describe(
+                &input,
+                self.1.as_deref(),
+                body,
+            )
+            .await?;
             if !images.is_empty() {
                 revision = format!("markdown-http-images-v1:{revision}");
             }

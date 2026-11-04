@@ -5,6 +5,7 @@ use {
         assembly::Assembler,
         collect::{
             Collector,
+            LocalImageFile,
             MarkdownFile,
             RdfFile,
             TextAssetFile,
@@ -35,7 +36,8 @@ pub struct CollectedWebsite {
 
 /// Build a website plan from a bounded documentation tree and RDF definitions.
 /// Hidden and underscore-prefixed directories are excluded from discovery.
-/// Supported sources are Markdown pages and `.ttl`/`.txt` downloads plus CNAME.
+/// Supported sources are Markdown pages, SVG/PNG/JPEG images, and `.ttl`/`.txt`
+/// downloads plus CNAME.
 pub async fn collect(
     source: &Path,
     definitions: &Path,
@@ -107,6 +109,10 @@ pub async fn collect_with_asset_factory(
                     source.clone(),
                     path,
                 )?));
+            } else if LocalImageFile::supported(&path) {
+                work.push(Arc::new(
+                    LocalImageFile::new(project, &source, &path).await?,
+                ));
             } else {
                 work.push(Arc::new(TextAssetFile::new(
                     project,
@@ -197,7 +203,8 @@ async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
                 pending.push(entry.path());
             } else if name == "CNAME" ||
                 entry.path().extension().is_some_and(|ext| {
-                    matches!(ext.to_str(), Some("md" | "ttl" | "txt"))
+                    matches!(ext.to_str(), Some("md" | "ttl" | "txt")) ||
+                        LocalImageFile::supported(&entry.path())
                 })
             {
                 files.push(entry.path());

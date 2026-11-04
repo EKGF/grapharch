@@ -53,9 +53,10 @@ grapharch publication collect --store output/kg \
 
 `MarkdownFile::in_site` adds page hints for a website; `GitMarkdownFile` reads a
 pinned repository blob and resolves repository-relative references. Retained
-images use the [Image Collector](images.md). A local Markdown
-fragment's image handling and a pinned Git page's relative-file resolution are
-distinct entry points; do not assume every arbitrary path is fetched.
+images use the [Image Collector](images.md). Local website images must remain
+beneath the documentation root; pinned Git pages resolve files inside their
+selected repository revision. Renderers use retained bytes rather than fetching
+arbitrary paths.
 
 ## Reuse canonical content in several publications
 
