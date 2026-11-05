@@ -117,3 +117,7 @@ Equivalent RDF uses `ga:featureSection "benefits"` and `ga:cardPresentation`
 with `ga:headingAnchor`, `ga:iconName`, and `ga:iconTone`. The collected hints
 remain in the KG, so rendering does not reopen the Markdown file. Lucide icon
 license notices are retained with the generated website's identity credits.
+
+### Resource lists
+
+Select `grapharch.resource_sections: [articles-talks]` to present a level-two section as a single-column list of resources. Its level-three headings remain canonical content headings. Cards use smaller horizontal icons; link-only paragraphs become calls to action with decorative external-link symbols. Select `book-open` in `card_icons` with explicit `primary` or `accent` tones. A section cannot select both feature and resource presentation. These hints are retained in the publication graph and do not duplicate the Markdown prose.

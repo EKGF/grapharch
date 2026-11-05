@@ -32,18 +32,20 @@ struct Frontmatter {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Hints {
-    subject:          Option<String>,
-    fragment:         Option<String>,
+    subject:           Option<String>,
+    fragment:          Option<String>,
     #[serde(default)]
-    fragments:        BTreeMap<String, String>,
+    fragments:         BTreeMap<String, String>,
     #[serde(default)]
-    showcase_gallery: bool,
+    showcase_gallery:  bool,
     #[serde(default)]
-    panel_sections:   Vec<String>,
+    panel_sections:    Vec<String>,
     #[serde(default)]
-    feature_sections: Vec<String>,
+    feature_sections:  Vec<String>,
     #[serde(default)]
-    card_icons:       BTreeMap<String, CardIcon>,
+    resource_sections: Vec<String>,
+    #[serde(default)]
+    card_icons:        BTreeMap<String, CardIcon>,
 }
 
 #[derive(Deserialize)]
@@ -253,6 +255,17 @@ impl Collector for MarkdownFile {
                 metadata.push(input.quad(
                     &fragment,
                     "featureSection",
+                    Literal::new_simple_literal(anchor),
+                ));
+            }
+            ensure!(
+                frontmatter.grapharch.resource_sections.len() <= 32,
+                "page exceeds 32 resource sections"
+            );
+            for anchor in &frontmatter.grapharch.resource_sections {
+                metadata.push(input.quad(
+                    &fragment,
+                    "resourceSection",
                     Literal::new_simple_literal(anchor),
                 ));
             }

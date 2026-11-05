@@ -23,13 +23,13 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     tokio::fs::write(
         input.path().join("index.md"),
         "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: urn:home\n  \
-         panel_sections: [benefits]\n  feature_sections: [benefits]\n  \
+         panel_sections: [benefits]\n  feature_sections: [benefits]\n  resource_sections: [next-steps]\n  \
          card_icons:\n    first-benefit: {name: network, tone: primary}\n    \
-         second-benefit: {name: shield, tone: accent}\n---\n# Example \
+         second-benefit: {name: shield, tone: accent}\n    article: {name: book-open, tone: primary}\n---\n# Example \
          project\n\nAn introduction.\n\n[Get started](guide.md)\n\n## \
          Benefits\n\n### First benefit\n\nA source-owned explanation.\n\n### \
-         Second benefit\n\nAnother explanation.\n\n## Next steps\n\n[Read the \
-         guide](guide.md)\n",
+         Second benefit\n\nAnother explanation.\n\n## Next steps\n\n### Article\n\nArticle summary.\n\n[Read the \
+         guide](https://example.org/article)\n",
     )
     .await?;
     tokio::fs::write(
@@ -69,19 +69,31 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
         doc.select(&scraper::Selector::parse(selector).unwrap())
             .count()
     };
+    assert_eq!(
+        count(".project-section-resources h2#next-steps"),
+        1
+    );
+    assert_eq!(
+        count(".project-section-resources .project-card-content h3#article"),
+        1
+    );
+    assert_eq!(
+        count(".project-card-action a svg[aria-hidden=\"true\"]"),
+        1
+    );
     assert_eq!(count(".project-hero"), 1);
     assert_eq!(count(".project-identity-row"), 0);
     assert_eq!(count(".project-section"), 2);
     assert_eq!(count(".project-section-panel"), 1);
     assert_eq!(count(".project-section-panel h2#benefits"), 1);
     assert_eq!(count(".project-section-panel h2#next-steps"), 0);
-    assert_eq!(count(".project-card"), 2);
+    assert_eq!(count(".project-card"), 3);
     assert_eq!(count(".project-section-features h2#benefits"), 1);
     assert_eq!(
         count(".project-card-icon[aria-hidden=\"true\"]"),
-        2
+        3
     );
-    assert_eq!(count(".project-card-icon-primary svg"), 1);
+    assert_eq!(count(".project-card-icon-primary svg"), 2);
     assert_eq!(count(".project-card-icon-accent svg"), 1);
     assert_eq!(count(".project-hero .project-actions"), 1);
     assert_eq!(
@@ -183,7 +195,15 @@ async fn invalid_feature_card_hints_fail_publication() -> Result<()> {
     for (hint, expected) in [
         (
             "feature_sections: [missing]",
-            "feature section missing",
+            "presentation section missing",
+        ),
+        (
+            "resource_sections: [missing]",
+            "presentation section missing",
+        ),
+        (
+            "feature_sections: [benefits]\n  resource_sections: [benefits]",
+            "conflicting presentations",
         ),
         (
             "card_icons:\n    benefit: {name: absent, tone: primary}",

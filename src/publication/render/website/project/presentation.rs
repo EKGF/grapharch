@@ -8,8 +8,9 @@ use {
 
 #[derive(Default)]
 pub(in crate::publication::render::website) struct Presentation {
-    pub features: Vec<String>,
-    pub icons:    BTreeMap<String, (String, String)>,
+    pub features:  Vec<String>,
+    pub resources: Vec<String>,
+    pub icons:     BTreeMap<String, (String, String)>,
 }
 impl Presentation {
     pub async fn read(plan: &Plan, page: &NamedNode) -> Result<Self> {
@@ -23,6 +24,19 @@ impl Presentation {
             value
                 .features
                 .push(literal(&row["value"], "feature section")?);
+        }
+        let mut rows = plan.source.objects(page, "resourceSection").await?;
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                value.resources.len() < 32,
+                "page exceeds 32 resource sections"
+            );
+            let anchor = literal(&row["value"], "resource section")?;
+            ensure!(
+                !value.features.contains(&anchor),
+                "section {anchor} has conflicting presentations"
+            );
+            value.resources.push(anchor);
         }
         let mut rows = plan.source.objects(page, "cardPresentation").await?;
         while let Some(row) = rows.next().await? {
@@ -65,6 +79,7 @@ pub(super) fn icon_svg(name: &str) -> Option<&'static str> {
         "network" => Some(include_str!("icons/network.svg")),
         "file-json" => Some(include_str!("icons/file-json.svg")),
         "git-branch" => Some(include_str!("icons/git-branch.svg")),
+        "book-open" => Some(include_str!("icons/book-open.svg")),
         "shield" => Some(include_str!("icons/shield.svg")),
         _ => None,
     }

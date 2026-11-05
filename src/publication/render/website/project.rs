@@ -51,6 +51,7 @@ pub(super) fn sections(
     );
     let mut section = false;
     let mut card = false;
+    let mut resource = false;
     for node in fragment.root_element().children() {
         let Some(element) = ElementRef::wrap(node) else {
             continue
@@ -58,7 +59,9 @@ pub(super) fn sections(
         match element.value().name() {
             "h2" => {
                 if card {
-                    output.push_str("</div>");
+                    output.push_str(
+                        if resource { "</div></div>" } else { "</div>" },
+                    );
                     card = false;
                 }
                 output.push_str(
@@ -93,11 +96,25 @@ pub(super) fn sections(
                         " project-section-features",
                     );
                 }
+                resource = element.value().attr("id").is_some_and(|id| {
+                    presentation.resources.iter().any(|anchor| anchor == id)
+                });
+                if resource {
+                    let marker = output
+                        .rfind("<section class=\"project-section")
+                        .unwrap();
+                    output.insert_str(
+                        marker + "<section class=\"project-section".len(),
+                        " project-section-resources",
+                    );
+                }
                 section = true;
             },
             "h3" if section => {
                 if card {
-                    output.push_str("</div>");
+                    output.push_str(
+                        if resource { "</div></div>" } else { "</div>" },
+                    );
                 }
                 output.push_str("<div class=\"project-card\">");
                 if let Some((name, tone)) = element
@@ -112,6 +129,9 @@ pub(super) fn sections(
                         presentation::icon_svg(name).expect("validated icon")
                     ));
                 }
+                if resource {
+                    output.push_str("<div class=\"project-card-content\">");
+                }
                 card = true;
             },
             _ => {},
@@ -123,12 +143,19 @@ pub(super) fn sections(
                 "<p class=\"project-actions\">",
                 1,
             ));
+        } else if resource && card && action_paragraph(element) {
+            let icon = include_str!("project/icons/external-link.svg");
+            output.push_str(
+                &html
+                    .replacen("<p>", "<p class=\"project-card-action\">", 1)
+                    .replace("</a>", &format!("{icon}</a>")),
+            );
         } else {
             output.push_str(&html);
         }
     }
     if card {
-        output.push_str("</div>");
+        output.push_str(if resource { "</div></div>" } else { "</div>" });
     }
     output.push_str(
         if section {

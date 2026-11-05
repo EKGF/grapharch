@@ -207,5 +207,8 @@ ga:ShowProvenanceShape a sh:NodeShape ; sh:targetSubjectsOf ga:showProvenance ;
 ga:ProjectCardPresentationShape a sh:NodeShape ;
     sh:targetObjectsOf ga:cardPresentation ;
     sh:property [ sh:path ga:headingAnchor ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
-    sh:property [ sh:path ga:iconName ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("network" "file-json" "git-branch" "shield") ] ;
+    sh:property [ sh:path ga:iconName ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("network" "file-json" "git-branch" "shield" "book-open") ] ;
     sh:property [ sh:path ga:iconTone ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("primary" "accent") ] .
+
+ga:PageResourceSectionShape a sh:NodeShape ; sh:targetSubjectsOf ga:resourceSection ;
+    sh:property [ sh:path ga:resourceSection ; sh:datatype xsd:string ; sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ; sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .

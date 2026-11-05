@@ -282,13 +282,15 @@ async fn write_page(
             header.metadata.head(plan, &header.title, page).await?;
         let panels = project::panels(plan, id).await?;
         let presentation = project::Presentation::read(plan, id).await?;
-        for anchor in &presentation.features {
+        for anchor in
+            presentation.features.iter().chain(&presentation.resources)
+        {
             ensure!(
                 content
                     .headings
                     .iter()
                     .any(|h| h.level == 2 && h.anchor == *anchor),
-                "feature section {anchor} is not a level-two heading"
+                "presentation section {anchor} is not a level-two heading"
             );
         }
         for anchor in presentation.icons.keys() {
