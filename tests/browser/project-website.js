@@ -54,6 +54,7 @@ async (page) => {
       check(!await menu.evaluate(node => node.open), 'Escape must close the community menu');
     }
     await page.locator('.project-navigation').getByRole('link', { name: 'Get Started', exact: true }).click();
+    await page.waitForLoadState('load');
     check(new URL(page.url()).pathname.endsWith('/adopt/'), 'Relative project navigation failed');
     check(await page.locator('code.language-json span').count() > 0, 'JSON example lost highlighting');
     await page.evaluate(() => document.fonts.ready);
