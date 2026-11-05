@@ -17,6 +17,8 @@ async (page) => {
               icon: getComputedStyle(icon).width, tone: getComputedStyle(icon).color,
               beside: icon.getBoundingClientRect().right < text.getBoundingClientRect().left,
               title: getComputedStyle(text.querySelector('h3')).fontSize,
+              bottom: getComputedStyle(text.lastElementChild).marginBottom,
+              weight: getComputedStyle(text.querySelector('.project-card-action a')).fontWeight,
               cta: !!card.querySelector('.project-card-action a svg[aria-hidden="true"]')};
           }),
         };
@@ -24,7 +26,7 @@ async (page) => {
       if (result.overflow || result.cards.length < 2) throw new Error(`${width}/${scheme}: resource overflow or missing cards`);
       const first = result.cards[0];
       for (const card of result.cards) {
-        if (card.x !== first.x || card.width !== first.width || card.icon !== '24px' || !card.beside || card.title !== '20px' || !card.cta) {
+        if (card.x !== first.x || card.width !== first.width || card.icon !== '24px' || !card.beside || card.title !== '20px' || card.bottom !== '0px' || card.weight !== '500' || !card.cta) {
           throw new Error(`${width}/${scheme}: resource-list composition mismatch ${JSON.stringify(card)}`);
         }
       }
