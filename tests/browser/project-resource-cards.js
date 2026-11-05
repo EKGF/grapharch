@@ -9,6 +9,7 @@ async (page) => {
       const result = await page.locator('.project-section-resources').evaluate(section => {
         const cards = [...section.querySelectorAll('.project-card')];
         return {
+          headingGap: cards[0].getBoundingClientRect().top - section.querySelector('h2').getBoundingClientRect().bottom,
           overflow: document.documentElement.scrollWidth > innerWidth,
           cards: cards.map(card => {
             const icon = card.querySelector('.project-card-icon');
@@ -23,7 +24,7 @@ async (page) => {
           }),
         };
       });
-      if (result.overflow || result.cards.length < 2) throw new Error(`${width}/${scheme}: resource overflow or missing cards`);
+      if (result.headingGap !== 32 || result.overflow || result.cards.length < 2) throw new Error(`${width}/${scheme}: resource geometry mismatch (heading gap ${result.headingGap}px)`);
       const first = result.cards[0];
       for (const card of result.cards) {
         if (card.x !== first.x || card.width !== first.width || card.icon !== '24px' || !card.beside || card.title !== '20px' || card.bottom !== '0px' || card.weight !== '500' || !card.cta) {

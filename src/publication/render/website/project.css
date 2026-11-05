@@ -65,4 +65,4 @@ html[data-color-scheme="dark"] .project-card-icon-accent{color:#ff9b4d}
 .project-card-action a{display:inline-flex;align-items:center;gap:.5rem;font-weight:500;text-decoration:none}
 .project-card-action svg{width:1rem;height:1rem;flex:none}
 
-.project-section-resources h2{font-size:1.875rem;line-height:2.25rem}
+.project-section-resources h2{font-size:1.875rem;line-height:2.25rem;margin-bottom:1rem}
