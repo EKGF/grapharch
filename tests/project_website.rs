@@ -22,7 +22,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
 "#).await?;
     tokio::fs::write(
         input.path().join("index.md"),
-        "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: urn:home\n  \
+        "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: urn:home\n  hero: landing\n  \
          panel_sections: [benefits]\n  feature_sections: [benefits]\n  resource_sections: [next-steps]\n  \
          card_icons:\n    first-benefit: {name: network, tone: primary}\n    \
          second-benefit: {name: shield, tone: accent}\n    article: {name: book-open, tone: primary}\n---\n# Example \
@@ -35,7 +35,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     tokio::fs::write(
         input.path().join("guide.md"),
         "---\ntitle: Guide\npermalink: /guide/\ngrapharch:\n  subject: \
-         urn:guide\n---\n[Home](index.md)\n",
+         urn:guide\n  card_icons:\n    step: {name: rocket, tone: primary}\n---\n[Home](index.md)\n\n## Step\n\nGuide text.\n\n[Read more](https://example.org/more)\n",
     )
     .await?;
     let collected = website::collect(
@@ -81,7 +81,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
         count(".project-card-action a svg[aria-hidden=\"true\"]"),
         1
     );
-    assert_eq!(count(".project-hero"), 1);
+    assert_eq!(count(".project-hero.project-hero-landing"), 1);
     assert_eq!(count(".project-identity-row"), 0);
     assert_eq!(count(".project-section"), 2);
     assert_eq!(count(".project-section-panel"), 1);
@@ -110,6 +110,9 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     )
     .await?;
     assert!(nested.contains("href=\"../\""));
+    assert!(nested.contains("project-hero-introduction"));
+    assert!(nested.contains("project-section-heading"));
+    assert!(nested.contains("project-section-actions"));
     let guide = scraper::Html::parse_document(&nested);
     assert_eq!(
         guide
@@ -193,6 +196,7 @@ async fn unknown_panel_heading_fails_instead_of_silently_styling_another_section
 #[tokio::test]
 async fn invalid_feature_card_hints_fail_publication() -> Result<()> {
     for (hint, expected) in [
+        ("hero: unknown", "unsupported hero presentation"),
         (
             "feature_sections: [missing]",
             "presentation section missing",

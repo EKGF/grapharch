@@ -46,8 +46,14 @@ pub(super) fn sections(
     presentation: &Presentation,
 ) -> String {
     let fragment = Html::parse_fragment(body);
-    let mut output = String::from(
-        "<div class=\"project-hero\"><div class=\"project-container\">",
+    let mut output = format!(
+        "<div class=\"project-hero project-hero-{}\"><div \
+         class=\"project-container\">",
+        if presentation.landing {
+            "landing"
+        } else {
+            "introduction"
+        }
     );
     let mut section = false;
     let mut card = false;
@@ -137,19 +143,50 @@ pub(super) fn sections(
             _ => {},
         }
         let html = element.html();
-        if !section && action_paragraph(element) {
+        if section &&
+            element.value().name() == "h2" &&
+            element
+                .value()
+                .attr("id")
+                .is_some_and(|id| presentation.icons.contains_key(id))
+        {
+            let (name, tone) =
+                &presentation.icons[element.value().attr("id").unwrap()];
+            output.push_str(&format!(
+                "<div class=\"project-section-heading\"><span \
+                 class=\"project-card-icon project-card-icon-{tone}\" \
+                 aria-hidden=\"true\">{}</span>{html}</div>",
+                presentation::icon_svg(name).expect("validated icon")
+            ));
+        } else if !section && action_paragraph(element) {
             output.push_str(&html.replacen(
                 "<p>",
                 "<p class=\"project-actions\">",
                 1,
             ));
-        } else if resource && card && action_paragraph(element) {
-            let icon = include_str!("project/icons/external-link.svg");
-            output.push_str(
-                &html
-                    .replacen("<p>", "<p class=\"project-card-action\">", 1)
-                    .replace("</a>", &format!("{icon}</a>")),
-            );
+        } else if card && action_paragraph(element) {
+            let mut actions =
+                html.replacen("<p>", "<p class=\"project-card-action\">", 1);
+            for link in element.child_elements() {
+                let icon = if link.value().attr("href").is_some_and(|href| {
+                    href.starts_with("https://") || href.starts_with("http://")
+                }) {
+                    include_str!("project/icons/external-link.svg")
+                } else {
+                    include_str!("project/icons/arrow-right.svg")
+                };
+                actions = actions.replace(
+                    &link.html(),
+                    &link.html().replace("</a>", &format!("{icon}</a>")),
+                );
+            }
+            output.push_str(&actions);
+        } else if section && action_paragraph(element) {
+            output.push_str(&html.replacen(
+                "<p>",
+                "<p class=\"project-section-actions\">",
+                1,
+            ));
         } else {
             output.push_str(&html);
         }

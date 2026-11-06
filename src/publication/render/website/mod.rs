@@ -298,8 +298,8 @@ async fn write_page(
                 content
                     .headings
                     .iter()
-                    .any(|h| h.level == 3 && h.anchor == *anchor),
-                "card icon {anchor} is not a level-three heading"
+                    .any(|h| matches!(h.level, 2 | 3) && h.anchor == *anchor),
+                "card icon {anchor} is not a level-two or level-three heading"
             );
         }
         for anchor in &panels {

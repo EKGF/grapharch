@@ -8,6 +8,7 @@ use {
 
 #[derive(Default)]
 pub(in crate::publication::render::website) struct Presentation {
+    pub landing:   bool,
     pub features:  Vec<String>,
     pub resources: Vec<String>,
     pub icons:     BTreeMap<String, (String, String)>,
@@ -15,6 +16,14 @@ pub(in crate::publication::render::website) struct Presentation {
 impl Presentation {
     pub async fn read(plan: &Plan, page: &NamedNode) -> Result<Self> {
         let mut value = Self::default();
+        if let Some(hero) = plan.source.optional(page, "heroKind").await? {
+            let hero = literal(&hero, "hero presentation")?;
+            ensure!(
+                matches!(hero.as_str(), "landing" | "introduction"),
+                "unsupported hero presentation {hero}"
+            );
+            value.landing = hero == "landing";
+        }
         let mut rows = plan.source.objects(page, "featureSection").await?;
         while let Some(row) = rows.next().await? {
             ensure!(
@@ -76,6 +85,23 @@ fn literal(value: &Term, name: &str) -> Result<String> {
 }
 pub(super) fn icon_svg(name: &str) -> Option<&'static str> {
     match name {
+        "triangle-alert" => Some(include_str!("icons/triangle-alert.svg")),
+        "search" => Some(include_str!("icons/search.svg")),
+        "plug" => Some(include_str!("icons/plug.svg")),
+        "users" => Some(include_str!("icons/users.svg")),
+        "megaphone" => Some(include_str!("icons/megaphone.svg")),
+        "layers" => Some(include_str!("icons/layers.svg")),
+        "store" => Some(include_str!("icons/store.svg")),
+        "cloud" => Some(include_str!("icons/cloud.svg")),
+        "rocket" => Some(include_str!("icons/rocket.svg")),
+        "folder-open" => Some(include_str!("icons/folder-open.svg")),
+        "quote" => Some(include_str!("icons/quote.svg")),
+        "package" => Some(include_str!("icons/package.svg")),
+        "database" => Some(include_str!("icons/database.svg")),
+        "file-box" => Some(include_str!("icons/file-box.svg")),
+        "sparkles" => Some(include_str!("icons/sparkles.svg")),
+        "vote" => Some(include_str!("icons/vote.svg")),
+        "circle-check" => Some(include_str!("icons/circle-check.svg")),
         "network" => Some(include_str!("icons/network.svg")),
         "file-json" => Some(include_str!("icons/file-json.svg")),
         "git-branch" => Some(include_str!("icons/git-branch.svg")),

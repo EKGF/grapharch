@@ -33,6 +33,7 @@ struct Frontmatter {
 #[serde(deny_unknown_fields)]
 struct Hints {
     subject:           Option<String>,
+    hero:              Option<String>,
     fragment:          Option<String>,
     #[serde(default)]
     fragments:         BTreeMap<String, String>,
@@ -234,6 +235,13 @@ impl Collector for MarkdownFile {
                     ),
                     Literal::new_simple_literal(description),
                     oxrdf::GraphName::DefaultGraph,
+                ));
+            }
+            if let Some(hero) = &frontmatter.grapharch.hero {
+                metadata.push(input.quad(
+                    &fragment,
+                    "heroKind",
+                    Literal::new_simple_literal(hero),
                 ));
             }
             ensure!(
