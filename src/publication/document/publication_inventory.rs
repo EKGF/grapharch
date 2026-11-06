@@ -55,9 +55,14 @@ pub(crate) async fn document(
         .filter(|version| version.advertised)
     {
         body.push_str(&format!(
-            "### {}\n\nBranch: {}\n\n[Open specification](<{}>)\n\n",
+            "### {}\n\nBranch: {}\n\n{}[Open specification](<{}>)\n\n",
             markdown_text(&version.label),
             markdown_text(&version.branch),
+            version
+                .status
+                .as_ref()
+                .map(|status| format!("Status: {}\n\n", markdown_text(status)))
+                .unwrap_or_default(),
             version.route.as_deref().unwrap_or(&version.url)
         ));
     }

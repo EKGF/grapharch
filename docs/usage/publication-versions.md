@@ -15,6 +15,9 @@ remain routable.
 
 Represent versions with `doap:Version`, a title, branch, identifier and
 `dcat:accessURL`. `ga:advertised` explicitly selects which versions readers see.
+An optional `ga:publicationStatus` literal supplies reader-facing status, such as
+"Unstandardized pull request preview"; it appears on the page and as `status`
+in the retained version manifest.
 The inventory's `dct:modified` records when it was observed, not when the
 specification was authored. Optional `ga:order` values place canonical releases
 and development versions before previews; versions without an explicit order

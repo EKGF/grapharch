@@ -31,7 +31,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
 <urn:inventory> dct:modified "2026-11-02T15:00:00Z"; dct:hasPart <urn:main>,<urn:develop>,<urn:preview>,<urn:hidden> .
 <urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; ga:route "/dprod/spec/main/"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true .
 <urn:develop> a doap:Version; ga:order 2; dct:title "Develop (latest)"; dct:identifier "develop"; doap:branch "develop"; dcat:accessURL <https://example.org/dprod/spec/develop/>; ga:advertised true .
-<urn:preview> a doap:Version; dct:title "ballot/4"; dct:identifier "ballot-4"; doap:branch "ballot/4"; dcat:accessURL <https://preview.example.org/dprod/spec/>; ga:advertised true .
+<urn:preview> a doap:Version; dct:title "ballot/4"; dct:identifier "ballot-4"; doap:branch "ballot/4"; ga:publicationStatus "Unstandardized pull request preview"; dcat:accessURL <https://preview.example.org/dprod/spec/>; ga:advertised true .
 <urn:hidden> a doap:Version; dct:title "merged-branch"; dct:identifier "merged-branch"; doap:branch "merged-branch"; dcat:accessURL <https://old.example.org/dprod/spec/>; ga:advertised false .
 "#).await?;
     let collected = website::collect(
@@ -67,6 +67,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
             html.contains("ballot/4")
     );
     assert!(!html.contains("merged-branch"));
+    assert!(html.contains("Unstandardized pull request preview"));
     let document = scraper::Html::parse_document(&html);
     let hero = document
         .select(&scraper::Selector::parse(".project-hero").unwrap())
@@ -103,5 +104,9 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
             manifest.contains("old.example.org")
     );
     assert!(manifest.contains("\"advertised\": false"));
+    assert!(
+        manifest
+            .contains("\"status\": \"Unstandardized pull request preview\"")
+    );
     Ok(())
 }

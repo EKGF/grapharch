@@ -28,6 +28,8 @@ pub(crate) struct Version {
     pub url:        String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub route:      Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status:     Option<String>,
     pub advertised: bool,
 }
 
@@ -55,6 +57,14 @@ impl Version {
                 !self.label.chars().any(char::is_control),
             "invalid publication label"
         );
+        if let Some(status) = &self.status {
+            ensure!(
+                !status.trim().is_empty() &&
+                    status.len() <= 512 &&
+                    !status.chars().any(char::is_control),
+                "invalid publication status"
+            );
+        }
         let url = url::Url::parse(&self.url)?;
         ensure!(
             matches!(url.scheme(), "http" | "https") &&
@@ -97,6 +107,7 @@ struct Record {
     label:      Option<String>,
     url:        Option<String>,
     route:      Option<String>,
+    status:     Option<String>,
     advertised: Option<bool>,
     order:      Option<u32>,
 }
@@ -117,6 +128,7 @@ impl Record {
             label:      required(self.label, "title")?,
             url:        required(self.url, "accessURL")?,
             route:      self.route,
+            status:     self.status,
             advertised: self.advertised.ok_or_else(|| {
                 anyhow::anyhow!(
                     "publication inventory member missing advertised"
@@ -181,6 +193,9 @@ impl Record {
                 p if p == format!("{DCT}title") => &mut self.label,
                 p if p == format!("{DOAP}branch") => &mut self.branch,
                 p if p == term("route").as_str() => &mut self.route,
+                p if p == term("publicationStatus").as_str() => {
+                    &mut self.status
+                },
                 _ => anyhow::bail!("unexpected inventory predicate"),
             };
             (slot, value.value().to_owned())
@@ -218,11 +233,12 @@ impl Inventory {
                 "SELECT DISTINCT ?version ?predicate ?object WHERE {{ \
                  {members} OPTIONAL {{ {fields} FILTER(?predicate \
                  IN(<{DCT}identifier>,<{DCT}title>,<{DOAP}branch>,\
-                 <{DCAT}accessURL>,{},{},{},<{}>)) }} }} ORDER BY ?version \
+                 <{DCAT}accessURL>,{},{},{},{},<{}>)) }} }} ORDER BY ?version \
                  ?predicate ?object",
                 term("advertised"),
                 term("order"),
                 term("route"),
+                term("publicationStatus"),
                 crate::publication::RDF_TYPE
             ))
             .await?;
