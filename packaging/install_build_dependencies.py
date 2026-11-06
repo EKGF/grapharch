@@ -12,7 +12,7 @@ def install(*, apt=("sudo", "apt-get"), timeout=120):
     )
     for operation in (
         ("update",),
-        ("install", "-y", "clang", "libclang-dev", "pkg-config"),
+        ("install", "-y", "clang", "libclang-dev", "pkg-config", "libssl-dev"),
     ):
         subprocess.run([*apt, *options, *operation], check=True, timeout=timeout)
 

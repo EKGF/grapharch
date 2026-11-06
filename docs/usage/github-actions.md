@@ -52,6 +52,40 @@ For installation alone, set `mode: install` and supply only `version`; the
 `grapharch` command is then available to subsequent steps. Both modes expose
 `version` and `binary-path`. Deployment is a separate choice.
 
+## Install an unreleased source revision
+
+On Linux runners, the same action can build an exact reviewed source revision.
+Check out GraphArch separately, then invoke that local action with
+`source-revision` instead of `version`:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    repository: EKGF/grapharch
+    ref: ${{ steps.configuration.outputs.generator-revision }}
+    path: .grapharch-tool
+    persist-credentials: false
+- uses: ./.grapharch-tool
+  id: grapharch
+  with:
+    mode: install
+    source-revision: ${{ steps.configuration.outputs.generator-revision }}
+```
+
+The configuration output must contain the full 40-character Git commit SHA.
+The action verifies that its checkout matches and has no modified or extra
+executable inputs, installs Linux compiler dependencies and the repository's
+pinned Rust toolchain, then builds with `cargo build --locked --release`.
+The runner must provide Git, rustup, and sudo access to apt-get, as standard
+GitHub-hosted Ubuntu runners do. Source builds are not supported on macOS or
+Windows yet; release installation remains available there.
+
+`binary-path` and `version` retain their existing meanings; `revision` records
+the exact source commit. Source builds use a separate runner-temporary build
+directory and do not use the release binary cache. Supply exactly one of
+`version` or `source-revision`; an invalid selector or failed build fails the
+action. Both selectors support `mode: install` and the normal family build mode.
+
 ## Build a Pages artifact
 
 The reusable workflow checks out your repository, builds the family, and stages

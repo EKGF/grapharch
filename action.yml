@@ -1,9 +1,12 @@
 name: Publish documentation with GraphArch
-description: Build documentation with a pinned and checksum-verified GraphArch release
+description: Build documentation with a verified release or exact GraphArch source revision
 inputs:
   version:
     description: Exact published version, without a leading v
-    required: true
+    required: false
+  source-revision:
+    description: Exact Git SHA of this action checkout, mutually exclusive with version (Linux source build)
+    required: false
   mode:
     description: build-family (default) or install for setup only
     default: build-family
@@ -27,9 +30,11 @@ inputs:
     default: 'true'
 outputs:
   version:
-    value: ${{ steps.install.outputs.version }}
+    value: ${{ steps.install.outputs.version || steps.source-install.outputs.version }}
+  revision:
+    value: ${{ steps.source-install.outputs.revision }}
   binary-path:
-    value: ${{ steps.install.outputs.binary-path }}
+    value: ${{ steps.install.outputs.binary-path || steps.source-install.outputs.binary-path }}
   publication-path:
     value: ${{ steps.build.outputs.publication-path }}
   pdf-path:
@@ -42,6 +47,12 @@ runs:
     - uses: actions/setup-python@v7
       with:
         python-version: '3.12'
+    - name: Validate generator selection
+      shell: bash
+      env:
+        GRAPHARCH_VERSION: ${{ inputs.version }}
+        GRAPHARCH_SOURCE_REVISION: ${{ inputs.source-revision }}
+      run: python "$GITHUB_ACTION_PATH/packaging/source_action.py" validate
     - name: Validate publication inputs
       shell: bash
       env:
@@ -54,25 +65,34 @@ runs:
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
       run: python "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
     - id: platform
+      if: inputs.version != ''
       shell: bash
       env:
         GRAPHARCH_VERSION: ${{ inputs.version }}
       run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" identify
     - uses: actions/cache@v6
-      if: inputs.cache == 'true'
+      if: inputs.version != '' && inputs.cache == 'true'
       with:
         path: ${{ runner.tool_cache }}/grapharch/${{ inputs.version }}/${{ steps.platform.outputs.target }}
         key: grapharch-release-${{ inputs.version }}-${{ steps.platform.outputs.target }}-v1
     - id: install
+      if: inputs.version != ''
       shell: bash
       env:
         GRAPHARCH_VERSION: ${{ inputs.version }}
       run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" install
+    - id: source-install
+      if: inputs.source-revision != ''
+      shell: bash
+      env:
+        GRAPHARCH_VERSION: ${{ inputs.version }}
+        GRAPHARCH_SOURCE_REVISION: ${{ inputs.source-revision }}
+      run: python "$GITHUB_ACTION_PATH/packaging/source_action.py" install
     - id: build
       shell: bash
       env:
         GRAPHARCH_MODE: ${{ inputs.mode }}
-        GRAPHARCH_BINARY: ${{ steps.install.outputs.binary-path }}
+        GRAPHARCH_BINARY: ${{ steps.install.outputs.binary-path || steps.source-install.outputs.binary-path }}
         GRAPHARCH_SOURCE: ${{ inputs.source }}
         GRAPHARCH_SOURCE_KIND: ${{ inputs.source-kind }}
         GRAPHARCH_DEFINITIONS: ${{ inputs.definitions }}
