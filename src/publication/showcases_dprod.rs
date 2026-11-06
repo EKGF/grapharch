@@ -542,8 +542,12 @@ async fn assemble(
         }
     }
     bindings.complete().await?;
-    super::website::bind(dataset, writer, PROJECT, node("website").as_str())
-        .await?;
+    for target in &targets {
+        if view.text(target, "renderer").await? == "website" {
+            super::website::bind(dataset, writer, PROJECT, target.as_str())
+                .await?;
+        }
+    }
     let revision = Assembler::new(dataset.clone()).assemble(PROJECT).await?;
     let planner = TargetPlanner::new(dataset.clone(), revision);
     let mut plans = Vec::new();

@@ -159,3 +159,64 @@ async fn explicit_publication_date_does_not_rewrite_old_native_rdf()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn specification_only_source_does_not_require_a_fake_website_target()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    family_repository::copy_tree(Path::new("examples/dprod"), source.path())?;
+    let remote = tempfile::tempdir()?;
+    dprod_repository::configure(source.path(), remote.path())?;
+    let checkout = remote.path().join("checkout");
+    let config = checkout.join("publication/standards.ttl");
+    let settings = definitions::edit_quads(
+        &tokio::fs::read_to_string(&config).await?,
+        |quads| {
+            quads.retain(|quad| {
+                quad.subject.to_string() != "<urn:dprod-showcase:website>" &&
+                    !(quad.predicate.as_str() ==
+                        "https://ekgf.org/ontology/grapharch#target" &&
+                        quad.object.to_string() ==
+                            "<urn:dprod-showcase:website>")
+            });
+            Ok(())
+        },
+    )?;
+    tokio::fs::write(&config, settings).await?;
+    family_repository::git(&checkout, &["add", "."])?;
+    family_repository::git(&checkout, &[
+        "commit",
+        "-m",
+        "Select only specification targets",
+    ])?;
+    let revision = family_repository::git(&checkout, &["rev-parse", "HEAD"])?;
+    let repository =
+        url::Url::from_directory_path(remote.path().join("remote.git"))
+            .unwrap()
+            .to_string();
+    family_repository::git(&checkout, &[
+        "push",
+        &repository,
+        "HEAD:refs/heads/main",
+    ])?;
+    let output = tempfile::tempdir()?;
+    let result = build(
+        &repository,
+        &revision,
+        output.path(),
+        "publication/standards.ttl",
+    )
+    .await?;
+    ensure!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let manifest: serde_json::Value = serde_json::from_slice(&result.stdout)?;
+    assert_eq!(
+        manifest["publications"].as_array().unwrap().len(),
+        2
+    );
+    assert!(!output.path().join("published/website").exists());
+    Ok(())
+}
