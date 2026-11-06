@@ -84,6 +84,13 @@ impl BuildStoreOptions {
 /// dataset.
 #[derive(Subcommand)]
 pub enum PublicationCommand {
+    /// Build source-owned DPROD targets from one exact repository commit.
+    BuildDprod {
+        #[arg(long)]
+        json:    bool,
+        #[command(flatten)]
+        request: super::dprod::BuildRequest,
+    },
     /// Pin a worker executable in an isolated process without opening a KG.
     #[command(hide = true)]
     PrepareBookWorker {
@@ -345,6 +352,14 @@ pub async fn run(
                 super::hosting::package(config, output_root, mount.as_deref())
                     .await?;
             println!("{}", package.display());
+        },
+        PublicationCommand::BuildDprod { json, request } => {
+            let manifest = request.build().await?;
+            if *json {
+                println!("{}", serde_json::to_string(&manifest)?);
+            } else {
+                println!("{}", request.output_root.display());
+            }
         },
         PublicationCommand::VerifyGallery {
             json,

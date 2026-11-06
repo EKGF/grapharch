@@ -474,22 +474,31 @@ async fn assemble(
             ))
             .await?;
     }
-    let date = native_view
-        .optional_by(
-            &NamedNode::new(ontology)?,
-            &NamedNode::new("http://purl.org/dc/terms/issued")?,
-        )
+    if view
+        .optional(&node("specification"), "publicationDate")
         .await?
-        .ok_or_else(|| {
-            anyhow::anyhow!("DPROD source has no publication date")
-        })?;
-    bindings
-        .write(quad(
-            &node("specification"),
-            "publicationDate",
-            date,
-        ))
-        .await?;
+        .is_none()
+    {
+        let date = native_view
+            .optional_by(
+                &NamedNode::new(ontology)?,
+                &NamedNode::new("http://purl.org/dc/terms/issued")?,
+            )
+            .await?
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "DPROD requires native issued metadata or an explicit \
+                     publicationDate"
+                )
+            })?;
+        bindings
+            .write(quad(
+                &node("specification"),
+                "publicationDate",
+                date,
+            ))
+            .await?;
+    }
     if derive {
         let native = NamedNode::new(ontology)?;
         for target in &targets {
@@ -509,6 +518,11 @@ async fn assemble(
                         Some(
                             Literal::new_simple_literal("overview").into(),
                         )
+                {
+                    continue;
+                }
+                if field == "publicationDate" &&
+                    view.optional(target, field).await?.is_some()
                 {
                     continue;
                 }
@@ -686,7 +700,7 @@ pub(super) async fn collect_remote(
     collect_scan(scan, &config.definitions).await
 }
 
-async fn collect_scan(
+pub(super) async fn collect_scan(
     scan: super::collect::git::RepositoryScan,
     definitions: &str,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {

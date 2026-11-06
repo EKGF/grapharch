@@ -29,7 +29,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
 <urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
 <urn:inventory-job> a ga:Documentor; ga:project <urn:project>; ga:kind "publication-inventory"; ga:subject <urn:inventory>; ga:fragment <urn:versions-page>; ga:route "spec-versions/"; ga:sourcePath "spec-versions.md"; ga:navigationOrder 6; dct:title "Specification versions" .
 <urn:inventory> dct:modified "2026-11-02T15:00:00Z"; dct:hasPart <urn:main>,<urn:develop>,<urn:preview>,<urn:hidden> .
-<urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true .
+<urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; ga:route "/dprod/spec/main/"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true .
 <urn:develop> a doap:Version; ga:order 2; dct:title "Develop (latest)"; dct:identifier "develop"; doap:branch "develop"; dcat:accessURL <https://example.org/dprod/spec/develop/>; ga:advertised true .
 <urn:preview> a doap:Version; dct:title "ballot/4"; dct:identifier "ballot-4"; doap:branch "ballot/4"; dcat:accessURL <https://preview.example.org/dprod/spec/>; ga:advertised true .
 <urn:hidden> a doap:Version; dct:title "merged-branch"; dct:identifier "merged-branch"; doap:branch "merged-branch"; dcat:accessURL <https://old.example.org/dprod/spec/>; ga:advertised false .
@@ -82,6 +82,11 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
         "Hosting implementation details do not belong in reader content"
     );
     assert!(html.contains("2 November 2026 at 15:00 UTC"));
+    assert!(
+        html.contains("href=\"/dprod/spec/main/\""),
+        "the assembled publication must link to its own spec, not the \
+         production host"
+    );
     assert!(
         html.find("DPROD 1.0").unwrap() <
             html.find("Develop (latest)").unwrap()

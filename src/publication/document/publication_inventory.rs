@@ -58,7 +58,7 @@ pub(crate) async fn document(
             "### {}\n\nBranch: {}\n\n[Open specification](<{}>)\n\n",
             markdown_text(&version.label),
             markdown_text(&version.branch),
-            version.url
+            version.route.as_deref().unwrap_or(&version.url)
         ));
     }
     let revision = format!("publication-inventory-v1:{snapshot}");
@@ -84,6 +84,43 @@ pub(crate) async fn document(
     if let Err(error) = page.produce(&mut stream).await {
         stream.abort().await?;
         return Err(error);
+    }
+    // Retain explicitly assembled sibling routes as graph-owned link targets.
+    // They are not Markdown pages in this website target's own scope.
+    for version in &inventory.versions {
+        if let Some(route) = &version.route {
+            let reference =
+                crate::publication::dataset::identity("publication-route", &[
+                    job.page.as_str(),
+                    route,
+                ]);
+            for (subject, predicate, object) in [
+                (
+                    job.page.clone(),
+                    crate::publication::term("reference"),
+                    oxrdf::Term::NamedNode(reference.clone()),
+                ),
+                (
+                    reference.clone(),
+                    NamedNode::new("http://purl.org/dc/terms/identifier")?,
+                    oxrdf::Literal::new_simple_literal(route).into(),
+                ),
+                (
+                    reference,
+                    crate::publication::term("url"),
+                    oxrdf::Literal::new_simple_literal(route).into(),
+                ),
+            ] {
+                stream
+                    .write(oxrdf::Quad::new(
+                        subject,
+                        predicate,
+                        object,
+                        oxrdf::GraphName::DefaultGraph,
+                    ))
+                    .await?;
+            }
+        }
     }
     stream.complete().await?;
     Ok(())

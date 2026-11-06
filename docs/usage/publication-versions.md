@@ -86,3 +86,11 @@ For an audience-facing PDF that should omit its visible audit appendix, set
 publication manifest remain available for audit, and other profiles retain their
 appendices. Keep human acknowledgments in authored content; recent Git activity
 is not a substitute for collective authorship credits.
+
+For an assembled site, a version may also declare an explicit local
+`ga:route "/project/spec/main/"`. The version page uses that host-root path,
+while `dcat:accessURL` retains the canonical public address. The route survives
+KG export/restoration and appears in `publication-versions.json`. Routes must
+use safe nonempty path segments without traversal. Packaging requires a matching
+assembled `index.html` inside its mount; a missing selected publication fails
+instead of redirecting to an older remote deployment.

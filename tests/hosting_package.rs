@@ -149,3 +149,35 @@ async fn package_supports_generic_version_paths_and_root_artifact_aliases()
     assert!(!text.contains("/spec/"));
     Ok(())
 }
+
+#[tokio::test]
+async fn explicit_local_version_requires_materialized_publication() -> Result<()>
+{
+    let input = tempfile::tempdir()?;
+    tokio::fs::create_dir(input.path().join("site")).await?;
+    tokio::fs::write(input.path().join("site/index.html"), "Home").await?;
+    tokio::fs::write(input.path().join("inventory.json"), r#"{"observed_at":"2026-11-02T12:00:00Z","versions":[{"slug":"main","branch":"main","label":"1.0 beta","url":"https://example.org/dprod/spec/main/","route":"/dprod/spec/main/","advertised":true}]}"#).await?;
+    let config = input.path().join("hosting.yml");
+    tokio::fs::write(
+        &config,
+        "version: 1\nmount: /dprod\nsite: site\ninventory: \
+         inventory.json\nversion_path: spec\n",
+    )
+    .await?;
+    let output = tempfile::tempdir()?;
+    let error = hosting::package(&config, output.path(), None)
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("no assembled index"));
+    assert!(!output.path().join(".vercel/output").exists());
+    tokio::fs::create_dir_all(input.path().join("site/spec/main")).await?;
+    tokio::fs::write(
+        input.path().join("site/spec/main/index.html"),
+        "Beta",
+    )
+    .await?;
+    let package = hosting::package(&config, output.path(), None).await?;
+    let routes = tokio::fs::read_to_string(package.join("config.json")).await?;
+    assert!(!routes.contains("example.org"));
+    Ok(())
+}

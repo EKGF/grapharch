@@ -242,3 +242,31 @@ parsing, storage, or compilation failures remain hard errors.
 The dedicated specification renderer produces `index.html`, `style.css`,
 `main.typ`, and `document.pdf` from the same pinned plan. The HTML PDF icon links
 to that PDF. Publication stages and promotes the paired artifacts together.
+
+## Exact-revision DPROD builds
+
+A trusted central workflow can build the DPROD source-owned targets without a
+showcase registry or executing code from the source branch:
+
+```sh
+grapharch publication build-dprod \
+  --git-repository https://github.com/EKGF/dprod.git \
+  --git-ref <exact-source-commit> \
+  --definitions publication/standards.ttl \
+  --generator-revision <exact-generator-commit> \
+  --git-cache output/git-cache \
+  --output-root output/publication --json
+```
+
+Both revision arguments require full lowercase Git commit IDs. Definitions and
+content come from the same source commit. The generator revision is declared by
+the trusted workflow; the manifest also hashes the executable actually used.
+Every configured target is rendered from a restored `documentation.nq`. The new
+output directory appears only after all targets succeed. `build-provenance.json`
+records source and configuration revisions, engine identity, target destinations,
+and each publication manifest. An existing output is rejected.
+
+Older sources without an ontology issuance date can specify an explicit
+`ga:publicationDate` on each specification/PDF target in their own publication
+configuration. This describes that publication; it does not add an issuance
+assertion to the source ontology.

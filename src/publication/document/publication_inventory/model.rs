@@ -26,6 +26,8 @@ pub(crate) struct Version {
     pub branch:     String,
     pub label:      String,
     pub url:        String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub route:      Option<String>,
     pub advertised: bool,
 }
 
@@ -64,6 +66,24 @@ impl Version {
                 self.url.ends_with('/'),
             "publication URL must be a credential-free HTTP(S) directory URL"
         );
+        if let Some(route) = &self.route {
+            ensure!(
+                route.starts_with('/') &&
+                    route.ends_with('/') &&
+                    route.len() > 2 &&
+                    route.len() <= 512 &&
+                    !route.starts_with("//") &&
+                    route[1..route.len() - 1].split('/').all(|segment| {
+                        !segment.is_empty() &&
+                            segment != "." &&
+                            segment != ".." &&
+                            segment.bytes().all(|c| {
+                                c.is_ascii_alphanumeric() || b"-_.".contains(&c)
+                            })
+                    }),
+                "publication route must be a safe host-root directory path"
+            );
+        }
         Ok(())
     }
 }
@@ -76,6 +96,7 @@ struct Record {
     branch:     Option<String>,
     label:      Option<String>,
     url:        Option<String>,
+    route:      Option<String>,
     advertised: Option<bool>,
     order:      Option<u32>,
 }
@@ -95,6 +116,7 @@ impl Record {
             branch:     required(self.branch, "branch")?,
             label:      required(self.label, "title")?,
             url:        required(self.url, "accessURL")?,
+            route:      self.route,
             advertised: self.advertised.ok_or_else(|| {
                 anyhow::anyhow!(
                     "publication inventory member missing advertised"
@@ -158,6 +180,7 @@ impl Record {
                 p if p == format!("{DCT}identifier") => &mut self.slug,
                 p if p == format!("{DCT}title") => &mut self.label,
                 p if p == format!("{DOAP}branch") => &mut self.branch,
+                p if p == term("route").as_str() => &mut self.route,
                 _ => anyhow::bail!("unexpected inventory predicate"),
             };
             (slot, value.value().to_owned())
@@ -195,10 +218,11 @@ impl Inventory {
                 "SELECT DISTINCT ?version ?predicate ?object WHERE {{ \
                  {members} OPTIONAL {{ {fields} FILTER(?predicate \
                  IN(<{DCT}identifier>,<{DCT}title>,<{DOAP}branch>,\
-                 <{DCAT}accessURL>,{},{},<{}>)) }} }} ORDER BY ?version \
+                 <{DCAT}accessURL>,{},{},{},<{}>)) }} }} ORDER BY ?version \
                  ?predicate ?object",
                 term("advertised"),
                 term("order"),
+                term("route"),
                 crate::publication::RDF_TYPE
             ))
             .await?;

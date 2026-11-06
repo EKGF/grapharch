@@ -9,6 +9,7 @@ mod definitions;
 mod diagnostic_graph;
 pub mod diagnostics;
 pub mod document;
+pub mod dprod;
 mod gallery;
 pub mod governance;
 pub mod hosting;

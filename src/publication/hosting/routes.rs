@@ -35,15 +35,7 @@ struct Inventory {
     observed_at: String,
     versions:    Vec<Version>,
 }
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Version {
-    slug:       String,
-    branch:     String,
-    label:      String,
-    url:        String,
-    advertised: bool,
-}
+use crate::publication::document::publication_inventory::model::Version;
 
 fn url(mount: &str, path: &str) -> String {
     format!(
@@ -152,6 +144,17 @@ pub(super) async fn configuration(
         );
         let mut seen = BTreeSet::new();
         for version in inventory.versions {
+            version.validate()?;
+            if let Some(route) = &version.route {
+                let local = route.strip_prefix(&url(mount, "")).context(
+                    "publication route lies outside the hosting mount",
+                )?;
+                ensure!(
+                    files.contains(&format!("{local}index.html")),
+                    "explicit local publication route has no assembled index: \
+                     {route}"
+                );
+            }
             let slug = super::relative(&version.slug)?;
             ensure!(
                 !slug.is_empty() &&
