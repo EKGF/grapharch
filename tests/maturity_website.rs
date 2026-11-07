@@ -28,7 +28,16 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
         source
             .path()
             .join("fragments/pillar/business/strategy/vision/levels.md"),
-        "## Level 1\n\n- [ ] Shared goals are recorded.",
+        "## Level 1\n\n- [ ] Shared goals are \
+         recorded.\n\n[Identity](../../background-and-intro.md#\
+         business-identity)",
+    )
+    .await?;
+    tokio::fs::write(
+        source
+            .path()
+            .join("fragments/pillar/business/background-and-intro.md"),
+        "## Business identity\n\nOriginal identity guidance.",
     )
     .await?;
     tokio::fs::write(source.path().join("model.ttl"), r#"

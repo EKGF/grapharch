@@ -129,6 +129,13 @@ pub(super) async fn write(
         part(&mut stream, &id, &header, 0).await?;
         part(&mut stream, &id, &page.summary, 1).await?;
         for (index, companion) in composed.companions.into_iter().enumerate() {
+            stream
+                .write(q(
+                    &companion.fragment,
+                    "sourcePath",
+                    Literal::new_simple_literal(&companion.source_path),
+                ))
+                .await?;
             let heading = identity("maturity-section-heading", &[
                 id.as_str(),
                 companion.title,

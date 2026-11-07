@@ -1,3 +1,4 @@
+mod source_aliases;
 use {
     super::super::{
         markup::html_escape as esc,
@@ -103,7 +104,9 @@ impl Catalog {
                 page_body.len() <= 1024 * 1024,
                 "website page exceeds 1 MiB content budget"
             );
-            catalog.insert(plan, owner).await?;
+            catalog.insert(plan, owner.clone()).await?;
+            source_aliases::retain(&mut catalog, plan, fragment, &owner)
+                .await?;
         }
         ensure!(
             catalog.routes.contains_key(""),

@@ -28,8 +28,9 @@ const SECTIONS: [(&str, &str); 7] = [
     ("use-cases", "Use cases"),
 ];
 struct Companion {
-    title:    &'static str,
-    fragment: NamedNode,
+    title:       &'static str,
+    source_path: String,
+    fragment:    NamedNode,
 }
 struct ComposedPage {
     page:           Page,
@@ -145,6 +146,7 @@ pub(super) async fn collect(
                             .with_include_roots(include_roots.clone())?;
                     companions.push(Companion {
                         title,
+                        source_path: format!("{directory}{name}.md"),
                         fragment: collector.fragment_id(),
                     });
                     collector.collect(writer).await?;
