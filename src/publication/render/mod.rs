@@ -349,6 +349,9 @@ impl Publisher {
                     bookshelf::manifest_books(plan, &stage.path).await?;
             }
             manifest.files.extend(image_files);
+            manifest.files.push(
+                crate::publication::icon::write_licenses(&stage.path).await?,
+            );
             manifest.diagnostics = diagnostics;
             manifest.failure_mode = self.failure_mode;
             let metadata = serde_yaml::to_string(&manifest)?;

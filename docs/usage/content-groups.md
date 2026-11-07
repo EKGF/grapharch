@@ -135,3 +135,18 @@ Duplicate IDs, including collisions with headings, fail. HTML and PDF document
 outputs give destinations a component prefix so independent source sections
 can use the same local identifier safely. Rendering uses the retained graph,
 including after the source files have been removed.
+
+## Decorative icons
+
+GraphArch recognizes four bundled inline icon names used by the EKGF source
+sites: `:octicons-arrow-right-24:`, `:material-cached:`,
+`:material-floor-plan:`, and `:material-run:`. An optional `{ .lg }` suffix
+requests a larger icon. Icons can appear inside ordinary Markdown links; the
+visible text label and link destination remain authoritative. Code examples
+remain literal, and an unknown Material or Octicons name produces an error.
+
+Collection records these as empty-alt builtin image references using the
+`urn:grapharch:icon:` namespace. HTML emits decorative, accessibility-hidden
+SVGs; PDF uses the same bundled vector artwork. No icon service or browser
+framework is required. Each source is limited to 128 icons, and generated
+publications include `grapharch-icon-licenses.txt` with the artwork notices.

@@ -215,7 +215,8 @@ impl Collector for MarkdownFile {
         )
         .await?;
         let containers = super::material_blocks::normalize(&expansion.body)?;
-        let semantic_images = super::semantic_images::normalize(&containers)?;
+        let icons = super::inline_icons::normalize(&containers)?;
+        let semantic_images = super::semantic_images::normalize(&icons)?;
         let variants = super::image_variants::normalize(&semantic_images)?;
         let figures = super::figures::normalize(&variants)?;
         let normalized_blocks = super::badges::normalize(

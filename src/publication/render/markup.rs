@@ -88,6 +88,18 @@ impl<'a> Markdown<'a> {
                     bail!("raw HTML is not supported in shared Markdown")
                 },
                 Event::Start(Tag::Image { dest_url, .. }) => {
+                    if crate::publication::icon::Icon::parse_uri(dest_url)?
+                        .is_some()
+                    {
+                        ensure!(
+                            matches!(
+                                events.get(index + 1),
+                                Some(Event::End(TagEnd::Image))
+                            ),
+                            "decorative icons must have empty alternative text"
+                        );
+                        continue;
+                    }
                     let mut alt = String::new();
                     for part in &events[index + 1..] {
                         match part {

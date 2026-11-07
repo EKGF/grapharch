@@ -25,6 +25,18 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
             Event::Start(tag) => {
                 match tag {
                     Tag::Image { dest_url, .. } => {
+                        if let Some(icon) =
+                            crate::publication::icon::Icon::parse_uri(dest_url)?
+                        {
+                            output.push_str(&format!(
+                                "#box[#image(bytes({}), format: \"svg\", \
+                                 width: {}em)]",
+                                quote(icon.svg()),
+                                if icon.large { 2 } else { 1 }
+                            ));
+                            in_image = true;
+                            continue;
+                        }
                         let mut alt = String::new();
                         for event in &events[index + 1..] {
                             match event {

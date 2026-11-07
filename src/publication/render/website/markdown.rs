@@ -77,6 +77,11 @@ pub(super) fn render(
                 }
             },
             Event::Start(Tag::Image { dest_url, title, .. }) => {
+                if crate::publication::icon::Icon::parse_uri(dest_url)?
+                    .is_some()
+                {
+                    continue;
+                }
                 let hints =
                     crate::publication::image_hints::ImageHints::parse(title)?;
                 let key = (page.id.as_str().into(), dest_url.to_string());

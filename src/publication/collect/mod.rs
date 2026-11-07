@@ -211,3 +211,5 @@ fn outcome(
 }
 
 mod image_variants;
+
+mod inline_icons;

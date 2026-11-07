@@ -42,6 +42,19 @@ pub(super) fn events<'a>(
             events[index + 1] = Event::InlineHtml("".into());
         }
     }
+    for index in 0..events.len().saturating_sub(1) {
+        if let Event::Start(Tag::Image { dest_url, .. }) = &events[index] &&
+            let Some(icon) =
+                crate::publication::icon::Icon::parse_uri(dest_url)?
+        {
+            anyhow::ensure!(
+                matches!(events[index + 1], Event::End(TagEnd::Image)),
+                "decorative icons must have empty alternative text"
+            );
+            events[index] = Event::InlineHtml(icon.html()?.into());
+            events[index + 1] = Event::InlineHtml("".into());
+        }
+    }
     let mut items = Vec::new();
     let mut tasks = HashSet::new();
     for (index, event) in events.iter().enumerate() {

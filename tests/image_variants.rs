@@ -54,6 +54,10 @@ async fn image_alternatives_survive_source_removal_and_print_selects_light()
         tokio::fs::read_to_string(site.directory.join("index.html")).await?;
     assert!(html.contains("Light model"));
     assert!(html.contains("Dark model"));
+    assert!(html.contains("data-image-scheme=\"light\""));
+    assert!(html.contains("data-image-scheme=\"dark\""));
+    assert!(html.contains("title=\"Original title\""));
+    assert!(!html.contains("grapharch:image"));
     let PublishOutcome::Published(pdf) =
         Publisher::new(restored).render(&pdf, output.path()).await?
     else {
@@ -66,6 +70,14 @@ async fn image_alternatives_survive_source_removal_and_print_selects_light()
     assert!(typst.contains("Retained explanation"));
     if std::env::var_os("GRAPHARCH_IMAGE_VARIANT_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/image-variants").await?;
+        for file in &site.manifest.files {
+            let destination =
+                std::path::Path::new("output/image-variants").join(file);
+            if let Some(parent) = destination.parent() {
+                tokio::fs::create_dir_all(parent).await?;
+            }
+            tokio::fs::copy(site.directory.join(file), destination).await?;
+        }
         tokio::fs::copy(
             pdf.directory.join("document.pdf"),
             "output/image-variants/document.pdf",

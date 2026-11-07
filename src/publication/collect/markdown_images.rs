@@ -83,6 +83,9 @@ pub(super) async fn describe(
         let Event::Start(Tag::Image { dest_url, title, .. }) = event else {
             continue
         };
+        if crate::publication::icon::Icon::parse_uri(&dest_url)?.is_some() {
+            continue;
+        }
         let first = seen.insert(dest_url.to_string());
         let hints = crate::publication::image_hints::ImageHints::parse(&title)?;
         if hints.interactive_svg && interactive.insert(dest_url.to_string()) {
