@@ -1,4 +1,7 @@
 //! Showcase cards are selected from project resources in the pinned KG.
+#[path = "gallery_discovery.rs"]
+mod discovery;
+
 use {
     super::{
         super::{
@@ -24,7 +27,8 @@ pub(super) async fn render(
         _ => anyhow::bail!("showcaseGallery must be true when declared"),
     }
     let mut rows = plan.source.objects(&plan.project, "showcase").await?;
-    let mut cards = BTreeMap::new();
+    let mut cards = BTreeMap::new(); // bounded: at most 16 registered showcases.
+    let mut facets = discovery::Discovery::default();
     while let Some(row) = rows.next().await? {
         let Term::NamedNode(id) = &row["value"] else {
             anyhow::bail!("showcase must be an IRI")
@@ -38,6 +42,8 @@ pub(super) async fn render(
             cards.len() < 16 && !cards.contains_key(&order),
             "showcase ordering is ambiguous or exceeds budget"
         );
+        let mut discovery = discovery::Discovery::read(plan, id).await?;
+        discovery.outputs.insert("KG".into());
         let name = title(&plan.source, id).await?;
         let description = match plan
             .source
@@ -80,7 +86,11 @@ pub(super) async fn render(
                 "showcase outputs have ambiguous order or exceed budget"
             );
             let output_title = title(&plan.source, output).await?;
+            if artifact.route.ends_with(".html") {
+                discovery.outputs.insert("HTML".into());
+            }
             if artifact.route.ends_with(".pdf") {
+                discovery.outputs.insert("PDF".into());
                 pdfs.insert(
                     order,
                     (artifact.route.clone(), output_title.clone()),
@@ -117,12 +127,28 @@ pub(super) async fn render(
             })
             .collect::<String>();
         let alternatives = alternatives.into_values().collect::<String>();
-        cards.insert(order, format!(r#"<article class="showcase-card" data-showcase="{id}"><div class="showcase-preview"><iframe sandbox="" loading="lazy" tabindex="-1" title="Preview of {name}" src="{prefix}{preview}"></iframe></div><div class="showcase-info"><h2>{name}</h2><p>{description}</p>{badge}<div class="showcase-actions"><a data-artifact class="showcase-open" href="{prefix}{preview}">Open HTML</a>{downloads}<a data-artifact href="{prefix}{dataset}" download>Download KG</a></div><details><summary>All publication outputs</summary><ul>{alternatives}</ul></details></div></article>"#,
+        let attributes = discovery.attributes();
+        let chips = discovery.chips();
+        let credits = if discovery.credits.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "<details class=\"showcase-credits\"><summary>Source and \
+                 credits</summary>{}</details>",
+                discovery.credits
+            )
+        };
+        facets.merge(&discovery);
+        cards.insert(order, format!(r#"<article class="showcase-card" data-showcase="{id}"{attributes}><div class="showcase-preview"><iframe sandbox="" loading="lazy" tabindex="-1" title="Preview of {name}" src="{prefix}{preview}"></iframe></div><div class="showcase-info"><h2>{name}</h2>{chips}<p>{description}</p>{badge}<div class="showcase-actions"><a data-artifact class="showcase-open" href="{prefix}{preview}">Open HTML</a>{downloads}<a data-artifact href="{prefix}{dataset}" download>Download KG</a></div><details><summary>All publication outputs</summary><ul>{alternatives}</ul></details>{credits}</div></article>"#,
             id=esc(id.as_str()), name=esc(&name), description=esc(&description), preview=esc(&preview.route), dataset=esc(&dataset.route)));
     }
+    let controls = facets.controls(cards.len());
     Ok(format!(
-        "<div class=\"showcase-gallery\">{}</div>",
-        cards.into_values().collect::<String>()
+        "<section data-showcase-gallery aria-label=\"Publication \
+         examples\">{controls}<div \
+         class=\"showcase-gallery\">{}</div></section><script>{}</script>",
+        cards.into_values().collect::<String>(),
+        include_str!("gallery.js")
     ))
 }
 

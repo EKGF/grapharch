@@ -183,6 +183,12 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     };
     let html =
         std::fs::read_to_string(publication.directory.join("index.html"))?;
+    if std::env::var_os("GRAPHARCH_GALLERY_PREVIEW").is_some() {
+        copy_tree(
+            &publication.directory,
+            &repo.join("output/gallery-review"),
+        )?;
+    }
     let document = scraper::Html::parse_document(&html);
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
     assert_eq!(document.select(&cards).count(), 10);
@@ -234,6 +240,15 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             }
         }
     }
+    assert!(html.contains("id=\"showcase-search\""));
+    assert!(html.contains("aria-live=\"polite\""));
+    assert!(html.contains("data-gallery-filter=\"input\""));
+    assert!(html.contains("data-gallery-filter=\"capability\""));
+    assert!(html.contains("data-gallery-filter=\"output\""));
+    assert!(html.contains("No showcases match"));
+    assert!(html.contains("data-input=\"OWL|SHACL\""));
+    assert!(html.contains("Source and credits"));
+    assert!(html.contains("https://github.com/EKGF/dprod"));
     assert!(html.contains("artifacts/dprod/"));
     assert!(html.contains("DPROD: native ontology and SHACL"));
     assert!(!html.contains("artifacts/rdf11/"));

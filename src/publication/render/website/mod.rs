@@ -66,13 +66,14 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}",
             include_str!("style.css"),
             include_str!("../callouts.css"),
             include_str!("../provenance.css"),
             theme.css(),
             include_str!("documentation.css"),
-            include_str!("search.css")
+            include_str!("search.css"),
+            include_str!("gallery.css")
         ),
     )
     .await?;

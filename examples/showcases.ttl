@@ -15,7 +15,7 @@ ex:specification a ga:Showcase ; ga:slug "specification" ; dct:title "Authority-
     ga:order 3 ; ga:kind "specification" ; ga:source "specification/project.ttl" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" .
 ex:rdf12 a ga:Showcase ; ga:slug "rdf12" ; dct:title "W3C RDF 1.2 N-Triples" ;
-    dct:description "The current reference fixture preserves native document constructs and demonstrates a diagnostic addendum for an upstream broken link." ;
+    dct:description "A W3C specification published from its original HTML, preserving document structure and cross-references. A known broken source link is explained in the generated issue report." ;
     ga:order 5 ; ga:kind "w3c" ; ga:source "w3c-rdf12-n-triples" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" ;
     ga:expectedDiagnostic "unresolved-native-reference" .
@@ -46,3 +46,16 @@ ex:code-highlighting a ga:Showcase ; ga:slug "code-highlighting" ; dct:title "Mu
     dct:description "Python, Bash, JavaScript, TypeScript, JSON, JSON-LD and SPARQL examples share offline syntax colours in the specification and PDF, with source text retained in the documentation graph." ;
     ga:order 10 ; ga:kind "specification" ; ga:source "code-highlighting/project.ttl" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "specification/document.pdf" .
+
+# Gallery discovery describes demonstrated capabilities; output formats are
+# derived from retained publication artifacts instead of duplicated here.
+ex:authored ga:showcaseInput "RDF" ; ga:showcaseCapability "Multiple editions", "Shared content" ; ga:showcaseUseCase "Multi-output publishing" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/showcase> ; dct:rights "Authored GraphArch example maintained by EKGF. Source and license are available in the repository." .
+ex:mixed ga:showcaseInput "Markdown", "SPARQL", "OWL" ; ga:showcaseCapability "Cross-references", "Mixed sources" ; ga:showcaseUseCase "Documentation site" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/mixed-sources> ; dct:rights "Authored GraphArch example maintained by EKGF. Source and license are available in the repository." .
+ex:specification ga:showcaseInput "RDF" ; ga:showcaseCapability "Authority branding", "Cross-references" ; ga:showcaseUseCase "Standards publication" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/specification> ; dct:rights "Authored GraphArch example maintained by EKGF. This demonstrates publication styling, not an adopted standard." .
+ex:dprod ga:showcaseInput "OWL", "SHACL" ; ga:showcaseCapability "Diagrams", "Multiple editions", "Cross-references" ; ga:showcaseUseCase "Ontology reference", "Standards publication" ; dct:source <https://github.com/EKGF/dprod> ; dct:rights "DPROD workgroup, EKGF and OMG contributors. Each generated publication records its collected source revision and applicable credits." .
+ex:rdf12 ga:showcaseInput "HTML" ; ga:showcaseCapability "Cross-references", "Source issue reporting" ; ga:showcaseUseCase "Standards publication" ; dct:source <https://www.w3.org/TR/rdf12-n-triples/> ; dct:rights "W3C RDF 1.2 N-Triples contributors. W3C Software and Document Notice and License; original attribution is retained in the publication." .
+ex:ekgf ga:showcaseInput "OWL" ; ga:showcaseCapability "Diagrams", "Cross-references", "Ontology families" ; ga:showcaseUseCase "Ontology reference" ; dct:source <https://github.com/EKGF/ekg-ontologies> ; dct:rights "EKGF ontology contributors. The collected Git revision is recorded in the generated publication." .
+ex:skos ga:showcaseInput "SKOS" ; ga:showcaseCapability "Multilingual labels", "Hierarchies", "Cross-references" ; ga:showcaseUseCase "Taxonomy reference" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/skos> ; dct:rights "Authored GraphArch taxonomy example maintained by EKGF. Source and license are available in the repository." .
+ex:use-cases ga:showcaseInput "RDF" ; ga:showcaseCapability "Diagrams", "Hierarchies", "Cross-references" ; ga:showcaseUseCase "Use-case catalog" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/use-cases> ; dct:rights "EKGF use-case example. Source provenance is retained with the generated diagrams and publications." .
+ex:commons ga:showcaseInput "OWL", "RDF/XML" ; ga:showcaseCapability "Diagrams", "Ontology families", "Cross-references" ; ga:showcaseUseCase "Ontology reference" ; dct:source <https://www.omg.org/spec/Commons/> ; dct:rights "OMG Commons Ontology Library contributors. Original ontology notices, authoritative source URLs and content digests are retained." .
+ex:code-highlighting ga:showcaseInput "Markdown" ; ga:showcaseCapability "Syntax highlighting" ; ga:showcaseUseCase "Technical documentation" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/code-highlighting> ; dct:rights "Authored GraphArch code samples maintained by EKGF. Source and license are available in the repository." .

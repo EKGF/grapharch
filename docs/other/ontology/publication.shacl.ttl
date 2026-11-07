@@ -291,3 +291,10 @@ ga:AbbreviationSelectionShape a sh:NodeShape ;
     sh:property [ sh:path ga:abbreviationScheme ; sh:nodeKind sh:IRI ;
         sh:class <http://www.w3.org/2004/02/skos/core#ConceptScheme> ;
         sh:minCount 1 ; sh:maxCount 8 ] .
+
+ga:ShowcaseDiscoveryShape a sh:NodeShape ; sh:targetClass ga:Showcase ;
+    sh:property [ sh:path ga:showcaseInput ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;
+    sh:property [ sh:path ga:showcaseCapability ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;
+    sh:property [ sh:path ga:showcaseUseCase ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;
+    sh:property [ sh:path dct:source ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dct:rights ; sh:nodeKind sh:Literal ; sh:maxCount 1 ; sh:maxLength 1024 ] .
