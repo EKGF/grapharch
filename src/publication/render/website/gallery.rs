@@ -59,13 +59,23 @@ pub(super) async fn render(
             _ => anyhow::bail!("showcase description is required"),
         };
         let preview = plan.source.node(id, "previewArtifact").await?;
-        let pdf = plan.source.node(id, "pdfArtifact").await?;
+        let pdf = match plan.source.optional(id, "pdfArtifact").await? {
+            None => None,
+            Some(Term::NamedNode(pdf)) => {
+                let artifact = catalog.page(&pdf)?;
+                ensure!(
+                    artifact.binary,
+                    "showcase PDF must be a selected artifact"
+                );
+                Some(artifact.route.clone())
+            },
+            _ => anyhow::bail!("showcase PDF must be an artifact IRI"),
+        };
         let dataset = plan.source.node(id, "datasetArtifact").await?;
         let preview = catalog.page(&preview)?;
-        let pdf = catalog.page(&pdf)?;
         let dataset = catalog.page(&dataset)?;
         ensure!(
-            preview.binary && pdf.binary && dataset.binary,
+            preview.binary && dataset.binary,
             "showcase outputs must be selected publication artifacts"
         );
         let count: u32 =
@@ -105,14 +115,12 @@ pub(super) async fn render(
                 ),
             );
         }
-        ensure!(
-            !pdfs.is_empty(),
-            "showcase must expose its PDF output"
-        );
-        ensure!(
-            pdfs.values().any(|(route, _)| route == &pdf.route),
-            "primary showcase PDF must be a declared output"
-        );
+        if let Some(pdf) = pdf {
+            ensure!(
+                pdfs.values().any(|(route, _)| route == &pdf),
+                "primary showcase PDF must be a declared output"
+            );
+        }
         let multiple = pdfs.len() > 1;
         let downloads = pdfs
             .into_values()

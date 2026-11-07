@@ -421,16 +421,21 @@ async fn build_case(
         case.preview.as_deref(),
         "index.html",
         &case.id,
-    )?;
+    )?
+    .ok_or_else(|| {
+        anyhow::anyhow!("showcase {} has no HTML preview", case.id)
+    })?;
     let pdf = artifact_selection(
         &artifacts,
         case.pdf.as_deref(),
         "document.pdf",
         &case.id,
     )?;
+    if let Some(pdf) = pdf {
+        metadata.push(quad(&case.id, "pdfArtifact", pdf.clone()));
+    }
     metadata.extend([
         quad(&case.id, "previewArtifact", preview.clone()),
-        quad(&case.id, "pdfArtifact", pdf.clone()),
         quad(
             &case.id,
             "diagnosticCount",
@@ -460,9 +465,9 @@ fn artifact_selection<'a>(
     selected: Option<&str>,
     filename: &str,
     case: &NamedNode,
-) -> Result<&'a NamedNode> {
+) -> Result<Option<&'a NamedNode>> {
     if let Some(path) = selected {
-        return artifacts.get(path).ok_or_else(|| {
+        return artifacts.get(path).map(Some).ok_or_else(|| {
             anyhow::anyhow!("showcase {case} has no selected artifact {path}")
         });
     }
@@ -471,15 +476,15 @@ fn artifact_selection<'a>(
             .file_name()
             .is_some_and(|name| name == filename)
     });
-    let (_, asset) = choices.next().ok_or_else(|| {
-        anyhow::anyhow!("showcase {case} has no {filename} artifact")
-    })?;
+    let Some((_, asset)) = choices.next() else {
+        return Ok(None);
+    };
     ensure!(
         choices.next().is_none(),
         "showcase {case} requires explicit selection among multiple \
          {filename} artifacts"
     );
-    Ok(asset)
+    Ok(Some(asset))
 }
 
 fn optional_text(

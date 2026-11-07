@@ -130,7 +130,7 @@ ga:BinaryAssetShape a sh:NodeShape ; sh:targetClass ga:BinaryAsset ; sh:nodeKind
     sh:property [ sh:path ga:contentSize ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:minCount 1 ; sh:maxCount 1 ] .
 ga:ShowcaseShape a sh:NodeShape ; sh:targetClass ga:Showcase ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:previewArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:pdfArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:pdfArtifact ; sh:class ga:BinaryAsset ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:datasetArtifact ; sh:class ga:BinaryAsset ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 # Asset references also occur on authored fragments and collected references.

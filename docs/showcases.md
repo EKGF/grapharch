@@ -54,7 +54,8 @@ description, original source and credits. Repeated `ga:showcaseInput`,
 actually demonstrates. `dct:source` links to its public source and `dct:rights`
 provides concise attribution. Labels are limited to 64 bytes and 16 per category.
 Available output filters come from the retained HTML, PDF and KG artifacts,
-not from claims in the registry.
+not from claims in the registry. PDF is optional: an HTML-only example still
+provides its website and retained KG, without a fabricated PDF download.
 
 Search and filters work entirely in the browser and keep their state in the URL,
 including under a GitHub Pages project path. Without JavaScript, every showcase
