@@ -115,6 +115,17 @@ pub(super) async fn write(
             &contribution,
         )
         .await?;
+        if let Some(body) = composed.generated_body {
+            generated(
+                &mut stream,
+                &page.summary,
+                &page.subject,
+                &body,
+                &snapshot,
+                &contribution,
+            )
+            .await?;
+        }
         part(&mut stream, &id, &header, 0).await?;
         part(&mut stream, &id, &page.summary, 1).await?;
         for (index, companion) in composed.companions.into_iter().enumerate() {

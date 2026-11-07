@@ -75,3 +75,13 @@ copy that prose into another source file.
 Execution has explicit limits: 4,096 model subjects, 8 MiB of hierarchy metadata,
 256 KiB per annotation, and 512 KiB per generated fragment. Descriptions are
 read one subject at a time. Exceeding a limit fails with an explicit error.
+
+## Taxonomy overview
+
+A second configured documentor with `ga:kind "maturity-overview"` and
+`ga:route "intro/overview/"` publishes a single hierarchy table from the pinned
+model. It lists each capability with its pillar, area, number and `rdfs:comment`
+(measurable ability), linking to native detail pages. It needs no companion
+source. Exclude the legacy generated overview Markdown from collection when
+replacing it at the same route; the authoritative RDF remains the only source
+for the taxonomy facts.

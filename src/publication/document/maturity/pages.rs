@@ -86,7 +86,7 @@ impl MaturityModelDocumentor {
         Ok(pages)
     }
 }
-fn valid_segment(value: &str) -> bool {
+pub(super) fn valid_segment(value: &str) -> bool {
     !value.is_empty() &&
         value.len() <= 128 &&
         value.bytes().all(|byte| {

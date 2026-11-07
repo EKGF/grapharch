@@ -1,5 +1,6 @@
 //! Native EKGF maturity-model fragments from a pinned collected revision.
 mod model;
+mod overview;
 pub(crate) mod pages;
 mod write;
 use {

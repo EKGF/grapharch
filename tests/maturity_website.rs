@@ -42,9 +42,10 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
     let config = source.path().join("project.ttl");
     tokio::fs::write(&config, r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
-<urn:p> a ga:Project; ga:contentSource "docs"; ga:collector <urn:rdf>; ga:documentor <urn:maturity>; ga:target <urn:t>.
+<urn:p> a ga:Project; ga:contentSource "docs"; ga:collector <urn:rdf>; ga:documentor <urn:maturity>, <urn:overview>; ga:target <urn:t>.
 <urn:rdf> a ga:Collector; ga:kind "rdf-file"; ga:source "model.ttl".
 <urn:maturity> a ga:Documentor; ga:kind "maturity-model"; ga:source "fragments"; ga:route "pillar/".
+<urn:overview> a ga:Documentor; ga:kind "maturity-overview"; ga:route "intro/overview/".
 <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site".
 <urn:s> a ga:Scope. <urn:f> a ga:Profile.
 "#).await?;
@@ -64,6 +65,13 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
     else {
         panic!("publication failed")
     };
+    let overview = tokio::fs::read_to_string(
+        result.directory.join("intro/overview/index.html"),
+    )
+    .await?;
+    assert!(overview.contains("A.1.1"));
+    assert!(overview.contains("Measurable ability"));
+    assert!(overview.contains("pillar/business/strategy/vision/"));
     let model =
         tokio::fs::read_to_string(result.directory.join("pillar/index.html"))
             .await?;

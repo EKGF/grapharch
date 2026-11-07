@@ -32,8 +32,9 @@ struct Companion {
     fragment: NamedNode,
 }
 struct ComposedPage {
-    page:       Page,
-    companions: Vec<Companion>,
+    page:           Page,
+    companions:     Vec<Companion>,
+    generated_body: Option<String>,
 }
 
 pub(super) async fn collect(
@@ -63,6 +64,25 @@ pub(super) async fn collect(
             "configured documentor must be typed Documentor"
         );
         let kind = view.text(processor, "kind").await?;
+        if kind == "maturity-overview" {
+            let doc = MaturityModelDocumentor::new(
+                dataset.clone(),
+                snapshot.clone(),
+                project,
+            )?;
+            let (page, body) = doc
+                .overview_page(&view.text(processor, "route").await?)
+                .await?;
+            bindings::write(dataset, writer, project, processor, vec![
+                ComposedPage {
+                    page,
+                    companions: Vec::new(),
+                    generated_body: Some(body),
+                },
+            ])
+            .await?;
+            continue;
+        }
         ensure!(
             kind == "maturity-model",
             "unsupported configured documentor kind: {kind}"
@@ -130,7 +150,11 @@ pub(super) async fn collect(
                     collector.collect(writer).await?;
                 }
             }
-            composed.push(ComposedPage { page, companions });
+            composed.push(ComposedPage {
+                page,
+                companions,
+                generated_body: None,
+            });
         }
         doc.document(writer).await?;
         bindings::write(dataset, writer, project, processor, composed).await?;

@@ -108,11 +108,11 @@ HTML or source-owned CSS.
 
 ## Figures and captions
 
-A `<figure markdown>` block containing one Markdown image followed by one
+A `<figure markdown>` block containing one Markdown image or table followed by one
 `<figcaption>` becomes a semantic Figure with a Caption child. Caption text,
 links, emphasis, line breaks, and copyright attribution remain ordinary
 Markdown in the retained graph. HTML publishes real `figure` and `figcaption`
-elements; PDF keeps the image and caption together as a figure.
+elements; PDF keeps the content and caption together as a figure.
 
 An image's optional `{ width="700" }` hint supplies a maximum width in pixels,
 clamped to the available output width. Values must be 1–2048. Arbitrary figure
