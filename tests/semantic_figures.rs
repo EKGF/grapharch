@@ -20,7 +20,9 @@ async fn authored_figures_preserve_captions_and_images_after_source_removal()
         source.path().join("index.md"),
         "# Figure review\n\n<figure markdown>\n  ![A diagram](image.svg){ \
          width=\"700\" }\n  <figcaption>Figure 1: Shared model<br/>© Original \
-         **contributors**</figcaption>\n</figure>\n",
+         **contributors**</figcaption>\n</figure>\n\n<figure markdown>\n| \
+         Model | Value |\n|---|---|\n| Shared | Useful |\n<figcaption>Model \
+         comparison</figcaption>\n</figure>\n",
     )
     .await?;
     let config = source.path().join("project.ttl");
@@ -52,6 +54,8 @@ async fn authored_figures_preserve_captions_and_images_after_source_removal()
         tokio::fs::read_to_string(site.directory.join("index.html")).await?;
     assert!(html.contains("<figure class=\"ga-figure\""));
     assert!(html.contains("<figcaption>"));
+    assert!(html.contains("Model comparison"));
+    assert!(html.contains("<table>"));
     assert!(html.contains("© Original <strong>contributors</strong>"));
     assert!(html.contains("--figure-width:700px"));
     assert!(!html.contains("{ width="));

@@ -62,27 +62,39 @@ pub(super) fn normalize(body: &str) -> Result<String> {
             max_width_px = Some(pixels);
             image.truncate(capture.get(0).unwrap().start());
         }
-        let mut images = 0;
-        let mut inside_image = false;
-        for event in Parser::new(&image) {
-            match event {
-                Event::Start(Tag::Image { .. }) => {
-                    images += 1;
-                    inside_image = true;
-                },
-                Event::End(TagEnd::Image) => inside_image = false,
-                Event::Start(Tag::Paragraph) |
-                Event::End(TagEnd::Paragraph) => {},
-                Event::Text(_) | Event::Code(_) if inside_image => {},
-                _ => {
-                    anyhow::bail!("figure body must contain one Markdown image")
-                },
+        let table =
+            Parser::new_ext(&image, crate::publication::markdown::options())
+                .next()
+                .is_some_and(|event| {
+                    matches!(event, Event::Start(Tag::Table(_)))
+                });
+        if table {
+            validate_table(&image)?;
+        } else {
+            let mut images = 0;
+            let mut inside_image = false;
+            for event in Parser::new(&image) {
+                match event {
+                    Event::Start(Tag::Image { .. }) => {
+                        images += 1;
+                        inside_image = true;
+                    },
+                    Event::End(TagEnd::Image) => inside_image = false,
+                    Event::Start(Tag::Paragraph) |
+                    Event::End(TagEnd::Paragraph) => {},
+                    Event::Text(_) | Event::Code(_) if inside_image => {},
+                    _ => {
+                        anyhow::bail!(
+                            "figure body must contain one Markdown image"
+                        )
+                    },
+                }
             }
+            ensure!(
+                images == 1,
+                "figure body requires exactly one image"
+            );
         }
-        ensure!(
-            images == 1,
-            "figure body requires exactly one image"
-        );
         let caption = parts[2].trim();
         ensure!(
             !caption.is_empty() && caption.len() <= 16 * 1024,
@@ -101,6 +113,31 @@ pub(super) fn normalize(body: &str) -> Result<String> {
     }
     output.push_str(&body[offset..]);
     Ok(output)
+}
+fn validate_table(body: &str) -> Result<()> {
+    let mut tables = 0;
+    let mut depth = 0;
+    for event in Parser::new_ext(body, crate::publication::markdown::options())
+    {
+        match event {
+            Event::Start(Tag::Table(_)) => {
+                tables += 1;
+                depth += 1;
+            },
+            Event::End(TagEnd::Table) => depth -= 1,
+            _ => {
+                ensure!(
+                    depth == 1,
+                    "figure table must contain exactly one Markdown table"
+                )
+            },
+        }
+    }
+    ensure!(
+        tables == 1 && depth == 0,
+        "figure requires one complete Markdown table"
+    );
+    Ok(())
 }
 #[cfg(test)]
 mod tests {
