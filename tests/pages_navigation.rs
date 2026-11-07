@@ -103,6 +103,18 @@ async fn check_navigation(with_index: bool) -> Result<()> {
         .select(&selector)
         .map(|e| e.text().collect::<String>())
         .collect::<Vec<_>>();
+    let adjacent = doc
+        .select(&scraper::Selector::parse(".page-neighbors a").unwrap())
+        .map(|e| e.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        adjacent,
+        if with_index {
+            vec!["PreviousB first"]
+        } else {
+            vec!["PreviousIntroduction", "NextB last"]
+        }
+    );
     if with_index {
         assert_eq!(labels, [
             "Introduction",

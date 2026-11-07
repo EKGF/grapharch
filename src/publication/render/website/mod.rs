@@ -275,7 +275,14 @@ async fn write_page(
                 esc(&ancestor.title)
             ));
         }
-        let previous_next = catalog.previous_next(id, &prefix)?;
+        let previous_next = if let Some((authored_breadcrumbs, neighbors)) =
+            header.navigation.context(id.as_str(), &prefix)
+        {
+            breadcrumbs = authored_breadcrumbs;
+            neighbors
+        } else {
+            catalog.previous_next(id, &prefix)?
+        };
         let heading = if content.headings.first().is_some_and(|h| h.level == 1)
         {
             String::new()
