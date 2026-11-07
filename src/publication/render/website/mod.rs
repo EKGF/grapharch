@@ -11,6 +11,7 @@ mod navigation;
 mod project;
 mod redirects;
 mod repository;
+mod search;
 mod shell;
 mod theme;
 use {
@@ -47,12 +48,13 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}",
             include_str!("style.css"),
             include_str!("../callouts.css"),
             include_str!("../provenance.css"),
             theme.css(),
-            include_str!("documentation.css")
+            include_str!("documentation.css"),
+            include_str!("search.css")
         ),
     )
     .await?;
@@ -227,6 +229,9 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         let inventory = crate::publication::document::publication_inventory::model::Inventory::read(&plan.dataset, &plan.source, &job.subject).await?;
         tokio::fs::write(stage.join("publication-versions.json"), serde_json::to_vec_pretty(&inventory)?).await?;
         files.push("publication-versions.json".into());
+    }
+    if header.navigation.documentation {
+        search::write(plan, &catalog, stage, &mut files).await?;
     }
     redirects::write(plan, stage, &catalog, &mut files).await?;
     Ok(files)

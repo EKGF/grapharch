@@ -97,6 +97,19 @@ navigation entries or sitemap pages. Unsafe paths, duplicate aliases, collisions
 with published files, and fragment aliases without a selected heading fail the
 publication before its output replaces the previous site.
 
+## Documentation search
+
+The documentation layout includes a search button and a keyboard shortcut,
+Control-K or Command-K. Search covers titles and retained page text, with links
+and matching excerpts. It runs entirely in the browser from a generated local
+`search-index.json`; no service or framework is required. Hidden pages, assets,
+redirects, and generated publication reports are omitted.
+
+The index is generated from the pinned publication graph and remains usable
+when the original Markdown and RDF files are unavailable. The renderer streams
+one page at a time and rejects an index exceeding 32 MiB or 10,000 pages. Search
+results show at most 20 pages. Failed index loading is reported in the dialog.
+
 ## Search metadata
 
 Use a short `description` in each Markdown page's frontmatter. The collector

@@ -56,10 +56,16 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     };
     let generator_credit = super::super::credit::HTML;
     let organization_identity = header.theme.identity();
-    let header_links =
-        header
-            .theme
-            .links(repository, prefix, &header.links.html(prefix));
+    let header_links = header.theme.links(
+        repository,
+        prefix,
+        &header.links.html(prefix),
+        if header.navigation.documentation {
+            super::search::button()
+        } else {
+            ""
+        },
+    );
     let project_brand = format!(
         "<a class=\"brand\" href=\"{prefix}\">{}<span \
          class=\"brand-version\"><span class=\"visually-hidden\">Version \
@@ -155,6 +161,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
             esc(plan.target.as_str())
         )
     };
+    let search_dialog = if header.navigation.documentation {
+        super::search::dialog(prefix)
+    } else {
+        String::new()
+    };
     let body = if project_page {
         super::project::sections(
             &format!("{heading}{}", page.body),
@@ -202,7 +213,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
 <header class="site-header">{header_content}{primary_navigation}</header>
 <div class="{layout}">{navigation_panel}
 <main id="main-content" tabindex="-1">{trail}<article>{heading}{body}{gallery}</article>{neighbors}{quality_link}{article_footer}</main>
-{page_outline}</div>{footer_navigation}{community_footer}<script>{navigation_script}</script></body></html>"##,
+{page_outline}</div>{footer_navigation}{community_footer}{search_dialog}<script>{navigation_script}</script></body></html>"##,
         extra_head = page.extra_head,
         page_title = esc(page.title),
         project_title = esc(project_title),
