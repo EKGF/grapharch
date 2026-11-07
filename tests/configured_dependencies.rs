@@ -265,8 +265,7 @@ async fn rdf_url_rejects_unsupported_protocol_mismatched_format_invalid_rdf_and_
         let error = collector
             .collect(&writer)
             .await
-            .err()
-            .expect("invalid dependency response must fail");
+            .expect_err("invalid dependency response must fail");
         assert!(format!("{error:#}").contains(expected));
         // A rejected Content-Length can close the socket before the fixture
         // finishes sending its body; that server-side write failure is
