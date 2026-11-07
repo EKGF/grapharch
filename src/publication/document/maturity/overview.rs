@@ -24,23 +24,29 @@ impl MaturityModelDocumentor {
         );
         let model = Model::read(&self.dataset, &self.view()).await?;
         let subject = identity("maturity-overview", &[self.project.as_str()]);
-        let mut body = String::from(
-            "| Pillar | Capability area | Number | Capability | Measurable \
-             ability |\n|---|---|---|---|---|\n",
-        );
+        let mut body = String::new();
         for id in model.order() {
             let node = &model.nodes[&id];
-            if node.kind != Kind::Capability {
-                continue;
+            match node.kind {
+                Kind::Pillar => {
+                    body.push_str(&format!("\n## {}\n\n", link(&model, &id)));
+                    continue;
+                },
+                Kind::Area => {
+                    body.push_str(&format!(
+                        "\n### {}\n\n| Number | Capability | Measurable \
+                         ability |\n|---|---|---|\n",
+                        link(&model, &id)
+                    ));
+                    continue;
+                },
+                Kind::Capability => {},
+                _ => continue,
             }
-            let area = node.parent.as_ref().unwrap();
-            let pillar = model.nodes[area].parent.as_ref().unwrap();
             let comment =
                 model::text(&self.view(), &id, model::COMMENT, false).await?;
             body.push_str(&format!(
-                "| {} | {} | {} | {} | {} |\n",
-                link(&model, pillar),
-                link(&model, area),
+                "| {} | {} | {} |\n",
                 escape(&node.number),
                 link(&model, &id),
                 escape(&comment).replace('\n', " ")

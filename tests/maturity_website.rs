@@ -80,6 +80,7 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
     .await?;
     assert!(overview.contains("A.1.1"));
     assert!(overview.contains("Measurable ability"));
+    assert!(!overview.contains("<th>Pillar</th>"));
     assert!(overview.contains("pillar/business/strategy/vision/"));
     let model =
         tokio::fs::read_to_string(result.directory.join("pillar/index.html"))
