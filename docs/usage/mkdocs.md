@@ -6,6 +6,9 @@ permalink: /usage/mkdocs/
 ---
 # Import MkDocs sites
 
+MkDocs import is available in source builds from `main`. Check the release notes
+before using these commands with a prebuilt binary.
+
 Point GraphArch at an existing MkDocs repository:
 
 ```bash
@@ -32,7 +35,7 @@ importer. Having both MkDocs configuration filenames is also an error.
 | `repo_url` | Source repository identity and repository link. |
 | `docs_dir` | Bounded content root, defaulting to `docs`, confined to the repository. |
 | `nav` | Ordered, nested, independent navigation entries; repeated placements of a page, custom labels, external HTTP(S)/email links, and page heading anchors are preserved. |
-| No `nav` | Directory navigation, including supported `.pages` hints, without executing the awesome-pages plugin. |
+| No `nav` | Directory navigation, including supported `.pages` hints, without executing the awesome-pages plugin. `title`, `hide`, `nav`, and `collapse: false` are accepted; unknown options fail. |
 | YAML frontmatter or native leading `title: ...` metadata | Page metadata, kept separate from the Markdown body. |
 | `pymdownx.snippets.base_path` | Explicit local include roots, confined to the repository. |
 | `pymdownx.snippets.auto_append` | Shared abbreviation dictionaries, retained as source-derived SKOS concepts. General-purpose automatic Markdown appenders are not supported. |

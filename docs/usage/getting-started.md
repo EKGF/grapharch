@@ -96,7 +96,12 @@ directory are excluded. Symlinks are rejected. Large repositories should select
 a content subdirectory or configure a scoped publication; the quick RDF reference
 is limited to 20,000 named typed subjects.
 
-A root `grapharch.ttl` or `project.ttl` is treated as explicit configuration:
+For an existing MkDocs repository, the same command reads `mkdocs.yml` or
+`mkdocs.yaml` and translates supported metadata, navigation, and content settings.
+See [Import MkDocs sites](mkdocs.md) for supported constructs, explicit diagnostics,
+and the distinction between content import and theme reproduction.
+
+A root `grapharch.ttl`, `project.ttl`, or `.grapharch/project.ttl` is treated as explicit configuration:
 a single configured target uses the existing configured publication pipeline.
 Invalid configuration remains an error. For multiple targets or another
 configuration filename, use the explicit publication commands below.
