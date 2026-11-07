@@ -118,14 +118,15 @@ pub(crate) fn draw(diagram: &Diagram, links: bool) -> Result<String> {
     let graph = graph(diagram, links)?;
     let config = configuration();
     let theme = Theme::modern();
-    let layout = compute_layout(&graph, &theme, &config);
+    let mut layout = compute_layout(&graph, &theme, &config);
+    let leaders = super::labels::place(&mut layout);
     let svg = render_svg(&layout, &theme, &config);
     let start = svg
         .find('>')
         .ok_or_else(|| anyhow::anyhow!("invalid diagram SVG"))?;
     let mut result = format!(
-        "{}<title>{} class neighborhood</title><desc>Arrows show explicit OWL \
-         and RDFS relationships; properties are independent \
+        "{}{leaders}<title>{} class neighborhood</title><desc>Arrows show \
+         explicit OWL and RDFS relationships; properties are independent \
          resources.</desc>{}",
         &svg[..=start],
         xml(&diagram.focus.label),
@@ -197,7 +198,9 @@ mod tests {
             ],
         };
         let graph = graph(&model, false).unwrap();
-        let layout = compute_layout(&graph, &Theme::modern(), &configuration());
+        let mut layout =
+            compute_layout(&graph, &Theme::modern(), &configuration());
+        super::super::labels::place(&mut layout);
         for edge in &layout.edges {
             let (x, y) =
                 edge.label_anchor.expect("positioned relationship label");
@@ -209,6 +212,55 @@ mod tests {
                         y <= node.y + node.height),
                     "relationship label overlaps {}",
                     node.id
+                );
+            }
+        }
+    }
+    #[test]
+    fn shared_domain_and_range_labels_do_not_overlap_each_other() {
+        let node = |id: &str, kind: &str| {
+            Node {
+                id:    id.into(),
+                label: format!("ekg-artdep:{id}"),
+                kind:  kind.into(),
+                link:  None,
+            }
+        };
+        let focus = node("DependencyEvidence", "Class");
+        let other = node("Dependency", "Class");
+        let resource = node("Resource", "Resource");
+        let p = node("dependencyEvidence", "Object property");
+        let q = node("evidenceGraph", "Object property");
+        let r = node("evidenceObject", "Object property");
+        let edge = |from: Node, relation: &str, to: Node| {
+            Edge { from, relation: relation.into(), to }
+        };
+        let diagram = Diagram {
+            focus: focus.clone(),
+            edges: vec![
+                edge(p.clone(), "rdfs:domain", other),
+                edge(p, "rdfs:range", focus.clone()),
+                edge(q.clone(), "rdfs:domain", focus.clone()),
+                edge(q, "rdfs:range", resource.clone()),
+                edge(r.clone(), "rdfs:domain", focus),
+                edge(r, "rdfs:range", resource),
+            ],
+        };
+        let graph = graph(&diagram, false).unwrap();
+        let mut layout =
+            compute_layout(&graph, &Theme::modern(), &configuration());
+        super::super::labels::place(&mut layout);
+        for (i, a) in layout.edges.iter().enumerate() {
+            let (ax, ay) = a.label_anchor.unwrap();
+            let al = a.label.as_ref().unwrap();
+            for b in &layout.edges[i + 1..] {
+                let (bx, by) = b.label_anchor.unwrap();
+                let bl = b.label.as_ref().unwrap();
+                assert!(
+                    (ax - bx).abs() >= (al.width + bl.width) / 2.0 + 8.0 ||
+                        (ay - by).abs() >=
+                            (al.height + bl.height) / 2.0 + 8.0,
+                    "overlapping relationship captions"
                 );
             }
         }
