@@ -99,7 +99,7 @@ publication before its output replaces the previous site.
 
 ## Documentation search
 
-The documentation layout includes a search button and a keyboard shortcut,
+Every website layout includes the same search button and keyboard shortcut,
 Control-K or Command-K. Search covers titles and retained page text, with links
 and matching excerpts. It runs entirely in the browser from a generated local
 `search-index.json`; no service or framework is required. Hidden pages, assets,

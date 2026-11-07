@@ -16,6 +16,14 @@ struct Page {
 #[tokio::test]
 async fn documentation_search_uses_retained_page_content_after_source_removal()
 -> Result<()> {
+    retained_search(true).await
+}
+#[tokio::test]
+async fn landing_search_uses_the_same_retained_index_and_header() -> Result<()>
+{
+    retained_search(false).await
+}
+async fn retained_search(documentation: bool) -> Result<()> {
     let source = tempfile::tempdir()?;
     let output = tempfile::tempdir()?;
     let definitions = source.path().join("project.ttl");
@@ -27,6 +35,14 @@ async fn documentation_search_uses_retained_page_content_after_source_removal()
 <urn:scope> a ga:Scope .
 <urn:profile> a ga:Profile; ga:style "ekgf"; ga:layout "documentation" .
 "#).await?;
+    if !documentation {
+        let config = tokio::fs::read_to_string(&definitions).await?;
+        tokio::fs::write(
+            &definitions,
+            config.replace("; ga:layout \"documentation\"", ""),
+        )
+        .await?;
+    }
     tokio::fs::write(
         source.path().join("index.md"),
         "# Introduction\n\nWelcome.",

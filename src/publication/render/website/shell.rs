@@ -60,11 +60,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         repository,
         prefix,
         &header.links.html(prefix),
-        if header.navigation.documentation {
-            super::search::button()
-        } else {
-            ""
-        },
+        super::search::button(),
     );
     let project_brand = format!(
         "<a class=\"brand\" href=\"{prefix}\">{}<span \
@@ -161,11 +157,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
             esc(plan.target.as_str())
         )
     };
-    let search_dialog = if header.navigation.documentation {
-        super::search::dialog(prefix)
-    } else {
-        String::new()
-    };
+    let search_dialog = super::search::dialog(prefix);
     let body = if project_page {
         super::project::sections(
             &format!("{heading}{}", page.body),

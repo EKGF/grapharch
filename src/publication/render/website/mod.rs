@@ -248,9 +248,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         tokio::fs::write(stage.join("publication-versions.json"), serde_json::to_vec_pretty(&inventory)?).await?;
         files.push("publication-versions.json".into());
     }
-    if header.navigation.documentation {
-        search::write(plan, &catalog, stage, &mut files).await?;
-    }
+    search::write(plan, &catalog, stage, &mut files).await?;
     let before_aliases = files.len();
     redirects::write(plan, stage, &catalog, &mut files).await?;
     artifacts.validate(files.len() - before_aliases, files.len())?;
