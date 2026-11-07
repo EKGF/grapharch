@@ -52,6 +52,8 @@ ga:ComponentShape a sh:NodeShape ; sh:targetClass ga:Component ; sh:nodeKind sh:
     sh:property [ sh:path ga:fragment ; sh:nodeKind sh:IRI ; sh:class ga:Fragment ] .
 
 ga:FragmentShape a sh:NodeShape ; sh:targetClass ga:Fragment ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:contentPrefix ; sh:datatype xsd:string ; sh:maxLength 65536 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:contentSuffix ; sh:datatype xsd:string ; sh:maxLength 65536 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:headingDepth ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxInclusive 4 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:subject ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;

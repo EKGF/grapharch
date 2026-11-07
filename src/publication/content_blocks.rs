@@ -92,3 +92,77 @@ impl Stack {
         Ok(())
     }
 }
+
+/// Retain enclosing semantic context when a publication selects a heading
+/// slice.
+pub(crate) struct Fragments {
+    // bounded: at most 1024 boundaries in a capped Markdown body.
+    markers: Vec<(usize, Boundary)>,
+}
+impl Fragments {
+    pub fn read(body: &str) -> Result<Self> {
+        use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag, TagEnd};
+        let mut markers = Vec::new();
+        let mut source = None;
+        let mut stack = Stack::default();
+        for (event, range) in
+            Parser::new_ext(body, crate::publication::markdown::options())
+                .into_offset_iter()
+        {
+            match event {
+                Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info)))
+                    if info.as_ref() == LANGUAGE =>
+                {
+                    source = Some(String::new())
+                },
+                Event::Text(text) if source.is_some() => {
+                    source.as_mut().unwrap().push_str(&text)
+                },
+                Event::End(TagEnd::CodeBlock) if source.is_some() => {
+                    let boundary = Boundary::parse(&source.take().unwrap())?;
+                    stack.step(boundary.clone())?;
+                    ensure!(
+                        markers.len() < 1024,
+                        "too many semantic content boundaries"
+                    );
+                    markers.push((range.end, boundary));
+                },
+                _ => {},
+            }
+        }
+        stack.finish()?;
+        Ok(Self { markers })
+    }
+
+    pub fn context(
+        &self,
+        start: usize,
+        end: usize,
+    ) -> Result<(String, String)> {
+        let mut stack = Stack::default();
+        let mut output = String::new();
+        for (_, boundary) in self
+            .markers
+            .iter()
+            .take_while(|(offset, _)| *offset <= start)
+        {
+            stack.step(boundary.clone())?;
+        }
+        for boundary in &stack.0 {
+            output.push_str(&boundary.markdown()?);
+        }
+        let prefix = output;
+        let mut output = String::new();
+        for (_, boundary) in self
+            .markers
+            .iter()
+            .filter(|(offset, _)| *offset > start && *offset <= end)
+        {
+            stack.step(boundary.clone())?;
+        }
+        for _ in &stack.0 {
+            output.push_str(&Boundary::End.markdown()?);
+        }
+        Ok((prefix, output))
+    }
+}

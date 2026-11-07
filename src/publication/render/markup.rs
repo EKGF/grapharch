@@ -27,9 +27,32 @@ impl<'a> Markdown<'a> {
         );
         let options = crate::publication::markdown::options();
         // bounded: maps and events refer only to this capped fragment.
+        let content_prefix =
+            plan.source.optional(fragment, "contentPrefix").await?;
+        let suffix = plan.source.optional(fragment, "contentSuffix").await?;
+        let context = |value: Option<oxrdf::Term>| -> Result<String> {
+            match value {
+                None => Ok(String::new()),
+                Some(oxrdf::Term::Literal(value)) => {
+                    ensure!(
+                        value.value().len() <= 64 * 1024,
+                        "fragment content context exceeds byte budget"
+                    );
+                    Ok(value.value().to_owned())
+                },
+                _ => bail!("fragment content context must be literal"),
+            }
+        };
+        let contextual = format!(
+            "{}{body}{}",
+            context(content_prefix)?,
+            context(suffix)?
+        );
         let mut events = crate::publication::mermaid::events(
             crate::publication::markdown::semantic_events(
-                Parser::new_ext(body, options).collect(),
+                Parser::new_ext(&contextual, options)
+                    .map(Event::into_static)
+                    .collect(),
             ),
         )?;
         let base_level = events

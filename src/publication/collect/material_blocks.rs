@@ -185,3 +185,35 @@ fn parse(body: &str, depth: usize, count: &mut usize) -> Result<String> {
     );
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::normalize;
+    #[test]
+    fn literal_code_and_ordinary_markdown_are_unchanged() {
+        for source in [
+            "ordinary prose",
+            "```text\n=== \"literal\"\n!!! info\n```\n",
+            "    === \"indented code\"\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+        }
+    }
+    #[test]
+    fn nested_containers_preserve_markdown_and_reject_invalid_headers() {
+        let source =
+            "=== \"Audience\"\n\n    !!! principle \"One model\"\n\n        A \
+             **shared** [source](source.md).\n\n=== \"Second\"\n\n    More.\n";
+        let result = normalize(source).unwrap();
+        assert!(result.contains("A **shared** [source](source.md)."));
+        assert!(result.contains("\"category\":\"principle\""));
+        assert!(!result.contains("!!! principle"));
+        for bad in [
+            "=== unquoted\n    content",
+            "!!! note\nnot indented",
+            "??? warning float\n    content",
+        ] {
+            assert!(normalize(bad).is_err(), "{bad}");
+        }
+    }
+}

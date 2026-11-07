@@ -1,10 +1,14 @@
 use {
     anyhow::Result,
     grapharch::publication::{
+        assembly::Assembler,
         dataset::Dataset,
+        plan::TargetPlanner,
         render::{PublishOutcome, Publisher},
         website,
+        writer::GraphWriter,
     },
+    oxrdf::NamedNode,
 };
 #[tokio::test]
 async fn material_blocks_survive_restore_and_publish_semantic_html()
@@ -12,12 +16,27 @@ async fn material_blocks_survive_restore_and_publish_semantic_html()
     let input = tempfile::tempdir()?;
     let output = tempfile::tempdir()?;
     let settings = input.path().join("project.ttl");
-    tokio::fs::write(&settings,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:s> a ga:Scope. <urn:f> a ga:Profile. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site"."#).await?;
+    tokio::fs::write(&settings,r#"
+@prefix ga:<https://ekgf.org/ontology/grapharch#>.
+@prefix dct:<http://purl.org/dc/terms/>.
+<urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>.
+<urn:s> a ga:Scope. <urn:f> a ga:Profile.
+<urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site".
+<urn:ps> a ga:Scope;ga:include <urn:page>;ga:traverse ga:topic;ga:maxDepth 1.
+<urn:pf> a ga:Profile;ga:placement <urn:placement>.
+<urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1.
+<urn:component> a ga:Component;dct:title "Technical detail";ga:fragment <urn:technical>.
+<urn:pdf> a ga:Target;dct:title "Semantic content";ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer "typst";ga:destination "pdf".
+"#).await?;
     tokio::fs::write(
         input.path().join("index.md"),
         r#"---
 title: Panels
 permalink: /
+grapharch:
+  subject: urn:page
+  fragments:
+    technical-details: urn:technical
 ---
 # Panels
 
@@ -30,6 +49,8 @@ permalink: /
         Nested information.
 
 === "Technical"
+
+    ## Technical details
 
     ???+ warning "Review <carefully>"
 
@@ -48,12 +69,22 @@ permalink: /
     .await?;
     let built =
         website::collect(input.path(), &settings, "urn:p", "urn:t", 2).await?;
+    let (writer, worker) =
+        GraphWriter::spawn(built.dataset.clone(), 4, 1024 * 1024)?;
+    let revision = Assembler::new(built.dataset.clone())
+        .assemble("urn:p")
+        .await?;
+    let pdf = TargetPlanner::new(built.dataset.clone(), revision)
+        .resolve("urn:p", &NamedNode::new("urn:pdf")?, &writer)
+        .await?;
+    drop(writer);
+    worker.await??;
     let archive = output.path().join("kg.nq");
     built.dataset.export(archive.clone()).await?;
     tokio::fs::remove_dir_all(input.path()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let PublishOutcome::Published(result) = Publisher::new(restored)
+    let PublishOutcome::Published(result) = Publisher::new(restored.clone())
         .render(&built.plan, output.path())
         .await?
     else {
@@ -61,12 +92,39 @@ permalink: /
     };
     let html =
         tokio::fs::read_to_string(result.directory.join("index.html")).await?;
-    assert!(html.contains("class=\"ga-tabs\""), "{html}");
+    assert_eq!(
+        html.matches("class=\"ga-tabs\"").count(),
+        1,
+        "a page must retain one original tab group"
+    );
     assert!(html.contains("Read this first"));
     assert!(html.contains("<details"));
     assert!(html.contains("href=\"detail/\""), "{html}");
     assert!(html.contains("literal, not a tab"));
     assert!(!html.contains("grapharch-content"));
     assert!(html.contains("Review &lt;carefully&gt;"));
+    let PublishOutcome::Published(pdf_result) =
+        Publisher::new(restored.clone())
+            .render(&pdf, output.path())
+            .await?
+    else {
+        panic!("PDF publish failed")
+    };
+    let typst =
+        tokio::fs::read_to_string(pdf_result.directory.join("main.typ"))
+            .await?;
+    assert!(typst.contains("Visible technical detail"));
+    assert!(!typst.contains("Nested information"));
+    assert!(!typst.contains("grapharch-content"));
+    if std::env::var_os("GRAPHARCH_MATERIAL_PREVIEW").is_some() {
+        for plan in [&built.plan, &pdf] {
+            Publisher::new(restored.clone())
+                .render(
+                    plan,
+                    std::path::Path::new("output/material-blocks"),
+                )
+                .await?;
+        }
+    }
     Ok(())
 }

@@ -89,6 +89,7 @@ pub(super) fn describe(
             "missing Markdown section anchor {anchor}"
         );
     }
+    let boundaries = crate::publication::content_blocks::Fragments::read(body)?;
     let mut output = Vec::new();
     let mut parents: Vec<(usize, NamedNode)> = Vec::new();
     for (index, (start, title, level, slug)) in sections.iter().enumerate() {
@@ -105,6 +106,18 @@ pub(super) fn describe(
             .cloned()
             .unwrap_or_else(|| identity("topic-fragment", &[topic.as_str()]));
         let text = &body[*start..end];
+        let (prefix, suffix) = boundaries.context(*start, end)?;
+        for (predicate, context) in
+            [("contentPrefix", prefix), ("contentSuffix", suffix)]
+        {
+            if !context.is_empty() {
+                output.push(input.quad(
+                    &fragment,
+                    predicate,
+                    Literal::new_simple_literal(context),
+                ));
+            }
+        }
         output.extend([
             input.quad(page, "topic", topic.clone()),
             input.quad(&topic, "type", term("Topic")),
@@ -167,7 +180,10 @@ pub(super) fn describe(
                         },
                         _ => String::new(),
                     };
-                    code = Some((language, String::new()));
+                    if language != crate::publication::content_blocks::LANGUAGE
+                    {
+                        code = Some((language, String::new()));
+                    }
                 },
                 Event::Text(text) if code.is_some() => {
                     code.as_mut().unwrap().1.push_str(&text)
