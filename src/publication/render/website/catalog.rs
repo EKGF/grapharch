@@ -284,12 +284,20 @@ impl Catalog {
         if self.pages.contains_key(owner.as_str()) {
             return Ok(());
         }
-        ensure!(
-            self.pages.len() < 256,
-            "website exceeds 256-page budget"
-        );
         let binary = plan.source.has_type(&owner, "BinaryAsset").await?;
         let asset = binary || plan.source.has_type(&owner, "TextAsset").await?;
+        // bounded: separate 256-page and 256-asset indexes, at most 512
+        // entries.
+        let count = self
+            .pages
+            .values()
+            .filter(|page| page.asset == asset)
+            .count();
+        ensure!(
+            count < 256,
+            "website exceeds 256-{} budget",
+            if asset { "asset" } else { "page" }
+        );
         ensure!(
             asset || plan.source.has_type(&owner, "Page").await?,
             "selected website content has no Page or TextAsset owner"

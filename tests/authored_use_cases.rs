@@ -185,3 +185,43 @@ async fn invalid_authored_relationships_fail_with_source_evidence() -> Result<()
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn native_assets_have_a_separate_budget_from_authored_pages() -> Result<()>
+{
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("cases")).await?;
+    tokio::fs::write(source.path().join("index.md"), "# Catalog").await?;
+    for index in 0..130 {
+        tokio::fs::write(
+            source.path().join(format!("cases/case-{index}.md")),
+            format!(
+                "---\ntitle: Case {index}\nsummary: Independent source case \
+                 {index}.\nis-part-of: []\n---\n\nAuthored prose {index}."
+            ),
+        )
+        .await?;
+    }
+    let config = source.path().join("project.ttl");
+    tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:Collector;ga:kind "authored-use-cases";ga:source "cases". <urn:t> a ga:Target;ga:renderer "website";ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    let built =
+        website::collect(source.path(), &config, "urn:p", "urn:t", 4).await?;
+    let PublishOutcome::Published(site) = Publisher::new(built.dataset)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("website failed")
+    };
+    assert!(site.manifest.files.len() > 256);
+    for index in 0..130 {
+        let html = tokio::fs::read_to_string(
+            site.directory
+                .join(format!("cases/case-{index}/index.html")),
+        )
+        .await?;
+        assert!(html.contains(&format!("Authored prose {index}.")));
+        assert!(html.contains("<object class=\"interactive-svg\""));
+    }
+    Ok(())
+}
