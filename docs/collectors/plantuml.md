@@ -9,7 +9,7 @@ grapharch:
 
 # PlantUML diagrams
 
-Keep authored diagrams and their local themes with the documentation. GraphArch
+Keep authored diagrams and their local themes with [authored documentation](../documentable-things/authored-documentation.md). GraphArch
 collects the source, resolves local includes, and retains the generated SVG in
 the documentation graph. HTML and PDF publication then use that retained image.
 An exported graph can publish the diagram after the source files and diagram

@@ -27,6 +27,7 @@ explanations, and diagrams. Renderers present that content as websites or PDFs.
 | [SPARQL Endpoint Collector](sparql-endpoints.md) | An explicit CONSTRUCT or DESCRIBE response | The same RDF-defined things as an RDF file, with query-result provenance |
 | [Published W3C Specification Collector](published-specifications.md) | A saved, published W3C HTML document | Supported specification sections, examples, references, and publication metadata |
 | [Legal Preamble Collector](legal-preambles.md) | A selected legal disclosure in HTML | [Legal preambles](../documentable-things/legal-preambles.md) explicitly attached to publication targets |
+| [PlantUML Diagrams](plantuml.md) | An authored PlantUML file and bounded local include closure | Retained SVG illustrations with source and renderer provenance |
 | [Image Collector](images.md) | Supported PNG, JPEG, or SVG images | Retained illustrations and product logos |
 | [Code Example Collector](code-examples.md) | An explicitly selected code file | Code examples published without execution |
 | [Text Download Collector](text-downloads.md) | UTF-8 download files | Source-relative website downloads |

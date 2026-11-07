@@ -21,6 +21,7 @@ const PAGES: &[&str] = &[
     "code-examples.md",
     "text-downloads.md",
     "repository-publications.md",
+    "plantuml.md",
 ];
 
 #[derive(Deserialize)]
