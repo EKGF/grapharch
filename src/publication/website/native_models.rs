@@ -1,4 +1,6 @@
 //! Explicit model-aware publication composition; no legacy generator runtime.
+#[cfg(test)]
+mod acceptance;
 mod bindings;
 use {
     crate::publication::{
