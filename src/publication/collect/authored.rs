@@ -277,6 +277,23 @@ impl Collector for MarkdownFile {
             let fragment =
                 subject.clone().unwrap_or_else(|| input.fragment_id());
             let source = super::page::source_path(root, &input.path)?;
+            ensure!(
+                frontmatter.page.aliases.len() <= 64,
+                "page exceeds 64 route aliases"
+            );
+            for alias in &frontmatter.page.aliases {
+                ensure!(
+                    alias.len() <= 2048,
+                    "route alias exceeds 2048 bytes"
+                );
+                let route = super::page::route("index.md", Some(alias))?;
+                metadata.push(input.quad(
+                    &fragment,
+                    "routeAlias",
+                    Literal::new_simple_literal(route),
+                ));
+            }
+
             revision = format!("site-page-v8:{source}:{revision}");
             subject = Some(fragment.clone());
             metadata.push(input.quad(

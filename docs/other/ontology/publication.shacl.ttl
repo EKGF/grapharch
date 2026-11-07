@@ -272,3 +272,7 @@ ga:NativeNavigationParentShape a sh:NodeShape ;
     sh:targetSubjectsOf ga:navigationParentPath ;
     sh:property [ sh:path ga:navigationParentPath ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:navigationProfile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:RouteAliasShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:routeAlias ;
+    sh:property [ sh:path ga:routeAlias ; sh:datatype xsd:string ; sh:maxCount 64 ; sh:maxLength 2048 ] .

@@ -8,6 +8,7 @@ mod markdown;
 mod metadata;
 mod navigation;
 mod project;
+mod redirects;
 mod repository;
 mod shell;
 mod theme;
@@ -223,6 +224,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         tokio::fs::write(stage.join("publication-versions.json"), serde_json::to_vec_pretty(&inventory)?).await?;
         files.push("publication-versions.json".into());
     }
+    redirects::write(plan, stage, &catalog, &mut files).await?;
     Ok(files)
 }
 

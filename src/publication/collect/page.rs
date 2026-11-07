@@ -8,6 +8,8 @@ use {
 #[derive(Default, Deserialize)]
 pub(super) struct PageHints {
     pub permalink:   Option<String>,
+    #[serde(default)]
+    pub aliases:     Vec<String>,
     pub parent:      Option<String>,
     pub nav_order:   Option<u32>,
     #[serde(default)]

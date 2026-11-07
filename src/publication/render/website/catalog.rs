@@ -23,20 +23,22 @@ pub(super) struct Page {
     pub headings:     HashSet<String>,
 }
 pub(super) struct Catalog {
-    pub pages:      BTreeMap<String, Page>,
-    pub sources:    HashMap<String, String>,
-    pub subjects:   HashMap<String, (String, String)>,
-    pub routes:     HashMap<String, String>,
+    pub pages:            BTreeMap<String, Page>,
+    pub fragment_anchors: HashMap<String, String>,
+    pub sources:          HashMap<String, String>,
+    pub subjects:         HashMap<String, (String, String)>,
+    pub routes:           HashMap<String, String>,
     pub references: HashMap<(String, String), (String, String, Option<String>)>,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
         let mut catalog = Self {
-            pages:      BTreeMap::new(),
-            sources:    HashMap::new(),
-            subjects:   HashMap::new(),
-            routes:     HashMap::new(),
-            references: HashMap::new(),
+            pages:            BTreeMap::new(),
+            fragment_anchors: HashMap::new(),
+            sources:          HashMap::new(),
+            subjects:         HashMap::new(),
+            routes:           HashMap::new(),
+            references:       HashMap::new(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;
@@ -83,6 +85,14 @@ impl Catalog {
                 }
             }
             if let Some(anchor) = first_anchor {
+                ensure!(
+                    catalog.fragment_anchors.len() <
+                        crate::publication::limits::LINK_INDEX_ENTRIES,
+                    "fragment anchor index exceeds budget"
+                );
+                catalog
+                    .fragment_anchors
+                    .insert(fragment.as_str().into(), anchor.clone());
                 let mut subjects =
                     plan.source.objects(fragment, "subject").await?;
                 while let Some(row) = subjects.next().await? {
