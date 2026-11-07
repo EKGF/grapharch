@@ -1,7 +1,7 @@
 //! One explicitly annotated RDF term becomes one reference fragment. Selection
 //! and publication arrangement remain outside this documentor.
 use {
-    super::Documentor,
+    super::{Documentor, shacl_queries::Queries},
     crate::publication::{
         RDF_TYPE,
         dataset::{Dataset, Stage, identity},
@@ -136,6 +136,7 @@ impl AnnotatedTermDocumentor {
         references: &mut HashSet<NamedNode>,
         path: &mut HashSet<NamedNode>,
         depth: usize,
+        queries: &mut Queries,
     ) -> Result<String> {
         const FIRST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#first";
         const REST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest";
@@ -159,7 +160,14 @@ impl AnnotatedTermDocumentor {
                 self.subject
             );
             let mut item = self
-                .source_value(view, &first[0].1, references, path, depth + 1)
+                .source_value(
+                    view,
+                    &first[0].1,
+                    references,
+                    path,
+                    depth + 1,
+                    queries,
+                )
                 .await?;
             let Term::NamedNode(next) = &rest[0].1 else {
                 anyhow::bail!(
@@ -178,9 +186,20 @@ impl AnnotatedTermDocumentor {
                 {
                     continue;
                 }
-                let value = self
-                    .source_value(view, object, references, path, depth + 1)
-                    .await?;
+                let value =
+                    if let Some(code) = queries.capture(predicate, object)? {
+                        code
+                    } else {
+                        self.source_value(
+                            view,
+                            object,
+                            references,
+                            path,
+                            depth + 1,
+                            queries,
+                        )
+                        .await?
+                    };
                 annotations.push(format!(
                     "{}: {value}",
                     code(&self.compact(predicate))
@@ -217,6 +236,7 @@ impl AnnotatedTermDocumentor {
         references: &'a mut HashSet<NamedNode>,
         path: &'a mut HashSet<NamedNode>,
         depth: usize,
+        queries: &'a mut Queries,
     ) -> futures::future::BoxFuture<'a, Result<String>> {
         Box::pin(async move {
             ensure!(
@@ -240,21 +260,27 @@ impl AnnotatedTermDocumentor {
                         "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest")
                     }) {
                         self.source_collection(
-                            view, facts, references, path, depth,
+                            view, facts, references, path, depth, queries,
                         )
                         .await?
                     } else {
                         let mut pairs = Vec::new();
                         for (predicate, object) in facts {
-                            let object = self
-                                .source_value(
+                            let object = if let Some(code) =
+                                queries.capture(&predicate, &object)?
+                            {
+                                code
+                            } else {
+                                self.source_value(
                                     view,
                                     &object,
                                     references,
                                     path,
                                     depth + 1,
+                                    queries,
                                 )
-                                .await?;
+                                .await?
+                            };
                             pairs.push(format!(
                                 "{}: {object}",
                                 code(&self.compact(&predicate))
@@ -390,6 +416,7 @@ impl Documentor for AnnotatedTermDocumentor {
         let mut references = HashSet::new();
         let mut hash = Sha256::new();
         let mut examples = Vec::new();
+        let mut queries = Queries::default();
         let mut count = 0;
         while let Some(row) = rows.next().await? {
             ensure!(
@@ -471,13 +498,16 @@ impl Documentor for AnnotatedTermDocumentor {
                 }
                 continue;
             }
-            let value = if self.source_annotations {
+            let value = if let Some(code) = queries.capture(predicate, value)? {
+                code
+            } else if self.source_annotations {
                 self.source_value(
                     &view,
                     value,
                     &mut references,
                     &mut HashSet::new(),
                     0,
+                    &mut queries,
                 )
                 .await?
             } else {
@@ -555,6 +585,7 @@ impl Documentor for AnnotatedTermDocumentor {
                         &mut references,
                         &mut HashSet::new(),
                         0,
+                        &mut queries,
                     )
                     .await?;
                 facts.push(format!(
@@ -758,6 +789,14 @@ impl Documentor for AnnotatedTermDocumentor {
             facts.join("\n")
         );
         let mut body = body;
+        queries.append(
+            &mut body,
+            self.arrangement
+                .depth
+                .unwrap_or(if self.family_reference { 2 } else { 1 })
+                as usize +
+                2,
+        );
         body.push_str(&self.arrangement.body);
         for example in examples {
             let width = example

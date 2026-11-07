@@ -6,6 +6,7 @@ mod mermaid;
 pub(crate) mod namespace_bindings;
 pub(crate) mod publication_inventory;
 mod resource;
+mod shacl_queries;
 pub(crate) mod skos;
 mod use_cases;
 use {
