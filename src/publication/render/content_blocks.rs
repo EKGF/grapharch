@@ -33,9 +33,9 @@ impl Containers {
         let value = self.stack.step(value)?;
         Ok(if end {
             match value {
-                Boundary::Alternatives | Boundary::Alternative { .. } => {
-                    "</section>\n".into()
-                },
+                Boundary::CardGroup |
+                Boundary::Alternatives |
+                Boundary::Alternative { .. } => "</section>\n".into(),
                 Boundary::Admonition { collapsible: true, .. } => {
                     "</details>\n".into()
                 },
@@ -43,6 +43,9 @@ impl Containers {
             }
         } else {
             match value {
+                Boundary::CardGroup => {
+                    "<section class=\"ga-card-group\">\n".into()
+                },
                 Boundary::Alternatives => {
                     self.tabs = true;
                     "<section class=\"ga-tabs\">\n".into()
@@ -110,7 +113,7 @@ impl Containers {
             }
         } else {
             match value {
-                Boundary::Alternatives => String::new(),
+                Boundary::Alternatives | Boundary::CardGroup => String::new(),
                 Boundary::Alternative { title } => {
                     format!(
                         "#block(sticky: true, above: 12pt, below: \

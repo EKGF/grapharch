@@ -10,6 +10,7 @@ pub(crate) const LANGUAGE: &str = "grapharch-content";
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 pub(crate) enum Boundary {
     Alternatives,
+    CardGroup,
     Alternative {
         title: String,
     },

@@ -57,6 +57,18 @@ grapharch:
 
         Visible technical detail.
 
+    <div class="grid cards" markdown>
+
+    - **Definition**
+
+        First card explanation.
+
+    - **Differences**
+
+        Second card explanation.
+
+    </div>
+
     ```text
     === "literal, not a tab"
     ```
@@ -102,6 +114,8 @@ grapharch:
         "a page must retain one original tab group"
     );
     assert!(html.contains("Read this first"));
+    assert!(html.contains("class=\"ga-card-group\""));
+    assert!(html.contains("First card explanation."));
     assert!(html.contains("<details"));
     assert!(html.contains("href=\"detail/\""), "{html}");
     assert!(html.contains("literal, not a tab"));
@@ -118,6 +132,7 @@ grapharch:
         tokio::fs::read_to_string(pdf_result.directory.join("main.typ"))
             .await?;
     assert!(typst.contains("Visible technical detail"));
+    assert!(typst.contains("Second card explanation."));
     assert!(!typst.contains("Nested information"));
     assert!(!typst.contains("grapharch-content"));
     let PublishOutcome::Published(partial_result) =

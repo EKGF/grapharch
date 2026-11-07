@@ -22,3 +22,6 @@ figure.code-example{counter-increment:ga-example;margin:1.5em 0;padding:12px 16p
 @media print{.ga-tab[hidden]{display:block}.ga-tab-list{display:none}.ga-tab-title[hidden]{display:block}}
 
 .identifier-badge { display: inline-block; color: #424cb5; background: #e9edf9; border-radius: .25em; padding: .08em .35em; font-size: .8em; line-height: 1.2; font-weight: 700; vertical-align: baseline; }
+
+/* Semantic card collections share the publication theme and retain list semantics. */
+.ga-card-group>ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:1.25rem;padding:0;list-style:none}.ga-card-group>ul>li{min-width:0;border:1px solid var(--border,#d7dbe3);border-radius:.65rem;padding:1.25rem;box-shadow:0 1px 3px #00000012}.ga-card-group>ul>li>:first-child{margin-top:0}.ga-card-group>ul>li>:last-child{margin-bottom:0}

@@ -124,6 +124,59 @@ fn parse(body: &str, depth: usize, count: &mut usize) -> Result<String> {
             index += 1;
             continue;
         }
+        if leading <= 3 &&
+            trimmed.trim_end() == "<div class=\"grid cards\" markdown>"
+        {
+            *count += 1;
+            ensure!(
+                *count <= 256,
+                "Material container count exceeds 256"
+            );
+            result.push_str(&Boundary::CardGroup.markdown()?);
+            index += 1;
+            let start = index;
+            let mut literal: Option<(char, usize)> = None;
+            while index < lines.len() {
+                let text = lines[index].trim();
+                if let Some(c) =
+                    text.chars().next().filter(|c| matches!(c, '`' | '~'))
+                {
+                    let width = text.chars().take_while(|v| *v == c).count();
+                    if width >= 3 {
+                        if literal.is_none() {
+                            literal = Some((c, width));
+                        } else if literal
+                            .is_some_and(|(old, n)| old == c && width >= n) &&
+                            text[width..].trim().is_empty()
+                        {
+                            literal = None;
+                        }
+                    }
+                } else if literal.is_none() {
+                    if text == "</div>" {
+                        break;
+                    }
+                    ensure!(
+                        !text.starts_with("<div"),
+                        "nested raw HTML in card group is unsupported"
+                    );
+                }
+                index += 1;
+            }
+            ensure!(
+                index < lines.len(),
+                "unclosed Material card group"
+            );
+            let body = lines[start..index].join("\n");
+            ensure!(
+                !body.trim().is_empty(),
+                "card group requires Markdown content"
+            );
+            result.push_str(&parse(&body, depth + 1, count)?);
+            result.push_str(&Boundary::End.markdown()?);
+            index += 1;
+            continue;
+        }
         let Some(boundary) = header(line)? else {
             result.push_str(line);
             result.push('\n');

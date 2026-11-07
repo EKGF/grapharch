@@ -99,3 +99,9 @@ The retained Markdown spelling is an empty link to
 navigational URL. Shared HTML and PDF renderers display the identifier as a
 compact label. Raw HTML is not passed through. Ordinary code examples remain
 literal; invalid badge markup is handled by the normal unsupported-HTML error.
+
+Material card collections written as `<div class="grid cards" markdown>` around
+an ordinary Markdown list are collected as semantic card groups. HTML presents
+the list as responsive cards using the shared theme; PDF retains every item in
+reading order. This supports the explicit authoring construct, not arbitrary
+HTML or source-owned CSS.
