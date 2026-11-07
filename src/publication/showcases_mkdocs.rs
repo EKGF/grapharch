@@ -42,7 +42,8 @@ pub async fn build(
         "MkDocs showcase requires an immutable Git commit"
     );
     let source_id =
-        git::documentation_source(&source.repository, &source.configuration)?;
+        git::documentation_source(&source.repository, &source.configuration)
+            .await?;
     let project = MkDocs::project_for_source(&source_id)?;
     let repository = Arc::new(
         git::remote_documentation(

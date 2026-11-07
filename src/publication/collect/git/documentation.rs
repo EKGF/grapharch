@@ -4,12 +4,16 @@ use super::*;
 
 /// Stable source identity shared by remote configuration and Git blob
 /// collectors.
-pub fn documentation_source(
+pub async fn documentation_source(
     repository: &str,
     relative: &Path,
 ) -> Result<String> {
     validate_path(relative)?;
-    let origin = public_repository_url(repository)?.to_string();
+    let repository = repository.to_owned();
+    let origin = tokio::task::spawn_blocking(move || {
+        public_repository_url(&repository).map(|url| url.to_string())
+    })
+    .await??;
     Ok(identity("git-file", &[
         &origin,
         relative.to_str().context("Git path must be UTF-8")?,
