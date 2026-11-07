@@ -59,8 +59,13 @@ impl LocalImageFile {
         destination: &str,
     ) -> Result<Self> {
         ensure!(
-            !destination.starts_with('/') && !destination.contains('\\'),
-            "local Markdown images require relative paths"
+            !destination.starts_with("//") && !destination.contains('\\'),
+            "local Markdown images must use source-relative or \
+             site-root-relative paths"
+        );
+        ensure!(
+            !destination.starts_with('/') || root.is_some(),
+            "site-root-relative images require an explicit documentation root"
         );
         let source = tokio::fs::canonicalize(source).await?;
         let root = root.unwrap_or_else(|| {
@@ -68,7 +73,14 @@ impl LocalImageFile {
         });
         let base = url::Url::from_file_path(&source)
             .map_err(|()| anyhow::anyhow!("invalid Markdown source path"))?;
-        let resolved = base.join(destination)?;
+        let resolved = if let Some(relative) = destination.strip_prefix('/') {
+            let root = tokio::fs::canonicalize(root).await?;
+            url::Url::from_directory_path(root)
+                .map_err(|()| anyhow::anyhow!("invalid documentation root"))?
+                .join(relative)?
+        } else {
+            base.join(destination)?
+        };
         ensure!(
             resolved.scheme() == "file" &&
                 resolved.query().is_none() &&
