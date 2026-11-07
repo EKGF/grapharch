@@ -168,11 +168,10 @@ impl Collector for PagesNavigation {
                     stream
                         .write(q(&entry, "parentEntry", parent.clone()))
                         .await?;
-                } else {
-                    stream
-                        .write(q(&primary, "navigationEntry", entry.clone()))
-                        .await?;
                 }
+                stream
+                    .write(q(&primary, "navigationEntry", entry.clone()))
+                    .await?;
                 for quad in [
                     q(&entry, "type", term("NavigationEntry")),
                     q(&entry, "order", Literal::from(order as u32)),

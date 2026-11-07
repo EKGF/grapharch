@@ -9,6 +9,16 @@ use {
 #[tokio::test]
 async fn directory_navigation_is_collected_from_source_owned_pages_files()
 -> Result<()> {
+    check_navigation(true).await
+}
+
+#[tokio::test]
+async fn indexless_sections_and_wildcards_before_explicit_paths() -> Result<()>
+{
+    check_navigation(false).await
+}
+
+async fn check_navigation(with_index: bool) -> Result<()> {
     let source = tempfile::tempdir()?;
     tokio::fs::create_dir(source.path().join("concepts")).await?;
     for (path, text) in [
@@ -26,7 +36,9 @@ async fn directory_navigation_is_collected_from_source_owned_pages_files()
             "---\ntitle: Topic B\n---\n# Topic B\n",
         ),
     ] {
-        tokio::fs::write(source.path().join(path), text).await?;
+        if with_index || path != "concepts/index.md" {
+            tokio::fs::write(source.path().join(path), text).await?;
+        }
     }
     tokio::fs::write(
         source.path().join(".pages.yaml"),
@@ -35,7 +47,11 @@ async fn directory_navigation_is_collected_from_source_owned_pages_files()
     .await?;
     tokio::fs::write(
         source.path().join("concepts/.pages.yaml"),
-        "nav:\n- index.md\n- B first: b.md\n- a.md\n",
+        if with_index {
+            "nav:\n- index.md\n- B first: b.md\n- a.md\n"
+        } else {
+            "nav:\n- ...\n- B last: b.md\n"
+        },
     )
     .await?;
     let defs = source.path().join("project.ttl");
@@ -78,11 +94,16 @@ async fn directory_navigation_is_collected_from_source_owned_pages_files()
         .select(&selector)
         .map(|e| e.text().collect::<String>())
         .collect::<Vec<_>>();
-    assert_eq!(labels, [
-        "Introduction",
-        "Learn",
-        "B first",
-        "Topic A"
-    ]);
+    if with_index {
+        assert_eq!(labels, [
+            "Introduction",
+            "Learn",
+            "B first",
+            "Topic A"
+        ]);
+    } else {
+        assert_eq!(labels, ["Introduction", "Topic A", "B last"]);
+        assert!(html.contains("Learn"));
+    }
     Ok(())
 }

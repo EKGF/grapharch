@@ -112,8 +112,8 @@ impl Directory {
             nav.len() <= 512,
             "navigation exceeds 512 authored items"
         );
-        let mut seen = BTreeSet::new(); // bounded: 512 authored items.
-        let mut items = Vec::new(); // bounded: 512 paths.
+        let mut authored = Vec::new(); // bounded: 512 authored items.
+        let mut explicit_paths = BTreeSet::new(); // bounded: 512 authored items.
         for item in nav {
             let (path, label) = match item {
                 Item::Path(path) => (path, None),
@@ -126,9 +126,17 @@ impl Directory {
                     (path, Some(label))
                 },
             };
+            ensure!(
+                explicit_paths.insert(path.clone()),
+                "duplicate directory navigation entry {path}"
+            );
+            authored.push((path, label));
+        }
+        let mut items = Vec::new(); // bounded: 512 paths.
+        for (path, label) in authored {
             if path == "..." {
                 for name in &available {
-                    if seen.insert(name.clone()) {
+                    if !explicit_paths.contains(name) {
                         items.push(Entry {
                             path:  directory.join(name),
                             label: None,
@@ -143,10 +151,6 @@ impl Directory {
                         .components()
                         .all(|part| matches!(part, Component::Normal(_))),
                 "navigation path must be relative without traversal"
-            );
-            ensure!(
-                seen.insert(path.clone()),
-                "duplicate directory navigation entry {path}"
             );
             ensure!(
                 tokio::fs::try_exists(directory.join(&path)).await?,
