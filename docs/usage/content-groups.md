@@ -105,3 +105,18 @@ an ordinary Markdown list are collected as semantic card groups. HTML presents
 the list as responsive cards using the shared theme; PDF retains every item in
 reading order. This supports the explicit authoring construct, not arbitrary
 HTML or source-owned CSS.
+
+## Figures and captions
+
+A `<figure markdown>` block containing one Markdown image followed by one
+`<figcaption>` becomes a semantic Figure with a Caption child. Caption text,
+links, emphasis, line breaks, and copyright attribution remain ordinary
+Markdown in the retained graph. HTML publishes real `figure` and `figcaption`
+elements; PDF keeps the image and caption together as a figure.
+
+An image's optional `{ width="700" }` hint supplies a maximum width in pixels,
+clamped to the available output width. Values must be 1–2048. Arbitrary figure
+attributes, multiple images, absent captions, and additional figure body
+content fail rather than being discarded. Literal examples inside code blocks
+remain literal. There are at most 128 figures per capped Markdown source, with
+captions limited to 16 KiB.

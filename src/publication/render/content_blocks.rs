@@ -33,6 +33,8 @@ impl Containers {
         let value = self.stack.step(value)?;
         Ok(if end {
             match value {
+                Boundary::Figure { .. } => "</figure>\n".into(),
+                Boundary::Caption => "</figcaption>\n".into(),
                 Boundary::CardGroup |
                 Boundary::Alternatives |
                 Boundary::Alternative { .. } => "</section>\n".into(),
@@ -43,6 +45,17 @@ impl Containers {
             }
         } else {
             match value {
+                Boundary::Figure { max_width_px } => {
+                    format!(
+                        "<figure class=\"ga-figure\"{}>\n",
+                        max_width_px
+                            .map(|width| {
+                                format!(" style=\"--figure-width:{width}px\"")
+                            })
+                            .unwrap_or_default()
+                    )
+                },
+                Boundary::Caption => "<figcaption>\n".into(),
                 Boundary::CardGroup => {
                     "<section class=\"ga-card-group\">\n".into()
                 },
@@ -108,11 +121,30 @@ impl Containers {
         let value = self.stack.step(value)?;
         Ok(if end {
             match value {
+                Boundary::Figure { .. } => "]])\n".into(),
+                Boundary::Caption => "]]\n".into(),
                 Boundary::Admonition { .. } => "]\n".into(),
                 _ => "\n".into(),
             }
         } else {
             match value {
+                Boundary::Figure { max_width_px } => {
+                    format!(
+                        "#layout(size => block(width: {})[#figure(kind: \
+                         image, numbering: none, supplement: none)[\n",
+                        max_width_px
+                            .map(|width| {
+                                format!(
+                                    "calc.min(size.width, {}pt)",
+                                    f64::from(width) * 0.75
+                                )
+                            })
+                            .unwrap_or_else(|| "size.width".into())
+                    )
+                },
+                Boundary::Caption => {
+                    "#block(above: 6pt)[#text(size: 9pt)[\n".into()
+                },
                 Boundary::Alternatives | Boundary::CardGroup => String::new(),
                 Boundary::Alternative { title } => {
                     format!(

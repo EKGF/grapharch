@@ -11,6 +11,10 @@ pub(crate) const LANGUAGE: &str = "grapharch-content";
 pub(crate) enum Boundary {
     Alternatives,
     CardGroup,
+    Figure {
+        max_width_px: Option<u16>,
+    },
+    Caption,
     Alternative {
         title: String,
     },
@@ -37,6 +41,12 @@ impl Boundary {
         );
         let value: Self = serde_json::from_str(source)?;
         match &value {
+            Self::Figure { max_width_px: Some(width) } => {
+                ensure!(
+                    (1..=2048).contains(width),
+                    "figure width must be 1–2048 pixels"
+                )
+            },
             Self::Alternative { title } => {
                 ensure!(
                     !title.is_empty() && title.len() <= 512,
@@ -73,6 +83,12 @@ impl Stack {
             self.0.len() < 16,
             "content container nesting exceeds 16"
         );
+        if matches!(value, Boundary::Caption) {
+            ensure!(
+                matches!(self.0.last(), Some(Boundary::Figure { .. })),
+                "caption requires a figure"
+            );
+        }
         if matches!(value, Boundary::Alternative { .. }) {
             ensure!(
                 matches!(self.0.last(), Some(Boundary::Alternatives)),

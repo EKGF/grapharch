@@ -6,6 +6,7 @@ mod badges;
 mod blank_nodes;
 pub(crate) mod configured;
 mod endpoint;
+mod figures;
 pub mod git;
 mod hashing_reader;
 mod http_rdf;
