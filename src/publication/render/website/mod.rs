@@ -243,7 +243,13 @@ async fn write_page(
     if page.asset {
         tokio::fs::write(output, body).await?;
     } else {
-        let content = markdown::render(body, page, catalog)?;
+        let first = fragments
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("website page has no fragments"))?;
+        let last = fragments.last().unwrap();
+        let contextual =
+            super::content_blocks::enclosing(plan, first, last, body).await?;
+        let content = markdown::render(&contextual, page, catalog)?;
         let prefix = "../".repeat(page.route.matches('/').count());
         let navigation = catalog.navigation(id, &prefix)?;
         let gallery = gallery::render(plan, catalog, id, &prefix).await?;

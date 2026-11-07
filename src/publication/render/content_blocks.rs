@@ -133,3 +133,33 @@ impl Containers {
     pub fn finish(self) -> Result<()> { self.stack.finish() }
 }
 pub(super) const SCRIPT: &str = include_str!("content_blocks.js");
+
+/// Apply only the outer context of the selected contiguous fragment range.
+pub(super) async fn enclosing(
+    plan: &super::model::Plan,
+    first: &oxrdf::NamedNode,
+    last: &oxrdf::NamedNode,
+    body: &str,
+) -> Result<String> {
+    let mut result = String::new();
+    for (fragment, predicate, is_prefix) in [
+        (first, "contentPrefix", true),
+        (last, "contentSuffix", false),
+    ] {
+        if !is_prefix {
+            result.push_str(body);
+        }
+        match plan.source.optional(fragment, predicate).await? {
+            None => {},
+            Some(oxrdf::Term::Literal(value)) => {
+                anyhow::ensure!(
+                    value.value().len() <= 64 * 1024,
+                    "fragment content context exceeds byte budget"
+                );
+                result.push_str(value.value());
+            },
+            _ => anyhow::bail!("fragment content context must be literal"),
+        }
+    }
+    Ok(result)
+}

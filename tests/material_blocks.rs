@@ -19,13 +19,14 @@ async fn material_blocks_survive_restore_and_publish_semantic_html()
     tokio::fs::write(&settings,r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
 @prefix dct:<http://purl.org/dc/terms/>.
-<urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>.
+<urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>,<urn:partial>.
 <urn:s> a ga:Scope. <urn:f> a ga:Profile.
 <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site".
 <urn:ps> a ga:Scope;ga:include <urn:page>;ga:traverse ga:topic;ga:maxDepth 1.
 <urn:pf> a ga:Profile;ga:placement <urn:placement>.
 <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1.
 <urn:component> a ga:Component;dct:title "Technical detail";ga:fragment <urn:technical>.
+<urn:partial> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer "website";ga:destination "partial".
 <urn:pdf> a ga:Target;dct:title "Semantic content";ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer "typst";ga:destination "pdf".
 "#).await?;
     tokio::fs::write(
@@ -74,8 +75,11 @@ grapharch:
     let revision = Assembler::new(built.dataset.clone())
         .assemble("urn:p")
         .await?;
-    let pdf = TargetPlanner::new(built.dataset.clone(), revision)
+    let pdf = TargetPlanner::new(built.dataset.clone(), revision.clone())
         .resolve("urn:p", &NamedNode::new("urn:pdf")?, &writer)
+        .await?;
+    let partial = TargetPlanner::new(built.dataset.clone(), revision)
+        .resolve("urn:p", &NamedNode::new("urn:partial")?, &writer)
         .await?;
     drop(writer);
     worker.await??;
@@ -116,6 +120,18 @@ grapharch:
     assert!(typst.contains("Visible technical detail"));
     assert!(!typst.contains("Nested information"));
     assert!(!typst.contains("grapharch-content"));
+    let PublishOutcome::Published(partial_result) =
+        Publisher::new(restored.clone())
+            .render(&partial, output.path())
+            .await?
+    else {
+        panic!("partial website failed")
+    };
+    let partial_html =
+        tokio::fs::read_to_string(partial_result.directory.join("index.html"))
+            .await?;
+    assert!(partial_html.contains("Visible technical detail"));
+    assert!(!partial_html.contains("Nested information"));
     if std::env::var_os("GRAPHARCH_MATERIAL_PREVIEW").is_some() {
         for plan in [&built.plan, &pdf] {
             Publisher::new(restored.clone())
