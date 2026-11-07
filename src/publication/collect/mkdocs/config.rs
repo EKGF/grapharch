@@ -193,7 +193,7 @@ fn safe(value: &Value, depth: usize, count: &mut usize) -> Result<()> {
     }
     Ok(())
 }
-fn reject_tags(body: &str) -> Result<()> {
+pub(super) fn reject_tags(body: &str) -> Result<()> {
     for line in body.lines() {
         let mut quote = None;
         let mut escaped = false;

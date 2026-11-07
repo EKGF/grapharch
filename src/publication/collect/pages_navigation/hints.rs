@@ -78,6 +78,7 @@ impl Directory {
                         file,
                     )?;
                     let (body, _) = input.authored().await?;
+                    super::super::mkdocs::validate_yaml_syntax(&body)?;
                     let hints = serde_yaml::from_str::<Hints>(&body)?;
                     ensure!(
                         !hints.collapse,

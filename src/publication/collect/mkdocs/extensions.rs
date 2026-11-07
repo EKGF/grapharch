@@ -103,6 +103,10 @@ pub(super) fn read(
                 {
                     let paths = paths(value)?;
                     if key == "base_path" {
+                        ensure!(
+                            !paths.is_empty(),
+                            "base_path must contain at least one root"
+                        );
                         hints.roots = paths;
                     } else {
                         hints.dictionaries = paths;

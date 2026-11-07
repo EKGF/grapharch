@@ -3,6 +3,7 @@ mod config;
 mod extensions;
 pub(super) mod metadata;
 mod navigation;
+mod paths;
 use {
     super::{Collector, SourceIdentity},
     crate::publication::{dataset::identity, term, writer::ContributionStream},
@@ -11,6 +12,7 @@ use {
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
     sha2::{Digest, Sha256},
     std::path::{Path, PathBuf},
+    tokio::io::AsyncReadExt,
 };
 
 pub(crate) struct MkDocs {
@@ -70,7 +72,12 @@ impl Collector for MkDocs {
             tokio::fs::metadata(&self.path).await?.len() <= 128 * 1024,
             "MkDocs configuration exceeds 128 KiB"
         );
-        let body = tokio::fs::read_to_string(&self.path).await?;
+        let mut body = String::new(); // bounded: read at most128KiB plus one byte to detect overflow.
+        tokio::fs::File::open(&self.path)
+            .await?
+            .take(128 * 1024 + 1)
+            .read_to_string(&mut body)
+            .await?;
         let config = config::Config::parse(&body)?;
         let docs = crate::publication::website::discovery::directory(
             &self.root,
@@ -121,16 +128,32 @@ impl Collector for MkDocs {
                 .write(q(&self.project, "includeRoot", lit(root)))
                 .await?;
         }
-        for path in &config.hints.dictionaries {
+        for requested in &config.hints.dictionaries {
+            let path = paths::appended_source(
+                &self.root,
+                &config.hints.roots,
+                requested,
+            )
+            .await?;
+            let source = self.root.join(&path);
+            if source.starts_with(&docs) {
+                stream
+                    .write(q(
+                        &self.project,
+                        "excludeSourcePath",
+                        lit(&super::page::source_path(&docs, &source)?),
+                    ))
+                    .await?;
+            }
             let collector = identity("mkdocs-abbreviations", &[
                 self.project.as_str(),
-                path,
+                &path,
             ]);
             for quad in [
                 q(&self.project, "collector", collector.clone()),
                 q(&collector, "type", term("Collector")),
                 q(&collector, "kind", lit("abbreviation-file")),
-                q(&collector, "source", lit(path)),
+                q(&collector, "source", lit(&path)),
             ] {
                 stream.write(quad).await?;
             }
@@ -252,4 +275,8 @@ fn title(subject: &NamedNode, value: &str) -> Quad {
         lit(value),
         GraphName::DefaultGraph,
     )
+}
+
+pub(crate) fn validate_yaml_syntax(body: &str) -> Result<()> {
+    config::reject_tags(body)
 }
