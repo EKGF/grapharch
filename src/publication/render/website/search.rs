@@ -42,7 +42,7 @@ pub(super) async fn write(
     let mut bytes = 2usize;
     let mut count = 0usize;
     while let Some(entry) = entries.next(plan).await? {
-        let owner = catalog.owner(plan, &entry.fragment).await?;
+        let owner = catalog.owner(&entry.fragment)?;
         if current.as_ref().is_some_and(|id| id != &owner) {
             let id = current.take().unwrap();
             append(

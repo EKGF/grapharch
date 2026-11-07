@@ -1,3 +1,6 @@
+mod metadata;
+#[cfg(test)]
+mod metadata_tests;
 mod source_aliases;
 use {
     super::super::{
@@ -27,6 +30,8 @@ pub(super) struct Catalog {
     pub abbreviations:
         std::sync::Arc<super::super::abbreviations::Abbreviations>,
     pub pages:            BTreeMap<String, Page>,
+    // bounded: one owner per selected fragment, at most PUBLICATION_ENTRIES.
+    owners:               HashMap<NamedNode, NamedNode>,
     pub fragment_anchors: HashMap<String, String>,
     pub sources:          HashMap<String, String>,
     pub subjects:         HashMap<String, (String, String)>,
@@ -40,6 +45,7 @@ impl Catalog {
         let mut catalog = Self {
             abbreviations:    plan.abbreviations.clone(),
             pages:            BTreeMap::new(),
+            owners:           HashMap::new(),
             fragment_anchors: HashMap::new(),
             sources:          HashMap::new(),
             subjects:         HashMap::new(),
@@ -55,8 +61,15 @@ impl Catalog {
         let mut heading_counts: HashMap<String, usize> = HashMap::new();
         while let Some(row) = rows.next().await? {
             let fragment = node(&row["fragment"])?;
-            let owner = catalog.owner(plan, fragment).await?;
-            let body = plan.source.text(fragment, "body").await?;
+            let metadata = metadata::Fragment::read(plan, fragment).await?;
+            let owner = metadata.owner;
+            ensure!(
+                catalog.owners.len() <
+                    crate::publication::limits::PUBLICATION_ENTRIES as usize,
+                "website owner index exceeds selected fragment budget"
+            );
+            catalog.owners.insert(fragment.clone(), owner.clone());
+            let body = metadata.body;
             bytes += body.len();
             ensure!(
                 bytes as u64 <=
@@ -101,10 +114,8 @@ impl Catalog {
                 catalog
                     .fragment_anchors
                     .insert(fragment.as_str().into(), anchor.clone());
-                let mut subjects =
-                    plan.source.objects(fragment, "subject").await?;
-                while let Some(row) = subjects.next().await? {
-                    let subject = node(&row["value"])?;
+                for value in metadata.subjects {
+                    let subject = node(&value)?;
                     ensure!(
                         catalog.subjects.len() <
                             crate::publication::limits::LINK_INDEX_ENTRIES,
@@ -124,8 +135,12 @@ impl Catalog {
                 "website page exceeds 1 MiB content budget"
             );
             catalog.insert(plan, owner.clone()).await?;
-            source_aliases::retain(&mut catalog, plan, fragment, &owner)
-                .await?;
+            source_aliases::retain(
+                &mut catalog,
+                fragment,
+                &owner,
+                metadata.paths,
+            )?;
         }
         ensure!(
             catalog.routes.contains_key(""),
@@ -403,16 +418,13 @@ impl Catalog {
         Ok(())
     }
 
-    pub async fn owner(
-        &self,
-        plan: &Plan,
-        fragment: &NamedNode,
-    ) -> Result<NamedNode> {
-        if plan.source.has_type(fragment, "TextAsset").await? {
-            Ok(fragment.clone())
-        } else {
-            plan.source.node(fragment, "partOf").await
-        }
+    pub fn owner(&self, fragment: &NamedNode) -> Result<NamedNode> {
+        self.owners.get(fragment).cloned().ok_or_else(|| {
+            anyhow::anyhow!(
+                "fragment is absent from the selected website owner index: \
+                 {fragment}"
+            )
+        })
     }
 
     pub fn page(&self, id: &NamedNode) -> Result<&Page> {

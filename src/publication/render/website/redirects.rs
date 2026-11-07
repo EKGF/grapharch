@@ -24,7 +24,7 @@ pub(super) async fn write(
     let mut entries = plan.entries().await?;
     while let Some(row) = entries.next().await? {
         let fragment = node(&row["fragment"])?;
-        let owner = catalog.owner(plan, fragment).await?;
+        let owner = catalog.owner(fragment)?;
         for resource in [fragment, &owner] {
             if !seen.insert(resource.clone()) {
                 continue;

@@ -102,7 +102,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let mut fragments = Vec::new();
     let mut seen = HashMap::new();
     while let Some(entry) = entries.next(plan).await? {
-        let owner = catalog.owner(plan, &entry.fragment).await?;
+        let owner = catalog.owner(&entry.fragment)?;
         if current.as_ref().is_some_and(|page| page != &owner) {
             let page = current.take().unwrap();
             write_page(

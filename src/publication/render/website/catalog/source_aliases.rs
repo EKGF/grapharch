@@ -1,22 +1,20 @@
 //! Retained authored fragments can be composed into a differently routed page.
 use {
     super::Catalog,
-    crate::publication::render::model::Plan,
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
 };
-pub(super) async fn retain(
+pub(super) fn retain(
     catalog: &mut Catalog,
-    plan: &Plan,
     fragment: &NamedNode,
     owner: &NamedNode,
+    paths: Vec<Term>,
 ) -> Result<()> {
     if fragment == owner {
         return Ok(());
     }
-    let mut paths = plan.source.objects(fragment, "sourcePath").await?;
-    while let Some(row) = paths.next().await? {
-        let Term::Literal(path) = &row["value"] else {
+    for value in paths {
+        let Term::Literal(path) = value else {
             anyhow::bail!("fragment source path must be literal")
         };
         let path = path.value();
