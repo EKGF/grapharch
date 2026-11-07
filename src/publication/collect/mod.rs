@@ -18,6 +18,7 @@ mod material_blocks;
 mod module_hints;
 pub(crate) mod page;
 mod pages_navigation;
+pub mod plantuml;
 mod preamble;
 pub(crate) mod published_artifact;
 mod rdf;
