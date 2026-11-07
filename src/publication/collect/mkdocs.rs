@@ -20,6 +20,16 @@ pub(crate) struct MkDocs {
     source:      String,
 }
 impl MkDocs {
+    /// Bind an immutable transport's logical source instead of its temporary
+    /// path.
+    pub(crate) fn with_source_identity(mut self, source: &str) -> Result<Self> {
+        NamedNode::new(source)?;
+        self.source = source.to_owned();
+        self.project = identity("mkdocs-project", &[source]);
+        self.target = identity("mkdocs-target", &[self.project.as_str()]);
+        Ok(self)
+    }
+
     pub async fn new(root: &Path, path: &Path) -> Result<Self> {
         ensure!(
             tokio::fs::symlink_metadata(path).await?.is_file(),
@@ -30,13 +40,14 @@ impl MkDocs {
             .to_string();
         let project = identity("mkdocs-project", &[&source]);
         let target = identity("mkdocs-target", &[project.as_str()]);
-        Ok(Self {
+        Self {
             project,
             target,
             root: root.to_owned(),
             path: path.to_owned(),
-            source,
-        })
+            source: source.clone(),
+        }
+        .with_source_identity(&source)
     }
 }
 #[async_trait]
