@@ -9,7 +9,7 @@
 .documentation-product-row .primary-navigation{min-width:0;flex:1;padding:0;margin:0;overflow:visible}
 body[data-layout=documentation] .site-layout{max-width:1440px;margin:auto;gap:40px;grid-template-columns:240px minmax(0,1fr) 200px}
 body[data-layout=documentation] .site-navigation,body[data-layout=documentation] .page-outline{top:140px}
-body[data-layout=documentation] main{min-width:0;padding-top:40px}
+body[data-layout=documentation] .site-layout main{min-width:0;padding-top:40px}
 body[data-layout=documentation] .site-navigation{border-right:0;font-size:.9rem}
 body[data-layout=documentation] article h1{font-size:2.2rem;font-weight:400;letter-spacing:-.025em}
 @media(max-width:1150px){body[data-layout=documentation] .site-layout{grid-template-columns:220px minmax(0,1fr)}body[data-layout=documentation] .page-outline{display:none}}
