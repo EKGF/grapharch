@@ -3,6 +3,7 @@
 mod annotated_term;
 pub(crate) mod class_diagram;
 pub(crate) mod description;
+mod maturity;
 mod mermaid;
 pub(crate) mod namespace_bindings;
 pub(crate) mod publication_inventory;
@@ -18,6 +19,7 @@ use {
 };
 pub use {
     annotated_term::AnnotatedTermDocumentor,
+    maturity::MaturityModelDocumentor,
     mermaid::MermaidDocumentor,
     use_cases::UseCaseDocumentor,
 };
