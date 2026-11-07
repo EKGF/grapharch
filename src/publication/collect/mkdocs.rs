@@ -1,5 +1,6 @@
 //! Bounded, non-executing import of source-owned MkDocs instructions.
 mod config;
+mod extensions;
 pub(super) mod metadata;
 mod navigation;
 use {
@@ -23,11 +24,15 @@ impl MkDocs {
     /// Bind an immutable transport's logical source instead of its temporary
     /// path.
     pub(crate) fn with_source_identity(mut self, source: &str) -> Result<Self> {
-        NamedNode::new(source)?;
+        self.project = Self::project_for_source(source)?;
         self.source = source.to_owned();
-        self.project = identity("mkdocs-project", &[source]);
         self.target = identity("mkdocs-target", &[self.project.as_str()]);
         Ok(self)
+    }
+
+    pub(crate) fn project_for_source(source: &str) -> Result<NamedNode> {
+        NamedNode::new(source)?;
+        Ok(identity("mkdocs-project", &[source]))
     }
 
     pub async fn new(root: &Path, path: &Path) -> Result<Self> {
@@ -108,6 +113,27 @@ impl Collector for MkDocs {
             ),
         ] {
             stream.write(quad).await?;
+        }
+        for root in &config.hints.roots {
+            crate::publication::website::discovery::directory(&self.root, root)
+                .await?;
+            stream
+                .write(q(&self.project, "includeRoot", lit(root)))
+                .await?;
+        }
+        for path in &config.hints.dictionaries {
+            let collector = identity("mkdocs-abbreviations", &[
+                self.project.as_str(),
+                path,
+            ]);
+            for quad in [
+                q(&self.project, "collector", collector.clone()),
+                q(&collector, "type", term("Collector")),
+                q(&collector, "kind", lit("abbreviation-file")),
+                q(&collector, "source", lit(path)),
+            ] {
+                stream.write(quad).await?;
+            }
         }
         if let Some(value) = config.site_url {
             let mut url = url::Url::parse(&value)?;

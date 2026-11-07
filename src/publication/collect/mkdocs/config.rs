@@ -1,4 +1,5 @@
 use {
+    super::extensions,
     anyhow::{Result, ensure},
     serde_yaml::{Mapping, Value},
     std::collections::BTreeSet,
@@ -12,6 +13,7 @@ pub(super) struct Config {
     pub site_url:    Option<String>,
     pub nav:         Option<Value>,
     pub warnings:    Vec<String>,
+    pub hints:       extensions::Hints,
 }
 impl Config {
     pub fn parse(body: &str) -> Result<Self> {
@@ -90,8 +92,14 @@ impl Config {
                     .into(),
             );
         }
-        extensions(map.get("markdown_extensions"), false, &mut errors)?;
-        extensions(map.get("plugins"), true, &mut errors)?;
+        let mut hints = extensions::Hints::default();
+        extensions::read(
+            map.get("markdown_extensions"),
+            false,
+            &mut errors,
+            &mut hints,
+        )?;
+        extensions::read(map.get("plugins"), true, &mut errors, &mut hints)?;
         if let Some(theme) = map.get("theme") {
             let name = theme
                 .as_str()
@@ -135,6 +143,7 @@ impl Config {
             site_url: text(map, "site_url")?,
             nav: map.get("nav").cloned(),
             warnings,
+            hints,
         })
     }
 }
@@ -216,112 +225,6 @@ fn reject_tags(body: &str) -> Result<()> {
             if !ch.is_whitespace() {
                 boundary = matches!(ch, '[' | '{' | ',' | ':') ||
                     (boundary && ch == '-');
-            }
-        }
-    }
-    Ok(())
-}
-fn extensions(
-    value: Option<&Value>,
-    plugins: bool,
-    errors: &mut Vec<String>,
-) -> Result<()> {
-    let Some(value) = value else {
-        return Ok(());
-    };
-    let mut items = Vec::new(); // bounded: validated YAML node budget.
-    match value {
-        Value::Sequence(values) => {
-            for item in values {
-                if let Some(name) = item.as_str() {
-                    items.push((name, None));
-                } else if let Some(map) = item.as_mapping() {
-                    ensure!(
-                        map.len() == 1,
-                        "extension entry must contain one name"
-                    );
-                    let (name, options) = map.iter().next().unwrap();
-                    items.push((
-                        name.as_str().ok_or_else(|| {
-                            anyhow::anyhow!("extension name must be text")
-                        })?,
-                        Some(options),
-                    ));
-                } else {
-                    anyhow::bail!(
-                        "extension entry must be a name or options mapping"
-                    );
-                }
-            }
-        },
-        Value::Mapping(map) => {
-            for (name, options) in map {
-                items.push((
-                    name.as_str().ok_or_else(|| {
-                        anyhow::anyhow!("extension name must be text")
-                    })?,
-                    Some(options),
-                ));
-            }
-        },
-        _ => anyhow::bail!("extensions/plugins must be a sequence or mapping"),
-    }
-    for (name, options) in items {
-        let supported = if plugins {
-            matches!(name, "search" | "awesome-pages")
-        } else {
-            matches!(
-                name,
-                "admonition" |
-                    "meta" |
-                    "toc" |
-                    "tables" |
-                    "footnotes" |
-                    "fenced_code" |
-                    "codehilite" |
-                    "attr_list" |
-                    "md_in_html" |
-                    "pymdownx.details" |
-                    "pymdownx.tabbed" |
-                    "pymdownx.superfences" |
-                    "pymdownx.highlight" |
-                    "pymdownx.tasklist" |
-                    "pymdownx.snippets"
-            )
-        };
-        if !supported {
-            errors.push(format!(
-                "{name}: unsupported; no Python extension/plugin is executed"
-            ));
-            continue;
-        }
-        if let Some(options) = options.filter(|v| !v.is_null()) {
-            let map = options.as_mapping().ok_or_else(|| {
-                anyhow::anyhow!("{name} options must be a mapping")
-            })?;
-            for (key, value) in map {
-                let key = key.as_str().ok_or_else(|| {
-                    anyhow::anyhow!("{name} option must be text")
-                })?;
-                let supported = match (name, key) {
-                    ("toc", "permalink") => {
-                        value.is_bool() || value.is_string()
-                    },
-                    ("pymdownx.tabbed", "alternate_style") |
-                    ("pymdownx.tasklist", "custom_checkbox") => {
-                        value == &Value::Bool(true)
-                    },
-                    ("codehilite", "css_class") => {
-                        value.as_str() == Some("highlight")
-                    },
-                    _ => false,
-                };
-                if !supported {
-                    errors.push(format!(
-                        "{name}.{key}: unsupported option; use explicit \
-                         GraphArch configuration"
-                    ));
-                }
             }
         }
     }

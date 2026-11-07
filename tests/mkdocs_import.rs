@@ -152,3 +152,53 @@ async fn mkdocs_native_metadata_and_default_directory_navigation() -> Result<()>
     assert!(!html.contains("title: Welcome"));
     Ok(())
 }
+
+#[tokio::test]
+async fn mkdocs_snippets_and_abbreviation_dictionary_use_explicit_roots()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("docs")).await?;
+    tokio::fs::write(
+        source.path().join("mkdocs.yml"),
+        "site_name: Knowledge\nmarkdown_extensions:\n  - abbr\n  - \
+         pymdownx.snippets:\n      base_path: ['.', docs]\n      check_paths: \
+         true\n      auto_append: [abbreviations.md]\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("docs/index.md"),
+        "# Knowledge\n\n--8<-- \"shared.md\"\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("shared.md"),
+        "An EKG connects meaning.\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("abbreviations.md"),
+        "*[EKG]: Enterprise Knowledge Graph\n",
+    )
+    .await?;
+    let (dataset, plan) = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await?;
+    source.close()?;
+    let PublishOutcome::Published(publication) =
+        Publisher::new(dataset).render(&plan, output.path()).await?
+    else {
+        panic!("superseded")
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    assert!(
+        html.contains("<abbr title=\"Enterprise Knowledge Graph\">EKG</abbr>")
+    );
+    assert!(html.contains("connects meaning"));
+    Ok(())
+}
