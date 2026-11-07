@@ -66,6 +66,18 @@ async fn interactive_svg_keeps_original_bytes_and_projects_validated_links_after
         object.value().attr("aria-label"),
         Some("Interactive diagram")
     );
+    let frame = document
+        .select(&Selector::parse(".interactive-svg-frame").unwrap())
+        .next()
+        .expect("responsive frame");
+    assert!(
+        frame
+            .value()
+            .attr("style")
+            .unwrap()
+            .starts_with("aspect-ratio:")
+    );
+    assert!(!frame.value().attr("style").unwrap().contains("display:"));
     let projected = tokio::fs::read_to_string(
         publication
             .directory

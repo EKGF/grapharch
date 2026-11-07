@@ -121,9 +121,8 @@ pub(super) fn replace<'a>(
     let html = if let Some(projection) = projection {
         format!(
             "<span class=\"interactive-svg-frame\" \
-             style=\"display:block;aspect-ratio:{}\"{}><object \
-             class=\"interactive-svg\" type=\"image/svg+xml\" data=\"{}\" \
-             aria-label=\"{}\" \
+             style=\"aspect-ratio:{}\"{}><object class=\"interactive-svg\" \
+             type=\"image/svg+xml\" data=\"{}\" aria-label=\"{}\" \
              style=\"display:block;width:100%;height:100%;color-scheme:\
              inherit\"{}><a href=\"{}\">{}</a></object></span>",
             esc(&projection.aspect),
