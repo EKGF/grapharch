@@ -89,6 +89,18 @@ async fn independent_navigation_trees_survive_source_removal() -> Result<()> {
     let (_out, site) = render(CONFIG).await?;
     let html = tokio::fs::read_to_string(site.join("guide/index.html")).await?;
     let document = scraper::Html::parse_document(&html);
+    let sidebar = document
+        .select(&scraper::Selector::parse(".site-navigation").unwrap())
+        .next()
+        .unwrap();
+    assert_eq!(
+        sidebar.value().attr("data-project"),
+        Some("urn:project")
+    );
+    assert_eq!(
+        sidebar.value().attr("data-target"),
+        Some("urn:target")
+    );
     let links = |selector: &str| {
         document
             .select(&scraper::Selector::parse(selector).unwrap())

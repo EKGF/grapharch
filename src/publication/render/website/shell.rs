@@ -119,8 +119,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         .unwrap_or_default();
     let navigation_panel = if let Some(sidebar) = explicit_sidebar {
         format!(
-            "<aside class=\"site-navigation\"><details open><summary>Browse \
-             documentation</summary>{sidebar}</details></aside>"
+            "<aside class=\"site-navigation\" data-project=\"{}\" \
+             data-target=\"{}\"><details open><summary>Browse \
+             documentation</summary>{sidebar}</details></aside>",
+            esc(plan.project.as_str()),
+            esc(plan.target.as_str())
         )
     } else if project_page {
         format!(
