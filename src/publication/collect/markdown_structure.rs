@@ -90,7 +90,10 @@ pub(super) fn describe(
         );
     }
     let boundaries = crate::publication::content_blocks::Fragments::read(body)?;
+    // bounded: all retained section bodies and wrappers share a 4 MiB source
+    // budget.
     let mut output = Vec::new();
+    let mut content_bytes = 0usize;
     let mut parents: Vec<(usize, NamedNode)> = Vec::new();
     for (index, (start, title, level, slug)) in sections.iter().enumerate() {
         let end = sections
@@ -109,6 +112,11 @@ pub(super) fn describe(
             crate::publication::footnotes::complete(&body[*start..end], body)?;
         let text = completed.as_str();
         let (prefix, suffix) = boundaries.context(*start, end)?;
+        content_bytes += text.len() + prefix.len() + suffix.len();
+        ensure!(
+            content_bytes <= 4 * 1024 * 1024,
+            "Markdown exceeds 4 MiB aggregate section content budget"
+        );
         for (predicate, context) in
             [("contentPrefix", prefix), ("contentSuffix", suffix)]
         {
@@ -260,4 +268,33 @@ pub(super) fn describe(
         }
     }
     Ok(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn repeated_note_bodies_cannot_amplify_section_storage_without_bound()
+    -> Result<()> {
+        let input = FileInput::new("urn:p", "urn:c", "notes.md".into())?;
+        let page = NamedNode::new("urn:page")?;
+        let mut body = String::new();
+        for number in 0..80 {
+            body.push_str(&format!(
+                "# Section {number}\n\nEvidence[^shared].\n\n"
+            ));
+        }
+        body.push_str("[^shared]: ");
+        body.push_str(&"e".repeat(60 * 1024));
+        body.push('\n');
+        let result = describe(&input, &page, &body, &BTreeMap::new());
+        assert!(
+            result.is_err(),
+            "repeated definitions must obey the aggregate source budget"
+        );
+        let error = result.err().unwrap();
+        assert!(error.to_string().contains("section content budget"));
+        Ok(())
+    }
 }
