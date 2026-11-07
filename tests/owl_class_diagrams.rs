@@ -211,3 +211,12 @@ ex:Core a owl:Class ; owl:equivalentClass [ owl:unionOf (ex:A ex:B) ] ;
     assert!(!body.contains("urn:grapharch:skolem:"));
     Ok(())
 }
+
+#[tokio::test]
+async fn different_anonymous_restrictions_have_distinguishable_captions()
+-> Result<()> {
+    let body = diagram(r#"ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:someValuesFrom ex:A ], [ a owl:Restriction ; owl:onProperty ex:q ; owl:someValuesFrom ex:B ] ."#).await?;
+    assert!(body.contains("Anonymous OWL expression 1"));
+    assert!(body.contains("Anonymous OWL expression 2"));
+    Ok(())
+}

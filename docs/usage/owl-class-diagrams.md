@@ -31,7 +31,7 @@ translation of OWL into closed-world UML fields:
 - Direct anonymous restrictions retain their `owl:onProperty`, value constraints,
   and cardinalities as explicit relationships. Union and intersection RDF lists
   are expanded into labeled member relationships. Anonymous expressions have
-  distinct identities even when their visible captions match.
+  distinct identities and numbered captions within the class neighborhood.
 - SHACL shapes are not presented as OWL restrictions. This view does not assert
   validation requirements, ownership, aggregation, or composition.
 

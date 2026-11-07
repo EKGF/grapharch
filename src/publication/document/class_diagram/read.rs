@@ -64,10 +64,16 @@ FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <
         }
         for id in ids {
             if !nodes.contains_key(id) {
-                nodes.insert(
-                    id.clone(),
-                    node(view, id, prefixes, documented).await?,
-                );
+                let mut value = node(view, id, prefixes, documented).await?;
+                if value.kind == "OWL expression" {
+                    let ordinal = nodes
+                        .values()
+                        .filter(|node| node.kind == "OWL expression")
+                        .count() +
+                        1;
+                    value.label = format!("Anonymous OWL expression {ordinal}");
+                }
+                nodes.insert(id.clone(), value);
             }
         }
         let target = match &row["o"] {
