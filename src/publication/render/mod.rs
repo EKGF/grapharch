@@ -13,6 +13,7 @@ mod diagnostic_graph;
 mod engine;
 mod files;
 mod html;
+mod image_data;
 mod markdown_html;
 mod markup;
 mod model;

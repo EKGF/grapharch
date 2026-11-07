@@ -62,7 +62,8 @@ pub(super) fn render(
     )?;
     let headings = index(&events);
     let mut heading_index = 0;
-    for event in &mut events {
+    let mut image_presentations = Vec::new(); // bounded: one capped Markdown page.
+    for (index, event) in events.iter_mut().enumerate() {
         match event {
             Event::Start(Tag::Heading { id, .. }) => {
                 *id = Some(headings[heading_index].anchor.clone().into());
@@ -75,30 +76,63 @@ pub(super) fn render(
                     *dest_url = link(dest_url, page, catalog)?.into();
                 }
             },
-            Event::Start(Tag::Image { dest_url, .. }) => {
-                let (_, _, asset) = catalog
-                    .references
-                    .get(&(page.id.as_str().into(), dest_url.to_string()))
-                    .ok_or_else(|| {
+            Event::Start(Tag::Image { dest_url, title, .. }) => {
+                let hints =
+                    crate::publication::image_hints::ImageHints::parse(title)?;
+                let key = (page.id.as_str().into(), dest_url.to_string());
+                let (_, _, id) =
+                    catalog.references.get(&key).ok_or_else(|| {
                         anyhow::anyhow!(
                             "image is not retained in the publication KG: \
                              {dest_url}"
                         )
                     })?;
-                let asset = asset
+                let id = id
                     .as_ref()
-                    .and_then(|id| catalog.pages.get(id))
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "image asset is not selected: {dest_url}"
-                        )
-                    })?;
-                *dest_url = format!(
-                    "{}{}",
-                    "../".repeat(page.route.matches('/').count()),
-                    asset.route
-                )
-                .into();
+                    .ok_or_else(|| anyhow::anyhow!("image asset is missing"))?;
+                let asset = catalog.pages.get(id).ok_or_else(|| {
+                    anyhow::anyhow!("image asset is not selected: {dest_url}")
+                })?;
+                let projection = if hints.interactive_svg {
+                    ensure!(
+                        catalog.presentations.contains(&key),
+                        "interactive SVG marker lacks its collected \
+                         presentation hint"
+                    );
+                    Some(
+                        catalog
+                            .projections
+                            .get(id)
+                            .ok_or_else(|| {
+                                anyhow::anyhow!(
+                                    "interactive SVG projection is missing"
+                                )
+                            })?
+                            .clone(),
+                    )
+                } else {
+                    None
+                };
+                let path = if let Some(projection) = &projection {
+                    super::interactive_svg::path(page, projection)
+                } else {
+                    format!(
+                        "{}{}",
+                        "../".repeat(page.route.matches('/').count()),
+                        asset.route
+                    )
+                };
+                if projection.is_some() || hints.color_scheme.is_some() {
+                    image_presentations.push((
+                        index,
+                        projection,
+                        path.clone(),
+                        hints.title.clone(),
+                        hints.color_scheme,
+                    ));
+                }
+                *dest_url = path.into();
+                *title = hints.title.unwrap_or_default().into();
             },
             Event::Html(_) |
             Event::InlineHtml(_) |
@@ -118,6 +152,16 @@ pub(super) fn render(
             _ => {},
         }
     }
+    for (index, projection, path, title, scheme) in image_presentations {
+        super::interactive_svg::replace(
+            &mut events,
+            index,
+            projection.as_ref(),
+            &path,
+            title.as_deref(),
+            scheme,
+        )?;
+    }
     let events = super::super::class_diagram::resolve(events, |iri| {
         link(iri, page, catalog)
     })?;
@@ -136,7 +180,11 @@ pub(super) fn render(
         .replace("</table>", "</table></div>");
     Ok(Content { html, headings })
 }
-fn link(value: &str, page: &Page, catalog: &Catalog) -> Result<String> {
+pub(super) fn link(
+    value: &str,
+    page: &Page,
+    catalog: &Catalog,
+) -> Result<String> {
     if let Some((id, anchor)) = catalog.subjects.get(value) {
         let target = &catalog.pages[id];
         return Ok(if target.id == page.id {

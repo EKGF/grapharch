@@ -83,3 +83,43 @@ are separate from authority logos and render at 100 CSS pixels in the
 specification header. See the
 [DPROD publication definitions](https://github.com/EKGF/dprod/blob/develop/publication/standards.ttl)
 for the complete working example.
+
+## Interactive SVG navigation
+
+Request interactive presentation when an SVG contains authored navigation links:
+
+```markdown
+![Maturity structure](assets/structure.svg "grapharch:interactive-svg")
+```
+
+A website publishes this diagram in an isolated SVG object. Its source-owned
+links are checked against the publication's routes and anchors, then projected
+relative to the publication root. Links open the surrounding page. SVG styles
+remain isolated from the documentation page; native `prefers-color-scheme` rules
+in the SVG follow the surrounding publication's color scheme.
+
+The original SVG stays unchanged in the KG and remains available as an ordinary
+image. A separate content-addressed SVG supplies website navigation. PDF uses
+the same original diagram as a static image. Missing link targets, unsupported
+SVG content, and non-SVG interactive images fail publication. Safe legacy SVG
+`<object>` authoring receives the same interactive intent during collection.
+
+## Light and dark illustrations
+
+Keep distinct authored variants together:
+
+```markdown
+![Structure](assets/structure-light.svg){.only-light}
+![Structure](assets/structure-dark.svg){.only-dark}
+```
+
+Both assets remain in the graph. Website presentation selects the matching
+color scheme; PDF chooses light and untagged images. Ordinary image titles are
+preserved, including when presentation hints are combined. The explicit
+`grapharch:interactive-svg;only-light` shorthand also combines interaction and
+color intent.
+
+Image references expose `ga:imagePresentation` and `ga:imageColorScheme` triples.
+Normalized Markdown stores combined options and ordinary titles in typed
+`grapharch:image { ... }` data so they survive export and restoration without
+reopening authoring files.

@@ -9,6 +9,7 @@ use {
     std::collections::{BTreeMap, HashMap, HashSet},
 };
 
+#[derive(Clone)]
 pub(super) struct Page {
     pub id:           NamedNode,
     pub title:        String,
@@ -29,6 +30,8 @@ pub(super) struct Catalog {
     pub subjects:         HashMap<String, (String, String)>,
     pub routes:           HashMap<String, String>,
     pub references: HashMap<(String, String), (String, String, Option<String>)>,
+    pub presentations:    HashSet<(String, String)>,
+    pub projections:      HashMap<String, super::interactive_svg::Projection>,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -39,6 +42,8 @@ impl Catalog {
             subjects:         HashMap::new(),
             routes:           HashMap::new(),
             references:       HashMap::new(),
+            presentations:    HashSet::new(),
+            projections:      HashMap::new(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;
@@ -160,19 +165,20 @@ impl Catalog {
             &format!(
                 "?ref <http://purl.org/dc/terms/identifier> ?original ; {} \
                  ?url . OPTIONAL {{ ?ref {} ?path }} OPTIONAL {{ ?ref {} \
-                 ?asset }}",
+                 ?asset }} OPTIONAL {{ ?ref {} ?presentation }}",
                 crate::publication::term("url"),
                 crate::publication::term("sourcePath"),
-                crate::publication::term("asset")
+                crate::publication::term("asset"),
+                crate::publication::term("imagePresentation")
             ),
             1,
         );
         let mut refs = plan
             .dataset
             .select(format!(
-                "SELECT DISTINCT ?owner ?original ?url ?path ?asset WHERE {{ \
-                 {{ {owner} BIND(?referenceOwner AS ?owner) }} UNION {{ \
-                 {owner} {page_owner} }} {fields} }}"
+                "SELECT DISTINCT ?owner ?original ?url ?path ?asset \
+                 ?presentation WHERE {{ {{ {owner} BIND(?referenceOwner AS \
+                 ?owner) }} UNION {{ {owner} {page_owner} }} {fields} }}"
             ))
             .await?;
         let mut bytes = 0usize;
@@ -205,6 +211,14 @@ impl Catalog {
                 "website reference index exceeds budget"
             );
             let key = (owner.as_str().into(), original.value().into());
+            if let Some(presentation) = row.get("presentation") {
+                ensure!(
+                    matches!(presentation, oxrdf::Term::Literal(value) if value.value() == "interactive-svg") &&
+                        asset.is_some(),
+                    "invalid SVG image presentation hint"
+                );
+                catalog.presentations.insert(key.clone());
+            }
             let value = (path, url.value().into(), asset);
             if let Some(previous) =
                 catalog.references.insert(key, value.clone())

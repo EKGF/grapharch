@@ -85,12 +85,15 @@ pub(super) fn normalize(body: &str) -> Result<String> {
             "SVG object requires a local .svg asset"
         );
         result.push_str(&body[offset..matched.start()]);
-        result.push_str(&format!("![Diagram](<{data}>)"));
+        result.push_str(&format!(
+            "![Diagram](<{data}> \"{}\")",
+            crate::publication::image_assets::INTERACTIVE_SVG_TITLE
+        ));
         offset = matched.end();
     }
     result.push_str(&body[offset..]);
     let figures = Regex::new(
-        r"(?is)<figure(?:\s+markdown)?\s*>\s*(!\[Diagram\]\(<[^>]+>\))\s*</figure\s*>",
+        r#"(?is)<figure(?:\s+markdown)?\s*>\s*(!\[Diagram\]\(<[^>]+> "grapharch:interactive-svg"\))\s*</figure\s*>"#,
     )?;
     Ok(figures.replace_all(&result, "$1").into_owned())
 }
@@ -105,7 +108,8 @@ mod tests {
                       type=\"image/svg+xml\"></object>\n</figure>";
         assert_eq!(
             normalize(source).unwrap(),
-            "![Diagram](</diagrams/out/example.svg#darkable>)"
+            "![Diagram](</diagrams/out/example.svg#darkable> \
+             \"grapharch:interactive-svg\")"
         );
         assert!(
             normalize(

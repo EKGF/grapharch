@@ -4,6 +4,7 @@ mod artifact;
 mod catalog;
 mod gallery;
 mod header_links;
+mod interactive_svg;
 mod markdown;
 mod metadata;
 mod navigation;
@@ -33,13 +34,16 @@ struct Header {
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
-    let catalog = Catalog::read(plan).await?;
+    let mut catalog = Catalog::read(plan).await?;
+    let interactive_files =
+        interactive_svg::prepare(plan, &mut catalog, stage).await?;
     let theme = theme::Theme::read(plan).await?;
     let mut files = vec![
         "style.css".to_owned(),
         ".nojekyll".into(),
         "404.html".into(),
     ];
+    files.extend(interactive_files);
     tokio::fs::write(
         stage.join("style.css"),
         format!(

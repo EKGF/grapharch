@@ -76,12 +76,53 @@ pub(super) async fn describe(
 ) -> Result<Vec<Quad>> {
     let mut seen = BTreeSet::new();
     let mut metadata = Vec::new();
+    let mut interactive = BTreeSet::new();
+    let mut schemes = BTreeMap::new();
     for event in Parser::new_ext(body, crate::publication::markdown::options())
     {
-        let Event::Start(Tag::Image { dest_url, .. }) = event else {
+        let Event::Start(Tag::Image { dest_url, title, .. }) = event else {
             continue
         };
-        if !seen.insert(dest_url.to_string()) {
+        let first = seen.insert(dest_url.to_string());
+        let hints = crate::publication::image_hints::ImageHints::parse(&title)?;
+        if hints.interactive_svg && interactive.insert(dest_url.to_string()) {
+            let reference = crate::publication::dataset::identity(
+                "markdown-image-reference",
+                &[input.fragment_id().as_str(), &dest_url],
+            );
+            metadata.push(input.quad(
+                &reference,
+                "imagePresentation",
+                Literal::new_simple_literal("interactive-svg"),
+            ));
+        }
+        if let Some(scheme) = hints.color_scheme {
+            let previous = schemes.insert(dest_url.to_string(), scheme);
+            ensure!(
+                previous.is_none_or(|value| value == scheme),
+                "one image URL has conflicting color-scheme hints"
+            );
+            if previous.is_none() {
+                let reference = crate::publication::dataset::identity(
+                    "markdown-image-reference",
+                    &[input.fragment_id().as_str(), &dest_url],
+                );
+                let value = match scheme {
+                    crate::publication::image_hints::ColorScheme::Light => {
+                        "light"
+                    },
+                    crate::publication::image_hints::ColorScheme::Dark => {
+                        "dark"
+                    },
+                };
+                metadata.push(input.quad(
+                    &reference,
+                    "imageColorScheme",
+                    Literal::new_simple_literal(value),
+                ));
+            }
+        }
+        if !first {
             continue;
         }
         ensure!(

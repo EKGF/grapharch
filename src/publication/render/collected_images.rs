@@ -3,9 +3,7 @@ use {
     super::model::{Plan, node},
     crate::publication::{dataset::Dataset, term},
     anyhow::{Result, ensure},
-    base64::{Engine, engine::general_purpose::STANDARD},
     oxrdf::{NamedNode, Term},
-    sha2::{Digest, Sha256},
     std::{collections::HashMap, path::Path},
 };
 
@@ -218,70 +216,9 @@ impl Images {
         let mut assets: Vec<_> = self.assets.iter().collect();
         assets.sort_by(|a, b| a.1.route.cmp(&b.1.route));
         for (id, asset) in assets {
-            let size: usize =
-                plan.source.text(id, "contentSize").await?.parse()?;
-            ensure!(
-                size > 0 &&
-                    size <=
-                        crate::publication::image_assets::MAX_IMAGE_BYTES,
-                "collected image exceeds byte budget"
-            );
-            total += size;
-            ensure!(
-                total <= crate::publication::image_assets::MAX_PUBLICATION_IMAGE_BYTES,
-                "publication images exceed total byte budget"
-            );
-            let digest = plan.source.text(id, "contentDigest").await?;
-            let pattern = plan.source.pattern(
-                &format!(
-                    "{id} {} ?chunk . ?chunk {} ?order ; {} ?data",
-                    term("chunk"),
-                    term("order"),
-                    term("base64")
-                ),
-                204,
-            );
-            let mut rows = plan
-                .dataset
-                .select(format!(
-                    "SELECT DISTINCT ?order ?data WHERE {{ {pattern} }} ORDER \
-                     BY ?order"
-                ))
-                .await?;
-            let mut bytes = Vec::with_capacity(size);
-            let mut order = 0;
-            while let Some(row) = rows.next().await? {
-                ensure!(
-                    order < crate::publication::image_assets::MAX_IMAGE_CHUNKS,
-                    "image chunk count exceeds budget"
-                );
-                let (Term::Literal(position), Term::Literal(data)) =
-                    (&row["order"], &row["data"])
-                else {
-                    anyhow::bail!("image chunks require literal order and data")
-                };
-                ensure!(
-                    position.value().parse::<usize>()? == order,
-                    "image chunks must have consecutive orders"
-                );
-                ensure!(
-                    data.value().len() <= 64 * 1024,
-                    "image chunk exceeds byte budget"
-                );
-                let chunk = STANDARD.decode(data.value())?;
-                ensure!(
-                    bytes.len() + chunk.len() <= size,
-                    "image exceeds declared size"
-                );
-                bytes.extend_from_slice(&chunk);
-                order += 1;
-            }
-            ensure!(
-                bytes.len() == size &&
-                    hex::encode(Sha256::digest(&bytes)) == digest,
-                "image asset size or digest mismatch"
-            );
-            crate::publication::image_assets::validate(&bytes, &asset.mime)?;
+            let bytes = super::image_data::read(plan, id, &asset.mime).await?;
+            total += bytes.len();
+            ensure!(total <= crate::publication::image_assets::MAX_PUBLICATION_IMAGE_BYTES, "publication images exceed total byte budget");
             let path = stage.join(&asset.route);
             tokio::fs::create_dir_all(
                 path.parent().expect("image asset parent"),

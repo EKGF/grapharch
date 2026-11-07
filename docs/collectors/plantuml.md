@@ -69,5 +69,5 @@ environment. Remote includes, dynamic include paths, implicit themes and
 arbitrary source-selected commands are rejected. Renderer installation is an
 explicit build prerequisite; a missing tool or invalid diagram fails the build.
 
-On subsequent builds, unchanged source closures and the same PlantUML version
-reuse the retained SVG. HTML and PDF rendering do not invoke PlantUML.
+Re-documenting the same KG with unchanged expanded sources and the same PlantUML
+version reuses the retained SVG. HTML and PDF rendering do not invoke PlantUML.

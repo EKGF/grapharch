@@ -1606,3 +1606,18 @@ ga:routeAlias a owl:DatatypeProperty ;
     skos:scopeNote "An alias does not change content identity or navigation placement. Static HTML redirects preserve an incoming fragment identifier and query. Conflicting or unsafe routes fail publication."@en ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Page ga:Fragment ) ] ;
     rdfs:range xsd:string .
+ga:imagePresentation a owl:DatatypeProperty ;
+    rdfs:label "Image presentation intent"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records an explicitly requested presentation for a retained image reference, independently of its binary asset and provenance."@en ;
+    dct:description "Records an explicitly requested presentation for a retained image reference, independently of its binary asset and provenance."@en ;
+    rdfs:domain ga:ExternalReference ; rdfs:range xsd:string ;
+    skos:scopeNote "The interactive-svg value requests an isolated interactive website projection of validated retained SVG. PDF publication can retain the same diagram as a static image."@en .
+
+ga:imageColorScheme a owl:DatatypeProperty ;
+    rdfs:label "Image color scheme"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the light or dark presentation context in which a retained image reference is intended to appear."@en ;
+    dct:description "Identifies the light or dark presentation context in which a retained image reference is intended to appear."@en ;
+    rdfs:domain ga:ExternalReference ; rdfs:range xsd:string ;
+    skos:scopeNote "Both variants remain in the documentation graph. Website presentation chooses the matching color scheme; print publication selects light and untagged images."@en .

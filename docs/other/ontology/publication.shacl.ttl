@@ -276,3 +276,9 @@ ga:NativeNavigationParentShape a sh:NodeShape ;
 ga:RouteAliasShape a sh:NodeShape ;
     sh:targetSubjectsOf ga:routeAlias ;
     sh:property [ sh:path ga:routeAlias ; sh:datatype xsd:string ; sh:maxCount 64 ; sh:maxLength 2048 ] .
+ga:ImagePresentationShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:imagePresentation, ga:imageColorScheme ;
+    sh:property [ sh:path ga:imagePresentation ; sh:datatype xsd:string ;
+        sh:in ( "interactive-svg" ) ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:imageColorScheme ; sh:datatype xsd:string ;
+        sh:in ( "light" "dark" ) ; sh:maxCount 1 ] .

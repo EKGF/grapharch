@@ -5,6 +5,7 @@ use {
 };
 // Encoded-byte cap is shared by collectors and restored-KG validation.
 // Decoded pixels/allocation and aggregate publication bytes have separate caps.
+pub(crate) const INTERACTIVE_SVG_TITLE: &str = "grapharch:interactive-svg";
 pub(crate) const MAX_IMAGE_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const IMAGE_CHUNK_BYTES: usize = 48 * 1024;
 pub(crate) const MAX_IMAGE_CHUNKS: usize =
@@ -132,12 +133,10 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                     if name == "href" {
                         ensure!(
                             value.starts_with('#') ||
-                                (tag == "a" &&
-                                    value.starts_with('/') &&
-                                    !value.starts_with("//") &&
-                                    !value
-                                        .chars()
-                                        .any(char::is_whitespace)),
+                                (tag == "a" && !value.is_empty() &&
+                                 !value.starts_with("//") &&
+                                 !value.chars().any(char::is_whitespace) &&
+                                 matches!(url::Url::parse(value), Err(url::ParseError::RelativeUrlWithoutBase))),
                             "SVG external references are unsupported"
                         );
                     }
