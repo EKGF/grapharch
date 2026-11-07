@@ -12,7 +12,7 @@ async fn mkdocs_nested_navigation_survives_source_removal() -> Result<()> {
     let source = tempfile::tempdir()?;
     let output = tempfile::tempdir()?;
     tokio::fs::create_dir_all(source.path().join("manual/guide")).await?;
-    tokio::fs::write(source.path().join("mkdocs.yml"), "site_name: Orchard handbook\nsite_description: Growing fruit\ndocs_dir: manual\ntheme: material\nplugins: [search]\nmarkdown_extensions: [admonition, tables, footnotes]\nnav:\n  - Welcome: index.md\n  - Growing:\n      - Pruning: guide/pruning.md\n      - Revisit: guide/pruning.md\n  - Reference: https://example.org/reference\n").await?;
+    tokio::fs::write(source.path().join("mkdocs.yml"), "site_name: Orchard handbook\nsite_description: Growing fruit\nsite_url: https://example.org/orchard/\ndocs_dir: manual\ntheme: material\nplugins: [search]\nmarkdown_extensions: [admonition, tables, footnotes]\nnav:\n  - Welcome: index.md\n  - Growing:\n      - Pruning: guide/pruning.md\n      - Revisit: guide/pruning.md\n  - Reference: https://example.org/reference\n").await?;
     tokio::fs::write(
         source.path().join("manual/index.md"),
         "# Orchard\n\nRead [pruning](guide/pruning.md).\n",
@@ -44,6 +44,12 @@ async fn mkdocs_nested_navigation_survives_source_removal() -> Result<()> {
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
     assert!(html.contains("Orchard handbook"));
+    assert!(html.contains("name=\"description\" content=\"Growing fruit\""));
+    assert!(
+        html.contains(
+            "rel=\"canonical\" href=\"https://example.org/orchard/\""
+        )
+    );
     assert!(html.contains("Growing"));
     assert!(html.contains("Revisit"));
     assert!(html.contains("https://example.org/reference"));

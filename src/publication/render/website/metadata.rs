@@ -10,7 +10,8 @@ use {
 };
 
 pub(super) struct Metadata {
-    base: Option<url::Url>,
+    base:        Option<url::Url>,
+    description: Option<Term>,
 }
 impl Metadata {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -34,7 +35,16 @@ impl Metadata {
                 },
                 _ => anyhow::bail!("website thisVersion must be an IRI"),
             };
-        Ok(Self { base })
+        let description = plan
+            .source
+            .optional_by(
+                &plan.project,
+                &NamedNode::new_unchecked(
+                    "http://purl.org/dc/terms/description",
+                ),
+            )
+            .await?;
+        Ok(Self { base, description })
     }
 
     pub async fn head(
@@ -59,6 +69,7 @@ impl Metadata {
                 ),
             )
             .await?
+            .or_else(|| self.description.clone())
         {
             let Term::Literal(value) = description else {
                 anyhow::bail!("page description must be a literal")

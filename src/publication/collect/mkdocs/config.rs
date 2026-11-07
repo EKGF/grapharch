@@ -9,6 +9,7 @@ pub(super) struct Config {
     pub docs:        String,
     pub description: Option<String>,
     pub repository:  Option<String>,
+    pub site_url:    Option<String>,
     pub nav:         Option<Value>,
     pub warnings:    Vec<String>,
 }
@@ -58,6 +59,24 @@ impl Config {
                 errors.push(format!(
                     "{key}: unsupported; remove it or supply explicit \
                      GraphArch configuration"
+                ));
+            }
+        }
+        for key in [
+            "site_author",
+            "repo_name",
+            "edit_uri",
+            "copyright",
+            "site_dir",
+            "strict",
+            "dev_addr",
+            "watch",
+            "validation",
+        ] {
+            if map.contains_key(key) {
+                warnings.push(format!(
+                    "{key}: retained in the source configuration; GraphArch \
+                     uses its own publication, validation, and output settings"
                 ));
             }
         }
@@ -113,6 +132,7 @@ impl Config {
             docs: text(map, "docs_dir")?.unwrap_or_else(|| "docs".into()),
             description: text(map, "site_description")?,
             repository: text(map, "repo_url")?,
+            site_url: text(map, "site_url")?,
             nav: map.get("nav").cloned(),
             warnings,
         })

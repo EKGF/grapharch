@@ -98,6 +98,29 @@ impl Collector for MkDocs {
         ] {
             stream.write(quad).await?;
         }
+        if let Some(value) = config.site_url {
+            let mut url = url::Url::parse(&value)?;
+            ensure!(
+                matches!(url.scheme(), "http" | "https") &&
+                    url.host_str().is_some() &&
+                    url.username().is_empty() &&
+                    url.password().is_none() &&
+                    url.query().is_none() &&
+                    url.fragment().is_none(),
+                "site_url must be an absolute HTTP(S) directory URL without \
+                 credentials/query/fragment"
+            );
+            if !url.path().ends_with('/') {
+                url.set_path(&format!("{}/", url.path()));
+            }
+            stream
+                .write(q(
+                    &self.target,
+                    "thisVersion",
+                    NamedNode::new(url.as_str())?,
+                ))
+                .await?;
+        }
         if let Some(value) = config.description {
             stream
                 .write(Quad::new(
