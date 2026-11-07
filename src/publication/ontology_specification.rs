@@ -126,7 +126,8 @@ async fn build(
     }
     let prefixes = structure::prefixes(&namespace_values);
     let mut groups = Vec::new();
-    let mut known = HashSet::new();
+    let mut known = HashSet::new(); // bounded: coordinated resource and identity-byte budgets.
+    let mut identity_bytes = 0usize;
     for (kind, title) in [
         ("Class", "Classes"),
         ("ObjectProperty", "Object properties"),
@@ -148,11 +149,14 @@ async fn build(
                 known.insert(subject.clone()),
                 "ontology term has multiple incompatible kinds"
             );
-            terms.push(subject.clone());
+            identity_bytes += subject.as_str().len();
             ensure!(
-                known.len() <= 200,
-                "ontology specification exceeds 200-term budget"
+                known.len() <= super::limits::FAMILY_RESOURCES &&
+                    identity_bytes <= super::limits::REFERENCE_INDEX_BYTES,
+                "ontology specification exceeds coordinated resource or \
+                 identity-byte budget"
             );
+            terms.push(subject.clone());
         }
         groups.push((kind, title, terms));
     }

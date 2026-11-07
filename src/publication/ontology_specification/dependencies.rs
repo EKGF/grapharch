@@ -13,17 +13,23 @@ pub(super) async fn selected(
     owned: &HashSet<NamedNode>,
 ) -> Result<Vec<NamedNode>> {
     let mut members = view.objects(scope, "include").await?;
-    let mut selected = BTreeSet::new(); // bounded: at most 200 explicit selected terms.
+    let mut selected = BTreeSet::new(); // bounded: coordinated resource and identity-byte budgets.
+    let mut identity_bytes: usize =
+        owned.iter().map(|id| id.as_str().len()).sum();
     while let Some(row) = members.next().await? {
         let Term::NamedNode(subject) = &row["value"] else {
             anyhow::bail!("selected ontology term must be an IRI")
         };
-        if !owned.contains(subject) {
-            selected.insert(subject.clone());
+        if !owned.contains(subject) && selected.insert(subject.clone()) {
+            identity_bytes += subject.as_str().len();
         }
         ensure!(
-            selected.len() + owned.len() <= 200,
-            "ontology specification exceeds 200-term budget"
+            selected.len() + owned.len() <=
+                crate::publication::limits::FAMILY_RESOURCES &&
+                identity_bytes <=
+                    crate::publication::limits::REFERENCE_INDEX_BYTES,
+            "ontology specification exceeds coordinated resource or \
+             identity-byte budget"
         );
     }
     for subject in &selected {
@@ -91,7 +97,8 @@ pub(super) async fn sources(
     if subjects.is_empty() {
         return Ok(BTreeMap::new())
     }
-    // bounded: at most 200 selected identities, with the query-byte cap below.
+    // bounded: coordinated resource/identity-byte budgets, and the query cap
+    // below.
     let values = subjects
         .iter()
         .map(ToString::to_string)
