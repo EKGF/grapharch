@@ -50,6 +50,8 @@ the project configuration; the path is relative to the project root and can sit
 outside its content directory:
 
 ```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
 <urn:project> ga:collector <urn:project:abbreviations> .
 <urn:project:abbreviations> a ga:Collector ;
     ga:kind "abbreviation-file" ;

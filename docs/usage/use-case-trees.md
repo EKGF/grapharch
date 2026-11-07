@@ -116,6 +116,8 @@ A documentation project can own its use cases as Markdown pages instead of
 maintaining a second RDF copy. Add a specialized source collector:
 
 ```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
 <urn:catalog> ga:collector <urn:catalog:use-cases> .
 <urn:catalog:use-cases> a ga:Collector ;
     ga:kind "authored-use-cases" ;
