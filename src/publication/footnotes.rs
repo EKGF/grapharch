@@ -14,6 +14,10 @@ pub(crate) fn qualify(source: &str, body: &str) -> Result<String> {
         body.len() <= 1024 * 1024,
         "footnote source exceeds 1 MiB"
     );
+    if !body.contains("[^") {
+        return Ok(body.into());
+    }
+    let mut protected = Vec::new(); // bounded by the 1 MiB source, at most 8192 literal regions.
     let mut edits = Vec::new(); // bounded: 1024 references and 128 definitions.
     let mut definitions = BTreeSet::new();
     let mut references = 0;
@@ -41,6 +45,19 @@ pub(crate) fn qualify(source: &str, body: &str) -> Result<String> {
                 })?;
                 (label, range.start + 2..range.start + end)
             },
+            Event::Code(_) |
+            Event::Start(Tag::CodeBlock(_)) |
+            Event::Html(_) |
+            Event::InlineHtml(_) |
+            Event::Start(Tag::Link { .. }) |
+            Event::Start(Tag::Image { .. }) => {
+                protected.push(range);
+                ensure!(
+                    protected.len() <= 8192,
+                    "footnote literal regions exceed budget"
+                );
+                continue;
+            },
             _ => continue,
         };
         ensure!(
@@ -64,6 +81,32 @@ pub(crate) fn qualify(source: &str, body: &str) -> Result<String> {
             )
         };
         edits.push((range, qualified));
+    }
+    let marker = regex::Regex::new(r"\[\^([^\]\r\n]{1,256})\]")?;
+    for capture in marker.captures_iter(body) {
+        let matched = capture.get(0).unwrap();
+        let label = capture.get(1).unwrap();
+        let escaped = body[..matched.start()]
+            .bytes()
+            .rev()
+            .take_while(|b| *b == b'\\')
+            .count() %
+            2 ==
+            1;
+        if escaped ||
+            protected
+                .iter()
+                .any(|range| range.contains(&matched.start()))
+        {
+            continue;
+        }
+        ensure!(
+            edits.iter().any(|(range, _)| {
+                range.start == label.start() && range.end == label.end()
+            }),
+            "unresolved footnote reference [{}] in {source}",
+            &capture[1]
+        );
     }
     edits.sort_by_key(|(range, _)| range.start);
     let mut output = String::new();
@@ -163,6 +206,12 @@ fn definitions(source: &str) -> Result<BTreeMap<String, String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn unresolved_notes_fail_but_literal_examples_remain_literal() {
+        assert!(qualify("source.md", "A claim[^missing].").is_err());
+        let literal = "`[^code]` and \\[^escaped]\n\n```md\n[^example]\n```";
+        assert_eq!(qualify("source.md", literal).unwrap(), literal);
+    }
     #[test]
     fn notes_follow_first_reference_order() {
         let body =
