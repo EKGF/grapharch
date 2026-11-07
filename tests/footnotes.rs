@@ -101,6 +101,10 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     let typst =
         tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
     assert_eq!(typst.matches("#footnote[").count(), 2);
+    assert!(
+        !typst.contains("#footnote[#par["),
+        "note marker and first text must share a line"
+    );
     assert_eq!(typst.matches("#footnote(label(").count(), 1);
     assert!(typst.contains("published study"));
     assert!(typst.contains("Another retained explanation"));

@@ -111,7 +111,8 @@ pub(crate) fn complete(excerpt: &str, source: &str) -> Result<String> {
         candidate.len() <= 2 * 1024 * 1024,
         "footnote selection context exceeds 2 MiB"
     );
-    let mut required = BTreeSet::new(); // bounded: 128 source definitions.
+    let mut seen = BTreeSet::new(); // bounded: 128 source definitions.
+    let mut required = Vec::new(); // bounded: 128 source definitions, in first-reference order.
     let mut in_definition = false;
     for event in Parser::new_ext(&candidate, options()) {
         match event {
@@ -119,7 +120,9 @@ pub(crate) fn complete(excerpt: &str, source: &str) -> Result<String> {
             Event::End(TagEnd::FootnoteDefinition) => in_definition = false,
             Event::FootnoteReference(label) => {
                 ensure!(!in_definition, "nested footnotes are unsupported");
-                required.insert(label.to_string());
+                if seen.insert(label.to_string()) {
+                    required.push(label.to_string());
+                }
             },
             _ => {},
         }
@@ -160,6 +163,16 @@ fn definitions(source: &str) -> Result<BTreeMap<String, String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn notes_follow_first_reference_order() {
+        let body =
+            "First[^z], then[^a].\n\n[^z]: First note.\n[^a]: Second note.\n";
+        let output = complete(body, body).unwrap();
+        assert!(
+            output.find("First note").unwrap() <
+                output.find("Second note").unwrap()
+        );
+    }
     #[test]
     fn source_notes_are_qualified_and_survive_heading_selection() {
         let source = "# Claim\n\nA claim[^one].\n\n# Notes\n\n[^one]: A \

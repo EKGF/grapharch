@@ -71,9 +71,22 @@ impl<'a> Notes<'a> {
         if !self.emitted.insert(label.into()) {
             return Ok(format!("#footnote(label({}))", quote(label)));
         }
-        let body = super::typst_markdown::convert(
-            &markdown.with_events(events.clone()),
-        )?;
+        let mut events = events.clone();
+        // Typst supplies the note's leading paragraph beside its number.
+        if matches!(events.first(), Some(Event::Start(Tag::Paragraph))) {
+            events.remove(0);
+            let end = events
+                .iter()
+                .position(|event| {
+                    matches!(event, Event::End(TagEnd::Paragraph))
+                })
+                .ok_or_else(|| {
+                    anyhow::anyhow!("unterminated note paragraph")
+                })?;
+            events.remove(end);
+        }
+        let body =
+            super::typst_markdown::convert(&markdown.with_events(events))?;
         Ok(format!(
             "#footnote[{body}]#label({})",
             quote(label)
