@@ -19,7 +19,7 @@ async fn authored_exclusions_are_applied_before_source_budget() -> Result<()> {
     let defs = root.path().join("project.ttl");
     let config = r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
-<urn:project> a ga:Project; ga:target <urn:target>; ga:excludeSourcePath "generated" .
+<urn:project> a ga:Project; ga:target <urn:target>; ga:excludeSourcePath "generated", "future-output" .
 <urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
 "#;

@@ -256,4 +256,4 @@ Exclude generated files or legacy host instructions from automatic source discov
 <urn:project> ga:excludeSourcePath "generated-diagrams", "CNAME" .
 ```
 
-Each path must exist inside the documentation root. Directory exclusions cover their subtrees; this is exact path selection, not a glob language. Definitions are retained before discovery, so these hints are included in provenance and apply before the source budget. Explicit navigation to an excluded page still fails rather than silently dropping the link.
+Each path must be relative to the documentation root without traversal or symlinks. Excluded generated output need not exist in a clean checkout. Directory exclusions cover their subtrees; this is exact path selection, not a glob language. Definitions are retained before discovery, so these hints are included in provenance and apply before the source budget. Explicit navigation to an excluded page still fails rather than silently dropping the link.

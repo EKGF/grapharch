@@ -28,17 +28,24 @@ async fn exclusions(
                     .all(|part| matches!(part, Component::Normal(_))),
             "source exclusion must be a relative path without traversal"
         );
-        let path = root.join(path);
-        let metadata = tokio::fs::symlink_metadata(&path).await?;
-        ensure!(
-            !metadata.is_symlink(),
-            "source exclusion must not be a symlink"
-        );
-        ensure!(
-            tokio::fs::canonicalize(&path).await?.starts_with(root),
-            "source exclusion escapes documentation root"
-        );
-        paths.push(path);
+        let mut ancestor = root.to_owned();
+        for part in path.components() {
+            ancestor.push(part);
+            match tokio::fs::symlink_metadata(&ancestor).await {
+                Ok(metadata) => {
+                    ensure!(
+                        !metadata.is_symlink(),
+                        "source exclusion must not traverse a symlink"
+                    )
+                },
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    break
+                },
+                Err(error) => return Err(error.into()),
+            }
+        }
+        // Excluded build output need not exist in a clean checkout.
+        paths.push(root.join(path));
     }
     Ok(paths)
 }
