@@ -245,7 +245,8 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 ) {
                     crate::publication::limits::PUBLICATION_FILES
                 } else {
-                    260
+                    // bounded: 256 image assets plus five fixed artifacts.
+                    261
                 },
             "publication artifact ownership exceeds budget"
         );
@@ -254,7 +255,11 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
             validate_artifact_path(name)?;
             let fixed = matches!(
                 name.as_str(),
-                "index.html" | "style.css" | "main.typ" | "document.pdf"
+                "index.html" |
+                    "style.css" |
+                    "main.typ" |
+                    "document.pdf" |
+                    "grapharch-icon-licenses.txt"
             );
             let book = manifest.renderer == "bookshelf" &&
                 (name == "books.json" ||

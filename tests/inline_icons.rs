@@ -58,8 +58,10 @@ async fn decorative_icons_survive_source_removal_in_html_and_pdf() -> Result<()>
     assert!(!html.contains(":material-"));
     assert!(html.contains("Learn more"));
     assert!(site.directory.join("grapharch-icon-licenses.txt").exists());
+    let publisher = Publisher::new(restored);
+    publisher.render(&pdf, output.path()).await?;
     let PublishOutcome::Published(pdf) =
-        Publisher::new(restored).render(&pdf, output.path()).await?
+        publisher.render(&pdf, output.path()).await?
     else {
         panic!("PDF failed")
     };
