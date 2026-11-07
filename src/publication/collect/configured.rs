@@ -53,6 +53,7 @@ pub(crate) async fn collect(
                 ensure!(path.starts_with(root) && tokio::fs::metadata(&path).await?.is_dir(), "navigation source must be a directory within project root");
                 Arc::new(super::pages_navigation::PagesNavigation { project: project.into(), processor: processor.clone(), profile: view.node(processor, "navigationProfile").await?, root: path })
             },
+            "plantuml-file" => Arc::new(super::plantuml::PlantUmlFile::configured(project, processor, &source, root, &view).await?),
             "rdf-file" => {
                 let relative = Path::new(&source);
                 ensure!(

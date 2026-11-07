@@ -91,6 +91,10 @@ pub async fn collect_with_asset_factory(
         let include_roots =
             discovery::include_roots(&source, &view, &NamedNode::new(project)?)
                 .await?;
+        let image_bindings = super::collect::plantuml::bindings(
+            &view, project, &source, &content,
+        )
+        .await?;
         let paths =
             discovery::discover(&content, &view, &NamedNode::new(project)?)
                 .await?;
@@ -127,6 +131,7 @@ pub async fn collect_with_asset_factory(
                         path,
                     )?
                     .with_default_title()
+                    .with_image_bindings(image_bindings.clone())
                     .with_include_roots(include_roots.clone())?,
                 ));
             } else if LocalImageFile::supported(&path) {
@@ -153,6 +158,7 @@ pub async fn collect_with_asset_factory(
         )
         .await?;
 
+        super::document::plantuml::document(&dataset, project, &writer).await?;
         native_models::collect(
             &source,
             &dataset,
