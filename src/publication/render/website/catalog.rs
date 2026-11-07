@@ -62,6 +62,7 @@ impl Catalog {
                         .map(|heading| heading.anchor)
                         .collect();
                 }
+                retain_anchors(&mut page.headings, &page_body)?;
                 page_body.clear();
                 heading_counts.clear();
             }
@@ -119,6 +120,7 @@ impl Catalog {
                     .into_iter()
                     .map(|heading| heading.anchor)
                     .collect();
+                retain_anchors(&mut page.headings, &page_body)?;
             }
         }
         let mut assets = plan.assets().await?;
@@ -505,4 +507,17 @@ impl Catalog {
             self.flatten(Some(&page.id), out);
         }
     }
+}
+
+fn retain_anchors(
+    headings: &mut HashSet<String>,
+    body: &str,
+) -> anyhow::Result<()> {
+    for anchor in crate::publication::anchor::labels(body)? {
+        ensure!(
+            headings.insert(anchor.clone()),
+            "duplicate explicit anchor or heading ID {anchor}"
+        );
+    }
+    Ok(())
 }

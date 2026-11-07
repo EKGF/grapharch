@@ -1,5 +1,6 @@
 //! Graph-backed publication definitions, independent of output placement.
 
+mod anchor;
 pub mod assembly;
 mod badge;
 pub mod cli;

@@ -107,6 +107,15 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             ));
                             continue;
                         }
+                        if let Some(label) =
+                            crate::publication::anchor::label(dest_url)
+                        {
+                            output.push_str(&format!(
+                                "#box(width: 0pt, height: 0pt)[] \
+                                 <{label}>#box["
+                            ));
+                            continue;
+                        }
                         let destination =
                             if let Some(label) = dest_url.strip_prefix('#') {
                                 format!("label({})", quote(label))

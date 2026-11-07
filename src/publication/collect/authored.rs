@@ -221,7 +221,8 @@ impl Collector for MarkdownFile {
             &figures,
             frontmatter.letter_prefix.as_deref(),
         )?;
-        let body = normalized_blocks.as_str();
+        let normalized_anchors = super::anchors::normalize(&normalized_blocks)?;
+        let body = normalized_anchors.as_str();
         revision = format!(
             "semantic-includes-v1:{}:{revision}",
             expansion.revision

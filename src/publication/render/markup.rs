@@ -147,12 +147,34 @@ impl<'a> Markdown<'a> {
                         &mut events[index]
                     {
                         let label = format!("{prefix}-h-{suffix}");
-                        heading_ids.insert(label.clone());
+                        ensure!(
+                            heading_ids.insert(label.clone()),
+                            "duplicate heading or explicit anchor {label}"
+                        );
                         *id = Some(label.into());
                     }
                 },
                 Event::Start(Tag::Link { dest_url, .. }) => {
                     if crate::publication::badge::label(dest_url).is_some() {
+                        continue;
+                    }
+                    if let Some(anchor) =
+                        crate::publication::anchor::label(dest_url)
+                    {
+                        let label = format!("{prefix}-h-{anchor}");
+                        ensure!(
+                            heading_ids.insert(label.clone()),
+                            "duplicate explicit anchor {anchor}"
+                        );
+                        if let Event::Start(Tag::Link { dest_url, .. }) =
+                            &mut events[index]
+                        {
+                            *dest_url = format!(
+                                "{}{label}",
+                                crate::publication::anchor::PREFIX
+                            )
+                            .into();
+                        }
                         continue;
                     }
                     let original = dest_url.to_string();

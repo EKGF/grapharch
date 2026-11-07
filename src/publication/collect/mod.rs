@@ -1,6 +1,7 @@
 //! Small source adapters that normalize authored content and native hints to
 //! RDF.
 
+mod anchors;
 mod authored;
 mod badges;
 mod blank_nodes;
