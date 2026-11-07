@@ -18,6 +18,16 @@ project, and we're excited to work with you.
 This document provides guidelines to help you
 get started with contributing to GraphArch.
 
+## Contributors
+
+GraphArch contributors include:
+
+- Anthony B. Coates — feedback on the readability of SHACL SPARQL constraints.
+- Marcel Fröhlich
+- Carl Mattocks
+- Pete Rivett
+- Tony Seale
+
 ## How Can You Contribute?
 
 There are several ways you can contribute to GraphArch:

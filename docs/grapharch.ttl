@@ -1,5 +1,6 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix doc: <urn:grapharch:docs:> .
 @prefix artgov: <https://ekgf.org/ontology/artifact-governance#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
@@ -7,6 +8,9 @@
 @prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
 <urn:grapharch:docs> a ga:Project ; dct:title "Grapharch" ;
     ga:repository <https://github.com/EKGF/grapharch> ;
+    dct:contributor doc:contributor-coates-anthony-b,
+        doc:contributor-froehlich-marcel, doc:contributor-mattocks-carl,
+        doc:contributor-rivett-pete, doc:contributor-seale-tony ;
     ga:showcasesSource "../examples" ;
     ga:scope doc:scope ; ga:target doc:website, doc:ontology-spec ;
     ga:collector doc:governance-source, doc:party-role-source,
@@ -67,3 +71,12 @@ doc:provenance-source a ga:Collector ;
 
 <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> <https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy> <urn:uuid:ee14e632-d8c2-43c1-95d8-72491ce7a846> .
 <urn:uuid:ee14e632-d8c2-43c1-95d8-72491ce7a846> a <https://www.omg.org/spec/Commons/Organizations/Organization> ; <http://www.w3.org/2000/01/rdf-schema#label> "Enterprise Knowledge Graph Forum"@en .
+
+# GraphArch contributors; local identities are not contact URLs or editorial roles.
+doc:contributor-coates-anthony-b a prov:Person ;
+    rdfs:label "Anthony B. Coates" ;
+    dct:description "Contributed feedback on the readability of documented SHACL SPARQL constraints."@en .
+doc:contributor-froehlich-marcel a prov:Person ; rdfs:label "Marcel Fröhlich" .
+doc:contributor-mattocks-carl a prov:Person ; rdfs:label "Carl Mattocks" .
+doc:contributor-rivett-pete a prov:Person ; rdfs:label "Pete Rivett" .
+doc:contributor-seale-tony a prov:Person ; rdfs:label "Tony Seale" .
