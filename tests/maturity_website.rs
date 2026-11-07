@@ -98,6 +98,15 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
         tokio::fs::read_to_string(result.directory.join("pillar/index.html"))
             .await?;
     assert!(model.contains("business/"));
+    let legacy = tokio::fs::read_to_string(
+        result
+            .directory
+            .join("pillar/business/background-and-intro/index.html"),
+    )
+    .await?;
+    assert!(legacy.contains("#introduction"));
+    assert!(legacy.contains("location.hash"));
+
     let parsed = scraper::Html::parse_document(&overview);
     let sidebar = parsed
         .select(&scraper::Selector::parse(".site-navigation").unwrap())

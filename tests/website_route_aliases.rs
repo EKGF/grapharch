@@ -46,3 +46,48 @@ async fn aliases_redirect_to_retained_page_sections_without_sources()
     assert!(section.contains("location.replace"));
     Ok(())
 }
+
+#[tokio::test]
+async fn unsafe_and_colliding_aliases_fail_before_publication() -> Result<()> {
+    for (alias, expected) in [
+        ("../escape/", "invalid publication route"),
+        (
+            "https://example.org/",
+            "invalid publication route",
+        ),
+        ("/", "collides"),
+        ("style.css/nested/", "collides"),
+    ] {
+        let input = tempfile::tempdir()?;
+        let output = tempfile::tempdir()?;
+        tokio::fs::write(
+            input.path().join("index.md"),
+            format!("---\naliases: [\"{alias}\"]\n---\n# Home\n"),
+        )
+        .await?;
+        let config = input.path().join("project.ttl");
+        tokio::fs::write(&config, CONFIG).await?;
+        let error =
+            match website::collect(input.path(), &config, "urn:p", "urn:t", 2)
+                .await
+            {
+                Err(error) => error,
+                Ok(built) => {
+                    Publisher::new(built.dataset)
+                        .render(&built.plan, output.path())
+                        .await
+                        .err()
+                        .expect("unsafe alias must fail")
+                },
+            };
+        assert!(
+            format!("{error:#}").contains(expected),
+            "{error:#}"
+        );
+        assert!(
+            !output.path().join("site").exists(),
+            "failed alias must not publish a partial site"
+        );
+    }
+    Ok(())
+}

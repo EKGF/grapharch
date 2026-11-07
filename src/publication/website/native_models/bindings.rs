@@ -153,6 +153,18 @@ pub(super) async fn write(
                 id.as_str(),
                 companion.title,
             ]);
+            stream
+                .write(q(
+                    &heading,
+                    "routeAlias",
+                    Literal::new_simple_literal(
+                        crate::publication::collect::page::route(
+                            &companion.source_path,
+                            None,
+                        )?,
+                    ),
+                ))
+                .await?;
             generated(
                 &mut stream,
                 &heading,
