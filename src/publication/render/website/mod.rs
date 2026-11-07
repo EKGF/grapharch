@@ -23,7 +23,7 @@ use {
     },
     anyhow::{Result, ensure},
     catalog::Catalog,
-    std::{collections::HashMap, path::Path},
+    std::{collections::HashMap, path::Path, time::Instant},
 };
 
 struct Header {
@@ -36,9 +36,20 @@ struct Header {
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
+    let started = Instant::now();
     let mut catalog = Catalog::read(plan).await?;
+    tracing::debug!(
+        phase = "website-catalog",
+        elapsed_ms = started.elapsed().as_millis(),
+        routes = catalog.pages.len()
+    );
     let interactive_files =
         interactive_svg::prepare(plan, &mut catalog, stage).await?;
+    tracing::debug!(
+        phase = "website-interactive-projections",
+        elapsed_ms = started.elapsed().as_millis(),
+        files = interactive_files.len()
+    );
     let artifacts = budget::ArtifactBudget::new(
         catalog.pages.values().filter(|page| !page.asset).count(),
         catalog.pages.values().filter(|page| page.asset).count(),
@@ -123,6 +134,10 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         )
         .await?;
     }
+    tracing::debug!(
+        phase = "website-authored-pages",
+        elapsed_ms = started.elapsed().as_millis()
+    );
     if !plan.quality.is_empty() {
         ensure!(
             !files.iter().any(|route| route == "quality-issues.html"),
@@ -238,6 +253,11 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let before_aliases = files.len();
     redirects::write(plan, stage, &catalog, &mut files).await?;
     artifacts.validate(files.len() - before_aliases, files.len())?;
+    tracing::debug!(
+        phase = "website-complete",
+        elapsed_ms = started.elapsed().as_millis(),
+        files = files.len()
+    );
     Ok(files)
 }
 

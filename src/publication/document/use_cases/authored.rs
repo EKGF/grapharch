@@ -17,6 +17,7 @@ use {
     anyhow::{Context, Result, ensure},
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
     sha2::{Digest, Sha256},
+    std::time::Instant,
 };
 /// Generate relationships only for explicitly collected source-owned use cases.
 pub(crate) async fn document(
@@ -24,9 +25,15 @@ pub(crate) async fn document(
     project: &str,
     writer: &GraphWriter,
 ) -> Result<()> {
+    let started = Instant::now();
     let snapshot = dataset.snapshot_collected_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     let bound_pages = super::authored_pages::read(dataset, &view).await?;
+    tracing::debug!(
+        phase = "authored-use-case-page-bindings",
+        elapsed_ms = started.elapsed().as_millis(),
+        cases = bound_pages.len()
+    );
     let links = bound_pages
         .iter()
         .map(|(id, page)| (id.clone(), format!("/{}", page.route)))
@@ -235,5 +242,10 @@ pub(crate) async fn document(
         }
         stream.complete().await?;
     }
+    tracing::debug!(
+        phase = "authored-use-case-documentation",
+        elapsed_ms = started.elapsed().as_millis(),
+        cases = count
+    );
     Ok(())
 }
