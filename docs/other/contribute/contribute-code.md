@@ -39,8 +39,8 @@ Clone the forked repository to your
 local machine.
 
 ```shell
-git clone https://github.com/ekgf/grapharg.git
-cd GraphArch
+git clone https://github.com/EKGF/grapharch.git
+cd grapharch
 ```
 
 ### Create a Branch
