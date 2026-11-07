@@ -93,6 +93,10 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
         .expect("retained projected diagram");
     let svg = tokio::fs::read_to_string(site.directory.join(projected)).await?;
     assert!(svg.contains("target=\"_top\""));
+    assert!(
+        svg.contains("prefers-color-scheme: dark"),
+        "native interactive labels need an authored dark palette"
+    );
     assert!(svg.contains("../use-case/customer/"));
     assert!(identity.contains("Ownership parent"));
     assert!(

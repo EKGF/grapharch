@@ -28,7 +28,8 @@ pub(crate) async fn collect(
     );
     let mut definitions =
         view.objects(&NamedNode::new(project)?, "collector").await?;
-    // bounded: at most 32 explicitly configured dependencies, not corpus data.
+    // bounded: 32 explicit source definitions expand to at most 512 collector
+    // instances.
     let mut work: Vec<Arc<dyn Collector>> = Vec::new();
     let mut count = 0;
     while let Some(row) = definitions.next().await? {

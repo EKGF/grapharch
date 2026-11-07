@@ -114,7 +114,10 @@ pub(super) fn diagram_with_links(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{total}\" \
          height=\"{height}\" viewBox=\"0 0 {total} {height}\" \
          role=\"img\"><title>{}</title><desc>Ownership is solid; reuse is \
-         dashed. Only the current use case is boxed.</desc>",
+         dashed. Only the current use case is \
+         boxed.</desc><style>text{{fill:#273b5c}}.current-label{{fill:#\
+         ffffff}}@media (prefers-color-scheme: \
+         dark){{text{{fill:#dbeafe}}.current-label{{fill:#ffffff}}}}</style>",
         xml(&node.label)
     );
     for (child, (cx, cy, cw)) in &placement {
@@ -163,8 +166,14 @@ pub(super) fn diagram_with_links(
         }
         let fill = if active { "#ffffff" } else { "#273b5c" };
         svg.push_str(&format!(
-            "<text x=\"{}\" y=\"{}\" font-family=\"Liberation Sans, Arial, \
-             sans-serif\" font-size=\"13\" fill=\"{fill}\">{}</text>",
+            "<text class=\"{}\" x=\"{}\" y=\"{}\" font-family=\"Liberation \
+             Sans, Arial, sans-serif\" font-size=\"13\" \
+             fill=\"{fill}\">{}</text>",
+            if active {
+                "current-label"
+            } else {
+                "neighbor-label"
+            },
             x + 12,
             y + 5,
             xml(&tree.nodes[id].label)
