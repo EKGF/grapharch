@@ -31,7 +31,7 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     RdfFile::new("urn:p", "urn:shape", path)?
         .collect(&writer)
         .await?;
-    let ask = "\n  ASK {\n    $this ?predicate ?object .\n  }\n";
+    let ask = "\r\n  ASK {\r\n    $this ?predicate ?object .\r\n  }\r\n";
     let path = source.path().join("ask.ttl");
     tokio::fs::write(
         &path,
@@ -216,7 +216,9 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
 
     for query in &expected {
         assert!(
-            codes.iter().any(|code| code.contains(query)),
+            codes.iter().any(|code| {
+                code.contains(&query.replace("\r\n", "\n").replace('\r', "\n"))
+            }),
             "HTML flattened source query"
         );
     }
