@@ -1543,12 +1543,14 @@ ga:contentPrefix a owl:DatatypeProperty ;
     rdfs:label "Enclosing content prefix"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Semantic container openings required when rendering a selected fragment independently from its enclosing authored document."@en ;
-    dct:description "Contains typed grapharch-content boundary records, not source prose or CSS. Whole-document assembly uses the original contiguous fragment bodies; independent fragment rendering restores this enclosing context."@en ;
+    dct:description "Semantic container openings required when rendering a selected fragment independently from its enclosing authored document."@en ;
+    rdfs:comment "Contains typed grapharch-content boundary records, not source prose or CSS. Whole-document assembly uses the original contiguous fragment bodies; independent fragment rendering restores this enclosing context."@en ;
     rdfs:domain ga:Fragment ; rdfs:range xsd:string .
 
 ga:contentSuffix a owl:DatatypeProperty ;
     rdfs:label "Enclosing content suffix"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Semantic container endings required when rendering a selected fragment independently from its enclosing authored document."@en ;
-    dct:description "Closes the typed container context retained by the collector for an independently selected fragment. It does not duplicate authored prose or prescribe a visual style."@en ;
+    dct:description "Semantic container endings required when rendering a selected fragment independently from its enclosing authored document."@en ;
+    rdfs:comment "Closes the typed container context retained by the collector for an independently selected fragment. It does not duplicate authored prose or prescribe a visual style."@en ;
     rdfs:domain ga:Fragment ; rdfs:range xsd:string .
