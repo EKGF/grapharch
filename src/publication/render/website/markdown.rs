@@ -17,7 +17,7 @@ pub(super) struct Content {
 }
 pub(super) fn headings(body: &str) -> Vec<Heading> {
     let events: Vec<_> =
-        Parser::new_ext(&body, crate::publication::markdown::options())
+        Parser::new_ext(body, crate::publication::markdown::options())
             .collect();
     index(&events)
 }
