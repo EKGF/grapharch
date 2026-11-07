@@ -5,9 +5,9 @@
 .primary-navigation a[aria-current=page],.primary-navigation a.active-section{color:var(--accent)}.primary-navigation details>ul{padding-left:20px}
 .footer-navigation{max-width:1440px;margin:2rem auto;padding:0 32px}.footer-navigation ul{list-style:none;display:flex;flex-wrap:wrap;gap:24px;padding:0}
 body[data-layout=documentation] .site-header{display:block;height:auto;padding:0;position:sticky;top:0}
-.documentation-header{display:flex;align-items:center;max-width:1440px;margin:auto;padding:20px 32px;gap:32px}
-.documentation-title{flex:1;text-align:center;color:var(--ink);font-size:1.3rem;font-weight:400;text-decoration:none}
-.documentation-header .community-menu{display:none}.documentation-header .site-links{margin:0}
+.documentation-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;max-width:1440px;margin:auto;padding:20px 32px;gap:32px}
+.documentation-title{display:block;text-align:center;color:var(--ink);font-size:1.3rem;font-weight:400;text-decoration:none}
+.documentation-header .community-menu{display:none}.documentation-header .site-links{margin:0;justify-self:end}.documentation-header>.ekgf-identity{justify-self:start}
 body[data-layout=documentation] .site-layout{max-width:1440px;margin:auto;gap:40px;grid-template-columns:240px minmax(0,1fr) 200px}
 body[data-layout=documentation] .site-navigation,body[data-layout=documentation] .page-outline{top:140px}
 body[data-layout=documentation] main{min-width:0;padding-top:40px}
