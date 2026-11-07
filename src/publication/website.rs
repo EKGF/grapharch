@@ -1,6 +1,6 @@
 //! Discover a Markdown documentation tree, collect independent files in
 //! parallel, and assemble a website plan. Rendering only reads that pinned KG.
-mod discovery;
+pub(crate) mod discovery;
 mod native_models;
 mod navigation;
 

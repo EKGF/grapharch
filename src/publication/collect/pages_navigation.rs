@@ -11,10 +11,11 @@ use {
 };
 
 pub(super) struct PagesNavigation {
-    pub project:   String,
-    pub processor: NamedNode,
-    pub profile:   NamedNode,
-    pub root:      PathBuf,
+    pub project:    String,
+    pub processor:  NamedNode,
+    pub profile:    NamedNode,
+    pub root:       PathBuf,
+    pub exclusions: Vec<PathBuf>,
 }
 #[async_trait]
 impl Collector for PagesNavigation {
@@ -58,8 +59,12 @@ impl Collector for PagesNavigation {
         let mut pending = vec![(self.root.clone(), None)]; // bounded: 512 navigation entries.
         let mut count = 0usize;
         while let Some((directory, parent)) = pending.pop() {
-            let document =
-                hints::Directory::read(&self.root, &directory).await?;
+            let document = hints::Directory::read(
+                &self.root,
+                &directory,
+                &self.exclusions,
+            )
+            .await?;
             if document.hidden {
                 continue;
             }
@@ -123,8 +128,12 @@ impl Collector for PagesNavigation {
                     "navigation rejects symlinks"
                 );
                 let (label, destination) = if metadata.is_dir() {
-                    let child =
-                        hints::Directory::read(&self.root, &item.path).await?;
+                    let child = hints::Directory::read(
+                        &self.root,
+                        &item.path,
+                        &self.exclusions,
+                    )
+                    .await?;
                     if child.hidden {
                         continue;
                     }

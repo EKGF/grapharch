@@ -34,7 +34,11 @@ pub(super) struct Directory {
     pub items:    Vec<Entry>,
 }
 impl Directory {
-    pub async fn read(root: &Path, directory: &Path) -> Result<Self> {
+    pub async fn read(
+        root: &Path,
+        directory: &Path,
+        exclusions: &[PathBuf],
+    ) -> Result<Self> {
         let file = directory.join(".pages.yaml");
         let mut source = super::super::page::source_path(root, &file)?;
         let (mut body, hints, explicit) =
@@ -74,6 +78,12 @@ impl Directory {
                     anyhow::anyhow!("navigation names must be UTF-8")
                 })?
                 .to_owned();
+            if exclusions
+                .iter()
+                .any(|excluded| entry.path().starts_with(excluded))
+            {
+                continue;
+            }
             if name.starts_with(['.', '_']) {
                 continue;
             }
@@ -152,6 +162,12 @@ impl Directory {
                         .all(|part| matches!(part, Component::Normal(_))),
                 "navigation path must be relative without traversal"
             );
+            if exclusions
+                .iter()
+                .any(|excluded| directory.join(&path).starts_with(excluded))
+            {
+                continue;
+            }
             ensure!(
                 tokio::fs::try_exists(directory.join(&path)).await?,
                 "navigation source does not exist: {path}"

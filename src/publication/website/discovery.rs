@@ -6,7 +6,7 @@ use {
     std::path::{Component, Path, PathBuf},
 };
 
-pub(super) async fn content_root(
+pub(crate) async fn content_root(
     root: &Path,
     view: &RevisionView,
     project: &NamedNode,
@@ -63,7 +63,7 @@ pub(super) async fn directory(root: &Path, value: &str) -> Result<PathBuf> {
     Ok(directory)
 }
 
-async fn exclusions(
+pub(crate) async fn exclusions(
     root: &Path,
     view: &RevisionView,
     project: &NamedNode,

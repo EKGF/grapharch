@@ -51,7 +51,10 @@ pub(crate) async fn collect(
                 ensure!(relative.components().all(|part| matches!(part, Component::Normal(_) | Component::CurDir)), "navigation source must be relative without traversal");
                 let path = tokio::fs::canonicalize(root.join(relative)).await?;
                 ensure!(path.starts_with(root) && tokio::fs::metadata(&path).await?.is_dir(), "navigation source must be a directory within project root");
-                Arc::new(super::pages_navigation::PagesNavigation { project: project.into(), processor: processor.clone(), profile: view.node(processor, "navigationProfile").await?, root: path })
+                let project_id = NamedNode::new(project)?;
+                let content_root = crate::publication::website::discovery::content_root(root, &view, &project_id).await?;
+                let exclusions = crate::publication::website::discovery::exclusions(&content_root, &view, &project_id).await?;
+                Arc::new(super::pages_navigation::PagesNavigation { exclusions, project: project.into(), processor: processor.clone(), profile: view.node(processor, "navigationProfile").await?, root: path })
             },
             "plantuml-file" => Arc::new(super::plantuml::PlantUmlFile::configured(project, processor, &source, root, &view).await?),
             "rdf-file" => {

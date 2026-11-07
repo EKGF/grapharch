@@ -128,3 +128,42 @@ async fn check_navigation(with_index: bool) -> Result<()> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn excluded_generated_sources_do_not_enter_navigation_discovery()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    tokio::fs::create_dir_all(source.path().join("docs/generated")).await?;
+    tokio::fs::write(source.path().join("docs/index.md"), "# Home").await?;
+    tokio::fs::write(
+        source.path().join("docs/.pages.yaml"),
+        "nav:\n- index.md\n- generated\n- ...\n",
+    )
+    .await?;
+    for index in 0..513 {
+        tokio::fs::write(
+            source.path().join(format!("docs/generated/{index}.md")),
+            "# Excluded generated page",
+        )
+        .await?;
+    }
+    let config = source.path().join("project.ttl");
+    tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>.
+<urn:p> a ga:Project; ga:contentSource "docs"; ga:excludeSourcePath "generated"; ga:collector <urn:n>; ga:target <urn:t>.
+<urn:n> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:f>.
+<urn:t> a ga:Target; ga:scope <urn:s>; ga:profile <urn:f>; ga:renderer "website"; ga:destination "site".
+<urn:s> a ga:Scope. <urn:f> a ga:Profile; ga:layout "documentation"."#).await?;
+    let built =
+        website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(site) = Publisher::new(built.dataset)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("publication failed")
+    };
+    let html =
+        tokio::fs::read_to_string(site.directory.join("index.html")).await?;
+    assert!(!html.contains("Excluded generated page"));
+    Ok(())
+}
