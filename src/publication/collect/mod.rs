@@ -209,3 +209,5 @@ fn outcome(
     }
     Ok(())
 }
+
+mod image_variants;

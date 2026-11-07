@@ -53,3 +53,5 @@ pub fn term(local: &str) -> oxrdf::NamedNode {
 pub mod sparql;
 
 pub(crate) mod image_assets;
+
+pub(crate) mod image_hints;
