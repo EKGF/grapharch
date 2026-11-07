@@ -21,6 +21,8 @@ its entries into source-owned [SKOS concepts](../usage/skos-taxonomies.md).
 Select the file from the project configuration:
 
 ```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
 <urn:project> ga:collector <urn:project:abbreviations> .
 <urn:project:abbreviations> a ga:Collector ;
     ga:kind "abbreviation-file" ;
