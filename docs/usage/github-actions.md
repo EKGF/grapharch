@@ -52,6 +52,13 @@ For installation alone, set `mode: install` and supply only `version`; the
 `grapharch` command is then available to subsequent steps. Both modes expose
 `version` and `binary-path`. Deployment is a separate choice.
 
+For a released generator whose exact source revision is part of your publication
+record, also supply `expected-revision` with the release commit SHA. The action
+checks the published platform manifest against that commit, the version, target,
+and verified archive checksum before running the binary. Its `revision` output
+then records the verified release source commit. Missing or mismatched provenance
+fails the action; it never switches to a source build.
+
 ## Install an unreleased source revision
 
 On Linux runners, the same action can build an exact reviewed source revision.
