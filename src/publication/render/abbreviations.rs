@@ -242,3 +242,38 @@ impl Abbreviations {
         Ok(output)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dictionary_projection_preserves_code_and_escapes_html() -> Result<()> {
+        let dictionary = Abbreviations {
+            definitions: BTreeMap::from([(
+                "EKG".into(),
+                "A <graph> & \"terms\"".into(),
+            )]),
+            pattern:     Some(Regex::new("EKG")?),
+        };
+        let body =
+            "EKG & EKGs\n\n`EKG`\n\n```text\n*[EKG]: example\n```\n\n    \
+             *[EKG]: example\n\n*[EKG]: A <graph> & \"terms\"\n";
+        let cleaned = dictionary.clean(body)?;
+        assert_eq!(cleaned.matches("*[EKG]: example").count(), 2);
+        assert!(!cleaned.contains("*[EKG]: A"));
+        let mut html = String::new();
+        pulldown_cmark::html::push_html(
+            &mut html,
+            dictionary.html(Parser::new(&cleaned))?.into_iter(),
+        );
+        assert_eq!(html.matches("<abbr ").count(), 1);
+        assert!(
+            html.contains("title=\"A &lt;graph&gt; &amp; &quot;terms&quot;\"")
+        );
+        assert!(html.contains("<code>EKG</code>"));
+        assert!(html.contains("EKGs"));
+        assert!(dictionary.clean("*[EKG]: conflicting meaning\n").is_err());
+        Ok(())
+    }
+}
