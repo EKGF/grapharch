@@ -4,6 +4,9 @@ inputs:
   version:
     description: Exact published version, without a leading v
     required: false
+  expected-revision:
+    description: Optional exact release source commit to verify against published provenance
+    required: false
   source-revision:
     description: Exact Git SHA of this action checkout, mutually exclusive with version (Linux source build)
     required: false
@@ -32,7 +35,7 @@ outputs:
   version:
     value: ${{ steps.install.outputs.version || steps.source-install.outputs.version }}
   revision:
-    value: ${{ steps.source-install.outputs.revision }}
+    value: ${{ steps.install.outputs.revision || steps.source-install.outputs.revision }}
   binary-path:
     value: ${{ steps.install.outputs.binary-path || steps.source-install.outputs.binary-path }}
   publication-path:
@@ -80,6 +83,7 @@ runs:
       shell: bash
       env:
         GRAPHARCH_VERSION: ${{ inputs.version }}
+        GRAPHARCH_EXPECTED_REVISION: ${{ inputs.expected-revision }}
       run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" install
     - id: source-install
       if: inputs.source-revision != ''

@@ -1,6 +1,7 @@
 """Checksum-verified installation of exact release binaries for GitHub Actions."""
 
 import hashlib
+import json
 import os
 import platform
 import re
@@ -33,6 +34,17 @@ def target():
     return f"{cpus[cpu]}-{systems[system]}"
 
 
+
+def validate_manifest(manifest, version, triple, checksum, expected):
+    if not re.fullmatch(r"[a-f0-9]{40}", expected) or expected == "0" * 40:
+        raise ValueError("expected-revision must be an exact nonzero lowercase Git SHA")
+    for key, value in {"version": version, "target": triple,
+                       "archive_sha256": checksum, "source_commit": expected}.items():
+        if manifest.get(key) != value:
+            raise ValueError(f"Release manifest {key} does not match requested engine")
+    return expected
+
+
 def main():
     version = os.environ["GRAPHARCH_VERSION"]
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
@@ -56,6 +68,12 @@ def main():
     match = re.fullmatch(r"([a-f0-9]{64})\s+\*?" + re.escape(archive_name), checksum)
     if not match:
         raise ValueError("Invalid release checksum file")
+    revision = ""
+    expected = os.environ.get("GRAPHARCH_EXPECTED_REVISION", "")
+    if expected:
+        with urllib.request.urlopen(base.removesuffix(".zip") + ".json", timeout=60) as response:
+            manifest = json.loads(response.read(64 * 1024))
+        revision = validate_manifest(manifest, version, triple, match[1], expected)
     archive = directory / archive_name
     if not archive.exists():
         with (
@@ -86,7 +104,7 @@ def main():
     with open(os.environ["GITHUB_PATH"], "a") as output:
         output.write(str(directory) + "\n")
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-        output.write(f"version={version}\nbinary-path={binary}\n")
+        output.write(f"version={version}\nrevision={revision}\nbinary-path={binary}\n")
 
 
 if __name__ == "__main__":

@@ -76,3 +76,15 @@ class SetupActionTest(unittest.TestCase):
                 setup.main()
             execute.assert_not_called()
             self.assertFalse((root / "paths").exists())
+
+
+class ReleaseProvenanceTest(unittest.TestCase):
+    def test_exact_release_source_and_archive_are_required(self):
+        manifest = {"version": "0.2.0", "target": "x86_64-unknown-linux-gnu",
+                    "archive_sha256": "b" * 64, "source_commit": "a" * 40}
+        self.assertEqual(setup.validate_manifest(manifest, "0.2.0", manifest["target"],
+                                              "b" * 64, "a" * 40), "a" * 40)
+        for field in ("version", "target", "archive_sha256", "source_commit"):
+            broken = dict(manifest, **{field: "wrong"})
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                setup.validate_manifest(broken, "0.2.0", manifest["target"], "b" * 64, "a" * 40)

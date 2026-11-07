@@ -265,6 +265,7 @@ def build(binary: Path | None, wheel: Path | None, target: str, output: Path) ->
             "version": version(),
             "target": target,
             "platform": item["key"],
+            "source_commit": subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip(),
             "archive": archive.name,
             "archive_sha256": digest,
             "binary_sha256": sha256(shipped),
