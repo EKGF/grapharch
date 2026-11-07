@@ -70,6 +70,24 @@ impl BuildRequest {
         if let Some(definitions) = &inventory.definitions {
             return self.configured(&inventory.root, definitions).await;
         }
+        if let Some(path) = &inventory.mkdocs {
+            let configuration =
+                super::collect::mkdocs::MkDocs::new(&inventory.root, path)
+                    .await?;
+            let project = configuration.project.clone();
+            let target = configuration.target.clone();
+            let built = super::website::collect_with_configuration(
+                &inventory.root,
+                path,
+                project.as_str(),
+                target.as_str(),
+                4,
+                &super::collect::default_http_image_factory,
+                Arc::new(configuration),
+            )
+            .await?;
+            return Ok((built.dataset, built.plan));
+        }
         let origin = url::Url::from_file_path(&source)
             .map_err(|_| anyhow::anyhow!("invalid source path"))?;
         let project = identity("quick-project", &[origin.as_str()]);

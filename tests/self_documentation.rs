@@ -121,8 +121,9 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         .collect();
     assert_eq!(
         scripts.len(),
-        2,
-        "only renderer color-scheme and navigation controls may execute"
+        3,
+        "only renderer color-scheme, navigation, and search controls may \
+         execute"
     );
     assert!(
         scripts[0]
@@ -138,13 +139,22 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
             .replace('\r', "\n")
             .trim()
     );
-    assert_eq!(scripts[1].value().attrs().count(), 0);
+    assert_eq!(scripts[2].value().attrs().count(), 0);
     assert_eq!(
-        scripts[1].text().collect::<String>().trim(),
+        scripts[2].text().collect::<String>().trim(),
         include_str!("../src/publication/render/website/nav.js")
             .replace("\r\n", "\n")
             .replace('\r', "\n")
             .trim()
+    );
+
+    assert_eq!(scripts[1].value().attr("src"), Some("search.js"));
+    assert!(scripts[1].value().attr("defer").is_some());
+    assert_eq!(scripts[1].value().attrs().count(), 2);
+    assert!(scripts[1].text().collect::<String>().trim().is_empty());
+    assert_eq!(
+        tokio::fs::read_to_string(site.join("search.js")).await?,
+        include_str!("../src/publication/render/website/search.js")
     );
 
     let guide = tokio::fs::read_to_string(

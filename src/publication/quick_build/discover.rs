@@ -7,6 +7,7 @@ pub(super) struct Inventory {
     pub root:        PathBuf,
     pub files:       Vec<PathBuf>,
     pub definitions: Option<PathBuf>,
+    pub mkdocs:      Option<PathBuf>,
 }
 impl Inventory {
     pub async fn read(source: &Path, output: &Path) -> Result<Self> {
@@ -22,6 +23,7 @@ impl Inventory {
                 root:        source.parent().unwrap().to_owned(),
                 files:       vec![source.to_owned()],
                 definitions: None,
+                mkdocs:      None,
             });
         }
         ensure!(
@@ -55,6 +57,31 @@ impl Inventory {
                 root: source.to_owned(),
                 files: Vec::new(),
                 definitions,
+                mkdocs: None,
+            });
+        }
+        let mut mkdocs = None;
+        for name in ["mkdocs.yml", "mkdocs.yaml"] {
+            let path = source.join(name);
+            if tokio::fs::try_exists(&path).await? {
+                ensure!(
+                    mkdocs.is_none(),
+                    "both mkdocs.yml and mkdocs.yaml exist; select one \
+                     configuration"
+                );
+                ensure!(
+                    tokio::fs::symlink_metadata(&path).await?.is_file(),
+                    "MkDocs configuration must be a regular file"
+                );
+                mkdocs = Some(path);
+            }
+        }
+        if mkdocs.is_some() {
+            return Ok(Self {
+                root: source.to_owned(),
+                files: Vec::new(),
+                definitions: None,
+                mkdocs,
             });
         }
         let excluded = if output.is_absolute() {
@@ -121,7 +148,12 @@ impl Inventory {
             "no supported Markdown or RDF sources found in {}",
             source.display()
         );
-        Ok(Self { root: source.to_owned(), files, definitions: None })
+        Ok(Self {
+            root: source.to_owned(),
+            files,
+            definitions: None,
+            mkdocs: None,
+        })
     }
 }
 pub(super) fn rdf(path: &Path) -> bool {

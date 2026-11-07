@@ -68,19 +68,38 @@ pub async fn collect_with_asset_factory(
     concurrency: usize,
     asset_factory: &super::collect::AssetCollectorFactory<'_>,
 ) -> Result<CollectedWebsite> {
+    collect_with_configuration(
+        source,
+        definitions,
+        project,
+        target,
+        concurrency,
+        asset_factory,
+        Arc::new(RdfFile::new(
+            project,
+            "urn:grapharch:website-definitions",
+            definitions.to_owned(),
+        )?),
+    )
+    .await
+}
+
+pub(crate) async fn collect_with_configuration(
+    source: &Path,
+    definitions: &Path,
+    project: &str,
+    target: &str,
+    concurrency: usize,
+    asset_factory: &super::collect::AssetCollectorFactory<'_>,
+    configuration: Arc<dyn Collector>,
+) -> Result<CollectedWebsite> {
     let source = tokio::fs::canonicalize(source).await?;
     let definitions = tokio::fs::canonicalize(definitions).await?;
     let dataset = Dataset::memory()?;
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
     let result = async {
-        RdfFile::new(
-            project,
-            "urn:grapharch:website-definitions",
-            definitions.clone(),
-        )?
-        .collect(&writer)
-        .await?;
+        configuration.collect(&writer).await?;
         let view = RevisionView::new(
             dataset.clone(),
             dataset.snapshot_collected_for(project).await?,

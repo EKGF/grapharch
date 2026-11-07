@@ -44,7 +44,7 @@ pub(super) async fn include_roots(
     Ok(roots)
 }
 
-pub(super) async fn directory(root: &Path, value: &str) -> Result<PathBuf> {
+pub(crate) async fn directory(root: &Path, value: &str) -> Result<PathBuf> {
     let relative = Path::new(value);
     ensure!(
         !value.is_empty() &&
