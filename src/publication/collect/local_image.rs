@@ -122,9 +122,9 @@ impl Collector for LocalImageFile {
         let file = tokio::fs::File::open(&path).await?;
         ensure!(
             file.metadata().await?.len() <= MAX_IMAGE_BYTES as u64,
-            "image exceeds 2 MiB budget"
+            "image exceeds 8 MiB budget"
         );
-        let mut bytes = Vec::new(); // bounded: image reader caps input at 2 MiB plus one overflow byte.
+        let mut bytes = Vec::new(); // bounded: image reader caps input at 8 MiB plus one overflow byte.
         file.take(MAX_IMAGE_BYTES as u64 + 1)
             .read_to_end(&mut bytes)
             .await?;

@@ -51,8 +51,13 @@ A standalone local `MarkdownFile` uses its parent directory as the image root.
 Embedders collecting standalone inputs can retain a corresponding image with
 `LocalImageFile::new(project, root, path).await?`; the full website pipeline
 schedules discovered images automatically. HTTPS requests keep their independent
-collector and asset-factory behavior. Every image uses the existing 2 MiB,
-dimension, and SVG-content limits.
+collector and asset-factory behavior. Each encoded image may contain up to **8 MiB**. A publication may retain up to
+**32 MiB** of image bytes in total. Raster images must also fit within 8192
+pixels on either edge and 16,777,216 pixels overall; decoding is capped at
+64 MiB. These independent limits allow ordinary photographic illustrations
+while rejecting oversized or compressed image bombs. Local and HTTPS collection
+and rendering from an exported graph enforce the same limits. SVG-content
+validation remains mandatory.
 
 ## Configure a product logo
 

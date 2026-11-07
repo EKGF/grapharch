@@ -3,11 +3,13 @@ use {
     anyhow::{Result, bail, ensure},
     std::io::Cursor,
 };
-pub(crate) const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
+// Encoded-byte cap is shared by collectors and restored-KG validation.
+// Decoded pixels/allocation and aggregate publication bytes have separate caps.
+pub(crate) const MAX_IMAGE_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
     ensure!(
         !bytes.is_empty() && bytes.len() <= MAX_IMAGE_BYTES,
-        "image exceeds 2 MiB budget or is empty"
+        "image exceeds 8 MiB budget or is empty"
     );
     match mime {
         "image/png" | "image/jpeg" => {

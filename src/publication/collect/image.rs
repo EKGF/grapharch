@@ -82,7 +82,7 @@ impl Collector for HttpImage {
             response
                 .content_length()
                 .is_none_or(|n| n <= MAX_IMAGE_BYTES as u64),
-            "image exceeds 2 MiB budget"
+            "image exceeds 8 MiB budget"
         );
         let mime = response
             .headers()
@@ -100,7 +100,7 @@ impl Collector for HttpImage {
         while let Some(chunk) = response.chunk().await? {
             ensure!(
                 bytes.len() + chunk.len() <= MAX_IMAGE_BYTES,
-                "image exceeds 2 MiB budget"
+                "image exceeds 8 MiB budget"
             );
             bytes.extend_from_slice(&chunk);
         }
