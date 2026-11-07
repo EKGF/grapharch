@@ -255,6 +255,26 @@ mod http_tests {
         tokio::io::{AsyncReadExt, AsyncWriteExt},
     };
 
+    async fn read_request_headers(
+        stream: &mut (impl tokio::io::AsyncRead + Unpin),
+    ) -> std::io::Result<()> {
+        // bounded: this local HTTP fixture accepts at most 2048 header bytes.
+        let mut ending = [0; 4];
+        for _ in 0..2048 {
+            let mut byte = [0];
+            stream.read_exact(&mut byte).await?;
+            ending.rotate_left(1);
+            ending[3] = byte[0];
+            if ending == *b"\r\n\r\n" {
+                return Ok(());
+            }
+        }
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "HTTP fixture request headers exceed 2048 bytes",
+        ))
+    }
+
     async fn response(status: &str, contents: &str) -> reqwest::RequestBuilder {
         let listener =
             tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -266,11 +286,30 @@ mod http_tests {
         );
         tokio::spawn(async move {
             let (mut stream, _) = listener.accept().await.unwrap();
-            let mut request = [0; 2048];
-            stream.read(&mut request).await.unwrap();
+            read_request_headers(&mut stream).await.unwrap();
             stream.write_all(response.as_bytes()).await.unwrap();
         });
         reqwest::Client::new().get(format!("http://{address}/"))
+    }
+
+    #[tokio::test]
+    async fn request_headers_handle_fragmentation_and_reject_truncation() {
+        let (mut writer, mut reader) = tokio::io::duplex(1);
+        tokio::spawn(async move {
+            writer
+                .write_all(b"GET / HTTP/1.1\r\nHost: local\r\n\r\n")
+                .await
+                .unwrap();
+        });
+        read_request_headers(&mut reader).await.unwrap();
+        let mut truncated = &b"GET / HTTP/1.1\r\n"[..];
+        assert_eq!(
+            read_request_headers(&mut truncated)
+                .await
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::UnexpectedEof
+        );
     }
 
     #[tokio::test]
