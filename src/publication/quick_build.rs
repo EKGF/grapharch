@@ -1,5 +1,6 @@
 //! Zero-configuration entry point using the shared collection and publication
 //! stages.
+mod aliases;
 mod discover;
 mod document;
 

@@ -184,7 +184,7 @@ pub(super) async fn rdf_pages(
     ]));
     let mut has_home = has_home(dataset, &view).await?;
     let mut any = false;
-    let mut documented = HashSet::new(); // bounded: shared 20,000 subject budget.
+    let mut documented: BTreeMap<NamedNode, String> = BTreeMap::new(); // bounded: shared 20,000 subject budget.
     for path in inventory
         .files
         .iter()
@@ -209,18 +209,26 @@ pub(super) async fn rdf_pages(
             ))
             .await?;
         let mut terms = Vec::new(); // bounded: shared 20,000 subject budget.
+        let mut aliases = std::collections::BTreeSet::new(); // bounded: 256 source pages.
         while let Some(row) = rows.next().await? {
             if let Term::NamedNode(subject) = &row["s"] {
                 ensure!(
                     terms.len() < 20_000,
                     "reference exceeds subject budget"
                 );
-                if documented.insert(subject.clone()) {
+                if let Some(owner) = documented.get(subject) {
+                    aliases.insert(owner.clone());
+                } else {
+                    documented.insert(subject.clone(), relative.clone());
                     terms.push(subject.clone());
                 }
             }
         }
         if terms.is_empty() {
+            if !aliases.is_empty() {
+                super::aliases::collect(writer, project, &relative, aliases)
+                    .await?;
+            }
             continue;
         }
         any = true;

@@ -119,7 +119,7 @@ async fn shared_rdf_subjects_render_once_and_survive_source_removal()
     )
     .await?;
     tokio::fs::write(source.path().join("pets.ttl"), ONTOLOGY).await?;
-    tokio::fs::write(source.path().join("extra.ttl"), "<https://example.org/pets#Pet> a <http://www.w3.org/2002/07/owl#Class>; <http://www.w3.org/2000/01/rdf-schema#comment> \"Care matters.\" .").await?;
+    tokio::fs::write(source.path().join("zzduplicate.ttl"), "<https://example.org/pets#Pet> a <http://www.w3.org/2002/07/owl#Class>; <http://www.w3.org/2000/01/rdf-schema#comment> \"Care matters.\" .").await?;
     let request = BuildRequest {
         source: source.path().to_owned(),
         output: output.path().join("initial"),
@@ -148,6 +148,12 @@ async fn shared_rdf_subjects_render_once_and_survive_source_removal()
         tokio::fs::read(publication.directory.join("index.html")).await?
     );
     assert!(publication.directory.join("provenance.html").exists());
+    assert!(
+        publication
+            .directory
+            .join("reference/zzduplicatettl/index.html")
+            .exists()
+    );
     Ok(())
 }
 
@@ -181,5 +187,34 @@ async fn configured_website_keeps_explicit_destination_and_title() -> Result<()>
         String::from_utf8_lossy(&result.stderr)
     );
     assert!(source.path().join("output/chosen/index.html").exists());
+    Ok(())
+}
+
+#[tokio::test]
+async fn explicit_config_is_validated_before_unconfigured_discovery_limits()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    tokio::fs::write(
+        source.path().join("grapharch.ttl"),
+        "invalid config",
+    )
+    .await?;
+    for index in 0..257 {
+        tokio::fs::write(
+            source.path().join(format!("page{index}.md")),
+            "# Page",
+        )
+        .await?;
+    }
+    let result = Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .arg("build")
+        .arg(source.path())
+        .output()
+        .await?;
+    assert!(!result.status.success());
+    assert!(
+        !String::from_utf8_lossy(&result.stderr)
+            .contains("exceeds 256 sources")
+    );
     Ok(())
 }

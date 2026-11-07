@@ -28,6 +28,35 @@ impl Inventory {
             kind.is_dir(),
             "source must be a file or directory"
         );
+        let mut definitions = None;
+        for name in ["grapharch.ttl", "project.ttl"] {
+            let path = source.join(name);
+            match tokio::fs::symlink_metadata(&path).await {
+                Ok(metadata) => {
+                    ensure!(
+                        metadata.is_file(),
+                        "configuration must be a regular file: {}",
+                        path.display()
+                    );
+                    ensure!(
+                        definitions.is_none(),
+                        "both grapharch.ttl and project.ttl exist; select \
+                         configuration with an explicit publication command"
+                    );
+                    definitions = Some(path);
+                },
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                },
+                Err(error) => return Err(error.into()),
+            }
+        }
+        if definitions.is_some() {
+            return Ok(Self {
+                root: source.to_owned(),
+                files: Vec::new(),
+                definitions,
+            });
+        }
         let excluded = if output.is_absolute() {
             output.to_owned()
         } else {
@@ -92,21 +121,7 @@ impl Inventory {
             "no supported Markdown or RDF sources found in {}",
             source.display()
         );
-        let definitions =
-            [source.join("grapharch.ttl"), source.join("project.ttl")]
-                .into_iter()
-                .filter(|path| files.contains(path))
-                .collect::<Vec<_>>(); // bounded: two conventional configuration paths.
-        ensure!(
-            definitions.len() <= 1,
-            "both grapharch.ttl and project.ttl exist; select configuration \
-             with an explicit publication command"
-        );
-        Ok(Self {
-            root: source.to_owned(),
-            files,
-            definitions: definitions.into_iter().next(),
-        })
+        Ok(Self { root: source.to_owned(), files, definitions: None })
     }
 }
 pub(super) fn rdf(path: &Path) -> bool {
