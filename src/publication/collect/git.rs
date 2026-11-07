@@ -20,6 +20,8 @@ use {
 
 mod blob;
 mod code;
+mod documentation;
+pub use documentation::{documentation_source, remote_documentation};
 pub(crate) mod hints;
 mod provenance;
 pub use {
@@ -207,6 +209,7 @@ pub async fn remote_publication(
             &cache,
             None,
             hints_path.as_deref(),
+            true,
         )?;
         let hints = hints.ok_or_else(|| {
             anyhow::anyhow!(
@@ -228,7 +231,10 @@ fn scan_remote(
     cache: &Path,
     project: &str,
 ) -> Result<RepositoryScan> {
-    Ok(scan_remote_selected(url, reference, cache, Some(project), None)?.0)
+    Ok(
+        scan_remote_selected(url, reference, cache, Some(project), None, true)?
+            .0,
+    )
 }
 
 fn scan_remote_selected(
@@ -237,6 +243,7 @@ fn scan_remote_selected(
     cache: &Path,
     project: Option<&str>,
     hints_path: Option<&Path>,
+    discover_rdf: bool,
 ) -> Result<(RepositoryScan, Option<hints::PublicationHints>)> {
     use fs2::FileExt;
     std::fs::create_dir_all(cache)?;
@@ -282,7 +289,11 @@ fn scan_remote_selected(
     let commit = repo
         .find_reference("refs/grapharch/source")?
         .peel_to_commit()?;
-    let mut pending = vec![(String::new(), commit.tree_id()?.detach())];
+    let mut pending = if discover_rdf {
+        vec![(String::new(), commit.tree_id()?.detach())]
+    } else {
+        Vec::new()
+    };
     let mut entries = Vec::new();
     let mut count = 0;
     while let Some((prefix, id)) = pending.pop() {
@@ -331,7 +342,7 @@ fn scan_remote_selected(
         }
     }
     ensure!(
-        !entries.is_empty(),
+        !discover_rdf || !entries.is_empty(),
         "repository contains no supported RDF files"
     );
     let public_origin = public_repository_url(url)?.to_string();
