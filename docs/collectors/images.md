@@ -95,8 +95,10 @@ Request interactive presentation when an SVG contains authored navigation links:
 A website publishes this diagram in an isolated SVG object. Its source-owned
 links are checked against the publication's routes and anchors, then projected
 relative to the publication root. Links open the surrounding page. SVG styles
-remain isolated from the documentation page; native `prefers-color-scheme` rules
-in the SVG follow the surrounding publication's color scheme.
+remain isolated from the documentation page. The publication theme controller
+projects its selected color scheme into the SVG's authored
+`prefers-color-scheme` media rules, including compound and nested queries.
+The original SVG retained in the graph is unchanged.
 
 The original SVG stays unchanged in the KG and remains available as an ordinary
 image. A separate content-addressed SVG supplies website navigation. PDF uses
