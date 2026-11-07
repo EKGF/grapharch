@@ -55,6 +55,10 @@ pub async fn remote_documentation(
 
 fn validate_path(path: &Path) -> Result<()> {
     ensure!(
+        path.as_os_str().len() <= 4096,
+        "documentation exceeds 4096-byte path budget"
+    );
+    ensure!(
         !path.as_os_str().is_empty() &&
             path.components()
                 .all(|part| matches!(part, std::path::Component::Normal(_))),
@@ -167,11 +171,13 @@ fn selected_paths(
                         pending.len() < 4096,
                         "documentation exceeds 4096 pending entries"
                     );
+                    let name = std::str::from_utf8(entry.filename())?;
+                    ensure!(
+                        path.len() + 1 + name.len() <= 4096,
+                        "documentation exceeds 4096-byte path budget"
+                    );
                     pending.push((
-                        format!(
-                            "{path}/{}",
-                            std::str::from_utf8(entry.filename())?
-                        ),
+                        format!("{path}/{name}"),
                         entry.object_id(),
                         entry.mode().kind(),
                     ));

@@ -98,6 +98,16 @@ async fn documentation_repository_does_not_require_rdf_sources() -> Result<()> {
             .await
             .is_err()
     );
+    let excessive = std::path::PathBuf::from("a/".repeat(2049));
+    let budget = pinned
+        .materialize_documentation(&[excessive], escape.path())
+        .await
+        .err()
+        .expect("excessive path must fail");
+    assert!(
+        budget.to_string().contains("4096-byte path budget"),
+        "{budget:#}"
+    );
     #[cfg(unix)]
     {
         tokio::fs::symlink("../LICENSE", origin.path().join("docs/link.md"))
