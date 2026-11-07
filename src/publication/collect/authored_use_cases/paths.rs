@@ -108,7 +108,8 @@ pub(super) fn resolve(id: &str, reference: &str) -> Result<String> {
     }
     ensure!(
         !parts.is_empty(),
-        "use-case reference does not identify a source-owned use case"
+        "use-case reference selects the collection overview, not a UseCase; \
+         independent roots require explicit is-part-of: []"
     );
     Ok(parts.join("/"))
 }

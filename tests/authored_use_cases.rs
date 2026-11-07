@@ -141,9 +141,14 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
 #[tokio::test]
 async fn invalid_authored_relationships_fail_with_source_evidence() -> Result<()>
 {
-    for (parent, expected) in
-        [("/missing", "unresolved isPartOf"), ("/child", "cycle")]
-    {
+    for (parent, expected) in [
+        ("/missing", "unresolved isPartOf"),
+        ("/child", "cycle"),
+        (
+            "..",
+            "independent roots require explicit is-part-of: []",
+        ),
+    ] {
         let source = tempfile::tempdir()?;
         tokio::fs::create_dir_all(source.path().join("use-case/root")).await?;
         tokio::fs::write(source.path().join("index.md"), "# Catalog").await?;
