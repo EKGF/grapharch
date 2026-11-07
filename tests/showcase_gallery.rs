@@ -26,6 +26,25 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         &repo.join("examples"),
         &source.path().join("examples"),
     )?;
+    // Exercise an HTML-only publication alongside genuine multi-PDF examples.
+    let authored = source.path().join("examples/showcase/project.ttl");
+    let text = std::fs::read_to_string(&authored)?;
+    assert_eq!(text.matches("ga:renderer \"typst\"").count(), 1);
+    std::fs::write(
+        &authored,
+        text.replace("ga:renderer \"typst\"", "ga:renderer \"html\""),
+    )?;
+    let registry = source.path().join("examples/showcases.ttl");
+    let text = std::fs::read_to_string(&registry)?;
+    assert_eq!(
+        text.matches(" ; ga:pdfPath \"review/document.pdf\" .")
+            .count(),
+        2
+    );
+    std::fs::write(
+        &registry,
+        text.replacen(" ; ga:pdfPath \"review/document.pdf\" .", " .", 1),
+    )?;
     // The acceptance test explicitly selects a local bare repository, never the
     // network.
     let family = source.path().join("examples/ekg-ontologies");
@@ -216,6 +235,20 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             assert!(std::fs::read(path)?.starts_with(b"%PDF-"));
         }
     }
+    let html_only = document
+        .select(
+            &scraper::Selector::parse(
+                "[data-showcase='urn:grapharch:showcase:authored']",
+            )
+            .unwrap(),
+        )
+        .next()
+        .unwrap();
+    assert_eq!(
+        html_only.value().attr("data-output"),
+        Some("HTML|KG")
+    );
+    assert!(!html_only.html().contains(".pdf"));
     for card in document.select(&cards) {
         let actions =
             scraper::Selector::parse(".showcase-actions a[href$='.pdf']")
