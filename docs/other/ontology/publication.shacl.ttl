@@ -255,3 +255,14 @@ ga:IncludeRootShape a sh:NodeShape ; sh:targetSubjectsOf ga:includeRoot ;
 ga:ConfiguredDocumentorShape a sh:NodeShape ;
     sh:targetSubjectsOf ga:documentor ;
     sh:property [ sh:path ga:documentor ; sh:nodeKind sh:IRI ; sh:class ga:Documentor ] .
+ga:LocalDiagramRendererShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:rendererExecutable ;
+    sh:property [ sh:path ga:rendererExecutable ; sh:datatype xsd:string ;
+        sh:in ( "plantuml" ) ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:PlantUmlCollectorShape a sh:NodeShape ; sh:targetClass ga:Collector ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ga:kind ; sh:hasValue "plantuml-file" ] ] ]
+        [ sh:property [ sh:path ga:rendererExecutable ; sh:hasValue "plantuml" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+          sh:property [ sh:path ga:destination ; sh:datatype xsd:string ; sh:pattern "^[^\\\\]+[.]svg$" ; sh:minCount 1 ; sh:maxCount 1 ] ]
+    ) .
