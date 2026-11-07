@@ -7,6 +7,7 @@ mod class_diagram;
 mod code;
 mod collected_images;
 mod content;
+mod content_blocks;
 mod credit;
 mod diagnostic_graph;
 mod engine;

@@ -7,6 +7,7 @@ pub(super) fn events<'a>(
 ) -> anyhow::Result<Vec<Event<'a>>> {
     // bounded: input and output represent a single capped Markdown fragment.
     let mut output = Vec::new();
+    let mut containers = super::super::content_blocks::Containers::default();
     let mut input = input.into_iter();
     while let Some(event) = input.next() {
         let Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info))) = &event
@@ -26,6 +27,10 @@ pub(super) fn events<'a>(
                 source.push_str(&text)
             }
         }
+        if language == crate::publication::content_blocks::LANGUAGE {
+            output.push(Event::Html(containers.html(&source)?.into()));
+            continue;
+        }
         let code = if language ==
             crate::publication::document::class_diagram::LANGUAGE
         {
@@ -43,6 +48,16 @@ pub(super) fn events<'a>(
         };
         output.push(Event::Html(html.into()));
     }
+    if containers.tabs {
+        output.push(Event::Html(
+            format!(
+                "<script>{}</script>",
+                super::super::content_blocks::SCRIPT
+            )
+            .into(),
+        ));
+    }
+    containers.finish()?;
     Ok(output)
 }
 

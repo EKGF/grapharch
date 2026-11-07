@@ -6,6 +6,7 @@ use {
 
 pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut output = String::new();
+    let mut containers = super::content_blocks::Containers::default();
     let mut code = None;
     let mut code_language = "";
     let mut example = false;
@@ -169,7 +170,9 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         let source = code.take().ok_or_else(|| {
                             anyhow::anyhow!("unbalanced code block")
                         })?;
-                        output.push_str(&if code_language == crate::publication::document::class_diagram::LANGUAGE {
+                        output.push_str(&if code_language == crate::publication::content_blocks::LANGUAGE {
+                            containers.typst(&source)?
+                        } else if code_language == crate::publication::document::class_diagram::LANGUAGE {
                             super::class_diagram::typst(&source)?
                         } else { super::code::typst(&source, code_language)? });
                         if example {
@@ -224,6 +227,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
             other => bail!("unsupported Markdown event in Typst: {other:?}"),
         }
     }
+    containers.finish()?;
     Ok(output)
 }
 

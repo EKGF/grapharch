@@ -12,6 +12,7 @@ mod image;
 mod local_image;
 mod markdown_images;
 mod markdown_structure;
+mod material_blocks;
 mod module_hints;
 pub(crate) mod page;
 mod pages_navigation;

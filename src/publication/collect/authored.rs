@@ -178,6 +178,9 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
+        let normalized_blocks = super::material_blocks::normalize(body)?;
+        let body = normalized_blocks.as_str();
+        revision = format!("semantic-containers-v1:{revision}");
         if self.4 && frontmatter.title.is_none() {
             frontmatter.title =
                 Some(super::page::default_title(body, &self.0.path));

@@ -4,6 +4,7 @@ pub mod assembly;
 pub mod cli;
 pub mod collect;
 mod collection;
+mod content_blocks;
 pub mod dataset;
 mod definitions;
 mod diagnostic_graph;
