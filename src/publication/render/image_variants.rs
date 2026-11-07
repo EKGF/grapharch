@@ -15,29 +15,28 @@ pub(super) fn print_events<'a>(events: &[Event<'a>]) -> Result<Vec<Event<'a>>> {
             }
             continue;
         }
-        if let Event::Start(Tag::Image { title, .. }) = event {
-            if ImageHints::parse(title)?.color_scheme == Some(ColorScheme::Dark)
-            {
-                hiding = true;
-                continue;
-            }
+        if let Event::Start(Tag::Image { title, .. }) = event &&
+            ImageHints::parse(title)?.color_scheme == Some(ColorScheme::Dark)
+        {
+            hiding = true;
+            continue;
         }
         if matches!(event, Event::Start(Tag::Paragraph)) {
             paragraph = Some(output.len());
         }
-        if matches!(event, Event::End(TagEnd::Paragraph)) {
-            if let Some(start) = paragraph.take() {
-                let empty = output[start + 1..].iter().all(|event| {
-                    match event {
-                        Event::SoftBreak | Event::HardBreak => true,
-                        Event::Text(text) => text.trim().is_empty(),
-                        _ => false,
-                    }
-                });
-                if empty {
-                    output.truncate(start);
-                    continue;
+        if matches!(event, Event::End(TagEnd::Paragraph)) &&
+            let Some(start) = paragraph.take()
+        {
+            let empty = output[start + 1..].iter().all(|event| {
+                match event {
+                    Event::SoftBreak | Event::HardBreak => true,
+                    Event::Text(text) => text.trim().is_empty(),
+                    _ => false,
                 }
+            });
+            if empty {
+                output.truncate(start);
+                continue;
             }
         }
         output.push(event.clone());
