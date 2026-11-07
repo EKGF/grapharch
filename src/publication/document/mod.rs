@@ -6,6 +6,7 @@ pub(crate) mod description;
 pub(crate) mod maturity;
 mod mermaid;
 pub(crate) mod namespace_bindings;
+pub mod plantuml;
 pub(crate) mod publication_inventory;
 mod resource;
 pub(crate) mod skos;

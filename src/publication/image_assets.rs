@@ -127,7 +127,13 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                     );
                     if name == "href" {
                         ensure!(
-                            value.starts_with('#'),
+                            value.starts_with('#') ||
+                                (tag == "a" &&
+                                    value.starts_with('/') &&
+                                    !value.starts_with("//") &&
+                                    !value
+                                        .chars()
+                                        .any(char::is_whitespace)),
                             "SVG external references are unsupported"
                         );
                     }
@@ -182,6 +188,22 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn svg_navigation_links_are_local_anchors_without_external_fetches() {
+        let local = r#"<svg xmlns="http://www.w3.org/2000/svg"><a href="/concept/example/#definition"><text>Example</text></a></svg>"#;
+        super::validate(local.as_bytes(), "image/svg+xml").unwrap();
+        for path in [
+            "//example.org/a",
+            "https://example.org/a",
+            "/\t/example.org/a",
+        ] {
+            let svg = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg"><a href="{path}">x</a></svg>"#
+            );
+            assert!(super::validate(svg.as_bytes(), "image/svg+xml").is_err());
+        }
+    }
+
     use super::validate;
     #[test]
     fn svg_namespace_is_not_an_external_resource() {
