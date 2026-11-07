@@ -214,13 +214,12 @@ impl Collector for MarkdownFile {
             self.3,
         )
         .await?;
-        let semantic_images =
-            super::semantic_images::normalize(&expansion.body)?;
-        let normalized_blocks =
-            super::material_blocks::normalize(&super::badges::normalize(
-                &semantic_images,
-                frontmatter.letter_prefix.as_deref(),
-            )?)?;
+        let containers = super::material_blocks::normalize(&expansion.body)?;
+        let semantic_images = super::semantic_images::normalize(&containers)?;
+        let normalized_blocks = super::badges::normalize(
+            &semantic_images,
+            frontmatter.letter_prefix.as_deref(),
+        )?;
         let body = normalized_blocks.as_str();
         revision = format!(
             "semantic-includes-v1:{}:{revision}",

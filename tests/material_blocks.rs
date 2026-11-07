@@ -59,7 +59,7 @@ grapharch:
 
     <div class="grid cards" markdown>
 
-    - **Definition**
+    - <span class="objective-badge" data-letter="1"></span> **Definition**
 
         First card explanation.
 
@@ -68,6 +68,10 @@ grapharch:
         Second card explanation.
 
     </div>
+
+    | Identifier | Description |
+    | --- | --- |
+    | <span class="objective-badge objective-badge-sm" data-letter="2"></span> | Table badge |
 
     ```text
     === "literal, not a tab"
@@ -116,6 +120,10 @@ grapharch:
     assert!(html.contains("Read this first"));
     assert!(html.contains("class=\"ga-card-group\""));
     assert!(html.contains("First card explanation."));
+    assert_eq!(
+        html.matches("class=\"identifier-badge\"").count(),
+        2
+    );
     assert!(html.contains("<details"));
     assert!(html.contains("href=\"detail/\""), "{html}");
     assert!(html.contains("literal, not a tab"));

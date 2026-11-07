@@ -8,7 +8,10 @@ pub(super) fn normalize(body: &str, prefix: Option<&str>) -> Result<String> {
         r#"^<span class="objective-badge(?: objective-badge-sm)?" data-letter="([A-Za-z0-9]{1,16})">$"#,
     )?;
     let mut changes = Vec::new(); // bounded: caller's Markdown source budget.
-    let events: Vec<_> = Parser::new(body).into_offset_iter().collect();
+    let events: Vec<_> =
+        Parser::new_ext(body, crate::publication::markdown::options())
+            .into_offset_iter()
+            .collect();
     for pair in events.windows(2) {
         if let (Event::InlineHtml(open), Event::InlineHtml(close)) =
             (&pair[0].0, &pair[1].0) &&
@@ -35,21 +38,24 @@ pub(super) fn normalize(body: &str, prefix: Option<&str>) -> Result<String> {
                 prefix.bytes().all(|b| b.is_ascii_alphanumeric()),
             "identifier badge must contain 1–16 ASCII letters or digits"
         );
-        let heading = Parser::new(&result)
-            .into_offset_iter()
-            .find_map(|(event, range)| {
-                matches!(
-                    event,
-                    Event::Start(Tag::Heading {
-                        level: pulldown_cmark::HeadingLevel::H1,
-                        ..
-                    })
-                )
-                .then_some(range)
-            })
-            .ok_or_else(|| {
-                anyhow::anyhow!("letter_prefix requires a level-one heading")
-            })?;
+        let heading =
+            Parser::new_ext(&result, crate::publication::markdown::options())
+                .into_offset_iter()
+                .find_map(|(event, range)| {
+                    matches!(
+                        event,
+                        Event::Start(Tag::Heading {
+                            level: pulldown_cmark::HeadingLevel::H1,
+                            ..
+                        })
+                    )
+                    .then_some(range)
+                })
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "letter_prefix requires a level-one heading"
+                    )
+                })?;
         let text = &result[heading.clone()];
         ensure!(
             !text.contains("urn:grapharch:badge:"),
