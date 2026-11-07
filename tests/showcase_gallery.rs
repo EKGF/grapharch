@@ -136,6 +136,44 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         &source.path().join("examples/dprod"),
         dprod_repository.path(),
     )?;
+    let mkdocs_repository = tempfile::tempdir()?;
+    let mkdocs_root = mkdocs_repository.path();
+    tokio::fs::create_dir(mkdocs_root.join("docs")).await?;
+    tokio::fs::write(
+        mkdocs_root.join("docs/index.md"),
+        "# Independent documentation\n\nOriginal public-site fixture.\n",
+    )
+    .await?;
+    tokio::fs::write(
+        mkdocs_root.join("mkdocs.yml"),
+        "site_name: Independent documentation\n",
+    )
+    .await?;
+    tokio::fs::write(
+        mkdocs_root.join("LICENSE"),
+        "Copyright original authors. Redistribution permitted.\n",
+    )
+    .await?;
+    family_repository::git(mkdocs_root, &["init", "-b", "main"])?;
+    family_repository::git(mkdocs_root, &["add", "."])?;
+    family_repository::git(mkdocs_root, &[
+        "commit",
+        "-m",
+        "Independent documentation fixture",
+    ])?;
+    let commit = family_repository::git(mkdocs_root, &["rev-parse", "HEAD"])?;
+    let url = url::Url::from_directory_path(mkdocs_root).unwrap();
+    tokio::fs::write(
+        source
+            .path()
+            .join("examples/mkdocs-bootswatch/showcase.yaml"),
+        format!(
+            "repository: {url}\ncommit: {commit}\nconfiguration: \
+             mkdocs.yml\npaths: [docs, mkdocs.yml, LICENSE]\nlicense: \
+             LICENSE\n"
+        ),
+    )
+    .await?;
     let docs = source.path().join("docs");
     std::fs::create_dir(&docs)?;
     std::fs::write(
@@ -192,6 +230,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     std::fs::remove_dir_all(repository.path())?;
     std::fs::remove_dir_all(commons_repository.path())?;
     std::fs::remove_dir_all(dprod_repository.path())?;
+    tokio::fs::remove_dir_all(mkdocs_repository.path()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
@@ -210,7 +249,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     }
     let document = scraper::Html::parse_document(&html);
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
-    assert_eq!(document.select(&cards).count(), 10);
+    assert_eq!(document.select(&cards).count(), 11);
     assert_eq!(
         document
             .select(
@@ -218,7 +257,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
                     .unwrap()
             )
             .count(),
-        10
+        11
     );
     for link in document.select(
         &scraper::Selector::parse(".showcase-card a[data-artifact]").unwrap(),

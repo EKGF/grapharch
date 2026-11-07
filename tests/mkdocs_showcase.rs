@@ -134,3 +134,41 @@ async fn remote_mkdocs_showcase_retains_source_license_images_and_git_revision()
     );
     Ok(())
 }
+
+#[tokio::test]
+#[ignore = "fetches the explicitly pinned independent public documentation"]
+async fn public_bootswatch_documentation_is_retained_without_mkdocs_runtime()
+-> Result<()> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let output = root.join("output/mkdocs-pinned-review");
+    tokio::fs::create_dir_all(&output).await?;
+    let (dataset, plans) = showcases::mkdocs(
+        &root.join("examples/mkdocs-bootswatch/showcase.yaml"),
+        &root.join("output/cache/git"),
+    )
+    .await?;
+    let archive = output.join("documentation.nq");
+    dataset.export(archive.clone()).await?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(site) =
+        Publisher::new(restored).render(&plans[0], &output).await?
+    else {
+        panic!("expected public documentation publication");
+    };
+    let html =
+        tokio::fs::read_to_string(site.directory.join("index.html")).await?;
+    assert!(html.contains("MkDocs Bootswatch"));
+    assert!(
+        tokio::fs::read_to_string(site.directory.join("LICENSE"))
+            .await?
+            .contains("Redistribution")
+    );
+    assert!(
+        tokio::fs::read_to_string(site.directory.join("provenance.html"))
+            .await?
+            .contains("374197dbc3b89b830075b7d67c66c9407968855a")
+    );
+    println!("{}", site.directory.display());
+    Ok(())
+}

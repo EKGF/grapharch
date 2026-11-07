@@ -24,6 +24,17 @@ async (page) => {
   await root.getByRole('button', { name: 'Clear filters' }).click();
   if (await root.locator('.showcase-card:visible').count() !== count) throw new Error('Reset did not restore all showcases');
   if (!(await input.evaluate(node => node === document.activeElement))) throw new Error('Reset should focus search');
+  const mkdocs = root.locator('.showcase-card[data-showcase="urn:grapharch:showcase:mkdocs-bootswatch"]');
+  if (await mkdocs.count()) {
+    await format.selectOption('MkDocs');
+    if (await root.locator('.showcase-card:visible').count() !== 1) throw new Error('MkDocs source filter is not specific');
+    const output = root.locator('[data-gallery-filter="output"]');
+    await output.selectOption('PDF');
+    if (await mkdocs.isVisible()) throw new Error('HTML-only MkDocs card falsely advertises PDF');
+    await output.selectOption('HTML');
+    if (!(await mkdocs.isVisible())) throw new Error('MkDocs HTML publication is hidden');
+    await root.getByRole('button', { name: 'Clear filters' }).click();
+  }
   const outputs = await root.locator('a[data-artifact]').count();
   if (outputs < count * 3) throw new Error('Publication downloads missing');
   await page.setViewportSize({ width: 390, height: 844 });

@@ -288,6 +288,20 @@ async fn build_case(
             )
             .await?
         },
+        "mkdocs" => {
+            showcases::mkdocs(
+                &source,
+                &root
+                    .parent()
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "showcase root requires a project directory"
+                        )
+                    })?
+                    .join("output/cache/git"),
+            )
+            .await?
+        },
         "ontology-family" => {
             showcases::family(
                 &source,

@@ -32,6 +32,13 @@ individual specification page for each ontology, with a combined PDF and exporte
 KG. Unlike the Git repository examples, its source revisions are identified by
 URL and content digest.
 
+The **Independent MkDocs documentation** showcase imports the original
+[MkDocs Bootswatch Themes](https://github.com/mkdocs/mkdocs-bootswatch) sources at
+an immutable Git revision, including twenty screenshots and the original BSD
+license. It demonstrates HTML navigation and search without executing MkDocs or
+its theme plugins. HTML and the retained graph are provided; a PDF is not
+advertised for this website example.
+
 The **Multilingual code examples** showcase demonstrates Python, Bash, JavaScript,
 TypeScript, JSON, JSON-LD and SPARQL. Its HTML and PDF use the same offline syntax
 colours. See [Code examples and syntax colours](usage/code-highlighting.md) for

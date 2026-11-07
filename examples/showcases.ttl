@@ -1,7 +1,7 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
-<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
     ga:order 1 ; ga:kind "authored" ; ga:source "showcase/project.ttl" ;
@@ -59,3 +59,14 @@ ex:skos ga:showcaseInput "SKOS" ; ga:showcaseCapability "Multilingual labels", "
 ex:use-cases ga:showcaseInput "RDF" ; ga:showcaseCapability "Diagrams", "Hierarchies", "Cross-references" ; ga:showcaseUseCase "Use-case catalog" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/use-cases> ; dct:rights "EKGF use-case example. Source provenance is retained with the generated diagrams and publications." .
 ex:commons ga:showcaseInput "OWL", "RDF/XML" ; ga:showcaseCapability "Diagrams", "Ontology families", "Cross-references" ; ga:showcaseUseCase "Ontology reference" ; dct:source <https://www.omg.org/spec/Commons/> ; dct:rights "OMG Commons Ontology Library contributors. Original ontology notices, authoritative source URLs and content digests are retained." .
 ex:code-highlighting ga:showcaseInput "Markdown" ; ga:showcaseCapability "Syntax highlighting" ; ga:showcaseUseCase "Technical documentation" ; dct:source <https://github.com/EKGF/grapharch/tree/main/examples/code-highlighting> ; dct:rights "Authored GraphArch code samples maintained by EKGF. Source and license are available in the repository." .
+
+ex:mkdocs-bootswatch a ga:Showcase ; ga:slug "mkdocs-bootswatch" ;
+    dct:title "Independent MkDocs documentation" ;
+    dct:description "The original MkDocs Bootswatch documentation, including its theme screenshots, imported from a pinned Git revision without running MkDocs. GraphArch supplies navigation, search, HTML and a retained documentation graph; the original BSD license remains downloadable." ;
+    ga:order 11 ; ga:kind "mkdocs" ; ga:source "mkdocs-bootswatch/showcase.yaml" ;
+    ga:previewPath "site/index.html" ;
+    ga:showcaseInput "Markdown", "MkDocs" ;
+    ga:showcaseCapability "Navigation", "Images", "Search" ;
+    ga:showcaseUseCase "Documentation site" ;
+    dct:source <https://github.com/mkdocs/mkdocs-bootswatch> ;
+    dct:rights "MkDocs Bootswatch Themes by Tom Christie and Dougal Matthews, BSD 2-Clause license. This is a GraphArch rendering of the original documentation, not a reproduction of its Bootstrap theme runtime." .
