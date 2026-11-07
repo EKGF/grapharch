@@ -11,18 +11,17 @@ pub(super) fn normalize(body: &str, prefix: Option<&str>) -> Result<String> {
     let events: Vec<_> = Parser::new(body).into_offset_iter().collect();
     for pair in events.windows(2) {
         if let (Event::InlineHtml(open), Event::InlineHtml(close)) =
-            (&pair[0].0, &pair[1].0)
+            (&pair[0].0, &pair[1].0) &&
+            let Some(capture) = span.captures(open)
         {
-            if let Some(capture) = span.captures(open) {
-                ensure!(
-                    close.as_ref() == "</span>",
-                    "identifier badge must be empty"
-                );
-                changes.push((
-                    pair[0].1.start..pair[1].1.end,
-                    format!("[](urn:grapharch:badge:{})", &capture[1]),
-                ));
-            }
+            ensure!(
+                close.as_ref() == "</span>",
+                "identifier badge must be empty"
+            );
+            changes.push((
+                pair[0].1.start..pair[1].1.end,
+                format!("[](urn:grapharch:badge:{})", &capture[1]),
+            ));
         }
     }
     let mut result = body.to_string();
@@ -69,4 +68,22 @@ pub(super) fn normalize(body: &str, prefix: Option<&str>) -> Result<String> {
         );
     }
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize;
+    #[test]
+    fn identifiers_preserve_code_and_reject_invalid_prefixes() {
+        let code =
+            "`<span class=\"objective-badge\" data-letter=\"A\"></span>`";
+        assert_eq!(normalize(code, None).unwrap(), code);
+        assert!(normalize("# A", Some("<script>")).is_err());
+        assert!(normalize("No heading", Some("A")).is_err());
+        assert!(normalize("# [](urn:grapharch:badge:A) A", Some("A")).is_err());
+        assert_eq!(
+            normalize("# Heading", Some("A")).unwrap(),
+            "# [](urn:grapharch:badge:A) Heading"
+        );
+    }
 }

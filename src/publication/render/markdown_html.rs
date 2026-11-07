@@ -14,18 +14,18 @@ pub(super) fn events<'a>(
     // items structurally so nested and mixed lists retain their semantics.
     let mut events = code::events(events.collect())?;
     for index in 0..events.len().saturating_sub(1) {
-        if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] {
-            if let Some(label) = crate::publication::badge::label(dest_url) {
-                anyhow::ensure!(
-                    matches!(events[index + 1], Event::End(TagEnd::Link)),
-                    "identifier badges must have no link body"
-                );
-                events[index] = Event::InlineHtml(
-                    format!("<span class=\"identifier-badge\">{label}</span>")
-                        .into(),
-                );
-                events[index + 1] = Event::InlineHtml("".into());
-            }
+        if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] &&
+            let Some(label) = crate::publication::badge::label(dest_url)
+        {
+            anyhow::ensure!(
+                matches!(events[index + 1], Event::End(TagEnd::Link)),
+                "identifier badges must have no link body"
+            );
+            events[index] = Event::InlineHtml(
+                format!("<span class=\"identifier-badge\">{label}</span>")
+                    .into(),
+            );
+            events[index + 1] = Event::InlineHtml("".into());
         }
     }
     let mut items = Vec::new();

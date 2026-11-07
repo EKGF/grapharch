@@ -36,10 +36,43 @@ pub(crate) fn default_http_image_factory(
     Ok(Arc::new(HttpImage::new(project, &request.url)?))
 }
 
+fn generated_binding<'a>(
+    root: Option<&Path>,
+    source: &Path,
+    destination: &str,
+    bindings: Option<&'a BTreeMap<String, NamedNode>>,
+) -> Result<Option<&'a NamedNode>> {
+    let (Some(root), Some(bindings)) = (root, bindings) else {
+        return Ok(None);
+    };
+    let base = if destination.starts_with('/') {
+        url::Url::from_directory_path(root)
+            .map_err(|()| anyhow::anyhow!("invalid image root"))?
+    } else {
+        url::Url::from_file_path(source)
+            .map_err(|()| anyhow::anyhow!("invalid image source"))?
+    };
+    let resolved = base.join(destination.trim_start_matches('/'))?;
+    ensure!(
+        resolved.scheme() == "file" && resolved.query().is_none(),
+        "generated image requires a local path without query"
+    );
+    let path = resolved
+        .to_file_path()
+        .map_err(|()| anyhow::anyhow!("invalid generated image path"))?;
+    ensure!(
+        path.starts_with(root),
+        "generated image escapes documentation root"
+    );
+    let relative = super::page::source_path(root, &path)?;
+    Ok(bindings.get(&relative))
+}
+
 pub(super) async fn describe(
     input: &FileInput,
     root: Option<&Path>,
     body: &str,
+    bindings: Option<&BTreeMap<String, NamedNode>>,
 ) -> Result<Vec<Quad>> {
     let mut seen = BTreeSet::new();
     let mut metadata = Vec::new();
@@ -67,16 +100,22 @@ pub(super) async fn describe(
                 )
             },
             Err(url::ParseError::RelativeUrlWithoutBase) => {
-                let image = LocalImageFile::reference(
-                    input.project.as_str(),
-                    root,
-                    &input.path,
-                    &dest_url,
-                )
-                .await?;
-                let asset = image.id();
-                let url = asset.as_str().to_owned();
-                (asset, url)
+                if let Some(asset) =
+                    generated_binding(root, &input.path, &dest_url, bindings)?
+                {
+                    (asset.clone(), asset.as_str().to_owned())
+                } else {
+                    let image = LocalImageFile::reference(
+                        input.project.as_str(),
+                        root,
+                        &input.path,
+                        &dest_url,
+                    )
+                    .await?;
+                    let asset = image.id();
+                    let url = asset.as_str().to_owned();
+                    (asset, url)
+                }
             },
             Err(error) => return Err(error.into()),
         };
@@ -211,4 +250,49 @@ pub async fn http_image_collectors_with_factory(
         work.push(collector);
     }
     Ok(work)
+}
+
+#[cfg(test)]
+mod binding_tests {
+    use super::*;
+    #[test]
+    fn generated_outputs_resolve_without_files_and_never_escape_the_root() {
+        let root =
+            std::env::temp_dir().join("grapharch-unmaterialized-image-root");
+        let source = root.join("concept/index.md");
+        let asset = NamedNode::new("urn:diagram:asset").unwrap();
+        let bindings = BTreeMap::from([(
+            "diagrams/out/example.svg".into(),
+            asset.clone(),
+        )]);
+        for path in [
+            "../diagrams/out/example.svg#darkable",
+            "/diagrams/out/example.svg#darkable",
+        ] {
+            assert_eq!(
+                generated_binding(Some(&root), &source, path, Some(&bindings))
+                    .unwrap(),
+                Some(&asset)
+            );
+        }
+        assert!(
+            generated_binding(
+                Some(&root),
+                &source,
+                "../../outside.svg",
+                Some(&bindings)
+            )
+            .is_err()
+        );
+        assert!(
+            generated_binding(
+                Some(&root),
+                &source,
+                "../missing.svg",
+                Some(&bindings)
+            )
+            .unwrap()
+            .is_none()
+        );
+    }
 }

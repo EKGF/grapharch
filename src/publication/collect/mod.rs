@@ -22,7 +22,6 @@ mod preamble;
 pub(crate) mod published_artifact;
 mod rdf;
 mod repository_publications;
-#[cfg(test)]
 pub(crate) mod semantic_images;
 mod source;
 mod text_asset;

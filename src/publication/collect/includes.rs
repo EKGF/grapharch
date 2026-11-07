@@ -24,6 +24,7 @@ struct State {
     fragment: NamedNode,
     bytes:    usize,
     count:    usize,
+    digests:  String,
 }
 impl Expansion {
     pub async fn read(
@@ -67,9 +68,12 @@ impl Expansion {
             fragment: input.fragment_id(),
             bytes: 0,
             count: 0,
+            digests: String::new(),
         };
         let body = state.expand(body, &source).await?;
-        let revision = hex::encode(Sha256::digest(body.as_bytes()));
+        let revision = hex::encode(Sha256::digest(
+            format!("{}:{body}", state.digests).as_bytes(),
+        ));
         Ok(Self { body, metadata: state.metadata, revision })
     }
 }
@@ -201,6 +205,10 @@ impl State {
                     "expanded Markdown exceeds 1 MiB"
                 );
             }
+            ensure!(
+                output.len() <= 1048576,
+                "expanded Markdown exceeds 1 MiB"
+            );
             Ok(output)
         })
     }
@@ -208,6 +216,7 @@ impl State {
     fn retain(&mut self, path: &Path, raw: &str, begin: usize, end: usize) {
         let path = path.to_string_lossy();
         let digest = hex::encode(Sha256::digest(raw.as_bytes()));
+        self.digests.push_str(&digest);
         let entity =
             crate::publication::dataset::identity("included-source", &[
                 &path, &digest,

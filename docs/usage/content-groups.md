@@ -60,3 +60,42 @@ Limits are explicit: 1 MiB source Markdown, 256 containers, 16 nesting levels,
 512-byte titles, and 64-byte category names. Invalid titles, unknown header
 options, missing indented bodies, malformed boundary records, and unbalanced
 containers fail rather than silently appearing as ordinary text.
+
+## Included source fragments
+
+Local Markdown collectors accept `--8<-- "path.md"` and
+`{% include-markdown "path.md" start="<!--start-->" end="<!--end-->" %}`.
+Markers are optional, excluded from the selected text, and must occur exactly
+once when supplied. Nested includes preserve indentation and rebase relative
+inline links and images to the including page. Reference-style relative links
+inside includes currently require conversion to inline link syntax.
+
+Paths resolve against the documentation content root and explicitly configured
+include roots. They never resolve against the process working directory.
+`MarkdownFile::with_include_roots` adds up to eight roots; ambiguous matches,
+absolute paths, parent traversal, symlink escapes, cycles, unknown directive
+options, and missing markers fail collection. Each included source is limited
+to 256 KiB, all dependencies to 1 MiB, nesting to 16 levels, and dependencies
+to 128 per page. Supplied Git blobs require a repository-aware include resolver
+and cannot use this local-file mechanism.
+
+The collected contribution retains full included source text and its hash,
+selected character ranges, and `prov:wasDerivedFrom` links. Updates outside a
+selected range still change dependency provenance. Publication reads the
+expanded Markdown from the pinned KG, so exporting the KG and deleting source
+files does not lose included content. Abbreviation definitions included from
+MkDocs sources do not imply support for MkDocs abbreviation expansion.
+
+## Identifier badges
+
+An authored empty `objective-badge` span with an alphanumeric `data-letter`
+becomes a semantic inline identifier. A `letter_prefix` frontmatter value adds
+the same identifier to the first level-one heading. Identifiers contain 1–16
+ASCII letters or digits; they do not change heading anchors or navigation titles.
+The optional source class `objective-badge-sm` does not dictate output styling.
+
+The retained Markdown spelling is an empty link to
+`urn:grapharch:badge:IDENTIFIER`. This is an identifier annotation, not a
+navigational URL. Shared HTML and PDF renderers display the identifier as a
+compact label. Raw HTML is not passed through. Ordinary code examples remain
+literal; invalid badge markup is handled by the normal unsupported-HTML error.
