@@ -247,3 +247,5 @@ produces independent primary/sidebar tree membership. It resolves the page
 paths through the same page bindings as explicit RDF navigation. Other MkDocs
 plugins, content syntax extensions and executable Python hooks are separate
 capabilities; this collector does not execute them.
+
+Documentation website builds infer absent page titles from the first Markdown heading, then the filename. An explicit frontmatter title remains authoritative and invalid frontmatter still fails collection.

@@ -105,12 +105,15 @@ pub async fn collect_with_asset_factory(
             let collector =
                 identity("website-collector", &[project, &relative]);
             if path.extension().is_some_and(|extension| extension == "md") {
-                work.push(Arc::new(MarkdownFile::in_site(
-                    project,
-                    collector.as_str(),
-                    source.clone(),
-                    path,
-                )?));
+                work.push(Arc::new(
+                    MarkdownFile::in_site(
+                        project,
+                        collector.as_str(),
+                        source.clone(),
+                        path,
+                    )?
+                    .with_default_title(),
+                ));
             } else if LocalImageFile::supported(&path) {
                 work.push(Arc::new(
                     LocalImageFile::new(project, &source, &path).await?,

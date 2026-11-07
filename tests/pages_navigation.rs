@@ -27,10 +27,7 @@ async fn check_navigation(with_index: bool) -> Result<()> {
             "concepts/index.md",
             "---\ntitle: Concepts\n---\n# Concepts\n",
         ),
-        (
-            "concepts/a.md",
-            "---\ntitle: Topic A\n---\n# Topic A\n",
-        ),
+        ("concepts/a.md", "# Topic A\n"),
         (
             "concepts/b.md",
             "---\ntitle: Topic B\n---\n# Topic B\n",
