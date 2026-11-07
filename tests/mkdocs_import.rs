@@ -156,6 +156,17 @@ async fn mkdocs_native_metadata_and_default_directory_navigation() -> Result<()>
     assert!(html.contains("Welcome home"));
     assert!(html.contains("Keeping trees healthy"));
     assert!(!html.contains("title: Welcome"));
+    let document = scraper::Html::parse_document(&html);
+    let links = scraper::Selector::parse(".primary-navigation a").unwrap();
+    assert_eq!(
+        document
+            .select(&links)
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>(),
+        "Welcome home"
+    );
     Ok(())
 }
 
@@ -294,6 +305,57 @@ async fn mkdocs_navigation_anchors_and_source_boundary_are_checked()
         error
             .to_string()
             .contains("both mkdocs.yml and mkdocs.yaml")
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn mkdocs_reads_native_dot_pages_hints_without_python() -> Result<()> {
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("docs")).await?;
+    tokio::fs::write(
+        source.path().join("mkdocs.yml"),
+        "site_name: Ordered\nplugins: [awesome-pages, search]\n",
+    )
+    .await?;
+    tokio::fs::write(source.path().join("docs/index.md"), "# Home\n").await?;
+    tokio::fs::write(source.path().join("docs/guide.md"), "# Guide\n").await?;
+    tokio::fs::write(
+        source.path().join("docs/.pages"),
+        "nav:\n  - Start here: index.md\n  - Read next: guide.md\n",
+    )
+    .await?;
+    let (dataset, plan) = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await?;
+    let PublishOutcome::Published(publication) =
+        Publisher::new(dataset).render(&plan, output.path()).await?
+    else {
+        panic!("superseded")
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    assert!(html.contains("Start here"));
+    assert!(html.contains("Read next"));
+    tokio::fs::write(
+        source.path().join("docs/.pages"),
+        "sort: natural\n",
+    )
+    .await?;
+    let result = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await;
+    assert!(
+        result.is_err(),
+        "unsupported .pages options must not disappear silently"
     );
     Ok(())
 }

@@ -9,11 +9,14 @@ use {
     },
 };
 #[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Hints {
-    title: Option<String>,
+    title:    Option<String>,
     #[serde(default)]
-    hide:  bool,
-    nav:   Option<Vec<Item>>,
+    hide:     bool,
+    nav:      Option<Vec<Item>>,
+    #[serde(default)]
+    collapse: bool,
 }
 #[derive(Deserialize)]
 #[serde(untagged)]
@@ -39,7 +42,28 @@ impl Directory {
         directory: &Path,
         exclusions: &[PathBuf],
     ) -> Result<Self> {
-        let file = directory.join(".pages.yaml");
+        let mut selected = None;
+        for name in [".pages", ".pages.yaml"] {
+            let path = directory.join(name);
+            match tokio::fs::symlink_metadata(&path).await {
+                Ok(metadata) => {
+                    ensure!(
+                        metadata.is_file(),
+                        "navigation hints must be a regular file"
+                    );
+                    ensure!(
+                        selected.is_none(),
+                        "both .pages and .pages.yaml exist; keep one \
+                         navigation hint file per directory"
+                    );
+                    selected = Some(path);
+                },
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                },
+                Err(error) => return Err(error.into()),
+            }
+        }
+        let file = selected.unwrap_or_else(|| directory.join(".pages"));
         let mut source = super::super::page::source_path(root, &file)?;
         let (mut body, hints, explicit) =
             match tokio::fs::symlink_metadata(&file).await {
@@ -55,6 +79,11 @@ impl Directory {
                     )?;
                     let (body, _) = input.authored().await?;
                     let hints = serde_yaml::from_str::<Hints>(&body)?;
+                    ensure!(
+                        !hints.collapse,
+                        "collapse: true is not supported; express the desired \
+                         navigation explicitly"
+                    );
                     (body, hints, true)
                 },
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
@@ -122,7 +151,15 @@ impl Directory {
             digest.update([0]);
         }
         let nav = hints.nav.unwrap_or_else(|| {
-            available.iter().cloned().map(Item::Path).collect()
+            let mut names: Vec<_> = available.iter().cloned().collect(); // bounded: at most512directory entries.
+            names.sort_by_key(|name| {
+                (
+                    name != "index.md",
+                    !name.ends_with(".md"),
+                    name.clone(),
+                )
+            });
+            names.into_iter().map(Item::Path).collect()
         });
         ensure!(
             nav.len() <= 512,
