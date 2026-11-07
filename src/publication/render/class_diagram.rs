@@ -65,7 +65,11 @@ pub(super) fn html(source: &str) -> Result<String> {
          text</summary><ul>",
         svg::draw(&diagram, true)?.replacen(
             "style=\"",
-            "style=\"display:block;width:100%;min-width:640px;height:auto;",
+            if diagram.edges.is_empty() {
+                "style=\"display:block;width:320px;max-width:100%;height:auto;"
+            } else {
+                "style=\"display:block;width:100%;min-width:900px;height:auto;"
+            },
             1
         ),
         svg::xml(&diagram.focus.label)
@@ -109,8 +113,13 @@ pub(super) fn typst(source: &str) -> Result<String> {
     let quote = super::markup::quote;
     let mut result = format!(
         "#block(breakable: false)[#image(bytes({}), format: \"svg\", width: \
-         100%, alt: {})]\n",
+         {}, alt: {})]\n",
         quote(&svg),
+        if diagram.edges.is_empty() {
+            "35%"
+        } else {
+            "100%"
+        },
         quote(&format!(
             "Class neighborhood for {}",
             diagram.focus.label
@@ -180,6 +189,15 @@ mod tests {
     fn typst_preserves_text_links_without_svg_link_annotations() {
         let output = typst(&model("#class", "Class")).unwrap();
         assert!(output.contains("#image(bytes("));
+        assert!(
+            output.contains("width: 35%"),
+            "isolated classes must not fill the page"
+        );
+        assert!(
+            html(&model("#class", "Class"))
+                .unwrap()
+                .contains("width:320px")
+        );
         assert!(!output.contains("<a href"));
     }
 }

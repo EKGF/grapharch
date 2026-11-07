@@ -125,13 +125,14 @@ pub(crate) fn draw(diagram: &Diagram, links: bool) -> Result<String> {
         .find('>')
         .ok_or_else(|| anyhow::anyhow!("invalid diagram SVG"))?;
     let mut result = format!(
-        "{}{leaders}<title>{} class neighborhood</title><desc>Arrows show \
-         explicit OWL and RDFS relationships; properties are independent \
+        "{}<title>{} class neighborhood</title><desc>Arrows show explicit OWL \
+         and RDFS relationships; properties are independent \
          resources.</desc>{}",
         &svg[..=start],
         xml(&diagram.focus.label),
         &svg[start + 1..]
     );
+    result = result.replace("</svg>", &format!("{leaders}</svg>"));
     result = result.replacen(
         "<svg ",
         &format!(

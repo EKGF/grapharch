@@ -265,9 +265,14 @@ async fn owl_documentors_prefer_markdown_over_plain_comments() -> Result<()> {
         panic!("description required")
     };
     assert_eq!(
-        body.value(),
+        body.value()
+            .split("\n\n**Class neighborhood**")
+            .next()
+            .unwrap(),
         "## Rich class explanation\n\nA **source-authored** explanation."
     );
+    assert!(!body.value().contains("A short plain definition."));
+    assert!(body.value().contains("```grapharch-class-diagram"));
     drop(writer);
     worker.await??;
     Ok(())

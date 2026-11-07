@@ -71,8 +71,26 @@ pub(super) fn place(layout: &mut Layout) -> String {
                 }
             }
         }
+        let mut off_edge = false;
+        if selected.is_none() {
+            'rings: for radius in 1i32..=24 {
+                for dx in -radius..=radius {
+                    for dy in [-radius + dx.abs(), radius - dx.abs()] {
+                        let point = (
+                            original.0 + dx as f32 * 12.0,
+                            original.1 + dy as f32 * 12.0,
+                        );
+                        if fits(rect(point.0, point.1)) {
+                            selected = Some(point);
+                            off_edge = true;
+                            break 'rings;
+                        }
+                    }
+                }
+            }
+        }
         let (position, needs_leader) = match selected {
-            Some(position) => (position, false),
+            Some(position) => (position, off_edge),
             None => {
                 // A caption lane gives even the densest legal panel enough
                 // room. The leader retains its association with the edge.
