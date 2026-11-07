@@ -1,0 +1,111 @@
+# baseURI: https://ekgf.org/dprod/spec/develop/contracts/shapes/
+# imports: https://ekgf.org/dprod/spec/develop/contracts/
+# imports: http://www.w3.org/ns/shacl#
+# prefix: dprod-shapes
+
+@base <https://ekgf.org/dprod/spec/develop/contracts/shapes/> .
+@prefix dprod-shapes: <https://ekgf.org/dprod/spec/develop/contracts/shapes/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+dprod-shapes:ScheduleShape
+  a sh:NodeShape ;
+  rdfs:isDefinedBy dprod-shapes: ;
+  rdfs:label "schedule shape" ;
+  sh:targetClass dprod:Schedule ;
+  sh:property [
+    sh:path dct:conformsTo ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:or (
+      [ sh:in (dprod:Rfc5545ScheduleFormat dprod:PosixCrontabScheduleFormat) ]
+      [ sh:class dprod:ScheduleFormat ]
+    ) ;
+    sh:message "Schedule format must be an identified dprod:ScheduleFormat."
+  ] ;
+  sh:property [
+    sh:path dprod:scheduleExpression ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Schedule must have exactly one authoritative expression as an xsd:string."
+  ] ;
+  sh:property [
+    sh:path dprod:scheduleTimeZone ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[A-Za-z0-9._+-]+(/[A-Za-z0-9._+-]+)*$" ;
+    sh:message "scheduleTimeZone must be one IANA timezone name."
+  ] ;
+  sh:sparql [
+    sh:message "RFC 5545 schedules must include DTSTART with TZID and RRULE (optionally EXDATE/RDATE lines); RRULE parts must be standard and must not repeat FREQ." ;
+    sh:select """
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX dprod: <https://ekgf.org/dprod/spec/develop/>
+      SELECT $this
+      WHERE {
+        $this dct:conformsTo dprod:Rfc5545ScheduleFormat ;
+              dprod:scheduleExpression ?expression .
+        FILTER (!REGEX(
+          STR(?expression),
+          "^DTSTART;TZID=[A-Za-z0-9._+-]+(/[A-Za-z0-9._+-]+)*:[0-9]{8}T[0-9]{6}(\\r?\\n(EXDATE|RDATE)(;[A-Za-z0-9-]+=[^:;\\r\\n]+)*:[^\\r\\n]+)*\\r?\\nRRULE:FREQ=(SECONDLY|MINUTELY|HOURLY|DAILY|WEEKLY|MONTHLY|YEARLY)(;(UNTIL|COUNT|INTERVAL|BYSECOND|BYMINUTE|BYHOUR|BYDAY|BYMONTHDAY|BYYEARDAY|BYWEEKNO|BYMONTH|BYSETPOS|WKST)=[^;\\r\\n]+)*(\\r?\\n(EXDATE|RDATE)(;[A-Za-z0-9-]+=[^:;\\r\\n]+)*:[^\\r\\n]+)*$"
+        ))
+      }
+    """ ;
+  ] ;
+  sh:sparql [
+    sh:message "scheduleTimeZone must match the TZID embedded in the RFC 5545 expression." ;
+    sh:select """
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX dprod: <https://ekgf.org/dprod/spec/develop/>
+      SELECT $this
+      WHERE {
+        $this dct:conformsTo dprod:Rfc5545ScheduleFormat ;
+              dprod:scheduleExpression ?expression ;
+              dprod:scheduleTimeZone ?timeZone .
+        BIND (REPLACE(STR(?expression), "^DTSTART;TZID=([^:]+):(.|\\n|\\r)*$", "$1") AS ?embedded)
+        FILTER (STR(?timeZone) != ?embedded)
+      }
+    """ ;
+  ] ;
+  sh:sparql [
+    sh:message "POSIX crontab schedules must contain exactly five time fields." ;
+    sh:select """
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX dprod: <https://ekgf.org/dprod/spec/develop/>
+      SELECT $this
+      WHERE {
+        $this dct:conformsTo dprod:PosixCrontabScheduleFormat ;
+              dprod:scheduleExpression ?expression .
+        FILTER (
+          !REGEX(STR(?expression), "^([^ \\t\\r\\n]+[ \\t]+){4}[^ \\t\\r\\n]+$") ||
+          CONTAINS(STR(?expression), "\\n") ||
+          CONTAINS(STR(?expression), "\\r")
+        )
+      }
+    """ ;
+  ] ;
+  sh:sparql [
+    sh:message "Schedules whose format carries no timezone must declare one IANA timezone." ;
+    sh:select """
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX dprod: <https://ekgf.org/dprod/spec/develop/>
+      SELECT $this
+      WHERE {
+        $this dct:conformsTo ?format .
+        FILTER (?format = dprod:PosixCrontabScheduleFormat ||
+                EXISTS { ?format dprod:carriesTimeZone false })
+        FILTER NOT EXISTS { $this dprod:scheduleTimeZone ?timeZone }
+      }
+    """ ;
+  ] ;
+.
