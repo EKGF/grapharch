@@ -27,6 +27,14 @@ async fn run() -> anyhow::Result<()> {
 
     cli.check_for_help();
 
+    if let Some(Commands::Build { request }) = &cli.command {
+        anyhow::ensure!(
+            cli.file.is_none() && cli.config.is_none(),
+            "build takes its source as a positional argument"
+        );
+        return request.build().await;
+    }
+
     if let Some(Commands::Publication { command }) = &cli.command {
         anyhow::ensure!(
             cli.file.is_none() && cli.config.is_none(),
@@ -139,7 +147,7 @@ async fn run() -> anyhow::Result<()> {
                 );
             }
         },
-        Some(Commands::Publication { .. }) => {
+        Some(Commands::Publication { .. } | Commands::Build { .. }) => {
             anyhow::bail!("publication command was not dispatched")
         },
         None => {},

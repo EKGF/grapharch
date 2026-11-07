@@ -82,3 +82,28 @@ pub(crate) fn slug(text: &str) -> String {
         value.into()
     }
 }
+
+pub(crate) fn default_title(body: &str, path: &Path) -> String {
+    use pulldown_cmark::{Event, Parser, Tag, TagEnd};
+    let mut heading = None;
+    for event in Parser::new(body) {
+        match event {
+            Event::Start(Tag::Heading { .. }) => heading = Some(String::new()),
+            Event::Text(text) | Event::Code(text) if heading.is_some() => {
+                heading.as_mut().unwrap().push_str(&text);
+            },
+            Event::End(TagEnd::Heading(_)) => {
+                if let Some(title) =
+                    heading.take().filter(|title| !title.trim().is_empty())
+                {
+                    return title;
+                }
+            },
+            _ => {},
+        }
+    }
+    path.file_stem()
+        .and_then(|name| name.to_str())
+        .unwrap_or("Documentation")
+        .replace(['-', '_'], " ")
+}

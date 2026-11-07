@@ -10,8 +10,8 @@ permalink: /usage/getting-started/
 
 # Getting started
 
-Install a prebuilt GraphArch release, keep a small publication configuration in
-your project, and run the same command locally and in CI.
+Install GraphArch and point it at your content. Start without configuration;
+add publication hints when you need to control the result.
 
 Standalone binaries are available from GitHub Releases. Package-manager channels
 remain subject to their separate publication status below.
@@ -60,6 +60,46 @@ grapharch publication --help
 
 If the command is not found, check that its installation directory is on your
 `PATH`. In an npm project, use `npx grapharch` instead of `grapharch`.
+
+## Start without configuration
+
+```sh
+grapharch build ./ontology.ttl
+grapharch build ./my-project --output output/preview
+# From a directory containing Markdown or RDF:
+grapharch build
+```
+
+Open `output/grapharch/site/index.html` (or `output/preview/site/index.html`
+with the override). The output also contains `documentation.nq`: source content,
+provenance, inferred publication definitions, and the resolved plan. HTML is
+rendered from that graph, so it can be restored without the source files.
+
+Supported inputs are Markdown and RDF in `.ttl`, `.rdf` (RDF/XML), `.nt`, `.nq`,
+`.trig`, and `.n3` files. Local images are collected as assets. No frontmatter,
+GraphArch vocabulary, or extra ontology annotations are needed. Markdown titles
+come from frontmatter when present, otherwise the first heading or filename.
+A single ontology's label supplies the site title; otherwise GraphArch uses the
+home page title or directory name. RDF definitions and relationships come from
+the supplied graph; missing descriptions are not invented. Shared subjects are
+documented once, using statements from all collected RDF files.
+
+The default website uses neutral styling and navigable pages. `README.md` or
+`index.md` is the home page; an RDF reference or generated contents page supplies
+the home page when neither exists. Git provenance is collected for checkouts.
+No publishing authority, approval status, release date, or license is assumed.
+
+Discovery is deterministic and limited to 256 source files and 4,096 directory
+entries. Hidden directories, underscore-prefixed entries, `node_modules`,
+`target`, `dist`, `build`, `output`, `vendor`, `venv`, and the selected output
+directory are excluded. Symlinks are rejected. Large repositories should select
+a content subdirectory or configure a scoped publication; the quick RDF reference
+is limited to 20,000 named typed subjects.
+
+A root `grapharch.ttl` or `project.ttl` is treated as explicit configuration:
+a single configured target uses the existing configured publication pipeline.
+Invalid configuration remains an error. For multiple targets or another
+configuration filename, use the explicit publication commands below.
 
 ## Publish your project
 

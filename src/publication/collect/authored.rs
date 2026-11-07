@@ -15,6 +15,8 @@ pub struct MarkdownFile(
     Option<(String, String)>,
     // Git-supplied Markdown provides its own repository-aware references.
     bool,
+    // Quick-start builds derive absent titles from headings or filenames.
+    bool,
 );
 /// A SPARQL-file collector that documents statements without executing them.
 pub struct SparqlFile(FileInput);
@@ -94,7 +96,13 @@ impl MarkdownFile {
         website: bool,
         hints: Option<(String, String)>,
     ) -> Self {
-        Self(input, website.then(PathBuf::new), hints, false)
+        Self(
+            input,
+            website.then(PathBuf::new),
+            hints,
+            false,
+            false,
+        )
     }
 
     /// Configure one collector instance and source file.
@@ -104,6 +112,7 @@ impl MarkdownFile {
             None,
             None,
             true,
+            false,
         ))
     }
 
@@ -121,7 +130,13 @@ impl MarkdownFile {
             Some(root),
             None,
             true,
+            false,
         ))
+    }
+
+    pub(crate) fn with_default_title(mut self) -> Self {
+        self.4 = true;
+        self
     }
 
     /// Stable identity of the authored fragment.
@@ -163,6 +178,10 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
+        if self.4 && frontmatter.title.is_none() {
+            frontmatter.title =
+                Some(super::page::default_title(body, &self.0.path));
+        }
         let input = match &frontmatter.grapharch.fragment {
             Some(fragment) => {
                 self.0.select_fragment(NamedNode::new(fragment)?)?

@@ -38,8 +38,14 @@ After installation:
 
 ```sh
 grapharch --version
-grapharch publication --help
+grapharch build ./ontology.ttl
+# Or discover Markdown and RDF in the current directory:
+grapharch build .
 ```
+
+Open `output/grapharch/site/index.html`. No configuration or frontmatter is
+required; GraphArch keeps the collected documentation graph alongside the site.
+Add publication configuration when you need specific branding, scopes, or outputs.
 
 Follow [Getting started](https://ekgf.github.io/grapharch/usage/getting-started/)
 for installation options and your first publication. See the

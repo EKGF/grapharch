@@ -2,6 +2,11 @@ use {clap::Subcommand, std::path::PathBuf};
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Build a static website from a file or directory, with sensible defaults.
+    Build {
+        #[command(flatten)]
+        request: crate::publication::quick_build::BuildRequest,
+    },
     /// Operate on the shared RDF documentation dataset.
     Publication {
         #[command(subcommand)]
