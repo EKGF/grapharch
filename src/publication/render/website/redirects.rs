@@ -71,7 +71,7 @@ pub(super) async fn write(
                     )
                 };
                 ensure!(
-                    aliases.len() < 2048,
+                    aliases.len() < super::budget::ALIASES,
                     "website exceeds 2048 route aliases"
                 );
                 ensure!(

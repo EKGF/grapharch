@@ -1,6 +1,7 @@
 //! A website is an arrangement of selected logical fragments, with page and
 //! navigation metadata read exclusively from the pinned documentation graph.
 mod artifact;
+mod budget;
 mod catalog;
 mod gallery;
 mod header_links;
@@ -38,6 +39,11 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let mut catalog = Catalog::read(plan).await?;
     let interactive_files =
         interactive_svg::prepare(plan, &mut catalog, stage).await?;
+    let artifacts = budget::ArtifactBudget::new(
+        catalog.pages.values().filter(|page| !page.asset).count(),
+        catalog.pages.values().filter(|page| page.asset).count(),
+        interactive_files.len(),
+    )?;
     let theme = theme::Theme::read(plan).await?;
     let mut files = vec![
         "style.css".to_owned(),
@@ -220,10 +226,6 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         }
         files.push(asset.route.clone());
     }
-    ensure!(
-        files.len() <= 512,
-        "website exceeds 512-artifact budget"
-    );
     if let Some(job) = crate::publication::document::publication_inventory::model::configured_job(&plan.dataset, &plan.source, &plan.project).await? {
         ensure!(!files.iter().any(|path| path == "publication-versions.json"), "publication inventory artifact collides with authored content");
         let inventory = crate::publication::document::publication_inventory::model::Inventory::read(&plan.dataset, &plan.source, &job.subject).await?;
@@ -233,7 +235,9 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     if header.navigation.documentation {
         search::write(plan, &catalog, stage, &mut files).await?;
     }
+    let before_aliases = files.len();
     redirects::write(plan, stage, &catalog, &mut files).await?;
+    artifacts.validate(files.len() - before_aliases, files.len())?;
     Ok(files)
 }
 

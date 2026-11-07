@@ -297,8 +297,18 @@ impl Catalog {
             .filter(|page| page.asset == asset)
             .count();
         ensure!(
-            count < 256,
-            "website exceeds 256-{} budget",
+            count <
+                if asset {
+                    super::budget::ASSETS
+                } else {
+                    super::budget::PAGES
+                },
+            "website exceeds {}-{} budget",
+            if asset {
+                super::budget::ASSETS
+            } else {
+                super::budget::PAGES
+            },
             if asset { "asset" } else { "page" }
         );
         ensure!(

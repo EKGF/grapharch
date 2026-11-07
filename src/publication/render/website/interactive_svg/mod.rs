@@ -34,7 +34,7 @@ pub(super) async fn prepare(
             })?;
         selected.insert(asset.clone());
         ensure!(
-            selected.len() <= 256,
+            selected.len() <= super::budget::PROJECTIONS,
             "interactive SVG asset count exceeds budget"
         );
     }
