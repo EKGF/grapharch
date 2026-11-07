@@ -282,3 +282,12 @@ ga:ImagePresentationShape a sh:NodeShape ;
         sh:in ( "interactive-svg" ) ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:imageColorScheme ; sh:datatype xsd:string ;
         sh:in ( "light" "dark" ) ; sh:maxCount 1 ] .
+
+ga:AbbreviationSelectionShape a sh:NodeShape ;
+    sh:name "Project abbreviation selection"@en ;
+    sh:description "A project selects at most eight named SKOS abbreviation schemes."@en ;
+    sh:targetSubjectsOf ga:abbreviationScheme ;
+    sh:class ga:Project ;
+    sh:property [ sh:path ga:abbreviationScheme ; sh:nodeKind sh:IRI ;
+        sh:class <http://www.w3.org/2004/02/skos/core#ConceptScheme> ;
+        sh:minCount 1 ; sh:maxCount 8 ] .

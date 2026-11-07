@@ -1,6 +1,7 @@
 //! Small source adapters that normalize authored content and native hints to
 //! RDF.
 
+mod abbreviations;
 mod anchors;
 mod authored;
 pub(crate) mod authored_use_cases;

@@ -61,6 +61,7 @@ pub(crate) async fn collect(
             continue;
         }
         let collector: Arc<dyn Collector> = match kind.as_str() {
+            "abbreviation-file" => Arc::new(super::abbreviations::AbbreviationFile::configured(project, processor, &source, root).await?),
             "repository-publications" => Arc::new(super::repository_publications::RepositoryPublications::configured(project, processor, &source, &view).await?),
             "documentation-navigation" => {
                 let relative = Path::new(&source);

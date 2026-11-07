@@ -1621,3 +1621,12 @@ ga:imageColorScheme a owl:DatatypeProperty ;
     dct:description "Identifies the light or dark presentation context in which a retained image reference is intended to appear."@en ;
     rdfs:domain ga:ExternalReference ; rdfs:range xsd:string ;
     skos:scopeNote "Both variants remain in the documentation graph. Website presentation chooses the matching color scheme; print publication selects light and untagged images."@en .
+
+ga:abbreviationScheme a owl:ObjectProperty ;
+    rdfs:label "Selected abbreviation dictionary"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects a source-owned SKOS concept scheme whose notations and definitions provide abbreviation meanings for a documentation project."@en ;
+    dct:description "Selects a source-owned SKOS concept scheme whose notations and definitions provide abbreviation meanings for a documentation project."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range skos:ConceptScheme ;
+    skos:scopeNote "A project selects at most eight schemes. Meanings are retained as SKOS concept definitions; presentation may explain matching short terms without changing their source text. Conflicting meanings are errors. A Markdown abbreviation-file collector retains the original dictionary fragment and derives the scheme and concepts from it."@en .

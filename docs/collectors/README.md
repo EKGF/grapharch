@@ -32,6 +32,7 @@ explanations, and diagrams. Renderers present that content as websites or PDFs.
 | [Text Download Collector](text-downloads.md) | UTF-8 download files | Source-relative website downloads |
 | [Repository Publication Collector](repository-publications.md) | GitHub pull requests and Vercel deployment metadata | Publication version-selection pages and preserved specification routes |
 | [PlantUML Diagrams](plantuml.md) | An authored PlantUML file and bounded local include closure | Retained SVG illustrations with source and renderer provenance |
+| [Abbreviation Files](abbreviation-files.md) | An authored Markdown abbreviation dictionary | Source-owned SKOS meanings and retained dictionary provenance |
 
 [Repository Scanners](repositories.md) discover local files or pinned Git blobs
 and dispatch the matching file collectors. They provide discovery and source
