@@ -146,3 +146,19 @@ async fn navigation_rejects_cycles_unselected_pages_and_bad_anchors()
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn source_path_navigation_resolves_to_collected_page_identity()
+-> Result<()> {
+    let config = CONFIG
+        .replace("ga:page <urn:home>", "ga:sourcePath \"index.md\"")
+        .replace(
+            "ga:page <urn:guide>",
+            "ga:sourcePath \"guide.md\"",
+        );
+    let (_out, site) = render(&config).await?;
+    let html = tokio::fs::read_to_string(site.join("guide/index.html")).await?;
+    assert!(html.contains("href=\"../guide/#details\""));
+    assert!(html.contains("Use cases"));
+    Ok(())
+}

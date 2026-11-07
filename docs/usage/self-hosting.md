@@ -199,6 +199,12 @@ children and a title. Parent entries must belong to the same tree.
     dct:title "Concepts" ; ga:page <urn:concept-page> .
 ```
 
+For existing content, an entry can use `ga:sourcePath "index.md"` instead of
+`ga:page`: GraphArch resolves the source-relative path to the collected page
+identity before planning. This avoids adding identifiers to every source file.
+A missing page or a combination of source path and explicit destination is an
+error. The resolved identity is retained in the graph.
+
 Set `grapharch.subject: urn:home` in the home Markdown frontmatter to give its
 page that identity. The same page can appear in another tree or twice in the
 same tree with different entry identities and labels. This does not duplicate

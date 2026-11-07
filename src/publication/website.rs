@@ -1,5 +1,7 @@
 //! Discover a Markdown documentation tree, collect independent files in
 //! parallel, and assemble a website plan. Rendering only reads that pinned KG.
+mod navigation;
+
 use {
     super::{
         assembly::Assembler,
@@ -234,6 +236,7 @@ pub(crate) async fn bind(
     )?
     .document(writer)
     .await?;
+    navigation::bind(dataset, writer, project).await?;
     let snapshot = dataset.snapshot_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     let target = NamedNode::new(target)?;
