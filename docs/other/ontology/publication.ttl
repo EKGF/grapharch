@@ -1554,3 +1554,11 @@ ga:contentSuffix a owl:DatatypeProperty ;
     dct:description "Semantic container endings required when rendering a selected fragment independently from its enclosing authored document."@en ;
     rdfs:comment "Closes the typed container context retained by the collector for an independently selected fragment. It does not duplicate authored prose or prescribe a visual style."@en ;
     rdfs:domain ga:Fragment ; rdfs:range xsd:string .
+
+
+ga:contentSource a owl:DatatypeProperty ;
+    rdfs:label "Documentation content source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
+    dct:description "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
+    rdfs:domain ga:Project ; rdfs:range xsd:string .

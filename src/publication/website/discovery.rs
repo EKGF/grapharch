@@ -6,6 +6,39 @@ use {
     std::path::{Component, Path, PathBuf},
 };
 
+pub(super) async fn content_root(
+    root: &Path,
+    view: &RevisionView,
+    project: &NamedNode,
+) -> Result<PathBuf> {
+    let Some(value) = view.optional(project, "contentSource").await? else {
+        return Ok(root.to_owned());
+    };
+    let Term::Literal(value) = value else {
+        anyhow::bail!("contentSource must be a relative directory path literal")
+    };
+    directory(root, value.value()).await
+}
+
+pub(super) async fn directory(root: &Path, value: &str) -> Result<PathBuf> {
+    let relative = Path::new(value);
+    ensure!(
+        !value.is_empty() &&
+            value.len() <= 2048 &&
+            relative.components().all(|part| {
+                matches!(part, Component::Normal(_) | Component::CurDir)
+            }),
+        "source directory must be relative without traversal"
+    );
+    let directory = tokio::fs::canonicalize(root.join(relative)).await?;
+    ensure!(
+        directory.starts_with(root) &&
+            tokio::fs::metadata(&directory).await?.is_dir(),
+        "source directory must be inside project root"
+    );
+    Ok(directory)
+}
+
 async fn exclusions(
     root: &Path,
     view: &RevisionView,

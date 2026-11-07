@@ -257,3 +257,5 @@ Exclude generated files or legacy host instructions from automatic source discov
 ```
 
 Each path must be relative to the documentation root without traversal or symlinks. Excluded generated output need not exist in a clean checkout. Directory exclusions cover their subtrees; this is exact path selection, not a glob language. Definitions are retained before discovery, so these hints are included in provenance and apply before the source budget. Explicit navigation to an excluded page still fails rather than silently dropping the link.
+
+A repository can keep authored pages in `docs/` and RDF dependencies in `metadata/`. Pass the repository as `--source`, set `ga:contentSource "docs"` on the project, and configure collectors relative to the repository root (for example `ga:source "metadata/model.ttl"`). Page routes stay relative to `docs/`. The directory navigation collector should use `ga:source "docs"` too. Source exclusions remain relative to the content directory.

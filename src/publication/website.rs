@@ -84,8 +84,11 @@ pub async fn collect_with_asset_factory(
             dataset.clone(),
             dataset.snapshot_collected_for(project).await?,
         );
+        let content =
+            discovery::content_root(&source, &view, &NamedNode::new(project)?)
+                .await?;
         let paths =
-            discovery::discover(&source, &view, &NamedNode::new(project)?)
+            discovery::discover(&content, &view, &NamedNode::new(project)?)
                 .await?;
         let mut work: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: 256 discovered sources and two repository records.
         let mut repositories = Vec::new(); // bounded: source tree and definitions can name at most two enclosing clones.
@@ -108,7 +111,7 @@ pub async fn collect_with_asset_factory(
             if path == definitions {
                 continue;
             }
-            let relative = super::collect::page::source_path(&source, &path)?;
+            let relative = super::collect::page::source_path(&content, &path)?;
             let collector =
                 identity("website-collector", &[project, &relative]);
             if path.extension().is_some_and(|extension| extension == "md") {
@@ -116,20 +119,20 @@ pub async fn collect_with_asset_factory(
                     MarkdownFile::in_site(
                         project,
                         collector.as_str(),
-                        source.clone(),
+                        content.clone(),
                         path,
                     )?
                     .with_default_title(),
                 ));
             } else if LocalImageFile::supported(&path) {
                 work.push(Arc::new(
-                    LocalImageFile::new(project, &source, &path).await?,
+                    LocalImageFile::new(project, &content, &path).await?,
                 ));
             } else {
                 work.push(Arc::new(TextAssetFile::new(
                     project,
                     collector.as_str(),
-                    source.clone(),
+                    content.clone(),
                     path,
                 )?));
             }

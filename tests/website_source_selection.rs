@@ -48,3 +48,64 @@ async fn authored_exclusions_are_applied_before_source_budget() -> Result<()> {
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir(root.path().join("docs")).await?;
+    tokio::fs::create_dir(root.path().join("metadata")).await?;
+    tokio::fs::write(
+        root.path().join("README.md"),
+        "# Repository administration\n",
+    )
+    .await?;
+    tokio::fs::write(
+        root.path().join("docs/index.md"),
+        "# Product guide\n",
+    )
+    .await?;
+    tokio::fs::write(
+        root.path().join("metadata/model.ttl"),
+        "<urn:model> <urn:label> \"Model source\" .",
+    )
+    .await?;
+    let definitions = root.path().join("project.ttl");
+    tokio::fs::write(&definitions, r#"
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:project> a ga:Project; ga:contentSource "docs"; ga:target <urn:target>; ga:collector <urn:nav>, <urn:rdf> .
+<urn:nav> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:profile> .
+<urn:rdf> a ga:Collector; ga:kind "rdf-file"; ga:source "metadata/model.ttl" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
+"#).await?;
+    let built = website::collect(
+        root.path(),
+        &definitions,
+        "urn:project",
+        "urn:target",
+        2,
+    )
+    .await?;
+    let archive = output.path().join("graph.nq");
+    built.dataset.export(archive.clone()).await?;
+    root.close()?;
+    let dataset = grapharch::publication::dataset::Dataset::memory()?;
+    dataset.import(archive).await?;
+    let grapharch::publication::render::PublishOutcome::Published(result) =
+        grapharch::publication::render::Publisher::new(dataset)
+            .render(&built.plan, output.path())
+            .await?
+    else {
+        panic!("published")
+    };
+    let home =
+        tokio::fs::read_to_string(result.directory.join("index.html")).await?;
+    assert!(home.contains("Product guide"));
+    assert!(!home.contains("Repository administration"));
+    assert!(
+        !tokio::fs::try_exists(result.directory.join("docs/index.html"))
+            .await?
+    );
+    Ok(())
+}

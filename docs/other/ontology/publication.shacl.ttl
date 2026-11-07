@@ -244,3 +244,7 @@ ga:NavigationCollectorShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigationPr
 
 ga:SourceExclusionsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePath ;
     sh:property [ sh:path ga:excludeSourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] .
+
+
+ga:ContentSourceShape a sh:NodeShape ; sh:targetSubjectsOf ga:contentSource ;
+    sh:property [ sh:path ga:contentSource ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] .
