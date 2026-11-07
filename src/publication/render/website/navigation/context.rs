@@ -24,10 +24,10 @@ impl Tree {
     ) {
         if let Some(children) = self.children.get(&parent.map(str::to_owned)) {
             for id in children {
-                if let Some(page) = &self.entries[id].page {
-                    if seen.insert(page) {
-                        output.push(id);
-                    }
+                if let Some(page) = &self.entries[id].page &&
+                    seen.insert(page)
+                {
+                    output.push(id);
                 }
                 self.reading_order(Some(id), seen, output);
             }
