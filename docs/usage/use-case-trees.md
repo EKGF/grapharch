@@ -154,7 +154,10 @@ multiple ownership parents, and ownership cycles stop publication.
 
 GraphArch retains these facts using the EKGF Use Case Ontology, then adds a
 **Use-case relationships** topic to each existing page. It contains a native
-SVG diagram, the source summary, and links to ownership and reuse neighbors.
+SVG diagram with clickable node labels, the source summary, and links to
+ownership and reuse neighbors. Diagram links use the retained page routes and
+the publication's strict link resolver, so deployment beneath a site prefix
+preserves navigation; PDF retains the static vector diagram and text links.
 The authored page body and existing topic order remain intact; no duplicate
 reference pages or generated source files are created. HTML and PDF rendering
 use the pinned documentation graph, even after the source tree is removed.

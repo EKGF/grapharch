@@ -1,6 +1,7 @@
 //! Actual EKGF use-case instances become fragments and retained vector
 //! diagrams.
 pub(crate) mod authored;
+mod authored_pages;
 mod model;
 mod svg;
 use {

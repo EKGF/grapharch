@@ -81,6 +81,19 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
         1
     );
     assert!(customer.contains("Use-case relationships"));
+    assert!(
+        customer.contains("<object class=\"interactive-svg\""),
+        "native use-case diagram must retain clickable node labels"
+    );
+    let projected = site
+        .manifest
+        .files
+        .iter()
+        .find(|path| path.starts_with("assets/interactive-"))
+        .expect("retained projected diagram");
+    let svg = tokio::fs::read_to_string(site.directory.join(projected)).await?;
+    assert!(svg.contains("target=\"_top\""));
+    assert!(svg.contains("../use-case/customer/"));
     assert!(identity.contains("Ownership parent"));
     assert!(
         identity.contains("../../../use-case/customer/#use-case-relationships"),

@@ -14,7 +14,7 @@ use {
         view::RevisionView,
         writer::GraphWriter,
     },
-    anyhow::{Result, ensure},
+    anyhow::{Context, Result, ensure},
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
     sha2::{Digest, Sha256},
 };
@@ -26,6 +26,11 @@ pub(crate) async fn document(
 ) -> Result<()> {
     let snapshot = dataset.snapshot_collected_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
+    let bound_pages = super::authored_pages::read(dataset, &view).await?;
+    let links = bound_pages
+        .iter()
+        .map(|(id, page)| (id.clone(), format!("/{}", page.route)))
+        .collect(); // bounded: at most 256 authored use-case page routes.
     let typed = view.pattern(
         &format!(
             "?subject a <{UC}UseCase> ; {} ?path",
@@ -54,37 +59,16 @@ pub(crate) async fn document(
             anyhow::bail!("invalid authored use-case source binding")
         };
         if tree.is_none() {
-            tree = Some(Tree::read(dataset, &view).await?);
+            tree =
+                Some(Tree::read(dataset, &view).await.with_context(|| {
+                    format!(
+                        "authored use-case topology including {}",
+                        path.value()
+                    )
+                })?);
         }
         let tree = tree.as_ref().unwrap();
-        let pages = view.pattern(
-            &format!(
-                "?page a {} ; {} {}",
-                term("Page"),
-                term("sourcePath"),
-                path
-            ),
-            0,
-        );
-        let mut rows = dataset
-            .select(format!(
-                "SELECT DISTINCT ?page WHERE {{ {pages} }} LIMIT 2"
-            ))
-            .await?;
-        let page = rows.next().await?.ok_or_else(|| {
-            anyhow::anyhow!(
-                "authored use case has no collected page: {}",
-                path.value()
-            )
-        })?;
-        let Term::NamedNode(page) = &page["page"] else {
-            anyhow::bail!("use-case page must be named")
-        };
-        ensure!(
-            rows.next().await?.is_none(),
-            "ambiguous authored use-case page: {}",
-            path.value()
-        );
+        let page = &bound_pages[subject].id;
         let node = &tree.nodes[subject];
         let fragment = identity("authored-use-case-topology", &[
             project,
@@ -107,9 +91,9 @@ pub(crate) async fn document(
         })?;
         let mut body = format!(
             "## Use-case relationships\n\n![Use-case neighborhood for \
-             {}]({asset})\n\n{summary}\n\nSolid lines show ownership; dashed \
-             lines show reuse. The current use case is boxed.\n\n**Ownership \
-             parent:** ",
+             {}]({asset} \"grapharch:interactive-svg\")\n\n{summary}\n\nSolid \
+             lines show ownership; dashed lines show reuse. The current use \
+             case is boxed.\n\n**Ownership parent:** ",
             escape(&node.label)
         );
         if let Some(parent) = &node.parent {
@@ -153,7 +137,7 @@ pub(crate) async fn document(
             body.len() <= 256 * 1024,
             "authored topology fragment exceeds 256 KiB"
         );
-        let diagram = svg::diagram(tree, subject)?;
+        let diagram = svg::diagram_with_links(tree, subject, &links)?;
         let revision = format!(
             "authored-topology-v1:{}",
             hex::encode(Sha256::digest(
@@ -229,6 +213,11 @@ pub(crate) async fn document(
             q(&fragment, "asset", asset.clone()),
             q(&fragment, "reference", reference.clone()),
             q(&reference, "type", term("ExternalReference")),
+            q(
+                &reference,
+                "imagePresentation",
+                Literal::new_simple_literal("interactive-svg"),
+            ),
             q(&reference, "asset", asset.clone()),
             q(
                 &reference,

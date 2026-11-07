@@ -14,6 +14,14 @@ fn xml(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 pub(super) fn diagram(tree: &Tree, center: &NamedNode) -> Result<String> {
+    diagram_with_links(tree, center, &BTreeMap::new())
+}
+
+pub(super) fn diagram_with_links(
+    tree: &Tree,
+    center: &NamedNode,
+    links: &BTreeMap<NamedNode, String>,
+) -> Result<String> {
     let node = &tree.nodes[center];
     let font = typst::text::Font::new(
         typst::foundations::Bytes::new(
@@ -138,6 +146,12 @@ pub(super) fn diagram(tree: &Tree, center: &NamedNode) -> Result<String> {
         }
     }
     for (id, (x, y, w)) in &placement {
+        if let Some(href) = links.get(id) {
+            svg.push_str(&format!(
+                "<a href=\"{}\" target=\"_top\">",
+                xml(href)
+            ));
+        }
         let active = id == center;
         if active {
             svg.push_str(&format!(
@@ -155,6 +169,9 @@ pub(super) fn diagram(tree: &Tree, center: &NamedNode) -> Result<String> {
             y + 5,
             xml(&tree.nodes[id].label)
         ));
+        if links.contains_key(id) {
+            svg.push_str("</a>");
+        }
     }
     svg.push_str("</svg>");
     crate::publication::image_assets::validate(
