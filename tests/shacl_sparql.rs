@@ -36,8 +36,7 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     tokio::fs::write(
         &path,
         format!(
-            "@prefix sh:<http://www.w3.org/ns/shacl#>. <{SHAPE}> sh:sparql \
-             [sh:ask {}].",
+            "@prefix sh:<http://www.w3.org/ns/shacl#>. <urn:ask-validator> a sh:SPARQLAskValidator; <http://www.w3.org/2000/01/rdf-schema#label> \"ASK validator\"; <http://www.w3.org/2000/01/rdf-schema#comment> \"An original formatting regression.\"; sh:ask {}.",
             oxrdf::Literal::new_simple_literal(ask)
         ),
     )
@@ -75,8 +74,21 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     )?
     .with_source_annotations();
     doc.document(&writer).await?;
+    let ask_doc = AnnotatedTermDocumentor::new(
+        dataset.clone(),
+        dataset.snapshot_for("urn:p").await?,
+        "urn:p",
+        NamedNode::new("urn:ask-validator")?,
+        "en",
+        Arc::new(BTreeMap::new()),
+        Arc::new(HashSet::new()),
+    )?
+    .with_source_annotations();
+    ask_doc.document(&writer).await?;
+
     let path = source.path().join("project.ttl");
-    tokio::fs::write(&path,format!(r##"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> <http://purl.org/dc/terms/title> "SHACL SPARQL constraints";a ga:Target;ga:renderer "specification";ga:destination "specification";ga:publisher <urn:authority>;ga:publicationStatus "Test Draft";ga:publicationDate "2026-11-07"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/shacl/test/>;ga:latestVersion <https://example.org/shacl/>;ga:license <https://creativecommons.org/licenses/by/4.0/>;ga:scope <urn:s>;ga:profile <urn:f>. <urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>; <http://www.w3.org/2000/01/rdf-schema#label> "Example standards group";ga:shortName "EX";ga:url "https://example.org/";ga:accentColor "#2b5f9f". <urn:s> a ga:Scope;ga:include <{SHAPE}>,<urn:abstract-subject>,<urn:status-subject>. <urn:f> a ga:Profile;ga:placement <urn:abstract-placement>,<urn:status-placement>,<urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:c>;ga:order 2. <urn:c> a ga:Component;ga:fragment {}.
+    tokio::fs::write(&path,format!(r##"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> <http://purl.org/dc/terms/title> "SHACL SPARQL constraints";a ga:Target;ga:renderer "specification";ga:destination "specification";ga:publisher <urn:authority>;ga:publicationStatus "Test Draft";ga:publicationDate "2026-11-07"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/shacl/test/>;ga:latestVersion <https://example.org/shacl/>;ga:license <https://creativecommons.org/licenses/by/4.0/>;ga:scope <urn:s>;ga:profile <urn:f>. <urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>; <http://www.w3.org/2000/01/rdf-schema#label> "Example standards group";ga:shortName "EX";ga:url "https://example.org/";ga:accentColor "#2b5f9f". <urn:s> a ga:Scope;ga:include <{SHAPE}>,<urn:ask-validator>,<urn:abstract-subject>,<urn:status-subject>. <urn:f> a ga:Profile;ga:placement <urn:abstract-placement>,<urn:status-placement>,<urn:placement>,<urn:ask-placement>. <urn:placement> a ga:Placement;ga:component <urn:c>;ga:order 2. <urn:c> a ga:Component;ga:fragment {}.
+<urn:ask-placement> a ga:Placement;ga:component <urn:ask-component>;ga:order 3. <urn:ask-component> a ga:Component;ga:fragment {}.
 <urn:definitions> a ga:Collector;ga:kind "rdf-file";ga:source "project.ttl".
 <urn:authored> a ga:Contribution;ga:project <urn:p>;ga:processor <urn:definitions>;ga:source "fixture";ga:revision "1".
 <urn:abstract-placement> a ga:Placement;ga:component <urn:abstract-component>;ga:order 0;ga:sectionKind "abstract".
@@ -85,7 +97,7 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
 <urn:status-component> a ga:Component;ga:fragment <urn:status>.
 <urn:abstract> a ga:Fragment;ga:subject <urn:abstract-subject>;ga:body "A formatting regression for retained SHACL queries.";ga:format "text/markdown";ga:contribution <urn:authored>.
 <urn:status> a ga:Fragment;ga:subject <urn:status-subject>;ga:body "An original, non-normative regression fixture.";ga:format "text/markdown";ga:contribution <urn:authored>.
-"##,doc.fragment_id())).await?;
+"##,doc.fragment_id(),ask_doc.fragment_id())).await?;
     RdfFile::new("urn:p", "urn:definitions", path)?
         .collect(&writer)
         .await?;
@@ -115,7 +127,11 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     expected.push(ask.into());
     let snapshot = restored.snapshot_for("urn:p").await?;
     let view = RevisionView::new(restored.clone(), snapshot.clone());
-    let body = view.text(&doc.fragment_id(), "body").await?;
+    let body = format!(
+        "{}\n{}",
+        view.text(&doc.fragment_id(), "body").await?,
+        view.text(&ask_doc.fragment_id(), "body").await?
+    );
     let predicate =
         Dataset::logical_pattern(&snapshot, "?constraint ?predicate ?query", 0);
     let mut retained = restored.select(format!("SELECT DISTINCT ?query WHERE {{ VALUES ?predicate {{ <http://www.w3.org/ns/shacl#select> <http://www.w3.org/ns/shacl#ask> }} {predicate} }}")).await?;
@@ -160,6 +176,21 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         .map(|code| code.text().collect::<String>())
         .collect();
     assert_eq!(codes.len(), 5);
+    let query_ids: Vec<_> = parsed
+        .select(&scraper::Selector::parse("[id]").unwrap())
+        .filter_map(|node| node.value().attr("id"))
+        .filter(|id| id.contains("-sparql-query-"))
+        .collect();
+    assert_eq!(query_ids.len(), 5);
+    assert_eq!(
+        query_ids
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len(),
+        5,
+        "queries on different resources need distinct local targets"
+    );
+
     assert!(
         parsed
             .select(&scraper::Selector::parse("td pre").unwrap())
