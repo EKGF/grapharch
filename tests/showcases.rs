@@ -92,6 +92,31 @@ async fn mixed_showcase_collects_native_sources_and_documents_owl_before_renderi
         assert!(content.contains("Authored guidance from a Markdown file"));
         assert!(content.contains("A governed collection of data"));
     }
+    for text in [
+        "Choose an output",
+        "Retain the original sources",
+        "One collected revision",
+    ] {
+        assert!(html.contains(text));
+        assert!(typst.contains(text));
+    }
+    assert!(html.contains("footnote-reference"));
+    assert!(html.contains("ga-tabs"));
+    assert!(typst.contains("#footnote["));
+    if std::env::var_os("GRAPHARCH_MIXED_PREVIEW").is_some() {
+        let preview = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("output/mixed-review");
+        tokio::fs::create_dir_all(&preview).await?;
+        for (source, target) in [
+            ("website/index.html", "index.html"),
+            ("website/style.css", "style.css"),
+            ("review/document.pdf", "document.pdf"),
+        ] {
+            tokio::fs::copy(temp.path().join(source), preview.join(target))
+                .await?;
+        }
+    }
+
     // Syntax spans and quoted Typst runs may split tokens in the serialized
     // artifact. Compare the actual displayed query, including whitespace.
     let document = scraper::Html::parse_document(&html);
