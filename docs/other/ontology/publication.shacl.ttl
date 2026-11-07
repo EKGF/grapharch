@@ -266,3 +266,9 @@ ga:PlantUmlCollectorShape a sh:NodeShape ; sh:targetClass ga:Collector ;
         [ sh:property [ sh:path ga:rendererExecutable ; sh:hasValue "plantuml" ; sh:minCount 1 ; sh:maxCount 1 ] ;
           sh:property [ sh:path ga:destination ; sh:datatype xsd:string ; sh:pattern "^[^\\\\]+[.]svg$" ; sh:minCount 1 ; sh:maxCount 1 ] ]
     ) .
+
+
+ga:NativeNavigationParentShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:navigationParentPath ;
+    sh:property [ sh:path ga:navigationParentPath ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:navigationProfile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] .

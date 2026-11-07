@@ -48,15 +48,27 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
 <urn:area> a mm:CapabilityArea; rdfs:label "Strategy"; mm:iriLocalName "strategy"; mm:inPillar <urn:pillar>.
 <urn:capability> a mm:Capability; rdfs:label "Vision"; mm:iriLocalName "vision"; mm:inArea <urn:area>; mm:capabilityNumber "A.1.1".
 "#).await?;
+    tokio::fs::create_dir_all(source.path().join("docs/intro")).await?;
+    tokio::fs::write(
+        source.path().join("docs/intro/index.md"),
+        "# Introduction",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("docs/.pages.yaml"),
+        "nav:\n- index.md\n- intro\n",
+    )
+    .await?;
     let config = source.path().join("project.ttl");
     tokio::fs::write(&config, r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
-<urn:p> a ga:Project; ga:contentSource "docs"; ga:collector <urn:rdf>; ga:documentor <urn:maturity>, <urn:overview>; ga:target <urn:t>.
+<urn:p> a ga:Project; ga:contentSource "docs"; ga:collector <urn:rdf>, <urn:nav>; ga:documentor <urn:maturity>, <urn:overview>; ga:target <urn:t>.
+<urn:nav> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:f>.
 <urn:rdf> a ga:Collector; ga:kind "rdf-file"; ga:source "model.ttl".
-<urn:maturity> a ga:Documentor; ga:kind "maturity-model"; ga:source "fragments"; ga:route "pillar/".
-<urn:overview> a ga:Documentor; ga:kind "maturity-overview"; ga:route "intro/overview/".
+<urn:maturity> a ga:Documentor; ga:kind "maturity-model"; ga:source "fragments"; ga:route "pillar/"; ga:navigationProfile <urn:f>; ga:order 20.
+<urn:overview> a ga:Documentor; ga:kind "maturity-overview"; ga:route "intro/overview/"; ga:navigationProfile <urn:f>; ga:navigationParentPath "intro"; ga:order 5.
 <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site".
-<urn:s> a ga:Scope. <urn:f> a ga:Profile.
+<urn:s> a ga:Scope. <urn:f> a ga:Profile; ga:layout "documentation".
 "#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
@@ -86,6 +98,15 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
         tokio::fs::read_to_string(result.directory.join("pillar/index.html"))
             .await?;
     assert!(model.contains("business/"));
+    let parsed = scraper::Html::parse_document(&overview);
+    let sidebar = parsed
+        .select(&scraper::Selector::parse(".site-navigation").unwrap())
+        .next()
+        .expect("sidebar");
+    assert!(
+        sidebar.text().any(|text| text.contains("Vision")),
+        "native hierarchy missing from sidebar"
+    );
     let capability = tokio::fs::read_to_string(
         result
             .directory

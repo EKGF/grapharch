@@ -2,6 +2,7 @@
 #[cfg(test)]
 mod acceptance;
 mod bindings;
+mod navigation;
 use {
     crate::publication::{
         collect::{Collector, MarkdownFile},

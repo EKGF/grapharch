@@ -10,13 +10,17 @@ use {
     anyhow::Result,
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
 };
-fn page_id(processor: &NamedNode, subject: &NamedNode) -> NamedNode {
+pub(super) fn page_id(processor: &NamedNode, subject: &NamedNode) -> NamedNode {
     identity("maturity-page", &[
         processor.as_str(),
         subject.as_str(),
     ])
 }
-fn q(subject: &NamedNode, predicate: &str, value: impl Into<Term>) -> Quad {
+pub(super) fn q(
+    subject: &NamedNode,
+    predicate: &str,
+    value: impl Into<Term>,
+) -> Quad {
     Quad::new(
         subject.clone(),
         if predicate == "type" {
@@ -36,6 +40,12 @@ pub(super) async fn write(
     pages: Vec<ComposedPage>,
 ) -> Result<()> {
     let snapshot = dataset.snapshot_for(project).await?;
+    let view = crate::publication::view::RevisionView::new(
+        dataset.clone(),
+        snapshot.clone(),
+    );
+    let navigation =
+        super::navigation::Placement::read(&view, processor).await?;
     let owner = identity("maturity-page-bindings", &[processor.as_str()]);
     let contribution = identity("contribution", &[
         project,
@@ -73,6 +83,9 @@ pub(super) async fn write(
     }
     for composed in pages {
         let page = composed.page;
+        if let Some(navigation) = &navigation {
+            navigation.write(&mut stream, processor, &page).await?;
+        }
         let id = page_id(processor, &page.subject);
         let header = identity("maturity-page-heading", &[id.as_str()]);
         for quad in [

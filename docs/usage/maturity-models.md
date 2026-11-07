@@ -85,3 +85,12 @@ model. It lists each capability with its pillar, area, number and `rdfs:comment`
 source. Exclude the legacy generated overview Markdown from collection when
 replacing it at the same route; the authoritative RDF remains the only source
 for the taxonomy facts.
+
+Native documentors participate in a sidebar only when they explicitly declare
+`ga:navigationProfile`. The model retains its parent hierarchy; `ga:order`
+positions the root after or among authored entries (default: 1000000).
+For an overview within an existing Introduction section, use
+`ga:navigationParentPath "intro"` with the same profile as the directory
+navigation collector. This references the collected section entry, not a
+copied generated `.pages.yaml` file. Unknown parent entries fail validation.
+Unlisted pages are never automatically added to an explicitly authored menu.
