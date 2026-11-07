@@ -147,6 +147,12 @@ async fn excluded_generated_sources_do_not_enter_navigation_discovery()
         )
         .await?;
     }
+    tokio::fs::create_dir_all(source.path().join("docs/assets/nested")).await?;
+    tokio::fs::write(
+        source.path().join("docs/assets/nested/icon.txt"),
+        "not documentation",
+    )
+    .await?;
     let config = source.path().join("project.ttl");
     tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:p> a ga:Project; ga:contentSource "docs"; ga:excludeSourcePath "generated"; ga:collector <urn:n>; ga:target <urn:t>.

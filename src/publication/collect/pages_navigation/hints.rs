@@ -88,6 +88,12 @@ impl Directory {
                 continue;
             }
             let kind = entry.file_type().await?;
+            if kind.is_dir() &&
+                !super::discovery::has_markdown(&entry.path(), exclusions)
+                    .await?
+            {
+                continue;
+            }
             if kind.is_dir() ||
                 entry
                     .path()
@@ -172,7 +178,13 @@ impl Directory {
                 tokio::fs::try_exists(directory.join(&path)).await?,
                 "navigation source does not exist: {path}"
             );
-            items.push(Entry { path: directory.join(path), label });
+            let path = directory.join(path);
+            if tokio::fs::symlink_metadata(&path).await?.is_dir() &&
+                !super::discovery::has_markdown(&path, exclusions).await?
+            {
+                continue;
+            }
+            items.push(Entry { path, label });
         }
         ensure!(
             items.len() <= 512,

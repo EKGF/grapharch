@@ -1,4 +1,5 @@
 //! Collect source-owned directory navigation hints without a MkDocs runtime.
+mod discovery;
 mod hints;
 use {
     super::{Collector, SourceIdentity},
