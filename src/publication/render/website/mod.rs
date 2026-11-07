@@ -2,6 +2,7 @@
 //! navigation metadata read exclusively from the pinned documentation graph.
 mod artifact;
 mod budget;
+pub(super) const MAX_ARTIFACTS: usize = budget::MAX_ARTIFACTS;
 mod catalog;
 mod gallery;
 mod header_links;

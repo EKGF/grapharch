@@ -224,7 +224,7 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
     );
     if manifest.renderer == "website" {
         ensure!(
-            manifest.files.len() <= 512,
+            manifest.files.len() <= super::website::MAX_ARTIFACTS,
             "website artifact ownership exceeds budget"
         );
         let mut names = std::collections::HashSet::new();
@@ -541,50 +541,54 @@ mod recovery_tests {
     #[test]
     fn paginated_ownership_accepts_thousands_of_pages_but_rejects_unowned_files()
     -> Result<()> {
-        let root = tempfile::tempdir()?;
-        let mut files = vec![
-            "index.html".into(),
-            "search-index.json".into(),
-            "navigation.json".into(),
-        ];
-        for i in 0..4200 {
-            files.push(format!("section-{i:064x}.html"));
+        for (renderer, pages) in
+            [("specification-pages", 4200), ("website", 600)]
+        {
+            let root = tempfile::tempdir()?;
+            let mut files = vec![
+                "index.html".into(),
+                "search-index.json".into(),
+                "navigation.json".into(),
+            ];
+            for i in 0..pages {
+                files.push(format!("section-{i:064x}.html"));
+            }
+            for file in &files {
+                fs::write(root.path().join(file), b"")?;
+            }
+            let manifest = PublicationManifest {
+                version: 1,
+                project: "urn:project".into(),
+                target: "urn:target".into(),
+                input_revision: "urn:revision".into(),
+                plan: "urn:plan".into(),
+                plan_snapshot: "urn:snapshot".into(),
+                scope: "urn:scope".into(),
+                profile: "urn:profile".into(),
+                renderer: renderer.into(),
+                job: "fixture".into(),
+                files,
+                books: Vec::new(),
+                failure_mode: Default::default(),
+                diagnostics: Vec::new(),
+            };
+            fs::write(
+                root.path().join("manifest.yaml"),
+                serde_yaml::to_string(&manifest)?,
+            )?;
+            assert!(owned(root.path(), "urn:project", "urn:target")?);
+            fs::write(root.path().join("notes.txt"), b"keep this file")?;
+            assert!(
+                owned(root.path(), "urn:project", "urn:target")
+                    .unwrap_err()
+                    .to_string()
+                    .contains("unowned artifact")
+            );
+            assert_eq!(
+                fs::read_to_string(root.path().join("notes.txt"))?,
+                "keep this file"
+            );
         }
-        for file in &files {
-            fs::write(root.path().join(file), b"")?;
-        }
-        let manifest = PublicationManifest {
-            version: 1,
-            project: "urn:project".into(),
-            target: "urn:target".into(),
-            input_revision: "urn:revision".into(),
-            plan: "urn:plan".into(),
-            plan_snapshot: "urn:snapshot".into(),
-            scope: "urn:scope".into(),
-            profile: "urn:profile".into(),
-            renderer: "specification-pages".into(),
-            job: "fixture".into(),
-            files,
-            books: Vec::new(),
-            failure_mode: Default::default(),
-            diagnostics: Vec::new(),
-        };
-        fs::write(
-            root.path().join("manifest.yaml"),
-            serde_yaml::to_string(&manifest)?,
-        )?;
-        assert!(owned(root.path(), "urn:project", "urn:target")?);
-        fs::write(root.path().join("notes.txt"), b"keep this file")?;
-        assert!(
-            owned(root.path(), "urn:project", "urn:target")
-                .unwrap_err()
-                .to_string()
-                .contains("unowned artifact")
-        );
-        assert_eq!(
-            fs::read_to_string(root.path().join("notes.txt"))?,
-            "keep this file"
-        );
         Ok(())
     }
 }

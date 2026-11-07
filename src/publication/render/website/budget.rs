@@ -7,6 +7,8 @@ pub(super) const ALIASES: usize = 2048;
 // Three base files, five bundled identity/font files, two crawler indexes,
 // two reports, one publication inventory, and two search files.
 const SHELL: usize = 3 + 5 + 2 + 2 + 1 + 2;
+pub(super) const MAX_ARTIFACTS: usize =
+    PAGES + ASSETS + PROJECTIONS + ALIASES + SHELL;
 pub(super) struct ArtifactBudget {
     selected: usize,
 }
