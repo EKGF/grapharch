@@ -126,27 +126,31 @@ impl Collector for LocalImageFile {
     }
 
     async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
-        let path = tokio::fs::canonicalize(&self.path).await?;
-        ensure!(
-            path.starts_with(&self.root),
-            "local Markdown image escapes documentation root"
-        );
-        let file = tokio::fs::File::open(&path).await?;
-        ensure!(
-            file.metadata().await?.len() <= MAX_IMAGE_BYTES as u64,
-            "image exceeds 8 MiB budget"
-        );
-        let mut bytes = Vec::new(); // bounded: image reader caps input at 8 MiB plus one overflow byte.
-        file.take(MAX_IMAGE_BYTES as u64 + 1)
-            .read_to_end(&mut bytes)
-            .await?;
-        ImageAsset {
-            project:   &self.project,
-            processor: &self.processor,
-            source:    &self.source,
-            id:        &self.id,
+        let result = async {
+            let path = tokio::fs::canonicalize(&self.path).await?;
+            ensure!(
+                path.starts_with(&self.root),
+                "local Markdown image escapes documentation root"
+            );
+            let file = tokio::fs::File::open(&path).await?;
+            ensure!(
+                file.metadata().await?.len() <= MAX_IMAGE_BYTES as u64,
+                "image exceeds 8 MiB budget"
+            );
+            let mut bytes = Vec::new(); // bounded: image reader caps input at 8 MiB plus one overflow byte.
+            file.take(MAX_IMAGE_BYTES as u64 + 1)
+                .read_to_end(&mut bytes)
+                .await?;
+            ImageAsset {
+                project:   &self.project,
+                processor: &self.processor,
+                source:    &self.source,
+                id:        &self.id,
+            }
+            .write(&bytes, Self::mime(&path)?, stream)
+            .await
         }
-        .write(&bytes, Self::mime(&path)?, stream)
-        .await
+        .await;
+        result.with_context(|| format!("local image {}", self.source))
     }
 }

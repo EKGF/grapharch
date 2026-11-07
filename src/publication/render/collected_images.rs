@@ -228,7 +228,7 @@ impl Images {
             );
             total += size;
             ensure!(
-                total <= 32 * 1024 * 1024,
+                total <= crate::publication::image_assets::MAX_PUBLICATION_IMAGE_BYTES,
                 "publication images exceed total byte budget"
             );
             let digest = plan.source.text(id, "contentDigest").await?;
@@ -251,7 +251,10 @@ impl Images {
             let mut bytes = Vec::with_capacity(size);
             let mut order = 0;
             while let Some(row) = rows.next().await? {
-                ensure!(order < 128, "image chunk count exceeds budget");
+                ensure!(
+                    order < crate::publication::image_assets::MAX_IMAGE_CHUNKS,
+                    "image chunk count exceeds budget"
+                );
                 let (Term::Literal(position), Term::Literal(data)) =
                     (&row["order"], &row["data"])
                 else {

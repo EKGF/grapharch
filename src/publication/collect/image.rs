@@ -195,7 +195,9 @@ impl ImageAsset<'_> {
         ] {
             stream.write(quad).await?;
         }
-        for (index, bytes) in bytes.chunks(48 * 1024).enumerate() {
+        for (index, bytes) in
+            bytes.chunks(image_assets::IMAGE_CHUNK_BYTES).enumerate()
+        {
             let chunk = identity("image-chunk", &[
                 self.id.as_str(),
                 &index.to_string(),

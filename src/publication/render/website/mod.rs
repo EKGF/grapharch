@@ -161,6 +161,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     files.push("provenance.html".into());
     let mut assets = plan.assets().await?;
     let mut asset_bytes = 0u64;
+    let mut image_bytes = 0u64;
     while let Some(row) = assets.next().await? {
         let id = super::model::node(&row["asset"])?;
         let asset = catalog.page(id)?;
@@ -174,6 +175,20 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             asset_bytes <= crate::publication::limits::RETAINED_ASSET_BYTES,
             "website assets exceed 512 MiB budget"
         );
+        let image = plan.source.optional(id, "format").await?;
+        if let Some(oxrdf::Term::Literal(mime)) = &image &&
+            mime.value().starts_with("image/")
+        {
+            let size: u64 =
+                plan.source.text(id, "contentSize").await?.parse()?;
+            ensure!(
+                size <= crate::publication::image_assets::MAX_IMAGE_BYTES
+                    as u64,
+                "image exceeds byte budget"
+            );
+            image_bytes += size;
+            ensure!(image_bytes <= crate::publication::image_assets::MAX_PUBLICATION_IMAGE_BYTES as u64, "publication images exceed total byte budget");
+        }
         let output = stage.join(&asset.route);
         tokio::fs::create_dir_all(
             output
@@ -182,8 +197,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         )
         .await?;
         artifact::write(plan, id, &output).await?;
-        if let Some(oxrdf::Term::Literal(mime)) =
-            plan.source.optional(id, "format").await? &&
+        if let Some(oxrdf::Term::Literal(mime)) = image &&
             mime.value().starts_with("image/")
         {
             let size = tokio::fs::metadata(&output).await?.len();
