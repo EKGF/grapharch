@@ -521,3 +521,24 @@ fn retain_anchors(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod explicit_anchor_tests {
+    use super::{HashSet, retain_anchors};
+    #[test]
+    fn explicit_destinations_cannot_shadow_headings_or_each_other() {
+        let mut headings = HashSet::from(["existing".to_string()]);
+        assert!(
+            retain_anchors(&mut headings, "[](urn:grapharch:anchor:existing)")
+                .is_err()
+        );
+        assert!(
+            retain_anchors(
+                &mut HashSet::new(),
+                "[](urn:grapharch:anchor:repeat) \
+                 [](urn:grapharch:anchor:repeat)"
+            )
+            .is_err()
+        );
+    }
+}

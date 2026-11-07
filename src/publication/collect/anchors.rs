@@ -30,3 +30,29 @@ pub(super) fn normalize(body: &str) -> Result<String> {
     crate::publication::anchor::labels(&result)?;
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::normalize;
+    #[test]
+    fn anchors_preserve_literal_examples_and_reject_active_html() {
+        let fenced = "```html\n<span id=\"example\"></span>\n```\n";
+        assert_eq!(normalize(fenced).unwrap(), fenced);
+        for source in [
+            "<span id=\"safe\" onclick=\"bad()\"></span>",
+            "<span id=\"safe\">Visible text</span>",
+            "<a href=\"https://example.org\" id=\"safe\"></a>",
+        ] {
+            assert_eq!(
+                normalize(source).unwrap(),
+                source,
+                "unsupported HTML must remain rejected by the source guard"
+            );
+        }
+        assert_eq!(
+            normalize("<a id=\"existing-target\"></a>").unwrap(),
+            "[](urn:grapharch:anchor:existing-target)"
+        );
+        assert!(normalize("[nonempty](urn:grapharch:anchor:example)").is_err());
+    }
+}
