@@ -13,7 +13,8 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut heading = None;
     let mut table_head = false;
     let mut in_image = false;
-    for (index, event) in markdown.events.iter().enumerate() {
+    let events = super::image_variants::print_events(&markdown.events)?;
+    for (index, event) in events.iter().enumerate() {
         if in_image {
             if matches!(event, Event::End(TagEnd::Image)) {
                 in_image = false;
@@ -25,7 +26,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                 match tag {
                     Tag::Image { dest_url, .. } => {
                         let mut alt = String::new();
-                        for event in &markdown.events[index + 1..] {
+                        for event in &events[index + 1..] {
                             match event {
                                 Event::End(TagEnd::Image) => break,
                                 Event::Text(text) | Event::Code(text) => {
@@ -45,8 +46,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         in_image = true;
                     },
                     Tag::Paragraph => {
-                        let atomic =
-                            standalone_image(&markdown.events[index + 1..]);
+                        let atomic = standalone_image(&events[index + 1..]);
                         output.push_str(
                             if atomic {
                                 "#block(breakable: false)["

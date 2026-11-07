@@ -397,3 +397,5 @@ mod future_budget_tests {
         Ok(())
     }
 }
+
+mod image_variants;
