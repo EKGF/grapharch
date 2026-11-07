@@ -193,8 +193,10 @@ fn reject_tags(body: &str) -> Result<()> {
                  Python tags, !ENV, anchors, and aliases with literal \
                  configuration values"
             );
-            boundary =
-                ch.is_whitespace() || matches!(ch, '[' | '{' | ',' | ':');
+            if !ch.is_whitespace() {
+                boundary = matches!(ch, '[' | '{' | ',' | ':') ||
+                    (boundary && ch == '-');
+            }
         }
     }
     Ok(())

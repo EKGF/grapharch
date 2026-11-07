@@ -114,7 +114,7 @@ async fn mkdocs_native_metadata_and_default_directory_navigation() -> Result<()>
     tokio::fs::create_dir_all(source.path().join("docs/guide")).await?;
     tokio::fs::write(
         source.path().join("mkdocs.yaml"),
-        "site_name: Orchard\ntheme: mkdocs\n",
+        "site_name: Orchard\nsite_author: Alice & Bob\ntheme: mkdocs\n",
     )
     .await?;
     tokio::fs::write(
