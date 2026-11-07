@@ -51,10 +51,26 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         "urn:p",
         NamedNode::new(SHAPE)?,
         "en",
-        Arc::new(BTreeMap::from([(
-            "sh".into(),
-            "http://www.w3.org/ns/shacl#".into(),
-        )])),
+        Arc::new(BTreeMap::from([
+            ("http://www.w3.org/ns/shacl#".into(), "sh".into()),
+            (
+                "http://www.w3.org/2000/01/rdf-schema#".into(),
+                "rdfs".into(),
+            ),
+            ("http://purl.org/dc/terms/".into(), "dct".into()),
+            (
+                "http://www.w3.org/2001/XMLSchema#".into(),
+                "xsd".into(),
+            ),
+            (
+                "https://ekgf.org/dprod/spec/develop/contracts/shapes/".into(),
+                "dprod-shapes".into(),
+            ),
+            (
+                "https://ekgf.org/dprod/spec/develop/".into(),
+                "dprod".into(),
+            ),
+        ])),
         Arc::new(HashSet::new()),
     )?
     .with_source_annotations();
@@ -97,11 +113,25 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         }
     }
     expected.push(ask.into());
-    let view = RevisionView::new(
-        restored.clone(),
-        restored.snapshot_for("urn:p").await?,
-    );
+    let snapshot = restored.snapshot_for("urn:p").await?;
+    let view = RevisionView::new(restored.clone(), snapshot.clone());
     let body = view.text(&doc.fragment_id(), "body").await?;
+    let predicate =
+        Dataset::logical_pattern(&snapshot, "?constraint ?predicate ?query", 0);
+    let mut retained = restored.select(format!("SELECT DISTINCT ?query WHERE {{ VALUES ?predicate {{ <http://www.w3.org/ns/shacl#select> <http://www.w3.org/ns/shacl#ask> }} {predicate} }}")).await?;
+    let mut literals = std::collections::BTreeSet::new();
+    while let Some(row) = retained.next().await? {
+        let Term::Literal(query) = &row["query"] else {
+            panic!("SHACL code literal")
+        };
+        literals.insert(query.value().to_owned());
+    }
+    assert_eq!(
+        literals,
+        expected.iter().cloned().collect(),
+        "retained RDF literal bytes changed"
+    );
+
     assert_eq!(
         body.matches("```sparql").count(),
         5,
@@ -130,6 +160,29 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         .map(|code| code.text().collect::<String>())
         .collect();
     assert_eq!(codes.len(), 5);
+    assert!(
+        parsed
+            .select(&scraper::Selector::parse("td pre").unwrap())
+            .next()
+            .is_none(),
+        "code blocks must not be squeezed into table cells"
+    );
+    for link in parsed.select(&scraper::Selector::parse("a[href]").unwrap()) {
+        if let Some(target) = link
+            .value()
+            .attr("href")
+            .and_then(|href| href.strip_prefix('#'))
+            .filter(|id| id.contains("sparql-query-"))
+        {
+            assert!(
+                parsed
+                    .select(&scraper::Selector::parse("[id]").unwrap())
+                    .any(|node| node.value().attr("id") == Some(target)),
+                "missing query code target: {target}"
+            );
+        }
+    }
+
     for query in &expected {
         assert!(
             codes.iter().any(|code| code.contains(query)),
