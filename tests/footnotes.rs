@@ -67,7 +67,14 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
         tokio::fs::read_to_string(site.directory.join("index.html")).await?;
     assert!(!html.contains("[^study]"));
     assert!(!html.contains("[^other]"));
-    assert!(html.contains("footnote-reference"));
+    assert_eq!(
+        html.matches("class=\"footnote-reference\"").count(),
+        3
+    );
+    assert_eq!(
+        html.matches("class=\"footnote-definition\"").count(),
+        2
+    );
     assert!(html.contains("published study"));
     assert!(html.contains("Another retained explanation"));
     let tab = tokio::fs::read_to_string(site.directory.join("tab/index.html"))
@@ -93,9 +100,24 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     };
     let typst =
         tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
-    assert!(typst.contains("#footnote["));
+    assert_eq!(typst.matches("#footnote[").count(), 2);
+    assert_eq!(typst.matches("#footnote(label(").count(), 1);
     assert!(typst.contains("published study"));
     assert!(typst.contains("Another retained explanation"));
     assert!(!typst.contains("[^study]"));
+    if std::env::var_os("GRAPHARCH_FOOTNOTE_PREVIEW").is_some() {
+        tokio::fs::create_dir_all("output/footnotes").await?;
+        tokio::fs::copy(
+            pdf.directory.join("document.pdf"),
+            "output/footnotes/document.pdf",
+        )
+        .await?;
+        tokio::fs::write("output/footnotes/index.html", html).await?;
+        tokio::fs::copy(
+            site.directory.join("style.css"),
+            "output/footnotes/style.css",
+        )
+        .await?;
+    }
     Ok(())
 }
