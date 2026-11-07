@@ -1,6 +1,7 @@
 mod metadata;
 #[cfg(test)]
 mod metadata_tests;
+mod references;
 mod source_aliases;
 use {
     super::super::{
@@ -179,88 +180,7 @@ impl Catalog {
             elapsed_ms = started.elapsed().as_millis(),
             routes = catalog.pages.len()
         );
-        let owner = plan.source.pattern(
-            &format!(
-                "?referenceOwner {} ?ref",
-                crate::publication::term("reference")
-            ),
-            0,
-        );
-        let page_owner = plan.source.pattern(
-            &format!(
-                "?referenceOwner {} ?owner",
-                crate::publication::term("partOf")
-            ),
-            2,
-        );
-        let fields = plan.source.pattern(
-            &format!(
-                "?ref <http://purl.org/dc/terms/identifier> ?original ; {} \
-                 ?url . OPTIONAL {{ ?ref {} ?path }} OPTIONAL {{ ?ref {} \
-                 ?asset }} OPTIONAL {{ ?ref {} ?presentation }}",
-                crate::publication::term("url"),
-                crate::publication::term("sourcePath"),
-                crate::publication::term("asset"),
-                crate::publication::term("imagePresentation")
-            ),
-            1,
-        );
-        let mut refs = plan
-            .dataset
-            .select(format!(
-                "SELECT DISTINCT ?owner ?original ?url ?path ?asset \
-                 ?presentation WHERE {{ {{ {owner} BIND(?referenceOwner AS \
-                 ?owner) }} UNION {{ {owner} {page_owner} }} {fields} }}"
-            ))
-            .await?;
-        let mut bytes = 0usize;
-        while let Some(row) = refs.next().await? {
-            let owner = node(&row["owner"])?;
-            if !catalog.pages.contains_key(owner.as_str()) {
-                continue;
-            }
-            let oxrdf::Term::Literal(original) = &row["original"] else {
-                anyhow::bail!("reference identifier must be literal")
-            };
-            let oxrdf::Term::Literal(url) = &row["url"] else {
-                anyhow::bail!("reference URL must be literal")
-            };
-            let path = match row.get("path") {
-                Some(oxrdf::Term::Literal(v)) => v.value().to_owned(),
-                None => String::new(),
-                _ => anyhow::bail!("reference path must be literal"),
-            };
-            let asset = row
-                .get("asset")
-                .map(node)
-                .transpose()?
-                .map(|id| id.as_str().to_owned());
-            bytes += original.value().len() + url.value().len() + path.len();
-            ensure!(
-                bytes <= crate::publication::limits::REFERENCE_INDEX_BYTES &&
-                    catalog.references.len() <
-                        crate::publication::limits::LINK_INDEX_ENTRIES,
-                "website reference index exceeds budget"
-            );
-            let key = (owner.as_str().into(), original.value().into());
-            if let Some(presentation) = row.get("presentation") {
-                ensure!(
-                    matches!(presentation, oxrdf::Term::Literal(value) if value.value() == "interactive-svg") &&
-                        asset.is_some(),
-                    "invalid SVG image presentation hint"
-                );
-                catalog.presentations.insert(key.clone());
-            }
-            let value = (path, url.value().into(), asset);
-            if let Some(previous) =
-                catalog.references.insert(key, value.clone())
-            {
-                ensure!(
-                    previous == value,
-                    "conflicting website reference metadata"
-                );
-            }
-        }
+        references::read(plan, &mut catalog).await?;
         // Keep only compact headings and page metadata after indexing.
         tracing::debug!(
             phase = "website-catalog-references",

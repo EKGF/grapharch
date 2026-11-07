@@ -207,9 +207,19 @@ async fn native_assets_have_a_separate_budget_from_authored_pages() -> Result<()
     tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:Collector;ga:kind "authored-use-cases";ga:source "cases". <urn:t> a ga:Target;ga:renderer "website";ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 4).await?;
-    let PublishOutcome::Published(site) = Publisher::new(built.dataset)
-        .render(&built.plan, output.path())
-        .await?
+    let publisher = Publisher::new(built.dataset);
+    // Bounded corpus: reference indexing must not form a cross-graph Cartesian
+    // join.
+    let PublishOutcome::Published(site) = tokio::time::timeout(
+        std::time::Duration::from_secs(20),
+        publisher.render(&built.plan, output.path()),
+    )
+    .await
+    .map_err(|_| {
+        anyhow::anyhow!(
+            "bounded website reference indexing exceeded 20 seconds"
+        )
+    })??
     else {
         panic!("website failed")
     };
