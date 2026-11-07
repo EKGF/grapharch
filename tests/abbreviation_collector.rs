@@ -80,6 +80,15 @@ async fn dictionary_source_and_skos_meanings_survive_source_deletion()
     let scheme = view
         .node(&NamedNode::new("urn:p")?, "abbreviationScheme")
         .await?;
+    let original_fragment = view.node(&scheme, "derivedFrom").await?;
+    assert_eq!(
+        view.text(&original_fragment, "body").await?,
+        original
+    );
+    assert_eq!(
+        view.text(&original_fragment, "format").await?,
+        "text/plain"
+    );
     let pattern = Dataset::logical_pattern(&source_revision, &format!("?concept a <http://www.w3.org/2004/02/skos/core#Concept>; <http://www.w3.org/2004/02/skos/core#inScheme> {scheme}; <http://www.w3.org/2004/02/skos/core#notation> ?term; <http://www.w3.org/2004/02/skos/core#definition> ?definition"), 0);
     let mut terms = restored
         .select(format!(
@@ -139,6 +148,11 @@ async fn dictionary_source_and_skos_meanings_survive_source_deletion()
 async fn malformed_conflicting_and_oversized_dictionaries_fail() -> Result<()> {
     let cases = [
         (b"ordinary prose".to_vec(), "line 1"),
+        (vec![0xff], "UTF-8"),
+        (
+            b"[//]: # (comment only)\n".to_vec(),
+            "no definitions",
+        ),
         (
             b"*[EKG]: One\n*[EKG]: Other\n".to_vec(),
             "duplicate abbreviation",
@@ -204,5 +218,35 @@ async fn dictionary_paths_cannot_escape_the_project_root() -> Result<()> {
         Err(error) => format!("{error:#}"),
     };
     assert!(error.contains("project-relative"), "{error}");
+    Ok(())
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn dictionary_symlinks_cannot_escape_the_project_root() -> Result<()> {
+    let source = fixture(b"*[EKG]: Enterprise Knowledge Graph\n").await?;
+    let outside = tempfile::tempdir()?;
+    let target = outside.path().join("outside.md");
+    tokio::fs::write(
+        &target,
+        "*[OUTSIDE]: Outside the authorized root\n",
+    )
+    .await?;
+    tokio::fs::remove_file(source.path().join("abbreviations.md")).await?;
+    tokio::fs::symlink(&target, source.path().join("abbreviations.md")).await?;
+    let error = match website::collect(
+        source.path(),
+        &source.path().join("project.ttl"),
+        "urn:p",
+        "urn:web",
+        2,
+    )
+    .await
+    {
+        Ok(_) => panic!("escaping dictionary symlink accepted"),
+        Err(error) => format!("{error:#}"),
+    };
+    assert!(error.contains("escapes project root"), "{error}");
+    assert!(error.contains("abbreviations.md"), "{error}");
     Ok(())
 }
