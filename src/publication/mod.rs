@@ -28,6 +28,7 @@ pub mod render;
 pub mod scope;
 pub mod showcases;
 mod showcases_dprod;
+mod showcases_mkdocs;
 mod showcases_semantic;
 mod validation;
 pub mod view;

@@ -176,6 +176,11 @@ impl MarkdownFile {
         self
     }
 
+    pub(crate) fn with_source_identity(mut self, source: &str) -> Result<Self> {
+        self.0 = self.0.with_source_identity(source)?;
+        Ok(self)
+    }
+
     /// Stable identity of the authored fragment.
     pub fn fragment_id(&self) -> NamedNode { self.0.fragment_id() }
 }

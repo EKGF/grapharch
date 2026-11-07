@@ -84,8 +84,10 @@ impl BuildRequest {
                 4,
                 &super::collect::default_http_image_factory,
                 super::website::SourceConfiguration {
-                    collector:       Arc::new(configuration),
-                    mkdocs_metadata: true,
+                    collector:        Arc::new(configuration),
+                    mkdocs_metadata:  true,
+                    repository:       None,
+                    extra_collectors: Vec::new(),
                 },
             )
             .await?;

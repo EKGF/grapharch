@@ -24,7 +24,10 @@ use {
     std::{path::Path, sync::Arc},
 };
 
-pub use super::gallery::{GalleryReport, ShowcaseReport};
+pub use super::{
+    gallery::{GalleryReport, ShowcaseReport},
+    showcases_mkdocs::build as mkdocs,
+};
 
 /// Run every declared live showcase and retain structured diagnostics and KG
 /// evidence.

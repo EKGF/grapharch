@@ -76,20 +76,24 @@ pub async fn collect_with_asset_factory(
         concurrency,
         asset_factory,
         SourceConfiguration {
-            collector:       Arc::new(RdfFile::new(
+            collector:        Arc::new(RdfFile::new(
                 project,
                 "urn:grapharch:website-definitions",
                 definitions.to_owned(),
             )?),
-            mkdocs_metadata: false,
+            mkdocs_metadata:  false,
+            repository:       None,
+            extra_collectors: Vec::new(),
         },
     )
     .await
 }
 
 pub(crate) struct SourceConfiguration {
-    pub collector:       Arc<dyn Collector>,
-    pub mkdocs_metadata: bool,
+    pub collector:        Arc<dyn Collector>,
+    pub mkdocs_metadata:  bool,
+    pub repository:       Option<Arc<super::collect::git::RepositoryScan>>,
+    pub extra_collectors: Vec<Arc<dyn Collector>>,
 }
 
 pub(crate) async fn collect_with_configuration(
@@ -126,6 +130,14 @@ pub(crate) async fn collect_with_configuration(
             discovery::discover(&content, &view, &NamedNode::new(project)?)
                 .await?;
         let mut work: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: 256 discovered sources and two repository records.
+        ensure!(
+            configuration.extra_collectors.len() <= 64,
+            "website exceeds 64 explicit auxiliary collectors"
+        );
+        work.extend(configuration.extra_collectors);
+        if let Some(repository) = &configuration.repository {
+            work.push(repository.provenance.clone());
+        }
         let mut repositories = Vec::new(); // bounded: source tree and definitions can name at most two enclosing clones.
         for directory in [
             source.as_path(),
@@ -149,30 +161,51 @@ pub(crate) async fn collect_with_configuration(
             let relative = super::collect::page::source_path(&content, &path)?;
             let collector =
                 identity("website-collector", &[project, &relative]);
-            if path.extension().is_some_and(|extension| extension == "md") {
-                work.push(Arc::new(
-                    MarkdownFile::in_site(
-                        project,
-                        collector.as_str(),
-                        content.clone(),
-                        path,
-                    )?
-                    .with_default_title()
-                    .with_mkdocs_metadata(configuration.mkdocs_metadata)
-                    .with_image_bindings(image_bindings.clone())
-                    .with_include_roots(include_roots.clone())?,
-                ));
-            } else if LocalImageFile::supported(&path) {
-                work.push(Arc::new(
-                    LocalImageFile::new(project, &content, &path).await?,
-                ));
+            let blob = if let Some(repository) = &configuration.repository {
+                Some(repository.blob(path.strip_prefix(&source)?).await?)
             } else {
-                work.push(Arc::new(TextAssetFile::new(
+                None
+            };
+            if let Some(blob) = &blob {
+                work.push(blob.provenance_collector());
+            }
+            if path.extension().is_some_and(|extension| extension == "md") {
+                let mut markdown = MarkdownFile::in_site(
                     project,
                     collector.as_str(),
                     content.clone(),
                     path,
-                )?));
+                )?
+                .with_default_title()
+                .with_mkdocs_metadata(configuration.mkdocs_metadata)
+                .with_image_bindings(image_bindings.clone())
+                .with_include_roots(include_roots.clone())?;
+                if let Some(blob) = blob {
+                    markdown = markdown.with_source_identity(blob.source())?;
+                }
+                work.push(Arc::new(markdown));
+            } else if LocalImageFile::supported(&path) {
+                if let Some(blob) = blob {
+                    work.push(blob.image_collector(
+                        collector.as_str(),
+                        identity("local-image-asset", &[project, &relative]),
+                    )?);
+                } else {
+                    work.push(Arc::new(
+                        LocalImageFile::new(project, &content, &path).await?,
+                    ));
+                }
+            } else {
+                let mut asset = TextAssetFile::new(
+                    project,
+                    collector.as_str(),
+                    content.clone(),
+                    path,
+                )?;
+                if let Some(blob) = blob {
+                    asset = asset.with_source_identity(blob.source())?;
+                }
+                work.push(Arc::new(asset));
             }
         }
         collect_all(work, &writer, concurrency).await?;

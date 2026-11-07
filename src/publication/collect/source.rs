@@ -66,6 +66,12 @@ impl FileInput {
         })
     }
 
+    pub(super) fn with_source_identity(mut self, source: &str) -> Result<Self> {
+        NamedNode::new(source)?;
+        self.source_uri = Some(source.to_owned());
+        Ok(self)
+    }
+
     pub fn identity(&self) -> Result<super::SourceIdentity<'_>> {
         Ok(super::SourceIdentity {
             project:   self.project.as_str(),
@@ -90,10 +96,11 @@ impl FileInput {
         if let Some(fragment) = &self.fragment {
             return fragment.clone();
         }
+        let path = self.path.to_string_lossy();
         identity("fragment", &[
             self.project.as_str(),
             self.collector.as_str(),
-            &self.path.to_string_lossy(),
+            self.source_uri.as_deref().unwrap_or(&path),
         ])
     }
 

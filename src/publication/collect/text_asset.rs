@@ -28,6 +28,11 @@ impl TextAssetFile {
         })
     }
 
+    pub(crate) fn with_source_identity(mut self, source: &str) -> Result<Self> {
+        self.input = self.input.with_source_identity(source)?;
+        Ok(self)
+    }
+
     /// Stable resource identifying this asset and its fragment.
     pub fn fragment_id(&self) -> NamedNode { self.input.fragment_id() }
 }

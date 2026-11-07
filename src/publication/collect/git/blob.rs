@@ -80,6 +80,11 @@ impl PinnedGitBlob {
         })
     }
 
+    /// Retain this immutable blob's source location and commit provenance.
+    pub fn provenance_collector(&self) -> Arc<dyn Collector> {
+        Arc::new(BlobProvenance(self.clone()))
+    }
+
     pub fn commit(&self) -> &str { &self.revision.commit }
 
     pub fn source(&self) -> &str { &self.source }
@@ -718,5 +723,22 @@ mod reference_tests {
         assert!(blob.reference("#local").await?.is_none());
         assert!(blob.reference("https://example.org/guide").await?.is_none());
         Ok(())
+    }
+}
+
+struct BlobProvenance(PinnedGitBlob);
+#[async_trait]
+impl Collector for BlobProvenance {
+    fn identity(&self) -> Result<SourceIdentity<'_>> {
+        Ok(SourceIdentity {
+            project:   &self.0.revision.project,
+            processor: "urn:grapharch:git-blob-provenance",
+            source:    self.0.source(),
+        })
+    }
+
+    async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
+        self.0.provenance(stream).await?;
+        Ok(self.0.revision())
     }
 }
