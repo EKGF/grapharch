@@ -1,5 +1,6 @@
 //! Native EKGF maturity-model fragments from a pinned collected revision.
 mod model;
+pub(crate) mod pages;
 mod write;
 use {
     super::{Documentor, annotated_term::escape},

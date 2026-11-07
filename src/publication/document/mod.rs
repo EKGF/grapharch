@@ -3,7 +3,7 @@
 mod annotated_term;
 pub(crate) mod class_diagram;
 pub(crate) mod description;
-mod maturity;
+pub(crate) mod maturity;
 mod mermaid;
 pub(crate) mod namespace_bindings;
 pub(crate) mod publication_inventory;

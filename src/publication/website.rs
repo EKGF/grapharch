@@ -1,6 +1,7 @@
 //! Discover a Markdown documentation tree, collect independent files in
 //! parallel, and assemble a website plan. Rendering only reads that pinned KG.
 mod discovery;
+mod native_models;
 mod navigation;
 
 use {
@@ -142,13 +143,6 @@ pub async fn collect_with_asset_factory(
             }
         }
         collect_all(work, &writer, concurrency).await?;
-        let images = super::collect::http_image_collectors_with_factory(
-            &dataset,
-            project,
-            asset_factory,
-        )
-        .await?;
-        collect_all(images, &writer, concurrency).await?;
 
         super::collect::configured::collect(
             &source,
@@ -158,6 +152,22 @@ pub async fn collect_with_asset_factory(
             concurrency,
         )
         .await?;
+
+        native_models::collect(
+            &source,
+            &dataset,
+            &writer,
+            project,
+            concurrency,
+        )
+        .await?;
+        let images = super::collect::http_image_collectors_with_factory(
+            &dataset,
+            project,
+            asset_factory,
+        )
+        .await?;
+        collect_all(images, &writer, concurrency).await?;
 
         super::ontology_specification::collect(
             &source, &dataset, &writer, project,
@@ -319,6 +329,20 @@ pub(crate) async fn bind(
                     anyhow::bail!("topic must be an IRI")
                 };
                 let part = view.node(topic, "fragment").await?;
+                let mut subjects = view.objects(&part, "subject").await?;
+                while let Some(row) = subjects.next().await? {
+                    let oxrdf::Term::NamedNode(subject) = &row["value"] else {
+                        anyhow::bail!("fragment subject must be an IRI")
+                    };
+                    stream
+                        .write(Quad::new(
+                            scope.clone(),
+                            term("include"),
+                            subject.clone(),
+                            GraphName::DefaultGraph,
+                        ))
+                        .await?;
+                }
                 stream
                     .write(Quad::new(
                         scope.clone(),

@@ -329,14 +329,24 @@ impl Catalog {
         };
         self.pages.insert(owner.as_str().into(), Page {
             title: title(&plan.source, &owner).await?,
-            id: owner,
+            id: owner.clone(),
             source,
             route,
             asset,
             binary,
             hidden,
             order,
-            parent: None,
+            parent: plan
+                .source
+                .optional(&owner, "parentTopic")
+                .await?
+                .map(|value| {
+                    match value {
+                        oxrdf::Term::NamedNode(id) => Ok(id),
+                        _ => anyhow::bail!("page parentTopic must be an IRI"),
+                    }
+                })
+                .transpose()?,
             parent_title,
             headings: HashSet::new(),
         });

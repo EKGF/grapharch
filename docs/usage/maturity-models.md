@@ -34,9 +34,35 @@ let subjects = documentor.subjects().await?;
 // Bind documentor.fragment_id(&subject) to components in the target profile.
 ```
 
-This is a library documentor. Publication orchestration must invoke it and bind
-its fragments to the desired components; RDF collection alone does not invoke
-it automatically. Each fragment retains its input revision and contribution.
+The library API can bind these fragments to any target components. Website
+builds can also invoke the documentor through an explicit project definition:
+
+```turtle
+<urn:project> ga:documentor <urn:maturity-pages> .
+<urn:maturity-pages> a ga:Documentor ;
+    ga:kind "maturity-model" ;
+    ga:source "docs-fragments" ;
+    ga:route "pillar/" .
+```
+
+The source path is relative to the project root and must stay within it. RDF
+collectors must retain the model metadata before this stage. Exclude legacy
+generated pages (for example `ga:excludeSourcePath "pillar"`) from the authored
+content tree. Website pages derive hierarchy routes from `mm:iriLocalName`,
+which must identify safe, unambiguous path segments. The model index occupies
+`pillar/`, levels occupy `pillar/level/`, and pillar/area/capability pages nest
+according to the source parent assertions.
+
+Existing authored Markdown under `docs-fragments/pillar/<pillar>/<area>/<capability>/`
+is collected independently. Recognized companions are `background-and-intro`,
+`dimensions`, `levels`, `value`, `traditional-approach`, `ekg-approach`, and
+`use-cases`, with `.md` extensions. Present companions appear in that order;
+missing optional sections produce no invented content. Their source identity
+and contribution remain separate from generated hierarchy fragments. The
+website composes them as page topics, and maps RDF subject links to the
+corresponding page headings. No MkDocs generator is executed.
+
+RDF collection alone does not invoke an unconfigured documentor. Each fragment retains its input revision and contribution.
 Changes regenerate the affected fragment content; removed subjects retire the
 corresponding generated contributions while historical snapshots remain valid.
 

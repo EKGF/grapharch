@@ -251,3 +251,7 @@ ga:ContentSourceShape a sh:NodeShape ; sh:targetSubjectsOf ga:contentSource ;
 
 ga:IncludeRootShape a sh:NodeShape ; sh:targetSubjectsOf ga:includeRoot ;
     sh:property [ sh:path ga:includeRoot ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 8 ] .
+
+ga:ConfiguredDocumentorShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:documentor ;
+    sh:property [ sh:path ga:documentor ; sh:nodeKind sh:IRI ; sh:class ga:Documentor ] .

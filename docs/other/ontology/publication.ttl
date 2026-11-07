@@ -1572,3 +1572,11 @@ ga:includeRoot a owl:DatatypeProperty ;
     rdfs:comment "Additional directory relative to the project root from which authored Markdown snippets may be collected. At most eight explicit roots; source dependencies are retained in the publication graph."@en ;
     rdfs:domain ga:Project ;
     rdfs:range xsd:string .
+
+ga:documentor a owl:ObjectProperty ;
+    rdfs:label "Configured documentor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a project with an explicit documentor configuration for generating documentation from collected source semantics."@en ;
+    dct:description "Associates a project with an explicit documentor configuration for generating documentation from collected source semantics."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range ga:Documentor .
