@@ -150,3 +150,17 @@ Collection records these as empty-alt builtin image references using the
 SVGs; PDF uses the same bundled vector artwork. No icon service or browser
 framework is required. Each source is limited to 128 icons, and generated
 publications include `grapharch-icon-licenses.txt` with the artwork notices.
+
+## Footnotes
+
+Standard Markdown notes (`[^label]` and `[^label]: explanation`) retain their
+source identity when collected. Definitions needed by a selected heading or an
+included excerpt travel with that content, even when authored elsewhere in the
+source document. Independent source files can reuse the same authored label.
+Material tabs and callouts are normalized before note identities are assigned.
+
+HTML links numbered references to their notes. PDF uses native numbered
+footnotes and reuses the same note for repeated references in a fragment.
+Definitions can contain ordinary Markdown emphasis and links. Unused notes are
+omitted from selected excerpts; nested notes and conflicting definitions fail.
+A source is capped at 128 notes, 1,024 references, and 64 KiB per definition.

@@ -32,6 +32,8 @@ impl<'a> Markdown<'a> {
         let contextual =
             super::content_blocks::enclosing(plan, fragment, fragment, &body)
                 .await?;
+        let contextual =
+            crate::publication::footnotes::complete(&contextual, &contextual)?;
         let mut events = crate::publication::mermaid::events(
             crate::publication::markdown::semantic_events(
                 Parser::new_ext(&contextual, options)
@@ -39,6 +41,13 @@ impl<'a> Markdown<'a> {
                     .collect(),
             ),
         )?;
+        for event in &mut events {
+            if let Event::FootnoteReference(label) |
+            Event::Start(Tag::FootnoteDefinition(label)) = event
+            {
+                *label = format!("{prefix}-fn-{label}").into();
+            }
+        }
         let base_level = events
             .iter()
             .filter_map(|event| {
@@ -233,6 +242,16 @@ impl<'a> Markdown<'a> {
             component_depth,
             abbreviations: plan.abbreviations.clone(),
         })
+    }
+
+    pub fn with_events(&self, events: Vec<Event<'a>>) -> Self {
+        Self {
+            events,
+            abbreviations: self.abbreviations.clone(),
+            base_level: self.base_level,
+            heading_depth: self.heading_depth,
+            component_depth: self.component_depth,
+        }
     }
 
     pub fn depth(&self, level: HeadingLevel) -> usize {

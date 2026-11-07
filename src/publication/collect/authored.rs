@@ -206,6 +206,12 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
+        let containers = super::material_blocks::normalize(body)?;
+        let qualified = crate::publication::footnotes::qualify(
+            self.0.source()?,
+            &containers,
+        )?;
+        let body = qualified.as_str();
         let expansion = super::includes::Expansion::read(
             &self.0,
             self.1.as_deref(),

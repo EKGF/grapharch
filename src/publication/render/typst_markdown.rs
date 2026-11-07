@@ -14,6 +14,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut table_head = false;
     let mut in_image = false;
     let events = super::image_variants::print_events(&markdown.events)?;
+    let (mut notes, events) = super::footnotes::Notes::read(&events)?;
     for (index, event) in events.iter().enumerate() {
         if in_image {
             if matches!(event, Event::End(TagEnd::Image)) {
@@ -22,6 +23,9 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
             continue;
         }
         match event {
+            Event::FootnoteReference(label) => {
+                output.push_str(&notes.typst(label, markdown)?)
+            },
             Event::Start(tag) => {
                 match tag {
                     Tag::Image { dest_url, .. } => {

@@ -404,3 +404,5 @@ mod future_budget_tests {
 }
 
 mod image_variants;
+
+mod footnotes;

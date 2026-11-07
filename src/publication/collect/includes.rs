@@ -192,7 +192,18 @@ impl State {
                 );
                 self.retain(&path, &raw, begin, finish);
                 self.active.push(path.clone());
-                let expanded = self.expand(&raw[begin..finish], &path).await?;
+                let containers = super::material_blocks::normalize(&raw)?;
+                let qualified = crate::publication::footnotes::qualify(
+                    &path.to_string_lossy(),
+                    &containers,
+                )?;
+                let begin = marker(&qualified, start.as_deref(), true)?;
+                let finish = marker(&qualified, end.as_deref(), false)?;
+                let excerpt = crate::publication::footnotes::complete(
+                    &qualified[begin..finish],
+                    &qualified,
+                )?;
+                let expanded = self.expand(&excerpt, &path).await?;
                 self.active.pop();
                 let expanded = rebase(&expanded, &path, source)?;
                 for included in expanded.lines() {

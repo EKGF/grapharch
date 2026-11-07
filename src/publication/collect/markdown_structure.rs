@@ -105,7 +105,9 @@ pub(super) fn describe(
             .get(slug)
             .cloned()
             .unwrap_or_else(|| identity("topic-fragment", &[topic.as_str()]));
-        let text = &body[*start..end];
+        let completed =
+            crate::publication::footnotes::complete(&body[*start..end], body)?;
+        let text = completed.as_str();
         let (prefix, suffix) = boundaries.context(*start, end)?;
         for (predicate, context) in
             [("contentPrefix", prefix), ("contentSuffix", suffix)]

@@ -55,6 +55,7 @@ pub(super) fn render(
     catalog: &Catalog,
 ) -> Result<Content> {
     let body = catalog.abbreviations.clean(body)?;
+    let body = crate::publication::footnotes::complete(&body, &body)?;
     let mut events = crate::publication::mermaid::events(
         crate::publication::markdown::semantic_events(
             Parser::new_ext(&body, crate::publication::markdown::options())

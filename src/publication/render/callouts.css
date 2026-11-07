@@ -40,3 +40,5 @@ html[data-color-scheme="dark"] [data-image-scheme="dark"]{display:var(--image-di
 @media print{html [data-image-scheme="dark"]{display:none!important}html [data-image-scheme="light"]{display:var(--image-display,revert)!important}}
 /* Builtin icons are decorative companions to retained text labels. */
 svg.inline-icon{display:inline-block;width:1em;height:1em;vertical-align:-.125em;flex:none;color:inherit}svg.inline-icon-large{width:2em;height:2em}
+/* Source-qualified notes remain linked and readable after fragment assembly. */
+.footnote-reference{font-size:.75em;line-height:0}.footnote-definition{display:flex;gap:.5em;margin:.75em 0;color:var(--muted,#555);font-size:.9em}.footnote-definition>p{margin:0}.footnote-definition-label{flex:none}

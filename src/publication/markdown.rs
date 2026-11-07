@@ -2,7 +2,8 @@
 use pulldown_cmark::{Event, Options, Tag, TagEnd};
 
 pub(crate) fn options() -> Options {
-    Options::ENABLE_TABLES |
+    Options::ENABLE_FOOTNOTES |
+        Options::ENABLE_TABLES |
         Options::ENABLE_STRIKETHROUGH |
         Options::ENABLE_TASKLISTS |
         Options::ENABLE_GFM

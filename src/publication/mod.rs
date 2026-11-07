@@ -57,3 +57,5 @@ pub(crate) mod image_assets;
 pub(crate) mod image_hints;
 
 pub(crate) mod icon;
+
+pub(crate) mod footnotes;
