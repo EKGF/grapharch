@@ -315,27 +315,32 @@ pub(super) async fn write(
             None
         };
         if let Some(markdown) = &mut markdown {
+            let book_link = |destination: &str| -> Result<String> {
+                let Some(id) = destination.strip_prefix('#') else {
+                    return Ok(destination.into())
+                };
+                let page = *catalog.owners.get(id).ok_or_else(|| {
+                    anyhow::anyhow!("unresolved book link {id}")
+                })?;
+                if b.members.contains(&page) {
+                    return Ok(destination.into());
+                }
+                Ok(base
+                    .join(&format!("{}#{id}", catalog.pages[page].route))?
+                    .to_string())
+            };
             for event in &mut markdown.events {
-                if let pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
-                    dest_url,
-                    ..
-                }) = event &&
-                    let Some(id) = dest_url.strip_prefix('#')
+                if let pulldown_cmark::Event::Start(
+                    pulldown_cmark::Tag::Link { dest_url, .. },
+                ) = event
                 {
-                    let page = *catalog.owners.get(id).ok_or_else(|| {
-                        anyhow::anyhow!("unresolved book link {id}")
-                    })?;
-                    if !b.members.contains(&page) {
-                        *dest_url = base
-                            .join(&format!(
-                                "{}#{id}",
-                                catalog.pages[page].route
-                            ))?
-                            .to_string()
-                            .into();
-                    }
+                    *dest_url = book_link(dest_url)?.into();
                 }
             }
+            markdown.events = super::class_diagram::resolve(
+                std::mem::take(&mut markdown.events),
+                book_link,
+            )?;
         }
         typst::entry(
             file,
