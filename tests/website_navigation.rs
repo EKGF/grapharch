@@ -42,7 +42,8 @@ async fn render(
             "guide.md",
             "Guide",
             "urn:guide",
-            "# Guide\n\n## Details\n\nUseful details.",
+            "# Guide\n\n<!-- summary-start -->\n## \
+             Details\n\nUseful<br/>details.\n<!-- summary-end -->",
         ),
     ] {
         tokio::fs::write(

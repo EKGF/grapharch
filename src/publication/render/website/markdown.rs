@@ -55,8 +55,10 @@ pub(super) fn render(
     catalog: &Catalog,
 ) -> Result<Content> {
     let mut events = crate::publication::mermaid::events(
-        Parser::new_ext(body, crate::publication::markdown::options())
-            .collect(),
+        crate::publication::markdown::semantic_events(
+            Parser::new_ext(body, crate::publication::markdown::options())
+                .collect(),
+        ),
     )?;
     let headings = index(&events);
     let mut heading_index = 0;

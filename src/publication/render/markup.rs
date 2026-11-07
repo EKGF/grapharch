@@ -28,7 +28,9 @@ impl<'a> Markdown<'a> {
         let options = crate::publication::markdown::options();
         // bounded: maps and events refer only to this capped fragment.
         let mut events = crate::publication::mermaid::events(
-            Parser::new_ext(body, options).collect(),
+            crate::publication::markdown::semantic_events(
+                Parser::new_ext(body, options).collect(),
+            ),
         )?;
         let base_level = events
             .iter()
