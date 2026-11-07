@@ -66,27 +66,28 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         esc(project_title),
         esc(env!("CARGO_PKG_VERSION"))
     );
-    let header_content = if header.navigation.documentation {
-        format!(
-            "<div class=\"documentation-header\">{organization_identity}<a \
-             class=\"documentation-title\" \
-             href=\"{prefix}\">{}</a>{header_links}</div>",
-            esc(project_title)
-        )
-    } else if header.theme.project() {
-        format!(
-            "<div class=\"community-header-row\"\
-             >{organization_identity}{header_links}</div>"
-        )
-    } else if header.theme.community() {
-        format!(
-            "<div class=\"community-header-row\"\
-             >{organization_identity}{header_links}</div><div \
-             class=\"project-identity-row\">{project_brand}</div>"
-        )
-    } else {
-        format!("{project_brand}{header_links}")
-    };
+    let header_content =
+        if header.navigation.documentation && header.theme.community() {
+            format!(
+                "<div class=\"community-header-row\"\
+                 >{organization_identity}{header_links}</div>"
+            )
+        } else if header.navigation.documentation {
+            header_links
+        } else if header.theme.project() {
+            format!(
+                "<div class=\"community-header-row\"\
+                 >{organization_identity}{header_links}</div>"
+            )
+        } else if header.theme.community() {
+            format!(
+                "<div class=\"community-header-row\"\
+                 >{organization_identity}{header_links}</div><div \
+                 class=\"project-identity-row\">{project_brand}</div>"
+            )
+        } else {
+            format!("{project_brand}{header_links}")
+        };
     let identity_attribution = header.theme.attribution(prefix);
     let community_footer = header.theme.community_footer(prefix);
     let article_footer = if community_footer.is_empty() {
@@ -113,6 +114,16 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         .navigation
         .html("primary", page.id, prefix)
         .unwrap_or_default();
+    let primary_navigation = if header.navigation.documentation {
+        format!(
+            "<div class=\"project-identity-row documentation-product-row\"><a \
+             class=\"documentation-title\" \
+             href=\"{prefix}\">{}</a>{primary_navigation}</div>",
+            esc(project_title)
+        )
+    } else {
+        primary_navigation
+    };
     let footer_navigation = header
         .navigation
         .html("footer", page.id, prefix)
