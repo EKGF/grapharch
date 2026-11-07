@@ -75,13 +75,21 @@ pub async fn collect_with_asset_factory(
         target,
         concurrency,
         asset_factory,
-        Arc::new(RdfFile::new(
-            project,
-            "urn:grapharch:website-definitions",
-            definitions.to_owned(),
-        )?),
+        SourceConfiguration {
+            collector:       Arc::new(RdfFile::new(
+                project,
+                "urn:grapharch:website-definitions",
+                definitions.to_owned(),
+            )?),
+            mkdocs_metadata: false,
+        },
     )
     .await
+}
+
+pub(crate) struct SourceConfiguration {
+    pub collector:       Arc<dyn Collector>,
+    pub mkdocs_metadata: bool,
 }
 
 pub(crate) async fn collect_with_configuration(
@@ -91,7 +99,7 @@ pub(crate) async fn collect_with_configuration(
     target: &str,
     concurrency: usize,
     asset_factory: &super::collect::AssetCollectorFactory<'_>,
-    configuration: Arc<dyn Collector>,
+    configuration: SourceConfiguration,
 ) -> Result<CollectedWebsite> {
     let source = tokio::fs::canonicalize(source).await?;
     let definitions = tokio::fs::canonicalize(definitions).await?;
@@ -99,7 +107,7 @@ pub(crate) async fn collect_with_configuration(
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
     let result = async {
-        configuration.collect(&writer).await?;
+        configuration.collector.collect(&writer).await?;
         let view = RevisionView::new(
             dataset.clone(),
             dataset.snapshot_collected_for(project).await?,
@@ -150,6 +158,7 @@ pub(crate) async fn collect_with_configuration(
                         path,
                     )?
                     .with_default_title()
+                    .with_mkdocs_metadata(configuration.mkdocs_metadata)
                     .with_image_bindings(image_bindings.clone())
                     .with_include_roots(include_roots.clone())?,
                 ));

@@ -1,5 +1,6 @@
 //! Bounded, non-executing import of source-owned MkDocs instructions.
 mod config;
+pub(super) mod metadata;
 mod navigation;
 use {
     super::{Collector, SourceIdentity},

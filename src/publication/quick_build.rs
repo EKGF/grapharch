@@ -83,7 +83,10 @@ impl BuildRequest {
                 target.as_str(),
                 4,
                 &super::collect::default_http_image_factory,
-                Arc::new(configuration),
+                super::website::SourceConfiguration {
+                    collector:       Arc::new(configuration),
+                    mkdocs_metadata: true,
+                },
             )
             .await?;
             return Ok((built.dataset, built.plan));

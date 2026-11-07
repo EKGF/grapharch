@@ -105,3 +105,44 @@ async fn mkdocs_rejects_unsupported_execution_and_invalid_paths() -> Result<()>
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn mkdocs_native_metadata_and_default_directory_navigation() -> Result<()>
+{
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir_all(source.path().join("docs/guide")).await?;
+    tokio::fs::write(
+        source.path().join("mkdocs.yaml"),
+        "site_name: Orchard\ntheme: mkdocs\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("docs/index.md"),
+        "title: Welcome home\n\n# Orchard\n\nStart growing.\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("docs/guide/pruning.md"),
+        "title: Keeping trees healthy\n\n# Pruning\n\nCare.\n",
+    )
+    .await?;
+    let (dataset, plan) = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await?;
+    let PublishOutcome::Published(publication) =
+        Publisher::new(dataset).render(&plan, output.path()).await?
+    else {
+        panic!("superseded")
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    assert!(html.contains("Welcome home"));
+    assert!(html.contains("Keeping trees healthy"));
+    assert!(!html.contains("title: Welcome"));
+    Ok(())
+}
