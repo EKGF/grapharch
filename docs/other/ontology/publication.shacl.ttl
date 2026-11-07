@@ -234,3 +234,7 @@ ga:WebsiteLayoutShape a sh:NodeShape ; sh:targetSubjectsOf ga:layout ;
 
 ga:ProfileNavigationShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigation ;
     sh:property [ sh:path ga:navigation ; sh:nodeKind sh:IRI ; sh:class ga:Navigation ; sh:maxCount 3 ] .
+
+
+ga:NavigationCollectorShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigationProfile ;
+    sh:property [ sh:path ga:navigationProfile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] .

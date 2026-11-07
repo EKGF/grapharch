@@ -222,3 +222,28 @@ publications do not need the original Markdown or configuration files.
 This is the shared navigation/layout foundation for MkDocs migration, not yet
 an importer for arbitrary MkDocs plugins or complete feature parity. Authored
 content remains the source; generated site files do not belong in source repos.
+
+
+### Reuse directory navigation hints
+
+A `documentation-navigation` collector reads existing `.pages.yaml` files into
+these navigation trees. This supports ordered Markdown/directory entries,
+label-to-path entries, directory titles, hidden sections, and `...` expansion.
+Directory `index.md` pages become their section's destination rather than a
+repeated child entry. The original files remain authoritative; no MkDocs runtime
+or generated navigation file is needed. For example, with `docs/` as the website
+source root:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:project> ga:collector <urn:directory-navigation> .
+<urn:directory-navigation> a ga:Collector ;
+    ga:kind "documentation-navigation" ; ga:source "." ;
+    ga:navigationProfile <urn:profile> .
+```
+
+The collector retains the navigation source text and digest in the KG and
+produces independent primary/sidebar tree membership. It resolves the page
+paths through the same page bindings as explicit RDF navigation. Other MkDocs
+plugins, content syntax extensions and executable Python hooks are separate
+capabilities; this collector does not execute them.

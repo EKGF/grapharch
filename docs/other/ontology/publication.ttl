@@ -1520,3 +1520,12 @@ ga:layout a owl:DatatypeProperty ;
     dct:description "Selects the semantic website content arrangement independently of the visual brand selected by the profile style."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range xsd:string .
+
+
+ga:navigationProfile a owl:ObjectProperty ;
+    rdfs:label "Navigation publication profile"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the publication profile receiving navigation hints normalized by a configured source collector."@en ;
+    dct:description "Identifies the publication profile receiving navigation hints normalized by a configured source collector."@en ;
+    rdfs:domain ga:Collector ;
+    rdfs:range ga:Profile .

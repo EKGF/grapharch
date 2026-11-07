@@ -46,6 +46,14 @@ pub(crate) async fn collect(
         let source = view.text(processor, "source").await?;
         let collector: Arc<dyn Collector> = match kind.as_str() {
             "repository-publications" => Arc::new(super::repository_publications::RepositoryPublications::configured(project, processor, &source, &view).await?),
+            "documentation-navigation" => {
+                ensure!(source == ".", "documentation navigation source must be the website root (.)");
+                let relative = Path::new(&source);
+                ensure!(relative.components().all(|part| matches!(part, Component::Normal(_) | Component::CurDir)), "navigation source must be relative without traversal");
+                let path = tokio::fs::canonicalize(root.join(relative)).await?;
+                ensure!(path.starts_with(root), "navigation source escapes documentation root");
+                Arc::new(super::pages_navigation::PagesNavigation { project: project.into(), processor: processor.clone(), profile: view.node(processor, "navigationProfile").await?, root: path })
+            },
             "rdf-file" => {
                 let relative = Path::new(&source);
                 ensure!(

@@ -14,6 +14,7 @@ mod markdown_images;
 mod markdown_structure;
 mod module_hints;
 pub(crate) mod page;
+mod pages_navigation;
 mod preamble;
 pub(crate) mod published_artifact;
 mod rdf;
