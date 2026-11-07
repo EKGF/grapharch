@@ -26,7 +26,13 @@ pub(super) fn events<'a>(
                 source.push_str(&text)
             }
         }
-        let code = super::super::code::html(&source, language)?;
+        let code = if language ==
+            crate::publication::document::class_diagram::LANGUAGE
+        {
+            super::super::class_diagram::html(&source)?
+        } else {
+            super::super::code::html(&source, language)?
+        };
         let html = if example {
             let caption = "<figure class=\"example code-example\"><figcaption \
                            class=\"marker\">Example <span \

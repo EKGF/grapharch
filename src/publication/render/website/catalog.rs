@@ -24,6 +24,7 @@ pub(super) struct Page {
 pub(super) struct Catalog {
     pub pages:      BTreeMap<String, Page>,
     pub sources:    HashMap<String, String>,
+    pub subjects:   HashMap<String, (String, String)>,
     pub routes:     HashMap<String, String>,
     pub references: HashMap<(String, String), (String, String, Option<String>)>,
 }
@@ -32,6 +33,7 @@ impl Catalog {
         let mut catalog = Self {
             pages:      BTreeMap::new(),
             sources:    HashMap::new(),
+            subjects:   HashMap::new(),
             routes:     HashMap::new(),
             references: HashMap::new(),
         };
@@ -39,6 +41,7 @@ impl Catalog {
         let mut current: Option<NamedNode> = None;
         let mut page_body = String::new();
         let mut bytes = 0;
+        let mut heading_counts: HashMap<String, usize> = HashMap::new();
         while let Some(row) = rows.next().await? {
             let fragment = node(&row["fragment"])?;
             let owner = catalog.owner(plan, fragment).await?;
@@ -59,8 +62,42 @@ impl Catalog {
                         .collect();
                 }
                 page_body.clear();
+                heading_counts.clear();
             }
             current = Some(owner.clone());
+            let mut first_anchor = None;
+            for heading in super::markdown::headings(&body) {
+                let slug =
+                    crate::publication::collect::page::slug(&heading.title);
+                let count = heading_counts.entry(slug.clone()).or_default();
+                let anchor = if *count == 0 {
+                    slug
+                } else {
+                    format!("{slug}-{count}")
+                };
+                *count += 1;
+                if first_anchor.is_none() {
+                    first_anchor = Some(anchor);
+                }
+            }
+            if let Some(anchor) = first_anchor {
+                let mut subjects =
+                    plan.source.objects(fragment, "subject").await?;
+                while let Some(row) = subjects.next().await? {
+                    let subject = node(&row["value"])?;
+                    ensure!(
+                        catalog.subjects.len() <
+                            crate::publication::limits::LINK_INDEX_ENTRIES,
+                        "website subject links exceed budget"
+                    );
+                    catalog
+                        .subjects
+                        .entry(subject.as_str().into())
+                        .or_insert_with(|| {
+                            (owner.as_str().into(), anchor.clone())
+                        });
+                }
+            }
             page_body.push_str(&body);
             ensure!(
                 page_body.len() <= 1024 * 1024,

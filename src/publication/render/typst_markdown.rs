@@ -166,12 +166,12 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push('\n');
                     },
                     TagEnd::CodeBlock => {
-                        output.push_str(&super::code::typst(
-                            &code.take().ok_or_else(|| {
-                                anyhow::anyhow!("unbalanced code block")
-                            })?,
-                            code_language,
-                        )?);
+                        let source = code.take().ok_or_else(|| {
+                            anyhow::anyhow!("unbalanced code block")
+                        })?;
+                        output.push_str(&if code_language == crate::publication::document::class_diagram::LANGUAGE {
+                            super::class_diagram::typst(&source)?
+                        } else { super::code::typst(&source, code_language)? });
                         if example {
                             output.push(']');
                             example = false;

@@ -758,6 +758,20 @@ impl Documentor for AnnotatedTermDocumentor {
             facts.join("\n")
         );
         let mut body = body;
+        if types.iter().any(|(kind, _)| {
+            kind.as_str() == "http://www.w3.org/2002/07/owl#Class"
+        }) {
+            super::class_diagram::append(
+                &self.dataset,
+                &view,
+                &self.subject,
+                &self.prefixes,
+                &self.documented,
+                &mut body,
+                &mut references,
+            )
+            .await?;
+        }
         body.push_str(&self.arrangement.body);
         for example in examples {
             let width = example

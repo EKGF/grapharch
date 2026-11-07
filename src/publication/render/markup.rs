@@ -177,6 +177,9 @@ impl<'a> Markdown<'a> {
                 );
             }
         }
+        let events = super::class_diagram::resolve(events, |iri| {
+            plan.diagram_link(iri)
+        })?;
         Ok(Self { events, base_level, heading_depth, component_depth })
     }
 

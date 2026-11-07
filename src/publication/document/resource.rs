@@ -163,6 +163,24 @@ impl ResourceDocumentor {
                 description = Some(comment.value().to_owned());
             }
         }
+        let mut description = description
+            .unwrap_or_else(|| format!("{subject} is an {}.", self.label));
+        if self.class.as_str() == "http://www.w3.org/2002/07/owl#Class" {
+            super::class_diagram::append(
+                &self.dataset,
+                &crate::publication::view::RevisionView::new(
+                    self.dataset.clone(),
+                    self.snapshot.clone(),
+                ),
+                subject,
+                &std::collections::BTreeMap::new(),
+                &std::collections::HashSet::new(),
+                &mut description,
+                &mut std::collections::HashSet::new(),
+            )
+            .await?;
+            digest.update(description.as_bytes());
+        }
         let revision =
             format!("resource-v2:{}", hex::encode(digest.finalize()));
         if self
@@ -192,8 +210,6 @@ impl ResourceDocumentor {
             self.processor.as_str(),
             subject.as_str(),
         ]);
-        let description = description
-            .unwrap_or_else(|| format!("{subject} is an {}.", self.label));
         self.fragment(
             &mut stream,
             self.fragment_id(subject),

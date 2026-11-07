@@ -6,7 +6,7 @@ use {
         term,
         writer::GraphWriter,
     },
-    oxrdf::{GraphName, Literal, NamedNode, Quad},
+    oxrdf::{GraphName, NamedNode, Quad},
 };
 
 #[tokio::test]
@@ -39,19 +39,13 @@ async fn owl_class_documentor_generates_source_linked_fragments_without_book_map
             )
             .await?
     );
-    assert!(
-        dataset
-            .contains(
-                &output,
-                Quad::new(
-                    fragment,
-                    term("body"),
-                    Literal::new_simple_literal("A documented class."),
-                    GraphName::DefaultGraph
-                )
-            )
-            .await?
+    let view = grapharch::publication::view::RevisionView::new(
+        dataset.clone(),
+        output.clone(),
     );
+    let body = view.text(&fragment, "body").await?;
+    assert!(body.starts_with("A documented class."));
+    assert!(body.contains("```grapharch-class-diagram"));
     documentor.document(&writer).await?;
     assert_eq!(output, dataset.snapshot().await?);
     drop(writer);

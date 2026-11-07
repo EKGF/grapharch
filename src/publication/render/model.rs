@@ -365,6 +365,15 @@ impl Plan {
         Ok(())
     }
 
+    pub(super) fn diagram_link(&self, destination: &str) -> Result<String> {
+        let iri = NamedNode::new(destination)?;
+        if let Some(anchor) = self.link_index.get(&iri) {
+            return Ok(anchor.clone());
+        }
+        super::class_diagram::validate_external(destination)?;
+        Ok(destination.into())
+    }
+
     pub async fn link(
         &self,
         destination: &str,

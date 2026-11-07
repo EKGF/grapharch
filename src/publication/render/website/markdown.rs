@@ -112,6 +112,9 @@ pub(super) fn render(
             _ => {},
         }
     }
+    let events = super::super::class_diagram::resolve(events, |iri| {
+        link(iri, page, catalog)
+    })?;
     let mut html = String::new();
     pulldown_cmark::html::push_html(
         &mut html,
@@ -128,6 +131,18 @@ pub(super) fn render(
     Ok(Content { html, headings })
 }
 fn link(value: &str, page: &Page, catalog: &Catalog) -> Result<String> {
+    if let Some((id, anchor)) = catalog.subjects.get(value) {
+        let target = &catalog.pages[id];
+        return Ok(if target.id == page.id {
+            format!("#{anchor}")
+        } else {
+            format!(
+                "{}{}#{anchor}",
+                "../".repeat(page.route.matches('/').count()),
+                target.route
+            )
+        });
+    }
     if let Some((_, _, Some(asset))) = catalog
         .references
         .get(&(page.id.as_str().into(), value.into()))
