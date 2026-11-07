@@ -70,6 +70,33 @@ Its existing live specification-version service remains separate: replacing a
 server-rendered deployment inventory requires an explicit source and freshness
 policy, rather than hardcoding a snapshot of active branches in Markdown.
 
+## Preserving earlier page addresses
+
+A page can declare earlier publication-relative addresses in frontmatter:
+
+```yaml
+---
+title: Getting started
+permalink: /guide/
+aliases:
+  - /getting-started/
+  - /old-guide/
+---
+```
+
+GraphArch retains these hints as `ga:routeAlias` on the collected page. A native
+documentor can put the same property on a selected fragment to redirect an old
+page address to that fragment's heading. The original content identity and
+navigation placement remain independent of these addresses.
+
+Each alias produces a small static HTML redirect with a visible continuation
+link, so it works on GitHub Pages without server routing rules. Browser redirects
+preserve incoming query parameters and fragment identifiers; otherwise a fragment
+alias opens its selected heading. Redirect pages use `noindex` and do not become
+navigation entries or sitemap pages. Unsafe paths, duplicate aliases, collisions
+with published files, and fragment aliases without a selected heading fail the
+publication before its output replaces the previous site.
+
 ## Search metadata
 
 Use a short `description` in each Markdown page's frontmatter. The collector
