@@ -63,5 +63,58 @@ async fn documentation_repository_does_not_require_rdf_sources() -> Result<()> {
     assert_eq!(pinned.commit, commit);
     assert!(pinned.files.is_empty());
     assert!(!pinned.root.join("docs/index.md").exists());
+    tokio::fs::write(
+        origin.path().join("docs/index.md"),
+        "# Changed content\n",
+    )
+    .await?;
+    git(origin.path(), &[
+        "commit",
+        "-am",
+        "Changed documentation",
+    ])
+    .await?;
+    let _newer =
+        remote_documentation(&url, "main", cache.path(), "urn:docs").await?;
+    let output = tempfile::tempdir()?;
+    let selected =
+        ["docs", "mkdocs.yml", "LICENSE"].map(std::path::PathBuf::from);
+    let blobs = pinned
+        .materialize_documentation(&selected, output.path())
+        .await?;
+    assert_eq!(blobs.len(), 3);
+    assert_eq!(
+        tokio::fs::read_to_string(output.path().join("docs/index.md")).await?,
+        "# Original content\n"
+    );
+    assert_eq!(
+        tokio::fs::read_to_string(output.path().join("LICENSE")).await?,
+        "Original source license\n"
+    );
+    let escape = tempfile::tempdir()?;
+    assert!(
+        pinned
+            .materialize_documentation(&["../LICENSE".into()], escape.path())
+            .await
+            .is_err()
+    );
+    #[cfg(unix)]
+    {
+        tokio::fs::symlink("../LICENSE", origin.path().join("docs/link.md"))
+            .await?;
+        git(origin.path(), &["add", "."]).await?;
+        git(origin.path(), &["commit", "-m", "Add symlink"]).await?;
+        let unsafe_tree =
+            remote_documentation(&url, "main", cache.path(), "urn:docs")
+                .await?;
+        let destination = tempfile::tempdir()?;
+        assert!(
+            unsafe_tree
+                .materialize_documentation(&selected, destination.path())
+                .await
+                .is_err()
+        );
+    }
+
     Ok(())
 }
