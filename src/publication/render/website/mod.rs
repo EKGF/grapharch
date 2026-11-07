@@ -6,6 +6,7 @@ mod gallery;
 mod header_links;
 mod markdown;
 mod metadata;
+mod navigation;
 mod project;
 mod repository;
 mod shell;
@@ -27,6 +28,7 @@ struct Header {
     theme:      theme::Theme,
     links:      header_links::Links,
     metadata:   metadata::Metadata,
+    navigation: navigation::Navigations,
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
@@ -40,11 +42,12 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}",
             include_str!("style.css"),
             include_str!("../callouts.css"),
             include_str!("../provenance.css"),
-            theme.css()
+            theme.css(),
+            include_str!("documentation.css")
         ),
     )
     .await?;
@@ -65,6 +68,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         theme,
         links: header_links::Links::read(plan).await?,
         metadata: metadata::Metadata::read(plan).await?,
+        navigation: navigation::Navigations::read(plan, &catalog).await?,
     };
     header.metadata.indexes(stage, &catalog, &mut files).await?;
     let mut entries = Entries::new(plan).await?;

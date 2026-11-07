@@ -1,0 +1,18 @@
+/* Documentation is a content arrangement; brand colors remain theme-owned. */
+.primary-navigation{width:100%;max-width:1440px;margin:auto;padding:0 32px;overflow-x:auto}
+.primary-navigation>ul{display:flex;align-items:baseline;gap:28px;list-style:none;margin:0;padding:0}
+.primary-navigation li{list-style:none}.primary-navigation a,.primary-navigation summary{display:block;padding:14px 0;text-decoration:none;font-size:.9rem;font-weight:600;white-space:nowrap}
+.primary-navigation a[aria-current=page]{color:var(--accent)}.primary-navigation details>ul{padding-left:20px}
+.footer-navigation{max-width:1440px;margin:2rem auto;padding:0 32px}.footer-navigation ul{list-style:none;display:flex;flex-wrap:wrap;gap:24px;padding:0}
+body[data-layout=documentation] .site-header{display:block;height:auto;padding:0;position:sticky;top:0}
+.documentation-header{display:flex;align-items:center;max-width:1440px;margin:auto;padding:20px 32px;gap:32px}
+.documentation-title{flex:1;text-align:center;color:var(--ink);font-size:1.3rem;font-weight:400;text-decoration:none}
+.documentation-header .community-menu{display:none}.documentation-header .site-links{margin:0}
+body[data-layout=documentation] .site-layout{max-width:1440px;margin:auto;gap:40px;grid-template-columns:240px minmax(0,1fr) 200px}
+body[data-layout=documentation] .site-navigation,body[data-layout=documentation] .page-outline{top:140px}
+body[data-layout=documentation] main{min-width:0;padding-top:40px}
+body[data-layout=documentation] .site-navigation{border-right:0;font-size:.9rem}
+body[data-layout=documentation] article h1{font-size:2.2rem;font-weight:400;letter-spacing:-.025em}
+@media(max-width:1150px){body[data-layout=documentation] .site-layout{grid-template-columns:220px minmax(0,1fr)}body[data-layout=documentation] .page-outline{display:none}}
+@media(max-width:900px){.documentation-header{padding:16px 20px;gap:16px}.documentation-title{font-size:1rem}.documentation-header .omg-identity{display:none}.primary-navigation{padding:0 20px}.primary-navigation>ul{gap:22px}body[data-layout=documentation] .site-layout{display:block}body[data-layout=documentation] .site-navigation{position:static}.footer-navigation ul{display:block}}
+@media print{.primary-navigation,.footer-navigation{display:none}}

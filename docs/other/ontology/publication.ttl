@@ -1458,3 +1458,65 @@ ga:iconTone a owl:DatatypeProperty ; rdfs:label "icon tone"@en ; rdfs:isDefinedB
 ga:resourceSection a owl:DatatypeProperty ; rdfs:label "resource section"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a level-two heading anchor for a single-column list of resource cards."@en ; dct:description "Selects a level-two heading anchor for a single-column list of resource cards."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string .
 
 ga:heroKind a owl:DatatypeProperty ; rdfs:label "hero kind"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a landing campaign hero or an interior introduction for a project page."@en ; dct:description "Selects a landing campaign hero or an interior introduction for a project page."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string .
+
+# Target-specific website navigation, distinct from content ownership.
+
+ga:Navigation a owl:Class ;
+    rdfs:label "Navigation tree"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An identified, target-specific ordered navigation tree whose entries refer to pages without changing their content identities."@en ;
+    dct:description "An identified, target-specific ordered navigation tree whose entries refer to pages without changing their content identities."@en .
+
+ga:NavigationEntry a owl:Class ;
+    rdfs:label "Navigation entry"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "One occurrence in a navigation tree, with its own label, order and parent independent of the destination page."@en ;
+    dct:description "One occurrence in a navigation tree, with its own label, order and parent independent of the destination page."@en .
+
+ga:navigation a owl:ObjectProperty ;
+    rdfs:label "Website navigation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a publication profile with an independent navigation tree for one named website region."@en ;
+    dct:description "Associates a publication profile with an independent navigation tree for one named website region."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:Navigation .
+
+ga:navigationEntry a owl:ObjectProperty ;
+    rdfs:label "Navigation tree entry"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a navigation tree with each of its identified entries, including entries nested under other entries."@en ;
+    dct:description "Associates a navigation tree with each of its identified entries, including entries nested under other entries."@en ;
+    rdfs:domain ga:Navigation ;
+    rdfs:range ga:NavigationEntry .
+
+ga:parentEntry a owl:ObjectProperty ;
+    rdfs:label "Parent navigation entry"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the immediate parent occurrence within the same navigation tree, independently of content ownership."@en ;
+    dct:description "Identifies the immediate parent occurrence within the same navigation tree, independently of content ownership."@en ;
+    rdfs:domain ga:NavigationEntry ;
+    rdfs:range ga:NavigationEntry .
+
+ga:page a owl:ObjectProperty ;
+    rdfs:label "Navigation destination page"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the selected content page reached by a navigation entry; multiple entries may refer to the same page."@en ;
+    dct:description "Identifies the selected content page reached by a navigation entry; multiple entries may refer to the same page."@en ;
+    rdfs:domain ga:NavigationEntry ;
+    rdfs:range ga:Page .
+
+ga:navigationRegion a owl:DatatypeProperty ;
+    rdfs:label "Navigation region"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the primary, sidebar or footer region in which a profile navigation tree is presented."@en ;
+    dct:description "Selects the primary, sidebar or footer region in which a profile navigation tree is presented."@en ;
+    rdfs:domain ga:Navigation ;
+    rdfs:range xsd:string .
+
+ga:layout a owl:DatatypeProperty ;
+    rdfs:label "Website content layout"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the semantic website content arrangement independently of the visual brand selected by the profile style."@en ;
+    dct:description "Selects the semantic website content arrangement independently of the visual brand selected by the profile style."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:string .

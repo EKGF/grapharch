@@ -1,0 +1,306 @@
+//! Independent target-specific navigation; pages remain content identities.
+use {
+    super::{
+        super::{
+            markup::html_escape as esc,
+            model::{Plan, node},
+        },
+        catalog::Catalog,
+    },
+    anyhow::{Result, ensure},
+    oxrdf::{NamedNode, Term},
+    std::collections::{BTreeMap, BTreeSet},
+};
+
+pub(super) struct Navigations {
+    trees:             BTreeMap<String, Tree>,
+    pub documentation: bool,
+}
+struct Tree {
+    title:    String,
+    entries:  BTreeMap<String, Entry>,
+    children: BTreeMap<Option<String>, Vec<String>>,
+}
+struct Entry {
+    label:    String,
+    parent:   Option<String>,
+    order:    u32,
+    href:     Option<String>,
+    page:     Option<String>,
+    external: bool,
+}
+impl Navigations {
+    pub async fn read(plan: &Plan, catalog: &Catalog) -> Result<Self> {
+        let documentation =
+            match plan.source.optional(&plan.profile, "layout").await? {
+                None => false,
+                Some(Term::Literal(value))
+                    if value.value() == "documentation" =>
+                {
+                    true
+                },
+                _ => {
+                    anyhow::bail!(
+                        "website layout must be documentation when specified"
+                    )
+                },
+            };
+        let mut trees = BTreeMap::new(); // bounded: three named regions.
+        let mut rows = plan.source.objects(&plan.profile, "navigation").await?;
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                trees.len() < 3,
+                "at most three navigation regions are supported"
+            );
+            let id = node(&row["value"])?;
+            let region = plan.source.text(id, "navigationRegion").await?;
+            ensure!(
+                matches!(region.as_str(), "primary" | "sidebar" | "footer"),
+                "unknown navigation region {region}"
+            );
+            ensure!(
+                !trees.contains_key(&region),
+                "duplicate navigation region {region}"
+            );
+            trees.insert(region, Tree::read(plan, catalog, id).await?);
+        }
+        Ok(Self { trees, documentation })
+    }
+
+    pub fn html(
+        &self,
+        region: &str,
+        active: &str,
+        prefix: &str,
+    ) -> Option<String> {
+        self.trees.get(region).map(|tree| {
+            format!(
+                "<nav class=\"{region}-navigation\" aria-label=\"{}\">{}</nav>",
+                esc(&tree.title),
+                tree.html(None, active, prefix)
+            )
+        })
+    }
+}
+impl Tree {
+    async fn read(
+        plan: &Plan,
+        catalog: &Catalog,
+        id: &NamedNode,
+    ) -> Result<Self> {
+        let title = label(plan, id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("navigation requires a title"))?;
+        let mut entries = BTreeMap::new(); // bounded: 512 entries per navigation.
+        let mut rows = plan.source.objects(id, "navigationEntry").await?;
+        while let Some(row) = rows.next().await? {
+            ensure!(
+                entries.len() < 512,
+                "navigation exceeds 512 entries"
+            );
+            let entry = node(&row["value"])?;
+            entries.insert(
+                entry.as_str().to_owned(),
+                Entry::read(plan, catalog, entry).await?,
+            );
+        }
+        ensure!(
+            !entries.is_empty(),
+            "navigation must contain entries"
+        );
+        let mut children: BTreeMap<Option<String>, Vec<String>> =
+            BTreeMap::new(); // bounded: same 512 entries.
+        for (id, entry) in &entries {
+            if let Some(parent) = &entry.parent {
+                ensure!(
+                    entries.contains_key(parent),
+                    "navigation parent is outside this tree: {parent}"
+                );
+            }
+            let mut chain = BTreeSet::new(); // bounded: maximum depth 16.
+            let mut current = Some(id.as_str());
+            while let Some(id) = current {
+                ensure!(chain.insert(id), "navigation cycle at {id}");
+                ensure!(chain.len() <= 16, "navigation exceeds depth 16");
+                current =
+                    entries.get(id).and_then(|entry| entry.parent.as_deref());
+            }
+            children
+                .entry(entry.parent.clone())
+                .or_default()
+                .push(id.clone());
+        }
+        for siblings in children.values_mut() {
+            siblings.sort_by_key(|id| entries[id].order);
+            for pair in siblings.windows(2) {
+                ensure!(
+                    entries[&pair[0]].order != entries[&pair[1]].order,
+                    "navigation siblings require distinct orders"
+                );
+            }
+        }
+        for (id, entry) in &entries {
+            ensure!(
+                entry.href.is_some() ||
+                    children.contains_key(&Some(id.clone())),
+                "navigation section without a destination requires children"
+            );
+        }
+        Ok(Self { title, entries, children })
+    }
+
+    fn active(&self, id: &str, page: &str) -> bool {
+        self.entries[id].page.as_deref() == Some(page) ||
+            self.children.get(&Some(id.into())).is_some_and(|children| {
+                children.iter().any(|child| self.active(child, page))
+            })
+    }
+
+    fn html(&self, parent: Option<&str>, active: &str, prefix: &str) -> String {
+        let mut html = String::from("<ul>");
+        if let Some(children) = self.children.get(&parent.map(str::to_owned)) {
+            for id in children {
+                let entry = &self.entries[id];
+                let current = entry.page.as_deref() == Some(active);
+                let content = if let Some(href) = &entry.href {
+                    format!(
+                        "<a href=\"{}{}\"{}>{}</a>",
+                        if entry.external { "" } else { prefix },
+                        esc(href),
+                        if current {
+                            " aria-current=\"page\""
+                        } else {
+                            ""
+                        },
+                        esc(&entry.label)
+                    )
+                } else {
+                    format!("<span>{}</span>", esc(&entry.label))
+                };
+                if self.children.contains_key(&Some(id.clone())) {
+                    html.push_str(&format!(
+                        "<li><details \
+                         data-id=\"{}\"{}><summary>{content}</summary>{}</\
+                         details></li>",
+                        esc(id),
+                        if self.active(id, active) { " open" } else { "" },
+                        self.html(Some(id), active, prefix)
+                    ));
+                } else {
+                    html.push_str(&format!("<li>{content}</li>"));
+                }
+            }
+        }
+        html.push_str("</ul>");
+        html
+    }
+}
+impl Entry {
+    async fn read(
+        plan: &Plan,
+        catalog: &Catalog,
+        id: &NamedNode,
+    ) -> Result<Self> {
+        let page = plan.source.optional(id, "page").await?;
+        let url = plan.source.optional(id, "url").await?;
+        ensure!(
+            page.is_none() || url.is_none(),
+            "navigation entry cannot specify both page and URL"
+        );
+        let anchor = optional_text(plan, id, "headingAnchor").await?;
+        let explicit_label = label(plan, id).await?;
+        let (href, page, label, external) = if let Some(value) = page {
+            let page = catalog.page(node(&value)?)?;
+            ensure!(
+                !page.asset,
+                "navigation page must not be an asset"
+            );
+            if let Some(anchor) = &anchor {
+                ensure!(
+                    page.headings.contains(anchor),
+                    "navigation anchor {anchor} does not exist on {}",
+                    page.id
+                );
+            }
+            (
+                Some(format!(
+                    "{}{}",
+                    page.route,
+                    anchor.map(|a| format!("#{a}")).unwrap_or_default()
+                )),
+                Some(page.id.as_str().into()),
+                explicit_label.unwrap_or_else(|| page.title.clone()),
+                false,
+            )
+        } else {
+            ensure!(
+                anchor.is_none(),
+                "navigation anchor requires a page"
+            );
+            let href = if let Some(value) = url {
+                let Term::Literal(value) = value else {
+                    anyhow::bail!("navigation URL must be a literal")
+                };
+                let parsed = url::Url::parse(value.value())?;
+                ensure!(
+                    matches!(parsed.scheme(), "http" | "https" | "mailto") &&
+                        !value.value().chars().any(char::is_control),
+                    "unsafe navigation URL"
+                );
+                Some(value.value().to_owned())
+            } else {
+                None
+            };
+            (
+                href,
+                None,
+                explicit_label.ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "navigation section or external link requires a title"
+                    )
+                })?,
+                true,
+            )
+        };
+        let parent = plan
+            .source
+            .optional(id, "parentEntry")
+            .await?
+            .map(|value| node(&value).map(|node| node.as_str().to_owned()))
+            .transpose()?;
+        let order = crate::publication::validation::unsigned(
+            &plan.source.optional(id, "order").await?.ok_or_else(|| {
+                anyhow::anyhow!("navigation entry requires order")
+            })?,
+            "navigation order",
+        )?;
+        Ok(Self { label, parent, order, href, page, external })
+    }
+}
+async fn label(plan: &Plan, id: &NamedNode) -> Result<Option<String>> {
+    match plan
+        .source
+        .optional_by(
+            id,
+            &NamedNode::new_unchecked("http://purl.org/dc/terms/title"),
+        )
+        .await?
+    {
+        None => Ok(None),
+        Some(Term::Literal(value)) if !value.value().trim().is_empty() => {
+            Ok(Some(value.value().into()))
+        },
+        _ => anyhow::bail!("navigation title must be a nonempty literal"),
+    }
+}
+async fn optional_text(
+    plan: &Plan,
+    id: &NamedNode,
+    field: &str,
+) -> Result<Option<String>> {
+    match plan.source.optional(id, field).await? {
+        None => Ok(None),
+        Some(Term::Literal(value)) => Ok(Some(value.value().into())),
+        _ => anyhow::bail!("{field} must be a literal"),
+    }
+}

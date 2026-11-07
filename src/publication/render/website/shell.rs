@@ -66,7 +66,14 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         esc(project_title),
         esc(env!("CARGO_PKG_VERSION"))
     );
-    let header_content = if header.theme.project() {
+    let header_content = if header.navigation.documentation {
+        format!(
+            "<div class=\"documentation-header\">{organization_identity}<a \
+             class=\"documentation-title\" \
+             href=\"{prefix}\">{}</a>{header_links}</div>",
+            esc(project_title)
+        )
+    } else if header.theme.project() {
         format!(
             "<div class=\"community-header-row\"\
              >{organization_identity}{header_links}</div>"
@@ -101,7 +108,21 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
              topics\">{previous_next}</nav>"
         )
     };
-    let navigation_panel = if project_page {
+    let explicit_sidebar = header.navigation.html("sidebar", page.id, prefix);
+    let primary_navigation = header
+        .navigation
+        .html("primary", page.id, prefix)
+        .unwrap_or_default();
+    let footer_navigation = header
+        .navigation
+        .html("footer", page.id, prefix)
+        .unwrap_or_default();
+    let navigation_panel = if let Some(sidebar) = explicit_sidebar {
+        format!(
+            "<aside class=\"site-navigation\"><details open><summary>Browse \
+             documentation</summary>{sidebar}</details></aside>"
+        )
+    } else if project_page {
         format!(
             "<nav class=\"project-navigation\" \
              aria-label=\"Project\">{navigation}</nav>"
@@ -143,14 +164,19 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     let page_outline = if project_page { "" } else { page_outline };
     let prepaint = header.theme.prepaint();
     let body_attribute = header.theme.body_attribute();
+    let layout_attribute = if header.navigation.documentation {
+        " data-layout=\"documentation\""
+    } else {
+        ""
+    };
     format!(
         r##"<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
-<body{body_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
-<header class="site-header">{header_content}</header>
+<body{body_attribute}{layout_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">{header_content}{primary_navigation}</header>
 <div class="{layout}">{navigation_panel}
 <main id="main-content" tabindex="-1">{trail}<article>{heading}{body}{gallery}</article>{neighbors}{quality_link}{article_footer}</main>
-{page_outline}</div>{community_footer}<script>{navigation_script}</script></body></html>"##,
+{page_outline}</div>{footer_navigation}{community_footer}<script>{navigation_script}</script></body></html>"##,
         extra_head = page.extra_head,
         page_title = esc(page.title),
         project_title = esc(project_title),

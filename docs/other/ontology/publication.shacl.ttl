@@ -215,3 +215,22 @@ ga:PageResourceSectionShape a sh:NodeShape ; sh:targetSubjectsOf ga:resourceSect
 
 ga:PageHeroShape a sh:NodeShape ; sh:targetSubjectsOf ga:heroKind ;
     sh:property [ sh:path ga:heroKind ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:in ("landing" "introduction") ] .
+
+
+ga:NavigationShape a sh:NodeShape ; sh:targetClass ga:Navigation ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:navigationRegion ; sh:datatype xsd:string ; sh:in ("primary" "sidebar" "footer") ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:navigationEntry ; sh:nodeKind sh:IRI ; sh:class ga:NavigationEntry ; sh:minCount 1 ; sh:maxCount 512 ] .
+
+ga:NavigationEntryShape a sh:NodeShape ; sh:targetClass ga:NavigationEntry ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:parentEntry ; sh:nodeKind sh:IRI ; sh:class ga:NavigationEntry ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:page ; sh:nodeKind sh:IRI ; sh:class ga:Page ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:url ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:headingAnchor ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:WebsiteLayoutShape a sh:NodeShape ; sh:targetSubjectsOf ga:layout ;
+    sh:property [ sh:path ga:layout ; sh:datatype xsd:string ; sh:in ("documentation") ; sh:maxCount 1 ] .
+
+ga:ProfileNavigationShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigation ;
+    sh:property [ sh:path ga:navigation ; sh:nodeKind sh:IRI ; sh:class ga:Navigation ; sh:maxCount 3 ] .

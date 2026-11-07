@@ -170,3 +170,49 @@ and locally bundled Roboto font. Its identity credits and font license ship
 with the generated website. It does not fetch fonts or logos while readers
 browse the site. Other websites retain their default presentation unless they
 select this theme; specification and PDF authority branding remain separate.
+
+
+## Independent website navigation
+
+For a documentation site, select `ga:layout "documentation"` on its profile.
+The layout keeps site identity, section navigation, a page tree, and the local
+heading outline distinct; `ga:style "ekgf"` independently selects EKGF branding.
+
+A profile can select one `ga:Navigation` for each `ga:navigationRegion`:
+`"primary"`, `"sidebar"`, or `"footer"`. Each tree contains identified
+`ga:navigationEntry` occurrences. An occurrence has its own `ga:order`, optional
+`ga:parentEntry`, and optional `dct:title` label. It refers to a `ga:page` or an
+absolute HTTP(S)/mailto `ga:url`. A section without a destination must have
+children and a title. Parent entries must belong to the same tree.
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+<urn:profile> ga:layout "documentation" ; ga:navigation <urn:sections> .
+<urn:sections> a ga:Navigation ; dct:title "Sections" ;
+    ga:navigationRegion "primary" ;
+    ga:navigationEntry <urn:introduction>, <urn:concepts> .
+<urn:introduction> a ga:NavigationEntry ; ga:order 1 ;
+    dct:title "Introduction" ; ga:page <urn:home> .
+<urn:concepts> a ga:NavigationEntry ; ga:order 2 ;
+    dct:title "Concepts" ; ga:page <urn:concept-page> .
+```
+
+Set `grapharch.subject: urn:home` in the home Markdown frontmatter to give its
+page that identity. The same page can appear in another tree or twice in the
+same tree with different entry identities and labels. This does not duplicate
+its content or change the PDF reading order. `ga:headingAnchor` on an entry
+selects an existing heading on its destination page. Explicit entries can link
+to pages excluded from automatic navigation with `nav_exclude`.
+
+Configured trees replace automatic navigation only in their selected regions.
+Existing page-derived navigation still applies when no explicit sidebar tree is
+selected. Entry destinations must be selected pages, anchors must exist, sibling
+orders must be distinct, and cycles are errors. Trees are limited to 512 entries
+and sixteen levels. Navigation is retained in the documentation graph, so restored
+publications do not need the original Markdown or configuration files.
+
+This is the shared navigation/layout foundation for MkDocs migration, not yet
+an importer for arbitrary MkDocs plugins or complete feature parity. Authored
+content remains the source; generated site files do not belong in source repos.
