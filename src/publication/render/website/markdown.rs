@@ -69,7 +69,9 @@ pub(super) fn render(
                 heading_index += 1;
             },
             Event::Start(Tag::Link { dest_url, .. }) => {
-                *dest_url = link(dest_url, page, catalog)?.into();
+                if crate::publication::badge::label(dest_url).is_none() {
+                    *dest_url = link(dest_url, page, catalog)?.into();
+                }
             },
             Event::Start(Tag::Image { dest_url, .. }) => {
                 let (_, _, asset) = catalog

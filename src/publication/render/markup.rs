@@ -152,6 +152,9 @@ impl<'a> Markdown<'a> {
                     }
                 },
                 Event::Start(Tag::Link { dest_url, .. }) => {
+                    if crate::publication::badge::label(dest_url).is_some() {
+                        continue;
+                    }
                     let original = dest_url.to_string();
                     let resolved = if let Some(resolved) = links.get(&original)
                     {

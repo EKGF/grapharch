@@ -17,18 +17,20 @@ pub struct MarkdownFile(
     bool,
     // Quick-start builds derive absent titles from headings or filenames.
     bool,
+    Vec<PathBuf>,
 );
 /// A SPARQL-file collector that documents statements without executing them.
 pub struct SparqlFile(FileInput);
 
 #[derive(Default, Deserialize)]
 struct Frontmatter {
-    title:       Option<String>,
-    description: Option<String>,
+    title:         Option<String>,
+    description:   Option<String>,
+    letter_prefix: Option<String>,
     #[serde(default)]
-    grapharch:   Hints,
+    grapharch:     Hints,
     #[serde(flatten)]
-    page:        super::page::PageHints,
+    page:          super::page::PageHints,
 }
 
 #[derive(Default, Deserialize)]
@@ -102,6 +104,7 @@ impl MarkdownFile {
             hints,
             false,
             false,
+            Vec::new(),
         )
     }
 
@@ -113,6 +116,7 @@ impl MarkdownFile {
             None,
             true,
             false,
+            Vec::new(),
         ))
     }
 
@@ -131,7 +135,18 @@ impl MarkdownFile {
             None,
             true,
             false,
+            Vec::new(),
         ))
+    }
+
+    /// Authorize additional roots for local Markdown includes.
+    pub fn with_include_roots(mut self, roots: Vec<PathBuf>) -> Result<Self> {
+        ensure!(
+            roots.len() <= 8,
+            "at most eight additional include roots are supported"
+        );
+        self.5 = roots;
+        Ok(self)
     }
 
     pub(crate) fn with_default_title(mut self) -> Self {
@@ -178,9 +193,24 @@ impl Collector for MarkdownFile {
             } else {
                 (Frontmatter::default(), normalized.as_str())
             };
-        let normalized_blocks = super::material_blocks::normalize(body)?;
+        let expansion = super::includes::Expansion::read(
+            &self.0,
+            self.1.as_deref(),
+            &self.5,
+            body,
+            self.3,
+        )
+        .await?;
+        let normalized_blocks =
+            super::material_blocks::normalize(&super::badges::normalize(
+                &expansion.body,
+                frontmatter.letter_prefix.as_deref(),
+            )?)?;
         let body = normalized_blocks.as_str();
-        revision = format!("semantic-containers-v1:{revision}");
+        revision = format!(
+            "semantic-includes-v1:{}:{revision}",
+            expansion.revision
+        );
         if self.4 && frontmatter.title.is_none() {
             frontmatter.title =
                 Some(super::page::default_title(body, &self.0.path));
@@ -218,7 +248,7 @@ impl Collector for MarkdownFile {
             .subject
             .map(NamedNode::new)
             .transpose()?;
-        let mut metadata = Vec::new();
+        let mut metadata = expansion.metadata;
         if self.1.is_some() || !fragments.is_empty() {
             let page = subject.clone().unwrap_or_else(|| input.fragment_id());
             metadata.extend(super::markdown_structure::describe(

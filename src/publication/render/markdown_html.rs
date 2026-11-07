@@ -12,7 +12,22 @@ pub(super) fn events<'a>(
 ) -> anyhow::Result<impl Iterator<Item = Event<'a>>> {
     // Bounded by the caller's per-fragment/page Markdown budget. Classify task
     // items structurally so nested and mixed lists retain their semantics.
-    let events = code::events(events.collect())?;
+    let mut events = code::events(events.collect())?;
+    for index in 0..events.len().saturating_sub(1) {
+        if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] {
+            if let Some(label) = crate::publication::badge::label(dest_url) {
+                anyhow::ensure!(
+                    matches!(events[index + 1], Event::End(TagEnd::Link)),
+                    "identifier badges must have no link body"
+                );
+                events[index] = Event::InlineHtml(
+                    format!("<span class=\"identifier-badge\">{label}</span>")
+                        .into(),
+                );
+                events[index + 1] = Event::InlineHtml("".into());
+            }
+        }
+    }
     let mut items = Vec::new();
     let mut tasks = HashSet::new();
     for (index, event) in events.iter().enumerate() {

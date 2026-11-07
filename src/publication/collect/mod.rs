@@ -2,6 +2,7 @@
 //! RDF.
 
 mod authored;
+mod badges;
 mod blank_nodes;
 pub(crate) mod configured;
 mod endpoint;
@@ -9,6 +10,7 @@ pub mod git;
 mod hashing_reader;
 mod http_rdf;
 mod image;
+mod includes;
 mod local_image;
 mod markdown_images;
 mod markdown_structure;

@@ -97,6 +97,16 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                     Tag::Strong => output.push_str("#strong["),
                     Tag::Strikethrough => output.push_str("#strike["),
                     Tag::Link { dest_url, .. } => {
+                        if let Some(label) =
+                            crate::publication::badge::label(dest_url)
+                        {
+                            output.push_str(&format!(
+                                "#box(fill: rgb(\"#e9edf9\"), inset: 3pt, \
+                                 radius: 2pt)[#text(fill: rgb(\"#424cb5\"), \
+                                 weight: \"bold\")[{label}]]#box["
+                            ));
+                            continue;
+                        }
                         let destination =
                             if let Some(label) = dest_url.strip_prefix('#') {
                                 format!("label({})", quote(label))
