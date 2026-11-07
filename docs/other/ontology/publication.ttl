@@ -1562,3 +1562,13 @@ ga:contentSource a owl:DatatypeProperty ;
     skos:definition "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
     dct:description "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
     rdfs:domain ga:Project ; rdfs:range xsd:string .
+
+# Explicit source dependency roots, independent from authored-page discovery.
+ga:includeRoot a owl:DatatypeProperty ;
+    rdfs:label "include root"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An additional project-relative directory from which authored Markdown snippets may be collected."@en ;
+    dct:description "An additional project-relative directory from which authored Markdown snippets may be collected."@en ;
+    rdfs:comment "Additional directory relative to the project root from which authored Markdown snippets may be collected. At most eight explicit roots; source dependencies are retained in the publication graph."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:string .

@@ -20,6 +20,30 @@ pub(super) async fn content_root(
     directory(root, value.value()).await
 }
 
+pub(super) async fn include_roots(
+    root: &Path,
+    view: &RevisionView,
+    project: &NamedNode,
+) -> Result<Vec<PathBuf>> {
+    let mut roots = Vec::new(); // bounded: eight explicitly configured include roots.
+    let mut values = view.objects(project, "includeRoot").await?;
+    while let Some(row) = values.next().await? {
+        ensure!(
+            roots.len() < 8,
+            "includeRoot exceeds eight-directory budget"
+        );
+        let Term::Literal(value) = &row["value"] else {
+            anyhow::bail!(
+                "includeRoot must be a relative directory path literal"
+            )
+        };
+        roots.push(directory(root, value.value()).await?);
+    }
+    roots.sort();
+    roots.dedup();
+    Ok(roots)
+}
+
 pub(super) async fn directory(root: &Path, value: &str) -> Result<PathBuf> {
     let relative = Path::new(value);
     ensure!(

@@ -87,6 +87,9 @@ pub async fn collect_with_asset_factory(
         let content =
             discovery::content_root(&source, &view, &NamedNode::new(project)?)
                 .await?;
+        let include_roots =
+            discovery::include_roots(&source, &view, &NamedNode::new(project)?)
+                .await?;
         let paths =
             discovery::discover(&content, &view, &NamedNode::new(project)?)
                 .await?;
@@ -122,7 +125,8 @@ pub async fn collect_with_asset_factory(
                         content.clone(),
                         path,
                     )?
-                    .with_default_title(),
+                    .with_default_title()
+                    .with_include_roots(include_roots.clone())?,
                 ));
             } else if LocalImageFile::supported(&path) {
                 work.push(Arc::new(

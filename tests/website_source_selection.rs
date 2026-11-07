@@ -62,7 +62,7 @@ async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
     .await?;
     tokio::fs::write(
         root.path().join("docs/index.md"),
-        "# Product guide\n",
+        "# Product guide\n\n--8<-- \"shared.md\"\n",
     )
     .await?;
     tokio::fs::write(
@@ -70,10 +70,15 @@ async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
         "<urn:model> <urn:label> \"Model source\" .",
     )
     .await?;
+    tokio::fs::write(
+        root.path().join("shared.md"),
+        "Shared authored explanation.\n",
+    )
+    .await?;
     let definitions = root.path().join("project.ttl");
     tokio::fs::write(&definitions, r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
-<urn:project> a ga:Project; ga:contentSource "docs"; ga:target <urn:target>; ga:collector <urn:nav>, <urn:rdf> .
+<urn:project> a ga:Project; ga:contentSource "docs"; ga:includeRoot "."; ga:target <urn:target>; ga:collector <urn:nav>, <urn:rdf> .
 <urn:nav> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:profile> .
 <urn:rdf> a ga:Collector; ga:kind "rdf-file"; ga:source "metadata/model.ttl" .
 <urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
@@ -102,6 +107,7 @@ async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
     let home =
         tokio::fs::read_to_string(result.directory.join("index.html")).await?;
     assert!(home.contains("Product guide"));
+    assert!(home.contains("Shared authored explanation."));
     assert!(!home.contains("Repository administration"));
     assert!(
         !tokio::fs::try_exists(result.directory.join("docs/index.html"))
