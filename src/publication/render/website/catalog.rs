@@ -9,7 +9,10 @@ use {
     },
     anyhow::{Result, ensure},
     oxrdf::NamedNode,
-    std::collections::{BTreeMap, HashMap, HashSet},
+    std::{
+        collections::{BTreeMap, HashMap, HashSet},
+        time::Instant,
+    },
 };
 
 #[derive(Clone)]
@@ -42,6 +45,7 @@ pub(super) struct Catalog {
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
+        let started = Instant::now();
         let mut catalog = Self {
             abbreviations:    plan.abbreviations.clone(),
             pages:            BTreeMap::new(),
@@ -156,6 +160,11 @@ impl Catalog {
                 retain_anchors(&mut page.headings, &page_body)?;
             }
         }
+        tracing::debug!(
+            phase = "website-catalog-fragments",
+            elapsed_ms = started.elapsed().as_millis(),
+            fragments = catalog.owners.len()
+        );
         let mut assets = plan.assets().await?;
         while let Some(row) = assets.next().await? {
             let asset = node(&row["asset"])?;
@@ -165,6 +174,11 @@ impl Catalog {
             );
             catalog.insert(plan, asset.clone()).await?;
         }
+        tracing::debug!(
+            phase = "website-catalog-assets",
+            elapsed_ms = started.elapsed().as_millis(),
+            routes = catalog.pages.len()
+        );
         let owner = plan.source.pattern(
             &format!(
                 "?referenceOwner {} ?ref",
@@ -248,6 +262,11 @@ impl Catalog {
             }
         }
         // Keep only compact headings and page metadata after indexing.
+        tracing::debug!(
+            phase = "website-catalog-references",
+            elapsed_ms = started.elapsed().as_millis(),
+            references = catalog.references.len()
+        );
         let parents: Vec<_> = catalog
             .pages
             .values()
