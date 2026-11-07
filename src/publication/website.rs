@@ -1,5 +1,6 @@
 //! Discover a Markdown documentation tree, collect independent files in
 //! parallel, and assemble a website plan. Rendering only reads that pinned KG.
+mod discovery;
 mod navigation;
 
 use {
@@ -22,10 +23,7 @@ use {
     },
     anyhow::{Result, ensure},
     oxrdf::{GraphName, Literal, NamedNode, Quad},
-    std::{
-        path::{Path, PathBuf},
-        sync::Arc,
-    },
+    std::{path::Path, sync::Arc},
 };
 
 /// A complete collected dataset and immutable website plan.
@@ -71,16 +69,25 @@ pub async fn collect_with_asset_factory(
 ) -> Result<CollectedWebsite> {
     let source = tokio::fs::canonicalize(source).await?;
     let definitions = tokio::fs::canonicalize(definitions).await?;
-    let paths = discover(&source).await?;
     let dataset = Dataset::memory()?;
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
     let result = async {
-        let mut work: Vec<Arc<dyn Collector>> = vec![Arc::new(RdfFile::new(
+        RdfFile::new(
             project,
             "urn:grapharch:website-definitions",
             definitions.clone(),
-        )?)];
+        )?
+        .collect(&writer)
+        .await?;
+        let view = RevisionView::new(
+            dataset.clone(),
+            dataset.snapshot_collected_for(project).await?,
+        );
+        let paths =
+            discovery::discover(&source, &view, &NamedNode::new(project)?)
+                .await?;
+        let mut work: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: 256 discovered sources and two repository records.
         let mut repositories = Vec::new(); // bounded: source tree and definitions can name at most two enclosing clones.
         for directory in [
             source.as_path(),
@@ -177,51 +184,6 @@ pub async fn collect_with_asset_factory(
     drop(writer);
     worker.await??;
     Ok(CollectedWebsite { dataset, plan: result? })
-}
-
-async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
-    let mut pending = vec![root.to_owned()];
-    let mut files = Vec::new();
-    let mut visited = 0;
-    while let Some(directory) = pending.pop() {
-        let mut entries = tokio::fs::read_dir(directory).await?;
-        while let Some(entry) = entries.next_entry().await? {
-            visited += 1;
-            ensure!(
-                visited <= 4096,
-                "website discovery exceeds 4096-entry budget"
-            );
-            let name = entry.file_name();
-            let name = name.to_str().ok_or_else(|| {
-                anyhow::anyhow!("website filenames must be UTF-8")
-            })?;
-            if name.starts_with('.') || name.starts_with('_') {
-                continue;
-            }
-            let kind = entry.file_type().await?;
-            ensure!(
-                !kind.is_symlink(),
-                "website discovery rejects symlinks: {}",
-                entry.path().display()
-            );
-            if kind.is_dir() {
-                pending.push(entry.path());
-            } else if name == "CNAME" ||
-                entry.path().extension().is_some_and(|ext| {
-                    matches!(ext.to_str(), Some("md" | "ttl" | "txt")) ||
-                        LocalImageFile::supported(&entry.path())
-                })
-            {
-                files.push(entry.path());
-                ensure!(
-                    files.len() <= 256,
-                    "website exceeds 256-source budget"
-                );
-            }
-        }
-    }
-    files.sort();
-    Ok(files)
 }
 
 pub(crate) async fn bind(

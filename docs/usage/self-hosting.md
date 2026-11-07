@@ -249,3 +249,11 @@ plugins, content syntax extensions and executable Python hooks are separate
 capabilities; this collector does not execute them.
 
 Documentation website builds infer absent page titles from the first Markdown heading, then the filename. An explicit frontmatter title remains authoritative and invalid frontmatter still fails collection.
+
+Exclude generated files or legacy host instructions from automatic source discovery using project-owned relative paths:
+
+```turtle
+<urn:project> ga:excludeSourcePath "generated-diagrams", "CNAME" .
+```
+
+Each path must exist inside the documentation root. Directory exclusions cover their subtrees; this is exact path selection, not a glob language. Definitions are retained before discovery, so these hints are included in provenance and apply before the source budget. Explicit navigation to an excluded page still fails rather than silently dropping the link.

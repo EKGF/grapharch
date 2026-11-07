@@ -238,3 +238,7 @@ ga:ProfileNavigationShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigation ;
 
 ga:NavigationCollectorShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigationProfile ;
     sh:property [ sh:path ga:navigationProfile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+
+ga:SourceExclusionsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePath ;
+    sh:property [ sh:path ga:excludeSourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] .

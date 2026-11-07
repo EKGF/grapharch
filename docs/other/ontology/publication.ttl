@@ -1529,3 +1529,12 @@ ga:navigationProfile a owl:ObjectProperty ;
     dct:description "Identifies the publication profile receiving navigation hints normalized by a configured source collector."@en ;
     rdfs:domain ga:Collector ;
     rdfs:range ga:Profile .
+
+
+ga:excludeSourcePath a owl:DatatypeProperty ;
+    rdfs:label "Excluded source path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Excludes an explicitly named file or directory subtree from automatic documentation source discovery, relative to the project documentation root."@en ;
+    dct:description "Excludes an explicitly named file or directory subtree from automatic documentation source discovery, relative to the project documentation root."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:string .
