@@ -51,7 +51,7 @@ async fn real_native_maturity_pages_retain_authoritative_companions()
     while pages.next().await?.is_some() {
         count += 1;
     }
-    assert_eq!(count, 92);
+    assert_eq!(count, 93); // 92 model subjects plus the native taxonomy overview.
     let archive = std::path::Path::new("output/maturity-native-acceptance.nq");
     tokio::fs::create_dir_all("output").await?;
     dataset.export(archive.to_path_buf()).await?;
