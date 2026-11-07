@@ -186,6 +186,13 @@ ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
             "broken {href}"
         );
     }
+    let mut ids = HashSet::new();
+    for node in page.select(&scraper::Selector::parse("[id]").unwrap()) {
+        assert!(
+            ids.insert(node.value().id().unwrap()),
+            "duplicate document ID"
+        );
+    }
     assert!(!html.contains("language-grapharch-class-diagram"));
     Ok(())
 }

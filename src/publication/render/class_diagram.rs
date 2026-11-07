@@ -63,9 +63,10 @@ pub(super) fn html(source: &str) -> Result<String> {
          diagram\" style=\"overflow-x:auto\">{}</div><figcaption>Class \
          neighborhood: {}</figcaption><details><summary>Relationships as \
          text</summary><ul>",
-        svg::draw(&diagram, true)?.replace(
-            "width=\"1000\"",
-            "style=\"display:block;width:100%;min-width:640px;height:auto\""
+        svg::draw(&diagram, true)?.replacen(
+            "style=\"",
+            "style=\"display:block;width:100%;min-width:640px;height:auto;",
+            1
         ),
         svg::xml(&diagram.focus.label)
     );

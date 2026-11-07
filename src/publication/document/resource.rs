@@ -176,7 +176,6 @@ impl ResourceDocumentor {
                 &std::collections::BTreeMap::new(),
                 &std::collections::HashSet::new(),
                 &mut description,
-                &mut std::collections::HashSet::new(),
             )
             .await?;
             digest.update(description.as_bytes());

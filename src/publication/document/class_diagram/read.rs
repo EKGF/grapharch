@@ -16,7 +16,6 @@ pub(crate) async fn append(
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
     body: &mut String,
-    references: &mut HashSet<NamedNode>,
 ) -> Result<()> {
     let direct = view.pattern(&format!(r#"
 {{ {subject} ?p ?o . BIND({subject} AS ?s) }} UNION
@@ -69,9 +68,6 @@ FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <
                     id.clone(),
                     node(view, id, prefixes, documented).await?,
                 );
-            }
-            if documented.contains(id) {
-                references.insert(id.clone());
             }
         }
         let target = match &row["o"] {

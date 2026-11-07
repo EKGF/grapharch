@@ -768,7 +768,6 @@ impl Documentor for AnnotatedTermDocumentor {
                 &self.prefixes,
                 &self.documented,
                 &mut body,
-                &mut references,
             )
             .await?;
         }
