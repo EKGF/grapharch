@@ -35,10 +35,12 @@ impl Theme {
 
     pub fn css(self) -> &'static str {
         match self {
-            Self::Default => "",
+            Self::Default => include_str!("project.css"),
             Self::Ekgf => {
                 concat!(
                     include_str!("ekgf.css"),
+                    "\n",
+                    include_str!("project.css"),
                     "\n",
                     include_str!("color_scheme.css")
                 )

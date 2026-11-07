@@ -35,7 +35,9 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         outline: page_outline,
         ..
     } = page;
-    let project_page = header.theme.project() && !page.report;
+    let project_page = (header.theme.project() ||
+        page.presentation.explicit_hero) &&
+        !page.report;
     let layout = if project_page {
         "project-layout"
     } else if page.report {
@@ -128,7 +130,9 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         .navigation
         .html("footer", page.id, prefix)
         .unwrap_or_default();
-    let navigation_panel = if let Some(sidebar) = explicit_sidebar {
+    let navigation_panel = if project_page && header.navigation.documentation {
+        String::new()
+    } else if let Some(sidebar) = explicit_sidebar {
         format!(
             "<aside class=\"site-navigation\" data-project=\"{}\" \
              data-target=\"{}\"><details open><summary>Browse \
@@ -177,7 +181,15 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     };
     let page_outline = if project_page { "" } else { page_outline };
     let prepaint = header.theme.prepaint();
-    let body_attribute = header.theme.body_attribute();
+    let body_attribute = if project_page && !header.theme.project() {
+        if header.theme.community() {
+            " class=\"theme-ekgf project-website\""
+        } else {
+            " class=\"project-website\""
+        }
+    } else {
+        header.theme.body_attribute()
+    };
     let layout_attribute = if header.navigation.documentation {
         " data-layout=\"documentation\""
     } else {

@@ -8,10 +8,11 @@ use {
 
 #[derive(Default)]
 pub(in crate::publication::render::website) struct Presentation {
-    pub landing:   bool,
-    pub features:  Vec<String>,
-    pub resources: Vec<String>,
-    pub icons:     BTreeMap<String, (String, String)>,
+    pub landing:       bool,
+    pub explicit_hero: bool,
+    pub features:      Vec<String>,
+    pub resources:     Vec<String>,
+    pub icons:         BTreeMap<String, (String, String)>,
 }
 impl Presentation {
     pub async fn read(plan: &Plan, page: &NamedNode) -> Result<Self> {
@@ -23,6 +24,7 @@ impl Presentation {
                 "unsupported hero presentation {hero}"
             );
             value.landing = hero == "landing";
+            value.explicit_hero = true;
         }
         let mut rows = plan.source.objects(page, "featureSection").await?;
         while let Some(row) = rows.next().await? {

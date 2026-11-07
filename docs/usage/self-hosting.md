@@ -265,3 +265,11 @@ source directories on the project, for example `ga:includeRoot "."` alongside
 `ga:contentSource "docs"`. Paths are relative to the project root, remain within
 it, and are limited to eight directories. Included source text and its provenance
 are retained in the graph; rendering does not read those directories.
+
+A documentation site can give an individual authored page the same landing-page
+presentation as a project site using `grapharch: {hero: landing}` (or
+`hero: introduction`) in its frontmatter. The page keeps the shared community
+header and footer; other pages retain their documentation navigation. Existing
+`feature_sections`, `resource_sections`, `panel_sections`, and `card_icons`
+hints select how ordinary Markdown sections are presented. No second theme or
+copy of the page's prose is needed.
