@@ -1,10 +1,10 @@
+#[path = "support/http.rs"]
+mod http;
+
 use {
     anyhow::Result,
     grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
-    tokio::{
-        io::{AsyncReadExt, AsyncWriteExt},
-        net::TcpListener,
-    },
+    tokio::{io::AsyncWriteExt, net::TcpListener},
 };
 
 #[tokio::test]
@@ -13,8 +13,7 @@ async fn http_family_showcase_renders_after_sources_disappear() -> Result<()> {
     let url = format!("http://{}/ontology.ttl", listener.local_addr()?);
     let server = tokio::spawn(async move {
         let (mut stream, _) = listener.accept().await?;
-        let mut request = [0; 4096];
-        stream.read(&mut request).await?;
+        http::read_request_headers(&mut stream).await?;
         let body = r##"@prefix owl:<http://www.w3.org/2002/07/owl#> .
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct:<http://purl.org/dc/terms/> .

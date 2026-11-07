@@ -1,3 +1,6 @@
+#[path = "support/http.rs"]
+mod http;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -7,10 +10,7 @@ use {
         website,
     },
     oxrdf::{Literal, NamedNode},
-    tokio::{
-        io::{AsyncReadExt, AsyncWriteExt},
-        net::TcpListener,
-    },
+    tokio::{io::AsyncWriteExt, net::TcpListener},
 };
 
 fn git_source_dependency(source: &str) -> String {
@@ -63,8 +63,7 @@ async fn serve(
     );
     let task = tokio::spawn(async move {
         let (mut socket, _) = listener.accept().await?;
-        let mut request = [0; 8192];
-        socket.read(&mut request).await?;
+        http::read_request_headers(&mut socket).await?;
         socket.write_all(header.as_bytes()).await?;
         socket.write_all(&body).await?;
         Ok(())
