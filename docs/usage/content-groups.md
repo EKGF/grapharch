@@ -120,3 +120,18 @@ attributes, multiple images, absent captions, and additional figure body
 content fail rather than being discarded. Literal examples inside code blocks
 remain literal. There are at most 128 figures per capped Markdown source, with
 captions limited to 16 KiB.
+
+## Explicit destinations
+
+Use an empty `<span id="ontology"></span>` or `<a id="ontology"></a>`
+when a durable link target belongs inside a tab or between headings. The
+collector retains its identity as a semantic destination, independently of
+HTML styling. Other span attributes and nonempty anchor bodies are not accepted
+by this construct; literal code examples are unchanged.
+
+Website links such as `concept.md#ontology` validate against both headings and
+explicit destinations. A fragment link into a tab opens the relevant panel.
+Duplicate IDs, including collisions with headings, fail. HTML and PDF document
+outputs give destinations a component prefix so independent source sections
+can use the same local identifier safely. Rendering uses the retained graph,
+including after the source files have been removed.
