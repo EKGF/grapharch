@@ -31,6 +31,9 @@ async fn mkdocs_nested_navigation_survives_source_removal() -> Result<()> {
     .await?;
     let archive = output.path().join("source.nq");
     dataset.export(archive.clone()).await?;
+    let retained = tokio::fs::read_to_string(&archive).await?;
+    assert!(retained.contains("site_name: Orchard handbook\\n"));
+    assert!(retained.contains("mkdocs-presentation-substitution"));
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
@@ -68,6 +71,9 @@ async fn mkdocs_rejects_unsupported_execution_and_invalid_paths() -> Result<()>
 {
     for (extra, expected) in [
         ("hooks: [hooks.py]\n", "hooks"),
+        ("theme: [material]\n", "theme must"),
+        ("use_directory_urls: bananas\n", "must be true"),
+        ("site_url: ftp://example.org/\n", "HTTP(S)"),
         ("plugins: [mkdocstrings]\n", "mkdocstrings"),
         (
             "theme: !!python/object/apply:os.system ['touch BAD']\n",
@@ -200,5 +206,94 @@ async fn mkdocs_snippets_and_abbreviation_dictionary_use_explicit_roots()
         html.contains("<abbr title=\"Enterprise Knowledge Graph\">EKG</abbr>")
     );
     assert!(html.contains("connects meaning"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn explicit_grapharch_configuration_precedes_mkdocs_even_when_invalid()
+-> Result<()> {
+    for name in ["grapharch.ttl", "project.ttl", ".grapharch/project.ttl"] {
+        let source = tempfile::tempdir()?;
+        tokio::fs::create_dir_all(source.path().join("docs")).await?;
+        tokio::fs::create_dir_all(source.path().join(".grapharch")).await?;
+        tokio::fs::write(
+            source.path().join("docs/index.md"),
+            "# Valid Markdown\n",
+        )
+        .await?;
+        tokio::fs::write(
+            source.path().join("mkdocs.yml"),
+            "site_name: MkDocs must not win\n",
+        )
+        .await?;
+        tokio::fs::write(
+            source.path().join(name),
+            "@prefix this is not Turtle",
+        )
+        .await?;
+        let result = BuildRequest {
+            source: source.path().to_owned(),
+            output: source.path().join("output"),
+        }
+        .collect()
+        .await;
+        assert!(
+            result.is_err(),
+            "invalid explicit {name} must not fall back to MkDocs"
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn mkdocs_navigation_anchors_and_source_boundary_are_checked()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir_all(source.path().join("docs")).await?;
+    tokio::fs::write(
+        source.path().join("docs/index.md"),
+        "# Home\n\n## Fruit\n\nTrees.\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("broken.ttl"),
+        "not RDF and outside docs_dir",
+    )
+    .await?;
+    let config = "site_name: Orchard\nnav:\n  - Fruit: index.md#fruit\n  - \
+                  Mail: mailto:team@example.org\n";
+    tokio::fs::write(source.path().join("mkdocs.yml"), config).await?;
+    let (dataset, plan) = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await?;
+    let PublishOutcome::Published(publication) =
+        Publisher::new(dataset).render(&plan, output.path()).await?
+    else {
+        panic!("superseded")
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    assert!(
+        html.contains("href=\"./#fruit\"") || html.contains("href=\"#fruit\"")
+    );
+    tokio::fs::write(source.path().join("mkdocs.yaml"), config).await?;
+    let error = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await
+    .err()
+    .expect("ambiguous config must fail");
+    assert!(
+        error
+            .to_string()
+            .contains("both mkdocs.yml and mkdocs.yaml")
+    );
     Ok(())
 }

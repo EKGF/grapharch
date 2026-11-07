@@ -84,11 +84,11 @@ impl Config {
         }
         if map
             .get("use_directory_urls")
-            .is_some_and(|v| v == &Value::Bool(false))
+            .is_some_and(|v| v != &Value::Bool(true))
         {
             errors.push(
-                "use_directory_urls: false is not supported; GraphArch uses \
-                 directory routes"
+                "use_directory_urls must be true; GraphArch uses directory \
+                 routes"
                     .into(),
             );
         }
@@ -101,6 +101,10 @@ impl Config {
         )?;
         extensions::read(map.get("plugins"), true, &mut errors, &mut hints)?;
         if let Some(theme) = map.get("theme") {
+            ensure!(
+                theme.is_string() || theme.is_mapping(),
+                "theme must be a name or option mapping"
+            );
             let name = theme
                 .as_str()
                 .or_else(|| theme.get("name").and_then(Value::as_str))

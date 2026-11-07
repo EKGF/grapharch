@@ -31,7 +31,7 @@ impl Inventory {
             "source must be a file or directory"
         );
         let mut definitions = None;
-        for name in ["grapharch.ttl", "project.ttl"] {
+        for name in ["grapharch.ttl", "project.ttl", ".grapharch/project.ttl"] {
             let path = source.join(name);
             match tokio::fs::symlink_metadata(&path).await {
                 Ok(metadata) => {
@@ -42,7 +42,7 @@ impl Inventory {
                     );
                     ensure!(
                         definitions.is_none(),
-                        "both grapharch.ttl and project.ttl exist; select \
+                        "multiple GraphArch configuration files exist; select \
                          configuration with an explicit publication command"
                     );
                     definitions = Some(path);
