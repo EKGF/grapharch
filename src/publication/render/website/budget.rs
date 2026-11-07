@@ -8,7 +8,8 @@ pub(super) const ALIASES: usize = 2048;
 // two reports, one publication inventory, and two search files.
 const SHELL: usize = 3 + 5 + 2 + 2 + 1 + 2;
 pub(super) const MAX_ARTIFACTS: usize =
-    PAGES + ASSETS + PROJECTIONS + ALIASES + SHELL;
+    // The common publisher adds its icon license after website generation.
+    PAGES + ASSETS + PROJECTIONS + ALIASES + SHELL + 1;
 pub(super) struct ArtifactBudget {
     selected: usize,
 }

@@ -542,7 +542,11 @@ mod recovery_tests {
     fn paginated_ownership_accepts_thousands_of_pages_but_rejects_unowned_files()
     -> Result<()> {
         for (renderer, pages) in
-            [("specification-pages", 4200), ("website", 600)]
+            // Website: 256 pages + 256 assets + 256 projections + 2048
+            // aliases
+            // + 15 shell files + the shared icon license; three files below
+            //   are fixed.
+            [("specification-pages", 4200), ("website", 2829)]
         {
             let root = tempfile::tempdir()?;
             let mut files = vec![
