@@ -24,6 +24,8 @@ pub(super) struct Page {
     pub headings:     HashSet<String>,
 }
 pub(super) struct Catalog {
+    pub abbreviations:
+        std::sync::Arc<super::super::abbreviations::Abbreviations>,
     pub pages:            BTreeMap<String, Page>,
     pub fragment_anchors: HashMap<String, String>,
     pub sources:          HashMap<String, String>,
@@ -36,6 +38,7 @@ pub(super) struct Catalog {
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
         let mut catalog = Self {
+            abbreviations:    plan.abbreviations.clone(),
             pages:            BTreeMap::new(),
             fragment_anchors: HashMap::new(),
             sources:          HashMap::new(),

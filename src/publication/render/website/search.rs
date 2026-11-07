@@ -48,7 +48,7 @@ pub(super) async fn write(
             append(
                 &mut output,
                 &catalog.pages[id.as_str()],
-                &body,
+                &catalog.abbreviations.clean(&body)?,
                 &mut bytes,
                 &mut count,
             )
@@ -66,7 +66,7 @@ pub(super) async fn write(
         append(
             &mut output,
             &catalog.pages[id.as_str()],
-            &body,
+            &catalog.abbreviations.clean(&body)?,
             &mut bytes,
             &mut count,
         )

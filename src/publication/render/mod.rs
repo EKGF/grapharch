@@ -1,5 +1,6 @@
 //! Static HTML and embedded Typst/PDF publication from immutable target plans.
 
+mod abbreviations;
 mod book_worker;
 mod bookshelf;
 mod callouts;

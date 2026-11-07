@@ -7,6 +7,7 @@ use {
 
 pub(super) struct Markdown<'a> {
     // bounded: one fragment, capped at 1 MiB before parsing; never the corpus.
+    pub abbreviations:   std::sync::Arc<super::abbreviations::Abbreviations>,
     pub events:          Vec<Event<'a>>,
     base_level:          usize,
     heading_depth:       usize,
@@ -27,8 +28,9 @@ impl<'a> Markdown<'a> {
         );
         let options = crate::publication::markdown::options();
         // bounded: maps and events refer only to this capped fragment.
+        let body = plan.abbreviations.clean(body)?;
         let contextual =
-            super::content_blocks::enclosing(plan, fragment, fragment, body)
+            super::content_blocks::enclosing(plan, fragment, fragment, &body)
                 .await?;
         let mut events = crate::publication::mermaid::events(
             crate::publication::markdown::semantic_events(
@@ -224,7 +226,13 @@ impl<'a> Markdown<'a> {
         let events = super::class_diagram::resolve(events, |iri| {
             plan.diagram_link(iri)
         })?;
-        Ok(Self { events, base_level, heading_depth, component_depth })
+        Ok(Self {
+            events,
+            base_level,
+            heading_depth,
+            component_depth,
+            abbreviations: plan.abbreviations.clone(),
+        })
     }
 
     pub fn depth(&self, level: HeadingLevel) -> usize {
@@ -266,7 +274,9 @@ impl<'a> Markdown<'a> {
         let mut output = String::new();
         pulldown_cmark::html::push_html(
             &mut output,
-            super::markdown_html::events(events)?,
+            self.abbreviations
+                .html(super::markdown_html::events(events)?)?
+                .into_iter(),
         );
         Ok(output)
     }

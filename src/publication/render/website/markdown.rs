@@ -17,7 +17,7 @@ pub(super) struct Content {
 }
 pub(super) fn headings(body: &str) -> Vec<Heading> {
     let events: Vec<_> =
-        Parser::new_ext(body, crate::publication::markdown::options())
+        Parser::new_ext(&body, crate::publication::markdown::options())
             .collect();
     index(&events)
 }
@@ -54,9 +54,10 @@ pub(super) fn render(
     page: &Page,
     catalog: &Catalog,
 ) -> Result<Content> {
+    let body = catalog.abbreviations.clean(body)?;
     let mut events = crate::publication::mermaid::events(
         crate::publication::markdown::semantic_events(
-            Parser::new_ext(body, crate::publication::markdown::options())
+            Parser::new_ext(&body, crate::publication::markdown::options())
                 .collect(),
         ),
     )?;
@@ -173,7 +174,12 @@ pub(super) fn render(
     let mut html = String::new();
     pulldown_cmark::html::push_html(
         &mut html,
-        super::super::markdown_html::events(events.into_iter())?,
+        catalog
+            .abbreviations
+            .html(super::super::markdown_html::events(
+                events.into_iter(),
+            )?)?
+            .into_iter(),
     );
     // Table wrappers keep narrow screens readable without page-wide overflow.
     html = html

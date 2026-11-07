@@ -45,7 +45,11 @@ impl Preamble {
                 let mut html = String::new();
                 pulldown_cmark::html::push_html(
                     &mut html,
-                    super::markdown_html::events(markdown.events.into_iter())?,
+                    plan.abbreviations
+                        .html(super::markdown_html::events(
+                            markdown.events.into_iter(),
+                        )?)?
+                        .into_iter(),
                 );
                 html
             },

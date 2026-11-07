@@ -25,6 +25,7 @@ pub(super) struct Plan {
     pub destination:      String,
     pub title:            String,
     link_index:           HashMap<NamedNode, String>,
+    pub abbreviations:    std::sync::Arc<super::abbreviations::Abbreviations>,
     pub images:           super::collected_images::Images,
     pub quality_evidence: super::quality::EvidenceIndex,
     pub quality:          Vec<crate::publication::diagnostics::Diagnostic>,
@@ -143,10 +144,14 @@ impl Plan {
             title,
             link_index: HashMap::new(),
             images: Default::default(),
+            abbreviations: Default::default(),
             quality,
             quality_evidence,
             provenance: Default::default(),
         };
+        plan.abbreviations = std::sync::Arc::new(
+            super::abbreviations::Abbreviations::read(&plan).await?,
+        );
         plan.provenance = super::provenance::Provenance::read(&plan).await?;
         if plan.renderer != "website" {
             plan.index_links().await?;
