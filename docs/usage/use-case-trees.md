@@ -109,3 +109,57 @@ The example-specific runner wires a reader target and a PDF target to generated
 fragments, as the other executable examples do. The documentation generator is reusable;
 this does not add a general `build-use-cases` CLI command or a complete
 persona/story/workflow documentation engine.
+
+## Authored use-case pages
+
+A documentation project can own its use cases as Markdown pages instead of
+maintaining a second RDF copy. Add a specialized source collector:
+
+```turtle
+<urn:catalog> ga:collector <urn:catalog:use-cases> .
+<urn:catalog:use-cases> a ga:Collector ;
+    ga:kind "authored-use-cases" ;
+    ga:source "docs/use-case" .
+```
+
+The source path is relative to the project root and must be inside the project's
+content directory. Each Markdown file becomes an independently collected use
+case; the subtree's `index.md` remains an ordinary overview page. Nested
+`index.md` files identify their containing use case, while `identity.md`
+identifies `identity` beneath its containing directory.
+
+```markdown
+---
+title: Customer identity
+summary: Verify a customer's **identity** and supporting evidence.
+is-part-of:
+  - ..
+is-used-in:
+  - /fraud-detection
+---
+
+The existing explanation stays here.
+```
+
+Titles and summaries are source-owned and required. Summaries retain Markdown
+formatting. Ownership accepts zero or one parent; `[]` explicitly declares an
+independent root. An omitted ownership field means the containing use case for
+nested cases, or an independent root at the subtree's top level. An omitted
+reuse field means no asserted reuse.
+
+`..` selects the containing use case, `/fraud-detection` selects a use case from
+the configured subtree root, and other relative paths resolve from the current
+use-case identity. Missing targets, self references, duplicate source identities,
+multiple ownership parents, and ownership cycles stop publication.
+
+GraphArch retains these facts using the EKGF Use Case Ontology, then adds a
+**Use-case relationships** topic to each existing page. It contains a native
+SVG diagram, the source summary, and links to ownership and reuse neighbors.
+The authored page body and existing topic order remain intact; no duplicate
+reference pages or generated source files are created. HTML and PDF rendering
+use the pinned documentation graph, even after the source tree is removed.
+
+Collection supports up to 256 use-case pages in a subtree, 1024 filesystem
+entries, and 64 explicit reuse references per page. Existing native topology
+and diagram budgets also apply. Hidden and underscore-prefixed entries are
+excluded; symbolic links and paths escaping the source root are rejected.

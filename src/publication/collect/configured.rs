@@ -30,9 +30,11 @@ pub(crate) async fn collect(
         view.objects(&NamedNode::new(project)?, "collector").await?;
     // bounded: at most 32 explicitly configured dependencies, not corpus data.
     let mut work: Vec<Arc<dyn Collector>> = Vec::new();
+    let mut count = 0;
     while let Some(row) = definitions.next().await? {
+        count += 1;
         ensure!(
-            work.len() < 32,
+            count <= 32,
             "configured sources exceed 32-source budget"
         );
         let Term::NamedNode(processor) = &row["value"] else {
@@ -44,6 +46,19 @@ pub(crate) async fn collect(
         );
         let kind = view.text(processor, "kind").await?;
         let source = view.text(processor, "source").await?;
+        if kind == "authored-use-cases" {
+            work.extend(
+                super::authored_use_cases::configured(
+                    project, processor, &source, root, &view,
+                )
+                .await?,
+            );
+            ensure!(
+                work.len() <= 512,
+                "configured sources exceed 512 collector instances"
+            );
+            continue;
+        }
         let collector: Arc<dyn Collector> = match kind.as_str() {
             "repository-publications" => Arc::new(super::repository_publications::RepositoryPublications::configured(project, processor, &source, &view).await?),
             "documentation-navigation" => {
@@ -111,6 +126,10 @@ pub(crate) async fn collect(
             _ => bail!("unsupported configured source kind {kind}"),
         };
         work.push(collector);
+        ensure!(
+            work.len() <= 512,
+            "configured sources exceed 512 collector instances"
+        );
     }
     collect_all(work, writer, concurrency).await
 }

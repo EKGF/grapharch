@@ -10,7 +10,7 @@ pub mod plantuml;
 pub(crate) mod publication_inventory;
 mod resource;
 pub(crate) mod skos;
-mod use_cases;
+pub(crate) mod use_cases;
 use {
     super::{dataset::Dataset, writer::GraphWriter},
     anyhow::Result,

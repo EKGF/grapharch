@@ -159,6 +159,10 @@ pub async fn collect_with_asset_factory(
         .await?;
 
         super::document::plantuml::document(&dataset, project, &writer).await?;
+        super::document::use_cases::authored::document(
+            &dataset, project, &writer,
+        )
+        .await?;
         native_models::collect(
             &source,
             &dataset,
