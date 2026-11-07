@@ -77,7 +77,11 @@ impl Navigations {
             format!(
                 "<nav class=\"{region}-navigation\" aria-label=\"{}\">{}</nav>",
                 esc(&tree.title),
-                tree.html(None, active, prefix)
+                if region == "primary" {
+                    tree.tabs(active, prefix)
+                } else {
+                    tree.html(None, active, prefix)
+                }
             )
         })
     }
@@ -147,6 +151,47 @@ impl Tree {
             );
         }
         Ok(Self { title, entries, children })
+    }
+
+    // A primary section selects its first authored descendant when it has no
+    // overview page. The full tree remains available for current-section state.
+    fn destination(&self, id: &str) -> &Entry {
+        let entry = &self.entries[id];
+        if entry.href.is_some() {
+            return entry;
+        }
+        self.destination(&self.children[&Some(id.to_owned())][0])
+    }
+
+    fn tabs(&self, active: &str, prefix: &str) -> String {
+        let mut html = String::from("<ul>");
+        if let Some(roots) = self.children.get(&None) {
+            for id in roots {
+                let entry = &self.entries[id];
+                let destination = self.destination(id);
+                html.push_str(&format!(
+                    "<li><a href=\"{}{}\"{}{}>{}</a></li>",
+                    if destination.external { "" } else { prefix },
+                    esc(destination
+                        .href
+                        .as_deref()
+                        .expect("validated destination")),
+                    if self.active(id, active) {
+                        " class=\"active-section\""
+                    } else {
+                        ""
+                    },
+                    if destination.page.as_deref() == Some(active) {
+                        " aria-current=\"page\""
+                    } else {
+                        ""
+                    },
+                    esc(&entry.label),
+                ));
+            }
+        }
+        html.push_str("</ul>");
+        html
     }
 
     fn active(&self, id: &str, page: &str) -> bool {

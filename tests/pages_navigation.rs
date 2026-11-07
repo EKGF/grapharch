@@ -86,6 +86,18 @@ async fn check_navigation(with_index: bool) -> Result<()> {
     )
     .await?;
     let doc = scraper::Html::parse_document(&html);
+    let primary = doc
+        .select(&scraper::Selector::parse(".primary-navigation a").unwrap())
+        .map(|e| e.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert_eq!(primary, ["Introduction", "Learn"]);
+    assert!(
+        doc.select(
+            &scraper::Selector::parse(".primary-navigation details").unwrap()
+        )
+        .next()
+        .is_none()
+    );
     let selector = scraper::Selector::parse(".sidebar-navigation a").unwrap();
     let labels = doc
         .select(&selector)
