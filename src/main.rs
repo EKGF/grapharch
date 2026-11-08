@@ -45,7 +45,8 @@ async fn run() -> anyhow::Result<()> {
         } else {
             grapharch::publication::diagnostics::FailureMode::FailFast
         };
-        return grapharch::publication::cli::run(command, mode).await;
+        // Keep unrelated publication pipelines out of the startup stack frame.
+        return Box::pin(grapharch::publication::cli::run(command, mode)).await;
     }
 
     anyhow::ensure!(
@@ -162,5 +163,17 @@ async fn main() {
     if let Err(e) = run().await {
         eprintln!("error: {e:#}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn startup_dispatch_future_is_bounded() {
+        let size = std::mem::size_of_val(&super::run());
+        assert!(
+            size <= 16 * 1024,
+            "startup future occupies {size} bytes"
+        );
     }
 }
