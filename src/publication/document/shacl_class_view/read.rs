@@ -5,7 +5,7 @@ use {
     oxrdf::{NamedNode, Term},
 };
 
-pub(super) async fn shapes(
+pub(in crate::publication::document) async fn shapes(
     dataset: &Dataset,
     view: &RevisionView,
     class: &NamedNode,

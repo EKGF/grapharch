@@ -202,11 +202,7 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
         note.matches("id=\"grapharch-diagram-note\"").count(),
         1
     );
-    assert!(
-        note.contains(
-            "OWL neighborhood diagrams present asserted relationships"
-        )
-    );
+    assert!(note.contains("Solid relationships present asserted OWL facts"));
     // bounded: this fixture has one home, one reference page and one note.
     let mut selected = None;
     for route in publication

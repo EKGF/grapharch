@@ -121,10 +121,18 @@ BIND(?s AS ?group)
         edges.extend(group);
         group_ends.push(edges.len());
     }
-    body.push_str("\n\n**Class neighborhood**\n\n");
     body.push_str("\n\n");
-    let projection =
-        Projection::generate(Diagram { focus, edges }, renderer).await?;
+    let mut diagram = Diagram {
+        focus,
+        edges,
+        shapes: Vec::new(),
+        limited: overflow,
+    };
+    diagram.shapes = super::constraints::collect(
+        &diagram, dataset, view, prefixes, documented,
+    )
+    .await?;
+    let projection = Projection::generate(diagram, renderer).await?;
     if projection.diagram.edges.is_empty() && !overflow {
         body.push_str(
             "No direct class, domain or range relationships are asserted in \
@@ -132,14 +140,6 @@ BIND(?s AS ?group)
         );
     }
     write(body, projection)?;
-    if overflow {
-        body.push_str(
-            "**Diagram limit:** showing up to five complete relationship \
-             groups within an 18-fact budget, selected in deterministic IRI \
-             order. Omitted groups remain in the published source graph; this \
-             view is not exhaustive.\n\n",
-        );
-    }
     Ok(())
 }
 fn write(body: &mut String, projection: Projection) -> Result<()> {
@@ -151,7 +151,7 @@ fn write(body: &mut String, projection: Projection) -> Result<()> {
     body.push_str(&format!("```{LANGUAGE}\n{source}\n```\n\n"));
     Ok(())
 }
-async fn node(
+pub(super) async fn node(
     view: &RevisionView,
     id: &NamedNode,
     prefixes: &BTreeMap<String, String>,

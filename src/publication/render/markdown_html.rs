@@ -55,19 +55,26 @@ pub(super) fn events<'a>(
             events[index + 1] = Event::InlineHtml("".into());
         }
     }
-    let mut rdf_table = false;
+    let mut semantic_table = false;
     for index in 0..events.len() {
         if matches!(events[index], Event::Start(Tag::Table(_))) {
-            rdf_table = super::rdf_tables::matches(&events, index);
-            if rdf_table {
+            let class = if super::rdf_tables::matches(&events, index) {
+                Some("rdf-properties")
+            } else if super::rdf_tables::shacl_summary(&events, index) {
+                Some("shacl-properties")
+            } else {
+                None
+            };
+            semantic_table = class.is_some();
+            if let Some(class) = class {
                 events[index] =
-                    Event::Html("<table class=\"rdf-properties\">".into());
+                    Event::Html(format!("<table class=\"{class}\">").into());
             }
-        } else if rdf_table &&
+        } else if semantic_table &&
             matches!(events[index], Event::End(TagEnd::Table))
         {
             events[index] = Event::Html("</table>".into());
-            rdf_table = false;
+            semantic_table = false;
         }
     }
     let mut items = Vec::new();
@@ -109,7 +116,7 @@ pub(super) fn events<'a>(
                 event
             };
             let table_start = matches!(&event, Event::Start(Tag::Table(_))) ||
-                matches!(&event, Event::Html(value) if value.as_ref() == "<table class=\"rdf-properties\">");
+                matches!(&event, Event::Html(value) if matches!(value.as_ref(), "<table class=\"rdf-properties\">" | "<table class=\"shacl-properties\">"));
             let table_end = matches!(&event, Event::End(TagEnd::Table)) ||
                 matches!(&event, Event::Html(value) if value.as_ref() == "</table>");
             let before = table_start.then(|| Event::Html("<div class=\"table-scroll\" role=\"region\" aria-label=\"Data table\" tabindex=\"0\">".into()));

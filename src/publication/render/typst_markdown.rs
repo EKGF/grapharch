@@ -156,6 +156,10 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             .join(", ");
                         if super::rdf_tables::matches(&events, index) {
                             widths = "30%, 1fr".into();
+                        } else if super::rdf_tables::shacl_summary(
+                            &events, index,
+                        ) {
+                            widths = "36%, 36%, 14%, 14%".into();
                         }
                         if columns.len() == 1 {
                             widths.push(',');

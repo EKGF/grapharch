@@ -42,3 +42,9 @@ html[data-color-scheme="dark"] [data-image-scheme="dark"]{display:var(--image-di
 svg.inline-icon{display:inline-block;width:1em;height:1em;vertical-align:-.125em;flex:none;color:inherit}svg.inline-icon-large{width:2em;height:2em}
 /* Source-qualified notes remain linked and readable after fragment assembly. */
 .footnote-reference{font-size:.75em;line-height:0}.footnote-definition{display:flex;gap:.5em;margin:.75em 0;color:var(--muted,#555);font-size:.9em}.footnote-definition>p{margin:0}.footnote-definition-label{flex:none}
+
+/* Compact shape summaries reserve space for identifiers, with prose below. */
+.shacl-properties{table-layout:fixed;min-width:32rem}.shacl-properties th,.shacl-properties td{overflow-wrap:anywhere}.shacl-properties th:nth-child(1),.shacl-properties td:nth-child(1){width:36%}.shacl-properties th:nth-child(2),.shacl-properties td:nth-child(2){width:36%}.shacl-properties th:nth-child(n+3),.shacl-properties td:nth-child(n+3){width:14%}.shacl-properties th{overflow-wrap:normal}
+
+/* Text alternatives align with prose, independently of centered SVG figures. */
+.owl-relationships{margin:0 0 1.5rem;text-align:left;width:100%;max-width:100%}.owl-relationships summary{cursor:pointer}.owl-relationship-table{table-layout:fixed;min-width:32rem}.owl-relationship-table td{width:33.333%;overflow-wrap:anywhere}.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}

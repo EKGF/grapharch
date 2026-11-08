@@ -129,7 +129,7 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
     let text =
         tokio::fs::read_to_string(html.directory.join("index.html")).await?;
     assert!(
-        text.contains("SHACL validation views") &&
+        text.contains("SHACL constraints") &&
             text.contains("shapes:ScheduleShape")
     );
     assert!(
@@ -138,24 +138,33 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
             text.contains("sh:sparql")
     );
     let parsed = scraper::Html::parse_document(&text);
-    let drawing = parsed
-        .select(
-            &scraper::Selector::parse(".shacl-validation-diagram svg").unwrap(),
-        )
+    assert_eq!(
+        parsed
+            .select(
+                &scraper::Selector::parse(".shacl-validation-diagram").unwrap()
+            )
+            .count(),
+        0
+    );
+    let table = parsed
+        .select(&scraper::Selector::parse("table.shacl-properties").unwrap())
         .next()
-        .expect("separate SHACL SVG");
-    let width: f64 = drawing
-        .value()
-        .attr("viewBox")
-        .or_else(|| drawing.value().attr("viewbox"))
-        .unwrap()
-        .split_whitespace()
-        .nth(2)
-        .unwrap()
-        .parse()?;
+        .expect("compact SHACL summary");
+    assert_eq!(
+        table
+            .select(&scraper::Selector::parse("thead th").unwrap())
+            .count(),
+        4
+    );
     assert!(
-        width <= 600.0,
-        "SHACL view is too wide for legible mobile presentation: {width}"
+        parsed
+            .select(&scraper::Selector::parse("details").unwrap())
+            .any(|details| {
+                details
+                    .text()
+                    .collect::<String>()
+                    .contains("Constraint details")
+            })
     );
     let PublishOutcome::Published(pdf) =
         Publisher::new(restored).render(&pdf, output.path()).await?
@@ -243,15 +252,15 @@ ex:Unselected a sh:NodeShape; sh:targetClass ex:Other.
 ex:Untyped sh:targetClass ex:Core.
 ex:WrongType a sh:PropertyShape; sh:targetClass ex:Core.
 "#).await?;
-    assert!(body.contains("SHACL validation views"), "{body}");
-    assert_eq!(body.matches("```grapharch-shacl-view").count(), 2);
+    assert!(body.contains("SHACL constraints"), "{body}");
+    assert_eq!(body.matches("```grapharch-shacl-view").count(), 0);
     assert!(body.contains("ex:First") && body.contains("ex:Second"));
     assert!(
         !body.contains("not merged"),
         "Interpretation belongs in the shared endnote"
     );
     assert_eq!(body.matches("| [ex:name]").count(), 2);
-    assert!(body.contains("minCount: 2") && body.contains("maxCount: 1"));
+    assert!(body.contains("minCount:** 2") && body.contains("maxCount:** 1"));
     assert!(body.contains("Declared counts conflict"));
     assert_eq!(
         body.matches("Declared counts conflict").count(),
@@ -282,6 +291,35 @@ ex:Complex a sh:NodeShape; sh:targetClass ex:Core; sh:sparql [sh:select "SELECT 
     );
     assert!(body.contains("sh:sparql"));
     assert!(!body.contains("2..*") && !body.contains("0..*"));
-    assert!(!view("").await?.contains("SHACL validation views"));
+    assert!(!view("").await?.contains("SHACL constraints"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn property_summary_separates_long_prose_from_compact_constraints()
+-> Result<()> {
+    let body = view(r#"
+ex:ContractShape a sh:NodeShape; sh:targetClass ex:Core;
+ sh:property [sh:path ex:contractLifecycleStatus; sh:class ex:Concept;
+ sh:minCount 0; sh:maxCount 1; sh:name "Lifecycle status";
+ sh:description "Long authored explanation belongs outside a narrow summary cell.";
+ sh:message "The status, when supplied, must be a concept."] .
+"#).await?;
+    assert!(body.contains("| Property | Value type | Count | Source |"));
+    let row = body
+        .lines()
+        .find(|line| line.starts_with("| [ex:contractLifecycleStatus]"))
+        .unwrap();
+    assert!(row.contains("0..1") && row.contains("ex:Concept"));
+    assert!(
+        !row.contains("Long authored") &&
+            !row.contains("Anonymous property shape")
+    );
+    assert!(body.contains(
+        "Long authored explanation belongs outside a narrow summary cell."
+    ));
+    assert!(body.contains("The status, when supplied, must be a concept."));
+    assert!(body.contains("Constraint details"));
+    assert!(!body.contains("```grapharch-shacl-view"));
     Ok(())
 }

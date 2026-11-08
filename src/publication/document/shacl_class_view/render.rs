@@ -6,28 +6,19 @@ use {
     std::collections::{BTreeMap, HashSet},
 };
 
-pub(super) async fn append(
+pub(super) fn append(
     shapes: &[Shape],
-    class: &NamedNode,
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
     body: &mut String,
-    renderer: &crate::publication::document::plantuml::LocalRenderer,
 ) -> Result<()> {
-    let mut output = String::from("\n\n**SHACL validation views**\n");
+    let mut output = String::from("\n\n**SHACL constraints**\n");
     for shape in shapes {
-        let projection =
-            super::diagram::generate(shape, class, prefixes, renderer).await?;
         let reference = resource(&shape.id, prefixes, documented);
         output.push_str(&format!(
             "\n\n**Validation shape: {reference}**\n\n[Full shape \
              definition](<{}>)\n",
             shape.id.as_str()
-        ));
-        output.push_str(&format!(
-            "\n\n```{}\n{}\n```\n",
-            super::diagram::LANGUAGE,
-            serde_json::to_string(&projection)?
         ));
         for (predicate, value) in &shape.facts {
             if matches!(
@@ -50,8 +41,46 @@ pub(super) async fn append(
             continue;
         }
         output.push_str(
-            "\n\n| Property path | Declared constraints | Property shape |\n| \
-             --- | --- | --- |\n",
+            "\n\n| Property | Value type | Count | Source |\n| --- | --- | \
+             --- | --- |\n",
+        );
+        for (index, property) in shape.properties.iter().enumerate() {
+            let path = path_text(property, prefixes, documented);
+            let types = property
+                .facts
+                .iter()
+                .filter(|(predicate, _)| {
+                    matches!(
+                        predicate.as_str().strip_prefix(SH),
+                        Some("class" | "datatype")
+                    )
+                })
+                .map(|(_, value)| {
+                    value_text(value, prefixes, documented, &reference)
+                })
+                .collect::<Vec<_>>()
+                .join(", "); // bounded: sixty-four facts.
+            let count = count_text(property);
+            let source = if anonymous(&property.id) {
+                &shape.id
+            } else {
+                &property.id
+            };
+            output.push_str(&format!(
+                "| {path} | {} | {count} | [{}](<{}>) |\n",
+                if types.is_empty() { "—" } else { &types },
+                index + 1,
+                source.as_str()
+            ));
+        }
+        output.push_str(
+            &crate::publication::content_blocks::Boundary::Admonition {
+                category:    "note".into(),
+                title:       "Constraint details".into(),
+                collapsible: true,
+                expanded:    false,
+            }
+            .markdown()?,
         );
         for (index, property) in shape.properties.iter().enumerate() {
             let simple = match property.paths.as_slice() {
@@ -68,46 +97,38 @@ pub(super) async fn append(
                 },
                 None => "Complex path — consult full shape".into(),
             };
-            let constraints = property
-                .facts
-                .iter()
-                .map(|(predicate, value)| {
-                    format!(
-                        "{}: {}",
-                        constraint(predicate),
-                        value_text(value, prefixes, documented, &reference)
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("; "); // bounded: sixty-four facts.
-            let mut constraints = if constraints.is_empty() {
-                "No direct constraints declared".into()
-            } else {
-                constraints
-            };
+            output.push_str(&format!("\n\n**{}. {path}**\n", index + 1));
+            for (predicate, value) in &property.facts {
+                output.push_str(&format!(
+                    "\n- **{}:** {}",
+                    constraint(predicate),
+                    value_text(value, prefixes, documented, &reference)
+                ));
+            }
+            if property.facts.is_empty() {
+                output.push_str("\n\nNo direct constraints declared.");
+            }
             if conflicting_counts(property) {
-                constraints.push_str(
-                    "; **Declared counts conflict — consult full shape**",
+                output.push_str(
+                    "\n\n**Declared counts conflict — consult full shape.**",
                 );
             }
             if simple.is_none() {
-                constraints.push_str(
-                    "; constraints apply to the full path, not a direct \
-                     property",
+                output.push_str(
+                    "\n\nConstraints apply to the full path, not a direct \
+                     property.",
                 );
             }
             let identity = if anonymous(&property.id) {
-                format!(
-                    "Anonymous property shape {} in {reference}",
-                    index + 1
-                )
+                format!("Anonymous property shape {}", index + 1)
             } else {
                 resource(&property.id, prefixes, documented)
             };
-            output.push_str(&format!(
-                "| {path} | {constraints} | {identity} |\n"
-            ));
+            output.push_str(&format!("\n\nSource: {identity}.\n"));
         }
+        output.push_str(
+            &crate::publication::content_blocks::Boundary::End.markdown()?,
+        );
     }
     ensure!(
         output.len() <= 128 * 1024,
@@ -184,5 +205,62 @@ fn conflicting_counts(property: &Property) -> bool {
     match (counts("minCount").max(), counts("maxCount").min()) {
         (Some(minimum), Some(maximum)) => minimum > maximum,
         _ => false,
+    }
+}
+
+fn path_text(
+    property: &Property,
+    prefixes: &BTreeMap<String, String>,
+    documented: &HashSet<NamedNode>,
+) -> String {
+    match property.paths.as_slice() {
+        [Term::NamedNode(path)] if !anonymous(path) => {
+            resource(path, prefixes, documented)
+        },
+        [] => "Missing path".into(),
+        [_] => "Complex path".into(),
+        _ => "Multiple paths".into(),
+    }
+}
+fn count_text(property: &Property) -> String {
+    let count = |name: &str| -> Option<u64> {
+        let mut values = property.facts.iter().filter(|(predicate, _)| {
+            predicate.as_str().strip_prefix(SH) == Some(name)
+        });
+        let (_, Term::Literal(value)) = values.next()? else {
+            return None;
+        };
+        if values.next().is_some() ||
+            value.datatype().as_str() !=
+                "http://www.w3.org/2001/XMLSchema#integer"
+        {
+            return None;
+        }
+        value.value().parse().ok()
+    };
+    if conflicting_counts(property) {
+        return "Conflicting".into();
+    }
+    let minimum = count("minCount");
+    let maximum = count("maxCount");
+    let declared = |name: &str| {
+        property.facts.iter().any(|(predicate, _)| {
+            predicate.as_str().strip_prefix(SH) == Some(name)
+        })
+    };
+    if (declared("minCount") && minimum.is_none()) ||
+        (declared("maxCount") && maximum.is_none())
+    {
+        return "See details".into();
+    }
+    match (minimum, maximum) {
+        (Some(minimum), Some(maximum)) if minimum == maximum => {
+            minimum.to_string()
+        },
+        (minimum, Some(maximum)) => {
+            format!("{}..{maximum}", minimum.unwrap_or(0))
+        },
+        (Some(minimum), None) => format!("{minimum}..*"),
+        (None, None) => "—".into(),
     }
 }

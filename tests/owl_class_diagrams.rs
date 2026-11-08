@@ -134,7 +134,8 @@ ex:Other a owl:Class ; rdfs:subClassOf ex:Core .
         body.matches("```grapharch-class-diagram").count(),
         1
     );
-    assert!(body.contains("Diagram limit"));
+    assert!(!body.contains("Diagram limit"));
+    assert!(body.contains("\"limited\":true"));
     #[derive(serde::Deserialize)]
     struct Retained {
         diagram: Neighborhood,
@@ -319,7 +320,8 @@ async fn oversized_property_groups_are_omitted_whole() -> Result<()> {
         source.push_str(&format!("ex:p rdfs:range ex:Target{i} .\n"));
     }
     let body = diagram(&source).await?;
-    assert!(body.contains("Diagram limit"));
+    assert!(!body.contains("Diagram limit"));
+    assert!(body.contains("\"limited\":true"));
     assert!(
         !body.contains("\"label\":\"ex:p\""),
         "a partial property group would misrepresent its domains/ranges"
@@ -463,7 +465,7 @@ async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
     );
     assert!(retained.source.contains("<<owl:Class>>"));
     assert!(
-        retained.source.contains("n0 --|> n1"),
+        retained.source.contains("n0 -up-|> n1"),
         "generalization must point from child to parent"
     );
     assert!(
@@ -529,3 +531,9 @@ ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:PublicationArtifact 
 
 #[path = "owl_class_diagrams/shorthand.rs"]
 mod shorthand;
+
+#[path = "owl_class_diagrams/layout.rs"]
+mod layout;
+
+#[path = "owl_class_diagrams/constraints.rs"]
+mod constraints;

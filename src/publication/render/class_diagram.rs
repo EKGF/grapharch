@@ -66,26 +66,62 @@ pub(super) fn html(source: &str) -> Result<String> {
          diagram; scroll horizontally when needed\" \
          style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
          border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} \
-         {}</figcaption><details><summary>Relationships as text</summary><ul>",
+         {}</figcaption></figure><details \
+         class=\"owl-relationships\"><summary>Relationships as text</summary>",
         svg::draw(&projection, true)?,
         svg::xml(&diagram.focus.label),
         super::diagram_notes::reference_html()
     );
     if diagram.edges.is_empty() {
-        html.push_str(&format!(
-            "<li>{}</li>",
-            node_html(&diagram.focus)?
-        ));
+        html.push_str(
+            "<p>No asserted OWL relationships in this neighborhood.</p>",
+        );
+    } else {
+        html.push_str(
+            "<div class=\"table-scroll\" role=\"region\" \
+             aria-label=\"Asserted OWL relationships\" tabindex=\"0\"><table \
+             class=\"owl-relationship-table\" aria-label=\"Asserted OWL \
+             relationships\"><thead class=\"sr-only\"><tr><th \
+             scope=\"col\">Subject</th><th scope=\"col\">Predicate</th><th \
+             scope=\"col\">Object</th></tr></thead><tbody>",
+        );
+        for edge in &diagram.edges {
+            html.push_str(&format!(
+                "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
+                node_html(&edge.from)?,
+                svg::xml(&edge.relation),
+                node_html(&edge.to)?
+            ));
+        }
+        html.push_str("</tbody></table></div>");
     }
-    for edge in &diagram.edges {
+    for shape in &diagram.shapes {
         html.push_str(&format!(
-            "<li>{} — {} → {}</li>",
-            node_html(&edge.from)?,
-            svg::xml(&edge.relation),
-            node_html(&edge.to)?
+            "<p>SHACL constraints for {} from {}</p><div \
+             class=\"table-scroll\" role=\"region\" aria-label=\"SHACL \
+             constraints\" tabindex=\"0\"><table \
+             class=\"owl-constraint-table\"><thead><tr><th \
+             scope=\"col\">Property</th><th scope=\"col\">Value type</th><th \
+             scope=\"col\">Count</th></tr></thead><tbody>",
+            node_html(&shape.class)?,
+            node_html(&shape.source)?
         ));
+        for field in &shape.fields {
+            let range = field
+                .range
+                .as_ref()
+                .map(node_html)
+                .transpose()?
+                .unwrap_or_else(|| "—".into());
+            html.push_str(&format!(
+                "<tr><td>{}</td><td>{range}</td><td>{}</td></tr>",
+                node_html(&field.property)?,
+                svg::xml(&field.cardinality())
+            ));
+        }
+        html.push_str("</tbody></table></div>");
     }
-    html.push_str("</ul></details></figure>\n");
+    html.push_str("</details>\n");
     Ok(html)
 }
 fn node_html(node: &Node) -> Result<String> {
@@ -147,12 +183,26 @@ pub(super) fn typst(source: &str) -> Result<String> {
     result.push_str(super::diagram_notes::reference_typst());
     // Text links remain accessible and clickable in PDF, where SVG hyperlink
     // annotations are not retained by the image decoder.
-    for edge in &diagram.edges {
+    if !diagram.edges.is_empty() {
+        result.push_str(
+            "#text(size: 8pt)[#ga-table(columns: (1fr, auto, 1fr), \
+             has-header: false, ",
+        );
+        for edge in &diagram.edges {
+            result.push_str(&format!(
+                "[{}], [#text({})], [{}], ",
+                node_typst(&edge.from),
+                quote(&edge.relation),
+                node_typst(&edge.to)
+            ));
+        }
+        result.push_str(")]\n");
+    }
+    for shape in &diagram.shapes {
         result.push_str(&format!(
-            "#par(text(size: 8pt)[{} #text({}) {}])\n",
-            node_typst(&edge.from),
-            quote(&format!("— {} →", edge.relation)),
-            node_typst(&edge.to)
+            "#par[SHACL constraints for {} from {}]\n",
+            node_typst(&shape.class),
+            node_typst(&shape.source)
         ));
     }
     Ok(result)
@@ -193,8 +243,10 @@ mod tests {
         };
         serde_json::to_string(&Projection {
             diagram: Diagram {
-                focus: node.clone(),
-                edges: vec![Edge {
+                focus:   node.clone(),
+                shapes:  Vec::new(),
+                limited: false,
+                edges:   vec![Edge {
                     predicate: None,
                     from:      node.clone(),
                     relation:  "rdfs:subClassOf".into(),
@@ -210,6 +262,52 @@ mod tests {
                 .into(),
         })
         .unwrap()
+    }
+    #[test]
+    fn textual_relationships_are_a_full_width_accessible_table() {
+        let output = html(&retained("#class")).unwrap();
+        let parsed = scraper::Html::parse_fragment(&output);
+        let details = parsed
+            .select(
+                &scraper::Selector::parse("details.owl-relationships").unwrap(),
+            )
+            .next()
+            .expect("relationship disclosure");
+        assert!(!details.ancestors().any(|node| {
+            scraper::ElementRef::wrap(node)
+                .is_some_and(|element| element.value().name() == "figure")
+        }));
+        let table = details
+            .select(&scraper::Selector::parse("table").unwrap())
+            .next()
+            .expect("three-column relationship table");
+        assert_eq!(
+            table.value().attr("aria-label"),
+            Some("Asserted OWL relationships")
+        );
+        assert_eq!(
+            table
+                .select(
+                    &scraper::Selector::parse("thead.sr-only th[scope=col]")
+                        .unwrap()
+                )
+                .count(),
+            3
+        );
+        assert_eq!(
+            table
+                .select(&scraper::Selector::parse("tbody tr td").unwrap())
+                .count(),
+            3
+        );
+        assert!(table.text().collect::<String>().contains("rdfs:subClassOf"));
+        assert_eq!(
+            details
+                .select(&scraper::Selector::parse("ul,li").unwrap())
+                .count(),
+            0
+        );
+        assert!(!output.contains(" — ") && !output.contains(" → "));
     }
     #[test]
     fn tall_pdf_drawings_have_a_physical_height_budget_and_text_links() {

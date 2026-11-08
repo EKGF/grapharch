@@ -23,7 +23,9 @@ impl Projection {
         let mut source = source(&diagram);
         let engine = renderer.version().await?;
         let mut svg = render(renderer, &source).await?;
-        if !diagram.edges.is_empty() {
+        if !diagram.edges.is_empty() &&
+            !super::layout::Layout::new(&diagram).has_hierarchy()
+        {
             let alternative_source = source.replacen(
                 "left to right direction",
                 "top to bottom direction",
@@ -112,6 +114,16 @@ pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
 fn source(diagram: &Diagram) -> String {
     let nodes = nodes(diagram);
     let shorthand = super::shorthand::Shorthand::new(diagram);
+    let layout = super::layout::Layout::new(diagram);
+    let mut visible = shorthand.visible.clone();
+    for shape in &diagram.shapes {
+        visible.insert(shape.class.id.as_str());
+        for field in shape.fields.iter().filter(|f| f.object) {
+            if let Some(range) = &field.range {
+                visible.insert(range.id.as_str());
+            }
+        }
+    }
     let mut identifiers = BTreeMap::new(); // bounded: at most thirty-seven node IDs.
     let mut output =
         "@startuml\n!pragma layout smetana\nallowmixing\nleft to right \
@@ -120,9 +132,17 @@ fn source(diagram: &Diagram) -> String {
          defaultFontName Arial\nskinparam defaultFontSize 14\nskinparam \
          ArrowColor #68758A\nskinparam nodesep 30\nskinparam ranksep 45\n"
             .to_owned();
+    identifiers
+        .extend(nodes.keys().enumerate().map(|(index, id)| (*id, index)));
+    if layout.has_hierarchy() {
+        output = output.replacen(
+            "left to right direction",
+            "top to bottom direction",
+            1,
+        );
+    }
     for (index, node) in nodes.values().enumerate() {
-        identifiers.insert(node.id.as_str(), index);
-        if !shorthand.visible.contains(node.id.as_str()) {
+        if !visible.contains(node.id.as_str()) {
             continue;
         }
         let color = if node.id == diagram.focus.id {
@@ -140,11 +160,13 @@ fn source(diagram: &Diagram) -> String {
                 "class \"{label}\" as n{index} <<owl:Class>> \
                  [[./grapharch-node/n{index}]] {color} {{\n"
             ));
-            for property in shorthand
-                .properties
-                .iter()
-                .filter(|p| p.attribute() && p.domain.id == node.id)
-            {
+            for property in shorthand.properties.iter().filter(|p| {
+                p.attribute() &&
+                    p.domain.id == node.id &&
+                    !super::constraint_projection::constrained(
+                        diagram, &node.id, &p.node.id,
+                    )
+            }) {
                 let property_index = nodes
                     .keys()
                     .position(|id| *id == property.node.id)
@@ -162,6 +184,12 @@ fn source(diagram: &Diagram) -> String {
                     text(&property.node.label)
                 ));
             }
+            super::constraint_projection::members(
+                &mut output,
+                node,
+                diagram,
+                &identifiers,
+            );
             output.push_str("}\n");
         } else {
             output.push_str(&format!(
@@ -174,13 +202,34 @@ fn source(diagram: &Diagram) -> String {
     for property in shorthand.properties.iter().filter(|p| !p.attribute()) {
         let range = property.range.expect("association has a declared range");
         output.push_str(&format!(
-            "n{} --> n{} [[./grapharch-node/n{}]] : {}\n",
+            "n{} {} n{} [[./grapharch-node/n{}]] : {}{}\n",
             identifiers[property.domain.id.as_str()],
+            layout.association_arrow(&property.domain.id, &range.id),
             identifiers[range.id.as_str()],
             identifiers[property.node.id.as_str()],
-            label(&property.node.label)
+            label(&property.node.label),
+            super::constraint_projection::association_annotations(
+                diagram,
+                &property.domain.id,
+                &property.node.id,
+                &range.id
+            )
         ));
     }
+    super::constraint_projection::associations(
+        &mut output,
+        diagram,
+        &identifiers,
+        |class, field| {
+            shorthand.properties.iter().any(|p| {
+                !p.attribute() &&
+                    p.domain.id == class &&
+                    p.node.id == field.property.id &&
+                    p.range.map(|r| r.id.as_str()) ==
+                        field.range.as_ref().map(|r| r.id.as_str())
+            })
+        },
+    );
     for (index, edge) in diagram.edges.iter().enumerate() {
         if shorthand.consumed.contains(&index) {
             continue;
@@ -190,17 +239,25 @@ fn source(diagram: &Diagram) -> String {
             edge.from.kind == "Class" &&
             edge.to.kind == "Class";
         output.push_str(&format!(
-            "n{} {} n{} : {}\n",
+            "n{} {} n{}{}\n",
             identifiers[edge.from.id.as_str()],
-            if generalization { "--|>" } else { "-->" },
+            if generalization {
+                layout.generalization_arrow(edge)
+            } else {
+                "-->"
+            },
             identifiers[edge.to.id.as_str()],
-            label(&edge.relation)
+            if generalization {
+                String::new()
+            } else {
+                format!(" : {}", label(&edge.relation))
+            }
         ));
     }
     output.push_str("@enduml\n");
     output
 }
-fn label(value: &str) -> String {
+pub(super) fn label(value: &str) -> String {
     if let Some((prefix, local)) = value.split_once(':') {
         return format!("{}:\\n{}", text(prefix), label(local));
     }
@@ -219,7 +276,7 @@ fn label(value: &str) -> String {
     lines.push(text(&line));
     lines.join("\\n")
 }
-fn text(value: &str) -> String {
+pub(super) fn text(value: &str) -> String {
     let mut output = String::new();
     for character in value.chars() {
         if character.is_alphanumeric() ||
@@ -240,13 +297,15 @@ mod tests {
      {
         let retained = Projection {
             diagram: Diagram {
-                focus: super::super::Node {
+                focus:   super::super::Node {
                     id:    "urn:test:class".into(),
                     label: "Class".into(),
                     kind:  "Class".into(),
                     link:  None,
                 },
-                edges: Vec::new(),
+                edges:   Vec::new(),
+                shapes:  Vec::new(),
+                limited: false,
             },
             source:  "@startuml\n' previous generated layout \
                       revision\nrectangle Class\n@enduml\n"

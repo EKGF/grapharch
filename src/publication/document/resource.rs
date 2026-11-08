@@ -193,7 +193,6 @@ impl ResourceDocumentor {
                 &std::collections::BTreeMap::new(),
                 &std::collections::HashSet::new(),
                 &mut description,
-                &self.diagram_renderer,
             )
             .await?;
             digest.update(description.as_bytes());
