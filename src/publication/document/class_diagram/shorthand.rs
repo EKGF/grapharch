@@ -16,6 +16,7 @@ pub(super) struct Property<'a> {
 impl Property<'_> {
     pub fn attribute(&self) -> bool {
         self.node.kind == "Datatype property" ||
+            self.range.is_none() ||
             self.range.is_some_and(|range| range.id == GENERIC_RESOURCE)
     }
 }
@@ -76,8 +77,7 @@ impl<'a> Shorthand<'a> {
             let range = ranges.first().copied();
             if range.is_some_and(|n| {
                 !matches!(n.kind.as_str(), "Class" | "Resource")
-            }) || (node.kind != "Datatype property" && range.is_none())
-            {
+            }) {
                 continue;
             }
             consumed.extend(incident.iter().map(|(i, _)| *i));

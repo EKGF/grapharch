@@ -197,3 +197,21 @@ ex:evidencePredicate {declaration} rdfs:domain ex:Core ; rdfs:range <http://www.
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn object_property_with_only_domain_is_an_untyped_member() -> Result<()> {
+    let body = diagram(
+        "ex:Core a owl:Class . ex:domain a owl:ObjectProperty ; rdfs:domain \
+         ex:Core .",
+    )
+    .await?;
+    let drawing = retained(&body)?;
+    assert_eq!(drawing.diagram.edges.len(), 1);
+    assert!(
+        drawing.source.contains("{field} ex:domain [[["),
+        "{}",
+        drawing.source
+    );
+    assert!(!drawing.source.contains("{field} ex:domain :"));
+    Ok(())
+}
