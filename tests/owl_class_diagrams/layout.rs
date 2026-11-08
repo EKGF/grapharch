@@ -122,3 +122,30 @@ async fn named_external_superclasses_keep_vertical_inheritance_without_invented_
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn inheritance_placement_wins_when_associations_share_its_endpoints()
+-> Result<()> {
+    for source in [
+        "ex:Core a owl:Class ; rdfs:subClassOf ex:Entity . ex:state a \
+         owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Entity .",
+        "ex:Core a owl:Class ; rdfs:subClassOf ex:Entity . ex:state a \
+         owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Entity . \
+         ex:context a owl:ObjectProperty ; rdfs:domain ex:Entity ; rdfs:range \
+         ex:Core .",
+    ] {
+        let retained = drawing(source).await?;
+        let svg = roxmltree::Document::parse(&retained.svg)?;
+        let core = bounds(&svg, "Core");
+        let parent = bounds(&svg, "Entity");
+        assert!(
+            parent[1] + parent[3] < core[1],
+            "Association rank must not invert superclass placement: parent \
+             {parent:?}, child {core:?}; {}",
+            retained.source
+        );
+        assert!(retained.source.contains("-up-|>"));
+        assert!(retained.svg.contains("state"));
+    }
+    Ok(())
+}

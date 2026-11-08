@@ -469,7 +469,7 @@ async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
     assert!(
         retained
             .source
-            .contains("n0 --> n1 [[./grapharch-node/n2]]"),
+            .contains("n0 -up-> n1 [[./grapharch-node/n2]]"),
         "single-domain properties use a linked association"
     );
     assert!(!retained.source.contains("*--"));

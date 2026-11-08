@@ -25,13 +25,19 @@ impl<'a> Layout<'a> {
     }
 
     pub fn association_arrow(&self, from: &str, to: &str) -> &'static str {
-        if !self.has_hierarchy() ||
-            self.reaches(from, to) ||
-            self.reaches(to, from)
-        {
-            "-->"
-        } else {
-            "-right->"
+        if !self.has_hierarchy() {
+            return "-->";
+        }
+        // An unconstrained edge has its own default downward rank. When it
+        // shares inheritance endpoints that rank can win over the triangle.
+        // Align every edge with the known hierarchy rather than leaving two
+        // contradictory rank requests for the layout engine to reconcile.
+        match (self.reaches(from, to), self.reaches(to, from)) {
+            (true, false) => "-up->",
+            (false, true) => "-down->",
+            // Cycles and self-relations have no vertical order.
+            (true, true) => "-->",
+            (false, false) => "-right->",
         }
     }
 
