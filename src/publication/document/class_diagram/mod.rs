@@ -3,6 +3,7 @@ mod constraint_projection;
 mod constraints;
 mod display;
 mod existential;
+mod label_lines;
 mod labels;
 mod layout;
 mod projection;

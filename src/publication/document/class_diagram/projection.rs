@@ -282,25 +282,7 @@ fn source(diagram: &Diagram) -> String {
     output.push_str("@enduml\n");
     output
 }
-pub(super) fn label(value: &str) -> String {
-    if let Some((prefix, local)) = value.split_once(':') {
-        return format!("{}:\\n{}", text(prefix), label(local));
-    }
-    let mut lines = Vec::new(); // bounded: source labels are capped at 512 bytes.
-    let mut line = String::new();
-    let mut length = 0;
-    for character in value.chars() {
-        if length == 24 || (length >= 10 && character.is_uppercase()) {
-            lines.push(text(&line));
-            line.clear();
-            length = 0;
-        }
-        line.push(character);
-        length += 1;
-    }
-    lines.push(text(&line));
-    lines.join("\\n")
-}
+pub(super) fn label(value: &str) -> String { super::label_lines::render(value) }
 pub(super) fn text(value: &str) -> String {
     let mut output = String::new();
     for character in value.chars() {
@@ -364,6 +346,17 @@ mod tests {
                         0 423 565\"/>";
         assert!(
             layout_score(landscape).unwrap() > layout_score(portrait).unwrap()
+        );
+    }
+    #[test]
+    fn authored_phrase_labels_wrap_at_words() {
+        assert_eq!(
+            label("legally delegated authority"),
+            "legally delegated\\nauthority"
+        );
+        assert_eq!(
+            label("delegates control to"),
+            "delegates control to"
         );
     }
     #[test]

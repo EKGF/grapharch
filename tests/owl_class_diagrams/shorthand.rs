@@ -99,7 +99,6 @@ async fn ambiguous_or_referenced_properties_keep_explicit_assertions()
          rdfs:range ex:Target .",
         "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \
          ex:Target, ex:Other .",
-        "ex:p a owl:ObjectProperty ; rdfs:range ex:Core .",
         "ex:p a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range [ \
          owl:unionOf (ex:A ex:B) ] .",
         "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \

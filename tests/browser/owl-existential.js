@@ -1,9 +1,9 @@
 async (page) => {
-  const figure = page.locator('figure.owl-class-diagram').filter({has: page.locator('figcaption', {hasText: 'DocumentPart'})}).first();
+  const figure = page.locator('figure.owl-class-diagram').filter({has: page.locator('figcaption', {hasText: /document\s*part/i})}).first();
   if (await figure.count() !== 1) throw new Error('Actual Commons DocumentPart diagram missing');
   const svg = figure.locator('svg');
   const text = (await svg.locator('text').allTextContents()).join(' ').replace(/\s+/g, ' ');
-  if (!text.includes('at least one') || !text.includes('Document') || !text.includes('isMemberOf')) throw new Error('Qualified existential association missing');
+  if (!text.includes('at least one') || !text.toLowerCase().includes('document') || !text.replace(/\s+/g,'').toLowerCase().includes('ismemberof')) throw new Error('Qualified existential association missing');
   for (const machinery of ['Anonymous', 'onProperty', 'someValuesFrom', '1..*']) {
     if (text.includes(machinery)) throw new Error(`Unsupported visible existential notation: ${machinery}`);
   }
@@ -12,9 +12,9 @@ async (page) => {
   const bounds = await svg.evaluate(node => {
     const result = {};
     for (const group of node.querySelectorAll('g.entity')) {
-      const label = [...group.querySelectorAll('text')].map(n=>n.textContent).join('').replace(/\s+/g,'');
-      if (label.endsWith('DocumentPart')) result.part = group.getBBox();
-      else if (label.endsWith('Document')) result.document = group.getBBox();
+      const label = [...group.querySelectorAll('text')].map(n=>n.textContent).join('').replace(/\s+/g,'').toLowerCase();
+      if (label.endsWith('documentpart')) result.part = group.getBBox();
+      else if (label.endsWith('document')) result.document = group.getBBox();
     }
     return Object.fromEntries(Object.entries(result).map(([name,b])=>[name,{y:b.y,height:b.height}]));
   });
