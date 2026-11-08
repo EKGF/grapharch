@@ -176,6 +176,7 @@ async fn website_diagrams_link_classes_and_survive_export_without_sources()
 ex:Core a owl:Class ; rdfs:label "Core" ; rdfs:comment "The central class." ; rdfs:subClassOf ex:Parent .
 ex:Parent a owl:Class ; rdfs:label "Parent" ; rdfs:comment "The parent class." .
 ex:p a owl:ObjectProperty ; rdfs:label "Related parent" ; rdfs:comment "Relates a core instance to its parent." ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
+ex:name a owl:DatatypeProperty ; rdfs:label "Name" ; rdfs:comment "A human-readable name." ; rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> .
 "#,
     )
     .await?;
