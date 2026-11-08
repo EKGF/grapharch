@@ -30,9 +30,17 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   arrow: its hollow triangle points to the superclass. Other subclass endpoints,
   `owl:equivalentClass`, and `owl:disjointWith` remain explicitly labeled arrows.
   No inference is performed.
-- Properties are separate resources with domain and range arrows. Multiple
-  domains or ranges apply together, not as alternative choices. A property
-  appearing here is not necessarily required on instances of the class.
+- A property with one named OWL class as its declared domain can use UML
+  shorthand. A datatype property becomes an attribute row, with its declared
+  range when present. An object property with one declared range becomes a
+  labelled association. Both link to the property documentation. This is
+  presentation shorthand: RDF properties remain independent resources, and no
+  requiredness, ownership, or multiplicity is inferred.
+- Multiple domains or ranges, anonymous expressions, missing domains, and
+  properties referenced by other displayed relationships stay explicit. Their
+  domain/range assertions apply together, not as alternative choices. The
+  accessible relationship list preserves every original assertion regardless
+  of shorthand.
 - Direct anonymous restrictions retain their `owl:onProperty`, value constraints,
   and cardinalities as explicit relationships. Union and intersection RDF lists
   are expanded into labeled member relationships. Anonymous expressions have
@@ -65,7 +73,7 @@ not require the original ontology files or network access. Changes to incoming
 relationships also change the generated fragment content and revision.
 
 Wide neighborhoods are also laid out top-to-bottom by the same engine; GraphArch
-retains the narrower of the two standard orientations. Labels wrap without
+retains the balanced orientation selected by the same fit score. Labels wrap without
 discarding identifier characters. It does not position edge captions itself.
 
 The build reuses one bounded local renderer process across class diagrams. It

@@ -111,6 +111,7 @@ pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
 }
 fn source(diagram: &Diagram) -> String {
     let nodes = nodes(diagram);
+    let shorthand = super::shorthand::Shorthand::new(diagram);
     let mut identifiers = BTreeMap::new(); // bounded: at most thirty-seven node IDs.
     let mut output =
         "@startuml\n!pragma layout smetana\nallowmixing\nleft to right \
@@ -121,6 +122,9 @@ fn source(diagram: &Diagram) -> String {
             .to_owned();
     for (index, node) in nodes.values().enumerate() {
         identifiers.insert(node.id.as_str(), index);
+        if !shorthand.visible.contains(node.id.as_str()) {
+            continue;
+        }
         let color = if node.id == diagram.focus.id {
             "#E9EDFF"
         } else if node.kind.contains("property") {
@@ -134,8 +138,28 @@ fn source(diagram: &Diagram) -> String {
         if node.kind == "Class" {
             output.push_str(&format!(
                 "class \"{label}\" as n{index} <<owl:Class>> \
-                 [[./grapharch-node/n{index}]] {color}\n"
+                 [[./grapharch-node/n{index}]] {color} {{\n"
             ));
+            for property in shorthand
+                .properties
+                .iter()
+                .filter(|p| p.attribute() && p.domain.id == node.id)
+            {
+                let property_index = nodes
+                    .keys()
+                    .position(|id| *id == property.node.id)
+                    .expect("retained property node");
+                let range = property
+                    .range
+                    .map(|r| format!(" : {}", text(&r.label)))
+                    .unwrap_or_default();
+                output.push_str(&format!(
+                    "  {{field}} {}{range} \
+                     [[[./grapharch-node/n{property_index}]]]\n",
+                    text(&property.node.label)
+                ));
+            }
+            output.push_str("}\n");
         } else {
             output.push_str(&format!(
                 "rectangle \"<<{}>>\\n{label}\" as n{index} \
@@ -144,7 +168,20 @@ fn source(diagram: &Diagram) -> String {
             ));
         }
     }
-    for edge in &diagram.edges {
+    for property in shorthand.properties.iter().filter(|p| !p.attribute()) {
+        let range = property.range.expect("association has a declared range");
+        output.push_str(&format!(
+            "n{} --> n{} [[./grapharch-node/n{}]] : {}\n",
+            identifiers[property.domain.id.as_str()],
+            identifiers[range.id.as_str()],
+            identifiers[property.node.id.as_str()],
+            label(&property.node.label)
+        ));
+    }
+    for (index, edge) in diagram.edges.iter().enumerate() {
+        if shorthand.consumed.contains(&index) {
+            continue;
+        }
         let generalization = edge.predicate.as_deref() ==
             Some("http://www.w3.org/2000/01/rdf-schema#subClassOf") &&
             edge.from.kind == "Class" &&

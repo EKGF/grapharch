@@ -465,8 +465,10 @@ async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
         "generalization must point from child to parent"
     );
     assert!(
-        retained.source.contains("rectangle "),
-        "properties remain independent resources"
+        retained
+            .source
+            .contains("n0 --> n1 [[./grapharch-node/n2]]"),
+        "single-domain properties use a linked association"
     );
     assert!(!retained.source.contains("*--"));
     Ok(())
@@ -513,3 +515,6 @@ ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:PublicationArtifact 
     );
     Ok(())
 }
+
+#[path = "owl_class_diagrams/shorthand.rs"]
+mod shorthand;

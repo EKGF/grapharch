@@ -2,6 +2,7 @@
 mod projection;
 pub(crate) use projection::Projection;
 mod read;
+mod shorthand;
 pub(crate) mod svg;
 use {
     anyhow::{Result, ensure},
