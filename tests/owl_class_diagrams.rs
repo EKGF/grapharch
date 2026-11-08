@@ -477,7 +477,7 @@ async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
 }
 
 #[tokio::test]
-async fn publication_artifact_uses_horizontal_space_without_losing_assertions()
+async fn publication_artifact_keeps_a_balanced_compact_layout_and_all_assertions()
 -> Result<()> {
     let body = diagram_with_focus(r#"
 ex:PublicationArtifact a owl:Class .
@@ -490,6 +490,7 @@ ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:PublicationArtifact 
     #[derive(serde::Deserialize)]
     struct Retained {
         svg:     String,
+        source:  String,
         diagram: Semantic,
     }
     #[derive(serde::Deserialize)]
@@ -505,6 +506,13 @@ ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:PublicationArtifact 
         .unwrap();
     let retained: Retained = serde_json::from_str(json)?;
     assert_eq!(retained.diagram.edges.len(), 8);
+    for property in ["artifactChecksum", "artifactMediaType", "artifactUrl"] {
+        assert!(
+            retained
+                .source
+                .contains(&format!("{{field}} ekg-artpub:{property} :"))
+        );
+    }
     assert!(!body.contains("Diagram limit"));
     let svg = roxmltree::Document::parse(&retained.svg)?;
     let bounds = svg.root_element().attribute("viewBox").unwrap();
@@ -512,8 +520,9 @@ ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:PublicationArtifact 
     let width: f64 = dimensions.next().unwrap().parse()?;
     let height: f64 = dimensions.next().unwrap().parse()?;
     assert!(
-        width > height * 1.5,
-        "PublicationArtifact must use horizontal space: {width}x{height}"
+        height <= width * 1.25 && width <= 1200.0,
+        "Compact attribute compartments should remain balanced: \
+         {width}x{height}"
     );
     Ok(())
 }
