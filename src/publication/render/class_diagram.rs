@@ -65,10 +65,11 @@ pub(super) fn html(source: &str) -> Result<String> {
          tabindex=\"0\" role=\"region\" aria-label=\"Class relationship \
          diagram; scroll horizontally when needed\" \
          style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
-         border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: \
+         border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} \
          {}</figcaption><details><summary>Relationships as text</summary><ul>",
         svg::draw(&projection, true)?,
-        svg::xml(&diagram.focus.label)
+        svg::xml(&diagram.focus.label),
+        super::diagram_notes::reference_html()
     );
     if diagram.edges.is_empty() {
         html.push_str(&format!(
@@ -143,6 +144,7 @@ pub(super) fn typst(source: &str) -> Result<String> {
             diagram.focus.label
         ))
     );
+    result.push_str(super::diagram_notes::reference_typst());
     // Text links remain accessible and clickable in PDF, where SVG hyperlink
     // annotations are not retained by the image decoder.
     for edge in &diagram.edges {

@@ -244,6 +244,7 @@ pub(super) async fn write(
     }
     let mut active: Option<(usize, BufWriter<File>)> = None;
     let mut opened = vec![false; books.len()];
+    let mut diagram_notes = vec![false; books.len()];
     let mut depths = vec![0; books.len()];
     let mut entries = Entries::new(plan).await?;
     let base = match plan.source.optional(&plan.target, "thisVersion").await? {
@@ -255,6 +256,8 @@ pub(super) async fn write(
         let Some(&i) = ownership.get(&page) else {
             continue
         };
+        diagram_notes[i] |=
+            super::diagram_notes::contains(&entry.body, &entry.format);
         if active.as_ref().map(|(book, _)| *book) != Some(i) {
             if let Some((_, mut file)) = active.take() {
                 file.flush().await?;
@@ -367,6 +370,7 @@ pub(super) async fn write(
         if plan.show_pdf_provenance().await? {
             plan.provenance.typst(&mut file, None).await?;
         }
+        super::diagram_notes::append_typst(&mut file, diagram_notes[i]).await?;
         file.flush().await?;
     }
     let previous = old_inventory(directory).await?;

@@ -97,6 +97,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         navigation: navigation::Navigations::read(plan, &catalog).await?,
     };
     header.metadata.indexes(stage, &catalog, &mut files).await?;
+    let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
     // bounded: one page's selected fragments, never the complete site's bodies.
     let mut body = String::new();
@@ -104,6 +105,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     let mut fragments = Vec::new();
     let mut seen = HashMap::new();
     while let Some(entry) = entries.next(plan).await? {
+        diagrams |= super::diagram_notes::contains(&entry.body, &entry.format);
         let owner = catalog.owner(&entry.fragment)?;
         if current.as_ref().is_some_and(|page| page != &owner) {
             let page = current.take().unwrap();
@@ -140,6 +142,26 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         phase = "website-authored-pages",
         elapsed_ms = started.elapsed().as_millis()
     );
+    if diagrams {
+        ensure!(
+            !catalog
+                .pages
+                .values()
+                .any(|page| page.route == super::diagram_notes::ROUTE),
+            "diagram note route conflicts with a selected asset"
+        );
+        write_report(
+            plan,
+            stage,
+            &catalog,
+            &header,
+            "diagram-notes",
+            "Diagram interpretation",
+            super::diagram_notes::html().as_bytes(),
+        )
+        .await?;
+        files.push(super::diagram_notes::ROUTE.into());
+    }
     if !plan.quality.is_empty() {
         ensure!(
             !files.iter().any(|route| route == "quality-issues.html"),

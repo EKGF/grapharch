@@ -172,9 +172,11 @@ pub(super) async fn write(
     } else {
         typst::begin(&mut file, plan, &[]).await?;
     }
+    let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
     let mut previous = None;
     while let Some(entry) = entries.next(plan).await? {
+        diagrams |= super::diagram_notes::contains(&entry.body, &entry.format);
         if entry.first && previous.is_some() {
             if plan.is_html() {
                 html::close(&mut file).await?;
@@ -240,9 +242,11 @@ pub(super) async fn write(
                 &format!("{}. Document provenance", letter(count + 1)),
             )
             .await?;
+        super::diagram_notes::append_html(&mut file, diagrams).await?;
         html::end(&mut file, false).await?;
     } else {
         typst::end(&mut file, previous.is_some()).await?;
+        super::diagram_notes::append_typst(&mut file, diagrams).await?;
     }
     file.flush().await?;
     Ok(plan.quality.clone())
@@ -255,10 +259,12 @@ pub(super) async fn write_typst(
 ) -> Result<()> {
     let mut file = BufWriter::new(File::create(stage.join("main.typ")).await?);
     typst::begin(&mut file, plan, diagnostics).await?;
+    let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
     let mut open = false;
     let mut main_started = false;
     while let Some(entry) = entries.next(plan).await? {
+        diagrams |= super::diagram_notes::contains(&entry.body, &entry.format);
         if entry.first {
             if open {
                 typst::close(&mut file).await?;
@@ -338,6 +344,7 @@ pub(super) async fn write_typst(
             )
             .await?;
     }
+    super::diagram_notes::append_typst(&mut file, diagrams).await?;
     file.flush().await?;
     Ok(())
 }

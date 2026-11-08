@@ -57,12 +57,14 @@ pub(super) async fn write(
     .await?;
     file.write_all(format!("<main id=\"document\">{}", header.html).as_bytes())
         .await?;
+    let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
     let mut outline = Outline::default();
     let mut open = false;
     let mut navigation = false;
     let mut diagnostics = Vec::new();
     while let Some(entry) = entries.next(plan).await? {
+        diagrams |= super::diagram_notes::contains(&entry.body, &entry.format);
         if entry.first {
             if open {
                 file.write_all(b"</section>\n").await?;
@@ -156,6 +158,7 @@ pub(super) async fn write(
             &outline.component("appendix", "Document provenance", 1)?,
         )
         .await?;
+    super::diagram_notes::append_html(&mut file, diagrams).await?;
     file.write_all(include_str!("search.html").as_bytes())
         .await?;
     file.write_all(

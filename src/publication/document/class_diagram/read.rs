@@ -1,5 +1,5 @@
 use {
-    super::{Diagram, Edge, LANGUAGE, LEGEND, Node, Projection},
+    super::{Diagram, Edge, LANGUAGE, Node, Projection},
     crate::publication::{dataset::Dataset, view::RevisionView},
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
@@ -122,7 +122,6 @@ BIND(?s AS ?group)
         group_ends.push(edges.len());
     }
     body.push_str("\n\n**Class neighborhood**\n\n");
-    body.push_str(LEGEND);
     body.push_str("\n\n");
     let projection =
         Projection::generate(Diagram { focus, edges }, renderer).await?;

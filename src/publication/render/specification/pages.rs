@@ -134,11 +134,14 @@ pub(in crate::publication::render) async fn catalog(
         search:     Vec::new(),
     };
     let toc_depth = plan.toc_depth().await?.unwrap_or(usize::MAX);
+    let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
     let mut page = 0;
     let mut first_section = false;
     let mut outline = Outline::default();
     while let Some(entry) = entries.next(plan).await? {
+        diagrams |=
+            super::super::diagram_notes::contains(&entry.body, &entry.format);
         if entry.first {
             if !matches!(entry.kind.as_str(), "abstract" | "status") {
                 if first_section {
@@ -259,6 +262,12 @@ pub(in crate::publication::render) async fn catalog(
         first_section,
         "paginated specification requires at least one section"
     );
+    if diagrams {
+        catalog.anchor(
+            super::super::diagram_notes::ID.into(),
+            catalog.pages.len() - 1,
+        )?;
+    }
     catalog.anchor(super::super::provenance::ID.into(), 0)?;
     let provenance_title =
         super::super::content::provenance_appendix_title(plan).await?;
@@ -403,7 +412,17 @@ pub(in crate::publication::render) async fn write_catalog(
                 if section_open {
                     previous.write_all(b"</section>").await?;
                 }
-                end(&mut previous, plan, current == Some(0)).await?;
+                end(
+                    &mut previous,
+                    plan,
+                    current == Some(0),
+                    current ==
+                        catalog
+                            .owners
+                            .get(super::super::diagram_notes::ID)
+                            .copied(),
+                )
+                .await?;
             }
             let p = &catalog.pages[page];
             files.push(p.route.clone());
@@ -559,7 +578,14 @@ pub(in crate::publication::render) async fn write_catalog(
         if section_open {
             file.write_all(b"</section>").await?;
         }
-        end(&mut file, plan, current == Some(0)).await?;
+        end(
+            &mut file,
+            plan,
+            current == Some(0),
+            current ==
+                catalog.owners.get(super::super::diagram_notes::ID).copied(),
+        )
+        .await?;
     }
     Ok((files, diagnostics))
 }
@@ -567,6 +593,7 @@ async fn end(
     file: &mut BufWriter<File>,
     plan: &Plan,
     home: bool,
+    diagrams: bool,
 ) -> Result<()> {
     if home && !plan.quality.is_empty() {
         let title = super::super::content::quality_appendix_title(plan).await?;
@@ -593,6 +620,7 @@ async fn end(
     } else {
         file.write_all(b"<p><a href=\"index.html#document-provenance\">Document provenance</a></p>").await?;
     }
+    super::super::diagram_notes::append_html(file, diagrams).await?;
     file.write_all(
         format!(
             "<footer>{}</footer></main>",

@@ -190,6 +190,15 @@ pub(super) fn render(
              table\" tabindex=\"0\"><table>",
         )
         .replace("</table>", "</table></div>");
+    html = html.replace(
+        "href=\"#grapharch-diagram-note\"",
+        &format!(
+            "href=\"{}{}#{}\"",
+            "../".repeat(page.route.matches('/').count()),
+            super::super::diagram_notes::ROUTE,
+            super::super::diagram_notes::ID
+        ),
+    );
     Ok(Content { html, headings })
 }
 pub(super) fn link(

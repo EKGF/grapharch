@@ -11,6 +11,7 @@ mod content;
 mod content_blocks;
 mod credit;
 mod diagnostic_graph;
+mod diagram_notes;
 mod engine;
 mod files;
 mod html;
