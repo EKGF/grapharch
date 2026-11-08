@@ -37,6 +37,10 @@ class CandidateWorkflows(unittest.TestCase):
         self.assertIn("github.event_name != 'pull_request'", workflow)
         self.assertIn("github.ref == 'refs/heads/main'", workflow)
 
+    def test_docs_schedule_cannot_cancel_full_candidate_checks(self):
+        workflow = (ROOT / '.github/workflows/rust-ci.yml').read_text()
+        self.assertIn("inputs.scope || 'candidate'", workflow.split('jobs:', 1)[0])
+
     def test_release_still_extracts_one_native_binary_per_target(self):
         workflow = (ROOT / '.github/workflows/distribute.yml').read_text()
         self.assertEqual(workflow.count('command: build'), 1)
