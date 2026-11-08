@@ -171,6 +171,11 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
     tokio::fs::write(source.path().join("ontology.ttl"), r#"@prefix owl:<http://www.w3.org/2002/07/owl#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
 <urn:one> a owl:Class; rdfs:label "One"; rdfs:subClassOf <urn:two> .
 <urn:two> a owl:Class; rdfs:label "Two" ."#).await?;
+    tokio::fs::write(
+        source.path().join("index.md"),
+        "# Home\n\nBrowse the reference.\n",
+    )
+    .await?;
     let output = tempfile::tempdir()?;
     let request = grapharch::publication::quick_build::BuildRequest {
         source: source.path().into(),
@@ -197,13 +202,35 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
         note.matches("id=\"grapharch-diagram-note\"").count(),
         1
     );
-    let html =
-        tokio::fs::read_to_string(publication.directory.join("index.html"))
+    // bounded: this fixture has one home, one reference page and one note.
+    let mut selected = None;
+    for route in publication
+        .manifest
+        .files
+        .iter()
+        .filter(|route| route.ends_with("index.html"))
+    {
+        let body = tokio::fs::read_to_string(publication.directory.join(route))
             .await?;
-    assert_eq!(html.matches("role=\"doc-noteref\"").count(), 2);
-    assert!(
-        html.contains("href=\"diagram-notes.html#grapharch-diagram-note\"")
+        if body.contains("role=\"doc-noteref\"") {
+            assert!(
+                selected.is_none(),
+                "one reference page in fixture"
+            );
+            selected = Some((route.clone(), body));
+        }
+    }
+    let (route, html) = selected.expect("reference page with diagrams");
+    assert_ne!(
+        route, "index.html",
+        "diagrams live on a nested reference page"
     );
+    assert_eq!(html.matches("role=\"doc-noteref\"").count(), 2);
+    let prefix =
+        "../".repeat(std::path::Path::new(&route).components().count() - 1);
+    assert!(html.contains(&format!(
+        "href=\"{prefix}diagram-notes.html#grapharch-diagram-note\""
+    )));
     assert!(!html.contains("These diagrams present asserted OWL"));
     let PublishOutcome::Published(again) = publisher
         .render(&plan, &output.path().join("again"))
@@ -213,7 +240,7 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
     };
     assert_eq!(
         html,
-        tokio::fs::read_to_string(again.directory.join("index.html")).await?
+        tokio::fs::read_to_string(again.directory.join(&route)).await?
     );
     assert_eq!(
         note,
