@@ -55,6 +55,21 @@ pub(super) fn events<'a>(
             events[index + 1] = Event::InlineHtml("".into());
         }
     }
+    let mut rdf_table = false;
+    for index in 0..events.len() {
+        if matches!(events[index], Event::Start(Tag::Table(_))) {
+            rdf_table = super::rdf_tables::matches(&events, index);
+            if rdf_table {
+                events[index] =
+                    Event::Html("<table class=\"rdf-properties\">".into());
+            }
+        } else if rdf_table &&
+            matches!(events[index], Event::End(TagEnd::Table))
+        {
+            events[index] = Event::Html("</table>".into());
+            rdf_table = false;
+        }
+    }
     let mut items = Vec::new();
     let mut tasks = HashSet::new();
     for (index, event) in events.iter().enumerate() {

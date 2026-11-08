@@ -36,8 +36,9 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     tokio::fs::write(
         &path,
         format!(
-            "@prefix sh:<http://www.w3.org/ns/shacl#>. <urn:ask-validator> a sh:SPARQLAskValidator; <http://www.w3.org/2000/01/rdf-schema#label> \"ASK validator\"; <http://www.w3.org/2000/01/rdf-schema#comment> \"An original formatting regression.\"; sh:ask {}.",
-            oxrdf::Literal::new_simple_literal(ask)
+            "@prefix sh:<http://www.w3.org/ns/shacl#>. <urn:ask-validator> a sh:SPARQLAskValidator; <http://www.w3.org/2000/01/rdf-schema#label> \"ASK validator\"; <http://www.w3.org/2000/01/rdf-schema#comment> \"An original formatting regression.\"; sh:ask {}; <https://example.org/{}> \"A long predicate boundary fixture.\".",
+            oxrdf::Literal::new_simple_literal(ask),
+            "long-predicate-".repeat(30)
         ),
     )
     .await?;
@@ -177,6 +178,13 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         .map(|code| code.text().collect::<String>())
         .collect();
     assert_eq!(codes.len(), 5);
+    assert_eq!(
+        parsed
+            .select(&scraper::Selector::parse("table.rdf-properties").unwrap())
+            .count(),
+        2,
+        "RDF tables need predicate-specific layout"
+    );
     let query_ids: Vec<_> = parsed
         .select(&scraper::Selector::parse("[id]").unwrap())
         .filter_map(|node| node.value().attr("id"))
@@ -236,6 +244,10 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
     assert_eq!(typst.matches("#ga-code((").count(), 5);
+    assert!(
+        typst.contains("columns: (30%, 1fr)"),
+        "predicate tables need flexible value space in PDF"
+    );
     assert!(
         tokio::fs::metadata(publication.directory.join("document.pdf"))
             .await?
