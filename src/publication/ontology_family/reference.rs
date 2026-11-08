@@ -1,5 +1,5 @@
 //! Source-owned vocabulary-reference arrangement, resolved before rendering.
-use super::*;
+use {super::*, std::collections::BTreeSet};
 
 pub(super) struct Layout {
     pub overview: String,
@@ -212,4 +212,56 @@ fn title(value: Term, field: &str) -> Result<String> {
         "{field} must be a nonempty plain-text heading of at most 160 bytes"
     );
     Ok(text.into())
+}
+
+/// Preserve source-authored ontology introductions without repeating identical
+/// annotations supplied under more than one standard predicate.
+pub(super) async fn introduction(
+    view: &RevisionView,
+    ontology: &NamedNode,
+) -> Result<String> {
+    if let Some(body) =
+        super::super::document::description::read(view, ontology, "en").await?
+    {
+        return super::super::document::description::nested(&body, 3);
+    }
+    let mut seen = HashSet::new(); // bounded: at most 448 selected annotations and 256 KiB.
+    let mut paragraphs = Vec::new(); // bounded: the same admitted annotation values.
+    let mut bytes = 0;
+    for predicate in super::super::document::description::ONTOLOGY_DESCRIPTIONS
+    {
+        let mut rows = view
+            .objects_by(ontology, &NamedNode::new_unchecked(predicate))
+            .await?;
+        let mut values = BTreeSet::new(); // bounded: at most 64 annotations per predicate.
+        let mut count = 0;
+        while let Some(row) = rows.next().await? {
+            count += 1;
+            ensure!(
+                count <= 64,
+                "ontology introduction annotation count exceeds 64 per \
+                 predicate"
+            );
+            let Term::Literal(value) = &row["value"] else {
+                anyhow::bail!("ontology introduction must be literal");
+            };
+            if value
+                .language()
+                .is_none_or(|language| language.eq_ignore_ascii_case("en"))
+            {
+                bytes += value.value().len();
+                ensure!(
+                    bytes <= 256 * 1024,
+                    "ontology introduction exceeds 256 KiB"
+                );
+                values.insert(value.value().to_owned());
+            }
+        }
+        for value in values {
+            if seen.insert(value.clone()) {
+                paragraphs.push(value);
+            }
+        }
+    }
+    Ok(paragraphs.join("\n\n"))
 }

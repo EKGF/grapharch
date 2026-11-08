@@ -495,3 +495,6 @@ async fn family_ontology_title_can_use_dublin_core_without_rdfs_label()
     assert_eq!(built.ontology_count, 1);
     Ok(())
 }
+
+#[path = "ontology_family/introduction.rs"]
+mod introduction;

@@ -244,11 +244,9 @@ impl Home {
 }
 
 async fn summary(plan: &Plan, subject: &NamedNode) -> Result<String> {
-    for predicate in [
-        "http://purl.org/dc/terms/description",
-        "http://www.w3.org/2004/02/skos/core#definition",
-        "http://www.w3.org/2000/01/rdf-schema#comment",
-    ] {
+    for predicate in
+        crate::publication::document::description::ONTOLOGY_DESCRIPTIONS
+    {
         let mut rows = plan
             .source
             .objects_by(subject, &NamedNode::new_unchecked(predicate))

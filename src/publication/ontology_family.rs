@@ -988,31 +988,9 @@ async fn build(
             "section",
             order as u32 + 3,
         );
-        let mut comments = english(
-            &member.view,
-            &member.ontology,
-            "http://www.w3.org/2000/01/rdf-schema#comment",
-        )
-        .await?;
-        for predicate in [
-            "http://www.w3.org/2004/02/skos/core#definition",
-            "http://purl.org/dc/terms/description",
-        ] {
-            comments.extend(
-                english(&member.view, &member.ontology, predicate).await?,
-            );
-        }
         let labels = vocabulary_labels(&member.view, &member.ontology).await?;
-        let description = match super::document::description::read(
-            &member.view,
-            &member.ontology,
-            "en",
-        )
-        .await?
-        {
-            Some(body) => super::document::description::nested(&body, 3)?,
-            None => comments.join("\n\n"),
-        };
+        let description =
+            reference::introduction(&member.view, &member.ontology).await?;
         let layout =
             reference::Layout::read(&member.view, &member.ontology).await?;
         let root_label = if member.scheme {

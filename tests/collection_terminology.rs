@@ -18,7 +18,7 @@ async fn render(
 @prefix owl:<http://www.w3.org/2002/07/owl#> .
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct:<http://purl.org/dc/terms/> .
-<https://example.org/vocab/> a owl:Ontology; rdfs:label "Example vocabulary"; dct:description "An example ontology." .
+<https://example.org/vocab/> a owl:Ontology; rdfs:label "Example vocabulary"; dct:abstract "Texte français."@fr, "An authored ontology abstract."@en; dct:description "An example ontology." .
 <https://example.org/vocab/Thing> a owl:Class, rdfs:Class; rdfs:label "Thing"; dct:description "An example thing." .
 <https://example.org/vocab/name> a owl:DatatypeProperty, <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property>; rdfs:label "name"; dct:description "A name." .
 "#).await?;
@@ -102,7 +102,9 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
     assert!(html.contains("library-home"));
     assert!(html.contains("library-publication-details"));
     assert!(html.contains("ontology-card"));
-    assert!(html.contains("An example ontology."));
+    assert!(html.contains("An authored ontology abstract."));
+    assert!(!html.contains("Texte français."));
+    assert!(!html.contains("An example ontology."));
     assert!(html.contains("data-class-count=\"1\""));
     assert!(html.contains("data-property-count=\"1\""));
     assert!(!html.contains("family-navigation"));

@@ -20,6 +20,19 @@ pub(crate) const SOURCE_DESCRIPTIONS: [&str; 6] = [
     "http://www.w3.org/ns/shacl#description",
 ];
 
+/// Source-owned ontology introductions, from synopsis to supplementary comment.
+/// Cards select the first available annotation; full introductions retain all
+/// distinct selected paragraphs in this same order.
+pub(crate) const ONTOLOGY_DESCRIPTIONS: [&str; 7] = [
+    "http://purl.org/dc/terms/abstract",
+    "http://purl.org/dc/terms/description",
+    "http://purl.org/dc/elements/1.1/description",
+    "http://www.w3.org/2004/02/skos/core#definition",
+    "http://www.w3.org/ns/prov#definition",
+    "http://www.w3.org/ns/shacl#description",
+    "http://www.w3.org/2000/01/rdf-schema#comment",
+];
+
 pub(super) fn missing_annotations(
     label: bool,
     description: bool,
