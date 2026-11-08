@@ -222,6 +222,17 @@ mod tests {
         assert_eq!(restored.svg, retained.svg);
     }
     #[test]
+    fn orientation_scoring_prefers_readable_landscape_over_narrow_portrait() {
+        let landscape = "<svg xmlns=\"http://www.w3.org/2000/svg\" \
+                         viewBox=\"0 0 800 400\"/>";
+        let portrait = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 \
+                        0 400 800\"/>";
+        assert!(
+            fitting_scale(landscape).unwrap() >
+                fitting_scale(portrait).unwrap()
+        );
+    }
+    #[test]
     fn long_labels_wrap_without_discarding_identifier_characters() {
         let wrapped = label("InformationSensitivityClassification");
         assert!(wrapped.contains("\\n"));

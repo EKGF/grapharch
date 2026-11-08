@@ -376,8 +376,9 @@ ex:IdentificationScheme a owl:Class .
         .unwrap()
         .parse()?;
     assert!(
-        width >= height,
-        "figure should use horizontal space: {width}x{height}"
+        height <= width * 1.25,
+        "figure should be balanced rather than narrow and tall: \
+         {width}x{height}"
     );
     assert!(
         width <= 1200.0,
