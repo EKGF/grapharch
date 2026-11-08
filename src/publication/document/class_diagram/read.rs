@@ -9,16 +9,22 @@ use {
 const OWL: &str = "http://www.w3.org/2002/07/owl#";
 const RDFS: &str = "http://www.w3.org/2000/01/rdf-schema#";
 
+pub(crate) struct Views<'a> {
+    pub assertions: &'a RevisionView,
+    pub metadata:   &'a RevisionView,
+}
+
 pub(crate) async fn append(
     dataset: &Dataset,
-    view: &RevisionView,
-    metadata: &RevisionView,
+    views: Views<'_>,
     subject: &NamedNode,
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
     body: &mut String,
     renderer: &crate::publication::document::plantuml::LocalRenderer,
 ) -> Result<()> {
+    let view = views.assertions;
+    let metadata = views.metadata;
     let direct = view.pattern(&format!(r#"
 {{ {subject} ?p ?o . BIND({subject} AS ?s) }} UNION
 {{ ?s ?p {subject} . BIND({subject} AS ?o) }}

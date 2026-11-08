@@ -170,16 +170,16 @@ impl ResourceDocumentor {
         let mut description = description
             .unwrap_or_else(|| format!("{subject} is an {}.", self.label));
         if self.class.as_str() == "http://www.w3.org/2002/07/owl#Class" {
+            let view = crate::publication::view::RevisionView::new(
+                self.dataset.clone(),
+                self.snapshot.clone(),
+            );
             super::class_diagram::append(
                 &self.dataset,
-                &crate::publication::view::RevisionView::new(
-                    self.dataset.clone(),
-                    self.snapshot.clone(),
-                ),
-                &crate::publication::view::RevisionView::new(
-                    self.dataset.clone(),
-                    self.snapshot.clone(),
-                ),
+                super::class_diagram::Views {
+                    assertions: &view,
+                    metadata:   &view,
+                },
                 subject,
                 &std::collections::BTreeMap::new(),
                 &std::collections::HashSet::new(),

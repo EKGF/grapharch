@@ -821,13 +821,16 @@ impl Documentor for AnnotatedTermDocumentor {
         if types.iter().any(|(kind, _)| {
             kind.as_str() == "http://www.w3.org/2002/07/owl#Class"
         }) {
+            let metadata = RevisionView::new(
+                self.dataset.clone(),
+                self.diagram_metadata.clone(),
+            );
             super::class_diagram::append(
                 &self.dataset,
-                &view,
-                &RevisionView::new(
-                    self.dataset.clone(),
-                    self.diagram_metadata.clone(),
-                ),
+                super::class_diagram::Views {
+                    assertions: &view,
+                    metadata:   &metadata,
+                },
                 &self.subject,
                 &self.prefixes,
                 &self.documented,

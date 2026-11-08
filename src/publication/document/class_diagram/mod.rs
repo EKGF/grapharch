@@ -124,4 +124,4 @@ impl Diagram {
             .chain(self.shapes.iter_mut().flat_map(|s| s.nodes_mut()))
     }
 }
-pub(super) use read::append;
+pub(super) use read::{Views, append};
