@@ -45,9 +45,15 @@ fn generated_binding<'a>(
     let (Some(root), Some(bindings)) = (root, bindings) else {
         return Ok(None);
     };
+    let root_url = url::Url::from_directory_path(root)
+        .map_err(|()| anyhow::anyhow!("invalid image root"))?;
+    // File URLs remove Windows canonical verbatim prefixes. Compare both
+    // paths in that same representation without materializing generated files.
+    let root = root_url
+        .to_file_path()
+        .map_err(|()| anyhow::anyhow!("invalid image root path"))?;
     let base = if destination.starts_with('/') {
-        url::Url::from_directory_path(root)
-            .map_err(|()| anyhow::anyhow!("invalid image root"))?
+        root_url
     } else {
         url::Url::from_file_path(source)
             .map_err(|()| anyhow::anyhow!("invalid image source"))?
@@ -61,10 +67,10 @@ fn generated_binding<'a>(
         .to_file_path()
         .map_err(|()| anyhow::anyhow!("invalid generated image path"))?;
     ensure!(
-        path.starts_with(root),
+        path.starts_with(&root),
         "generated image escapes documentation root"
     );
-    let relative = super::page::source_path(root, &path)?;
+    let relative = super::page::source_path(&root, &path)?;
     Ok(bindings.get(&relative))
 }
 
@@ -299,6 +305,48 @@ pub async fn http_image_collectors_with_factory(
 #[cfg(test)]
 mod binding_tests {
     use super::*;
+    #[cfg(windows)]
+    #[test]
+    fn canonical_windows_roots_match_file_url_paths_without_materialized_assets()
+     {
+        let root = Path::new(r"\\?\C:\grapharch\docs");
+        let source = root.join("concept/index.md");
+        let asset = NamedNode::new("urn:diagram:asset").unwrap();
+        let bindings =
+            BTreeMap::from([("diagrams/example.svg".into(), asset.clone())]);
+        for destination in ["../diagrams/example.svg", "/diagrams/example.svg"]
+        {
+            assert_eq!(
+                generated_binding(
+                    Some(root),
+                    &source,
+                    destination,
+                    Some(&bindings)
+                )
+                .unwrap(),
+                Some(&asset)
+            );
+        }
+        assert!(
+            generated_binding(
+                Some(root),
+                &source,
+                "../../outside.svg",
+                Some(&bindings)
+            )
+            .is_err()
+        );
+        assert!(
+            generated_binding(
+                Some(root),
+                &source,
+                "/../docs-sibling/outside.svg",
+                Some(&bindings)
+            )
+            .is_err()
+        );
+    }
+
     #[test]
     fn generated_outputs_resolve_without_files_and_never_escape_the_root() {
         let root =
