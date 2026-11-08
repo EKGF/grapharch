@@ -179,6 +179,11 @@ fn conflicting_counts(property: &Property) -> bool {
             let Term::Literal(value) = value else {
                 return None;
             };
+            if value.datatype().as_str() !=
+                "http://www.w3.org/2001/XMLSchema#integer"
+            {
+                return None;
+            }
             value.value().parse::<u64>().ok()
         })
     };

@@ -137,6 +137,26 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
             text.contains("sh:or") &&
             text.contains("sh:sparql")
     );
+    let parsed = scraper::Html::parse_document(&text);
+    let drawing = parsed
+        .select(
+            &scraper::Selector::parse(".shacl-validation-diagram svg").unwrap(),
+        )
+        .next()
+        .expect("separate SHACL SVG");
+    let width: f64 = drawing
+        .value()
+        .attr("viewBox")
+        .or_else(|| drawing.value().attr("viewbox"))
+        .unwrap()
+        .split_whitespace()
+        .nth(2)
+        .unwrap()
+        .parse()?;
+    assert!(
+        width <= 600.0,
+        "SHACL view is too wide for legible mobile presentation: {width}"
+    );
     let PublishOutcome::Published(pdf) =
         Publisher::new(restored).render(&pdf, output.path()).await?
     else {
@@ -213,7 +233,7 @@ async fn exact_named_shapes_remain_distinct_and_keep_repeated_paths()
 ex:First a sh:NodeShape; sh:targetClass ex:Core; sh:closed true;
  sh:property [sh:path ex:name; sh:minCount 1; sh:maxCount 1; sh:datatype xsd:string],
  [sh:path ex:name; sh:minCount 2; sh:maxCount 1; sh:nodeKind sh:Literal].
-ex:Second a sh:NodeShape; sh:targetClass ex:Core; sh:property [sh:path ex:owner; sh:class ex:Person].
+ex:Second a sh:NodeShape; sh:targetClass ex:Core; sh:property [sh:path ex:owner; sh:class ex:Person], [sh:path ex:invalid; sh:minCount "2"; sh:maxCount "1"].
 ex:Unselected a sh:NodeShape; sh:targetClass ex:Other.
 ex:Untyped sh:targetClass ex:Core.
 ex:WrongType a sh:PropertyShape; sh:targetClass ex:Core.
@@ -225,6 +245,11 @@ ex:WrongType a sh:PropertyShape; sh:targetClass ex:Core.
     assert_eq!(body.matches("| [ex:name]").count(), 2);
     assert!(body.contains("minCount: 2") && body.contains("maxCount: 1"));
     assert!(body.contains("Declared counts conflict"));
+    assert_eq!(
+        body.matches("Declared counts conflict").count(),
+        1,
+        "string-valued counts must not be coerced to integers"
+    );
     assert!(body.contains("sh:class") && body.contains("ex:Person"));
     assert!(
         !body.contains("ex:Unselected") &&

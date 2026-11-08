@@ -108,6 +108,15 @@ pub(super) async fn generate(
             let term: Term = raw.parse()?;
             let value = match term {
                 Term::NamedNode(node) => short(node.as_str(), prefixes),
+                Term::Literal(value)
+                    if matches!(
+                        predicate.strip_prefix(SH),
+                        Some("minCount" | "maxCount")
+                    ) && value.datatype().as_str() !=
+                        "http://www.w3.org/2001/XMLSchema#integer" =>
+                {
+                    value.to_string()
+                },
                 Term::Literal(value) => value.value().into(),
                 _ => unreachable!("simple scalar constraints"),
             };
