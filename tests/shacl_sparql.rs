@@ -155,8 +155,9 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     );
     for query in &expected {
         assert!(
-            body.contains(query),
-            "generated code changed source indentation"
+            body.replace("\r\n", "\n").contains(&display_query(query)),
+            "generated code must remove outer layout and retain relative \
+             indentation"
         );
     }
     let PublishOutcome::Published(publication) = Publisher::new(restored)
@@ -216,9 +217,9 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
 
     for query in &expected {
         assert!(
-            codes.iter().any(|code| {
-                code.contains(&query.replace("\r\n", "\n").replace('\r', "\n"))
-            }),
+            codes
+                .iter()
+                .any(|code| { code.contains(&display_query(query)) }),
             "HTML flattened source query"
         );
     }
@@ -254,4 +255,24 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         }
     }
     Ok(())
+}
+
+fn display_query(query: &str) -> String {
+    let lines: Vec<_> = query.lines().collect();
+    let first = lines
+        .iter()
+        .position(|line| !line.trim().is_empty())
+        .unwrap();
+    let last = lines
+        .iter()
+        .rposition(|line| !line.trim().is_empty())
+        .unwrap();
+    let indent = lines[first].len() - lines[first].trim_start().len();
+    let mut display = lines[first..=last]
+        .iter()
+        .map(|line| line.strip_prefix(&" ".repeat(indent)).unwrap_or(line))
+        .collect::<Vec<_>>()
+        .join("\n");
+    display.push('\n');
+    display
 }
