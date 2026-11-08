@@ -158,16 +158,16 @@ async fn range_only_placeholder_does_not_hide_a_pinned_cross_source_domain()
     let mut rows = built.dataset.select("PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT ?body WHERE { GRAPH ?g { ?fragment ga:subject <https://example.org/vocab/Target>; ga:body ?body } }".into()).await?;
     let mut found = false;
     while let Some(row) = rows.next().await? {
-        if let oxrdf::Term::Literal(body) = &row["body"] {
-            if body.value().contains("```grapharch-class-diagram") {
-                found = true;
-                assert!(
-                    !body.value().contains("unknownDomain"),
-                    "a collected specific domain must take priority over a \
-                     placeholder"
-                );
-                assert!(body.value().contains("ex:Source"));
-            }
+        if let oxrdf::Term::Literal(body) = &row["body"] &&
+            body.value().contains("```grapharch-class-diagram")
+        {
+            found = true;
+            assert!(
+                !body.value().contains("unknownDomain"),
+                "a collected specific domain must take priority over a \
+                 placeholder"
+            );
+            assert!(body.value().contains("ex:Source"));
         }
     }
     assert!(found);
