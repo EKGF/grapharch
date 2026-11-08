@@ -167,7 +167,9 @@ fn exact_commit(value: &str) -> Result<()> {
 async fn executable_digest() -> Result<String> {
     let mut file = tokio::fs::File::open(std::env::current_exe()?).await?;
     let mut hash = Sha256::new();
-    let mut buffer = [0u8; 64 * 1024];
+    // bounded: one 64 KiB streaming hash buffer; keep it off nested future
+    // frames.
+    let mut buffer = vec![0u8; 64 * 1024];
     loop {
         let length = file.read(&mut buffer).await?;
         if length == 0 {

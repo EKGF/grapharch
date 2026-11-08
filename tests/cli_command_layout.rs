@@ -8,3 +8,20 @@ fn publication_command_keeps_backend_options_indirect() {
         "publication backend configuration must not inflate every command"
     );
 }
+
+#[test]
+fn exact_repository_build_future_is_bounded() {
+    let request = grapharch::publication::dprod::BuildRequest {
+        git_repository:     String::new(),
+        git_ref:            String::new(),
+        definitions:        String::new(),
+        generator_revision: String::new(),
+        git_cache:          std::path::PathBuf::new(),
+        output_root:        std::path::PathBuf::new(),
+    };
+    let size = std::mem::size_of_val(&request.build());
+    assert!(
+        size <= 16 * 1024,
+        "repository build future occupies {size} bytes"
+    );
+}

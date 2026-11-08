@@ -45,8 +45,7 @@ async fn run() -> anyhow::Result<()> {
         } else {
             grapharch::publication::diagnostics::FailureMode::FailFast
         };
-        // Keep unrelated publication pipelines out of the startup stack frame.
-        return Box::pin(grapharch::publication::cli::run(command, mode)).await;
+        return grapharch::publication::cli::run(command, mode).await;
     }
 
     anyhow::ensure!(
