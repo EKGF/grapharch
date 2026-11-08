@@ -69,3 +69,21 @@ async fn datatype_zero_minimum_is_omitted_but_complex_ranges_stay_explicit()
     assert!(complex.source.contains("OWL expression"));
     Ok(())
 }
+
+#[tokio::test]
+async fn datatype_counts_reject_inverse_properties_invalid_counts_and_mixed_fillers()
+-> Result<()> {
+    for restriction in [
+        "owl:onProperty [owl:inverseOf ex:p]; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality 1",
+        "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality \"1\"",
+        "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality -1",
+        "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:onClass ex:Other; owl:qualifiedCardinality 1",
+        "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality 0",
+    ] {
+        let body=diagram(&format!("ex:Core a owl:Class; rdfs:subClassOf [a owl:Restriction; {restriction}] . ex:p a owl:DatatypeProperty . ex:Other a owl:Class .")).await?;
+        let d:Drawing=serde_json::from_str(body.split("```grapharch-class-diagram\n").nth(1).unwrap().split("\n```").next().unwrap())?;
+        assert!(d.source.contains("OWL expression"));
+        assert!(!d.source.contains("{field}"));
+    }
+    Ok(())
+}
