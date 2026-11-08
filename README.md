@@ -34,6 +34,11 @@ To build in GitHub Actions:
 See [GitHub Actions](https://ekgf.github.io/grapharch/usage/github-actions/)
 for configuration and Pages publication.
 
+Building OWL class diagrams also requires a local Java and PlantUML installation.
+The repository’s GitHub Action provisions the pinned renderer explicitly; ordinary
+Markdown builds and rendering a retained graph do not need it. See
+[OWL class diagrams](docs/usage/owl-class-diagrams.md) for the dependency contract.
+
 After installation:
 
 ```sh
