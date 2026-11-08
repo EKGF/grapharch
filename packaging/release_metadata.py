@@ -31,5 +31,5 @@ publish = (
 )
 with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
     output.write(
-        f"version={release_version}\nmatrix={json.dumps({'include': PLATFORMS})}\npublish={str(publish).lower()}\n"
+        f"revision={head}\nversion={release_version}\nmatrix={json.dumps({'include': PLATFORMS})}\npublish={str(publish).lower()}\n"
     )

@@ -39,6 +39,7 @@ fn compile_time_cli_path_is_restored() {
                 subprocess.run(['git', '-c', 'user.name=CI Fixture', '-c', 'user.email=ci@example.invalid',
                                 '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'test(ci): archive transport fixture'], cwd=root, check=True)
                 revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
+                os.environ['GRAPHARCH_BUILD_REVISION'] = revision
                 manifest = root / 'output/ci-engine.json'
                 candidate.build(root, revision, 'full', manifest, True)
                 fingerprint = json.loads(manifest.read_text())['fingerprint']

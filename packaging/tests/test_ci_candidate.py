@@ -15,6 +15,11 @@ IDENTITY = {'revision': REVISION, 'run_id': '123', 'target': 'x86_64-unknown-lin
 
 
 class CandidateTests(unittest.TestCase):
+    def test_rejects_generator_revision_from_another_checkout(self):
+        with patch.dict(candidate.os.environ, {'GRAPHARCH_BUILD_REVISION':'b'*40}), patch.object(candidate,'validate_checkout'):
+            with self.assertRaisesRegex(ValueError,'generator identity'):
+                candidate.identity(Path.cwd(),REVISION)
+
     def fixture(self, directory):
         root = Path(directory).resolve()
         target = root / 'target/debug with spaces'

@@ -41,6 +41,12 @@ class CandidateWorkflows(unittest.TestCase):
         workflow = (ROOT / '.github/workflows/rust-ci.yml').read_text()
         self.assertIn("inputs.scope || 'candidate'", workflow.split('jobs:', 1)[0])
 
+    def test_release_identity_is_explicitly_forwarded_into_native_containers(self):
+        workflow=(ROOT / '.github/workflows/distribute.yml').read_text()
+        self.assertIn('GRAPHARCH_BUILD_REVISION: ${{ needs.metadata.outputs.revision }}', workflow)
+        self.assertIn('GRAPHARCH_BUILD_RELEASE_VERSION: ${{ needs.metadata.outputs.version }}', workflow)
+        self.assertIn('docker-options: --env GRAPHARCH_BUILD_REVISION --env GRAPHARCH_BUILD_RELEASE_VERSION',workflow)
+
     def test_release_still_extracts_one_native_binary_per_target(self):
         workflow = (ROOT / '.github/workflows/distribute.yml').read_text()
         self.assertEqual(workflow.count('command: build'), 1)

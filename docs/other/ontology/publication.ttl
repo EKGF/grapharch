@@ -14,8 +14,8 @@
 
 <https://ekgf.org/ontology/grapharch> a owl:Ontology ;
     owl:imports <https://ekgf.org/ontology/artifact-governance#> ;
-    owl:versionIRI <https://ekgf.org/ontology/grapharch/0.2.0> ;
-    owl:versionInfo "0.2.0 — development draft" ;
+    owl:versionIRI <https://ekgf.org/ontology/grapharch/0.2.2> ;
+    owl:versionInfo "0.2.2 — development draft" ;
     dct:title "Grapharch documentation and publication ontology"@en ;
     rdfs:label "Grapharch documentation and publication ontology"@en ;
     dct:description "A vocabulary for collecting source contributions, generating reusable documentation fragments, assembling validated dataset revisions, resolving publication plans, and recording HTML and PDF publication results. It separates the identity of documented resources and logical components from target-specific arrangement and presentation."@en ;

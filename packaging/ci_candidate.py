@@ -15,7 +15,7 @@ from distribute import platform as release_platform, verify_machine
 DOC_TESTS = ('showcase_gallery', 'taxonomy_use_case_showcases', 'specification_sidebar',
              'dprod_showcase', 'w3c_specification', 'self_documentation', 'ontology_specification',
              'publication_ontology', 'authority_governance', 'ontology_family', 'repository_sources')
-ENVIRONMENT = ('RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'CARGO_BUILD_TARGET', 'CARGO_INCREMENTAL',
+ENVIRONMENT = ('GRAPHARCH_BUILD_REVISION', 'GRAPHARCH_BUILD_RELEASE_VERSION', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'CARGO_BUILD_TARGET', 'CARGO_INCREMENTAL',
                'CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG', 'RUSTC_WRAPPER', 'CARGO_TARGET_DIR', 'CARGO_BUILD_BUILD_DIR', 'RUSTC', 'RUSTC_WORKSPACE_WRAPPER')
 MAX_BINARY = 512 * 1024 * 1024
 
@@ -27,6 +27,8 @@ def digest(path):
 
 def identity(root, revision):
     validate_checkout(root, revision)
+    if os.environ.get('GRAPHARCH_BUILD_REVISION') not in (None, '', revision):
+        raise ValueError('compiled generator identity differs from candidate revision')
     compiler = subprocess.check_output(['rustc', '--version', '--verbose'], cwd=root, text=True)
     hosts = [line[6:] for line in compiler.splitlines() if line.startswith('host: ')]
     if len(hosts) != 1 or os.environ.get('CARGO_BUILD_TARGET') not in (None, '', hosts[0]):

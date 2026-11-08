@@ -36,6 +36,7 @@ jobs:
     outputs:
       matrix: ${{ steps.metadata.outputs.matrix }}
       version: ${{ steps.metadata.outputs.version }}
+      revision: ${{ steps.metadata.outputs.revision }}
       publish: ${{ steps.metadata.outputs.publish }}
     steps:
       - uses: actions/checkout@v7
@@ -79,6 +80,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     env:
+      GRAPHARCH_BUILD_REVISION: ${{ needs.metadata.outputs.revision }}
+      GRAPHARCH_BUILD_RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       RUSTFLAGS: ${{ matrix.os == 'win32' && '-C target-feature=+crt-static' || '' }}
     steps:
@@ -108,6 +111,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           maturin-version: v1.15.0
+          docker-options: --env GRAPHARCH_BUILD_REVISION --env GRAPHARCH_BUILD_RELEASE_VERSION
           command: build
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}

@@ -63,12 +63,14 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         super::search::button(),
     );
     let project_brand = format!(
-        "<a class=\"brand\" href=\"{prefix}\">{}<span \
-         class=\"brand-version\"><span class=\"visually-hidden\">Version \
-         </span>{}</span><span \
+        "<a class=\"brand\" href=\"{prefix}\">{}<span class=\"brand-version\" \
+         data-build-channel=\"{}\" data-generator-revision=\"{}\"><span \
+         class=\"visually-hidden\">Version </span>{}</span><span \
          class=\"brand-context\">Documentation</span></a>",
         esc(project_title),
-        esc(env!("CARGO_PKG_VERSION"))
+        esc(env!("GRAPHARCH_BUILD_CHANNEL")),
+        esc(env!("GRAPHARCH_GENERATOR_REVISION")),
+        esc(env!("GRAPHARCH_BUILD_LABEL"))
     );
     let header_content =
         if header.navigation.documentation && header.theme.community() {

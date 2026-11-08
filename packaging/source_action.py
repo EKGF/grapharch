@@ -45,11 +45,11 @@ def install(root, revision):
     subprocess.run(['rustup', 'toolchain', 'install', toolchain, '--profile', 'minimal'], check=True)
     directory = Path(os.environ['RUNNER_TEMP']) / 'grapharch-source' / revision
     subprocess.run(['cargo', '+' + toolchain, 'build', '--locked', '--release', '--bin', 'grapharch',
-                    '--target-dir', str(directory)], cwd=root, check=True)
+                    '--target-dir', str(directory)], cwd=root, check=True, env={**os.environ, 'GRAPHARCH_BUILD_REVISION': revision, 'GRAPHARCH_BUILD_RELEASE_VERSION': ''})
     binary = directory / 'release/grapharch'
     version = tomllib.loads((root / 'Cargo.toml').read_text())['package']['version']
     actual = subprocess.check_output([str(binary), '--version'], text=True).strip()
-    if actual != f'grapharch {version}':
+    if actual != f'grapharch {version}-dev+{revision[:12]}':
         raise ValueError('source binary version differs from pinned manifest')
     with open(os.environ['GITHUB_PATH'], 'a') as output:
         output.write(str(binary.parent) + '\n')

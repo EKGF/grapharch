@@ -143,7 +143,7 @@ async fn provenance_is_a_linked_closing_appendix_from_restored_kg() -> Result<()
         typst.contains("Document provenance") &&
             typst.contains("Earlier Committer")
     );
-    assert!(typst.contains(env!("CARGO_PKG_VERSION")));
+    assert!(typst.contains(env!("GRAPHARCH_BUILD_LABEL")));
     Ok(())
 }
 

@@ -55,9 +55,16 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         )
         .next()
         .expect("visible version badge in the header");
+    if env!("GRAPHARCH_BUILD_CHANNEL") != "release" {
+        assert!(
+            version.text().collect::<String>().contains("-dev+") ||
+                version.text().collect::<String>().contains("-source"),
+            "unreleased documentation must identify its source build"
+        );
+    }
     assert_eq!(
         version.text().collect::<String>(),
-        format!("Version {}", env!("CARGO_PKG_VERSION"))
+        format!("Version {}", env!("GRAPHARCH_BUILD_LABEL"))
     );
     assert_eq!(
         version
@@ -67,6 +74,23 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
             .text()
             .collect::<String>(),
         "Version "
+    );
+    assert_eq!(
+        version.value().attr("data-generator-revision"),
+        Some(env!("GRAPHARCH_GENERATOR_REVISION"))
+    );
+    assert_eq!(
+        version.value().attr("data-build-channel"),
+        Some(env!("GRAPHARCH_BUILD_CHANNEL"))
+    );
+    let binary = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .arg("--version")
+        .output()
+        .await?;
+    assert!(binary.status.success());
+    assert_eq!(
+        String::from_utf8(binary.stdout)?.trim(),
+        format!("grapharch {}", env!("GRAPHARCH_BUILD_LABEL"))
     );
     let context = document
         .select(
@@ -85,7 +109,7 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
     assert!(
         footer.text().collect::<String>().contains(&format!(
             "Grapharch {}",
-            env!("CARGO_PKG_VERSION")
+            env!("GRAPHARCH_BUILD_LABEL")
         ))
     );
     if let Ok(destination) = std::env::var("GRAPHARCH_HEADER_REVIEW") {
