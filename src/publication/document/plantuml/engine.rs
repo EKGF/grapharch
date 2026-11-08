@@ -14,6 +14,7 @@ use {
     },
 };
 const END: &[u8] = b"GRAPHARCH-PLANTUML-END\n";
+const END_WINDOWS: &[u8] = b"GRAPHARCH-PLANTUML-END\r\n";
 const REQUESTS_PER_PROCESS: usize = 128;
 
 pub(crate) struct LocalRenderer {
@@ -148,10 +149,10 @@ impl Session {
             self.input.write_all(b"\n").await?;
         }
         self.input.flush().await?;
-        let limit =
-            crate::publication::image_assets::MAX_IMAGE_BYTES + END.len();
+        let limit = crate::publication::image_assets::MAX_IMAGE_BYTES +
+            END_WINDOWS.len();
         let mut bytes = Vec::new(); // bounded: one retained SVG, terminator and overflow sentinel.
-        while !bytes.ends_with(END) {
+        while !bytes.ends_with(END) && !bytes.ends_with(END_WINDOWS) {
             let remaining = limit.saturating_sub(bytes.len()) + 1;
             let count = (&mut self.output)
                 .take(remaining as u64)
@@ -166,7 +167,14 @@ impl Session {
                 "PlantUML process output exceeds byte budget"
             );
         }
-        bytes.truncate(bytes.len() - END.len());
+        // Java println uses the platform line separator. Accept either exact
+        // framing sequence without normalizing or changing retained SVG bytes.
+        let terminator = if bytes.ends_with(END_WINDOWS) {
+            END_WINDOWS
+        } else {
+            END
+        };
+        bytes.truncate(bytes.len() - terminator.len());
         ensure!(
             !bytes.starts_with(b"ERROR"),
             "PlantUML rejected the diagram: {}",

@@ -190,7 +190,7 @@ count=0
 while IFS= read -r line; do
   if [ "$line" = @enduml ]; then
     count=$((count + 1))
-    printf '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="40" data-render="%s"><rect width="90" height="30"/></svg>GRAPHARCH-PLANTUML-END\n' "$count" || exit $?
+    printf '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="40" data-render="%s"><rect width="90" height="30"/></svg>GRAPHARCH-PLANTUML-END\r\n' "$count" || exit $?
   fi
 done
 "##).await?;
