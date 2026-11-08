@@ -183,6 +183,18 @@ impl ResourceDocumentor {
                 &self.diagram_renderer,
             )
             .await?;
+            super::shacl_class_view::append(
+                &self.dataset,
+                &crate::publication::view::RevisionView::new(
+                    self.dataset.clone(),
+                    self.snapshot.clone(),
+                ),
+                subject,
+                &std::collections::BTreeMap::new(),
+                &std::collections::HashSet::new(),
+                &mut description,
+            )
+            .await?;
             digest.update(description.as_bytes());
         }
         let revision =
