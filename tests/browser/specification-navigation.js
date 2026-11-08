@@ -1,7 +1,7 @@
 async (page) => {
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   await page.setViewportSize({width:1440,height:1000});
-  await page.locator('.ontology-card h2 a').filter({hasText:/Parties Ontology/}).first().click();
+  await page.locator('.ontology-card-link').filter({hasText:/Parties Ontology/}).first().click();
   await page.waitForFunction(()=>document.querySelector('.toc .toc-toggle')!==null);
   await page.getByRole('button',{name:'Collapse all',exact:true}).click();
   assert(await page.locator('.toc-toggle[aria-expanded=false]').count()>0,'branches did not collapse');

@@ -121,7 +121,27 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
             .collect::<String>()
             .contains("Collection reference.")
     );
-    let selector = scraper::Selector::parse(".ontology-card h2 a").unwrap();
+    let selector = scraper::Selector::parse(".ontology-card-link").unwrap();
+    assert!(
+        document
+            .select(
+                &scraper::Selector::parse("a.ontology-card-link dl").unwrap()
+            )
+            .next()
+            .is_some()
+    );
+    let badge = document
+        .select(&scraper::Selector::parse("a.authority-banner").unwrap())
+        .next()
+        .unwrap();
+    assert_eq!(badge.value().attr("href"), Some("index.html"));
+    assert!(
+        badge
+            .value()
+            .attr("aria-label")
+            .unwrap()
+            .contains("Ontology suite overview")
+    );
     let route = document
         .select(&selector)
         .next()
@@ -133,6 +153,21 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
         tokio::fs::read_to_string(output.path().join("reference").join(route))
             .await?;
     assert!(ontology.contains("library-home-link"));
+    let page = scraper::Html::parse_document(&ontology);
+    let href = |selector: &str| {
+        page.select(&scraper::Selector::parse(selector).unwrap())
+            .next()
+            .unwrap()
+            .value()
+            .attr("href")
+            .unwrap()
+            .to_owned()
+    };
+    assert_eq!(
+        href("a.authority-banner"),
+        href(".library-home-link a")
+    );
+
     assert!(ontology.contains("On this page"));
     assert!(!ontology.contains("class=\"ontology-card\""));
     assert!(!ontology.contains("class=\"specification-pages library-home\""));

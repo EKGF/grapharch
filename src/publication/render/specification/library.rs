@@ -167,7 +167,10 @@ impl Home {
                 let card = &cards[&index];
                 html.push_str(&format!(
                     "<article class=\"ontology-card\" data-class-count=\"{}\" \
-                     data-property-count=\"{}\"><h2><a href=\"{}\">{}</a></h2>",
+                     data-property-count=\"{}\"><a \
+                     class=\"ontology-card-link\" href=\"{}\" \
+                     aria-labelledby=\"ontology-card-title-{index}\"><h2 \
+                     id=\"ontology-card-title-{index}\">{}</h2>",
                     card.classes,
                     card.properties,
                     html_escape(&page.route),
@@ -182,7 +185,7 @@ impl Home {
                 html.push_str(&format!(
                     "<dl class=\"ontology-metrics\"><div><dt>Classes</\
                      dt><dd>{}</dd></div><div><dt>Properties</dt><dd>{}</dd></\
-                     div></dl></article>",
+                     div></dl></a></article>",
                     card.classes, card.properties
                 ));
             }
@@ -269,4 +272,36 @@ async fn summary(plan: &Plan, subject: &NamedNode) -> Result<String> {
         }
     }
     Ok(String::new())
+}
+
+/// Link the existing status ribbon to the same relative library route as the
+/// ordinary specification backlink, without changing its authored status text.
+pub(super) fn home_badge(header: &str, title: &str) -> Result<String> {
+    let mut document = scraper::Html::parse_fragment(header);
+    let selector = scraper::Selector::parse(".authority-banner").unwrap();
+    let badge = document
+        .select(&selector)
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("library status badge missing"))?;
+    let id = badge.id();
+    let status = badge
+        .value()
+        .attr("aria-label")
+        .ok_or_else(|| anyhow::anyhow!("status badge label missing"))?;
+    let replacement = scraper::Html::parse_fragment(&format!(
+        "<a class=\"authority-banner\" href=\"index.html\" aria-label=\"{} — \
+         {}\"></a>",
+        html_escape(title),
+        html_escape(status)
+    ));
+    let anchor = replacement
+        .select(&scraper::Selector::parse("a").unwrap())
+        .next()
+        .unwrap();
+    let mut node = document.tree.get_mut(id).unwrap();
+    let scraper::Node::Element(element) = node.value() else {
+        unreachable!()
+    };
+    *element = anchor.value().clone();
+    Ok(document.root_element().inner_html())
 }

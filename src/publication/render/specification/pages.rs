@@ -435,6 +435,12 @@ pub(in crate::publication::render) async fn write_catalog(
                 &p.title,
                 context.and_then(|b| b.pdf.as_deref()),
             )?;
+            if library.is_some() {
+                header_html = super::library::home_badge(
+                    &header_html,
+                    &terminology.overview(),
+                )?;
+            }
             if context.is_some_and(|book| book.pdf.is_none()) {
                 header_html.push_str(
                     "<aside class=\"markdown-alert markdown-alert-caution\" \
