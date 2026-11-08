@@ -163,7 +163,7 @@ pub(super) async fn write(
     file.write_all(include_str!("search.html").as_bytes())
         .await?;
     file.write_all(
-        format!("<footer>{}</footer>", super::credit::HTML).as_bytes(),
+        format!("<footer>{}</footer>", super::credit::html()).as_bytes(),
     )
     .await?;
     file.write_all(b"</main><div id=\"toc-resizer\" class=\"toc-resizer\" role=\"separator\" aria-label=\"Resize table of contents\" aria-controls=\"toc\" aria-orientation=\"vertical\" tabindex=\"0\" title=\"Drag or use arrow keys to resize; double-click to reset\" hidden></div><script>").await?;

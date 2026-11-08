@@ -11,10 +11,29 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 import ci_candidate as candidate
 
 REVISION = 'a' * 40
-IDENTITY = {'revision': REVISION, 'run_id': '123', 'target': 'x86_64-unknown-linux-gnu', 'os': 'Linux', 'arch': 'x86_64', 'profile': 'test', 'features': 'all'}
+IDENTITY = {'revision': REVISION, 'run_id': '123', 'target': 'x86_64-unknown-linux-gnu', 'os': 'Linux', 'arch': 'x86_64', 'profile': 'test', 'features': 'all', 'generator_build': None}
 
 
 class CandidateTests(unittest.TestCase):
+    def test_consumer_retry_preserves_sealed_producer_build(self):
+        from build_context import BuildContext
+        environment = {'GITHUB_ACTIONS':'true', 'GITHUB_SHA':REVISION,
+            'GITHUB_REPOSITORY':'EKGF/grapharch',
+            'GITHUB_WORKFLOW_REF':'EKGF/grapharch/.github/workflows/pages.yml@refs/heads/main',
+            'GITHUB_RUN_ID':'123', 'GITHUB_RUN_NUMBER':'7', 'GITHUB_RUN_ATTEMPT':'1'}
+        with tempfile.TemporaryDirectory() as temporary, patch.dict(candidate.os.environ, environment, clear=True):
+            producer = json.loads(BuildContext.current(REVISION).json())
+            identity = dict(IDENTITY, generator_build=producer)
+            root, engine, _, messages, manifest = self.fixture(temporary)
+            with patch.object(candidate, 'identity', return_value=identity):
+                candidate.record(root, REVISION, messages, manifest, True)
+            with patch.dict(candidate.os.environ, {'GITHUB_RUN_ATTEMPT':'2'}), patch.object(candidate, 'identity', return_value=dict(IDENTITY)):
+                self.assertEqual(candidate.verify(root, REVISION, manifest, 'engine'), engine)
+                self.assertEqual(candidate.load(root, REVISION, manifest)['identity']['generator_build'], producer)
+            with patch.dict(candidate.os.environ, {'GITHUB_RUN_ID':'999'}), patch.object(candidate, 'identity', return_value=dict(IDENTITY)):
+                with self.assertRaisesRegex(ValueError, 'another build'):
+                    candidate.verify(root, REVISION, manifest, 'engine')
+
     def test_rejects_generator_revision_from_another_checkout(self):
         with patch.dict(candidate.os.environ, {'GRAPHARCH_BUILD_REVISION':'b'*40}), patch.object(candidate,'validate_checkout'):
             with self.assertRaisesRegex(ValueError,'generator identity'):

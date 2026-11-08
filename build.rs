@@ -36,6 +36,7 @@ fn identity() {
     for name in [
         "GRAPHARCH_BUILD_REVISION",
         "GRAPHARCH_BUILD_RELEASE_VERSION",
+        "GRAPHARCH_BUILD_CONTEXT",
     ] {
         println!("cargo:rerun-if-env-changed={name}");
     }
@@ -123,6 +124,17 @@ fn identity() {
             );
         }
     }
+    let context = env::var("GRAPHARCH_BUILD_CONTEXT")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            assert!(
+                value.len() <= 4096,
+                "generator build context exceeds byte budget"
+            );
+            serde_json::from_str::<build_identity::CiBuild>(&value)
+                .expect("typed generator build context")
+        });
     let value = build_identity::Identity::new(
         &env::var("CARGO_PKG_VERSION").unwrap(),
         revision.as_deref(),
@@ -131,6 +143,8 @@ fn identity() {
             .ok()
             .filter(|v| !v.is_empty())
             .as_deref(),
+        context,
+        external,
     )
     .expect("valid generator build identity");
     println!(
@@ -144,5 +158,17 @@ fn identity() {
     println!(
         "cargo:rustc-env=GRAPHARCH_GENERATOR_REVISION={}",
         value.revision
+    );
+    println!(
+        "cargo:rustc-env=GRAPHARCH_BUILD_NUMBER={}",
+        value.number
+    );
+    println!(
+        "cargo:rustc-env=GRAPHARCH_BUILD_RUN_URL={}",
+        value.run_url
+    );
+    println!(
+        "cargo:rustc-env=GRAPHARCH_BUILD_DETAILS={}",
+        value.details
     );
 }

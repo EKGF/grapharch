@@ -68,6 +68,9 @@ jobs:
         run: python3 -B -m unittest discover -s packaging/tests -p test_ci_transport.py
       - name: Native build dependencies
         run: python3 -B packaging/install_build_dependencies.py
+      - name: Bind the generator identity to this actual build
+        shell: bash
+        run: python3 -B packaging/build_context.py --revision "$GRAPHARCH_CI_REVISION"
       - name: Format
         if: needs.scope.outputs.suite == 'full'
         run: cargo fmt --check
@@ -213,6 +216,9 @@ jobs:
         with:
           cache-on-failure: false
           cache-shared-key: rust-ci
+      - name: Bind the generator identity to this actual build
+        shell: bash
+        run: python3 -B packaging/build_context.py --revision "$GRAPHARCH_CI_REVISION"
       - name: Format
         run: cargo fmt --check
       - name: Lint

@@ -67,6 +67,11 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           cache-on-failure: false
+      - name: Bind the generator identity to this actual build
+        shell: bash
+        env:
+          REVIEWED_REVISION: ${{ needs.metadata.outputs.revision }}
+        run: python packaging/build_context.py --revision "$REVIEWED_REVISION"
       - run: cargo fmt --check
       - name: Verify portable TLS dependency graphs
         run: python packaging/check_release_dependencies.py
@@ -86,6 +91,11 @@ jobs:
       RUSTFLAGS: ${{ matrix.os == 'win32' && '-C target-feature=+crt-static' || '' }}
     steps:
       - uses: actions/checkout@v7
+      - name: Bind the generator identity to this actual build
+        shell: bash
+        env:
+          REVIEWED_REVISION: ${{ needs.metadata.outputs.revision }}
+        run: python packaging/build_context.py --revision "$REVIEWED_REVISION"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -111,7 +121,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           maturin-version: v1.15.0
-          docker-options: --env GRAPHARCH_BUILD_REVISION --env GRAPHARCH_BUILD_RELEASE_VERSION
+          docker-options: --env GRAPHARCH_BUILD_REVISION --env GRAPHARCH_BUILD_RELEASE_VERSION --env GRAPHARCH_BUILD_CONTEXT
           command: build
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}

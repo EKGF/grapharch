@@ -1,5 +1,6 @@
 """Build once, then execute only the exact candidate engine/test harness."""
 import argparse
+from dataclasses import asdict
 import hashlib
 import json
 import os
@@ -10,6 +11,7 @@ import sys
 import tomllib
 
 from source_action import validate_checkout
+from build_context import BuildContext, prepared_context
 from distribute import platform as release_platform, verify_machine
 
 DOC_TESTS = ('showcase_gallery', 'taxonomy_use_case_showcases', 'specification_sidebar',
@@ -33,7 +35,9 @@ def identity(root, revision):
     hosts = [line[6:] for line in compiler.splitlines() if line.startswith('host: ')]
     if len(hosts) != 1 or os.environ.get('CARGO_BUILD_TARGET') not in (None, '', hosts[0]):
         raise ValueError('candidate compiler target must match the native host')
+    context = prepared_context(revision)
     return {'target': hosts[0], 'revision': revision, 'run_id': os.environ.get('GITHUB_RUN_ID', ''),
+            'generator_build': asdict(context) if context else None,
             'workspace': str(root.resolve()), 'os': platform.system(), 'arch': platform.machine(),
             'nextest': subprocess.check_output(['cargo-nextest', 'nextest', '--version'], text=True).strip(),
             'toolchain': compiler,
@@ -94,7 +98,14 @@ def load(root, revision, manifest, fingerprint=None):
     result = json.loads(manifest.read_text())
     if result.get('schema_version') != 1 or result.get('fingerprint') != seal(result) or fingerprint is not None and result.get('fingerprint') != fingerprint:
         raise ValueError('candidate manifest fingerprint mismatch')
-    if result['identity'] != identity(root, revision):
+    expected = identity(root, revision)
+    producer = result['identity'].get('generator_build')
+    if producer is not None:
+        BuildContext.parse(producer).validate_consumer(revision)
+        # A retried consumer uses the original sealed producer build number.
+        # It does not relabel the unchanged executable with its own attempt.
+        expected['generator_build'] = producer
+    if result['identity'] != expected:
         raise ValueError('candidate revision, target, toolchain, profile, features or inputs changed')
     return result
 
@@ -155,6 +166,9 @@ def test_arguments(suite, native=True):
 
 
 def build(root, revision, suite, manifest, native, docs=False):
+    if os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_SHA') == revision:
+        if prepared_context(revision) != BuildContext.current(revision):
+            raise ValueError('candidate compiler requires its actual verified CI build context')
     identity(root, revision)
     if os.environ.get('CARGO_TARGET_DIR') not in (None, '', str(root / 'target')) or (root / 'target').exists() and not (root / 'target').resolve().is_relative_to(root.resolve()):
         raise ValueError('CI archives require the in-checkout Cargo target directory')

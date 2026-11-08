@@ -108,7 +108,10 @@ impl Theme {
         include_str!("community_footer.html")
             .replace("{prefix}", prefix)
             .replace("{home}", home)
-            .replace("{generator_credit}", super::super::credit::HTML)
+            .replace(
+                "{generator_credit}",
+                &super::super::credit::html(),
+            )
     }
 
     pub fn attribution(self, prefix: &str) -> String {

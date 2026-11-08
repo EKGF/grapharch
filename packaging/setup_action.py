@@ -97,7 +97,7 @@ def main():
         binary.write_bytes(source.read(entries[0]))
     binary.chmod(0o755)
     result = subprocess.run(
-        [str(binary), "--version"], check=True, text=True, capture_output=True
+        [str(binary), "-V"], check=True, text=True, capture_output=True
     )
     if result.stdout.strip() != f"grapharch {version}":
         raise ValueError("Installed binary version does not match requested release")

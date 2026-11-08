@@ -739,7 +739,7 @@ async fn catalogue(
     }
     html.push_str(&format!(
         "</div></section><footer>{}</footer></main></body></html>",
-        super::credit::HTML
+        super::credit::html()
     ));
     let mut publication_details = String::new();
     for predicate in [

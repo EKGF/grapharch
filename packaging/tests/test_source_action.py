@@ -35,12 +35,12 @@ class SourceActionTests(unittest.TestCase):
             root = Path(directory)
             (root / 'Cargo.toml').write_text('[package]\nversion="0.1.0"\n')
             (root / 'rust-toolchain.toml').write_text('[toolchain]\nchannel="nightly-2026-10-30"\n')
-            environment = {'RUNNER_TEMP': directory, 'GITHUB_PATH': str(root / 'paths'),
+            environment = {'GRAPHARCH_BUILD_CONTEXT':'unrelated consumer build', 'RUNNER_TEMP': directory, 'GITHUB_PATH': str(root / 'paths'),
                            'GITHUB_OUTPUT': str(root / 'outputs')}
             with patch.dict(os.environ, environment), patch.object(source, 'validate_checkout'), \
                  patch.object(source.platform, 'system', return_value='Linux'), \
                  patch.object(source.subprocess, 'run') as run, \
-                 patch.object(source.subprocess, 'check_output', return_value='grapharch 0.1.0-dev+aaaaaaaaaaaa\n'):
+                 patch.object(source.subprocess, 'check_output', side_effect=['grapharch 0.1.0\n','grapharch 0.1.0 (source aaaaaaaaaaaa)\nsource commit ' + 'a'*40]):
                 source.install(root, 'a' * 40)
             command = run.call_args_list[-1]
             self.assertEqual(command.args[0][:7],
@@ -48,6 +48,7 @@ class SourceActionTests(unittest.TestCase):
             self.assertEqual(command.kwargs['cwd'], root)
             self.assertEqual(command.kwargs['env']['GRAPHARCH_BUILD_REVISION'], 'a' * 40)
             self.assertEqual(command.kwargs['env']['GRAPHARCH_BUILD_RELEASE_VERSION'], '')
+            self.assertEqual(command.kwargs['env']['GRAPHARCH_BUILD_CONTEXT'], '')
             self.assertIn('revision=' + 'a' * 40, (root / 'outputs').read_text())
             self.assertIn('binary-path=', (root / 'outputs').read_text())
 

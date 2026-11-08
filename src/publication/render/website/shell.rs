@@ -54,7 +54,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
             "<p><a href=\"{prefix}quality-issues.html\">Quality issues</a></p>"
         )
     };
-    let generator_credit = super::super::credit::HTML;
+    let generator_credit = super::super::credit::html();
     let organization_identity = header.theme.identity();
     let header_links = header.theme.links(
         repository,
@@ -64,12 +64,15 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     );
     let project_brand = format!(
         "<a class=\"brand\" href=\"{prefix}\">{}<span class=\"brand-version\" \
-         data-build-channel=\"{}\" data-generator-revision=\"{}\"><span \
+         data-build-channel=\"{}\" data-generator-revision=\"{}\" \
+         data-build-number=\"{}\" title=\"{}\"><span \
          class=\"visually-hidden\">Version </span>{}</span><span \
          class=\"brand-context\">Documentation</span></a>",
         esc(project_title),
         esc(env!("GRAPHARCH_BUILD_CHANNEL")),
         esc(env!("GRAPHARCH_GENERATOR_REVISION")),
+        esc(env!("GRAPHARCH_BUILD_NUMBER")),
+        esc(env!("GRAPHARCH_BUILD_DETAILS")),
         esc(env!("GRAPHARCH_BUILD_LABEL"))
     );
     let header_content =

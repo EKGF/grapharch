@@ -187,7 +187,7 @@ pub(super) async fn end(
     file.write_all(
         format!(
             "<footer>{}</footer></main></body></html>\n",
-            super::credit::HTML
+            super::credit::html()
         )
         .as_bytes(),
     )

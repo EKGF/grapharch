@@ -52,7 +52,7 @@ def smoke(output: Path, target: str) -> None:
             binary = root / binary_name(item)
             binary.write_bytes(archive.read(binary_name(item)))
             binary.chmod(0o755)
-        if checked([str(binary), "--version"]).strip() != expected:
+        if checked([str(binary), "-V"]).strip() != expected:
             raise ValueError("standalone archive reports a different version")
         environment = root / "python environment"
         venv.EnvBuilder(with_pip=True).create(environment)
@@ -71,7 +71,7 @@ def smoke(output: Path, target: str) -> None:
         )
         command = scripts / binary_name(item)
         if checked(
-            [str(command), "--version"]
+            [str(command), "-V"]
         ).strip() != expected or "build-family" not in checked(
             [str(command), "publication", "--help"]
         ):
@@ -102,7 +102,7 @@ def smoke(output: Path, target: str) -> None:
             project,
         )
         response = checked(
-            npm_command() + ["run", "--silent", "grapharch", "--", "--version"], project
+            npm_command() + ["run", "--silent", "grapharch", "--", "-V"], project
         )
         if response.strip() != expected:
             raise ValueError("installed npm package does not expose the expected CLI")

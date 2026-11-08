@@ -657,7 +657,7 @@ async fn end(
     file.write_all(
         format!(
             "<footer>{}</footer></main>",
-            super::super::credit::HTML
+            super::super::credit::html()
         )
         .as_bytes(),
     )

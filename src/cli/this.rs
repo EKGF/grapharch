@@ -6,7 +6,7 @@ use {
 };
 
 #[derive(Parser)]
-#[command(version, long_version = env!("GRAPHARCH_BUILD_LABEL"), about, long_about = None)]
+#[command(version, long_version = concat!(env!("GRAPHARCH_BUILD_LABEL"), "\n", env!("GRAPHARCH_BUILD_DETAILS")), about, long_about = None)]
 pub struct Cli {
     #[command(flatten)]
     pub verbose: clap_verbosity_flag::Verbosity,

@@ -57,8 +57,8 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         .expect("visible version badge in the header");
     if env!("GRAPHARCH_BUILD_CHANNEL") != "release" {
         assert!(
-            version.text().collect::<String>().contains("-dev+") ||
-                version.text().collect::<String>().contains("-source"),
+            ["ci", "local", "source"]
+                .contains(&env!("GRAPHARCH_BUILD_CHANNEL")),
             "unreleased documentation must identify its source build"
         );
     }
@@ -83,6 +83,14 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         version.value().attr("data-build-channel"),
         Some(env!("GRAPHARCH_BUILD_CHANNEL"))
     );
+    assert_eq!(
+        version.value().attr("data-build-number"),
+        Some(env!("GRAPHARCH_BUILD_NUMBER"))
+    );
+    assert_eq!(
+        version.value().attr("title"),
+        Some(env!("GRAPHARCH_BUILD_DETAILS"))
+    );
     let binary = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
         .arg("--version")
         .output()
@@ -90,7 +98,21 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
     assert!(binary.status.success());
     assert_eq!(
         String::from_utf8(binary.stdout)?.trim(),
-        format!("grapharch {}", env!("GRAPHARCH_BUILD_LABEL"))
+        format!(
+            "grapharch {}\n{}",
+            env!("GRAPHARCH_BUILD_LABEL"),
+            env!("GRAPHARCH_BUILD_DETAILS")
+        )
+    );
+    let canonical =
+        tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+            .arg("-V")
+            .output()
+            .await?;
+    assert!(canonical.status.success());
+    assert_eq!(
+        String::from_utf8(canonical.stdout)?.trim(),
+        format!("grapharch {}", env!("CARGO_PKG_VERSION"))
     );
     let context = document
         .select(

@@ -31,7 +31,7 @@ fn compile_time_cli_path_is_restored() {
     assert_eq!(String::from_utf8(output.stdout).unwrap().trim(), "original archive fixture");
 }
 ''')
-            environment = {'CARGO_TARGET_DIR': str(root / 'target'), 'CARGO_BUILD_BUILD_DIR': str(root / 'target'), 'GITHUB_OUTPUT': str(root / 'output/outputs')}
+            environment = {'CARGO_TARGET_DIR': str(root / 'target'), 'CARGO_BUILD_BUILD_DIR': str(root / 'target'), 'GITHUB_OUTPUT': str(root / 'output/outputs'), 'GRAPHARCH_BUILD_CONTEXT': ''}
             with patch.dict(os.environ, environment):
                 subprocess.run(['cargo', 'generate-lockfile', '--offline'], cwd=root, check=True)
                 subprocess.run(['git', 'init', '--quiet'], cwd=root, check=True)
