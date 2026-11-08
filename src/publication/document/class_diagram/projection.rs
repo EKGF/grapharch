@@ -55,9 +55,7 @@ impl Projection {
             value.source.len() <= 128 * 1024,
             "retained PlantUML source exceeds 128 KiB"
         );
-        // Source is provenance, not an instruction to render again. A newer
-        // generator may use different formatting/layout rules without changing
-        // this pinned drawing.
+        // Retained source is provenance, never an instruction to rerender.
         ensure!(
             value.engine.starts_with("PlantUML version") &&
                 value.engine.len() <= 1024,
@@ -99,8 +97,7 @@ fn layout_score(svg: &str) -> Result<f64> {
         width.is_finite() && width > 0.0 && height.is_finite() && height > 0.0,
         "invalid PlantUML SVG dimensions"
     );
-    // Balance readable scaling with horizontal use of the content area. Pure
-    // fit scoring can reward a tall, narrow drawing for a tiny font advantage.
+    // Balance readable scaling with horizontal use, not narrowest fit.
     let scale = (900.0 / width).min(600.0 / height);
     Ok(scale * (width / height).min(1.0))
 }
@@ -153,8 +150,7 @@ fn source(diagram: &Diagram) -> String {
             "#FFFFFF"
         };
         let label = label(&node.label);
-        // Links are opaque node references. Publication routes are resolved
-        // after layout; source-supplied links never enter PlantUML syntax.
+        // Opaque links resolve after layout; source URLs never enter PlantUML.
         if node.kind == "Class" {
             output.push_str(&format!(
                 "class \"{label}\" as n{index} <<owl:Class>> \
@@ -195,6 +191,12 @@ fn source(diagram: &Diagram) -> String {
                     &shorthand.qualified_counts,
                 );
             }
+            super::qualified_count::QualifiedCount::members(
+                &mut output,
+                node,
+                &shorthand.qualified_counts,
+                &identifiers,
+            );
             super::constraint_projection::members(
                 &mut output,
                 node,

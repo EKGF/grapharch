@@ -16,6 +16,8 @@ ex:Period a owl:Class; rdfs:label "Period"; rdfs:subClassOf
  [a owl:Restriction; owl:onProperty ex:finish; owl:onClass ex:Date; owl:maxQualifiedCardinality 1],
  [a owl:Restriction; owl:onProperty ex:duration; owl:onClass ex:Duration; owl:maxQualifiedCardinality 1] .
 ex:NoDate a owl:Class; rdfs:label "No date"; rdfs:subClassOf [a owl:Restriction; owl:onProperty ex:start; owl:onClass ex:Date; owl:maxQualifiedCardinality 0] .
+ex:Time a owl:Class; rdfs:label "Time"; rdfs:subClassOf [a owl:Restriction; owl:onProperty ex:value; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality 1] .
+ex:value a owl:DatatypeProperty; rdfs:label "has time value" .
 ex:Date a owl:Class; rdfs:label "Date" . ex:Duration a owl:Class; rdfs:label "Duration" .
 ex:start a owl:ObjectProperty; rdfs:label "has start date" .
 ex:finish a owl:ObjectProperty; rdfs:label "has end date" .
@@ -62,6 +64,27 @@ ex:duration a owl:ObjectProperty; rdfs:label "has duration" .
         );
         assert!(!visible.iter().any(|s| s.contains("expression")));
     }
+    let time = document
+        .select(&figures)
+        .find(|f| {
+            f.select(&captions).any(|c| {
+                c.text()
+                    .collect::<String>()
+                    .starts_with("Class neighborhood: Time ")
+            })
+        })
+        .unwrap();
+    let time_text = time
+        .select(&texts)
+        .flat_map(|n| n.text())
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        time_text.contains("has time value : xsd:string [1]"),
+        "{time_text}"
+    );
+    assert!(!time_text.contains("OWL expression"));
+    assert!(html.contains("onDataRange"));
     assert!(html.contains("maxQualifiedCardinality"));
     assert!(
         tokio::fs::read(publication.directory.join("document.pdf"))

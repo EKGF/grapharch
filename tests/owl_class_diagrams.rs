@@ -555,3 +555,6 @@ mod qualified_exact;
 
 #[path = "owl_class_diagrams/qualified_maximum.rs"]
 mod qualified_maximum;
+
+#[path = "owl_class_diagrams/qualified_data.rs"]
+mod qualified_data;

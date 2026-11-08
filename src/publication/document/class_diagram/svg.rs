@@ -171,10 +171,10 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
     if !super::qualified_count::collect(&projection.diagram).is_empty() {
         description.push_str(
             " Qualified counts count only property values in the named target \
-             class; other values are not excluded. A zero qualified maximum \
-             prohibits values in that target class, not other property \
-             values. A zero qualified minimum imposes no restriction and is \
-             omitted visually. ",
+             class or datatype; other values are not excluded. A zero \
+             qualified maximum prohibits values in that target class or \
+             datatype, not other property values. A zero qualified minimum \
+             imposes no restriction and is omitted visually. ",
         );
     }
     if !super::nested_existence::collect(&projection.diagram).is_empty() {

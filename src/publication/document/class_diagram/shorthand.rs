@@ -152,10 +152,10 @@ impl<'a> Shorthand<'a> {
         }
         for minimum in &qualified_counts {
             if minimum.visible() {
-                visible.extend([
-                    minimum.class.id.as_str(),
-                    minimum.filler.id.as_str(),
-                ]);
+                visible.insert(minimum.class.id.as_str());
+                if !minimum.datatype {
+                    visible.insert(minimum.filler.id.as_str());
+                }
             }
         }
         visible.extend(existences.iter().map(|e| e.class.id.as_str()));

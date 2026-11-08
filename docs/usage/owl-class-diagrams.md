@@ -126,3 +126,19 @@ The renderer runs with PlantUML’s sandbox security profile.
 
 This automatic feature is independent of [authored PlantUML diagrams](../collectors/plantuml.md),
 which remain supported by the dedicated collector and documentor.
+
+Datatype-qualified restrictions with a named `owl:onDataRange` use a class
+field, for example `has time value : xsd:string [1] {qualified}`. The count
+applies only to values in that datatype on instances of the restricted class;
+it neither declares a global range nor excludes other values. Minimum and
+maximum counts use `[n..*]` and `[0..n]`; minimum zero is omitted, maximum zero
+remains a prohibition. Complex datatype expressions remain explicit.
+
+| Named restriction filler | Minimum | Exact positive | Maximum, including zero | Complex filler |
+| --- | --- | --- | --- | --- |
+| `owl:onClass` | Target `n..*`; zero omitted | Target `n` | Target `0..n` | Explicit expression |
+| `owl:onDataRange` | Field `[n..*]`; zero omitted | Field `[n]` | Field `[0..n]` | Explicit expression |
+
+Exact zero currently remains explicit. Data counts concern distinct data values,
+not the number of lexical spellings of a literal. The original predicates,
+values and source links remain retained in either presentation.
