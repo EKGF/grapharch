@@ -11,15 +11,15 @@ use {
 
 pub(crate) const LANGUAGE: &str = "grapharch-class-diagram";
 pub(crate) const LEGEND: &str =
-    "These diagrams present asserted OWL relationships without inference. A \
-     property with one unambiguous declared domain may be drawn as a class \
-     attribute or a labelled association; RDF properties remain independent \
-     resources. Domain/range declarations do not impose requiredness or \
-     cardinality. Multiple domains or ranges apply conjunctively, not as \
-     alternatives. Anonymous OWL expressions remain explicit. Relationships \
-     as text preserves the original assertions. Where shown, SHACL validation \
-     views document each explicitly associated shape separately; they do not \
-     add OWL axioms or report validation results.";
+    "OWL neighborhood diagrams present asserted relationships without \
+     inference. A property with one unambiguous declared domain may be drawn \
+     as a class attribute or a labelled association; RDF properties remain \
+     independent resources. Domain/range declarations do not impose \
+     requiredness or cardinality. Multiple domains or ranges apply \
+     conjunctively, not as alternatives. Anonymous OWL expressions remain \
+     explicit. Relationships as text preserves the original assertions. Where \
+     shown, SHACL validation views document each explicitly associated shape \
+     separately; they do not add OWL axioms or report validation results.";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

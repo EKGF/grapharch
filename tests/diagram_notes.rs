@@ -202,6 +202,11 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
         note.matches("id=\"grapharch-diagram-note\"").count(),
         1
     );
+    assert!(
+        note.contains(
+            "OWL neighborhood diagrams present asserted relationships"
+        )
+    );
     // bounded: this fixture has one home, one reference page and one note.
     let mut selected = None;
     for route in publication
@@ -231,7 +236,7 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
     assert!(html.contains(&format!(
         "href=\"{prefix}diagram-notes.html#grapharch-diagram-note\""
     )));
-    assert!(!html.contains("These diagrams present asserted OWL"));
+    assert!(!html.contains("OWL neighborhood diagrams"));
     let PublishOutcome::Published(again) = publisher
         .render(&plan, &output.path().join("again"))
         .await?

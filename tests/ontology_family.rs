@@ -81,7 +81,7 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
     );
     let sections = scraper::Selector::parse(
         "main > section:not(#quality-issues):not(#publication-diagnostics):\
-         not(#document-provenance)",
+         not(#document-provenance):not([role=doc-endnotes])",
     )
     .unwrap();
     assert!(
@@ -95,13 +95,27 @@ async fn ekgf_family_publishes_documented_terms_from_restored_kg() -> Result<()>
          navigation"
     );
     assert_eq!(
+        doc.select(
+            &scraper::Selector::parse(
+                "main > section:not([role=doc-endnotes])"
+            )
+            .unwrap()
+        )
+        .next_back()
+        .unwrap()
+        .value()
+        .id(),
+        Some("document-provenance"),
+        "generation evidence closes the publication after coverage"
+    );
+    assert_eq!(
         doc.select(&scraper::Selector::parse("main > section").unwrap())
             .next_back()
             .unwrap()
             .value()
             .id(),
-        Some("document-provenance"),
-        "generation evidence closes the publication after coverage"
+        Some("grapharch-diagram-note"),
+        "one shared interpretation note follows all publication content"
     );
     let overview_section = doc
         .select(&sections)

@@ -93,7 +93,7 @@ ex:required a <http://www.w3.org/ns/shacl#PropertyShape> ; <http://www.w3.org/ns
         assert!(body.contains(expected), "missing {expected}");
     }
     assert!(!body.contains("Multiple domains and ranges apply together"));
-    assert!(!body.contains("These diagrams present asserted OWL"));
+    assert!(!body.contains("OWL neighborhood diagrams"));
     assert!(!body.contains("ex:required"));
     Ok(())
 }
