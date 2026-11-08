@@ -6,8 +6,9 @@ mod existential;
 mod label_lines;
 mod labels;
 mod layout;
+mod nested_existence;
 mod projection;
-mod qualified_minimum;
+mod qualified_count;
 pub(crate) use projection::Projection;
 mod read;
 mod shorthand;
@@ -30,22 +31,22 @@ pub(crate) const LEGEND: &str =
      entailed. Simple existential subclass restrictions use a class-scoped \
      association labelled at least one filler; this does not constrain all \
      property values or declare a global range. Qualified minimum \
-     associations show n..* at the named target with {qualified}: only values \
-     in that target class count, and other property values are not excluded. \
-     A simple zero qualified minimum imposes no restriction and is omitted \
-     visually. Other anonymous OWL expressions remain explicit. Types and \
-     counts from simple property shapes enrich the UML notation. Identical \
-     qualifiers are shown once; where declaring shapes disagree, the disputed \
-     type or multiplicity is omitted from the drawing and remains in the \
-     dedicated shape documentation. No shape is chosen arbitrarily and \
-     conflicting counts are not silently intersected. An absent count imposes \
-     no lower or upper bound beyond zero or unbounded, respectively. Complex \
-     constraints require the linked full shape definition. Original OWL facts \
-     and shape provenance remain in the published source graph. Some diagrams \
-     show at most five complete OWL relationship groups within an \
-     eighteen-fact budget, selected in deterministic IRI order; omitted \
-     groups remain in the published source graph. These views are not \
-     exhaustive.";
+     associations show n..* for minima or n for exact counts at the named \
+     target with {qualified}: only values in that target class count, and \
+     other property values are not excluded. A simple zero qualified minimum \
+     imposes no restriction and is omitted visually. Other anonymous OWL \
+     expressions remain explicit. Types and counts from simple property \
+     shapes enrich the UML notation. Identical qualifiers are shown once; \
+     where declaring shapes disagree, the disputed type or multiplicity is \
+     omitted from the drawing and remains in the dedicated shape \
+     documentation. No shape is chosen arbitrarily and conflicting counts are \
+     not silently intersected. An absent count imposes no lower or upper \
+     bound beyond zero or unbounded, respectively. Complex constraints \
+     require the linked full shape definition. Original OWL facts and shape \
+     provenance remain in the published source graph. Some diagrams show at \
+     most five complete OWL relationship groups within an eighteen-fact \
+     budget, selected in deterministic IRI order; omitted groups remain in \
+     the published source graph. These views are not exhaustive.";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

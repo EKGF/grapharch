@@ -184,6 +184,17 @@ fn source(diagram: &Diagram) -> String {
                     text(&property.node.label)
                 ));
             }
+            for existence in shorthand
+                .existences
+                .iter()
+                .filter(|e| e.class.id == node.id)
+            {
+                existence.write(
+                    &mut output,
+                    &identifiers,
+                    &shorthand.qualified_counts,
+                );
+            }
             super::constraint_projection::members(
                 &mut output,
                 node,
@@ -244,7 +255,7 @@ fn source(diagram: &Diagram) -> String {
             })
         },
     );
-    for minimum in &shorthand.qualified_minima {
+    for minimum in &shorthand.qualified_counts {
         minimum.write(&mut output, &identifiers, &layout);
     }
     for existential in &shorthand.existentials {

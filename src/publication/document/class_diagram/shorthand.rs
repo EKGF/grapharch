@@ -28,7 +28,8 @@ pub(super) struct Shorthand<'a> {
     pub range_only:       Vec<RangeOnly<'a>>,
     pub properties:       Vec<Property<'a>>,
     pub existentials:     Vec<super::existential::Existential<'a>>,
-    pub qualified_minima: Vec<super::qualified_minimum::QualifiedMinimum<'a>>,
+    pub qualified_counts: Vec<super::qualified_count::QualifiedCount<'a>>,
+    pub existences:       Vec<super::nested_existence::Existence<'a>>,
     pub consumed:         BTreeSet<usize>,
     pub visible:          BTreeSet<&'a str>,
 }
@@ -105,8 +106,12 @@ impl<'a> Shorthand<'a> {
             consumed.extend(incident.iter().map(|(i, _)| *i));
             properties.push(Property { node, domain: domains[0], range });
         }
-        let qualified_minima = super::qualified_minimum::collect(diagram);
-        for minimum in &qualified_minima {
+        let existences = super::nested_existence::collect(diagram);
+        for existence in &existences {
+            consumed.extend(&existence.consumed);
+        }
+        let qualified_counts = super::qualified_count::collect(diagram);
+        for minimum in &qualified_counts {
             consumed.extend(&minimum.consumed);
         }
         let existentials = super::existential::collect(diagram);
@@ -145,21 +150,23 @@ impl<'a> Shorthand<'a> {
                 existential.filler.id.as_str(),
             ]);
         }
-        for minimum in &qualified_minima {
-            if minimum.minimum > 0 {
+        for minimum in &qualified_counts {
+            if minimum.count > 0 {
                 visible.extend([
                     minimum.class.id.as_str(),
                     minimum.filler.id.as_str(),
                 ]);
             }
         }
+        visible.extend(existences.iter().map(|e| e.class.id.as_str()));
         visible.extend(range_only.iter().map(|p| p.range.id.as_str()));
         visible.remove(GENERIC_RESOURCE);
         Self {
             range_only,
             properties,
             existentials,
-            qualified_minima,
+            qualified_counts,
+            existences,
             consumed,
             visible,
         }

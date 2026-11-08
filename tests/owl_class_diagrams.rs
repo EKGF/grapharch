@@ -549,3 +549,6 @@ mod range_only;
 
 #[path = "owl_class_diagrams/qualified_minimum.rs"]
 mod qualified_minimum;
+
+#[path = "owl_class_diagrams/qualified_exact.rs"]
+mod qualified_exact;

@@ -280,3 +280,93 @@ ex:managedBy a owl:ObjectProperty; rdfs:label "is managed by" .
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn exact_count_and_nested_zero_proof_survive_source_removal() -> Result<()>
+{
+    let source = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("sources")).await?;
+    tokio::fs::write(source.path().join("project.ttl"), DEFINITIONS).await?;
+    tokio::fs::write(source.path().join("sources/ontology.ttl"), r#"
+@prefix ex:<https://example.org/vocab/> .
+@prefix owl:<http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+ex: a owl:Ontology; rdfs:label "Qualified exact fixture" .
+ex:Official a owl:Class; rdfs:label "Official"; rdfs:subClassOf ex:ResponsibleParty,
+ [a owl:Restriction; owl:onProperty ex:playedBy; owl:onClass ex:Person; owl:qualifiedCardinality 1],
+ [a owl:Restriction; owl:onProperty ex:playedBy; owl:someValuesFrom [a owl:Restriction; owl:onProperty ex:member; owl:onClass ex:Body; owl:minQualifiedCardinality 0]] .
+ex:ResponsibleParty a owl:Class; rdfs:label "Responsible party" .
+ex:Appointee a owl:Class; rdfs:label "Appointee"; rdfs:subClassOf ex:Official .
+ex:Person a owl:Class; rdfs:label "Person" .
+ex:Body a owl:Class . ex:member a owl:ObjectProperty .
+ex:playedBy a owl:ObjectProperty; rdfs:label "is played by" .
+"#).await?;
+    let built = collect(source.path()).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("retained.nq");
+    built.dataset.export(archive.clone()).await?;
+    source.close()?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("publication required");
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    let document = scraper::Html::parse_document(&html);
+    let figure_selector =
+        scraper::Selector::parse("figure.owl-class-diagram").unwrap();
+    let caption = scraper::Selector::parse("figcaption").unwrap();
+    let svg = scraper::Selector::parse("svg text").unwrap();
+    let figure = document
+        .select(&figure_selector)
+        .find(|f| {
+            f.select(&caption).any(|c| {
+                c.text()
+                    .collect::<String>()
+                    .starts_with("Class neighborhood: Official ")
+            })
+        })
+        .unwrap();
+    let visible = figure
+        .select(&svg)
+        .flat_map(|t| t.text())
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(visible.contains("qualified") && visible.contains("is played by"));
+    assert!(
+        !visible.contains("expression") &&
+            !visible.contains("Literal") &&
+            !visible.contains("1..*")
+    );
+    for fact in [
+        "someValuesFrom",
+        "minQualifiedCardinality",
+        "qualifiedCardinality",
+    ] {
+        assert!(html.contains(fact));
+    }
+    assert!(
+        tokio::fs::read(publication.directory.join("document.pdf"))
+            .await?
+            .starts_with(b"%PDF-")
+    );
+    if let Some(directory) =
+        std::env::var_os("GRAPHARCH_QUALIFIED_EXACT_OUTPUT")
+    {
+        let destination = std::path::PathBuf::from(directory);
+        tokio::fs::create_dir_all(&destination).await?;
+        for name in ["index.html", "main.typ", "document.pdf", "style.css"] {
+            tokio::fs::copy(
+                publication.directory.join(name),
+                destination.join(name),
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}

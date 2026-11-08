@@ -49,6 +49,19 @@ BIND(IF(?p IN (<{RDFS}domain>, <{RDFS}range>), ?s, IF(?s = {subject}, ?o, ?s)) A
 BIND(?s AS ?group)
 ?s a <{OWL}Restriction> ; ?p ?o . FILTER(STRSTARTS(STR(?p), "{OWL}"))
 "#), 43);
+    // One additional authored restriction level, retained in its complete root
+    // group. This is bounded syntax inspection, not an inferred graph.
+    let nested = view.pattern(
+        &format!(
+            r#"
+{subject} <{RDFS}subClassOf> ?root .
+?root a <{OWL}Restriction>; <{OWL}someValuesFrom> ?s .
+?s a <{OWL}Restriction>; ?p ?o . FILTER(STRSTARTS(STR(?p), "{OWL}"))
+BIND(?root AS ?group)
+"#
+        ),
+        46,
+    );
     let expressions = view.pattern(&format!(r#"
 {subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
 BIND(?s AS ?group)
@@ -58,9 +71,9 @@ BIND(?s AS ?group)
     let mut rows = dataset
         .select(format!(
             "SELECT DISTINCT ?group ?s ?p ?o WHERE {{ {{ {direct} }} UNION {{ \
-             {property} }} UNION {{ {restrictions} }} UNION {{ {expressions} \
-             }} FILTER(isIRI(?s) && (isIRI(?o) || isLiteral(?o))) }} ORDER BY \
-             ?group ?s ?p ?o LIMIT 97"
+             {property} }} UNION {{ {restrictions} }} UNION {{ {nested} }} \
+             UNION {{ {expressions} }} FILTER(isIRI(?s) && (isIRI(?o) || \
+             isLiteral(?o))) }} ORDER BY ?group ?s ?p ?o LIMIT 97"
         ))
         .await?;
     let mut groups = BTreeMap::<String, Vec<Edge>>::new(); // bounded: ninety-six facts plus one sentinel.

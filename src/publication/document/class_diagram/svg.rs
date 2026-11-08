@@ -170,11 +170,19 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
              be entailed. ",
         );
     }
-    if !super::qualified_minimum::collect(&projection.diagram).is_empty() {
+    if !super::qualified_count::collect(&projection.diagram).is_empty() {
         description.push_str(
-            " Qualified minima count only property values in the named target \
+            " Qualified counts count only property values in the named target \
              class; other values are not excluded. A zero qualified minimum \
              imposes no restriction and is omitted visually. ",
+        );
+    }
+    if !super::nested_existence::collect(&projection.diagram).is_empty() {
+        description.push_str(
+            " The nested zero-minimum filler is unconstrained, but its outer \
+             existential still requires a property value. A positive \
+             qualified count on the same class and property already \
+             guarantees that existence; otherwise the member retains [1..*]. ",
         );
     }
     for edge in &projection.diagram.edges {
