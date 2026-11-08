@@ -30,7 +30,7 @@ impl Projection {
                 1,
             );
             let alternative_svg = render(renderer, &alternative_source).await?;
-            if fitting_scale(&alternative_svg)? > fitting_scale(&svg)? {
+            if layout_score(&alternative_svg)? > layout_score(&svg)? {
                 source = alternative_source;
                 svg = alternative_svg;
             }
@@ -78,7 +78,7 @@ async fn render(renderer: &LocalRenderer, source: &str) -> Result<String> {
     );
     Ok(svg)
 }
-fn fitting_scale(svg: &str) -> Result<f64> {
+fn layout_score(svg: &str) -> Result<f64> {
     let document = roxmltree::Document::parse(svg)?;
     let bounds = document
         .root_element()
@@ -97,9 +97,10 @@ fn fitting_scale(svg: &str) -> Result<f64> {
         width.is_finite() && width > 0.0 && height.is_finite() && height > 0.0,
         "invalid PlantUML SVG dimensions"
     );
-    // Prefer the orientation whose text can remain largest inside a balanced
-    // desktop/document figure, rather than optimizing every output for a phone.
-    Ok((900.0 / width).min(600.0 / height))
+    // Balance readable scaling with horizontal use of the content area. Pure
+    // fit scoring can reward a tall, narrow drawing for a tiny font advantage.
+    let scale = (900.0 / width).min(600.0 / height);
+    Ok(scale * (width / height).min(1.0))
 }
 
 pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
@@ -228,8 +229,17 @@ mod tests {
         let portrait = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 \
                         0 400 800\"/>";
         assert!(
-            fitting_scale(landscape).unwrap() >
-                fitting_scale(portrait).unwrap()
+            layout_score(landscape).unwrap() > layout_score(portrait).unwrap()
+        );
+    }
+    #[test]
+    fn a_small_font_scale_advantage_does_not_select_a_tall_portrait() {
+        let landscape = "<svg xmlns=\"http://www.w3.org/2000/svg\" \
+                         viewBox=\"0 0 950 268\"/>";
+        let portrait = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 \
+                        0 423 565\"/>";
+        assert!(
+            layout_score(landscape).unwrap() > layout_score(portrait).unwrap()
         );
     }
     #[test]

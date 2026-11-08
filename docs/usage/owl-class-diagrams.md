@@ -49,7 +49,8 @@ publication; nested expressions beyond the direct neighborhood are not expanded
 recursively. Isolated classes still receive a class box.
 
 Both engine orientations are compared against a balanced 900-by-600 figure area.
-The orientation that keeps labels largest is retained. Layout does not remove
+The score balances readable label scaling with a penalty for tall, narrow
+figures. Layout does not remove
 assertions to fit a phone. On narrow screens, the diagram stays readable inside a
 keyboard-focusable horizontal scroll region; the relationship list also remains
 available. PDF figures retain a physical height limit.

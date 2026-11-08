@@ -19,6 +19,14 @@ async fn diagram(source: &str) -> Result<String> {
 }
 
 async fn diagram_with_prefix(source: &str, prefix: &str) -> Result<String> {
+    diagram_with_focus(source, prefix, "Core").await
+}
+
+async fn diagram_with_focus(
+    source: &str,
+    prefix: &str,
+    focus: &str,
+) -> Result<String> {
     let root = tempfile::tempdir()?;
     let path = root.path().join("ontology.ttl");
     tokio::fs::write(
@@ -43,7 +51,7 @@ async fn diagram_with_prefix(source: &str, prefix: &str) -> Result<String> {
         dataset.clone(),
         snapshot,
         "urn:diagram:project",
-        NamedNode::new("https://example.org/Core")?,
+        NamedNode::new(format!("https://example.org/{focus}"))?,
         "en",
         Arc::new(BTreeMap::from([(
             "https://example.org/".into(),
@@ -461,5 +469,47 @@ async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
         "properties remain independent resources"
     );
     assert!(!retained.source.contains("*--"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn publication_artifact_uses_horizontal_space_without_losing_assertions()
+-> Result<()> {
+    let body = diagram_with_focus(r#"
+ex:PublicationArtifact a owl:Class .
+ex:StandardsRelease a owl:Class ; owl:disjointWith ex:PublicationArtifact .
+ex:artifactChecksum a owl:DatatypeProperty ; rdfs:domain ex:PublicationArtifact ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> .
+ex:artifactMediaType a owl:DatatypeProperty ; rdfs:domain ex:PublicationArtifact ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> .
+ex:artifactUrl a owl:DatatypeProperty ; rdfs:domain ex:PublicationArtifact ; rdfs:range <http://www.w3.org/2001/XMLSchema#anyURI> .
+ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:PublicationArtifact .
+"#, "ekg-artpub", "PublicationArtifact").await?;
+    #[derive(serde::Deserialize)]
+    struct Retained {
+        svg:     String,
+        diagram: Semantic,
+    }
+    #[derive(serde::Deserialize)]
+    struct Semantic {
+        edges: Vec<serde::de::IgnoredAny>,
+    }
+    let json = body
+        .split("```grapharch-class-diagram\n")
+        .nth(1)
+        .unwrap()
+        .split("\n```")
+        .next()
+        .unwrap();
+    let retained: Retained = serde_json::from_str(json)?;
+    assert_eq!(retained.diagram.edges.len(), 8);
+    assert!(!body.contains("Diagram limit"));
+    let svg = roxmltree::Document::parse(&retained.svg)?;
+    let bounds = svg.root_element().attribute("viewBox").unwrap();
+    let mut dimensions = bounds.split_whitespace().skip(2);
+    let width: f64 = dimensions.next().unwrap().parse()?;
+    let height: f64 = dimensions.next().unwrap().parse()?;
+    assert!(
+        width > height * 1.5,
+        "PublicationArtifact must use horizontal space: {width}x{height}"
+    );
     Ok(())
 }
