@@ -182,14 +182,6 @@ pub(super) fn render(
             )?)?
             .into_iter(),
     );
-    // Table wrappers keep narrow screens readable without page-wide overflow.
-    html = html
-        .replace(
-            "<table>",
-            "<div class=\"table-scroll\" role=\"region\" aria-label=\"Data \
-             table\" tabindex=\"0\"><table>",
-        )
-        .replace("</table>", "</table></div>");
     html = html.replace(
         "href=\"#grapharch-diagram-note\"",
         &format!(

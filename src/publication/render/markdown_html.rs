@@ -108,7 +108,13 @@ pub(super) fn events<'a>(
             } else {
                 event
             };
-            std::iter::once(event).chain(title)
+            let table_start = matches!(&event, Event::Start(Tag::Table(_))) ||
+                matches!(&event, Event::Html(value) if value.as_ref() == "<table class=\"rdf-properties\">");
+            let table_end = matches!(&event, Event::End(TagEnd::Table)) ||
+                matches!(&event, Event::Html(value) if value.as_ref() == "</table>");
+            let before = table_start.then(|| Event::Html("<div class=\"table-scroll\" role=\"region\" aria-label=\"Data table\" tabindex=\"0\">".into()));
+            let after = table_end.then(|| Event::Html("</div>".into()));
+            before.into_iter().chain(std::iter::once(event)).chain(title).chain(after)
         }))
 }
 
@@ -118,6 +124,28 @@ mod tests {
         super::events,
         pulldown_cmark::{Parser, html},
     };
+
+    #[test]
+    fn tables_have_one_keyboard_scroll_region_and_keep_alignment() {
+        let source = "| Column | Value |\n| :--- | ---: |\n| long | text |\n";
+        let mut output = String::new();
+        html::push_html(
+            &mut output,
+            events(Parser::new_ext(
+                source,
+                crate::publication::markdown::options(),
+            ))
+            .unwrap(),
+        );
+        assert_eq!(
+            output.matches("class=\"table-scroll\"").count(),
+            1,
+            "{output}"
+        );
+        assert!(output.contains("tabindex=\"0\""));
+        assert!(output.contains("text-align: right"), "{output}");
+        assert!(output.ends_with("</table>\n</div>"), "{output}");
+    }
 
     #[test]
     fn marked_json_examples_retain_callouts_and_colored_tokens() {

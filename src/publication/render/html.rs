@@ -25,8 +25,10 @@ pub(super) const STYLE: &str =
      #1755a4}.subtitle,footer{color:#526174}pre{overflow:auto;padding:18px;\
      background:#f3f5f8;border:1px solid \
      #dfe4eb;border-radius:4px}code{font:0.86em \
-     ui-monospace,monospace}table{border-collapse:collapse;table-layout:auto;\
-     width:100%;margin:24px \
+     ui-monospace,monospace}.table-scroll{max-width:100%;overflow-x:auto}.\
+     table-scroll:focus-visible{outline:3px solid \
+     #1755a4}table{border-collapse:collapse;table-layout:auto;width:100%;\
+     margin:24px \
      0}table:has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th:\
      first-child,table:has(>thead>tr>th:nth-child(2):last-child)>tbody>tr>td:\
      first-child{min-width:min(7.5rem,25vw)}th,td{border:1px solid \
