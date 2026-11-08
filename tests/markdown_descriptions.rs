@@ -266,7 +266,7 @@ async fn owl_documentors_prefer_markdown_over_plain_comments() -> Result<()> {
     };
     assert_eq!(
         body.value()
-            .split("\n\n**Class neighborhood**")
+            .split("\n\n```grapharch-class-diagram")
             .next()
             .unwrap(),
         "## Rich class explanation\n\nA **source-authored** explanation."
