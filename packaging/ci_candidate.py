@@ -154,7 +154,7 @@ def test_arguments(suite, native=True):
 
 def build(root, revision, suite, manifest, native, docs=False):
     identity(root, revision)
-    if os.environ.get('CARGO_TARGET_DIR', 'CARGO_BUILD_BUILD_DIR', 'RUSTC', 'RUSTC_WORKSPACE_WRAPPER') not in (None, '', str(root / 'target')) or (root / 'target').exists() and not (root / 'target').resolve().is_relative_to(root.resolve()):
+    if os.environ.get('CARGO_TARGET_DIR') not in (None, '', str(root / 'target')) or (root / 'target').exists() and not (root / 'target').resolve().is_relative_to(root.resolve()):
         raise ValueError('CI archives require the in-checkout Cargo target directory')
     if os.environ.get('CARGO_BUILD_BUILD_DIR') not in (None, '', str(root / 'target')):
         raise ValueError('CI archives require an in-checkout Cargo build directory')
