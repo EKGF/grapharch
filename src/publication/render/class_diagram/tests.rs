@@ -158,3 +158,13 @@ fn shape_markers_link_to_named_sources_in_captions_and_text() {
         .collect::<String>();
     assert!(details.contains("SHACL S1") && details.contains("SHACL S2"));
 }
+
+#[test]
+fn compact_pdf_diagrams_never_enlarge_beyond_intrinsic_readable_size() {
+    let mut projection = Projection::parse(&shape_only()).unwrap();
+    projection.svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 \
+                      400 200\"><rect width=\"400\" height=\"200\"/></svg>"
+        .into();
+    let output = typst(&serde_json::to_string(&projection).unwrap()).unwrap();
+    assert!(output.contains("calc.min(size.width * 1.0, 300pt)"));
+}

@@ -194,8 +194,9 @@ pub(super) fn typst(source: &str) -> Result<String> {
         width.is_finite() && height.is_finite() && width > 0.0 && height > 0.0,
         "invalid class diagram dimensions"
     );
-    // Bound physical height as well as width. A tall neighborhood must not be
-    // enlarged to a full page merely to fill the text column.
+    // Bound height and intrinsic size as well as available width. SVG pixels
+    // become 0.75 PDF points, preserving the generator's font scale instead
+    // of enlarging a compact class box merely to fill the text column.
     let mut result = format!(
         "#block(breakable: false)[#layout(size => image(bytes({}), format: \
          \"svg\", width: calc.min(size.width * {}, {}pt), alt: {}))]\n",
@@ -205,7 +206,7 @@ pub(super) fn typst(source: &str) -> Result<String> {
         } else {
             "1.0"
         },
-        420.0 * width / height,
+        (width * 0.75).min(420.0 * width / height),
         quote(&format!(
             "Class neighborhood for {}",
             diagram.focus.label
