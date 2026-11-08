@@ -152,6 +152,9 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             })
                             .collect::<Vec<_>>()
                             .join(", ");
+                        if super::rdf_tables::matches(&events, index) {
+                            widths = "30%, 1fr".into();
+                        }
                         if columns.len() == 1 {
                             widths.push(',');
                         }
