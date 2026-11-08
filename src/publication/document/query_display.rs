@@ -68,12 +68,14 @@ fn scan(bytes: &[u8], quote: &mut Option<(u8, bool)>) {
                 // delimiters. A comparison operator therefore never consumes
                 // later tokens.
                 let rest = &bytes[i + 1..];
-                if let Some(end) = rest.iter().position(|b| *b == b'>') &&
-                    rest[..end].iter().all(|b| {
+                let end = rest
+                    .iter()
+                    .take_while(|b| {
                         !b.is_ascii_whitespace() &&
                             !matches!(
                                 b,
-                                b'<' | b'"' |
+                                b'>' | b'<' |
+                                    b'"' |
                                     b'\'' |
                                     b'{' |
                                     b'}' |
@@ -83,7 +85,8 @@ fn scan(bytes: &[u8], quote: &mut Option<(u8, bool)>) {
                                     b'\\'
                             )
                     })
-                {
+                    .count();
+                if rest.get(end) == Some(&b'>') {
                     i += end + 2;
                     continue;
                 }
@@ -128,5 +131,15 @@ mod tests {
     fn quote_markers_in_comments_iris_and_escaped_strings_are_not_long_strings()
     {
         assert_eq!(format("\n  PREFIX x: <https://example.org/#x>\n  # \"\"\" comment\n  ASK { BIND(\"escaped \\\" quote\" AS ?x) }\n"), "PREFIX x: <https://example.org/#x>\n# \"\"\" comment\nASK { BIND(\"escaped \\\" quote\" AS ?x) }\n");
+    }
+    #[test]
+    fn comparison_heavy_query_display_has_bounded_scan_time() {
+        let query = "< ".repeat(32768);
+        let started = std::time::Instant::now();
+        assert_eq!(format(&query), query);
+        assert!(
+            started.elapsed() < std::time::Duration::from_secs(2),
+            "IRI lookahead repeatedly scanned the remaining query"
+        );
     }
 }
