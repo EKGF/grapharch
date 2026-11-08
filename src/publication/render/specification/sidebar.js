@@ -101,57 +101,20 @@
     };
     button.addEventListener('click', () => set(children.hidden));
     branches.push({li, children, set});
-    if (li.closest('.family-navigation') || li.parentElement.closest('li')) set(false);
+    if (li.parentElement.closest('li')) set(false);
   }};
   addBranches(toc);
   const reveal = () => {
     toc.querySelectorAll('[aria-current]').forEach(a => a.removeAttribute('aria-current'));
-    // A section hash changes the local location, not the selected library page.
-    const family = toc.querySelector('.family-navigation');
-    const page = family && [...family.querySelectorAll('a[href]')].find(a => a.pathname === location.pathname && !a.hash);
-    if (page) page.setAttribute('aria-current', 'page');
-    const candidates = [...toc.querySelectorAll('a[href]')].filter(a => !a.closest('.family-navigation') && a.pathname === location.pathname);
+    const candidates = [...toc.querySelectorAll('a[href]')].filter(a => a.pathname === location.pathname);
     const current = candidates.find(a => location.hash && a.hash === location.hash) || candidates.find(a => !a.hash);
     if (current) current.setAttribute('aria-current', location.hash ? 'location' : 'page');
-    for (const branch of branches) if ((current && (branch.children.contains(current) || branch.li === current.closest('li'))) || (page && branch.children.contains(page))) branch.set(true);
+    for (const branch of branches) if (current && (branch.children.contains(current) || branch.li === current.closest('li'))) branch.set(true);
   };
   toc.querySelector('[data-toc-collapse]')?.addEventListener('click', () => { branches.forEach(b => b.set(false)); });
   toc.querySelector('[data-toc-expand]')?.addEventListener('click', () => { branches.forEach(b => b.set(true)); });
   addEventListener('hashchange', reveal);
   reveal();
-  const familyTree = toc.querySelector('[data-family-tree]');
-  if (familyTree) {
-    const disclosure = familyTree.closest('details');
-    let started = false;
-    disclosure.addEventListener('toggle', async () => {
-      if (!disclosure.open || started) return;
-      started = true; familyTree.textContent = familyTree.dataset.loadingLabel;
-      try {
-        const response = await fetch(familyTree.dataset.navigationIndex);
-        if (!response.ok) throw new Error(`Navigation index HTTP ${response.status}`);
-        const pages = await response.json();
-        if (!Array.isArray(pages) || pages.length > 8192) throw new Error('Invalid navigation index');
-        const root = document.createElement('ol');
-        const lists = [];
-        pages.forEach((p, i) => {
-          if (typeof p.title !== 'string' || typeof p.href !== 'string' || !/^[a-z0-9-]+\.html$/.test(p.href) || (p.parent !== null && (!Number.isInteger(p.parent) || p.parent < 0 || p.parent >= i))) throw new Error('Invalid navigation entry');
-          const li = document.createElement('li');
-          const a = document.createElement('a'); a.href = p.href; a.textContent = p.title;
-          li.append(a);
-          const children = document.createElement('ol'); lists.push({li,children});
-          if (p.parent === null) root.append(li);
-          else { const parent=lists[p.parent]; if (!parent.children.parentNode) parent.li.append(parent.children); parent.children.append(li); }
-        });
-        familyTree.replaceChildren(root); addBranches(familyTree); reveal();
-        const selected = familyTree.querySelector('a[aria-current="page"]');
-        if (selected) {
-          const item = selected.getBoundingClientRect();
-          const viewport = familyTree.getBoundingClientRect();
-          familyTree.scrollTop += item.top - viewport.top - (viewport.height - item.height) / 2;
-        }
-      } catch (error) { familyTree.textContent = `${familyTree.dataset.errorLabel}: ${error.message}`; }
-    });
-  }
   let entries;
   let loading;
   let opener;

@@ -143,7 +143,7 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     assert!(html.contains("24 ontologies"));
     assert!(
         html.contains("Library overview") &&
-            html.contains("Browse this library")
+            html.matches("class=\"ontology-card\"").count() == 24
     );
     assert!(!html.contains("Browse this family"));
     let typst = tokio::fs::read_to_string(root.join("pdf/main.typ")).await?;

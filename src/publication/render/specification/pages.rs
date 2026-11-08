@@ -346,6 +346,11 @@ pub(in crate::publication::render) async fn write_catalog(
     books: Option<&HashMap<usize, BookContext>>,
 ) -> Result<(Vec<String>, Vec<Diagnostic>)> {
     let header = metadata::header(plan).await?;
+    let library = if books.is_none() {
+        super::library::Home::read(plan, catalog).await?
+    } else {
+        None
+    };
     let mut files = vec![
         "style.css".into(),
         "search-index.json".into(),
@@ -378,24 +383,7 @@ pub(in crate::publication::render) async fn write_catalog(
         &plan.profile,
     )
     .await?;
-    let collection_term = html_escape(terminology.singular());
     let overview_title = html_escape(&terminology.overview());
-    let loading_label = html_escape(&format!(
-        "Loading {} navigation…",
-        terminology.singular()
-    ));
-    let error_label = html_escape(&format!(
-        "{} navigation unavailable",
-        terminology.title()
-    ));
-    let family_html = format!(
-        "<details class=\"family-navigation\"><summary>Browse this \
-         {collection_term}</summary><p><a \
-         href=\"index.html\">{overview_title}</a></p><div data-family-tree \
-         data-navigation-index=\"navigation.json\" \
-         data-loading-label=\"{loading_label}\" \
-         data-error-label=\"{error_label}\"></div></details>"
-    );
     let mut entries = Entries::new(plan).await?;
     let mut current = None;
     let mut section_open = false;
@@ -464,32 +452,22 @@ pub(in crate::publication::render) async fn write_catalog(
             let contents = context
                 .map(|book| book.contents.as_str())
                 .unwrap_or(&p.contents);
-            let family_html: String = if books.is_some() {
-                String::new()
-            } else {
-                family_html.clone()
-            };
+            let home = page == 0 && library.is_some();
+            let body_class = if home { " library-home" } else { "" };
             let bookshelf_link = if context.is_some() {
-                "<p><a href=\"index.html\">Back to bookshelf</a></p>"
-            } else {
-                ""
-            };
-            let sidebar_contents = if family_html.is_empty() {
-                format!("{}{contents}", include_str!("navigation.html"))
-            } else {
+                "<p><a href=\"index.html\">Back to bookshelf</a></p>".to_owned()
+            } else if page != 0 {
                 format!(
-                    "{}{family_html}<div class=\"page-outline-navigation\" \
-                     role=\"region\" aria-label=\"On this page\"><h2>On this \
-                     page</h2><p \
-                     class=\"page-outline-title\">{}</p>{contents}</div>",
-                    include_str!("navigation.html"),
-                    html_escape(&p.title)
+                    "<p class=\"library-home-link\"><a href=\"index.html\">← \
+                     {overview_title}</a></p>"
                 )
-            };
-            let toc_title = if family_html.is_empty() {
-                toc_title
             } else {
-                "Navigation"
+                String::new()
+            };
+            let sidebar_contents = if home {
+                include_str!("navigation.html").to_owned()
+            } else {
+                format!("{}{contents}", include_str!("navigation.html"))
             };
             next.write_all(
                 format!(
@@ -500,10 +478,10 @@ pub(in crate::publication::render) async fn write_catalog(
                      {}</title><link rel=\"stylesheet\" \
                      href=\"style.css\"><link rel=\"icon\" \
                      href=\"data:,\"></head><body class=\"specification \
-                     specification-pages\" style=\"--authority-color:{}\"><a \
-                     class=\"skip-link\" href=\"#document\">Skip to \
-                     document</a><main id=\"document\"><p \
-                     class=\"family-breadcrumb\"><a \
+                     specification-pages{body_class}\" \
+                     style=\"--authority-color:{}\"><a class=\"skip-link\" \
+                     href=\"#document\">Skip to document</a><main \
+                     id=\"document\"><p class=\"family-breadcrumb\"><a \
                      href=\"index.html\">{}</a> / \
                      {book_breadcrumb}{}</p>{header_html}<nav id=\"toc\" \
                      class=\"toc\" role=\"doc-toc\" \
@@ -552,7 +530,12 @@ pub(in crate::publication::render) async fn write_catalog(
             .await?;
         }
         let rendered = body(&entry, plan, &mut outline).await?;
-        let (routed, errors) = route_links(&rendered, catalog, page)?;
+        let (mut routed, errors) = route_links(&rendered, catalog, page)?;
+        if let Some(home) = &library &&
+            entry.fragment.as_str() == home.fragment
+        {
+            routed = home.render(&routed);
+        }
         for (reference, message) in errors {
             ensure!(mode == FailureMode::KeepGoing, "{message}");
             ensure!(
@@ -741,7 +724,10 @@ struct Navigation<'a> {
     parent: Option<usize>,
 }
 
-async fn subjects(entry: &Entry, plan: &Plan) -> Result<Vec<oxrdf::NamedNode>> {
+pub(super) async fn subjects(
+    entry: &Entry,
+    plan: &Plan,
+) -> Result<Vec<oxrdf::NamedNode>> {
     let mut rows = plan.source.objects(&entry.fragment, "subject").await?;
     let mut subjects = Vec::new();
     while let Some(row) = rows.next().await? {

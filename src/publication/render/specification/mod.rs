@@ -2,6 +2,7 @@
 //! graph; this renderer owns document structure, numbering and presentation.
 mod authority;
 mod config;
+mod library;
 pub(in crate::publication::render) mod metadata;
 mod native;
 mod outline;

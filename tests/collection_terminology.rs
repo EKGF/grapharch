@@ -19,7 +19,8 @@ async fn render(
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct:<http://purl.org/dc/terms/> .
 <https://example.org/vocab/> a owl:Ontology; rdfs:label "Example vocabulary"; dct:description "An example ontology." .
-<https://example.org/vocab/Thing> a owl:Class; rdfs:label "Thing"; dct:description "An example thing." .
+<https://example.org/vocab/Thing> a owl:Class, rdfs:Class; rdfs:label "Thing"; dct:description "An example thing." .
+<https://example.org/vocab/name> a owl:DatatypeProperty, <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property>; rdfs:label "name"; dct:description "A name." .
 "#).await?;
     let hint = term
         .map(|term| {
@@ -98,20 +99,30 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
 -> Result<()> {
     let (output, html) =
         render(Some("ontology suite"), "specification-pages").await?;
-    assert!(html.contains("Browse this ontology suite"));
+    assert!(html.contains("library-home"));
+    assert!(html.contains("ontology-card"));
+    assert!(html.contains("An example ontology."));
+    assert!(html.contains("data-class-count=\"1\""));
+    assert!(html.contains("data-property-count=\"1\""));
+    assert!(!html.contains("family-navigation"));
+    let document = scraper::Html::parse_document(&html);
+    let selector = scraper::Selector::parse(".ontology-card h2 a").unwrap();
+    let route = document
+        .select(&selector)
+        .next()
+        .unwrap()
+        .value()
+        .attr("href")
+        .unwrap();
+    let ontology =
+        tokio::fs::read_to_string(output.path().join("reference").join(route))
+            .await?;
+    assert!(ontology.contains("library-home-link"));
+    assert!(ontology.contains("On this page"));
+    assert!(!ontology.contains("class=\"ontology-card\""));
+    assert!(!ontology.contains("class=\"specification-pages library-home\""));
+
     assert!(html.contains("Ontology suite overview"));
-    assert!(html.contains("Loading ontology suite navigation"));
-    assert!(html.contains("Ontology suite navigation unavailable"));
-    assert!(!html.contains("Browse this family"));
-    let library = html.find("class=\"family-navigation\"").unwrap();
-    let outline = html
-        .find("class=\"page-outline-navigation\"")
-        .expect("distinct current-page outline");
-    assert!(
-        library < outline,
-        "library switcher belongs above the page outline"
-    );
-    assert!(html.contains("aria-label=\"On this page\""));
     let search = tokio::fs::read_to_string(
         output.path().join("reference/search-index.json"),
     )
@@ -123,7 +134,7 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
 #[tokio::test]
 async fn default_collection_term_remains_family() -> Result<()> {
     let (_, html) = render(None, "specification-pages").await?;
-    assert!(html.contains("Browse this family"));
+    assert!(html.contains("ontology-card"));
     assert!(html.contains("Family overview"));
     assert!(html.contains("in this family"));
     Ok(())

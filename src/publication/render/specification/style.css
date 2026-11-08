@@ -65,9 +65,8 @@ img{max-width:100%;height:auto}
 table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th:first-child,table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>tbody>tr>td:first-child{min-width:min(7.5rem,25vw)}
 
 .toc-tools{margin-bottom:1rem}.toc-tools button,.search-top button{font:inherit;cursor:pointer;border:1px solid #b9c8d5;border-radius:.3rem;background:white;color:var(--link);padding:.45rem .65rem}.toc-tools>[data-search-open]{width:100%;min-height:2.25rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}.toc-tools kbd{font-size:.75rem;color:#526670}.toc-actions{display:flex;justify-content:flex-end;gap:.25rem;margin-top:.25rem}.toc-actions button{display:inline-flex;align-items:center;gap:.25rem;min-height:2rem;padding:.25rem .375rem;border:0;background:transparent;color:#526670;font-size:.78rem;line-height:1.2;flex:0 1 auto;white-space:nowrap;touch-action:manipulation}.toc-actions button:hover{background:#e8eef3;color:var(--authority-color)}.toc-actions button:active{background:#dce6ef}.toc-actions svg{flex:none}.toc li{position:relative}.toc-toggle{position:absolute;left:-.25rem;top:0;border:0;background:transparent;font:inherit;color:var(--link);cursor:pointer;padding:0 .25rem;transform:rotate(90deg)}.toc-toggle[aria-expanded=false]{transform:none}.toc a[aria-current]{color:var(--authority-color);font-weight:bold}.toc [hidden]{display:none!important}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e9aa00;outline-offset:2px}
-#spec-search{width:min(44rem,calc(100vw - 2rem));max-height:85dvh;border:1px solid #b9c8d5;border-radius:.65rem;padding:1.5rem;color:var(--ink);box-shadow:0 1rem 4rem #182b3540}#spec-search::backdrop{background:#182b3570}.search-top{display:flex;align-items:center;justify-content:space-between;gap:1rem}.search-top h2{margin:0 0 1rem}#spec-search label{display:block;font-size:.85rem;font-weight:bold;margin:.7rem 0 .3rem}#spec-search input{width:100%;padding:.7rem;font:inherit;border:1px solid #b9c8d5;border-radius:.25rem}#spec-search select{padding:.4rem;font:inherit;max-width:100%}#spec-search-status{font-size:.85rem;color:#526670}#spec-search-results{list-style:none;padding:0}#spec-search-results li{padding:.7rem 0;border-top:1px solid #d8dfe5}#spec-search-results a{display:block;overflow-wrap:anywhere}#spec-search-results small{display:block;color:#526670;margin-top:.2rem}.family-breadcrumb{font-size:.9rem;margin-bottom:1.5rem}.family-navigation{margin-top:2rem;padding-top:1rem;border-top:1px solid #b9c8d5}.family-navigation h2{font-size:.8rem;margin:0 0 .7rem}.family-navigation a{font-size:.85rem}.page-context{color:#526670;font-size:.9rem}.page-links{display:flex;justify-content:space-between;gap:1rem;margin-top:2rem}
-@media print{.toc-tools,.toc-toggle,#spec-search,.family-navigation,.page-links{display:none}}
-.family-navigation>summary{cursor:pointer;font-weight:bold;color:var(--link);font-size:.9rem}.family-navigation summary:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
+#spec-search{width:min(44rem,calc(100vw - 2rem));max-height:85dvh;border:1px solid #b9c8d5;border-radius:.65rem;padding:1.5rem;color:var(--ink);box-shadow:0 1rem 4rem #182b3540}#spec-search::backdrop{background:#182b3570}.search-top{display:flex;align-items:center;justify-content:space-between;gap:1rem}.search-top h2{margin:0 0 1rem}#spec-search label{display:block;font-size:.85rem;font-weight:bold;margin:.7rem 0 .3rem}#spec-search input{width:100%;padding:.7rem;font:inherit;border:1px solid #b9c8d5;border-radius:.25rem}#spec-search select{padding:.4rem;font:inherit;max-width:100%}#spec-search-status{font-size:.85rem;color:#526670}#spec-search-results{list-style:none;padding:0}#spec-search-results li{padding:.7rem 0;border-top:1px solid #d8dfe5}#spec-search-results a{display:block;overflow-wrap:anywhere}#spec-search-results small{display:block;color:#526670;margin-top:.2rem}.family-breadcrumb{font-size:.9rem;margin-bottom:1.5rem}.page-context{color:#526670;font-size:.9rem}.page-links{display:flex;justify-content:space-between;gap:1rem;margin-top:2rem}
+@media print{.toc-tools,.toc-toggle,#spec-search,.page-links{display:none}}
 
 /* Published native specifications commonly use the old W3C grammar-token
    palette. Keep it scoped to HTML fragments, not ontology identifiers. */
@@ -85,12 +84,22 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 .rdf-properties>thead>tr>th:first-child,.rdf-properties>tbody>tr>td:first-child{width:1%;min-width:calc(min(20ch,40vw) + 1.6rem + 1px)}
 .rdf-properties>tbody>tr>td:first-child>code{display:inline-block;max-inline-size:min(24ch,35vw);overflow-wrap:anywhere}
 
-/* Numbered page sections use a number/label grid. Library routes are whole
-   labels, never cells in that grid's narrow numbering column. */
-.toc .family-navigation{margin:0 0 1.5rem;padding:0 0 1rem;border-top:0;border-bottom:1px solid #b9c8d5}
-.toc .family-navigation a{display:block;padding:.35rem .5rem;line-height:1.4;overflow-wrap:normal;word-break:normal}
-.family-navigation [data-family-tree]{max-height:45vh;overflow:auto;padding:.25rem .5rem .25rem 1rem}
-.family-navigation a[aria-current=page]{background:#e8eef6;border-radius:.25rem;color:var(--authority-color);font-weight:bold}
-.family-navigation>p{margin:.75rem 0 .25rem}.toc .family-navigation li{margin:.15rem 0}
-.page-outline-navigation>h2{margin:0 0 .5rem}.page-outline-title{font-size:.9rem;font-weight:bold;color:var(--ink);margin:0 0 1rem}
-.page-outline-navigation>ol>li{margin-top:1rem}.page-outline-navigation>ol>li>a{font-weight:bold}
+/* Library homes share publication identity, but lead with a bounded card grid.
+   Ontology pages retain the normal specification shell and local contents. */
+.library-home{padding:3rem max(2rem,calc((100vw - 75rem)/2)) 4rem}
+.library-home main{margin:auto}.library-home .family-breadcrumb{display:none}
+.library-home .head{padding:2.5rem;background:linear-gradient(135deg,#f1f4fc,#fff);border:1px solid #dde3ee;border-radius:.75rem}
+.library-home .head h1{font-size:clamp(2rem,4vw,3.2rem);padding-right:0;letter-spacing:-.035em}
+.library-home .publication-status{font-size:1.1rem;padding-right:0;margin:.8rem 0 1.5rem}
+.library-home .publication-metadata{font-size:.85rem}.library-home .publication-metadata dd{margin-left:0}
+.library-home .toc{position:static;width:auto;padding:1.5rem 0;background:none;border:0;overflow:visible}
+.library-home .toc h2,.library-home .toc-actions,.library-home .toc-resizer{display:none}
+.library-home .toc-tools{max-width:28rem;margin:0}.library-introduction{font-size:1.15rem;color:#526174}
+.library-metric-note{font-size:.8rem;color:#526174}.ontology-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,21rem),1fr));gap:1.5rem;margin:1.5rem 0 2.5rem}
+.ontology-card{min-width:0;padding:1.5rem;border:1px solid #d8dfe5;border-radius:.75rem;background:#fff;box-shadow:0 2px 5px #182b3510;display:flex;flex-direction:column}
+.ontology-card h2{font-size:1.2rem;font-weight:700;margin:0 0 1rem;line-height:1.35}.ontology-card h2 a{text-decoration:none}.ontology-card h2 a:hover{text-decoration:underline}
+.ontology-card>p{color:#526174;font-size:.95rem;margin:0 0 1.5rem;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.ontology-metrics{display:flex;gap:2rem;border-top:1px solid #e5e9ef;margin:auto 0 0;padding-top:1rem}.ontology-metrics div{display:flex;flex-direction:column-reverse}.ontology-metrics dt{font-size:.8rem;color:#526174}.ontology-metrics dd{font-size:1.5rem;font-weight:700;color:var(--authority-color);margin:0}
+.library-resources{display:flex;flex-wrap:wrap;gap:1rem;margin:2rem 0}.toc .library-home-link a{display:block;line-height:1.4;padding:.5rem 0;font-weight:bold}
+@media(max-width:600px){.library-home{padding:1.5rem}.library-home .head{padding:1.5rem}.ontology-cards{gap:1rem}}
+@media print{.library-home{padding:0}.library-home .head{background:none;border:0;padding:0}.ontology-cards{display:block}.ontology-card{break-inside:avoid;box-shadow:none}.ontology-card>p{display:block;overflow:visible}.library-home .toc{display:none}}
