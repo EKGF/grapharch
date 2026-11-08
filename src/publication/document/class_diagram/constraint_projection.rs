@@ -108,9 +108,12 @@ pub(super) fn associations(
             } else {
                 format!("\"{}\" ", text(&count))
             };
+            let arrow = super::layout::Layout::new(diagram)
+                .association_arrow(&shape.class.id, &range.id)
+                .replacen('-', "-[#3B6E8F,dashed]", 1);
             output.push_str(&format!(
-                "n{} -[#3B6E8F,dashed]-> {count}n{} [[./grapharch-node/n{}]] \
-                 : {}\\nSHACL {}\n",
+                "n{} {arrow} {count}n{} [[./grapharch-node/n{}]] : {}\\nSHACL \
+                 {}\n",
                 ids[shape.class.id.as_str()],
                 ids[range.id.as_str()],
                 ids[field.property.id.as_str()],
