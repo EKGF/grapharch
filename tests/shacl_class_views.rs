@@ -219,6 +219,7 @@ ex:Untyped sh:targetClass ex:Core.
 ex:WrongType a sh:PropertyShape; sh:targetClass ex:Core.
 "#).await?;
     assert!(body.contains("SHACL validation views"), "{body}");
+    assert_eq!(body.matches("```grapharch-shacl-view").count(), 2);
     assert!(body.contains("ex:First") && body.contains("ex:Second"));
     assert!(body.contains("not merged") && body.contains("instances"));
     assert_eq!(body.matches("| [ex:name]").count(), 2);

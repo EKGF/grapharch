@@ -26,6 +26,7 @@ mod provenance;
 mod quality;
 mod rdf_tables;
 mod record;
+mod shacl_view;
 mod specification;
 mod typst;
 mod typst_markdown;

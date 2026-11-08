@@ -6,11 +6,13 @@ use {
     std::collections::{BTreeMap, HashSet},
 };
 
-pub(super) fn append(
+pub(super) async fn append(
     shapes: &[Shape],
+    class: &NamedNode,
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
     body: &mut String,
+    renderer: &crate::publication::document::plantuml::LocalRenderer,
 ) -> Result<()> {
     let mut output = String::from(
         "\n\n**SHACL validation views**\n\nThese independently declared \
@@ -20,11 +22,18 @@ pub(super) fn append(
          result.\n",
     );
     for shape in shapes {
+        let projection =
+            super::diagram::generate(shape, class, prefixes, renderer).await?;
         let reference = resource(&shape.id, prefixes, documented);
         output.push_str(&format!(
             "\n\n**Validation shape: {reference}**\n\n[Full shape \
              definition](<{}>)\n",
             shape.id.as_str()
+        ));
+        output.push_str(&format!(
+            "\n\n```{}\n{}\n```\n",
+            super::diagram::LANGUAGE,
+            serde_json::to_string(&projection)?
         ));
         for (predicate, value) in &shape.facts {
             if matches!(

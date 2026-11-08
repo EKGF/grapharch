@@ -212,6 +212,8 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             containers.typst(&source)?
                         } else if code_language == crate::publication::document::class_diagram::LANGUAGE {
                             super::class_diagram::typst(&source)?
+                        } else if code_language == crate::publication::document::shacl_class_view::diagram::LANGUAGE {
+                            super::shacl_view::typst(&source)?
                         } else { super::code::typst(&source, code_language)? });
                         if example {
                             output.push(']');

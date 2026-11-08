@@ -829,6 +829,7 @@ impl Documentor for AnnotatedTermDocumentor {
                 &self.prefixes,
                 &self.documented,
                 &mut body,
+                &self.diagram_renderer,
             )
             .await?;
         }

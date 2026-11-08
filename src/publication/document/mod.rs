@@ -10,7 +10,7 @@ pub mod plantuml;
 pub(crate) mod publication_inventory;
 mod query_display;
 mod resource;
-mod shacl_class_view;
+pub(crate) mod shacl_class_view;
 mod shacl_queries;
 pub(crate) mod skos;
 pub(crate) mod use_cases;

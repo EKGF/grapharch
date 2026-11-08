@@ -1,5 +1,6 @@
 //! Separate exact-target SHACL views; never reinterpret validation as OWL
 //! axioms.
+pub(crate) mod diagram;
 mod read;
 mod render;
 use {
@@ -28,10 +29,14 @@ pub(super) async fn append(
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
     body: &mut String,
+    renderer: &super::plantuml::LocalRenderer,
 ) -> Result<()> {
     let shapes = read::shapes(dataset, view, class).await?;
     if shapes.is_empty() {
         return Ok(());
     }
-    render::append(&shapes, prefixes, documented, body)
+    render::append(
+        &shapes, class, prefixes, documented, body, renderer,
+    )
+    .await
 }
