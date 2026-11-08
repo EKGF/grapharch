@@ -66,12 +66,11 @@ pub(super) fn html(source: &str) -> Result<String> {
          diagram; scroll horizontally when needed\" \
          style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
          border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} \
-         {}{}</figcaption></figure><details \
+         {}</figcaption></figure><details \
          class=\"owl-relationships\"><summary>Relationships as text</summary>",
         svg::draw(&projection, true)?,
         svg::xml(&diagram.focus.label),
-        super::diagram_notes::reference_html(),
-        shape_markers(&projection)?
+        super::diagram_notes::reference_html()
     );
     if diagram.edges.is_empty() {
         html.push_str(
@@ -96,15 +95,14 @@ pub(super) fn html(source: &str) -> Result<String> {
         }
         html.push_str("</tbody></table></div>");
     }
-    for (index, shape) in diagram.shapes.iter().enumerate() {
+    for shape in &diagram.shapes {
         html.push_str(&format!(
-            "<p>SHACL S{} constraints for {} from {}</p><div \
+            "<p>SHACL constraints for {} from {}</p><div \
              class=\"table-scroll\" role=\"region\" aria-label=\"SHACL \
              constraints\" tabindex=\"0\"><table \
              class=\"owl-constraint-table\"><thead><tr><th \
              scope=\"col\">Property</th><th scope=\"col\">Value type</th><th \
              scope=\"col\">Count</th></tr></thead><tbody>",
-            index + 1,
             node_html(&shape.class)?,
             node_html(&shape.source)?
         ));
@@ -126,35 +124,6 @@ pub(super) fn html(source: &str) -> Result<String> {
     html.push_str("</details>\n");
     Ok(html)
 }
-fn shape_markers(projection: &Projection) -> Result<String> {
-    if projection.diagram.shapes.is_empty() {
-        return Ok(String::new());
-    }
-    let mut output = String::from(" <span class=\"shape-sources\">SHACL: ");
-    for (index, shape) in projection.diagram.shapes.iter().enumerate() {
-        if index > 0 {
-            output.push_str(" · ");
-        }
-        let marker = format!("S{}", index + 1);
-        let name = svg::xml(&shape.source.label);
-        let attributes = format!(
-            "class=\"shape-marker\" title=\"{name}\" aria-label=\"SHACL \
-             {marker}: {name}\""
-        );
-        if let Some(link) = &shape.source.link {
-            svg::safe_link(link)?;
-            output.push_str(&format!(
-                "<a href=\"{}\" {attributes}>{marker}</a>",
-                svg::xml(link)
-            ));
-        } else {
-            output.push_str(&format!("<span {attributes}>{marker}</span>"));
-        }
-    }
-    output.push_str("</span>");
-    Ok(output)
-}
-
 fn node_html(node: &Node) -> Result<String> {
     if let Some(link) = &node.link {
         svg::safe_link(link)?;
@@ -230,10 +199,9 @@ pub(super) fn typst(source: &str) -> Result<String> {
         }
         result.push_str(")]\n");
     }
-    for (index, shape) in diagram.shapes.iter().enumerate() {
+    for shape in &diagram.shapes {
         result.push_str(&format!(
-            "#par[SHACL S{} constraints for {} from {}]\n",
-            index + 1,
+            "#par[SHACL constraints for {} from {}]\n",
             node_typst(&shape.class),
             node_typst(&shape.source)
         ));

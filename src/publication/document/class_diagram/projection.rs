@@ -116,12 +116,12 @@ fn source(diagram: &Diagram) -> String {
     let shorthand = super::shorthand::Shorthand::new(diagram);
     let layout = super::layout::Layout::new(diagram);
     let mut visible = shorthand.visible.clone();
-    for shape in &diagram.shapes {
-        visible.insert(shape.class.id.as_str());
-        for field in shape.fields.iter().filter(|f| f.object) {
-            if let Some(range) = &field.range {
-                visible.insert(range.id.as_str());
-            }
+    for (class, field) in super::constraint_projection::properties(diagram) {
+        visible.insert(class.id.as_str());
+        if field.object &&
+            let Some(range) = field.range
+        {
+            visible.insert(range.id.as_str());
         }
     }
     let mut identifiers = BTreeMap::new(); // bounded: at most thirty-seven node IDs.
@@ -202,18 +202,18 @@ fn source(diagram: &Diagram) -> String {
     for property in shorthand.properties.iter().filter(|p| !p.attribute()) {
         let range = property.range.expect("association has a declared range");
         output.push_str(&format!(
-            "n{} {} n{} [[./grapharch-node/n{}]] : {}{}\n",
+            "n{} {} {}n{} [[./grapharch-node/n{}]] : {}\n",
             identifiers[property.domain.id.as_str()],
             layout.association_arrow(&property.domain.id, &range.id),
-            identifiers[range.id.as_str()],
-            identifiers[property.node.id.as_str()],
-            label(&property.node.label),
-            super::constraint_projection::association_annotations(
+            super::constraint_projection::association_count(
                 diagram,
                 &property.domain.id,
                 &property.node.id,
                 &range.id
-            )
+            ),
+            identifiers[range.id.as_str()],
+            identifiers[property.node.id.as_str()],
+            label(&property.node.label)
         ));
     }
     super::constraint_projection::associations(

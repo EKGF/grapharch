@@ -14,22 +14,24 @@ use {
 
 pub(crate) const LANGUAGE: &str = "grapharch-class-diagram";
 pub(crate) const LEGEND: &str =
-    "Solid relationships present asserted OWL facts without inference. A \
-     property with one unambiguous declared domain may be drawn as a class \
-     member or a labelled association; RDF properties remain independent \
-     resources. Domain/range declarations do not impose requiredness or \
-     cardinality. Multiple domains or ranges apply conjunctively, not as \
-     alternatives. Anonymous OWL expressions remain explicit. Relationships \
-     as text preserves the original assertions. SHACL compartments and \
-     association annotations are labelled by source shape; dashed \
-     associations come from shape constraints. Counts constrain instances \
-     under that shape and are not OWL entailments or validation results. \
-     Separate shape labels must not be merged. An absent count imposes no \
-     lower or upper bound beyond zero or unbounded, respectively. Complex \
-     constraints require the linked full shape definition. Some diagrams show \
-     at most five complete OWL relationship groups within an eighteen-fact \
-     budget, selected in deterministic IRI order; omitted groups remain in \
-     the published source graph. These views are not exhaustive.";
+    "Class diagrams use UML shorthand for asserted OWL facts and declared \
+     SHACL constraints, without inference or a claim that validation passed. \
+     RDF properties remain independent resources even when drawn as class \
+     members or labelled associations. Domain/range declarations alone do not \
+     impose requiredness or cardinality. Multiple domains or ranges apply \
+     conjunctively, not as alternatives. Anonymous OWL expressions remain \
+     explicit. Types and counts from simple property shapes enrich the UML \
+     notation. Identical qualifiers are shown once; where declaring shapes \
+     disagree, the disputed type or multiplicity is omitted from the drawing \
+     and remains in the source-scoped constraint details. No shape is chosen \
+     arbitrarily and conflicting counts are not silently intersected. An \
+     absent count imposes no lower or upper bound beyond zero or unbounded, \
+     respectively. Complex constraints require the linked full shape \
+     definition. Relationships as text preserves original OWL facts and \
+     separate shape provenance. Some diagrams show at most five complete OWL \
+     relationship groups within an eighteen-fact budget, selected in \
+     deterministic IRI order; omitted groups remain in the published source \
+     graph. These views are not exhaustive.";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

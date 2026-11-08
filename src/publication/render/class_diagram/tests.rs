@@ -121,34 +121,35 @@ fn shape_only() -> String {
 fn shape_only_pdf_uses_available_width_with_its_height_bound() {
     let output = typst(&shape_only()).unwrap();
     assert!(output.contains("calc.min(size.width * 1.0, 210pt)"));
-    assert!(output.contains("SHACL S1") && output.contains("SHACL S2"));
+    assert!(
+        output.contains("SHACL constraints") && !output.contains("SHACL S1")
+    );
     assert!(output.contains("#link(label(\"one\"))"));
 }
 
 #[test]
-fn shape_markers_link_to_named_sources_in_captions_and_text() {
+fn shape_sources_remain_in_details_without_caption_markers() {
     let output = html(&shape_only()).unwrap();
     let parsed = scraper::Html::parse_fragment(&output);
-    let markers: Vec<_> = parsed
-        .select(&scraper::Selector::parse("figcaption .shape-marker").unwrap())
-        .collect();
-    assert_eq!(markers.len(), 2);
-    for (index, marker) in markers.iter().enumerate() {
-        assert_eq!(
-            marker.text().collect::<String>(),
-            format!("S{}", index + 1)
+    let caption = parsed
+        .select(&scraper::Selector::parse("figcaption").unwrap())
+        .next()
+        .unwrap()
+        .text()
+        .collect::<String>();
+    assert!(!caption.contains("SHACL") && !caption.contains("S1"));
+    for target in ["#one", "#two"] {
+        assert!(
+            parsed
+                .select(
+                    &scraper::Selector::parse(&format!(
+                        "details a[href='{target}']"
+                    ))
+                    .unwrap()
+                )
+                .next()
+                .is_some()
         );
-        assert_eq!(
-            marker.value().attr("href"),
-            Some(if index == 0 { "#one" } else { "#two" })
-        );
-        let name = if index == 0 {
-            "First & specific shape"
-        } else {
-            "Second shape"
-        };
-        assert_eq!(marker.value().attr("title"), Some(name));
-        assert!(marker.value().attr("aria-label").unwrap().contains(name));
     }
     let details = parsed
         .select(&scraper::Selector::parse("details.owl-relationships").unwrap())
@@ -156,7 +157,10 @@ fn shape_markers_link_to_named_sources_in_captions_and_text() {
         .unwrap()
         .text()
         .collect::<String>();
-    assert!(details.contains("SHACL S1") && details.contains("SHACL S2"));
+    assert!(
+        details.contains("First & specific shape") &&
+            details.contains("Second shape")
+    );
 }
 
 #[test]

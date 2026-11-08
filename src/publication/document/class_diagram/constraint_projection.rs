@@ -1,4 +1,5 @@
-//! SHACL annotations in the same class drawing, with exact shape scopes.
+//! Ordinary UML qualifiers from unambiguous constraints; provenance stays
+//! retained.
 use {
     super::{
         Diagram,
@@ -9,6 +10,59 @@ use {
     std::collections::BTreeMap,
 };
 
+pub(super) struct Property<'a> {
+    pub property: &'a Node,
+    pub range:    Option<&'a Node>,
+    pub object:   bool,
+    count:        String,
+}
+impl<'a> Property<'a> {
+    fn from_fields(fields: &[&'a Field]) -> Self {
+        let first = fields[0];
+        let same_type = fields.iter().all(|field| {
+            field.object == first.object &&
+                field.range.as_ref().map(|n| &n.id) ==
+                    first.range.as_ref().map(|n| &n.id)
+        });
+        let same_count = fields.iter().all(|field| {
+            (field.minimum, field.maximum) == (first.minimum, first.maximum)
+        });
+        Self {
+            property: &first.property,
+            range:    same_type.then_some(first.range.as_ref()).flatten(),
+            object:   same_type && first.object,
+            count:    if same_count {
+                first.cardinality()
+            } else {
+                String::new()
+            },
+        }
+    }
+
+    fn endpoint(&self) -> String {
+        if self.count.is_empty() {
+            String::new()
+        } else {
+            format!("\"{}\" ", text(&self.count))
+        }
+    }
+}
+pub(super) fn properties(diagram: &Diagram) -> Vec<(&Node, Property<'_>)> {
+    let mut groups = BTreeMap::<(&str, &str), (&Node, Vec<&Field>)>::new(); // bounded: 128 retained simple fields.
+    for shape in &diagram.shapes {
+        for field in &shape.fields {
+            groups
+                .entry((&shape.class.id, &field.property.id))
+                .or_insert_with(|| (&shape.class, Vec::new()))
+                .1
+                .push(field);
+        }
+    }
+    groups
+        .into_values()
+        .map(|(class, fields)| (class, Property::from_fields(&fields)))
+        .collect() // bounded: at most 128 property views, not source facts.
+}
 pub(super) fn constrained(
     diagram: &Diagram,
     class: &str,
@@ -25,97 +79,74 @@ pub(super) fn members(
     diagram: &Diagram,
     ids: &BTreeMap<&str, usize>,
 ) {
-    for (index, shape) in diagram
-        .shapes
-        .iter()
-        .enumerate()
-        .filter(|(_, s)| s.class.id == node.id)
+    let shorthand = super::shorthand::Shorthand::new(diagram);
+    for (_, field) in properties(diagram)
+        .into_iter()
+        .filter(|(class, f)| class.id == node.id && !f.object)
     {
-        output.push_str(&format!(
-            "  --\n  {{field}} SHACL S{} [[[./grapharch-node/n{}]]]\n",
-            index + 1,
-            ids[shape.source.id.as_str()]
-        ));
-        for field in shape.fields.iter().filter(|f| !f.object) {
-            let range = field
-                .range
-                .as_ref()
-                .map(|r| format!(" : {}", text(&r.label)))
-                .unwrap_or_default();
-            let cardinality = field.cardinality();
-            let counts = if cardinality.is_empty() {
-                String::new()
-            } else {
-                format!(" [{}]", text(&cardinality))
-            };
-            output.push_str(&format!(
-                "  {{field}} {}{range}{counts} [[[./grapharch-node/n{}]]]\n",
-                text(&field.property.label),
-                ids[field.property.id.as_str()]
-            ));
+        if field.range.is_none() &&
+            shorthand.properties.iter().any(|property| {
+                !property.attribute() &&
+                    property.domain.id == node.id &&
+                    property.node.id == field.property.id
+            })
+        {
+            continue;
         }
+        let range = field
+            .range
+            .map(|r| format!(" : {}", text(&r.label)))
+            .unwrap_or_default();
+        let count = if field.count.is_empty() {
+            String::new()
+        } else {
+            format!(" [{}]", text(&field.count))
+        };
+        output.push_str(&format!(
+            "  {{field}} {}{range}{count} [[[./grapharch-node/n{}]]]\n",
+            text(&field.property.label),
+            ids[field.property.id.as_str()]
+        ));
     }
 }
-pub(super) fn association_annotations(
+pub(super) fn association_count(
     diagram: &Diagram,
     class: &str,
     property: &str,
     range: &str,
 ) -> String {
-    diagram
-        .shapes
-        .iter()
-        .enumerate()
-        .filter(|(_, s)| s.class.id == class)
-        .flat_map(|(index, s)| {
-            s.fields
-                .iter()
-                .filter(move |f| {
-                    f.object &&
-                        f.property.id == property &&
-                        f.range.as_ref().is_some_and(|r| r.id == range)
-                })
-                .map(move |f| {
-                    format!(
-                        "\\nSHACL S{} {}",
-                        index + 1,
-                        text(&f.cardinality())
-                    )
-                })
+    properties(diagram)
+        .into_iter()
+        .find(|(c, f)| {
+            c.id == class &&
+                f.property.id == property &&
+                f.range.is_none_or(|r| r.id == range)
         })
-        .collect::<Vec<_>>()
-        .join("") // bounded: thirty-two shape scopes, 128 fields.
+        .map(|(_, f)| f.endpoint())
+        .unwrap_or_default()
 }
 pub(super) fn associations(
     output: &mut String,
     diagram: &Diagram,
     ids: &BTreeMap<&str, usize>,
-    has_owl: impl Fn(&str, &Field) -> bool,
+    has_owl: impl Fn(&str, &Property<'_>) -> bool,
 ) {
-    for (index, shape) in diagram.shapes.iter().enumerate() {
-        for field in shape.fields.iter().filter(|f| f.object) {
-            let Some(range) = &field.range else { continue };
-            if has_owl(&shape.class.id, field) {
-                continue;
-            }
-            let count = field.cardinality();
-            let count = if count.is_empty() {
-                String::new()
-            } else {
-                format!("\"{}\" ", text(&count))
-            };
-            let arrow = super::layout::Layout::new(diagram)
-                .association_arrow(&shape.class.id, &range.id)
-                .replacen('-', "-[#3B6E8F,dashed]", 1);
-            output.push_str(&format!(
-                "n{} {arrow} {count}n{} [[./grapharch-node/n{}]] : {}\\nSHACL \
-                 S{}\n",
-                ids[shape.class.id.as_str()],
-                ids[range.id.as_str()],
-                ids[field.property.id.as_str()],
-                label(&field.property.label),
-                index + 1
-            ));
+    let layout = super::layout::Layout::new(diagram);
+    for (class, field) in
+        properties(diagram).into_iter().filter(|(_, f)| f.object)
+    {
+        let Some(range) = field.range else { continue };
+        if has_owl(&class.id, &field) {
+            continue;
         }
+        output.push_str(&format!(
+            "n{} {} {}n{} [[./grapharch-node/n{}]] : {}\n",
+            ids[class.id.as_str()],
+            layout.association_arrow(&class.id, &range.id),
+            field.endpoint(),
+            ids[range.id.as_str()],
+            ids[field.property.id.as_str()],
+            label(&field.property.label)
+        ));
     }
 }

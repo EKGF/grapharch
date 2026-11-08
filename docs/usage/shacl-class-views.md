@@ -10,21 +10,21 @@ Named `sh:NodeShape` resources with an explicit `sh:targetClass` enrich the
 existing OWL class neighborhood. GraphArch does not generate a second shape
 box. No additional publication configuration is needed.
 
-Each targeting shape has a labelled compartment in its class. Compact `S1`,
-`S2` markers link to the named source shapes in the figure caption and retain
-their separate scope throughout the drawing. Simple datatype
-properties appear as typed members; simple `sh:class` constraints add object
-relationships. Declared counts appear beside the member or association. These
-are validation constraints from the named shape, not OWL entailments or a
-claim that validation has passed. The diagram links to the source shapes and
-property definitions.
+Simple datatype properties appear as ordinary UML members, with types and
+multiplicities where the declaring shapes agree. Simple `sh:class` constraints
+add object relationships; association multiplicities appear at the value end.
+Shape names and implementation labels do not appear inside the diagram or its
+caption. Source links and exact constraint scopes remain in the detailed view.
+These are declared validation constraints, not OWL entailments or a claim that
+validation has passed.
 
-Multiple targeting shapes keep separate labels and counts. GraphArch does not
-select one arbitrarily or merge contradictory scopes. Repeated property shapes
-remain distinct. Conflicting or incorrectly typed counts stay in the detailed
-constraints rather than becoming misleading diagram multiplicities. If neither
-count is declared, no multiplicity is printed. A missing lower or upper count
-otherwise means zero or unbounded, respectively.
+Identical declarations are drawn once. If declaring shapes disagree about a
+type or count, that qualifier is omitted from the drawing and all declarations
+remain separately available in the details. GraphArch never chooses one shape
+arbitrarily or silently intersects contradictory counts. Complex or incorrectly
+typed counts remain in the detailed constraints. If neither count is declared,
+no multiplicity is printed. A missing lower or upper count otherwise means
+zero or unbounded, respectively.
 
 Complex paths, logical combinations, qualified constraints and nested node
 constraints remain in the linked full definition and detailed constraints.
