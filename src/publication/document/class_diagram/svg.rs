@@ -170,6 +170,13 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
              be entailed. ",
         );
     }
+    if !super::qualified_minimum::collect(&projection.diagram).is_empty() {
+        description.push_str(
+            " Qualified minima count only property values in the named target \
+             class; other values are not excluded. A zero qualified minimum \
+             imposes no restriction and is omitted visually. ",
+        );
+    }
     for edge in &projection.diagram.edges {
         description.push_str(&format!(
             " {} {} {}.",

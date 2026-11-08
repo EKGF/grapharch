@@ -546,3 +546,6 @@ mod existentials;
 
 #[path = "owl_class_diagrams/range_only.rs"]
 mod range_only;
+
+#[path = "owl_class_diagrams/qualified_minimum.rs"]
+mod qualified_minimum;

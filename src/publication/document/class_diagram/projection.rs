@@ -244,6 +244,9 @@ fn source(diagram: &Diagram) -> String {
             })
         },
     );
+    for minimum in &shorthand.qualified_minima {
+        minimum.write(&mut output, &identifiers, &layout);
+    }
     for existential in &shorthand.existentials {
         output.push_str(&format!(
             "n{} {} n{} [[./grapharch-node/n{}]] : {}\\n{{at least one {}}}\n",

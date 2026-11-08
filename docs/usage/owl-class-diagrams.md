@@ -60,6 +60,14 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   does not mean every property value belongs to that filler, and does not create
   a global range or an unqualified `1..*` multiplicity. Universal restrictions,
   unknown property types, inverse paths, complex fillers and additional qualifiers stay explicit.
+- A simple direct subclass restriction with a named `owl:onProperty`, named
+  `owl:onClass`, and positive `owl:minQualifiedCardinality` becomes an association
+  with `n..*` at the target end and `{qualified}` beside the property label. Only
+  values belonging to that target class count; other property values are not
+  excluded. A zero qualified minimum imposes no restriction and is omitted from
+  the drawing. Exact or maximum zero counts, inverse properties, boolean
+  expressions, malformed counts and restrictions with extra constraints stay
+  explicit. Original statements remain in the source details and retained graph.
 - Other direct restrictions retain their `owl:onProperty`, value constraints,
   and cardinalities as explicit relationships. Union and intersection RDF lists
   are expanded into labeled member relationships. Anonymous expressions have

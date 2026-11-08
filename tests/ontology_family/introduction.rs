@@ -195,3 +195,88 @@ async fn range_only_placeholder_does_not_hide_a_pinned_cross_source_domain()
 
     Ok(())
 }
+
+#[tokio::test]
+async fn qualified_minimum_projection_survives_source_removal() -> Result<()> {
+    let source = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("sources")).await?;
+    tokio::fs::write(source.path().join("project.ttl"), DEFINITIONS).await?;
+    tokio::fs::write(source.path().join("sources/ontology.ttl"), r#"
+@prefix ex:<https://example.org/vocab/> .
+@prefix owl:<http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+ex: a owl:Ontology; rdfs:label "Qualified minimum fixture" .
+ex:Department a owl:Class; rdfs:label "Department"; rdfs:subClassOf [a owl:Restriction; owl:onProperty ex:managedBy; owl:onClass ex:Minister; owl:minQualifiedCardinality 1] .
+ex:OptionalDepartment a owl:Class; rdfs:label "Optional Department"; rdfs:subClassOf [a owl:Restriction; owl:onProperty ex:managedBy; owl:onClass ex:Minister; owl:minQualifiedCardinality 0] .
+ex:Minister a owl:Class; rdfs:label "Minister" .
+ex:managedBy a owl:ObjectProperty; rdfs:label "is managed by" .
+"#).await?;
+    let built = collect(source.path()).await?;
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("retained.nq");
+    built.dataset.export(archive.clone()).await?;
+    source.close()?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("publication required");
+    };
+    let html =
+        tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?;
+    let document = scraper::Html::parse_document(&html);
+    let figures = scraper::Selector::parse("figure.owl-class-diagram").unwrap();
+    let svgs = scraper::Selector::parse("svg text").unwrap();
+    let mut positive = false;
+    let mut zero = false;
+    for figure in document.select(&figures) {
+        let words = figure
+            .select(&svgs)
+            .flat_map(|n| n.text())
+            .collect::<Vec<_>>()
+            .join(" ");
+        if words.contains("Optional Department") {
+            zero = true;
+            assert!(
+                !words.contains("Minister") && !words.contains("expression")
+            );
+        } else if words.contains("Department") {
+            positive = true;
+            assert!(words.contains("1..*") && words.contains("qualified"));
+        }
+    }
+    assert!(positive && zero);
+    assert!(
+        html.contains("minQualifiedCardinality"),
+        "original details retained"
+    );
+    let typst =
+        tokio::fs::read_to_string(publication.directory.join("main.typ"))
+            .await?;
+    assert!(
+        typst.contains("qualified") &&
+            typst.contains("minQualifiedCardinality")
+    );
+    assert!(
+        tokio::fs::read(publication.directory.join("document.pdf"))
+            .await?
+            .starts_with(b"%PDF-")
+    );
+    if let Some(directory) =
+        std::env::var_os("GRAPHARCH_QUALIFIED_MINIMUM_OUTPUT")
+    {
+        let destination = std::path::PathBuf::from(directory);
+        tokio::fs::create_dir_all(&destination).await?;
+        for name in ["index.html", "main.typ", "document.pdf", "style.css"] {
+            tokio::fs::copy(
+                publication.directory.join(name),
+                destination.join(name),
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}
