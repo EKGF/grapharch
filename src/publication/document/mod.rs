@@ -5,6 +5,7 @@ pub(crate) mod description;
 mod mermaid;
 pub(crate) mod namespace_bindings;
 pub(crate) mod publication_inventory;
+mod query_display;
 mod resource;
 mod shacl_queries;
 pub(crate) mod skos;

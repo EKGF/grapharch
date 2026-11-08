@@ -38,6 +38,7 @@ impl Queries {
     pub fn append(&self, body: &mut String, depth: usize) {
         for (index, (kind, source)) in self.values.iter().enumerate() {
             let number = index + 1;
+            let source = super::query_display::format(source);
             let width = source
                 .split(|ch| ch != '`')
                 .map(str::len)

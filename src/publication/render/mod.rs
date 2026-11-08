@@ -20,6 +20,7 @@ mod people;
 mod preamble;
 mod provenance;
 mod quality;
+mod rdf_tables;
 mod record;
 mod specification;
 mod typst;
