@@ -29,6 +29,17 @@ async (page) => {
       }
     }
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('Diagram causes page overflow');
+    if (width === 390) {
+      const regions = page.locator('figure.owl-class-diagram [role="region"]');
+      const index = await regions.evaluateAll(nodes => nodes.findIndex(node => node.scrollWidth > node.clientWidth + 1));
+      if (index >= 0) {
+        const region = regions.nth(index);
+        await region.evaluate(node => { node.scrollLeft = 0; });
+        await region.focus();
+        await page.keyboard.press('ArrowRight');
+        await page.waitForFunction(() => document.activeElement.scrollLeft > 0);
+      }
+    }
     results.push({viewport: width, diagrams: dimensions.length, minimumTextHeight: Math.min(...dimensions.map(item => item.smallestText))});
   }
   for (const scheme of ['dark', 'light']) {
