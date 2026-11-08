@@ -214,5 +214,15 @@ done
         )
         .await?;
     assert!(std::str::from_utf8(&named)?.contains("data-render=\"3\""));
+    for _ in 3..128 {
+        renderer.svg("@startuml\nclass Bounded\n@enduml\n").await?;
+    }
+    let restarted = renderer
+        .svg("@startuml\nclass Restarted\n@enduml\n")
+        .await?;
+    assert!(
+        std::str::from_utf8(&restarted)?.contains("data-render=\"1\""),
+        "a process must restart after its bounded request count"
+    );
     Ok(())
 }

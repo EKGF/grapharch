@@ -161,9 +161,9 @@ async fn website_diagrams_link_classes_and_survive_export_without_sources()
 @prefix ex: <https://example.org/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-ex:Core a owl:Class ; rdfs:label "Core" ; rdfs:subClassOf ex:Parent .
-ex:Parent a owl:Class ; rdfs:label "Parent" .
-ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
+ex:Core a owl:Class ; rdfs:label "Core" ; rdfs:comment "The central class." ; rdfs:subClassOf ex:Parent .
+ex:Parent a owl:Class ; rdfs:label "Parent" ; rdfs:comment "The parent class." .
+ex:p a owl:ObjectProperty ; rdfs:label "Related parent" ; rdfs:comment "Relates a core instance to its parent." ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
 "#,
     )
     .await?;
@@ -176,7 +176,7 @@ ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
     dataset.export(archive.clone()).await?;
     source.close()?;
     let restored = Dataset::memory()?;
-    restored.import(archive).await?;
+    restored.import(archive.clone()).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
         .render(&plan, &output.path().join("after"))
         .await?
@@ -215,6 +215,33 @@ ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
         );
     }
     assert!(!html.contains("language-grapharch-class-diagram"));
+    let store_path = output.path().join("retained-store");
+    let disk = Dataset::open(store_path.clone()).await?;
+    disk.import(archive).await?;
+    drop(disk);
+    let empty_path = output.path().join("no-layout-tools");
+    tokio::fs::create_dir(&empty_path).await?;
+    let rendered =
+        tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
+            .env("PATH", &empty_path)
+            .env_remove("JAVA_HOME")
+            .args(["publication", "render", "--store"])
+            .arg(store_path)
+            .args([
+                "--plan",
+                plan.id.as_str(),
+                "--snapshot",
+                plan.snapshot.as_str(),
+                "--output-root",
+            ])
+            .arg(output.path().join("without-tools"))
+            .output()
+            .await?;
+    assert!(
+        rendered.status.success(),
+        "restored rendering must not require PlantUML or Java: {}",
+        String::from_utf8_lossy(&rendered.stderr)
+    );
     Ok(())
 }
 
