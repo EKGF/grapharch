@@ -21,6 +21,13 @@ resources link to their original IRIs. Accessible SVG descriptions and PDF image
 alternatives preserve the meaning without duplicate visible relationship tables.
 A shared endnote explains the notation and bounded scope.
 
+Class names, attributes and association labels use authored `rdfs:label` values.
+Selection prefers the requested language (English by default), then its regional
+variants, then language-neutral text; a stable lexical choice resolves multiple
+labels at the same priority. A QName is used when no label is selected. Only
+colliding names in the bounded diagram gain a QName qualifier; original IRIs
+remain in links, HTML tooltips and the retained graph.
+
 ## What the arrows mean
 
 Named OWL classes use UML class boxes marked `«owl:Class»`. Explicit
@@ -36,7 +43,13 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   labelled association; a property without a range remains an untyped member. Both link to the property documentation. This is
   presentation shorthand: RDF properties remain independent resources, and no
   requiredness, ownership, or multiplicity is inferred.
-- Multiple domains or ranges, anonymous expressions, missing domains, and
+- A simple object or generic RDF property with one named range and no domain
+  declared in the selected inputs uses a dotted `rdfs:Resource` source box and
+  labelled association. This box is a presentation placeholder, not a new RDF
+  assertion or a claim that a specific domain cannot be entailed. Declarations
+  in other pinned family sources are checked before using the placeholder;
+  subproperty inheritance is not executed as an ad hoc inference rule.
+- Multiple domains or ranges, anonymous expressions, and
   properties referenced by other displayed relationships stay explicit. Their
   domain/range assertions apply together, not as alternative choices. The
   retained documentation graph preserves every original assertion regardless

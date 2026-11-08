@@ -103,7 +103,7 @@ async fn diagram_endpoint_types_use_other_pinned_family_members() -> Result<()>
     let mut qualified = false;
     while let Some(row) = rows.next().await? {
         if let oxrdf::Term::Literal(body) = &row["body"] {
-            qualified |= body.value().contains("at least one ex:Whole");
+            qualified |= body.value().contains("at least one Whole");
         }
     }
     assert!(
@@ -130,5 +130,68 @@ async fn diagram_endpoint_types_use_other_pinned_family_members() -> Result<()>
             "{file} lost a known cross-source object property declaration"
         );
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn range_only_placeholder_does_not_hide_a_pinned_cross_source_domain()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("sources")).await?;
+    tokio::fs::write(source.path().join("project.ttl"), DEFINITIONS).await?;
+    tokio::fs::write(source.path().join("sources/classes.ttl"), r#"
+@prefix owl:<http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+<https://example.org/vocab/> a owl:Ontology; rdfs:label "Classes" .
+<https://example.org/vocab/Target> a owl:Class; rdfs:label "Target" .
+<https://example.org/vocab/PlaceholderTarget> a owl:Class; rdfs:label "Placeholder target" .
+<https://example.org/vocab/q> a owl:ObjectProperty; rdfs:label "delegates control to"; rdfs:range <https://example.org/vocab/PlaceholderTarget> .
+<https://example.org/vocab/p> rdfs:range <https://example.org/vocab/Target> .
+"#).await?;
+    tokio::fs::write(source.path().join("sources/declarations.ttl"), r#"
+@prefix owl:<http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+<https://example.org/vocab/p> a owl:ObjectProperty; rdfs:domain <https://example.org/vocab/Source> .
+<https://example.org/vocab/Source> a owl:Class .
+"#).await?;
+    let built = collect(source.path()).await?;
+    let mut rows = built.dataset.select("PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT ?body WHERE { GRAPH ?g { ?fragment ga:subject <https://example.org/vocab/Target>; ga:body ?body } }".into()).await?;
+    let mut found = false;
+    while let Some(row) = rows.next().await? {
+        if let oxrdf::Term::Literal(body) = &row["body"] {
+            if body.value().contains("```grapharch-class-diagram") {
+                found = true;
+                assert!(
+                    !body.value().contains("unknownDomain"),
+                    "a collected specific domain must take priority over a \
+                     placeholder"
+                );
+                assert!(body.value().contains("ex:Source"));
+            }
+        }
+    }
+    assert!(found);
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("retained.nq");
+    built.dataset.export(archive.clone()).await?;
+    source.close()?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    for file in ["index.html", "main.typ"] {
+        let text =
+            tokio::fs::read_to_string(publication.directory.join(file)).await?;
+        assert!(
+            text.contains("presentation placeholder"),
+            "missing accessible qualification in {file}"
+        );
+        assert!(text.contains("delegates control to"));
+    }
+
     Ok(())
 }

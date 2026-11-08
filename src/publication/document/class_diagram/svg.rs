@@ -34,6 +34,15 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
         projection::nodes(&projection.diagram).values().enumerate()
     {
         let placeholder = format!("./grapharch-node/n{index}");
+        for name in ["xlink:title", "title"] {
+            let replacement = if links {
+                format!("{name}=\"{}\"", xml(&node.id))
+            } else {
+                String::new()
+            };
+            result = result
+                .replace(&format!("{name}=\"{placeholder}\""), &replacement);
+        }
         for name in ["xlink:href", "href"] {
             let original = format!("{name}=\"{placeholder}\"");
             let replacement = if links {
@@ -150,6 +159,16 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
             description.push_str(text);
         }
         description.push_str("; ");
+    }
+    if document.descendants().any(|node| {
+        node.attribute("data-qualified-name") == Some("unknownDomain")
+    }) {
+        description.push_str(
+            " The dotted rdfs:Resource source is a presentation placeholder: \
+             no specific domain is declared in the selected inputs. It is not \
+             an asserted domain or a claim that no more specific domain can \
+             be entailed. ",
+        );
     }
     for edge in &projection.diagram.edges {
         description.push_str(&format!(

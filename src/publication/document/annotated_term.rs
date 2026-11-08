@@ -830,6 +830,7 @@ impl Documentor for AnnotatedTermDocumentor {
                 super::class_diagram::Views {
                     assertions: &view,
                     metadata:   &metadata,
+                    language:   &self.language,
                 },
                 &self.subject,
                 &self.prefixes,

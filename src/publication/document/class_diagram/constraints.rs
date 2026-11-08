@@ -67,6 +67,7 @@ pub(super) async fn collect(
     diagram: &Diagram,
     dataset: &Dataset,
     view: &RevisionView,
+    metadata: &RevisionView,
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
 ) -> Result<Vec<Shape>> {
@@ -93,7 +94,7 @@ pub(super) async fn collect(
                 "combined class diagram exceeds thirty-two shape scopes"
             );
             let source =
-                read::node(view, &shape.id, prefixes, documented).await?;
+                read::node(metadata, &shape.id, prefixes, documented).await?;
             let mut fields = Vec::new(); // bounded: total 128 simple fields in one diagram.
             for property in &shape.properties {
                 let Some((path, range, object, minimum, maximum)) =
@@ -108,14 +109,16 @@ pub(super) async fn collect(
                 );
                 field_count += 1;
                 fields.push(Field {
-                    property: read::node(view, path, prefixes, documented)
+                    property: read::node(metadata, path, prefixes, documented)
                         .await?,
                     property_shape: property.id.as_str().into(),
                     range: match range {
                         Some(range) => {
                             Some(
-                                read::node(view, range, prefixes, documented)
-                                    .await?,
+                                read::node(
+                                    metadata, range, prefixes, documented,
+                                )
+                                .await?,
                             )
                         },
                         None => None,

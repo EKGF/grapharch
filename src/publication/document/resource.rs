@@ -179,6 +179,7 @@ impl ResourceDocumentor {
                 super::class_diagram::Views {
                     assertions: &view,
                     metadata:   &view,
+                    language:   "en",
                 },
                 subject,
                 &std::collections::BTreeMap::new(),

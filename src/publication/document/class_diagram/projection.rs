@@ -199,6 +199,20 @@ fn source(diagram: &Diagram) -> String {
             ));
         }
     }
+    if !shorthand.range_only.is_empty() {
+        output.push_str(
+            "class \"rdfs:Resource\" as unknownDomain \
+             #white;line:gray;line.dotted\n",
+        );
+        for property in &shorthand.range_only {
+            output.push_str(&format!(
+                "unknownDomain ..> n{} [[./grapharch-node/n{}]] : {}\n",
+                identifiers[property.range.id.as_str()],
+                identifiers[property.property.id.as_str()],
+                label(&property.property.label)
+            ));
+        }
+    }
     for property in shorthand.properties.iter().filter(|p| !p.attribute()) {
         let range = property.range.expect("association has a declared range");
         output.push_str(&format!(

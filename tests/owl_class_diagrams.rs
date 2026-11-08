@@ -177,6 +177,7 @@ ex:Core a owl:Class ; rdfs:label "Core" ; rdfs:comment "The central class." ; rd
 ex:Parent a owl:Class ; rdfs:label "Parent" ; rdfs:comment "The parent class." .
 ex:p a owl:ObjectProperty ; rdfs:label "Related parent" ; rdfs:comment "Relates a core instance to its parent." ; rdfs:domain ex:Core ; rdfs:range ex:Parent .
 ex:name a owl:DatatypeProperty ; rdfs:label "Name" ; rdfs:comment "A human-readable name." ; rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> .
+ex:incoming a owl:ObjectProperty ; rdfs:label "delegates control to" ; rdfs:comment "Delegates control to a core instance." ; rdfs:range ex:Core .
 "#,
     )
     .await?;
@@ -229,6 +230,9 @@ ex:name a owl:DatatypeProperty ; rdfs:label "Name" ; rdfs:comment "A human-reada
     }
     assert!(!html.contains("language-grapharch-class-diagram"));
     assert!(html.contains("at least one"));
+    assert!(html.contains("presentation placeholder"));
+    assert!(html.contains("delegates control to"));
+    assert!(html.contains("title=\"https://example.org/incoming\""));
     let store_path = output.path().join("retained-store");
     let disk = Dataset::open(store_path.clone()).await?;
     disk.import(archive).await?;
@@ -539,3 +543,6 @@ mod constraints;
 
 #[path = "owl_class_diagrams/existentials.rs"]
 mod existentials;
+
+#[path = "owl_class_diagrams/range_only.rs"]
+mod range_only;

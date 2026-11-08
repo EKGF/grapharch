@@ -20,7 +20,12 @@ impl Property<'_> {
             self.range.is_some_and(|range| range.id == GENERIC_RESOURCE)
     }
 }
+pub(super) struct RangeOnly<'a> {
+    pub property: &'a Node,
+    pub range:    &'a Node,
+}
 pub(super) struct Shorthand<'a> {
+    pub range_only:   Vec<RangeOnly<'a>>,
     pub properties:   Vec<Property<'a>>,
     pub existentials: Vec<super::existential::Existential<'a>>,
     pub consumed:     BTreeSet<usize>,
@@ -28,6 +33,7 @@ pub(super) struct Shorthand<'a> {
 }
 impl<'a> Shorthand<'a> {
     pub fn new(diagram: &'a Diagram) -> Self {
+        let mut range_only = Vec::new(); // bounded: eighteen retained facts.
         let mut properties = Vec::new(); // bounded: eighteen retained edges.
         let mut consumed = BTreeSet::new(); // bounded: eighteen edge indices.
         let mut visited = BTreeSet::new(); // bounded: thirty-seven nodes.
@@ -68,6 +74,20 @@ impl<'a> Shorthand<'a> {
                 .filter(|(_, e)| e.predicate.as_deref() == Some(RANGE))
                 .map(|(_, e)| &e.to)
                 .collect(); // bounded: eighteen edges.
+            if domains.is_empty() &&
+                ranges.len() == 1 &&
+                matches!(
+                    node.kind.as_str(),
+                    "Object property" | "RDF property" | "Resource"
+                ) &&
+                matches!(ranges[0].kind.as_str(), "Class" | "Resource") &&
+                ranges[0].id != GENERIC_RESOURCE
+            {
+                consumed.extend(incident.iter().map(|(i, _)| *i));
+                range_only
+                    .push(RangeOnly { property: node, range: ranges[0] });
+                continue;
+            }
             if domains.len() != 1 ||
                 domains[0].kind != "Class" ||
                 domains[0].id == GENERIC_RESOURCE ||
@@ -120,7 +140,14 @@ impl<'a> Shorthand<'a> {
                 existential.filler.id.as_str(),
             ]);
         }
+        visible.extend(range_only.iter().map(|p| p.range.id.as_str()));
         visible.remove(GENERIC_RESOURCE);
-        Self { properties, existentials, consumed, visible }
+        Self {
+            range_only,
+            properties,
+            existentials,
+            consumed,
+            visible,
+        }
     }
 }

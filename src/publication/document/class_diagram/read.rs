@@ -12,6 +12,7 @@ const RDFS: &str = "http://www.w3.org/2000/01/rdf-schema#";
 pub(crate) struct Views<'a> {
     pub assertions: &'a RevisionView,
     pub metadata:   &'a RevisionView,
+    pub language:   &'a str,
 }
 
 pub(crate) async fn append(
@@ -31,10 +32,18 @@ pub(crate) async fn append(
 FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <{RDFS}domain>, <{RDFS}range>))
 BIND(IF(?p IN (<{RDFS}domain>, <{RDFS}range>), ?s, IF(?s = {subject}, ?o, ?s)) AS ?group)
 "#), 41);
-    let property = view.pattern(&format!(r#"
+    let touching = view.pattern(
+        &format!(
+            r#"
 ?property ?touch {subject} . FILTER(?touch IN (<{RDFS}domain>, <{RDFS}range>))
+"#
+        ),
+        42,
+    );
+    let declarations = metadata.pattern(&format!(r#"
 ?property ?p ?o . FILTER(?p IN (<{RDFS}domain>, <{RDFS}range>)) BIND(?property AS ?s) BIND(?property AS ?group)
-"#), 42);
+"#), 45);
+    let property = format!("{touching} {declarations}");
     let restrictions = view.pattern(&format!(r#"
 {subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
 BIND(?s AS ?group)
@@ -137,9 +146,10 @@ BIND(?s AS ?group)
         limited: overflow,
     };
     diagram.shapes = super::constraints::collect(
-        &diagram, dataset, view, prefixes, documented,
+        &diagram, dataset, view, metadata, prefixes, documented,
     )
     .await?;
+    super::display::apply(&mut diagram, metadata, views.language).await?;
     let projection = Projection::generate(diagram, renderer).await?;
     write(body, projection)?;
     Ok(())
