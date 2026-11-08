@@ -107,15 +107,36 @@ pub(super) fn typst(source: &str) -> Result<String> {
         "image/svg+xml",
     )?;
     let quote = super::markup::quote;
+    let document = roxmltree::Document::parse(&svg)?;
+    let bounds = document
+        .root_element()
+        .attribute("viewBox")
+        .ok_or_else(|| anyhow::anyhow!("class diagram has no viewBox"))?;
+    let mut dimensions = bounds.split_whitespace().skip(2);
+    let width: f64 = dimensions
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("class diagram has no width"))?
+        .parse()?;
+    let height: f64 = dimensions
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("class diagram has no height"))?
+        .parse()?;
+    anyhow::ensure!(
+        width.is_finite() && height.is_finite() && width > 0.0 && height > 0.0,
+        "invalid class diagram dimensions"
+    );
+    // Bound physical height as well as width. A tall neighborhood must not be
+    // enlarged to a full page merely to fill the text column.
     let mut result = format!(
-        "#block(breakable: false)[#image(bytes({}), format: \"svg\", width: \
-         {}, alt: {})]\n",
+        "#block(breakable: false)[#layout(size => image(bytes({}), format: \
+         \"svg\", width: calc.min(size.width * {}, {}pt), alt: {}))]\n",
         quote(&svg),
         if diagram.edges.is_empty() {
-            "35%"
+            "0.35"
         } else {
-            "100%"
+            "1.0"
         },
+        420.0 * width / height,
         quote(&format!(
             "Class neighborhood for {}",
             diagram.focus.label
@@ -152,4 +173,55 @@ pub(super) fn validate_external(destination: &str) -> Result<()> {
         "unresolved diagram resource: {destination}"
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::*,
+        crate::publication::document::class_diagram::{Diagram, Edge},
+    };
+    fn retained(link: &str) -> String {
+        let node = Node {
+            id:    "urn:test:class".into(),
+            label: "Class".into(),
+            kind:  "Class".into(),
+            link:  Some(link.into()),
+        };
+        serde_json::to_string(&Projection {
+            diagram: Diagram {
+                focus: node.clone(),
+                edges: vec![Edge {
+                    from:     node.clone(),
+                    relation: "rdfs:subClassOf".into(),
+                    to:       node,
+                }],
+            },
+            source:  "@startuml\n@enduml\n".into(),
+            engine:  "PlantUML version fixture".into(),
+            svg:     "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" \
+                      height=\"800\" viewBox=\"0 0 400 800\"><a \
+                      href=\"./grapharch-node/n0\"><rect width=\"400\" \
+                      height=\"800\"/></a></svg>"
+                .into(),
+        })
+        .unwrap()
+    }
+    #[test]
+    fn tall_pdf_drawings_have_a_physical_height_budget_and_text_links() {
+        let output = typst(&retained("#class")).unwrap();
+        assert!(output.contains("calc.min(size.width * 1.0, 210pt)"));
+        assert!(output.contains("#link(label(\"class\"))"));
+        assert!(!output.contains("grapharch-node"));
+    }
+    #[test]
+    fn retained_svg_links_reject_executable_destinations() {
+        assert!(html(&retained("javascript:alert(1)")).is_err());
+        assert!(html(&retained("//evil.example")).is_err());
+        assert!(
+            html(&retained("#class"))
+                .unwrap()
+                .contains("href=\"#class\"")
+        );
+    }
 }
