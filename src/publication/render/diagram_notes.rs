@@ -10,7 +10,7 @@ use {
 pub(super) const ID: &str = "grapharch-diagram-note";
 pub(super) const ROUTE: &str = "diagram-notes.html";
 pub(super) fn contains(body: &str, format: &str) -> bool {
-    format == "text/markdown" && Parser::new_ext(body, crate::publication::markdown::options()).any(|event| matches!(event, Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info))) if matches!(info.as_ref(), crate::publication::document::class_diagram::LANGUAGE | "grapharch-shacl-view")))
+    format == "text/markdown" && Parser::new_ext(body, crate::publication::markdown::options()).any(|event| matches!(event, Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info))) if matches!(info.as_ref(), crate::publication::document::class_diagram::LANGUAGE)))
 }
 pub(super) fn reference_html() -> &'static str {
     "<sup><a role=\"doc-noteref\" aria-label=\"Diagram interpretation note\" \

@@ -116,5 +116,25 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
         ),
         1,
     );
+    let opening = result.find("<svg ").ok_or_else(|| anyhow::anyhow!("missing SVG root"))?;
+    let content = opening + result[opening..].find('>').ok_or_else(|| anyhow::anyhow!("invalid SVG root"))? + 1;
+    result.insert_str(content, &format!("<desc>{}</desc>", xml(&description(projection)?)));
     Ok(result)
+}
+
+/// Describe the retained visual labels without introducing a visible duplicate.
+pub(crate) fn description(projection: &Projection) -> Result<String> {
+    let document = roxmltree::Document::parse(&projection.svg)?;
+    let mut description = format!("UML class diagram for {}. Diagram labels: ", projection.diagram.focus.label);
+    // bounded: labels in the validated, capped retained SVG only.
+    for node in document.descendants().filter(|node| node.has_tag_name("text")) {
+        for text in node.descendants().filter_map(|node| node.is_text().then(|| node.text()).flatten()) {
+            description.push_str(text);
+        }
+        description.push_str("; ");
+    }
+    for edge in &projection.diagram.edges {
+        description.push_str(&format!(" {} {} {}.", edge.from.label, edge.relation, edge.to.label));
+    }
+    Ok(description)
 }

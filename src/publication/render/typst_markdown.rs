@@ -156,10 +156,6 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             .join(", ");
                         if super::rdf_tables::matches(&events, index) {
                             widths = "30%, 1fr".into();
-                        } else if super::rdf_tables::shacl_summary(
-                            &events, index,
-                        ) {
-                            widths = "36%, 36%, 14%, 14%".into();
                         }
                         if columns.len() == 1 {
                             widths.push(',');
@@ -218,8 +214,6 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             containers.typst(&source)?
                         } else if code_language == crate::publication::document::class_diagram::LANGUAGE {
                             super::class_diagram::typst(&source)?
-                        } else if code_language == crate::publication::document::shacl_class_view::diagram::LANGUAGE {
-                            super::shacl_view::typst(&source)?
                         } else { super::code::typst(&source, code_language)? });
                         if example {
                             output.push(']');

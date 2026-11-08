@@ -8,34 +8,6 @@ pub(super) fn matches(events: &[Event<'_>], index: usize) -> bool {
     matches!(header, [Event::Start(Tag::TableHead), Event::Start(Tag::TableCell), Event::Text(predicate), Event::End(TagEnd::TableCell), Event::Start(Tag::TableCell), Event::Text(value), Event::End(TagEnd::TableCell), Event::End(TagEnd::TableHead)] if predicate.as_ref() == "RDF predicate" && value.as_ref() == "Value")
 }
 
-/// Recognize the generated SHACL summary, without affecting arbitrary tables.
-pub(super) fn shacl_summary(events: &[Event<'_>], index: usize) -> bool {
-    let Some(Event::Start(Tag::TableHead)) = events.get(index + 1) else {
-        return false;
-    };
-    let mut cursor = index + 2;
-    for expected in ["Property", "Value type", "Count", "Source"] {
-        let Some(
-            [
-                Event::Start(Tag::TableCell),
-                Event::Text(label),
-                Event::End(TagEnd::TableCell),
-            ],
-        ) = events.get(cursor..cursor + 3)
-        else {
-            return false;
-        };
-        if label.as_ref() != expected {
-            return false;
-        }
-        cursor += 3;
-    }
-    matches!(
-        events.get(cursor),
-        Some(Event::End(TagEnd::TableHead))
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use {

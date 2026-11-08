@@ -128,49 +128,19 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
     };
     let text =
         tokio::fs::read_to_string(html.directory.join("index.html")).await?;
-    assert!(
-        text.contains("SHACL constraints") &&
-            text.contains("shapes:ScheduleShape")
-    );
-    assert!(
-        text.contains("dct:conformsTo") &&
-            text.contains("sh:or") &&
-            text.contains("sh:sparql")
-    );
+    assert!(text.contains("shapes:ScheduleShape") && text.contains("sh:sparql"));
     let parsed = scraper::Html::parse_document(&text);
-    assert_eq!(
-        parsed
-            .select(
-                &scraper::Selector::parse(".shacl-validation-diagram").unwrap()
-            )
-            .count(),
-        0
-    );
-    let table = parsed
-        .select(&scraper::Selector::parse("table.shacl-properties").unwrap())
-        .next()
-        .expect("compact SHACL summary");
-    assert_eq!(
-        table
-            .select(&scraper::Selector::parse("thead th").unwrap())
-            .count(),
-        4
-    );
-    assert!(
-        parsed
-            .select(&scraper::Selector::parse("details").unwrap())
-            .any(|details| {
-                details
-                    .text()
-                    .collect::<String>()
-                    .contains("Constraint details")
-            })
-    );
+    assert_eq!(parsed.select(&scraper::Selector::parse(".owl-relationships, .owl-constraint-table, table.shacl-properties, .shacl-validation-diagram").unwrap()).count(), 0);
+    assert!(!text.contains("Constraint details") && !text.contains("Relationships as text"));
+    assert!(parsed.select(&scraper::Selector::parse("svg desc").unwrap()).next().is_some());
     let PublishOutcome::Published(pdf) =
         Publisher::new(restored).render(&pdf, output.path()).await?
     else {
         panic!("PDF not published")
     };
+    let typst = tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    assert!(!typst.contains("Relationships as text") && !typst.contains("Constraint details") && !typst.contains("#par[SHACL constraints"));
+    assert!(typst.contains("ScheduleShape") && typst.contains("sh:sparql"));
     if std::env::var_os("GRAPHARCH_SHACL_VIEW_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/shacl-class-view").await?;
         tokio::fs::copy(
@@ -252,27 +222,11 @@ ex:Unselected a sh:NodeShape; sh:targetClass ex:Other.
 ex:Untyped sh:targetClass ex:Core.
 ex:WrongType a sh:PropertyShape; sh:targetClass ex:Core.
 "#).await?;
-    assert!(body.contains("SHACL constraints"), "{body}");
-    assert_eq!(body.matches("```grapharch-shacl-view").count(), 0);
+    assert!(!body.contains("## SHACL") && !body.contains("Constraint details"));
     assert!(body.contains("ex:First") && body.contains("ex:Second"));
-    assert!(
-        !body.contains("not merged"),
-        "Interpretation belongs in the shared endnote"
-    );
-    assert_eq!(body.matches("| [ex:name]").count(), 2);
-    assert!(body.contains("minCount:** 2") && body.contains("maxCount:** 1"));
-    assert!(body.contains("Declared counts conflict"));
-    assert_eq!(
-        body.matches("Declared counts conflict").count(),
-        1,
-        "string-valued counts must not be coerced to integers"
-    );
-    assert!(body.contains("sh:class") && body.contains("ex:Person"));
-    assert!(
-        !body.contains("ex:Unselected") &&
-            !body.contains("ex:Untyped") &&
-            !body.contains("ex:WrongType")
-    );
+    assert!(!body.contains("ex:Unselected") && !body.contains("ex:Untyped") && !body.contains("ex:WrongType"));
+    assert!(!body.contains("| [ex:name]"));
+    assert!(body.contains("\"omitted\":1"));
     Ok(())
 }
 
@@ -284,14 +238,9 @@ ex:Complex a sh:NodeShape; sh:targetClass ex:Core; sh:sparql [sh:select "SELECT 
  sh:property [sh:path [sh:inversePath ex:owner]; sh:minCount 1],
  [sh:path ex:friend; sh:qualifiedValueShape [sh:class ex:Person]; sh:qualifiedMinCount 2].
 "#).await?;
-    assert!(body.contains("Complex path"), "{body}");
-    assert!(
-        body.contains("qualifiedMinCount") &&
-            body.contains("Full shape definition")
-    );
-    assert!(body.contains("sh:sparql"));
+    assert!(body.contains("ex:Complex") && body.contains("\"omitted\":2"));
     assert!(!body.contains("2..*") && !body.contains("0..*"));
-    assert!(!view("").await?.contains("SHACL constraints"));
+    assert!(!body.contains("Constraint details") && !body.contains("Full shape definition"));
     Ok(())
 }
 
@@ -305,21 +254,9 @@ ex:ContractShape a sh:NodeShape; sh:targetClass ex:Core;
  sh:description "Long authored explanation belongs outside a narrow summary cell.";
  sh:message "The status, when supplied, must be a concept."] .
 "#).await?;
-    assert!(body.contains("| Property | Value type | Count | Source |"));
-    let row = body
-        .lines()
-        .find(|line| line.starts_with("| [ex:contractLifecycleStatus]"))
-        .unwrap();
-    assert!(row.contains("0..1") && row.contains("ex:Concept"));
-    assert!(
-        !row.contains("Long authored") &&
-            !row.contains("Anonymous property shape")
-    );
-    assert!(body.contains(
-        "Long authored explanation belongs outside a narrow summary cell."
-    ));
+    assert!(!body.contains("| Property |") && !body.contains("Constraint details"));
+    assert!(body.contains("0..1") && body.contains("ex:Concept"));
+    assert!(body.contains("Long authored explanation belongs outside a narrow summary cell."));
     assert!(body.contains("The status, when supplied, must be a concept."));
-    assert!(body.contains("Constraint details"));
-    assert!(!body.contains("```grapharch-shacl-view"));
     Ok(())
 }

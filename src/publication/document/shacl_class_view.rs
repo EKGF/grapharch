@@ -1,14 +1,6 @@
-//! Separate exact-target SHACL views; never reinterpret validation as OWL
-//! axioms.
-pub(crate) mod diagram;
+//! Read pinned SHACL constraints for class-diagram enrichment.
 pub(crate) mod read;
-mod render;
-use {
-    crate::publication::{dataset::Dataset, view::RevisionView},
-    anyhow::Result,
-    oxrdf::{NamedNode, Term},
-    std::collections::{BTreeMap, HashSet},
-};
+use oxrdf::{NamedNode, Term};
 const SH: &str = "http://www.w3.org/ns/shacl#";
 
 pub(super) struct Property {
@@ -19,23 +11,6 @@ pub(super) struct Property {
 }
 pub(super) struct Shape {
     pub(super) id:         NamedNode,
-    pub(super) facts:      Vec<(NamedNode, Term)>, /* bounded: sixty-four
-                                                    * source facts. */
     pub(super) properties: Vec<Property>, /* bounded: thirty-two property
                                            * shapes. */
-}
-
-pub(super) async fn append(
-    dataset: &Dataset,
-    view: &RevisionView,
-    class: &NamedNode,
-    prefixes: &BTreeMap<String, String>,
-    documented: &HashSet<NamedNode>,
-    body: &mut String,
-) -> Result<()> {
-    let shapes = read::shapes(dataset, view, class).await?;
-    if shapes.is_empty() {
-        return Ok(());
-    }
-    render::append(&shapes, prefixes, documented, body)
 }

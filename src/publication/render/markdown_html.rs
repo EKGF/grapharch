@@ -60,8 +60,6 @@ pub(super) fn events<'a>(
         if matches!(events[index], Event::Start(Tag::Table(_))) {
             let class = if super::rdf_tables::matches(&events, index) {
                 Some("rdf-properties")
-            } else if super::rdf_tables::shacl_summary(&events, index) {
-                Some("shacl-properties")
             } else {
                 None
             };
@@ -116,7 +114,7 @@ pub(super) fn events<'a>(
                 event
             };
             let table_start = matches!(&event, Event::Start(Tag::Table(_))) ||
-                matches!(&event, Event::Html(value) if matches!(value.as_ref(), "<table class=\"rdf-properties\">" | "<table class=\"shacl-properties\">"));
+                matches!(&event, Event::Html(value) if matches!(value.as_ref(), "<table class=\"rdf-properties\">"));
             let table_end = matches!(&event, Event::End(TagEnd::Table)) ||
                 matches!(&event, Event::Html(value) if value.as_ref() == "</table>");
             let before = table_start.then(|| Event::Html("<div class=\"table-scroll\" role=\"region\" aria-label=\"Data table\" tabindex=\"0\">".into()));

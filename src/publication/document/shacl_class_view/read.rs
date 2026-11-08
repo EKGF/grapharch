@@ -61,7 +61,7 @@ pub(in crate::publication::document) async fn shapes(
             });
             properties.push(Property { id: property.clone(), paths, facts });
         }
-        shapes.push(Shape { id: id.clone(), facts: source, properties });
+        shapes.push(Shape { id: id.clone(), properties });
     }
     Ok(shapes)
 }

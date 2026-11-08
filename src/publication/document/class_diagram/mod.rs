@@ -23,12 +23,12 @@ pub(crate) const LEGEND: &str =
      explicit. Types and counts from simple property shapes enrich the UML \
      notation. Identical qualifiers are shown once; where declaring shapes \
      disagree, the disputed type or multiplicity is omitted from the drawing \
-     and remains in the source-scoped constraint details. No shape is chosen \
+     and remains in the dedicated shape documentation. No shape is chosen \
      arbitrarily and conflicting counts are not silently intersected. An \
      absent count imposes no lower or upper bound beyond zero or unbounded, \
      respectively. Complex constraints require the linked full shape \
-     definition. Relationships as text preserves original OWL facts and \
-     separate shape provenance. Some diagrams show at most five complete OWL \
+     definition. Original OWL facts and shape provenance remain in the \
+     published source graph. Some diagrams show at most five complete OWL \
      relationship groups within an eighteen-fact budget, selected in \
      deterministic IRI order; omitted groups remain in the published source \
      graph. These views are not exhaustive.";

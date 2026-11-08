@@ -35,10 +35,6 @@ pub(super) fn events<'a>(
             crate::publication::document::class_diagram::LANGUAGE
         {
             super::super::class_diagram::html(&source)?
-        } else if language ==
-            crate::publication::document::shacl_class_view::diagram::LANGUAGE
-        {
-            super::super::shacl_view::html(&source)?
         } else {
             super::super::code::html(&source, language)?
         };

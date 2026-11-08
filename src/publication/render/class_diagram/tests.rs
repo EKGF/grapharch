@@ -1,6 +1,6 @@
 use {
     super::*,
-    crate::publication::document::class_diagram::{Diagram, Edge},
+    crate::publication::document::class_diagram::{Diagram, Edge, Node},
 };
 fn retained(link: &str) -> String {
     let node = Node {
@@ -32,54 +32,19 @@ fn retained(link: &str) -> String {
     .unwrap()
 }
 #[test]
-fn textual_relationships_are_a_full_width_accessible_table() {
+fn diagram_has_accessible_description_without_duplicate_sections() {
     let output = html(&retained("#class")).unwrap();
     let parsed = scraper::Html::parse_fragment(&output);
-    let details = parsed
-        .select(&scraper::Selector::parse("details.owl-relationships").unwrap())
-        .next()
-        .expect("relationship disclosure");
-    assert!(!details.ancestors().any(|node| {
-        scraper::ElementRef::wrap(node)
-            .is_some_and(|element| element.value().name() == "figure")
-    }));
-    let table = details
-        .select(&scraper::Selector::parse("table").unwrap())
-        .next()
-        .expect("three-column relationship table");
-    assert_eq!(
-        table.value().attr("aria-label"),
-        Some("Asserted OWL relationships")
-    );
-    assert_eq!(
-        table
-            .select(
-                &scraper::Selector::parse("thead.sr-only th[scope=col]")
-                    .unwrap()
-            )
-            .count(),
-        3
-    );
-    assert_eq!(
-        table
-            .select(&scraper::Selector::parse("tbody tr td").unwrap())
-            .count(),
-        3
-    );
-    assert!(table.text().collect::<String>().contains("rdfs:subClassOf"));
-    assert_eq!(
-        details
-            .select(&scraper::Selector::parse("ul,li").unwrap())
-            .count(),
-        0
-    );
-    assert!(!output.contains(" — ") && !output.contains(" → "));
+    assert_eq!(parsed.select(&scraper::Selector::parse("details, table").unwrap()).count(), 0);
+    let description = parsed.select(&scraper::Selector::parse("svg desc").unwrap()).next().expect("accessible SVG description");
+    assert!(description.text().collect::<String>().contains("Class rdfs:subClassOf Class"));
+    assert!(!output.contains("Relationships as text"));
 }
 #[test]
 fn tall_pdf_drawings_have_a_physical_height_budget_and_text_links() {
     let output = typst(&retained("#class")).unwrap();
     assert!(output.contains("calc.min(size.width * 1.0, 210pt)"));
-    assert!(output.contains("#link(label(\"class\"))"));
+    assert!(!output.contains("#ga-table") && !output.contains("#par[SHACL"));
     assert!(!output.contains("grapharch-node"));
 }
 #[test]
@@ -121,46 +86,16 @@ fn shape_only() -> String {
 fn shape_only_pdf_uses_available_width_with_its_height_bound() {
     let output = typst(&shape_only()).unwrap();
     assert!(output.contains("calc.min(size.width * 1.0, 210pt)"));
-    assert!(
-        output.contains("SHACL constraints") && !output.contains("SHACL S1")
-    );
-    assert!(output.contains("#link(label(\"one\"))"));
+    assert!(!output.contains("SHACL constraints"));
+    assert!(!output.contains("#par["));
 }
 
 #[test]
-fn shape_sources_remain_in_details_without_caption_markers() {
-    let output = html(&shape_only()).unwrap();
-    let parsed = scraper::Html::parse_fragment(&output);
-    let caption = parsed
-        .select(&scraper::Selector::parse("figcaption").unwrap())
-        .next()
-        .unwrap()
-        .text()
-        .collect::<String>();
-    assert!(!caption.contains("SHACL") && !caption.contains("S1"));
-    for target in ["#one", "#two"] {
-        assert!(
-            parsed
-                .select(
-                    &scraper::Selector::parse(&format!(
-                        "details a[href='{target}']"
-                    ))
-                    .unwrap()
-                )
-                .next()
-                .is_some()
-        );
-    }
-    let details = parsed
-        .select(&scraper::Selector::parse("details.owl-relationships").unwrap())
-        .next()
-        .unwrap()
-        .text()
-        .collect::<String>();
-    assert!(
-        details.contains("First & specific shape") &&
-            details.contains("Second shape")
-    );
+fn shape_sources_are_retained_without_visible_duplicate_sections() {
+    let source = shape_only();
+    let output = html(&source).unwrap();
+    assert!(!output.contains("<details") && !output.contains("SHACL"));
+    assert_eq!(Projection::parse(&source).unwrap().diagram.shapes.len(), 2);
 }
 
 #[test]

@@ -822,15 +822,6 @@ impl Documentor for AnnotatedTermDocumentor {
                 &self.diagram_renderer,
             )
             .await?;
-            super::shacl_class_view::append(
-                &self.dataset,
-                &view,
-                &self.subject,
-                &self.prefixes,
-                &self.documented,
-                &mut body,
-            )
-            .await?;
         }
         body.push_str(&self.arrangement.body);
         for example in examples {

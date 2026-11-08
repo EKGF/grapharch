@@ -52,11 +52,8 @@ async (page) => {
     const canvas = await figures.first().locator('[role="region"]').evaluate(node => getComputedStyle(node).backgroundColor);
     if (canvas !== 'rgb(255, 255, 255)') throw new Error(`Diagram ink has no controlled light canvas in ${scheme} mode`);
   }
-  const relationships = page.locator('details.owl-relationships').first();
-  const summary = relationships.locator('summary');
-  await summary.focus();
-  await page.keyboard.press('Enter');
-  if (!(await relationships.evaluate(node => node.open))) throw new Error('Relationship text is not keyboard accessible');
+  if (await page.locator('.owl-relationships, table.shacl-properties, .owl-constraint-table').count()) throw new Error('Duplicate class details remain');
+  if (await figures.locator('svg desc').count() !== await figures.count()) throw new Error('Missing accessible diagram descriptions');
   const local = page.locator('figure.owl-class-diagram svg a[href^="#"]').first();
   if (await local.count()) {
     const href = await local.getAttribute('href');
@@ -64,5 +61,5 @@ async (page) => {
     await page.keyboard.press('Enter');
     if (new URL(page.url()).hash !== href) throw new Error('Class link keyboard navigation failed');
   }
-  return {figures: count, layouts: results, keyboardTextAlternative: true, links: true, themes: ["light", "dark"]};
+  return {figures: count, layouts: results, accessibleDiagramDescription: true, links: true, themes: ["light", "dark"]};
 }
