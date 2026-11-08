@@ -67,6 +67,8 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
         definitions::iri("urn:showcase:reader-profile")?,
     )?;
     let fixture = fixture.replace("Literal brackets such as", r"## Coverage\n\n| Term | Count |\n| --- | ---: |\n| Document | 28 |\n\n> [!WARNING]\n> Review annotations must stay together.\n\nLiteral brackets such as");
+    let shape_label = "dprod-shapes:RejectMixedLifecycleStatusOnDataOfferShape";
+    let fixture = fixture.replace("Literal brackets such as", &format!(r"| Path | Constraints | Shape |\n| --- | --- | --- |\n| status | maxCount: 0 | [{shape_label}](https://example.org/shapes/reject) |\n\nLiteral brackets such as"));
     let long_iri = format!(
         "https://example.org/{}",
         "longidentifier".repeat(30)
@@ -91,6 +93,12 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     };
     let typst =
         std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    assert!(
+        typst.contains('\u{200b}'),
+        "Long table identifiers require legal line-break opportunities"
+    );
+    assert!(typst.replace('\u{200b}', "").contains(shape_label));
+    assert!(typst.contains("#link(\"https://example.org/shapes/reject\")"));
     assert!(
         typst.contains("#let ga-style = \"reader\""),
         "reader typography must be selected from its pinned publication \

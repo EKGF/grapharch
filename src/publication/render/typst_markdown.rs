@@ -12,6 +12,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut example = false;
     let mut heading = None;
     let mut table_head = false;
+    let mut in_table = false;
     let mut in_image = false;
     let events = super::image_variants::print_events(&markdown.events)?;
     let (mut notes, events) = super::footnotes::Notes::read(&events)?;
@@ -141,6 +142,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push_str(&format!("#link({destination})["));
                     },
                     Tag::Table(columns) => {
+                        in_table = true;
                         let mut widths = columns
                             .iter()
                             .map(|alignment| {
@@ -221,7 +223,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         }
                         output.push('\n');
                     },
-                    TagEnd::List(_) | TagEnd::Table => output.push_str(")\n"),
+                    TagEnd::List(_) => output.push_str(")\n"),
+                    TagEnd::Table => {
+                        in_table = false;
+                        output.push_str(")\n");
+                    },
                     TagEnd::Item => output.push_str("],"),
                     TagEnd::TableCell => {
                         output.push_str(if table_head { "]]," } else { "]," })
@@ -244,11 +250,13 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                 if let Some(code) = &mut code {
                     code.push_str(text);
                 } else {
-                    output.push_str(&format!("#text({})", quote(text)));
+                    let text = table_text(text, in_table);
+                    output.push_str(&format!("#text({})", quote(&text)));
                 }
             },
             Event::Code(text) => {
-                output.push_str(&format!("#raw({})", quote(text)))
+                let text = table_text(text, in_table);
+                output.push_str(&format!("#raw({})", quote(&text)))
             },
             Event::SoftBreak => output.push(' '),
             Event::HardBreak => output.push_str("#linebreak()\n"),
@@ -269,6 +277,36 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     }
     containers.finish()?;
     Ok(output)
+}
+
+// Presentation-only break opportunities preserve the full label and
+// destination. Long ASCII identifier tokens have no language hyphenation
+// points. Leave ordinary prose and non-ASCII grapheme clusters untouched.
+fn table_text(value: &str, in_table: bool) -> std::borrow::Cow<'_, str> {
+    if !in_table ||
+        !value
+            .split_whitespace()
+            .any(|token| token.len() > 24 && token.is_ascii())
+    {
+        return std::borrow::Cow::Borrowed(value);
+    }
+    let mut output = String::with_capacity(value.len());
+    for token in value.split_inclusive(char::is_whitespace) {
+        if token.trim_end().len() > 24 && token.is_ascii() {
+            let mut chars = token.chars().peekable();
+            while let Some(ch) = chars.next() {
+                output.push(ch);
+                if ch.is_ascii_alphanumeric() &&
+                    chars.peek().is_some_and(char::is_ascii_alphanumeric)
+                {
+                    output.push('\u{200b}');
+                }
+            }
+        } else {
+            output.push_str(token);
+        }
+    }
+    std::borrow::Cow::Owned(output)
 }
 
 // An image cannot split across pages. Its paragraph must not emit an empty
@@ -293,7 +331,25 @@ fn standalone_image(events: &[Event<'_>]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use {super::standalone_image, pulldown_cmark::Parser};
+    use {
+        super::{standalone_image, table_text},
+        pulldown_cmark::Parser,
+    };
+
+    #[test]
+    fn table_identifier_breaks_preserve_text_and_do_not_change_prose() {
+        let label = "dprod-shapes:RejectMixedLifecycleStatusOnDataOfferShape";
+        let wrapped = table_text(label, true);
+        assert!(wrapped.contains('\u{200b}'));
+        assert_eq!(wrapped.replace('\u{200b}', ""), label);
+        assert_eq!(table_text(label, false), label);
+        assert_eq!(
+            table_text("ordinary prose and short names", true),
+            "ordinary prose and short names"
+        );
+        let combining = "e\u{301}".repeat(30);
+        assert_eq!(table_text(&combining, true), combining);
+    }
 
     #[test]
     fn only_image_only_paragraphs_are_atomic() {
