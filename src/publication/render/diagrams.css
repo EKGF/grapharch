@@ -1,0 +1,11 @@
+/* Preserve readable intrinsic diagram geometry; overflow belongs to the figure,
+   never the page. Styled native tracks remain discoverable on overlay-scrollbar
+   platforms without introducing a second, JavaScript-operated scrollbar. */
+.class-diagram-scroll{max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.class-diagram-scroll:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
+.class-diagram-scroll::-webkit-scrollbar{height:12px}
+.class-diagram-scroll::-webkit-scrollbar-track{background:#edf0f4;border-radius:6px}
+.class-diagram-scroll::-webkit-scrollbar-thumb{background:#8794a6;border:2px solid #edf0f4;border-radius:6px}
+.class-diagram-scroll::-webkit-scrollbar-thumb:hover{background:#526174}
+@supports not selector(::-webkit-scrollbar){.class-diagram-scroll{scrollbar-width:auto;scrollbar-color:#8794a6 #edf0f4}}
+@media print{.class-diagram-scroll{overflow:visible}.class-diagram-scroll svg{width:auto!important;max-width:100%!important}}

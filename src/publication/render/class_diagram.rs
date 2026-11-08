@@ -57,9 +57,9 @@ pub(super) fn html(source: &str) -> Result<String> {
     Ok(format!(
         "<figure class=\"owl-class-diagram\" \
          style=\"width:fit-content;max-width:100%;margin:1.25rem auto\"><div \
-         tabindex=\"0\" role=\"region\" aria-label=\"Class relationship \
-         diagram; scroll horizontally when needed\" \
-         style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
+         class=\"class-diagram-scroll\" tabindex=\"0\" role=\"region\" \
+         aria-label=\"Class relationship diagram; scroll horizontally when \
+         needed\" style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
          border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} \
          {}</figcaption></figure>\n",
         svg::draw(&projection, true)?,

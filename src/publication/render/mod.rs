@@ -302,7 +302,10 @@ impl Publisher {
                     stage.path.join("style.css"),
                     format!(
                         "{style}\n{}\n{}\n{}",
-                        include_str!("callouts.css"),
+                        concat!(
+                            include_str!("callouts.css"),
+                            include_str!("diagrams.css")
+                        ),
                         include_str!("provenance.css"),
                         if plan.renderer == "bookshelf" {
                             include_str!("bookshelf.css")

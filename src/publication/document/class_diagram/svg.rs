@@ -70,7 +70,7 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
         .descendants()
         .filter_map(|node| node.attribute("id").map(str::to_owned))
         .collect(); // bounded: validated 256 KiB SVG.
-    let minimum_width = if links {
+    let responsive = if links {
         let width: f64 = document
             .root_element()
             .attribute("viewBox")
@@ -83,9 +83,9 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
             width.is_finite() && width > 0.0,
             "invalid class diagram width"
         );
-        format!(";min-width:{}px", width * 0.85)
+        format!("display:block;width:{width}px;max-width:none;height:auto")
     } else {
-        String::new()
+        String::from("display:block;max-width:100%;height:auto")
     };
     let style = document
         .root_element()
@@ -102,8 +102,6 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
                 &format!("url(#{namespace}{id})"),
             );
     }
-    let responsive =
-        format!("display:block;max-width:100%;height:auto{minimum_width}");
     if let Some(style) = style {
         result = result.replacen(
             &format!("style=\"{style}\""),
@@ -173,16 +171,19 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
     if !super::qualified_count::collect(&projection.diagram).is_empty() {
         description.push_str(
             " Qualified counts count only property values in the named target \
-             class; other values are not excluded. A zero qualified minimum \
-             imposes no restriction and is omitted visually. ",
+             class; other values are not excluded. A zero qualified maximum \
+             prohibits values in that target class, not other property \
+             values. A zero qualified minimum imposes no restriction and is \
+             omitted visually. ",
         );
     }
     if !super::nested_existence::collect(&projection.diagram).is_empty() {
         description.push_str(
             " The nested zero-minimum filler is unconstrained, but its outer \
              existential still requires a property value. A positive \
-             qualified count on the same class and property already \
-             guarantees that existence; otherwise the member retains [1..*]. ",
+             qualified minimum or exact count on the same class and property \
+             already guarantees that existence; otherwise the member retains \
+             [1..*]. ",
         );
     }
     for edge in &projection.diagram.edges {

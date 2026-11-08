@@ -73,7 +73,8 @@ fn pdf_diagram_note_stays_inside_the_unbreakable_figure() {
 #[test]
 fn phone_diagrams_keep_readable_intrinsic_width_inside_a_scroll_region() {
     let output = html(&retained("#class")).unwrap();
-    assert!(output.contains("min-width:340px"));
+    assert!(output.contains("width:400px;max-width:none"));
+    assert!(output.contains("class=\"class-diagram-scroll\""));
     assert!(output.contains("overflow-x:auto"));
     assert!(output.contains("tabindex=\"0\""));
 }
