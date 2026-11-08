@@ -60,7 +60,8 @@ pub(super) fn html(source: &str) -> Result<String> {
     let projection = Projection::parse(source)?;
     let diagram = &projection.diagram;
     let mut html = format!(
-        "<figure class=\"owl-class-diagram\" style=\"margin:1.25rem 0\"><div \
+        "<figure class=\"owl-class-diagram\" \
+         style=\"width:fit-content;max-width:100%;margin:1.25rem auto\"><div \
          tabindex=\"0\" role=\"region\" aria-label=\"Class relationship \
          diagram\" style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
          border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: \
