@@ -90,14 +90,32 @@ pub(super) async fn run(
     .context("PlantUML exceeded its 30-second rendering budget")?
 }
 pub(super) async fn version(program: &OsStr) -> Result<String> {
-    let bytes = run(program, &["-version"], b"", 64 * 1024).await?;
+    // The informational -version command also probes Graphviz. Query the
+    // preprocessor so embedded Smetana remains independent of external dot.
+    let bytes = run(
+        program,
+        &["-preproc", "-pipe"],
+        b"@startuml\n%version()\n@enduml\n",
+        64 * 1024,
+    )
+    .await?;
     let text = std::str::from_utf8(&bytes)?;
-    let first = text.lines().next().unwrap_or("").trim();
+    let mut lines = text.lines();
+    let start = lines.next();
+    let version = lines.next().unwrap_or("");
     ensure!(
-        first.starts_with("PlantUML version ") && first.len() <= 512,
-        "renderer must identify itself as PlantUML"
+        start == Some("@startuml") &&
+            !version.is_empty() &&
+            version.len() <= 512 &&
+            version.bytes().all(|b| {
+                b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_')
+            }) &&
+            lines.next() == Some("@enduml") &&
+            lines.next().is_none(),
+        "renderer must return the bounded PlantUML preprocessor version \
+         protocol"
     );
-    Ok(first.into())
+    Ok(format!("PlantUML version {version}"))
 }
 pub(super) fn clean_svg(bytes: &[u8]) -> Result<Vec<u8>> {
     let source = std::str::from_utf8(bytes)?;

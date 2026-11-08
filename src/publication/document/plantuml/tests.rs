@@ -30,7 +30,7 @@ async fn retained_sources_document_after_deletion_and_svg_renders_without_the_to
     // invocation.
     tokio::fs::write(&executable, r##"#!/bin/sh
 if [ "$PLANTUML_SECURITY_PROFILE" != SANDBOX ]; then exit 2; fi
-if [ "$1" = -version ]; then printf 'PlantUML version recorded-fixture\n'; exit 0; fi
+if [ "$1" = -preproc ]; then cat >/dev/null; printf '@startuml\nrecorded-fixture\n@enduml\n'; exit 0; fi
 while IFS= read -r line; do
   if [ "$line" = @enduml ]; then
     printf '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="110" height="30" fill="#116659"/></svg>GRAPHARCH-PLANTUML-END\n' || exit $?
@@ -185,7 +185,7 @@ async fn local_renderer_reuses_one_bounded_pipe_for_multiple_diagrams()
     let executable = root.path().join("recorded-pipe");
     tokio::fs::write(&executable, r##"#!/bin/sh
 if [ "$PLANTUML_SECURITY_PROFILE" != SANDBOX ]; then exit 2; fi
-if [ "$1" = -version ]; then printf 'PlantUML version recorded-pipe\n'; exit 0; fi
+if [ "$1" = -preproc ]; then cat >/dev/null; printf '@startuml\nrecorded-pipe\n@enduml\n'; exit 0; fi
 count=0
 while IFS= read -r line; do
   if [ "$line" = @enduml ]; then
