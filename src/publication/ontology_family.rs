@@ -1230,11 +1230,13 @@ async fn build(
             let prefixes = prefixes.clone();
             let known = known.clone();
             let diagram_renderer = diagram_renderer.clone();
+            let diagram_metadata = collected_snapshot.clone();
             async move {
                 let documentor = AnnotatedTermDocumentor::new(
                     dataset, snapshot, project, subject, "en", prefixes, known,
                 )?
                 .with_diagram_renderer(diagram_renderer)
+                .with_diagram_metadata(diagram_metadata)
                 .with_family_reference()
                 .with_arrangement(arrangement);
                 let documentor = if let Some(ontology) = ontology {

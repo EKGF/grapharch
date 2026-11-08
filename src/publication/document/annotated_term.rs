@@ -24,6 +24,7 @@ use {
 pub struct AnnotatedTermDocumentor {
     dataset:            Dataset,
     snapshot:           NamedNode,
+    diagram_metadata:   NamedNode,
     project:            NamedNode,
     subject:            NamedNode,
     language:           String,
@@ -55,6 +56,7 @@ impl AnnotatedTermDocumentor {
     ) -> Result<Self> {
         Ok(Self {
             dataset,
+            diagram_metadata: snapshot.clone(),
             snapshot,
             project: NamedNode::new(project)?,
             subject,
@@ -69,6 +71,13 @@ impl AnnotatedTermDocumentor {
                 std::ffi::OsStr::new("plantuml"),
             )),
         })
+    }
+
+    /// Resolve endpoint declarations from the same pinned publication inputs,
+    /// while retaining this term's source-local relationship assertions.
+    pub(crate) fn with_diagram_metadata(mut self, snapshot: NamedNode) -> Self {
+        self.diagram_metadata = snapshot;
+        self
     }
 
     pub(crate) fn with_diagram_renderer(
@@ -815,6 +824,10 @@ impl Documentor for AnnotatedTermDocumentor {
             super::class_diagram::append(
                 &self.dataset,
                 &view,
+                &RevisionView::new(
+                    self.dataset.clone(),
+                    self.diagram_metadata.clone(),
+                ),
                 &self.subject,
                 &self.prefixes,
                 &self.documented,

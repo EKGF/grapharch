@@ -78,3 +78,57 @@ async fn ontology_abstract_and_other_authored_introduction_survive_source_remova
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn diagram_endpoint_types_use_other_pinned_family_members() -> Result<()>
+{
+    let source = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("sources")).await?;
+    tokio::fs::write(source.path().join("project.ttl"), format!("{DEFINITIONS}\n<https://example.org/relations/> <https://ekgf.org/ontology/artifact-governance#inFamily> <urn:test:family> ; <http://www.w3.org/ns/shacl#declare> [ <http://www.w3.org/ns/shacl#prefix> \"rel\" ; <http://www.w3.org/ns/shacl#namespace> \"https://example.org/relations/\" ] .")).await?;
+    tokio::fs::write(source.path().join("sources/classes.ttl"), r#"
+@prefix owl:<http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+<https://example.org/vocab/> a owl:Ontology; rdfs:label "Classes" .
+<https://example.org/vocab/Part> a owl:Class; rdfs:label "Part"; rdfs:subClassOf [a owl:Restriction; owl:onProperty <https://example.org/relations/member>; owl:someValuesFrom <https://example.org/vocab/Whole>] .
+<https://example.org/vocab/Whole> a owl:Class; rdfs:label "Whole" .
+"#).await?;
+    tokio::fs::write(source.path().join("sources/relations.ttl"), r#"
+@prefix owl:<http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> .
+<https://example.org/relations/> a owl:Ontology; rdfs:label "Relations" .
+<https://example.org/relations/member> a owl:ObjectProperty; rdfs:label "member" .
+"#).await?;
+    let built = collect(source.path()).await?;
+    let mut rows = built.dataset.select("PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT ?body WHERE { GRAPH ?g { ?fragment ga:subject <https://example.org/vocab/Part>; ga:body ?body } }".into()).await?;
+    let mut qualified = false;
+    while let Some(row) = rows.next().await? {
+        if let oxrdf::Term::Literal(body) = &row["body"] {
+            qualified |= body.value().contains("at least one ex:Whole");
+        }
+    }
+    assert!(
+        qualified,
+        "cross-source authored object-property type missing from diagram"
+    );
+    let output = tempfile::tempdir()?;
+    let archive = output.path().join("retained.nq");
+    built.dataset.export(archive.clone()).await?;
+    source.close()?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("publication required")
+    };
+    for file in ["index.html", "main.typ"] {
+        let body =
+            tokio::fs::read_to_string(publication.directory.join(file)).await?;
+        assert!(
+            body.contains("at least one"),
+            "{file} lost a known cross-source object property declaration"
+        );
+    }
+    Ok(())
+}

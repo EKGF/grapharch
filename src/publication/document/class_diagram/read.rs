@@ -12,6 +12,7 @@ const RDFS: &str = "http://www.w3.org/2000/01/rdf-schema#";
 pub(crate) async fn append(
     dataset: &Dataset,
     view: &RevisionView,
+    metadata: &RevisionView,
     subject: &NamedNode,
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
@@ -50,7 +51,7 @@ BIND(?s AS ?group)
     let mut groups = BTreeMap::<String, Vec<Edge>>::new(); // bounded: ninety-six facts plus one sentinel.
     let mut count = 0;
     let mut nodes = BTreeMap::new(); // bounded: at most 193 endpoint resources.
-    let focus = node(view, subject, prefixes, documented).await?;
+    let focus = node(metadata, subject, prefixes, documented).await?;
     nodes.insert(subject.clone(), focus.clone());
     let mut overflow = false;
     while let Some(row) = rows.next().await? {
@@ -73,7 +74,8 @@ BIND(?s AS ?group)
         }
         for id in ids {
             if !nodes.contains_key(id) {
-                let mut value = node(view, id, prefixes, documented).await?;
+                let mut value =
+                    node(metadata, id, prefixes, documented).await?;
                 if value.kind == "OWL expression" {
                     let ordinal = nodes
                         .values()

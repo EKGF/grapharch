@@ -176,6 +176,10 @@ impl ResourceDocumentor {
                     self.dataset.clone(),
                     self.snapshot.clone(),
                 ),
+                &crate::publication::view::RevisionView::new(
+                    self.dataset.clone(),
+                    self.snapshot.clone(),
+                ),
                 subject,
                 &std::collections::BTreeMap::new(),
                 &std::collections::HashSet::new(),
