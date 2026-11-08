@@ -55,6 +55,10 @@ drawing; target-specific links are resolved without rerunning layout. Rendering 
 not require the original ontology files or network access. Changes to incoming
 relationships also change the generated fragment content and revision.
 
+Wide neighborhoods are also laid out top-to-bottom by the same engine; GraphArch
+retains the narrower of the two standard orientations. Labels wrap without
+discarding identifier characters. It does not position edge captions itself.
+
 The build reuses one bounded local renderer process across class diagrams. It
 restarts the process after 128 requests and limits each request’s time and output.
 The renderer runs with PlantUML’s sandbox security profile.

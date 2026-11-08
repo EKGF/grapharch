@@ -297,3 +297,40 @@ async fn generated_layout_and_engine_identity_are_retained_with_the_assertions()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn a_wide_restriction_neighborhood_uses_a_compact_engine_orientation()
+-> Result<()> {
+    let body = diagram(r#"
+ex:Core a owl:Class ; rdfs:subClassOf ex:Designation, [ a owl:Restriction ; owl:onProperty ex:compliesWith ; owl:onClass ex:IdentificationScheme ; owl:minQualifiedCardinality 0 ] ; owl:disjointWith ex:Name .
+ex:identifies a owl:ObjectProperty ; rdfs:domain ex:Core .
+ex:isIdentifiedBy a owl:ObjectProperty ; rdfs:range ex:Core .
+ex:IdentificationScheme a owl:Class .
+"#).await?;
+    #[derive(serde::Deserialize)]
+    struct Retained {
+        svg: String,
+    }
+    let json = body
+        .split("```grapharch-class-diagram\n")
+        .nth(1)
+        .unwrap()
+        .split("\n```")
+        .next()
+        .unwrap();
+    let retained: Retained = serde_json::from_str(json)?;
+    let svg = roxmltree::Document::parse(&retained.svg)?;
+    let width: f64 = svg
+        .root_element()
+        .attribute("viewBox")
+        .unwrap()
+        .split_whitespace()
+        .nth(2)
+        .unwrap()
+        .parse()?;
+    assert!(
+        width <= 600.0,
+        "engine orientation leaves the restriction too wide: {width}"
+    );
+    Ok(())
+}

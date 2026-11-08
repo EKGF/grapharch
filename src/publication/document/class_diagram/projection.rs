@@ -20,9 +20,21 @@ impl Projection {
         diagram: Diagram,
         renderer: &LocalRenderer,
     ) -> Result<Self> {
-        let source = source(&diagram);
+        let mut source = source(&diagram);
         let engine = renderer.version().await?;
-        let svg = String::from_utf8(renderer.svg(&source).await?)?;
+        let mut svg = render(renderer, &source).await?;
+        if width(&svg)? > 600.0 {
+            let alternative_source = source.replacen(
+                "left to right direction",
+                "top to bottom direction",
+                1,
+            );
+            let alternative_svg = render(renderer, &alternative_source).await?;
+            if width(&alternative_svg)? < width(&svg)? {
+                source = alternative_source;
+                svg = alternative_svg;
+            }
+        }
         ensure!(
             svg.len() <= 256 * 1024,
             "class diagram SVG exceeds 256 KiB"
@@ -56,6 +68,32 @@ impl Projection {
         image_assets::validate(value.svg.as_bytes(), "image/svg+xml")?;
         Ok(value)
     }
+}
+
+async fn render(renderer: &LocalRenderer, source: &str) -> Result<String> {
+    let svg = String::from_utf8(renderer.svg(source).await?)?;
+    ensure!(
+        svg.len() <= 256 * 1024,
+        "class diagram SVG exceeds 256 KiB"
+    );
+    Ok(svg)
+}
+fn width(svg: &str) -> Result<f64> {
+    let document = roxmltree::Document::parse(svg)?;
+    let bounds = document
+        .root_element()
+        .attribute("viewBox")
+        .ok_or_else(|| anyhow::anyhow!("PlantUML SVG has no viewBox"))?;
+    let width: f64 = bounds
+        .split_whitespace()
+        .nth(2)
+        .ok_or_else(|| anyhow::anyhow!("PlantUML SVG has no viewBox width"))?
+        .parse()?;
+    ensure!(
+        width.is_finite() && width > 0.0,
+        "invalid PlantUML SVG width"
+    );
+    Ok(width)
 }
 
 pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
