@@ -38,9 +38,12 @@ impl Projection {
         let value: Self = serde_json::from_str(text)?;
         Diagram::parse(&serde_json::to_string(&value.diagram)?)?;
         ensure!(
-            value.source == source(&value.diagram),
-            "class diagram source does not match its retained assertions"
+            value.source.len() <= 128 * 1024,
+            "retained PlantUML source exceeds 128 KiB"
         );
+        // Source is provenance, not an instruction to render again. A newer
+        // generator may use different formatting/layout rules without changing
+        // this pinned drawing.
         ensure!(
             value.engine.starts_with("PlantUML version") &&
                 value.engine.len() <= 1024,
@@ -80,13 +83,7 @@ fn source(diagram: &Diagram) -> String {
         } else {
             "#FFFFFF"
         };
-        let label = node
-            .label
-            .split_once(':')
-            .map(|(prefix, local)| {
-                format!("{}:\\n{}", text(prefix), text(local))
-            })
-            .unwrap_or_else(|| text(&node.label));
+        let label = label(&node.label);
         // Links are opaque node references. Publication routes are resolved
         // after layout; source-supplied links never enter PlantUML syntax.
         output.push_str(&format!(
@@ -100,11 +97,30 @@ fn source(diagram: &Diagram) -> String {
             "n{} --> n{} : {}\n",
             identifiers[edge.from.id.as_str()],
             identifiers[edge.to.id.as_str()],
-            text(&edge.relation)
+            label(&edge.relation)
         ));
     }
     output.push_str("@enduml\n");
     output
+}
+fn label(value: &str) -> String {
+    if let Some((prefix, local)) = value.split_once(':') {
+        return format!("{}:\\n{}", text(prefix), label(local));
+    }
+    let mut lines = Vec::new(); // bounded: source labels are capped at 512 bytes.
+    let mut line = String::new();
+    let mut length = 0;
+    for character in value.chars() {
+        if length == 24 || (length >= 10 && character.is_uppercase()) {
+            lines.push(text(&line));
+            line.clear();
+            length = 0;
+        }
+        line.push(character);
+        length += 1;
+    }
+    lines.push(text(&line));
+    lines.join("\\n")
 }
 fn text(value: &str) -> String {
     let mut output = String::new();
@@ -122,6 +138,43 @@ fn text(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn restoring_a_drawing_does_not_regenerate_its_source_with_new_layout_rules()
+     {
+        let retained = Projection {
+            diagram: Diagram {
+                focus: super::super::Node {
+                    id:    "urn:test:class".into(),
+                    label: "Class".into(),
+                    kind:  "Class".into(),
+                    link:  None,
+                },
+                edges: Vec::new(),
+            },
+            source:  "@startuml\n' previous generated layout \
+                      revision\nrectangle Class\n@enduml\n"
+                .into(),
+            engine:  "PlantUML version retained-fixture".into(),
+            svg:     "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" \
+                      height=\"50\"><rect width=\"120\" height=\"50\"/></svg>"
+                .into(),
+        };
+        let restored =
+            Projection::parse(&serde_json::to_string(&retained).unwrap())
+                .unwrap();
+        assert_eq!(restored.source, retained.source);
+        assert_eq!(restored.svg, retained.svg);
+    }
+    #[test]
+    fn long_labels_wrap_without_discarding_identifier_characters() {
+        let wrapped = label("InformationSensitivityClassification");
+        assert!(wrapped.contains("\\n"));
+        assert_eq!(
+            wrapped.replace("\\n", ""),
+            "InformationSensitivityClassification"
+        );
+        assert_eq!(label("rdfs:subClassOf"), "rdfs:\\nsubClassOf");
+    }
     #[test]
     fn source_text_cannot_inject_plantuml_or_creole_directives() {
         let malicious =
