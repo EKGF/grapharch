@@ -338,7 +338,7 @@ async fn generated_layout_and_engine_identity_are_retained_with_the_assertions()
 }
 
 #[tokio::test]
-async fn a_wide_restriction_neighborhood_uses_a_compact_engine_orientation()
+async fn a_restriction_neighborhood_uses_a_balanced_engine_orientation()
 -> Result<()> {
     let body = diagram(r#"
 ex:Core a owl:Class ; rdfs:subClassOf ex:Designation, [ a owl:Restriction ; owl:onProperty ex:compliesWith ; owl:onClass ex:IdentificationScheme ; owl:minQualifiedCardinality 0 ] ; owl:disjointWith ex:Name .
@@ -367,15 +367,27 @@ ex:IdentificationScheme a owl:Class .
         .nth(2)
         .unwrap()
         .parse()?;
+    let height: f64 = svg
+        .root_element()
+        .attribute("viewBox")
+        .unwrap()
+        .split_whitespace()
+        .nth(3)
+        .unwrap()
+        .parse()?;
     assert!(
-        width <= 600.0,
-        "engine orientation leaves the restriction too wide: {width}"
+        width >= height,
+        "figure should use horizontal space: {width}x{height}"
+    );
+    assert!(
+        width <= 1200.0,
+        "focused fixture should remain bounded"
     );
     Ok(())
 }
 
 #[tokio::test]
-async fn mobile_width_budget_omits_only_complete_relationship_groups()
+async fn layout_preserves_complete_groups_instead_of_optimizing_for_phone_width()
 -> Result<()> {
     let body = diagram_with_prefix(r#"
 ex:Core a owl:Class ; rdfs:subClassOf ex:MembershipEvidence, ex:MembershipEvent .
@@ -404,13 +416,49 @@ ex:capturedAt a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range <http://
         .nth(2)
         .unwrap()
         .parse()?;
+    assert!(width > 0.0);
     assert!(
-        width <= 600.0,
-        "mobile width budget exceeded: {width}"
+        !body.contains("Diagram limit"),
+        "layout must not omit asserted groups"
+    );
+    assert!(body.contains("withdrawnConsent"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
+{
+    let body = diagram(
+        "ex:Core a owl:Class ; rdfs:subClassOf ex:Parent . ex:Parent a \
+         owl:Class . ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; \
+         rdfs:range ex:Parent .",
+    )
+    .await?;
+    #[derive(serde::Deserialize)]
+    struct Retained {
+        source: String,
+    }
+    let json = body
+        .split("```grapharch-class-diagram\n")
+        .nth(1)
+        .unwrap()
+        .split("\n```")
+        .next()
+        .unwrap();
+    let retained: Retained = serde_json::from_str(json)?;
+    assert!(
+        retained.source.contains("class \"ex:"),
+        "OWL classes need UML class declarations"
+    );
+    assert!(retained.source.contains("<<owl:Class>>"));
+    assert!(
+        retained.source.contains("n0 --|> n1"),
+        "generalization must point from child to parent"
     );
     assert!(
-        body.contains("Diagram limit"),
-        "layout omissions must be explicit"
+        retained.source.contains("rectangle "),
+        "properties remain independent resources"
     );
+    assert!(!retained.source.contains("*--"));
     Ok(())
 }

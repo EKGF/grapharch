@@ -26,9 +26,11 @@ pub(crate) struct Node {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Edge {
-    pub from:     Node,
-    pub relation: String,
-    pub to:       Node,
+    pub from:      Node,
+    pub relation:  String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub predicate: Option<String>,
+    pub to:        Node,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -63,6 +65,13 @@ impl Diagram {
             );
         }
         for edge in &diagram.edges {
+            if let Some(predicate) = &edge.predicate {
+                ensure!(
+                    predicate.len() <= 2048,
+                    "diagram predicate exceeds IRI budget"
+                );
+                oxrdf::NamedNode::new(predicate.clone())?;
+            }
             ensure!(
                 edge.relation.len() <= 256,
                 "class diagram relation exceeds text budget"

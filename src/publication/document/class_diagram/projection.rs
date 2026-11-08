@@ -23,14 +23,14 @@ impl Projection {
         let mut source = source(&diagram);
         let engine = renderer.version().await?;
         let mut svg = render(renderer, &source).await?;
-        if width(&svg)? > 600.0 {
+        if !diagram.edges.is_empty() {
             let alternative_source = source.replacen(
                 "left to right direction",
                 "top to bottom direction",
                 1,
             );
             let alternative_svg = render(renderer, &alternative_source).await?;
-            if width(&alternative_svg)? < width(&svg)? {
+            if fitting_scale(&alternative_svg)? > fitting_scale(&svg)? {
                 source = alternative_source;
                 svg = alternative_svg;
             }
@@ -41,8 +41,6 @@ impl Projection {
         );
         Ok(Self { diagram, source, engine, svg })
     }
-
-    pub(super) fn width(&self) -> Result<f64> { width(&self.svg) }
 
     pub fn parse(text: &str) -> Result<Self> {
         ensure!(
@@ -80,22 +78,28 @@ async fn render(renderer: &LocalRenderer, source: &str) -> Result<String> {
     );
     Ok(svg)
 }
-fn width(svg: &str) -> Result<f64> {
+fn fitting_scale(svg: &str) -> Result<f64> {
     let document = roxmltree::Document::parse(svg)?;
     let bounds = document
         .root_element()
         .attribute("viewBox")
         .ok_or_else(|| anyhow::anyhow!("PlantUML SVG has no viewBox"))?;
-    let width: f64 = bounds
-        .split_whitespace()
-        .nth(2)
-        .ok_or_else(|| anyhow::anyhow!("PlantUML SVG has no viewBox width"))?
+    let mut dimensions = bounds.split_whitespace().skip(2);
+    let width: f64 = dimensions
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("PlantUML SVG has no width"))?
+        .parse()?;
+    let height: f64 = dimensions
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("PlantUML SVG has no height"))?
         .parse()?;
     ensure!(
-        width.is_finite() && width > 0.0,
-        "invalid PlantUML SVG width"
+        width.is_finite() && width > 0.0 && height.is_finite() && height > 0.0,
+        "invalid PlantUML SVG dimensions"
     );
-    Ok(width)
+    // Prefer the orientation whose text can remain largest inside a balanced
+    // desktop/document figure, rather than optimizing every output for a phone.
+    Ok((900.0 / width).min(600.0 / height))
 }
 
 pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
@@ -107,13 +111,13 @@ pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
 fn source(diagram: &Diagram) -> String {
     let nodes = nodes(diagram);
     let mut identifiers = BTreeMap::new(); // bounded: at most thirty-seven node IDs.
-    let mut output = "@startuml\n!pragma layout smetana\nleft to right \
-                      direction\nhide empty members\nhide circle\nskinparam \
-                      shadowing false\nskinparam backgroundColor \
-                      transparent\nskinparam defaultFontName Arial\nskinparam \
-                      defaultFontSize 14\nskinparam ArrowColor \
-                      #68758A\nskinparam nodesep 30\nskinparam ranksep 45\n"
-        .to_owned();
+    let mut output =
+        "@startuml\n!pragma layout smetana\nallowmixing\nleft to right \
+         direction\nhide empty members\nhide circle\nskinparam shadowing \
+         false\nskinparam backgroundColor transparent\nskinparam \
+         defaultFontName Arial\nskinparam defaultFontSize 14\nskinparam \
+         ArrowColor #68758A\nskinparam nodesep 30\nskinparam ranksep 45\n"
+            .to_owned();
     for (index, node) in nodes.values().enumerate() {
         identifiers.insert(node.id.as_str(), index);
         let color = if node.id == diagram.focus.id {
@@ -126,16 +130,28 @@ fn source(diagram: &Diagram) -> String {
         let label = label(&node.label);
         // Links are opaque node references. Publication routes are resolved
         // after layout; source-supplied links never enter PlantUML syntax.
-        output.push_str(&format!(
-            "rectangle \"<<{}>>\\n{label}\" as n{index} \
-             [[./grapharch-node/n{index}]] {color}\n",
-            text(&node.kind)
-        ));
+        if node.kind == "Class" {
+            output.push_str(&format!(
+                "class \"{label}\" as n{index} <<owl:Class>> \
+                 [[./grapharch-node/n{index}]] {color}\n"
+            ));
+        } else {
+            output.push_str(&format!(
+                "rectangle \"<<{}>>\\n{label}\" as n{index} \
+                 [[./grapharch-node/n{index}]] {color}\n",
+                text(&node.kind)
+            ));
+        }
     }
     for edge in &diagram.edges {
+        let generalization = edge.predicate.as_deref() ==
+            Some("http://www.w3.org/2000/01/rdf-schema#subClassOf") &&
+            edge.from.kind == "Class" &&
+            edge.to.kind == "Class";
         output.push_str(&format!(
-            "n{} --> n{} : {}\n",
+            "n{} {} n{} : {}\n",
             identifiers[edge.from.id.as_str()],
+            if generalization { "--|>" } else { "-->" },
             identifiers[edge.to.id.as_str()],
             label(&edge.relation)
         ));

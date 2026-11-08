@@ -61,6 +61,23 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
         .descendants()
         .filter_map(|node| node.attribute("id").map(str::to_owned))
         .collect(); // bounded: validated 256 KiB SVG.
+    let minimum_width = if links {
+        let width: f64 = document
+            .root_element()
+            .attribute("viewBox")
+            .and_then(|value| value.split_whitespace().nth(2))
+            .ok_or_else(|| {
+                anyhow::anyhow!("class diagram has no viewBox width")
+            })?
+            .parse()?;
+        anyhow::ensure!(
+            width.is_finite() && width > 0.0,
+            "invalid class diagram width"
+        );
+        format!(";min-width:{}px", width * 0.85)
+    } else {
+        String::new()
+    };
     let style = document
         .root_element()
         .attribute("style")
@@ -76,7 +93,8 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
                 &format!("url(#{namespace}{id})"),
             );
     }
-    let responsive = "display:block;max-width:100%;height:auto";
+    let responsive =
+        format!("display:block;max-width:100%;height:auto{minimum_width}");
     if let Some(style) = style {
         result = result.replacen(
             &format!("style=\"{style}\""),

@@ -23,11 +23,13 @@ nonempty diagrams.
 
 ## What the arrows mean
 
-These are UML-style boxes with explicit OWL/RDFS relationship labels, not a
-translation of OWL into closed-world UML fields:
+Named OWL classes use UML class boxes marked `«owl:Class»`. Explicit
+OWL/RDFS labels preserve relationships that have no direct UML equivalent:
 
-- `rdfs:subClassOf`, `owl:equivalentClass`, and `owl:disjointWith` retain their
-  source meaning and direction. No inference is performed.
+- Asserted `rdfs:subClassOf` between named OWL classes uses a UML generalization
+  arrow: its hollow triangle points to the superclass. Other subclass endpoints,
+  `owl:equivalentClass`, and `owl:disjointWith` remain explicitly labeled arrows.
+  No inference is performed.
 - Properties are separate resources with domain and range arrows. Multiple
   domains or ranges apply together, not as alternative choices. A property
   appearing here is not necessarily required on instances of the class.
@@ -39,15 +41,18 @@ translation of OWL into closed-world UML fields:
   validation requirements, ownership, aggregation, or composition.
 
 The diagram is deliberately local. It shows up to five complete relationship groups within
-an 18-fact budget, selected in deterministic IRI order. If both engine orientations
-produce a drawing wider than 600 pixels, whole groups are removed from the end
-until the figure fits that width. The limit notice identifies these omissions.
-Domain/range facts for a
+an 18-fact budget, selected in deterministic IRI order. Domain/range facts for a
 property and facts describing a direct restriction stay together. An oversized
 group is omitted whole, with a visible limit notice; it is never cut into a
 misleading partial assertion. Full source assertions remain in the
 publication; nested expressions beyond the direct neighborhood are not expanded
 recursively. Isolated classes still receive a class box.
+
+Both engine orientations are compared against a balanced 900-by-600 figure area.
+The orientation that keeps labels largest is retained. Layout does not remove
+assertions to fit a phone. On narrow screens, the diagram stays readable inside a
+keyboard-focusable horizontal scroll region; the relationship list also remains
+available. PDF figures retain a physical height limit.
 
 ## Reproducible publication
 

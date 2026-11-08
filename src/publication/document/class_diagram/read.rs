@@ -98,8 +98,9 @@ BIND(?s AS ?group)
             _ => anyhow::bail!("unsupported diagram endpoint"),
         };
         groups.entry(group).or_default().push(Edge {
-            from:     nodes[from].clone(),
-            relation: if matches!(
+            predicate: Some(predicate.as_str().into()),
+            from:      nodes[from].clone(),
+            relation:  if matches!(
                 predicate.as_str().strip_prefix(OWL),
                 Some("unionOf" | "intersectionOf")
             ) {
@@ -107,7 +108,7 @@ BIND(?s AS ?group)
             } else {
                 compact(predicate.as_str(), prefixes)
             },
-            to:       target,
+            to:        target,
         });
     }
     let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
@@ -123,20 +124,8 @@ BIND(?s AS ?group)
     body.push_str("\n\n**Class neighborhood**\n\n");
     body.push_str(LEGEND);
     body.push_str("\n\n");
-    let mut projection =
+    let projection =
         Projection::generate(Diagram { focus, edges }, renderer).await?;
-    while projection.width()? > 600.0 && !group_ends.is_empty() {
-        // Retry at most five times, removing whole groups rather than
-        // individual assertions. The retained model, drawing and omission
-        // notice agree.
-        group_ends.pop();
-        let mut diagram = projection.diagram;
-        diagram
-            .edges
-            .truncate(group_ends.last().copied().unwrap_or(0));
-        projection = Projection::generate(diagram, renderer).await?;
-        overflow = true;
-    }
     if projection.diagram.edges.is_empty() && !overflow {
         body.push_str(
             "No direct class, domain or range relationships are asserted in \
@@ -147,9 +136,9 @@ BIND(?s AS ?group)
     if overflow {
         body.push_str(
             "**Diagram limit:** showing up to five complete relationship \
-             groups within an 18-fact and 600-pixel layout budget, selected \
-             in deterministic IRI order. Omitted groups remain in the \
-             published source graph; this view is not exhaustive.\n\n",
+             groups within an 18-fact budget, selected in deterministic IRI \
+             order. Omitted groups remain in the published source graph; this \
+             view is not exhaustive.\n\n",
         );
     }
     Ok(())

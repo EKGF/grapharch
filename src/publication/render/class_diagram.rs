@@ -63,7 +63,8 @@ pub(super) fn html(source: &str) -> Result<String> {
         "<figure class=\"owl-class-diagram\" \
          style=\"width:fit-content;max-width:100%;margin:1.25rem auto\"><div \
          tabindex=\"0\" role=\"region\" aria-label=\"Class relationship \
-         diagram\" style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
+         diagram; scroll horizontally when needed\" \
+         style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
          border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: \
          {}</figcaption><details><summary>Relationships as text</summary><ul>",
         svg::draw(&projection, true)?,
@@ -192,9 +193,10 @@ mod tests {
             diagram: Diagram {
                 focus: node.clone(),
                 edges: vec![Edge {
-                    from:     node.clone(),
-                    relation: "rdfs:subClassOf".into(),
-                    to:       node,
+                    predicate: None,
+                    from:      node.clone(),
+                    relation:  "rdfs:subClassOf".into(),
+                    to:        node,
                 }],
             },
             source:  "@startuml\n@enduml\n".into(),
@@ -213,6 +215,13 @@ mod tests {
         assert!(output.contains("calc.min(size.width * 1.0, 210pt)"));
         assert!(output.contains("#link(label(\"class\"))"));
         assert!(!output.contains("grapharch-node"));
+    }
+    #[test]
+    fn phone_diagrams_keep_readable_intrinsic_width_inside_a_scroll_region() {
+        let output = html(&retained("#class")).unwrap();
+        assert!(output.contains("min-width:340px"));
+        assert!(output.contains("overflow-x:auto"));
+        assert!(output.contains("tabindex=\"0\""));
     }
     #[test]
     fn retained_svg_links_reject_executable_destinations() {

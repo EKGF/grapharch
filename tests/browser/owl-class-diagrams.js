@@ -15,17 +15,20 @@ async (page) => {
         title: svg.getAttribute('aria-label'),
         width: svg.getBoundingClientRect().width,
         available: region.clientWidth,
+        scrollWidth: region.scrollWidth,
+        scrollable: getComputedStyle(region).overflowX === "auto" && region.tabIndex === 0,
         smallestText: Math.min(...texts.map(text => text.getBoundingClientRect().height)),
         links: [...svg.querySelectorAll('a[href]')].map(link => link.getAttribute('href')),
       };
     }));
     for (const drawing of dimensions) {
-      if (!drawing.title || drawing.width > drawing.available + 1) throw new Error(`Clipped diagram: ${drawing.title}`);
-      if (drawing.smallestText < 8) throw new Error(`Unreadable labels at ${width}px: ${drawing.title} (${drawing.smallestText})`);
+      if (!drawing.title || drawing.width > drawing.scrollWidth + 1 || (drawing.width > drawing.available + 1 && !drawing.scrollable)) throw new Error(`Clipped diagram: ${drawing.title}`);
+      if (drawing.smallestText < 10) throw new Error(`Unreadable labels at ${width}px: ${drawing.title} (${drawing.smallestText})`);
       for (const link of drawing.links) {
         if (link.startsWith('#') && !(await page.locator(`[id="${link.slice(1)}"]`).count())) throw new Error(`Broken class link: ${link}`);
       }
     }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('Diagram causes page overflow');
     results.push({viewport: width, diagrams: dimensions.length, minimumTextHeight: Math.min(...dimensions.map(item => item.smallestText))});
   }
   for (const scheme of ['dark', 'light']) {
