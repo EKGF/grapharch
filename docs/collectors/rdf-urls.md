@@ -47,7 +47,11 @@ The example URL serves the publisher's RDF/XML document. `ga:source` is a URL
 **string literal**; `ga:format` explicitly supplies the RDF media type. Supported
 formats include `text/turtle`, `application/rdf+xml`, `application/n-triples`,
 `application/n-quads`, `application/trig`, `text/n3` and `application/ld+json`.
-The response's content type must identify the same RDF format. Malformed RDF,
+An RDF-specific response content type must identify the same format. Neutral
+`text/plain` and `application/octet-stream` responses are parsed using the
+explicitly configured RDF format; this supports immutable repository downloads
+without guessing their syntax. HTML and conflicting RDF media types are rejected.
+Malformed RDF,
 unsupported formats and responses above the 8 MiB source limit fail explicitly.
 Relative IRIs resolve against the fetched URL.
 

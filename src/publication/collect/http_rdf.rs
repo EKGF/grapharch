@@ -42,7 +42,7 @@ fn checked_url(value: &str) -> Result<url::Url> {
 }
 
 impl RdfUrl {
-    /// Bind an RDF media type to one source URL; content type must agree.
+    /// Bind the parser format; an RDF-specific transport type must agree.
     pub fn new(
         project: &str,
         processor: &str,
@@ -104,7 +104,11 @@ impl Collector for RdfUrl {
             })?
             .to_str()?;
         ensure!(
-            RdfFormat::from_media_type(mime) == Some(self.format),
+            RdfFormat::from_media_type(mime) == Some(self.format) ||
+                matches!(
+                    mime.split(';').next().unwrap_or(mime).trim(),
+                    "text/plain" | "application/octet-stream"
+                ),
             "RDF URL Content-Type disagrees with configured format"
         );
         ensure!(
