@@ -234,10 +234,7 @@ fn source(diagram: &Diagram) -> String {
         if shorthand.consumed.contains(&index) {
             continue;
         }
-        let generalization = edge.predicate.as_deref() ==
-            Some("http://www.w3.org/2000/01/rdf-schema#subClassOf") &&
-            edge.from.kind == "Class" &&
-            edge.to.kind == "Class";
+        let generalization = super::layout::is_generalization(edge);
         output.push_str(&format!(
             "n{} {} n{}{}\n",
             identifiers[edge.from.id.as_str()],

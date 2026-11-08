@@ -100,3 +100,25 @@ async fn cyclic_inheritance_keeps_both_arrows_without_impossible_vertical_hints(
     assert!(retained.svg.contains("data-link-type=\"extension\""));
     Ok(())
 }
+
+#[tokio::test]
+async fn named_external_superclasses_keep_vertical_inheritance_without_invented_types()
+-> Result<()> {
+    let retained =
+        drawing("ex:Core a owl:Class ; rdfs:subClassOf ex:External .").await?;
+    let svg = roxmltree::Document::parse(&retained.svg)?;
+    let core = bounds(&svg, "Core");
+    let parent = bounds(&svg, "External");
+    assert!(
+        parent[1] + parent[3] < core[1],
+        "External superclass must be above Core: {parent:?} / {core:?}"
+    );
+    assert!(retained.source.contains("-up-|>"));
+    assert!(!retained.source.contains("subClassOf"));
+    assert!(
+        retained.source.contains("<<Resource>>"),
+        "Missing source typing must not be replaced by an invented owl:Class \
+         assertion"
+    );
+    Ok(())
+}

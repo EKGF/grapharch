@@ -57,8 +57,8 @@ impl<'a> Layout<'a> {
     }
 }
 
-fn is_generalization(edge: &Edge) -> bool {
+pub(super) fn is_generalization(edge: &Edge) -> bool {
     edge.predicate.as_deref() == Some(SUBCLASS) &&
-        edge.from.kind == "Class" &&
-        edge.to.kind == "Class"
+        matches!(edge.from.kind.as_str(), "Class" | "Resource") &&
+        matches!(edge.to.kind.as_str(), "Class" | "Resource")
 }
