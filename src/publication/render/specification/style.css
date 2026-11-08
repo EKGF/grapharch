@@ -84,3 +84,13 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 /* Predicate identifiers get intrinsic space, capped so long IRIs still wrap. */
 .rdf-properties>thead>tr>th:first-child,.rdf-properties>tbody>tr>td:first-child{width:1%;min-width:calc(min(20ch,40vw) + 1.6rem + 1px)}
 .rdf-properties>tbody>tr>td:first-child>code{display:inline-block;max-inline-size:min(24ch,35vw);overflow-wrap:anywhere}
+
+/* Numbered page sections use a number/label grid. Library routes are whole
+   labels, never cells in that grid's narrow numbering column. */
+.toc .family-navigation{margin:0 0 1.5rem;padding:0 0 1rem;border-top:0;border-bottom:1px solid #b9c8d5}
+.toc .family-navigation a{display:block;padding:.35rem .5rem;line-height:1.4;overflow-wrap:normal;word-break:normal}
+.family-navigation [data-family-tree]{max-height:45vh;overflow:auto;padding:.25rem .5rem .25rem 1rem}
+.family-navigation a[aria-current=page]{background:#e8eef6;border-radius:.25rem;color:var(--authority-color);font-weight:bold}
+.family-navigation>p{margin:.75rem 0 .25rem}.toc .family-navigation li{margin:.15rem 0}
+.page-outline-navigation>h2{margin:0 0 .5rem}.page-outline-title{font-size:.9rem;font-weight:bold;color:var(--ink);margin:0 0 1rem}
+.page-outline-navigation>ol>li{margin-top:1rem}.page-outline-navigation>ol>li>a{font-weight:bold}

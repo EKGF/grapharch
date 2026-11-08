@@ -103,6 +103,15 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
     assert!(html.contains("Loading ontology suite navigation"));
     assert!(html.contains("Ontology suite navigation unavailable"));
     assert!(!html.contains("Browse this family"));
+    let library = html.find("class=\"family-navigation\"").unwrap();
+    let outline = html
+        .find("class=\"page-outline-navigation\"")
+        .expect("distinct current-page outline");
+    assert!(
+        library < outline,
+        "library switcher belongs above the page outline"
+    );
+    assert!(html.contains("aria-label=\"On this page\""));
     let search = tokio::fs::read_to_string(
         output.path().join("reference/search-index.json"),
     )

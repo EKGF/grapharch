@@ -474,6 +474,23 @@ pub(in crate::publication::render) async fn write_catalog(
             } else {
                 ""
             };
+            let sidebar_contents = if family_html.is_empty() {
+                format!("{}{contents}", include_str!("navigation.html"))
+            } else {
+                format!(
+                    "{}{family_html}<div class=\"page-outline-navigation\" \
+                     role=\"region\" aria-label=\"On this page\"><h2>On this \
+                     page</h2><p \
+                     class=\"page-outline-title\">{}</p>{contents}</div>",
+                    include_str!("navigation.html"),
+                    html_escape(&p.title)
+                )
+            };
+            let toc_title = if family_html.is_empty() {
+                toc_title
+            } else {
+                "Navigation"
+            };
             next.write_all(
                 format!(
                     "<!doctype html><html lang=\"en\"><head><meta \
@@ -493,15 +510,13 @@ pub(in crate::publication::render) async fn write_catalog(
                      aria-labelledby=\"toc-title\" \
                      data-search-index=\"{search_index}\"><h2 \
                      id=\"toc-title\">{toc_title}</\
-                     h2>{bookshelf_link}{}{}{family_html}</nav>",
+                     h2>{bookshelf_link}{sidebar_contents}</nav>",
                     html_escape(plan.revision.as_str()),
                     html_escape(&p.title),
                     html_escape(&plan.title),
                     header.color,
                     html_escape(&plan.title),
-                    html_escape(&p.title),
-                    include_str!("navigation.html"),
-                    contents
+                    html_escape(&p.title)
                 )
                 .as_bytes(),
             )

@@ -105,12 +105,15 @@
   }};
   addBranches(toc);
   const reveal = () => {
-    const candidates = [...toc.querySelectorAll('a[href]')].filter(a => a.pathname === location.pathname);
-    const current = candidates.find(a => location.hash && a.hash === location.hash) || candidates.find(a => !a.hash);
     toc.querySelectorAll('[aria-current]').forEach(a => a.removeAttribute('aria-current'));
-    if (!current) return;
-    current.setAttribute('aria-current', location.hash ? 'location' : 'page');
-    for (const branch of branches) if (branch.children.contains(current) || branch.li === current.closest('li')) branch.set(true);
+    // A section hash changes the local location, not the selected library page.
+    const family = toc.querySelector('.family-navigation');
+    const page = family && [...family.querySelectorAll('a[href]')].find(a => a.pathname === location.pathname && !a.hash);
+    if (page) page.setAttribute('aria-current', 'page');
+    const candidates = [...toc.querySelectorAll('a[href]')].filter(a => !a.closest('.family-navigation') && a.pathname === location.pathname);
+    const current = candidates.find(a => location.hash && a.hash === location.hash) || candidates.find(a => !a.hash);
+    if (current) current.setAttribute('aria-current', location.hash ? 'location' : 'page');
+    for (const branch of branches) if ((current && (branch.children.contains(current) || branch.li === current.closest('li'))) || (page && branch.children.contains(page))) branch.set(true);
   };
   toc.querySelector('[data-toc-collapse]')?.addEventListener('click', () => { branches.forEach(b => b.set(false)); });
   toc.querySelector('[data-toc-expand]')?.addEventListener('click', () => { branches.forEach(b => b.set(true)); });
