@@ -172,6 +172,7 @@ async fn annotation_and_generic_properties_use_declared_domain_to_range_associat
 -> Result<()> {
     for declaration in [
         "a owl:AnnotationProperty ;",
+        "a owl:ObjectProperty, owl:DatatypeProperty ;",
         "a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> ;",
         "",
     ] {

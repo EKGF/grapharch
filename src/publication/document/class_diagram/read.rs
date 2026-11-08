@@ -168,6 +168,7 @@ async fn node(
             )
             .await?;
         let mut kind = "Resource";
+        let mut property_types = 0_u8;
         let mut count = 0;
         while let Some(row) = types.next().await? {
             count += 1;
@@ -182,16 +183,13 @@ async fn node(
                 match value.as_str().strip_prefix(OWL) {
                     Some("Class") => kind = "Class",
                     Some("ObjectProperty") => {
-                        kind = "Object property";
-                        break;
+                        property_types |= 1;
                     },
                     Some("AnnotationProperty") => {
-                        kind = "Annotation property";
-                        break;
+                        property_types |= 4;
                     },
                     Some("DatatypeProperty") => {
-                        kind = "Datatype property";
-                        break;
+                        property_types |= 2;
                     },
                     Some("Restriction") => {
                         kind = "OWL restriction";
@@ -201,7 +199,15 @@ async fn node(
                 }
             }
         }
-        kind
+        match property_types {
+            0 => kind,
+            1 => "Object property",
+            2 => "Datatype property",
+            4 => "Annotation property",
+            // Conflicting specialized declarations never imply datatype-only
+            // presentation merely because one type was read first.
+            _ => "RDF property",
+        }
     };
     let label = if anonymous {
         "Anonymous OWL expression".to_owned()
