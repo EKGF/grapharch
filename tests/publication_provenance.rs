@@ -144,6 +144,22 @@ async fn provenance_is_a_linked_closing_appendix_from_restored_kg() -> Result<()
             typst.contains("Earlier Committer")
     );
     assert!(typst.contains(env!("GRAPHARCH_BUILD_LABEL")));
+    if !env!("GRAPHARCH_BUILD_RUN_URL").is_empty() {
+        for value in [
+            env!("GRAPHARCH_BUILD_NUMBER"),
+            env!("GRAPHARCH_BUILD_RUN_URL"),
+            env!("GRAPHARCH_GENERATOR_REVISION"),
+        ] {
+            assert!(
+                html.contains(value),
+                "HTML must retain the producer identity"
+            );
+            assert!(
+                typst.contains(value),
+                "PDF source must retain the same producer identity"
+            );
+        }
+    }
     Ok(())
 }
 
