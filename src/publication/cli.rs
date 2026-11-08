@@ -162,7 +162,7 @@ pub enum PublicationCommand {
         #[arg(long)]
         json:             bool,
         #[command(flatten)]
-        backend:          BuildStoreOptions,
+        backend:          Box<BuildStoreOptions>,
         /// YAML list of stable collector identities and endpoint graph
         /// queries.
         #[arg(long,conflicts_with_all=["source","local_repository","github","git_repository"])]
