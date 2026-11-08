@@ -68,8 +68,8 @@ fn scan(bytes: &[u8], quote: &mut Option<(u8, bool)>) {
                 // delimiters. A comparison operator therefore never consumes
                 // later tokens.
                 let rest = &bytes[i + 1..];
-                if let Some(end) = rest.iter().position(|b| *b == b'>') {
-                    if rest[..end].iter().all(|b| {
+                if let Some(end) = rest.iter().position(|b| *b == b'>') &&
+                    rest[..end].iter().all(|b| {
                         !b.is_ascii_whitespace() &&
                             !matches!(
                                 b,
@@ -82,10 +82,10 @@ fn scan(bytes: &[u8], quote: &mut Option<(u8, bool)>) {
                                     b'`' |
                                     b'\\'
                             )
-                    }) {
-                        i += end + 2;
-                        continue;
-                    }
+                    })
+                {
+                    i += end + 2;
+                    continue;
                 }
                 i += 1;
             },
