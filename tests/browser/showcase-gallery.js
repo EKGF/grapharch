@@ -35,6 +35,15 @@ async (page) => {
     if (!(await mkdocs.isVisible())) throw new Error('MkDocs HTML publication is hidden');
     await root.getByRole('button', { name: 'Clear filters' }).click();
   }
+  const fibo = root.locator('.showcase-card[data-showcase="urn:grapharch:showcase:fibo-be"]');
+  if (await fibo.count()) {
+    await input.fill('FIBO Business Entities');
+    if (await root.locator('.showcase-card:visible').count() !== 1 || !(await fibo.isVisible())) throw new Error('FIBO search does not find the complete BE example');
+    const outputs = (await fibo.getAttribute('data-output')).split('|');
+    for (const output of ['HTML', 'PDF', 'KG']) if (!outputs.includes(output)) throw new Error(`FIBO ${output} output missing`);
+    if (!(await fibo.textContent()).includes('48')) throw new Error('FIBO source scope missing');
+    await root.getByRole('button', { name: 'Clear filters' }).click();
+  }
   const outputs = await root.locator('a[data-artifact]').count();
   if (outputs < count * 3) throw new Error('Publication downloads missing');
   await page.setViewportSize({ width: 390, height: 844 });

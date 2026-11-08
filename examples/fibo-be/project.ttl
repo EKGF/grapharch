@@ -1,0 +1,88 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix gov: <https://ekgf.org/ontology/artifact-governance#> .
+@prefix pub: <https://ekgf.org/ontology/artifact-publication#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <urn:fibo-be:> .
+
+# Publication arrangement only. No upstream ontology content is copied here.
+ex:project a ga:Project; dct:title "FIBO Business Entities"; ga:target ex:specification, ex:pdf;
+ ga:repository <https://github.com/edmcouncil/fibo> .
+ex:scope a ga:Scope .
+ex:profile a ga:Profile; pub:publishesFamily ex:family .
+ex:family a gov:Family; rdfs:label "FIBO Business Entities"; ga:collectionTerm "domain" .
+
+ex:specification a ga:Target; dct:title "FIBO Business Entities";
+ dct:description "The complete Business Entities (BE) directory: legal and functional entities, corporations, ownership and control, partnerships, private limited companies, sole proprietorships, trusts, government entities and regional reference individuals.";
+ rdfs:comment "Unofficial GraphArch documentation preview of all 48 BE RDF/XML ontologies from EDM Council FIBO commit 33a92cd34285d532c158da97bb42add089f135d3. This includes domain and module metadata, aggregation ontologies and regional individuals. The 43 imports outside BE (FIBO Foundations, OMG Commons and LCC) remain external references; no implicit import closure or reasoning is performed. This is not the whole FIBO ontology or an adopted replacement specification. Original license notices and immutable source URLs with content digests are retained.";
+ dct:source <https://github.com/edmcouncil/fibo/tree/33a92cd34285d532c158da97bb42add089f135d3/BE>;
+ ga:scope ex:scope; ga:profile ex:profile; ga:renderer "specification-pages"; ga:destination "specification";
+ ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
+ ga:publicationDate "2026-11-08"^^<http://www.w3.org/2001/XMLSchema#date>;
+ ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/fibo-be/specification/>;
+ ga:latestVersion <https://spec.edmcouncil.org/fibo/>; ga:license <https://opensource.org/licenses/MIT> .
+
+ex:pdf a ga:Target; dct:title "FIBO Business Entities";
+ dct:description "The complete Business Entities (BE) directory: legal and functional entities, corporations, ownership and control, partnerships, private limited companies, sole proprietorships, trusts, government entities and regional reference individuals.";
+ rdfs:comment "Unofficial GraphArch documentation preview of all 48 BE RDF/XML ontologies from EDM Council FIBO commit 33a92cd34285d532c158da97bb42add089f135d3. This includes domain and module metadata, aggregation ontologies and regional individuals. The 43 imports outside BE (FIBO Foundations, OMG Commons and LCC) remain external references; no implicit import closure or reasoning is performed. This is not the whole FIBO ontology or an adopted replacement specification. Original license notices and immutable source URLs with content digests are retained.";
+ dct:source <https://github.com/edmcouncil/fibo/tree/33a92cd34285d532c158da97bb42add089f135d3/BE>;
+ ga:scope ex:scope; ga:profile ex:profile; ga:renderer "specification"; ga:destination "pdf";
+ ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
+ ga:publicationDate "2026-11-08"^^<http://www.w3.org/2001/XMLSchema#date>;
+ ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/fibo-be/specification/>;
+ ga:latestVersion <https://spec.edmcouncil.org/fibo/>; ga:license <https://opensource.org/licenses/MIT> .
+
+ex:publisher a gov:Authority; rdfs:label "GraphArch showcases"; ga:shortName "GraphArch";
+ ga:accentColor "#2b5f9f"; ga:url "https://ekgf.github.io/grapharch/" .
+
+# Exact upstream ontology identities and namespace prefixes.
+<https://spec.edmcouncil.org/fibo/ontology/BE/AllBE-Europe/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-beeu-all"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/AllBE-Europe/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/AllBE-NorthAmerica/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-bena-all"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/AllBE-NorthAmerica/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/AllBE-ReferenceIndividuals/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-beref-all"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/AllBE-ReferenceIndividuals/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/AllBE/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-all"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/AllBE/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/Corporations/Corporations/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-corp-corp"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/Corporations/Corporations/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/Corporations/MetadataBECorporations/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-corp-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/Corporations/MetadataBECorporations/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-fct-fct"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/MetadataBEFunctionalEntities/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-fct-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/MetadataBEFunctionalEntities/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/Publishers/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-fct-pub"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/Publishers/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/CentralAsiaGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-casj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/CentralAsiaGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/EasternAsiaGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-easj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/EasternAsiaGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/SoutheasternAsiaGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-seasj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/SoutheasternAsiaGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/SouthernAsiaGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-sasj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/SouthernAsiaGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/WesternAsiaGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-wasj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/AsianJurisdiction/WesternAsiaGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/EUGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-euj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/EUGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/EasternEuropeGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-eeuj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/EasternEuropeGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/NorthernEuropeGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-neuj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/NorthernEuropeGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/SouthernEuropeGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-seuj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/SouthernEuropeGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/UKGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-ukj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/UKGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/WesternEuropeGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-weuj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/EuropeanJurisdiction/WesternEuropeGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/GovernmentEntities/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-ge"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/GovernmentEntities/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/LatinAmericanJurisdiction/CentralAmericanGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-ctlaj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/LatinAmericanJurisdiction/CentralAmericanGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/LatinAmericanJurisdiction/SouthAmericanGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-saj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/LatinAmericanJurisdiction/SouthAmericanGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/MetadataBEGovernmentEntities/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/MetadataBEGovernmentEntities/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/CAGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-caj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/CAGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/CaribbeanGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-cbj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/CaribbeanGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/MXGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-mxj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/MXGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/USGovernmentEntitiesAndJurisdictions/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ge-usj"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/GovernmentEntities/NorthAmericanJurisdiction/USGovernmentEntitiesAndJurisdictions/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/CorporateBodies/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-le-cb"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/CorporateBodies/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/FormalBusinessOrganizations/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-le-fbo"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/FormalBusinessOrganizations/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LEIEntities/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-le-lei"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LEIEntities/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LegalPersons/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-le-lp"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LegalPersons/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/MetadataBELegalEntities/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-le-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/MetadataBELegalEntities/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/MetadataBE/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/MetadataBE/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/ControlParties/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-oac-cpty"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/ControlParties/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateControl/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-oac-cctl"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateControl/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-oac-cown"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-oac-exec"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/MetadataBEOwnershipAndControl/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-oac-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/MetadataBEOwnershipAndControl/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/OwnershipParties/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-oac-opty"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/OwnershipParties/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/Partnerships/MetadataBEPartnerships/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ptr-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/Partnerships/MetadataBEPartnerships/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/Partnerships/Partnerships/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-ptr-ptr"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/Partnerships/Partnerships/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/PrivateLimitedCompanies/MetadataBEPrivateLimitedCompanies/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-plc-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/PrivateLimitedCompanies/MetadataBEPrivateLimitedCompanies/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/PrivateLimitedCompanies/PrivateLimitedCompanies/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-plc-plc"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/PrivateLimitedCompanies/PrivateLimitedCompanies/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/SoleProprietorships/MetadataBESoleProprietorships/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-sps-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/SoleProprietorships/MetadataBESoleProprietorships/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/SoleProprietorships/SoleProprietorships/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-sps-sps"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/SoleProprietorships/SoleProprietorships/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/MetadataBETrusts/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-tr-mod"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/MetadataBETrusts/" ] .
+<https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/> gov:inFamily ex:family; sh:declare [ sh:prefix "fibo-be-tr-tr"; sh:namespace "https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/" ] .
+

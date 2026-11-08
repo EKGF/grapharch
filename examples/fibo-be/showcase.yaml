@@ -1,0 +1,106 @@
+# Complete official BE/ RDF/XML inventory at one immutable Git revision.
+# External owl:imports remain references; they are not fetched implicitly.
+definitions: project.ttl
+project: urn:fibo-be:project
+target: urn:fibo-be:specification
+additional_targets:
+  - urn:fibo-be:pdf
+source:
+  kind: rdf-urls
+  documents:
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/AllBE-Europe.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/AllBE-NorthAmerica.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/AllBE-ReferenceIndividuals.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/AllBE.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Corporations/Corporations.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Corporations/MetadataBECorporations.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/FunctionalEntities/FunctionalEntities.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/FunctionalEntities/MetadataBEFunctionalEntities.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/FunctionalEntities/Publishers.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/AsianJurisdiction/CentralAsiaGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/AsianJurisdiction/EasternAsiaGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/AsianJurisdiction/SoutheasternAsiaGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/AsianJurisdiction/SouthernAsiaGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/AsianJurisdiction/WesternAsiaGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/EuropeanJurisdiction/EUGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/EuropeanJurisdiction/EasternEuropeGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/EuropeanJurisdiction/NorthernEuropeGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/EuropeanJurisdiction/SouthernEuropeGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/EuropeanJurisdiction/UKGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/EuropeanJurisdiction/WesternEuropeGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/GovernmentEntities.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/LatinAmericanJurisdiction/CentralAmericanGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/LatinAmericanJurisdiction/SouthAmericanGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/MetadataBEGovernmentEntities.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/NorthAmericanJurisdiction/CAGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/NorthAmericanJurisdiction/CaribbeanGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/NorthAmericanJurisdiction/MXGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/GovernmentEntities/NorthAmericanJurisdiction/USGovernmentEntitiesAndJurisdictions.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/LegalEntities/CorporateBodies.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/LegalEntities/FormalBusinessOrganizations.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/LegalEntities/LEIEntities.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/LegalEntities/LegalPersons.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/LegalEntities/MetadataBELegalEntities.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/MetadataBE.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/ControlParties.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/CorporateControl.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/CorporateOwnership.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/Executives.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/MetadataBEOwnershipAndControl.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/OwnershipParties.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Partnerships/MetadataBEPartnerships.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Partnerships/Partnerships.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/PrivateLimitedCompanies/MetadataBEPrivateLimitedCompanies.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/PrivateLimitedCompanies/PrivateLimitedCompanies.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/SoleProprietorships/MetadataBESoleProprietorships.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/SoleProprietorships/SoleProprietorships.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Trusts/MetadataBETrusts.rdf
+      media_type: application/rdf+xml
+    - url: https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Trusts/Trusts.rdf
+      media_type: application/rdf+xml

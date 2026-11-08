@@ -32,6 +32,14 @@ individual specification page for each ontology, with a combined PDF and exporte
 KG. Unlike the Git repository examples, its source revisions are identified by
 URL and content digest.
 
+The **FIBO Business Entities** showcase includes all 48 RDF/XML documents in the
+official BE module at an immutable repository revision: legal entities,
+corporations, ownership, partnerships, trusts and regional reference individuals.
+Its source-owned module hierarchy organizes the HTML pages and combined PDF.
+Imports outside BE remain explicit external references. See the
+[inventory, license and scope](https://github.com/EKGF/grapharch/tree/main/examples/fibo-be)
+for the exact revision and boundaries.
+
 The **Independent MkDocs documentation** showcase imports the original
 [MkDocs Bootswatch Themes](https://github.com/mkdocs/mkdocs-bootswatch) sources at
 an immutable Git revision, including twenty screenshots and the original BSD

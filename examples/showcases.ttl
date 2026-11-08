@@ -1,7 +1,7 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
-<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch, ex:fibo-be .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
     ga:order 1 ; ga:kind "authored" ; ga:source "showcase/project.ttl" ;
@@ -70,3 +70,13 @@ ex:mkdocs-bootswatch a ga:Showcase ; ga:slug "mkdocs-bootswatch" ;
     ga:showcaseUseCase "Documentation site" ;
     dct:source <https://github.com/mkdocs/mkdocs-bootswatch> ;
     dct:rights "MkDocs Bootswatch Themes by Tom Christie and Dougal Matthews, BSD 2-Clause license. This is a GraphArch rendering of the original documentation, not a reproduction of its Bootstrap theme runtime." .
+
+ex:fibo-be a ga:Showcase; ga:slug "fibo-be"; dct:title "FIBO Business Entities";
+ dct:description "The complete 48-document FIBO BE domain, including legal entities, ownership, corporations, governments and regional reference individuals. A pinned official revision becomes a paginated ontology reference, UML class diagrams and PDF; imports outside BE remain explicit external references.";
+ ga:order 12; ga:kind "ontology-family"; ga:source "fibo-be/showcase.yaml";
+ ga:previewPath "specification/index.html"; ga:pdfPath "pdf/document.pdf";
+ ga:showcaseInput "OWL", "RDF/XML";
+ ga:showcaseCapability "Diagrams", "Ontology families", "Cross-references";
+ ga:showcaseUseCase "Ontology reference", "Business vocabulary";
+ dct:source <https://github.com/edmcouncil/fibo/tree/33a92cd34285d532c158da97bb42add089f135d3/BE>;
+ dct:rights "FIBO Business Entities by EDM Council and its contributors, MIT license. The source ontologies retain their EDM Council and OMG copyright notices. This unofficial GraphArch preview records immutable source URLs and content digests." .

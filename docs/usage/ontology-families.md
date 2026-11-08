@@ -235,7 +235,11 @@ These projects are examples and test cases for the general pipeline:
   repository and fail if it cannot be fetched.
 - **DPROD:** an individual-ontology showcase demonstrating a specification,
   companion website, and PDF. It is not a required vocabulary or input.
-- **FIBO:** the large-family and native-module benchmark reads an existing clone;
+- **FIBO Business Entities:** the gallery publishes the complete 48-document BE
+  module from immutable official source URLs, with its native module hierarchy,
+  individual HTML pages, combined PDF and retained KG. External imports remain
+  references; see `examples/fibo-be` for the exact inventory and license.
+- **Full FIBO benchmark:** the large-family and native-module benchmark reads an existing clone;
   see `examples/fibo` for source manifests, setup, and timing instructions.
 
 The same pipeline works with other organizations, repositories, and ontologies.

@@ -4,6 +4,9 @@ mod definitions;
 #[path = "support/family_repository.rs"]
 mod family_repository;
 
+#[path = "support/family_showcase.rs"]
+mod family_showcase;
+
 #[path = "support/dprod_repository.rs"]
 mod dprod_repository;
 
@@ -68,69 +71,19 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         family.join("showcase.yaml"),
         serde_yaml::to_string(&config)?,
     )?;
-    // The published Commons configuration remains live HTTP. This transport-
-    // independent gallery acceptance uses a tiny synthetic repository; the
-    // dedicated Commons test covers HTTP locally, and Docs CI verifies OMG.
-    let commons = source.path().join("examples/omg-commons");
-    let commons_sources = tempfile::tempdir()?;
-    let corpus = String::from(
-        r#"
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix dct: <http://purl.org/dc/terms/> .
-<https://www.omg.org/spec/Commons/Classifiers/Fixture> a owl:Class ; rdfs:label "Synthetic fixture"@en ; dct:description "An offline test resource."@en ; rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Classifiers/> .
-"#,
-    );
-    // bounded: the fixed authored showcase registry has 24 ontology members.
-    let mut members = std::collections::BTreeSet::new();
-    let definitions = std::fs::read(commons.join("project.ttl"))?;
-    for quad in oxrdfio::RdfParser::from_format(oxrdfio::RdfFormat::Turtle)
-        .for_slice(&definitions)
-    {
-        let quad = quad?;
-        if quad.predicate.as_str() ==
-            "https://ekgf.org/ontology/artifact-governance#inFamily" &&
-            quad.object.to_string() == "<urn:omg-commons:family>"
-        {
-            members.insert(quad.subject.to_string());
-        }
-    }
-    assert!(!members.is_empty());
-    for (index, member) in members.iter().enumerate() {
-        let mut body = if member ==
-            "<https://www.omg.org/spec/Commons/Classifiers/>"
-        {
-            corpus.clone()
-        } else {
-            String::from("@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix dct: <http://purl.org/dc/terms/> .\n")
-        };
-        body.push_str(&format!(
-            "{member} a owl:Ontology ; rdfs:label \"Synthetic offline \
-             ontology {index}\"@en ; dct:description \"Gallery fixture, not \
-             copied upstream content.\"@en .\n"
-        ));
-        std::fs::write(
-            commons_sources.path().join(format!("ontology-{index}.ttl")),
-            body,
-        )?;
-    }
-    let commons_repository = tempfile::tempdir()?;
-    let (url, commit) = family_repository::bare_copy(
-        commons_sources.path(),
-        commons_repository.path(),
-    )?;
-    let mut config: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string(commons.join("showcase.yaml"))?,
-    )?;
-    let transport = config["source"].as_mapping_mut().expect("source mapping");
-    transport.clear();
-    transport.insert("kind".into(), "git".into());
-    transport.insert("url".into(), url.into());
-    transport.insert("ref".into(), commit.into());
-    std::fs::write(
-        commons.join("showcase.yaml"),
-        serde_yaml::to_string(&config)?,
-    )?;
+    // Live HTTP corpora use explicit synthetic local transports in this offline
+    // gallery test; their dedicated acceptance tests exercise original sources.
+    let commons_repository = family_showcase::configure(
+        &source.path().join("examples/omg-commons"),
+        "urn:omg-commons:family",
+        "https://www.omg.org/spec/Commons/Classifiers/",
+    )
+    .await?;
+    let fibo_repository = family_showcase::configure(
+        &source.path().join("examples/fibo-be"),
+        "urn:fibo-be:family",
+        "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LegalPersons/",
+    ).await?;
     let dprod_repository = tempfile::tempdir()?;
     dprod_repository::configure(
         &source.path().join("examples/dprod"),
@@ -229,6 +182,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     std::fs::remove_dir_all(source.path())?;
     std::fs::remove_dir_all(repository.path())?;
     std::fs::remove_dir_all(commons_repository.path())?;
+    tokio::fs::remove_dir_all(fibo_repository.path()).await?;
     std::fs::remove_dir_all(dprod_repository.path())?;
     tokio::fs::remove_dir_all(mkdocs_repository.path()).await?;
     let restored = Dataset::memory()?;
@@ -249,7 +203,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     }
     let document = scraper::Html::parse_document(&html);
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
-    assert_eq!(document.select(&cards).count(), 11);
+    assert_eq!(document.select(&cards).count(), 12);
     assert_eq!(
         document
             .select(
@@ -257,7 +211,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
                     .unwrap()
             )
             .count(),
-        11
+        12
     );
     for link in document.select(
         &scraper::Selector::parse(".showcase-card a[data-artifact]").unwrap(),
