@@ -119,7 +119,7 @@ ex:Other a owl:Class ; rdfs:subClassOf ex:Core .
     let body = diagram(&source).await?;
     assert_eq!(
         body.matches("```grapharch-class-diagram").count(),
-        3
+        1
     );
     assert!(body.contains("Diagram limit"));
     Ok(())
@@ -218,5 +218,41 @@ async fn different_anonymous_restrictions_have_distinguishable_captions()
     let body = diagram(r#"ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:someValuesFrom ex:A ], [ a owl:Restriction ; owl:onProperty ex:q ; owl:someValuesFrom ex:B ] ."#).await?;
     assert!(body.contains("Anonymous OWL expression 1"));
     assert!(body.contains("Anonymous OWL expression 2"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_small_neighborhood_keeps_property_domain_and_range_in_one_diagram()
+-> Result<()> {
+    let body = diagram(r#"
+ex:Core a owl:Class .
+ex:StandardsRelease a owl:Class ; owl:disjointWith ex:Core .
+ex:artifactChecksum a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> .
+ex:artifactMediaType a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> .
+ex:artifactUrl a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/2001/XMLSchema#anyURI> .
+ex:publicationArtifact a owl:ObjectProperty ; rdfs:range ex:Core .
+"#).await?;
+    assert_eq!(
+        body.matches("```grapharch-class-diagram").count(),
+        1,
+        "eight related assertions must not be split into detached panels"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn oversized_property_groups_are_omitted_whole() -> Result<()> {
+    let mut source = "ex:Core a owl:Class . ex:p a owl:ObjectProperty ; \
+                      rdfs:domain ex:Core .\n"
+        .to_owned();
+    for i in 0..100 {
+        source.push_str(&format!("ex:p rdfs:range ex:Target{i} .\n"));
+    }
+    let body = diagram(&source).await?;
+    assert!(body.contains("Diagram limit"));
+    assert!(
+        !body.contains("\"label\":\"ex:p\""),
+        "a partial property group would misrepresent its domains/ranges"
+    );
     Ok(())
 }

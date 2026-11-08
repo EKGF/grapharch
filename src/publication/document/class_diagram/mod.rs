@@ -43,10 +43,10 @@ impl Diagram {
         );
         let diagram: Self = serde_json::from_str(source)?;
         ensure!(
-            diagram.edges.len() <= 6,
-            "class diagram exceeds six relationship panel budget"
+            diagram.edges.len() <= 18,
+            "class diagram exceeds eighteen relationship budget"
         );
-        let mut identities = std::collections::BTreeMap::new(); // bounded: thirteen nodes.
+        let mut identities = std::collections::BTreeMap::new(); // bounded: at most thirty-seven nodes.
         for node in diagram.nodes() {
             if let Some(previous) = identities.insert(&node.id, node) {
                 ensure!(

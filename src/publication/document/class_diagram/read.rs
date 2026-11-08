@@ -21,38 +21,46 @@ pub(crate) async fn append(
 {{ {subject} ?p ?o . BIND({subject} AS ?s) }} UNION
 {{ ?s ?p {subject} . BIND({subject} AS ?o) }}
 FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <{RDFS}domain>, <{RDFS}range>))
+BIND(IF(?p IN (<{RDFS}domain>, <{RDFS}range>), ?s, IF(?s = {subject}, ?o, ?s)) AS ?group)
 "#), 41);
     let property = view.pattern(&format!(r#"
 ?property ?touch {subject} . FILTER(?touch IN (<{RDFS}domain>, <{RDFS}range>))
-?property ?p ?o . FILTER(?p IN (<{RDFS}domain>, <{RDFS}range>)) BIND(?property AS ?s)
+?property ?p ?o . FILTER(?p IN (<{RDFS}domain>, <{RDFS}range>)) BIND(?property AS ?s) BIND(?property AS ?group)
 "#), 42);
     let restrictions = view.pattern(&format!(r#"
 {subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
+BIND(?s AS ?group)
 ?s a <{OWL}Restriction> ; ?p ?o . FILTER(?p IN (<{OWL}onProperty>, <{OWL}someValuesFrom>, <{OWL}allValuesFrom>, <{OWL}onClass>, <{OWL}onDataRange>, <{OWL}hasValue>, <{OWL}cardinality>, <{OWL}minCardinality>, <{OWL}maxCardinality>, <{OWL}qualifiedCardinality>, <{OWL}minQualifiedCardinality>, <{OWL}maxQualifiedCardinality>))
 "#), 43);
     let expressions = view.pattern(&format!(r#"
 {subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
+BIND(?s AS ?group)
 ?s ?p ?list . FILTER(?p IN (<{OWL}unionOf>, <{OWL}intersectionOf>))
 ?list <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?o
 "#), 44);
     let mut rows = dataset
         .select(format!(
-            "SELECT DISTINCT ?s ?p ?o WHERE {{ {{ {direct} }} UNION {{ \
+            "SELECT DISTINCT ?group ?s ?p ?o WHERE {{ {{ {direct} }} UNION {{ \
              {property} }} UNION {{ {restrictions} }} UNION {{ {expressions} \
              }} FILTER(isIRI(?s) && (isIRI(?o) || isLiteral(?o))) }} ORDER BY \
-             ?s ?p ?o LIMIT 19"
+             ?group ?s ?p ?o LIMIT 97"
         ))
         .await?;
-    let mut edges = Vec::new(); // bounded: eighteen asserted edges plus one overflow sentinel.
-    let mut nodes = BTreeMap::new(); // bounded: thirty-nine nodes from the bounded query.
+    let mut groups = BTreeMap::<String, Vec<Edge>>::new(); // bounded: ninety-six facts plus one sentinel.
+    let mut count = 0;
+    let mut nodes = BTreeMap::new(); // bounded: at most 193 endpoint resources.
     let focus = node(view, subject, prefixes, documented).await?;
     nodes.insert(subject.clone(), focus.clone());
     let mut overflow = false;
     while let Some(row) = rows.next().await? {
-        if edges.len() == 18 {
+        let group = row["group"].to_string();
+        if count == 96 {
+            // Never show a group cut short by the query budget.
+            groups.remove(&group);
             overflow = true;
             break;
         }
+        count += 1;
         let (Term::NamedNode(from), Term::NamedNode(predicate)) =
             (&row["s"], &row["p"])
         else {
@@ -88,7 +96,7 @@ FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <
             },
             _ => anyhow::bail!("unsupported diagram endpoint"),
         };
-        edges.push(Edge {
+        groups.entry(group).or_default().push(Edge {
             from:     nodes[from].clone(),
             relation: if matches!(
                 predicate.as_str().strip_prefix(OWL),
@@ -101,28 +109,34 @@ FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <
             to:       target,
         });
     }
+    let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
+    for group in groups.into_values() {
+        if edges.len() + group.len() > 18 {
+            overflow = true;
+            continue;
+        }
+        edges.extend(group);
+    }
     body.push_str("\n\n**Class neighborhood**\n\n");
     body.push_str(LEGEND);
     body.push_str("\n\n");
     if edges.is_empty() {
         write(body, Diagram { focus, edges })?;
-        body.push_str(
-            "No direct class, domain or range relationships are asserted in \
-             the collected sources.\n\n",
-        );
-    } else {
-        for panel in edges.chunks(6) {
-            write(body, Diagram {
-                focus: focus.clone(),
-                edges: panel.to_vec(),
-            })?;
+        if !overflow {
+            body.push_str(
+                "No direct class, domain or range relationships are asserted \
+                 in the collected sources.\n\n",
+            );
         }
+    } else {
+        write(body, Diagram { focus, edges })?;
     }
     if overflow {
         body.push_str(
-            "**Diagram limit:** showing the first 18 asserted relationships \
-             in deterministic IRI order. Additional relationships remain in \
-             the published source graph; this view is not exhaustive.\n\n",
+            "**Diagram limit:** showing complete relationship groups within \
+             an 18-fact budget, selected in deterministic IRI order. Omitted \
+             groups remain in the published source graph; this view is not \
+             exhaustive.\n\n",
         );
     }
     Ok(())
