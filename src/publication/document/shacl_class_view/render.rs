@@ -14,13 +14,7 @@ pub(super) async fn append(
     body: &mut String,
     renderer: &crate::publication::document::plantuml::LocalRenderer,
 ) -> Result<()> {
-    let mut output = String::from(
-        "\n\n**SHACL validation views**\n\nThese independently declared \
-         shapes describe constraints on instances of this class. They are not \
-         merged and do not add OWL axioms. Only explicit `sh:targetClass` \
-         associations are shown; this is documentation, not a validation \
-         result.\n",
-    );
+    let mut output = String::from("\n\n**SHACL validation views**\n");
     for shape in shapes {
         let projection =
             super::diagram::generate(shape, class, prefixes, renderer).await?;

@@ -170,6 +170,11 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
         )
         .await?;
         tokio::fs::write("output/shacl-class-view/index.html", text).await?;
+        tokio::fs::copy(
+            html.directory.join("style.css"),
+            "output/shacl-class-view/style.css",
+        )
+        .await?;
     }
     Ok(())
 }
@@ -241,7 +246,10 @@ ex:WrongType a sh:PropertyShape; sh:targetClass ex:Core.
     assert!(body.contains("SHACL validation views"), "{body}");
     assert_eq!(body.matches("```grapharch-shacl-view").count(), 2);
     assert!(body.contains("ex:First") && body.contains("ex:Second"));
-    assert!(body.contains("not merged") && body.contains("instances"));
+    assert!(
+        !body.contains("not merged"),
+        "Interpretation belongs in the shared endnote"
+    );
     assert_eq!(body.matches("| [ex:name]").count(), 2);
     assert!(body.contains("minCount: 2") && body.contains("maxCount: 1"));
     assert!(body.contains("Declared counts conflict"));

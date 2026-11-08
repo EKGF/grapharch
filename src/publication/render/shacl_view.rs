@@ -17,11 +17,11 @@ pub(super) fn html(body: &str) -> Result<String> {
          role=\"region\" aria-label=\"SHACL validation view; full constraints \
          follow in the table\" style=\"overflow-x:auto\"><div \
          style=\"width:{}px;max-width:100%;min-width:{}px\">{drawing}</div></\
-         div><figcaption>SHACL validation view: {}. Declared constraints \
-         only; full shape details follow.</figcaption></figure>",
+         div><figcaption>SHACL validation view: {}. {}</figcaption></figure>",
         width,
         width.min(400.0),
-        svg::xml(&projection.label)
+        svg::xml(&projection.label),
+        super::diagram_notes::reference_html()
     ))
 }
 
@@ -30,13 +30,14 @@ pub(super) fn typst(body: &str) -> Result<String> {
     let (drawing, width, height) = drawing(&projection)?;
     Ok(format!(
         "#block(breakable: false)[#layout(size => image(bytes({}), format: \
-         \"svg\", width: calc.min(size.width, {}pt), alt: {}))]\n",
+         \"svg\", width: calc.min(size.width, {}pt), alt: {}))]\n{}",
         super::markup::quote(&drawing),
         360.0 * width / height,
         super::markup::quote(&format!(
             "SHACL validation view {}",
             projection.label
-        ))
+        )),
+        super::diagram_notes::reference_typst()
     ))
 }
 
@@ -47,6 +48,7 @@ fn drawing(projection: &Projection) -> Result<(String, f64, f64)> {
         .attribute("viewBox")
         .ok_or_else(|| anyhow::anyhow!("SHACL SVG has no viewBox"))?
         .split_whitespace()
+        .take(5)
         .map(str::parse)
         .collect::<std::result::Result<_, _>>()?; // bounded: SVG viewBox must contain exactly four numbers.
     ensure!(
