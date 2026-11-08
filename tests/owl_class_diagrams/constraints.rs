@@ -35,9 +35,9 @@ ex:Neighbor a sh:NodeShape ; sh:targetClass ex:Target ; sh:property
         .unwrap();
     let retained: serde_json::Value = serde_json::from_str(source)?;
     let drawing = retained["source"].as_str().unwrap();
-    assert!(drawing.contains("SHACL ex:A"), "{drawing}");
-    assert!(drawing.contains("SHACL ex:B"));
-    assert!(drawing.contains("SHACL ex:Neighbor"));
+    assert!(drawing.contains("SHACL S1"), "{drawing}");
+    assert!(drawing.contains("SHACL S2"));
+    assert!(drawing.contains("SHACL S3"));
     assert!(drawing.contains("ex:name") && drawing.contains("string"));
     assert!(drawing.contains("1..3") && drawing.contains("0..0"));
     assert!(!drawing.contains("9.."));

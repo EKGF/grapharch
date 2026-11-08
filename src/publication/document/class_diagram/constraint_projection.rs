@@ -25,14 +25,15 @@ pub(super) fn members(
     diagram: &Diagram,
     ids: &BTreeMap<&str, usize>,
 ) {
-    for shape in diagram.shapes.iter().filter(|s| s.class.id == node.id) {
+    for (index, shape) in diagram
+        .shapes
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.class.id == node.id)
+    {
         output.push_str(&format!(
-            "  --\n  {{field}} SHACL {} [[[./grapharch-node/n{}]]]\n",
-            if shape.source.label.len() <= 32 {
-                text(&shape.source.label)
-            } else {
-                label(&shape.source.label)
-            },
+            "  --\n  {{field}} SHACL S{} [[[./grapharch-node/n{}]]]\n",
+            index + 1,
             ids[shape.source.id.as_str()]
         ));
         for field in shape.fields.iter().filter(|f| !f.object) {
@@ -53,12 +54,6 @@ pub(super) fn members(
                 ids[field.property.id.as_str()]
             ));
         }
-        if shape.omitted > 0 {
-            output.push_str(&format!(
-                "  {{field}} {} additional constraints: see shape\n",
-                shape.omitted
-            ));
-        }
     }
 }
 pub(super) fn association_annotations(
@@ -70,8 +65,9 @@ pub(super) fn association_annotations(
     diagram
         .shapes
         .iter()
-        .filter(|s| s.class.id == class)
-        .flat_map(|s| {
+        .enumerate()
+        .filter(|(_, s)| s.class.id == class)
+        .flat_map(|(index, s)| {
             s.fields
                 .iter()
                 .filter(move |f| {
@@ -81,8 +77,8 @@ pub(super) fn association_annotations(
                 })
                 .map(move |f| {
                     format!(
-                        "\\nSHACL {} {}",
-                        label(&s.source.label),
+                        "\\nSHACL S{} {}",
+                        index + 1,
                         text(&f.cardinality())
                     )
                 })
@@ -96,7 +92,7 @@ pub(super) fn associations(
     ids: &BTreeMap<&str, usize>,
     has_owl: impl Fn(&str, &Field) -> bool,
 ) {
-    for shape in &diagram.shapes {
+    for (index, shape) in diagram.shapes.iter().enumerate() {
         for field in shape.fields.iter().filter(|f| f.object) {
             let Some(range) = &field.range else { continue };
             if has_owl(&shape.class.id, field) {
@@ -113,12 +109,12 @@ pub(super) fn associations(
                 .replacen('-', "-[#3B6E8F,dashed]", 1);
             output.push_str(&format!(
                 "n{} {arrow} {count}n{} [[./grapharch-node/n{}]] : {}\\nSHACL \
-                 {}\n",
+                 S{}\n",
                 ids[shape.class.id.as_str()],
                 ids[range.id.as_str()],
                 ids[field.property.id.as_str()],
                 label(&field.property.label),
-                label(&shape.source.label)
+                index + 1
             ));
         }
     }

@@ -66,11 +66,12 @@ pub(super) fn html(source: &str) -> Result<String> {
          diagram; scroll horizontally when needed\" \
          style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
          border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} \
-         {}</figcaption></figure><details \
+         {}{}</figcaption></figure><details \
          class=\"owl-relationships\"><summary>Relationships as text</summary>",
         svg::draw(&projection, true)?,
         svg::xml(&diagram.focus.label),
-        super::diagram_notes::reference_html()
+        super::diagram_notes::reference_html(),
+        shape_markers(&projection)?
     );
     if diagram.edges.is_empty() {
         html.push_str(
@@ -95,14 +96,15 @@ pub(super) fn html(source: &str) -> Result<String> {
         }
         html.push_str("</tbody></table></div>");
     }
-    for shape in &diagram.shapes {
+    for (index, shape) in diagram.shapes.iter().enumerate() {
         html.push_str(&format!(
-            "<p>SHACL constraints for {} from {}</p><div \
+            "<p>SHACL S{} constraints for {} from {}</p><div \
              class=\"table-scroll\" role=\"region\" aria-label=\"SHACL \
              constraints\" tabindex=\"0\"><table \
              class=\"owl-constraint-table\"><thead><tr><th \
              scope=\"col\">Property</th><th scope=\"col\">Value type</th><th \
              scope=\"col\">Count</th></tr></thead><tbody>",
+            index + 1,
             node_html(&shape.class)?,
             node_html(&shape.source)?
         ));
@@ -124,6 +126,35 @@ pub(super) fn html(source: &str) -> Result<String> {
     html.push_str("</details>\n");
     Ok(html)
 }
+fn shape_markers(projection: &Projection) -> Result<String> {
+    if projection.diagram.shapes.is_empty() {
+        return Ok(String::new());
+    }
+    let mut output = String::from(" <span class=\"shape-sources\">SHACL: ");
+    for (index, shape) in projection.diagram.shapes.iter().enumerate() {
+        if index > 0 {
+            output.push_str(" · ");
+        }
+        let marker = format!("S{}", index + 1);
+        let name = svg::xml(&shape.source.label);
+        let attributes = format!(
+            "class=\"shape-marker\" title=\"{name}\" aria-label=\"SHACL \
+             {marker}: {name}\""
+        );
+        if let Some(link) = &shape.source.link {
+            svg::safe_link(link)?;
+            output.push_str(&format!(
+                "<a href=\"{}\" {attributes}>{marker}</a>",
+                svg::xml(link)
+            ));
+        } else {
+            output.push_str(&format!("<span {attributes}>{marker}</span>"));
+        }
+    }
+    output.push_str("</span>");
+    Ok(output)
+}
+
 fn node_html(node: &Node) -> Result<String> {
     if let Some(link) = &node.link {
         svg::safe_link(link)?;
@@ -169,7 +200,7 @@ pub(super) fn typst(source: &str) -> Result<String> {
         "#block(breakable: false)[#layout(size => image(bytes({}), format: \
          \"svg\", width: calc.min(size.width * {}, {}pt), alt: {}))]\n",
         quote(&svg),
-        if diagram.edges.is_empty() {
+        if diagram.edges.is_empty() && diagram.shapes.is_empty() {
             "0.35"
         } else {
             "1.0"
@@ -198,9 +229,10 @@ pub(super) fn typst(source: &str) -> Result<String> {
         }
         result.push_str(")]\n");
     }
-    for shape in &diagram.shapes {
+    for (index, shape) in diagram.shapes.iter().enumerate() {
         result.push_str(&format!(
-            "#par[SHACL constraints for {} from {}]\n",
+            "#par[SHACL S{} constraints for {} from {}]\n",
+            index + 1,
             node_typst(&shape.class),
             node_typst(&shape.source)
         ));
@@ -229,108 +261,4 @@ pub(super) fn validate_external(destination: &str) -> Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
-    use {
-        super::*,
-        crate::publication::document::class_diagram::{Diagram, Edge},
-    };
-    fn retained(link: &str) -> String {
-        let node = Node {
-            id:    "urn:test:class".into(),
-            label: "Class".into(),
-            kind:  "Class".into(),
-            link:  Some(link.into()),
-        };
-        serde_json::to_string(&Projection {
-            diagram: Diagram {
-                focus:   node.clone(),
-                shapes:  Vec::new(),
-                limited: false,
-                edges:   vec![Edge {
-                    predicate: None,
-                    from:      node.clone(),
-                    relation:  "rdfs:subClassOf".into(),
-                    to:        node,
-                }],
-            },
-            source:  "@startuml\n@enduml\n".into(),
-            engine:  "PlantUML version fixture".into(),
-            svg:     "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" \
-                      height=\"800\" viewBox=\"0 0 400 800\"><a \
-                      href=\"./grapharch-node/n0\"><rect width=\"400\" \
-                      height=\"800\"/></a></svg>"
-                .into(),
-        })
-        .unwrap()
-    }
-    #[test]
-    fn textual_relationships_are_a_full_width_accessible_table() {
-        let output = html(&retained("#class")).unwrap();
-        let parsed = scraper::Html::parse_fragment(&output);
-        let details = parsed
-            .select(
-                &scraper::Selector::parse("details.owl-relationships").unwrap(),
-            )
-            .next()
-            .expect("relationship disclosure");
-        assert!(!details.ancestors().any(|node| {
-            scraper::ElementRef::wrap(node)
-                .is_some_and(|element| element.value().name() == "figure")
-        }));
-        let table = details
-            .select(&scraper::Selector::parse("table").unwrap())
-            .next()
-            .expect("three-column relationship table");
-        assert_eq!(
-            table.value().attr("aria-label"),
-            Some("Asserted OWL relationships")
-        );
-        assert_eq!(
-            table
-                .select(
-                    &scraper::Selector::parse("thead.sr-only th[scope=col]")
-                        .unwrap()
-                )
-                .count(),
-            3
-        );
-        assert_eq!(
-            table
-                .select(&scraper::Selector::parse("tbody tr td").unwrap())
-                .count(),
-            3
-        );
-        assert!(table.text().collect::<String>().contains("rdfs:subClassOf"));
-        assert_eq!(
-            details
-                .select(&scraper::Selector::parse("ul,li").unwrap())
-                .count(),
-            0
-        );
-        assert!(!output.contains(" — ") && !output.contains(" → "));
-    }
-    #[test]
-    fn tall_pdf_drawings_have_a_physical_height_budget_and_text_links() {
-        let output = typst(&retained("#class")).unwrap();
-        assert!(output.contains("calc.min(size.width * 1.0, 210pt)"));
-        assert!(output.contains("#link(label(\"class\"))"));
-        assert!(!output.contains("grapharch-node"));
-    }
-    #[test]
-    fn phone_diagrams_keep_readable_intrinsic_width_inside_a_scroll_region() {
-        let output = html(&retained("#class")).unwrap();
-        assert!(output.contains("min-width:340px"));
-        assert!(output.contains("overflow-x:auto"));
-        assert!(output.contains("tabindex=\"0\""));
-    }
-    #[test]
-    fn retained_svg_links_reject_executable_destinations() {
-        assert!(html(&retained("javascript:alert(1)")).is_err());
-        assert!(html(&retained("//evil.example")).is_err());
-        assert!(
-            html(&retained("#class"))
-                .unwrap()
-                .contains("href=\"#class\"")
-        );
-    }
-}
+mod tests;

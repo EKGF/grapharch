@@ -10,7 +10,9 @@ Named `sh:NodeShape` resources with an explicit `sh:targetClass` enrich the
 existing OWL class neighborhood. GraphArch does not generate a second shape
 box. No additional publication configuration is needed.
 
-Each targeting shape has a labelled compartment in its class. Simple datatype
+Each targeting shape has a labelled compartment in its class. Compact `S1`,
+`S2` markers link to the named source shapes in the figure caption and retain
+their separate scope throughout the drawing. Simple datatype
 properties appear as typed members; simple `sh:class` constraints add object
 relationships. Declared counts appear beside the member or association. These
 are validation constraints from the named shape, not OWL entailments or a
