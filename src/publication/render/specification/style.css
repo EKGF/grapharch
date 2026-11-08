@@ -81,5 +81,5 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 @media(max-width:600px){.head:has(.product-logo) h1{clear:both}}
 
 /* Predicate identifiers get intrinsic space, capped so long IRIs still wrap. */
-.rdf-properties>thead>tr>th:first-child,.rdf-properties>tbody>tr>td:first-child{width:1%;min-width:min(18ch,40vw)}
+.rdf-properties>thead>tr>th:first-child,.rdf-properties>tbody>tr>td:first-child{width:1%;min-width:calc(min(20ch,40vw) + 1.6rem + 1px)}
 .rdf-properties>tbody>tr>td:first-child>code{display:inline-block;max-inline-size:min(24ch,35vw);overflow-wrap:anywhere}
