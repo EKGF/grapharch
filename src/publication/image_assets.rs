@@ -69,8 +69,9 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
             let document = roxmltree::Document::parse_with_options(
                 source,
                 roxmltree::ParsingOptions {
-                    allow_dtd:   false,
-                    nodes_limit: 8192,
+                    allow_dtd:       false,
+                    nodes_limit:     8192,
+                    entity_resolver: None,
                 },
             )?;
             let root = document.root_element();
