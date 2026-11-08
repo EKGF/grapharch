@@ -241,7 +241,7 @@ fn source(diagram: &Diagram) -> String {
             if generalization {
                 layout.generalization_arrow(edge)
             } else {
-                "-->"
+                layout.relation_arrow(edge)
             },
             identifiers[edge.to.id.as_str()],
             if generalization {

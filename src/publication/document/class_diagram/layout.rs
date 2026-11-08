@@ -35,6 +35,18 @@ impl<'a> Layout<'a> {
         }
     }
 
+    pub fn relation_arrow(&self, edge: &Edge) -> &'static str {
+        if edge.predicate.as_deref() == Some(SUBCLASS) && self.has_hierarchy() {
+            if self.reaches(&edge.to.id, &edge.from.id) {
+                "-->"
+            } else {
+                "-up->"
+            }
+        } else {
+            self.association_arrow(&edge.from.id, &edge.to.id)
+        }
+    }
+
     fn reaches(&self, from: &str, to: &str) -> bool {
         let mut pending = vec![from]; // bounded: at most thirty-seven diagram nodes.
         let mut visited = std::collections::BTreeSet::new(); // bounded: at most thirty-seven diagram nodes.
@@ -45,11 +57,10 @@ impl<'a> Layout<'a> {
             if !visited.insert(node) {
                 continue;
             }
-            for edge in
-                self.diagram.edges.iter().filter(|edge| {
-                    is_generalization(edge) && edge.from.id == node
-                })
-            {
+            for edge in self.diagram.edges.iter().filter(|edge| {
+                edge.predicate.as_deref() == Some(SUBCLASS) &&
+                    edge.from.id == node
+            }) {
                 pending.push(&edge.to.id);
             }
         }
