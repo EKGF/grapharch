@@ -61,18 +61,22 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   a global range or an unqualified `1..*` multiplicity. Universal restrictions,
   unknown property types, inverse paths, complex fillers and additional qualifiers stay explicit.
 - A simple direct subclass restriction with a named `owl:onProperty`, named
-  `owl:onClass`, and a positive `owl:minQualifiedCardinality` or `owl:qualifiedCardinality`
-  becomes an association with `n..*` or exact `n`, respectively, at the target end and `{qualified}` beside the property label. Only
+  `owl:onClass`, and `owl:minQualifiedCardinality`, `owl:qualifiedCardinality`,
+  or `owl:maxQualifiedCardinality` becomes an association with `n..*`, exact `n`,
+  or `0..n`, respectively, at the target end and `{qualified}` beside the
+  property label. Only
   values belonging to that target class count; other property values are not
   excluded. A zero qualified minimum imposes no restriction and is omitted from
-  the drawing. Exact or maximum zero counts, inverse properties, boolean
+  the drawing. A maximum of zero is shown as `0..0`: values in the named target
+  class are prohibited, while other property values remain possible. A maximum
+  never guarantees existence. Exact zero counts, inverse properties, boolean
   expressions, malformed counts and restrictions with extra constraints stay
   explicit. A positive exact qualified count does not make the property globally
   functional: values outside the named class remain possible.
 - An outer existential whose filler is a simple zero qualified minimum still
   requires a value. GraphArch inspects one additional restriction level within
   the same bounded relationship group, and shows a linked `[1..*]` member. If
-  the same class has a positive qualified count on exactly the same property,
+  the same class has a positive qualified minimum or exact count on that property,
   that count already guarantees existence, so the duplicate member is omitted.
   Different properties, additional filler constraints and other nested forms
   are not simplified. Original statements remain in source details and the graph.

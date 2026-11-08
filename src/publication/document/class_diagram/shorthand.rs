@@ -151,7 +151,7 @@ impl<'a> Shorthand<'a> {
             ]);
         }
         for minimum in &qualified_counts {
-            if minimum.count > 0 {
+            if minimum.visible() {
                 visible.extend([
                     minimum.class.id.as_str(),
                     minimum.filler.id.as_str(),

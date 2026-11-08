@@ -26,7 +26,7 @@ impl Existence<'_> {
         counts.iter().any(|count| {
             count.class.id == self.class.id &&
                 count.property.id == self.property.id &&
-                count.count > 0
+                count.guarantees_existence()
         })
     }
 

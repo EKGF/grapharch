@@ -498,3 +498,6 @@ async fn family_ontology_title_can_use_dublin_core_without_rdfs_label()
 
 #[path = "ontology_family/introduction.rs"]
 mod introduction;
+
+#[path = "ontology_family/qualified_counts.rs"]
+mod qualified_counts;

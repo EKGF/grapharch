@@ -70,8 +70,6 @@ async fn qualified_minimum_does_not_simplify_other_or_ambiguous_constraints()
 -> Result<()> {
     for constraint in [
         "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
-         owl:maxQualifiedCardinality 0",
-        "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
          owl:qualifiedCardinality 0",
         "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
          owl:minQualifiedCardinality -1",

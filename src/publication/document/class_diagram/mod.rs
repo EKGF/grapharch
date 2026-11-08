@@ -30,15 +30,19 @@ pub(crate) const LEGEND: &str =
      selected inputs, not an asserted domain or a claim that none can be \
      entailed. Simple existential subclass restrictions use a class-scoped \
      association labelled at least one filler; this does not constrain all \
-     property values or declare a global range. Qualified minimum \
-     associations show n..* for minima or n for exact counts at the named \
-     target with {qualified}: only values in that target class count, and \
-     other property values are not excluded. A simple zero qualified minimum \
-     imposes no restriction and is omitted visually. Other anonymous OWL \
-     expressions remain explicit. Types and counts from simple property \
-     shapes enrich the UML notation. Identical qualifiers are shown once; \
-     where declaring shapes disagree, the disputed type or multiplicity is \
-     omitted from the drawing and remains in the dedicated shape \
+     property values or declare a global range. Qualified cardinality \
+     associations show n..* for minima, n for exact counts, or 0..n for \
+     maxima at the named target with {qualified}: only values in that target \
+     class count, and other property values are not excluded. A zero maximum \
+     prohibits values in that named target class; it is never omitted. A \
+     simple zero qualified minimum imposes no restriction and is omitted \
+     visually. An existential with a simple zero-minimum filler still \
+     requires a value; a positive qualified minimum or exact count on the \
+     same class and property already guarantees that existence. Unsupported \
+     anonymous OWL expressions remain explicit. Types and counts from simple \
+     property shapes enrich the UML notation. Identical qualifiers are shown \
+     once; where declaring shapes disagree, the disputed type or multiplicity \
+     is omitted from the drawing and remains in the dedicated shape \
      documentation. No shape is chosen arbitrarily and conflicting counts are \
      not silently intersected. An absent count imposes no lower or upper \
      bound beyond zero or unbounded, respectively. Complex constraints \
