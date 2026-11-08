@@ -39,7 +39,10 @@ translation of OWL into closed-world UML fields:
   validation requirements, ownership, aggregation, or composition.
 
 The diagram is deliberately local. It shows up to five complete relationship groups within
-an 18-fact budget, selected in deterministic IRI order. Domain/range facts for a
+an 18-fact budget, selected in deterministic IRI order. If both engine orientations
+produce a drawing wider than 600 pixels, whole groups are removed from the end
+until the figure fits that width. The limit notice identifies these omissions.
+Domain/range facts for a
 property and facts describing a direct restriction stay together. An oversized
 group is omitted whole, with a visible limit notice; it is never cut into a
 misleading partial assertion. Full source assertions remain in the

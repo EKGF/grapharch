@@ -111,46 +111,51 @@ BIND(?s AS ?group)
         });
     }
     let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
-    let mut selected_groups = 0;
+    let mut group_ends = Vec::new(); // bounded: five complete groups.
     for group in groups.into_values() {
-        if selected_groups == 5 || edges.len() + group.len() > 18 {
+        if group_ends.len() == 5 || edges.len() + group.len() > 18 {
             overflow = true;
             continue;
         }
-        selected_groups += 1;
         edges.extend(group);
+        group_ends.push(edges.len());
     }
     body.push_str("\n\n**Class neighborhood**\n\n");
     body.push_str(LEGEND);
     body.push_str("\n\n");
-    if edges.is_empty() {
-        write(body, Diagram { focus, edges }, renderer).await?;
-        if !overflow {
-            body.push_str(
-                "No direct class, domain or range relationships are asserted \
-                 in the collected sources.\n\n",
-            );
-        }
-    } else {
-        write(body, Diagram { focus, edges }, renderer).await?;
+    let mut projection =
+        Projection::generate(Diagram { focus, edges }, renderer).await?;
+    while projection.width()? > 600.0 && !group_ends.is_empty() {
+        // Retry at most five times, removing whole groups rather than
+        // individual assertions. The retained model, drawing and omission
+        // notice agree.
+        group_ends.pop();
+        let mut diagram = projection.diagram;
+        diagram
+            .edges
+            .truncate(group_ends.last().copied().unwrap_or(0));
+        projection = Projection::generate(diagram, renderer).await?;
+        overflow = true;
     }
+    if projection.diagram.edges.is_empty() && !overflow {
+        body.push_str(
+            "No direct class, domain or range relationships are asserted in \
+             the collected sources.\n\n",
+        );
+    }
+    write(body, projection)?;
     if overflow {
         body.push_str(
             "**Diagram limit:** showing up to five complete relationship \
-             groups within an 18-fact budget, selected in deterministic IRI \
-             order. Omitted groups remain in the published source graph; this \
-             view is not exhaustive.\n\n",
+             groups within an 18-fact and 600-pixel layout budget, selected \
+             in deterministic IRI order. Omitted groups remain in the \
+             published source graph; this view is not exhaustive.\n\n",
         );
     }
     Ok(())
 }
-async fn write(
-    body: &mut String,
-    diagram: Diagram,
-    renderer: &crate::publication::document::plantuml::LocalRenderer,
-) -> Result<()> {
-    let source =
-        serde_json::to_string(&Projection::generate(diagram, renderer).await?)?;
+fn write(body: &mut String, projection: Projection) -> Result<()> {
+    let source = serde_json::to_string(&projection)?;
     ensure!(
         source.len() <= 512 * 1024,
         "class diagram exceeds content budget"

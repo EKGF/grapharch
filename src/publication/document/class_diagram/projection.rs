@@ -42,6 +42,8 @@ impl Projection {
         Ok(Self { diagram, source, engine, svg })
     }
 
+    pub(super) fn width(&self) -> Result<f64> { width(&self.svg) }
+
     pub fn parse(text: &str) -> Result<Self> {
         ensure!(
             text.len() <= 512 * 1024,

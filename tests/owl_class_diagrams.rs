@@ -15,6 +15,10 @@ use {
 };
 
 async fn diagram(source: &str) -> Result<String> {
+    diagram_with_prefix(source, "ex").await
+}
+
+async fn diagram_with_prefix(source: &str, prefix: &str) -> Result<String> {
     let root = tempfile::tempdir()?;
     let path = root.path().join("ontology.ttl");
     tokio::fs::write(
@@ -43,7 +47,7 @@ async fn diagram(source: &str) -> Result<String> {
         "en",
         Arc::new(BTreeMap::from([(
             "https://example.org/".into(),
-            "ex".into(),
+            prefix.into(),
         )])),
         Arc::new(HashSet::new()),
     )?
@@ -358,6 +362,47 @@ ex:IdentificationScheme a owl:Class .
     assert!(
         width <= 600.0,
         "engine orientation leaves the restriction too wide: {width}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn mobile_width_budget_omits_only_complete_relationship_groups()
+-> Result<()> {
+    let body = diagram_with_prefix(r#"
+ex:Core a owl:Class ; rdfs:subClassOf ex:MembershipEvidence, ex:MembershipEvent .
+ex:consentMembership a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Membership .
+ex:withdrawnConsent a owl:ObjectProperty ; rdfs:domain ex:RecipientConsentWithdrawal ; rdfs:range ex:Core .
+ex:capturedAt a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/2001/XMLSchema#dateTime> .
+"#, "ekg-communication").await?;
+    #[derive(serde::Deserialize)]
+    struct Retained {
+        svg: String,
+    }
+    let json = body
+        .split("```grapharch-class-diagram\n")
+        .nth(1)
+        .unwrap()
+        .split("\n```")
+        .next()
+        .unwrap();
+    let retained: Retained = serde_json::from_str(json)?;
+    let svg = roxmltree::Document::parse(&retained.svg)?;
+    let width: f64 = svg
+        .root_element()
+        .attribute("viewBox")
+        .unwrap()
+        .split_whitespace()
+        .nth(2)
+        .unwrap()
+        .parse()?;
+    assert!(
+        width <= 600.0,
+        "mobile width budget exceeded: {width}"
+    );
+    assert!(
+        body.contains("Diagram limit"),
+        "layout omissions must be explicit"
     );
     Ok(())
 }
