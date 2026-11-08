@@ -35,9 +35,22 @@ fn retained(link: &str) -> String {
 fn diagram_has_accessible_description_without_duplicate_sections() {
     let output = html(&retained("#class")).unwrap();
     let parsed = scraper::Html::parse_fragment(&output);
-    assert_eq!(parsed.select(&scraper::Selector::parse("details, table").unwrap()).count(), 0);
-    let description = parsed.select(&scraper::Selector::parse("svg desc").unwrap()).next().expect("accessible SVG description");
-    assert!(description.text().collect::<String>().contains("Class rdfs:subClassOf Class"));
+    assert_eq!(
+        parsed
+            .select(&scraper::Selector::parse("details, table").unwrap())
+            .count(),
+        0
+    );
+    let description = parsed
+        .select(&scraper::Selector::parse("svg desc").unwrap())
+        .next()
+        .expect("accessible SVG description");
+    assert!(
+        description
+            .text()
+            .collect::<String>()
+            .contains("Class rdfs:subClassOf Class")
+    );
     assert!(!output.contains("Relationships as text"));
 }
 #[test]
@@ -95,7 +108,10 @@ fn shape_sources_are_retained_without_visible_duplicate_sections() {
     let source = shape_only();
     let output = html(&source).unwrap();
     assert!(!output.contains("<details") && !output.contains("SHACL"));
-    assert_eq!(Projection::parse(&source).unwrap().diagram.shapes.len(), 2);
+    assert_eq!(
+        Projection::parse(&source).unwrap().diagram.shapes.len(),
+        2
+    );
 }
 
 #[test]

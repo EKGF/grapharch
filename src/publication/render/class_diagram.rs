@@ -1,10 +1,6 @@
 //! Render retained semantic diagram blocks; no source RDF or files are read.
 use {
-    crate::publication::document::class_diagram::{
-        LANGUAGE,
-        Projection,
-        svg,
-    },
+    crate::publication::document::class_diagram::{LANGUAGE, Projection, svg},
     anyhow::Result,
     pulldown_cmark::{CodeBlockKind, Event, Tag, TagEnd},
     std::collections::HashMap,
@@ -59,7 +55,13 @@ pub(super) fn html(source: &str) -> Result<String> {
     let projection = Projection::parse(source)?;
     let diagram = &projection.diagram;
     Ok(format!(
-        "<figure class=\"owl-class-diagram\" style=\"width:fit-content;max-width:100%;margin:1.25rem auto\"><div tabindex=\"0\" role=\"region\" aria-label=\"Class relationship diagram; scroll horizontally when needed\" style=\"overflow-x:auto;background:#fff;padding:0.75rem;border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} {}</figcaption></figure>\n",
+        "<figure class=\"owl-class-diagram\" \
+         style=\"width:fit-content;max-width:100%;margin:1.25rem auto\"><div \
+         tabindex=\"0\" role=\"region\" aria-label=\"Class relationship \
+         diagram; scroll horizontally when needed\" \
+         style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
+         border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: {} \
+         {}</figcaption></figure>\n",
         svg::draw(&projection, true)?,
         svg::xml(&diagram.focus.label),
         super::diagram_notes::reference_html()
