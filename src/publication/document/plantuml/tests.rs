@@ -31,8 +31,11 @@ async fn retained_sources_document_after_deletion_and_svg_renders_without_the_to
     tokio::fs::write(&executable, r##"#!/bin/sh
 if [ "$PLANTUML_SECURITY_PROFILE" != SANDBOX ]; then exit 2; fi
 if [ "$1" = -version ]; then printf 'PlantUML version recorded-fixture\n'; exit 0; fi
-if cat >/dev/null; then :; else exit 1; fi
-printf '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="110" height="30" fill="#116659"/></svg>' || exit $?
+while IFS= read -r line; do
+  if [ "$line" = @enduml ]; then
+    printf '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="110" height="30" fill="#116659"/></svg>GRAPHARCH-PLANTUML-END\n' || exit $?
+  fi
+done
 "##).await?;
     let mut permissions = tokio::fs::metadata(&executable).await?.permissions();
     permissions.set_mode(0o755);
@@ -156,18 +159,60 @@ async fn installed_plantuml_produces_repeatable_valid_svg_without_remote_include
     let program = OsStr::new("plantuml");
     let source =
         "@startuml\nclass Example [[/concept/example/#definition]]\n@enduml\n";
-    let first = runner::svg(program, source).await?;
-    let second = runner::svg(program, source).await?;
+    let renderer = LocalRenderer::new(program);
+    let first = renderer.svg(source).await?;
+    let second = renderer.svg(source).await?;
     assert_eq!(first, second);
     crate::publication::image_assets::validate(&first, "image/svg+xml")?;
     assert!(
-        runner::svg(
-            program,
-            "@startuml\n!includeurl https://example.org/never-fetch\nclass \
-             A\n@enduml\n"
-        )
-        .await
-        .is_err()
+        renderer
+            .svg(
+                "@startuml\n!includeurl \
+                 https://example.org/never-fetch\nclass A\n@enduml\n"
+            )
+            .await
+            .is_err()
     );
+    Ok(())
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn local_renderer_reuses_one_bounded_pipe_for_multiple_diagrams()
+-> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let root = tempfile::tempdir()?;
+    let executable = root.path().join("recorded-pipe");
+    tokio::fs::write(&executable, r##"#!/bin/sh
+if [ "$PLANTUML_SECURITY_PROFILE" != SANDBOX ]; then exit 2; fi
+if [ "$1" = -version ]; then printf 'PlantUML version recorded-pipe\n'; exit 0; fi
+count=0
+while IFS= read -r line; do
+  if [ "$line" = @enduml ]; then
+    count=$((count + 1))
+    printf '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="40" data-render="%s"><rect width="90" height="30"/></svg>GRAPHARCH-PLANTUML-END\n' "$count" || exit $?
+  fi
+done
+"##).await?;
+    let mut permissions = tokio::fs::metadata(&executable).await?.permissions();
+    permissions.set_mode(0o755);
+    tokio::fs::set_permissions(&executable, permissions).await?;
+    let renderer = LocalRenderer::new(executable.as_os_str());
+    assert_eq!(
+        renderer.version().await?,
+        "PlantUML version recorded-pipe"
+    );
+    let first = renderer.svg("@startuml\nclass First\n@enduml\n").await?;
+    let second = renderer.svg("@startuml\nclass Second\n@enduml\n").await?;
+    assert!(std::str::from_utf8(&first)?.contains("data-render=\"1\""));
+    assert!(std::str::from_utf8(&second)?.contains("data-render=\"2\""));
+    assert!(!std::str::from_utf8(&second)?.contains("GRAPHARCH-PLANTUML-END"));
+    let named = renderer
+        .svg(
+            "' authored preamble\n@startuml named-diagram\nclass \
+             Named\n@enduml\n",
+        )
+        .await?;
+    assert!(std::str::from_utf8(&named)?.contains("data-render=\"3\""));
     Ok(())
 }

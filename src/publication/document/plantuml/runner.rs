@@ -22,12 +22,7 @@ async fn read(
     );
     Ok(bytes)
 }
-pub(super) async fn run(
-    program: &OsStr,
-    args: &[&str],
-    source: &[u8],
-    limit: u64,
-) -> Result<Vec<u8>> {
+pub(super) fn command(program: &OsStr, args: &[&str]) -> Command {
     let mut command = Command::new(program);
     command
         .args(args)
@@ -45,6 +40,15 @@ pub(super) async fn run(
             command.env(key, value);
         }
     }
+    command
+}
+pub(super) async fn run(
+    program: &OsStr,
+    args: &[&str],
+    source: &[u8],
+    limit: u64,
+) -> Result<Vec<u8>> {
+    let mut command = command(program, args);
     let mut child = command.spawn().context(
         "PlantUML diagrams require a local PlantUML installation (and \
          Graphviz for graph layouts) on PATH; GraphArch never downloads a \
@@ -86,22 +90,8 @@ pub(super) async fn version(program: &OsStr) -> Result<String> {
     );
     Ok(first.into())
 }
-pub(super) async fn svg(program: &OsStr, source: &str) -> Result<Vec<u8>> {
-    let bytes = run(
-        program,
-        &[
-            "-pipe",
-            "-tsvg",
-            "-charset",
-            "UTF-8",
-            "-nometadata",
-            "-failfast2",
-        ],
-        source.as_bytes(),
-        crate::publication::image_assets::MAX_IMAGE_BYTES as u64,
-    )
-    .await?;
-    let source = std::str::from_utf8(&bytes)?;
+pub(super) fn clean_svg(bytes: &[u8]) -> Result<Vec<u8>> {
+    let source = std::str::from_utf8(bytes)?;
     let mut result = String::new();
     let mut offset = 0;
     let mut metadata = 0;

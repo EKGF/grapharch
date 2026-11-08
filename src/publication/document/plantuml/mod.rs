@@ -1,6 +1,8 @@
 //! Convert retained PlantUML source into validated SVG before publication
 //! planning.
+mod engine;
 mod runner;
+pub(crate) use engine::LocalRenderer;
 use {
     crate::publication::{
         collect::ImageAsset,
@@ -30,6 +32,7 @@ async fn document_with(
     writer: &GraphWriter,
     program: &OsStr,
 ) -> Result<()> {
+    let renderer = LocalRenderer::new(program);
     let view = RevisionView::new(
         dataset.clone(),
         dataset.snapshot_collected_for(project).await?,
@@ -70,7 +73,7 @@ async fn document_with(
         );
         let version = match &version {
             Some(value) => value,
-            None => version.insert(runner::version(program).await?),
+            None => version.insert(renderer.version().await?),
         };
         let output = view.text(diagram, "route").await?;
         let processor = identity("plantuml-documentor", &[project]);
@@ -101,7 +104,7 @@ async fn document_with(
             )
             .await?;
         let result = async {
-            let svg = runner::svg(program, &code).await?;
+            let svg = renderer.svg(&code).await?;
             ImageAsset {
                 project,
                 processor: processor.as_str(),
