@@ -99,7 +99,7 @@ pub(super) fn typst(source: &str) -> Result<String> {
     // of enlarging a compact class box merely to fill the text column.
     let mut result = format!(
         "#block(breakable: false)[#layout(size => image(bytes({}), format: \
-         \"svg\", width: calc.min(size.width * {}, {}pt), alt: {}))]\n",
+         \"svg\", width: calc.min(size.width * {}, {}pt), alt: {}))\n",
         quote(&svg),
         if diagram.edges.is_empty() && diagram.shapes.is_empty() {
             "0.35"
@@ -110,6 +110,7 @@ pub(super) fn typst(source: &str) -> Result<String> {
         quote(&svg::description(&projection)?)
     );
     result.push_str(super::diagram_notes::reference_typst());
+    result.push_str("]\n");
     Ok(result)
 }
 

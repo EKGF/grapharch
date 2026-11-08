@@ -61,6 +61,16 @@ fn tall_pdf_drawings_have_a_physical_height_budget_and_text_links() {
     assert!(!output.contains("grapharch-node"));
 }
 #[test]
+fn pdf_diagram_note_stays_inside_the_unbreakable_figure() {
+    let output = typst(&retained("#class")).unwrap();
+    assert!(output.starts_with("#block(breakable: false)["));
+    assert!(output.ends_with("\n]\n"));
+    assert!(
+        !output.contains("))]\n#align"),
+        "note must not escape the figure block"
+    );
+}
+#[test]
 fn phone_diagrams_keep_readable_intrinsic_width_inside_a_scroll_region() {
     let output = html(&retained("#class")).unwrap();
     assert!(output.contains("min-width:340px"));
