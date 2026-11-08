@@ -150,3 +150,22 @@ The GraphArch website workflow runs these live checks on changes and nightly.
 It uploads the evidence even when verification fails and blocks publication of
 an incomplete gallery. Pinned offline fixtures remain separate regression tests;
 they are never substituted for an unavailable live source.
+
+## Local UML rendering dependency
+
+The action explicitly installs Temurin Java 21 and PlantUML MIT 1.2026.9 during
+setup, including `mode: install`. The official release JAR is pinned by SHA-256
+in `packaging/setup_plantuml.py`; cached bytes are rechecked before use. Setup
+verifies the reported version and renders a small Smetana class diagram before
+adding the launcher to PATH. Unsupported platforms, checksum mismatches and
+missing Java fail setup.
+
+OWL diagram generation needs this local renderer. Smetana runs inside Java and
+does not require Graphviz. Authored PlantUML diagrams that explicitly use other
+layout engines may have additional prerequisites. The CLI does not download a
+renderer or send ontology content to an external service. Rendering an already
+collected and documented KG requires neither Java nor PlantUML.
+
+Repository CI uses `.github/actions/setup-plantuml`, which calls the same
+installer. Direct CLI users must install Java and PlantUML on PATH themselves.
+The JAR is an explicit CI tool dependency, not bundled into GraphArch binaries.

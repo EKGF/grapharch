@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Setup
         uses: actions-rust-lang/setup-rust-toolchain@v2
+      - uses: ./.github/actions/setup-plantuml
       - name: Format
         uses: actions-rust-lang/rustfmt@v1
       - name: Lint

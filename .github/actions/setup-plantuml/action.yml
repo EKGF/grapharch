@@ -1,0 +1,15 @@
+name: Set up GraphArch UML renderer
+description: Install Java and a checksum-verified local PlantUML MIT renderer
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.12'
+    - uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: '21'
+    - name: Verify and install pinned PlantUML
+      shell: bash
+      run: python "$GITHUB_ACTION_PATH/../../../packaging/setup_plantuml.py"

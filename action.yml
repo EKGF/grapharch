@@ -67,6 +67,13 @@ runs:
         GRAPHARCH_TARGET: ${{ inputs.target }}
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
       run: python "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
+    - uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: '21'
+    - name: Set up local UML renderer
+      shell: bash
+      run: python "$GITHUB_ACTION_PATH/packaging/setup_plantuml.py"
     - id: platform
       if: inputs.version != ''
       shell: bash

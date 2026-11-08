@@ -39,3 +39,22 @@ The default `mode` is `build-family`. `source-kind` defaults to `directory`; cho
 Outputs `publication-path`, `pdf-path` and `kg-path` are canonical absolute paths validated to exist beneath the chosen output root. The publication directory contains `index.html`; the KG is checked separately. `pdf-path` is empty when the renderer does not produce a single collection PDF. Upload `publication-path` as the website, and optionally include the separate `kg-path` archive in deployment packaging. The action does not deploy or reread sources to assemble outputs.
 
 Use `mode: install` for setup alone, then invoke any CLI command yourself. `version` is required and exact, without `v`; `cache` defaults to `true`. Outputs `version` and the absolute `binary-path` are available in both modes. The verified installation directory is added to PATH. A checksum is fetched and checked even on cache hits. Unsupported platforms, missing artifacts, corrupt archives and version mismatches fail without compilation or alternate downloads. Invalid inputs fail before downloading; CLI failures preserve their exit status. No registry credentials are needed.
+
+## Local UML rendering dependency
+
+The action explicitly installs Temurin Java 21 and PlantUML MIT 1.2026.9 during
+setup, including `mode: install`. The official release JAR is pinned by SHA-256
+in `packaging/setup_plantuml.py`; cached bytes are rechecked before use. Setup
+verifies the reported version and renders a small Smetana class diagram before
+adding the launcher to PATH. Unsupported platforms, checksum mismatches and
+missing Java fail setup.
+
+OWL diagram generation needs this local renderer. Smetana runs inside Java and
+does not require Graphviz. Authored PlantUML diagrams that explicitly use other
+layout engines may have additional prerequisites. The CLI does not download a
+renderer or send ontology content to an external service. Rendering an already
+collected and documented KG requires neither Java nor PlantUML.
+
+Repository CI uses `.github/actions/setup-plantuml`, which calls the same
+installer. Direct CLI users must install Java and PlantUML on PATH themselves.
+The JAR is an explicit CI tool dependency, not bundled into GraphArch binaries.

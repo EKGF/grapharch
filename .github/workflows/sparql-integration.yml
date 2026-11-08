@@ -16,6 +16,7 @@ jobs:
           - 8080:8080
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-plantuml
       - uses: actions-rust-lang/setup-rust-toolchain@v2
       - name: Wait for isolated RDF4J server
         shell: bash
