@@ -1,42 +1,237 @@
-name: "Rust CI"
+name: Rust CI
 on:
   push:
-    branches:
-      - "main"
-      - "feature/**"
-    paths-ignore:
-      - "docs/**"
+    branches: [main, 'feature/**']
   pull_request:
-    branches:
-      - "main"
-      - "feature/**"
-    paths-ignore:
-      - "docs/**"
-    # Run manually
   workflow_dispatch:
+    inputs:
+      scope:
+        type: choice
+        options: [candidate, docs, sparql]
+        default: candidate
+  workflow_call:
+    inputs:
+      scope:
+        type: string
+        default: candidate
 permissions:
-  checks: write
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  GRAPHARCH_CI_REVISION: ${{ github.sha }}
+concurrency:
+  group: candidate-${{ github.ref }}-${{ inputs.scope == 'sparql' && 'integration' || 'candidate' }}
+  cancel-in-progress: true
 jobs:
-  rust-ci:
-    name: "Format, Lint, Test, and Build"
+  scope:
+    runs-on: ubuntu-24.04
+    outputs:
+      suite: ${{ steps.scope.outputs.suite }}
+      desktop: ${{ steps.scope.outputs.desktop }}
+      docs: ${{ steps.scope.outputs.docs }}
+      sparql: ${{ steps.scope.outputs.sparql }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Verify candidate scope and provenance regressions
+        run: python3 -B -m unittest discover -s packaging/tests -p 'test_ci_*.py'
+      - id: scope
+        env:
+          CANDIDATE_SCOPE: ${{ inputs.scope || 'candidate' }}
+        run: python3 -B packaging/ci_scope.py
+  compile:
+    name: Compile the Linux candidate once
+    needs: scope
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      fingerprint: ${{ steps.candidate.outputs.fingerprint }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: ./.github/actions/setup-plantuml
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          cache-on-failure: false
+          cache-shared-key: rust-ci
+      - uses: ./.github/actions/setup-nextest
+      - name: Verify archive transport without Cargo on the consumer PATH
+        env:
+          GRAPHARCH_CI_ARCHIVE_SMOKE: '1'
+        run: python3 -B -m unittest discover -s packaging/tests -p test_ci_transport.py
+      - name: Native build dependencies
+        run: python3 -B packaging/install_build_dependencies.py
+      - name: Format
+        if: needs.scope.outputs.suite == 'full'
+        run: cargo fmt --check
+      - name: Lint
+        if: needs.scope.outputs.suite == 'full'
+        run: cargo clippy --locked --all-features --all-targets -- -D warnings
+      - name: Compile the candidate and test harnesses once
+        id: candidate
+        env:
+          GRAPHARCH_CI_SUITE: ${{ needs.scope.outputs.suite }}
+          GRAPHARCH_CI_NATIVE: ${{ needs.scope.outputs.sparql }}
+          GRAPHARCH_CI_SPLIT_DOCS: ${{ needs.scope.outputs.docs }}
+        run: >-
+          python3 -B packaging/ci_candidate.py build
+          --revision "$GRAPHARCH_CI_REVISION"
+          --suite "$GRAPHARCH_CI_SUITE" --native "$GRAPHARCH_CI_NATIVE" --split-docs "$GRAPHARCH_CI_SPLIT_DOCS"
+      - name: Share only this run's verified candidate build
+        uses: actions/upload-artifact@v7
+        with:
+          name: candidate-linux-build
+          path: |
+            output/candidate-tests.tar.zst
+            output/ci-engine.json
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 7
+  linux-tests:
+    name: Linux source tests
+    needs: [scope, compile]
+    if: needs.scope.outputs.suite == 'full' || needs.scope.outputs.sparql == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: ./.github/actions/setup-ci-consumer
+        with:
+          revision: ${{ github.sha }}
+          fingerprint: ${{ needs.compile.outputs.fingerprint }}
+      - name: Run the precompiled source test partition
+        env:
+          GRAPHARCH_CI_FINGERPRINT: ${{ needs.compile.outputs.fingerprint }}
+          GRAPHARCH_CI_GROUP: ${{ needs.scope.outputs.suite == 'full' && 'remaining' || 'protocol' }}
+          GRAPHARCH_CI_SPLIT_DOCS: ${{ needs.scope.outputs.docs }}
+        run: >-
+          python3 -B packaging/ci_candidate.py test
+          --revision "$GRAPHARCH_CI_REVISION" --fingerprint "$GRAPHARCH_CI_FINGERPRINT"
+          --group "$GRAPHARCH_CI_GROUP" --split-docs "$GRAPHARCH_CI_SPLIT_DOCS"
+  native-store:
+    name: Real SPARQL NativeStore
+    needs: [scope, compile]
+    if: needs.scope.outputs.sparql == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: ./.github/actions/setup-ci-consumer
+        with:
+          revision: ${{ github.sha }}
+          fingerprint: ${{ needs.compile.outputs.fingerprint }}
+      - name: Verify isolation and restored publication without recompilation
+        env:
+          GRAPHARCH_CI_FINGERPRINT: ${{ needs.compile.outputs.fingerprint }}
+        run: >-
+          python3 -B packaging/ci_native_store.py
+          --revision "$GRAPHARCH_CI_REVISION" --fingerprint "$GRAPHARCH_CI_FINGERPRINT"
+  docs:
+    name: Verify showcases and publish documentation
+    needs: [scope, compile]
+    if: needs.scope.outputs.docs == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      GRAPHARCH_CI_FINGERPRINT: ${{ needs.compile.outputs.fingerprint }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: ./.github/actions/setup-ci-consumer
+        with:
+          revision: ${{ github.sha }}
+          fingerprint: ${{ needs.compile.outputs.fingerprint }}
+      - name: Verify self-documentation with precompiled test harnesses
+        run: >-
+          python3 -B packaging/ci_candidate.py test --group docs
+          --revision "$GRAPHARCH_CI_REVISION" --fingerprint "$GRAPHARCH_CI_FINGERPRINT"
+      - name: Reuse remote ontology repository cache
+        uses: actions/cache@v6
+        with:
+          path: output/cache/git
+          key: grapharch-git-${{ runner.os }}-${{ hashFiles('examples/**/showcase.yaml') }}
+          restore-keys: grapharch-git-${{ runner.os }}-
+      - name: Verify every live showcase with the candidate engine
+        id: showcase-verification
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B packaging/ci_candidate.py run
+          --revision "$GRAPHARCH_CI_REVISION" --fingerprint "$GRAPHARCH_CI_FINGERPRINT"
+          -- publication verify-gallery --source examples --project urn:grapharch:docs
+          --output-root output/showcase-verification --json
+      - name: Retain showcase reports and documentation graphs
+        if: ${{ always() && steps.showcase-verification.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: showcase-verification
+          path: output/showcase-verification
+          if-no-files-found: error
+          retention-days: 14
+      - name: Generate documentation with the identical candidate engine
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B packaging/ci_candidate.py run
+          --revision "$GRAPHARCH_CI_REVISION" --fingerprint "$GRAPHARCH_CI_FINGERPRINT"
+          -- publication build-site --source docs --definitions docs/grapharch.ttl
+          --project urn:grapharch:docs --target urn:grapharch:docs:website --output-root output/docs
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: output/docs/site
+  desktop:
+    name: Format, Lint, Test (${{ matrix.os }})
+    needs: scope
+    if: needs.scope.outputs.desktop == 'true'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: "${{ matrix.os }}"
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup
-        uses: actions-rust-lang/setup-rust-toolchain@v2
-      - uses: ./.github/actions/setup-plantuml
-      - name: Format
-        uses: actions-rust-lang/rustfmt@v1
-      - name: Lint
-        uses: auguwu/clippy-action@1.5.0
+      - uses: actions/checkout@v7
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
-      - name: Test
-        run: cargo test --all-features
-      - name: Build
-        run: cargo build --locked
+          ref: ${{ github.sha }}
+      - uses: ./.github/actions/setup-plantuml
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          cache-on-failure: false
+          cache-shared-key: rust-ci
+      - name: Format
+        run: cargo fmt --check
+      - name: Lint
+        run: cargo clippy --locked --all-features --all-targets -- -D warnings
+      - name: Test and compile the native CLI
+        run: cargo test --locked --all-features
+  pages-deploy:
+    needs: [scope, docs]
+    if: >-
+      needs.scope.outputs.docs == 'true' && github.event_name != 'pull_request'
+      && github.ref == 'refs/heads/main'
+      && contains(fromJSON('["push","workflow_dispatch","schedule"]'), github.event_name)
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the verified static Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -58,3 +58,39 @@ collected and documented KG requires neither Java nor PlantUML.
 Repository CI uses `.github/actions/setup-plantuml`, which calls the same
 installer. Direct CLI users must install Java and PlantUML on PATH themselves.
 The JAR is an explicit CI tool dependency, not bundled into GraphArch binaries.
+
+## Candidate CI compilation
+
+`Rust CI` is the single automatic candidate workflow. Source changes retain
+Linux, macOS and Windows checks. Documentation-only changes use the Linux
+self-documentation suites; changes to embedded ontology definitions still run
+all three operating systems. The existing manual Docs and SPARQL workflows,
+and the nightly Docs schedule, call explicit scopes of this same workflow.
+
+The Linux producer builds the candidate CLI and required test harnesses once,
+then uses pinned nextest 0.9.151 to transport that compiled graph. Linux source
+tests, documentation tests/site generation, and the real RDF4J test run in
+parallel from that archive. The documentation suites are partitioned out of the
+other Linux test job, so their runtime is not duplicated. Rustdoc tests remain
+a separate producer check. Consumers verify the producing run, source commit,
+workspace, operating system/architecture, compiler, profile, features, input
+hashes and executable/archive checksums before running anything. Missing or
+mismatched artifacts fail; consumers never compile a replacement or install an
+older released GraphArch. An original tiny archive fixture also proves that
+compiled tests and their compile-time CLI paths survive deletion/restoration
+of the build directory and run with Cargo absent from PATH.
+
+Consumer jobs have read-only repository permissions. The separate Pages job
+handles only the generated static site, and deploys only trusted main pushes,
+manual runs and schedules. PR and cross-run executable artifacts cannot enter
+that privileged deployment path. Archives retain the original workspace path
+because existing tests use compile-time source/executable paths; an unexpected
+workspace or target location is a hard error.
+
+This does not make debug tests, Clippy analysis, Rustdoc harnesses, and native
+optimized release builds interchangeable. Release verification and the six
+OS/architecture builds in `distribute.yml` remain distinct configurations.
+Each release platform's wheel still supplies the same executable bytes to its
+standalone and npm packages. Consumer actions selecting a published `version`
+continue to download that verified release without compiling GraphArch;
+`source-revision` remains an explicit source-development build.

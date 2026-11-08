@@ -1,0 +1,30 @@
+name: Restore the exact candidate engine and test graph
+description: Verify same-run provenance and extract precompiled executables without Cargo compilation
+inputs:
+  revision:
+    required: true
+    description: Exact candidate source revision
+  fingerprint:
+    required: true
+    description: Fingerprint emitted by the compile job
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/setup-plantuml
+    - uses: actions-rust-lang/setup-rust-toolchain@v2
+      with:
+        cache: 'false'
+    - uses: ./.github/actions/setup-nextest
+    - uses: actions/download-artifact@v8
+      with:
+        name: candidate-linux-build
+        path: output
+    - name: Verify and extract the exact compiled candidate
+      shell: bash
+      env:
+        GRAPHARCH_CI_REVISION: ${{ inputs.revision }}
+        GRAPHARCH_CI_FINGERPRINT: ${{ inputs.fingerprint }}
+      run: >-
+        python3 -B packaging/ci_candidate.py extract
+        --revision "$GRAPHARCH_CI_REVISION"
+        --fingerprint "$GRAPHARCH_CI_FINGERPRINT"

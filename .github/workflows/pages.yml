@@ -1,89 +1,16 @@
 name: Docs CI
-
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'docs/**'
-      - 'examples/**'
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - 'tests/**'
-      - '.github/workflows/pages.yml'
-  pull_request:
-    paths:
-      - 'docs/**'
-      - 'examples/**'
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'tests/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
   schedule:
     - cron: '17 3 * * *'
-
 permissions:
   contents: read
-
-concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  pages-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-plantuml
-      - uses: actions-rust-lang/setup-rust-toolchain@v2
-      - name: Native build dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config libssl-dev
-      - name: Verify self-documentation
-        run: cargo test --locked --test showcase_gallery --test taxonomy_use_case_showcases --test specification_sidebar --test dprod_showcase --test w3c_specification --test self_documentation --test ontology_specification --test publication_ontology --test authority_governance --test ontology_family --test repository_sources
-      - name: Reuse remote ontology repository cache
-        uses: actions/cache@v6
-        with:
-          path: output/cache/git
-          key: grapharch-git-${{ runner.os }}-${{ hashFiles('examples/**/showcase.yaml') }}
-          restore-keys: grapharch-git-${{ runner.os }}-
-      - name: Verify every live showcase
-        id: showcase-verification
-        run: >-
-          cargo run --locked -- publication verify-gallery
-          --source examples --project urn:grapharch:docs
-          --output-root output/showcase-verification --json
-      - name: Retain showcase reports and documentation graphs
-        if: ${{ always() && steps.showcase-verification.outcome != 'skipped' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: showcase-verification
-          path: output/showcase-verification
-          if-no-files-found: error
-          retention-days: 14
-      - name: Generate documentation with Grapharch
-        run: >-
-          cargo run --locked -- publication build-site
-          --source docs --definitions docs/grapharch.ttl
-          --project urn:grapharch:docs --target urn:grapharch:docs:website
-          --output-root output/docs
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: output/docs/site
-
-  pages-deploy:
-    if: github.event_name != 'pull_request'
-    needs: pages-build
-    runs-on: ubuntu-latest
+  docs:
+    uses: ./.github/workflows/rust-ci.yml
     permissions:
+      contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+    with:
+      scope: docs
