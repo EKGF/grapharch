@@ -410,6 +410,11 @@ async fn assemble(
                 .await?;
         }
     }
+    let diagram_renderer = Arc::new(
+        crate::publication::document::plantuml::LocalRenderer::new(
+            std::ffi::OsStr::new("plantuml"),
+        ),
+    );
     for (key, title, subjects) in groups {
         if roots.is_empty() {
             place(&mut bindings, key, title, "section", order).await?;
@@ -429,6 +434,7 @@ async fn assemble(
                 prefixes.clone(),
                 known.clone(),
             )?
+            .with_diagram_renderer(diagram_renderer.clone())
             .with_ontology_context(NamedNode::new(ontology)?)
             .with_arrangement(skos.decoration(&subject, 1));
             let documentor = if derive {

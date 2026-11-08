@@ -33,6 +33,7 @@ pub struct AnnotatedTermDocumentor {
     family_reference:   bool,
     arrangement:        super::skos::Decoration,
     ontology_context:   Option<NamedNode>,
+    diagram_renderer:   Arc<super::plantuml::LocalRenderer>,
 }
 impl AnnotatedTermDocumentor {
     pub(crate) fn processor_identity(
@@ -64,7 +65,18 @@ impl AnnotatedTermDocumentor {
             family_reference: false,
             arrangement: super::skos::Decoration::default(),
             ontology_context: None,
+            diagram_renderer: Arc::new(super::plantuml::LocalRenderer::new(
+                std::ffi::OsStr::new("plantuml"),
+            )),
         })
+    }
+
+    pub(crate) fn with_diagram_renderer(
+        mut self,
+        renderer: Arc<super::plantuml::LocalRenderer>,
+    ) -> Self {
+        self.diagram_renderer = renderer;
+        self
     }
 
     /// Publish the source's supplied English annotations without inventing
@@ -807,6 +819,7 @@ impl Documentor for AnnotatedTermDocumentor {
                 &self.prefixes,
                 &self.documented,
                 &mut body,
+                &self.diagram_renderer,
             )
             .await?;
         }

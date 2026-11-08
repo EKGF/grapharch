@@ -278,6 +278,11 @@ async fn build(
             q(&fragment, "contribution", contribution.clone()),
         ]);
     }
+    let diagram_renderer = Arc::new(
+        crate::publication::document::plantuml::LocalRenderer::new(
+            std::ffi::OsStr::new("plantuml"),
+        ),
+    );
     for (position, (kind, title, terms)) in groups.into_iter().enumerate() {
         let component = identity("ontology-group", &[target.as_str(), kind]);
         placement(
@@ -302,7 +307,8 @@ async fn build(
                 "en",
                 prefixes.clone(),
                 known.clone(),
-            )?;
+            )?
+            .with_diagram_renderer(diagram_renderer.clone());
             let documentor = if external_set.contains(&subject) {
                 documentor.with_source_annotations()
             } else {

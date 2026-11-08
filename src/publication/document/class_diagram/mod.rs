@@ -1,5 +1,6 @@
 //! A bounded, asserted OWL neighborhood retained as typed publication content.
-mod labels;
+mod projection;
+pub(crate) use projection::Projection;
 mod read;
 pub(crate) mod svg;
 use {

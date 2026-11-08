@@ -1241,15 +1241,22 @@ async fn build(
     for (_, subject, _, _) in &jobs {
         managed.add(term_processor.as_str(), subject.as_str(), true)?;
     }
+    let diagram_renderer = Arc::new(
+        crate::publication::document::plantuml::LocalRenderer::new(
+            std::ffi::OsStr::new("plantuml"),
+        ),
+    );
     futures::stream::iter(jobs.into_iter().map(
         |(snapshot, subject, ontology, arrangement)| {
             let dataset = dataset.clone();
             let prefixes = prefixes.clone();
             let known = known.clone();
+            let diagram_renderer = diagram_renderer.clone();
             async move {
                 let documentor = AnnotatedTermDocumentor::new(
                     dataset, snapshot, project, subject, "en", prefixes, known,
                 )?
+                .with_diagram_renderer(diagram_renderer)
                 .with_family_reference()
                 .with_arrangement(arrangement);
                 let documentor = if let Some(ontology) = ontology {

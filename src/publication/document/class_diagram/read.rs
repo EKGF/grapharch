@@ -1,5 +1,5 @@
 use {
-    super::{Diagram, Edge, LANGUAGE, LEGEND, Node},
+    super::{Diagram, Edge, LANGUAGE, LEGEND, Node, Projection},
     crate::publication::{dataset::Dataset, view::RevisionView},
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
@@ -16,6 +16,7 @@ pub(crate) async fn append(
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
     body: &mut String,
+    renderer: &crate::publication::document::plantuml::LocalRenderer,
 ) -> Result<()> {
     let direct = view.pattern(&format!(r#"
 {{ {subject} ?p ?o . BIND({subject} AS ?s) }} UNION
@@ -121,7 +122,7 @@ BIND(?s AS ?group)
     body.push_str(LEGEND);
     body.push_str("\n\n");
     if edges.is_empty() {
-        write(body, Diagram { focus, edges })?;
+        write(body, Diagram { focus, edges }, renderer).await?;
         if !overflow {
             body.push_str(
                 "No direct class, domain or range relationships are asserted \
@@ -129,7 +130,7 @@ BIND(?s AS ?group)
             );
         }
     } else {
-        write(body, Diagram { focus, edges })?;
+        write(body, Diagram { focus, edges }, renderer).await?;
     }
     if overflow {
         body.push_str(
@@ -141,10 +142,15 @@ BIND(?s AS ?group)
     }
     Ok(())
 }
-fn write(body: &mut String, diagram: Diagram) -> Result<()> {
-    let source = serde_json::to_string(&diagram)?;
+async fn write(
+    body: &mut String,
+    diagram: Diagram,
+    renderer: &crate::publication::document::plantuml::LocalRenderer,
+) -> Result<()> {
+    let source =
+        serde_json::to_string(&Projection::generate(diagram, renderer).await?)?;
     ensure!(
-        source.len() <= 64 * 1024,
+        source.len() <= 512 * 1024,
         "class diagram exceeds content budget"
     );
     body.push_str(&format!("```{LANGUAGE}\n{source}\n```\n\n"));

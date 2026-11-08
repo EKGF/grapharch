@@ -9,8 +9,11 @@ nav_order: 9
 GraphArch automatically adds a small class-neighborhood diagram to each OWL
 class documented from collected RDF. This works in ontology-family publications,
 DPROD publications, and an unconfigured `grapharch build` of an ontology file.
-There is no separate diagram source to maintain and no PlantUML server or Java
-installation to configure.
+There is no separate diagram source to maintain. Collection/documentation uses a
+local PlantUML installation on `PATH` and Java. The embedded Smetana layout
+engine does not require a Graphviz executable. GraphArch never downloads an
+engine or sends ontology content to a diagram service; a missing local engine
+is an explicit error. Rendering an already documented graph needs neither tool.
 
 The highlighted box is the documented class. Neighboring classes and properties
 link to their documentation when selected in the publication; otherwise HTTP(S)
@@ -35,20 +38,26 @@ translation of OWL into closed-world UML fields:
 - SHACL shapes are not presented as OWL restrictions. This view does not assert
   validation requirements, ownership, aggregation, or composition.
 
-The diagram is deliberately local. It shows up to 18 relationships, ordered
-by source/predicate/object, in panels of up to six relationships. A visible notice
-identifies truncated neighborhoods. Full source assertions remain in the
+The diagram is deliberately local. It shows complete relationship groups within
+an 18-fact budget, selected in deterministic IRI order. Domain/range facts for a
+property and facts describing a direct restriction stay together. An oversized
+group is omitted whole, with a visible limit notice; it is never cut into a
+misleading partial assertion. Full source assertions remain in the
 publication; nested expressions beyond the direct neighborhood are not expanded
 recursively. Isolated classes still receive a class box.
 
 ## Reproducible publication
 
 The documentor reads the pinned collected RDF revision and stores the typed
-neighborhood in the generated documentation fragment. HTML and PDF render that
-same retained model. Rendering an exported and restored documentation KG does
+neighborhood, generated PlantUML source, engine version, and validated SVG in the
+generated documentation fragment. HTML and PDF use that same retained vector
+drawing; target-specific links are resolved without rerunning layout. Rendering an exported and restored documentation KG does
 not require the original ontology files or network access. Changes to incoming
 relationships also change the generated fragment content and revision.
 
-This automatic feature is independent of authored diagrams. Existing authored
-image assets remain supported; it does not claim execution support for arbitrary
-PlantUML source files.
+The build reuses one bounded local renderer process across class diagrams. It
+restarts the process after 128 requests and limits each request’s time and output.
+The renderer runs with PlantUML’s sandbox security profile.
+
+This automatic feature is independent of [authored PlantUML diagrams](../collectors/plantuml.md),
+which remain supported by the dedicated collector and documentor.

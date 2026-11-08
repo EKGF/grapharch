@@ -182,6 +182,11 @@ pub(super) async fn rdf_pages(
             "skos".into(),
         ),
     ]));
+    let diagram_renderer = Arc::new(
+        crate::publication::document::plantuml::LocalRenderer::new(
+            std::ffi::OsStr::new("plantuml"),
+        ),
+    );
     let mut has_home = has_home(dataset, &view).await?;
     let mut any = false;
     let mut documented: BTreeMap<NamedNode, String> = BTreeMap::new(); // bounded: shared 20,000 subject budget.
@@ -286,6 +291,7 @@ pub(super) async fn rdf_pages(
                 prefixes.clone(),
                 known.clone(),
             )?
+            .with_diagram_renderer(diagram_renderer.clone())
             .with_source_annotations();
             documentor.document(writer).await?;
             let fragment = documentor.fragment_id();

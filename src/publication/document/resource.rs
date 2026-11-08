@@ -11,12 +11,13 @@ use {
 };
 
 pub(super) struct ResourceDocumentor {
-    dataset:   Dataset,
-    snapshot:  NamedNode,
-    project:   NamedNode,
-    class:     NamedNode,
-    label:     &'static str,
-    processor: NamedNode,
+    dataset:          Dataset,
+    snapshot:         NamedNode,
+    project:          NamedNode,
+    class:            NamedNode,
+    label:            &'static str,
+    processor:        NamedNode,
+    diagram_renderer: super::plantuml::LocalRenderer,
 }
 
 impl ResourceDocumentor {
@@ -34,6 +35,9 @@ impl ResourceDocumentor {
             class: NamedNode::new(class)?,
             label,
             processor: identity("documentor-v1", &[project, class]),
+            diagram_renderer: super::plantuml::LocalRenderer::new(
+                std::ffi::OsStr::new("plantuml"),
+            ),
         })
     }
 
@@ -176,6 +180,7 @@ impl ResourceDocumentor {
                 &std::collections::BTreeMap::new(),
                 &std::collections::HashSet::new(),
                 &mut description,
+                &self.diagram_renderer,
             )
             .await?;
             digest.update(description.as_bytes());

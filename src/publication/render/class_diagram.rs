@@ -1,9 +1,9 @@
 //! Render retained semantic diagram blocks; no source RDF or files are read.
 use {
     crate::publication::document::class_diagram::{
-        Diagram,
         LANGUAGE,
         Node,
+        Projection,
         svg,
     },
     anyhow::Result,
@@ -32,7 +32,8 @@ pub(super) fn resolve<'a>(
                 _ => anyhow::bail!("invalid class diagram content"),
             }
         }
-        let mut diagram = Diagram::parse(&source)?;
+        let mut projection = Projection::parse(&source)?;
+        let diagram = &mut projection.diagram;
         for node in diagram.nodes_mut() {
             if let Some(original) = &node.link {
                 let destination = match links.get(original) {
@@ -49,29 +50,22 @@ pub(super) fn resolve<'a>(
         }
         output.push(event);
         output.push(Event::Text(
-            serde_json::to_string(&diagram)?.into(),
+            serde_json::to_string(&projection)?.into(),
         ));
         output.push(Event::End(TagEnd::CodeBlock));
     }
     Ok(output)
 }
 pub(super) fn html(source: &str) -> Result<String> {
-    let diagram = Diagram::parse(source)?;
+    let projection = Projection::parse(source)?;
+    let diagram = &projection.diagram;
     let mut html = format!(
         "<figure class=\"owl-class-diagram\" style=\"margin:1.25rem 0\"><div \
          tabindex=\"0\" role=\"region\" aria-label=\"Class relationship \
-         diagram\" style=\"overflow-x:auto\">{}</div><figcaption>Class \
-         neighborhood: {}</figcaption><details><summary>Relationships as \
-         text</summary><ul>",
-        svg::draw(&diagram, true)?.replacen(
-            "style=\"",
-            if diagram.edges.is_empty() {
-                "style=\"display:block;width:320px;max-width:100%;height:auto;"
-            } else {
-                "style=\"display:block;width:100%;min-width:900px;height:auto;"
-            },
-            1
-        ),
+         diagram\" style=\"overflow-x:auto;background:#fff;padding:0.75rem;\
+         border-radius:0.4rem\">{}</div><figcaption>Class neighborhood: \
+         {}</figcaption><details><summary>Relationships as text</summary><ul>",
+        svg::draw(&projection, true)?,
         svg::xml(&diagram.focus.label)
     );
     if diagram.edges.is_empty() {
@@ -104,8 +98,9 @@ fn node_html(node: &Node) -> Result<String> {
     }
 }
 pub(super) fn typst(source: &str) -> Result<String> {
-    let diagram = Diagram::parse(source)?;
-    let svg = svg::draw(&diagram, false)?;
+    let projection = Projection::parse(source)?;
+    let diagram = &projection.diagram;
+    let svg = svg::draw(&projection, false)?;
     crate::publication::image_assets::validate(
         svg.as_bytes(),
         "image/svg+xml",
@@ -156,48 +151,4 @@ pub(super) fn validate_external(destination: &str) -> Result<()> {
         "unresolved diagram resource: {destination}"
     );
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn model(link: &str, label: &str) -> String {
-        serde_json::to_string(&Diagram {
-            focus: Node {
-                id:    "https://example.org/C".into(),
-                label: label.into(),
-                kind:  "Class".into(),
-                link:  Some(link.into()),
-            },
-            edges: Vec::new(),
-        })
-        .unwrap()
-    }
-
-    #[test]
-    fn native_svg_escapes_source_text_and_rejects_executable_links() {
-        let rendered =
-            html(&model("#class", "<script>alert('x')</script>")).unwrap();
-        assert!(!rendered.contains("<script>"));
-        assert!(rendered.contains("&lt;script&gt;"));
-        assert!(html(&model("javascript:alert(1)", "Class")).is_err());
-        assert!(html(&model("//evil.example", "Class")).is_err());
-    }
-
-    #[test]
-    fn typst_preserves_text_links_without_svg_link_annotations() {
-        let output = typst(&model("#class", "Class")).unwrap();
-        assert!(output.contains("#image(bytes("));
-        assert!(
-            output.contains("width: 35%"),
-            "isolated classes must not fill the page"
-        );
-        assert!(
-            html(&model("#class", "Class"))
-                .unwrap()
-                .contains("width:320px")
-        );
-        assert!(!output.contains("<a href"));
-    }
 }

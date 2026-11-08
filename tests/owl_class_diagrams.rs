@@ -256,3 +256,23 @@ async fn oversized_property_groups_are_omitted_whole() -> Result<()> {
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn generated_layout_and_engine_identity_are_retained_with_the_assertions()
+-> Result<()> {
+    let body =
+        diagram("ex:Core a owl:Class ; rdfs:subClassOf ex:Parent .").await?;
+    assert!(
+        body.contains("!pragma layout smetana"),
+        "generated PlantUML must be retained"
+    );
+    assert!(
+        body.contains("PlantUML version"),
+        "renderer identity must be retained"
+    );
+    assert!(
+        body.contains("<svg"),
+        "restored publications must not invoke a layout engine"
+    );
+    Ok(())
+}
