@@ -81,6 +81,7 @@ async fn simple_existential_is_a_scoped_association_without_global_multiplicity(
 async fn unsupported_restrictions_are_not_simplified_to_existentials()
 -> Result<()> {
     for constraint in [
+        "owl:onProperty ex:unknown ; owl:someValuesFrom ex:Document",
         "owl:onProperty ex:isMemberOf ; owl:allValuesFrom ex:Document",
         "owl:onProperty [ owl:inverseOf ex:isMemberOf ] ; owl:someValuesFrom \
          ex:Document",

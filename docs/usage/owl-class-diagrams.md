@@ -41,12 +41,12 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   domain/range assertions apply together, not as alternative choices. The
   retained documentation graph preserves every original assertion regardless
   of shorthand.
-- A simple anonymous subclass restriction with one named `owl:onProperty` and
+- A simple anonymous subclass restriction with one explicitly declared object property in `owl:onProperty` and
   one named `owl:someValuesFrom` becomes a class-scoped association, labelled
   with the property and `{at least one Filler}`. This existential qualification
   does not mean every property value belongs to that filler, and does not create
   a global range or an unqualified `1..*` multiplicity. Universal restrictions,
-  inverse paths, complex fillers and additional qualifiers stay explicit.
+  unknown property types, inverse paths, complex fillers and additional qualifiers stay explicit.
 - Other direct restrictions retain their `owl:onProperty`, value constraints,
   and cardinalities as explicit relationships. Union and intersection RDF lists
   are expanded into labeled member relationships. Anonymous expressions have
