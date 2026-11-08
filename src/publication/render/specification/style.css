@@ -2,7 +2,8 @@
 *{box-sizing:border-box}
 html{color:var(--ink);background:#fff;font:16px/1.5 Arial,Helvetica,sans-serif;scroll-padding-top:1rem}
 body{margin:0;padding:2.5rem 2rem 4rem calc(var(--toc-size) + 5.5rem)}
-main{max-width:50rem;margin:0;overflow-wrap:anywhere}
+/* One shared measure for prose, reference tables, diagrams and examples. */
+main{max-width:75rem;min-width:0;margin:0;overflow-wrap:anywhere}
 a{color:var(--link);text-underline-offset:.1em}a:visited{color:#5a3696}a:hover{color:#0074b8}
 a:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
 h1,h2,h3,h4,h5,h6{line-height:1.2;color:var(--authority-color);overflow-wrap:anywhere}
@@ -83,11 +84,3 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 /* Predicate identifiers get intrinsic space, capped so long IRIs still wrap. */
 .rdf-properties>thead>tr>th:first-child,.rdf-properties>tbody>tr>td:first-child{width:1%;min-width:calc(min(20ch,40vw) + 1.6rem + 1px)}
 .rdf-properties>tbody>tr>td:first-child>code{display:inline-block;max-inline-size:min(24ch,35vw);overflow-wrap:anywhere}
-
-/* Use the space beside the TOC for diagrams and reference tables. Prose keeps
-   a reading measure, growing moderately on wider screens. Screen-only so the
-   paged print layout and PDF renderer retain their own physical measures. */
-@media screen{
-  main{max-width:none;min-width:0;--prose-width:clamp(50rem,60vw,60rem)}
-  main :where(p,ul,ol,dl,blockquote,pre,.head,.publication-preamble,footer){max-width:var(--prose-width)}
-}
