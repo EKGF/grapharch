@@ -251,16 +251,24 @@ ex:p a owl:ObjectProperty ; rdfs:label "Related parent" ; rdfs:comment "Relates 
 
 #[tokio::test]
 async fn list_expressions_and_cardinalities_remain_explicit() -> Result<()> {
-    let body = diagram(r#"
-ex:Core a owl:Class ; owl:equivalentClass [ owl:unionOf (ex:A ex:B) ] ;
- rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:minCardinality 2 ] .
+    // Check each semantic construct independently: the combined neighborhood
+    // can exceed the layout budget with different platform font metrics.
+    let union = diagram(
+        r#"
+ex:Core a owl:Class ; owl:equivalentClass [ owl:unionOf (ex:A ex:B) ] .
+"#,
+    )
+    .await?;
+    assert!(union.contains("owl:unionOf member"));
+    assert!(union.contains("ex:A"));
+    assert!(union.contains("ex:B"));
+    let restriction = diagram(r#"
+ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:minCardinality 2 ] .
 "#).await?;
-    assert!(body.contains("owl:unionOf member"));
-    assert!(body.contains("ex:A"));
-    assert!(body.contains("ex:B"));
-    assert!(body.contains("owl:minCardinality"));
-    assert!(body.contains("Literal value"));
-    assert!(!body.contains("urn:grapharch:skolem:"));
+    assert!(restriction.contains("owl:minCardinality"));
+    assert!(restriction.contains("Literal value"));
+    assert!(!union.contains("urn:grapharch:skolem:"));
+    assert!(!restriction.contains("urn:grapharch:skolem:"));
     Ok(())
 }
 
