@@ -22,6 +22,8 @@ async fn render(
 <https://example.org/vocab/Thing> a owl:Class; rdfs:label "Thing"; dct:description "An example thing."; rdfs:subClassOf <https://example.org/vocab/Parent> .
 <https://example.org/vocab/Parent> a owl:Class; rdfs:label "Parent"; dct:description "The parent." .
 "#).await?;
+    tokio::fs::write(corpus.join("empty.ttl"), r#"@prefix owl:<http://www.w3.org/2002/07/owl#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> . @prefix dct:<http://purl.org/dc/terms/> .
+<https://example.org/zempty/> a owl:Ontology; rdfs:label "Z empty vocabulary"; dct:description "An ontology without classes." ."#).await?;
     let hint = term
         .map(|term| {
             format!("<urn:terms:collection> ga:collectionTerm \"{term}\" .")
@@ -42,6 +44,7 @@ async fn render(
 {hint}
 <urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer "{renderer}"; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
 <urn:terms:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
+<https://example.org/zempty/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "empty"; sh:namespace "https://example.org/zempty/"] .
 <https://example.org/vocab/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "example"; sh:namespace "https://example.org/vocab/"] .
 "##)).await?;
     let built = ontology_family::collect(
@@ -86,6 +89,34 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
                 let body = tokio::fs::read_to_string(file.path()).await?;
                 notes += body.matches("id=\"grapharch-diagram-note\"").count();
                 refs += body.matches("role=\"doc-noteref\"").count();
+                let document = scraper::Html::parse_document(&body);
+                for reference in document.select(
+                    &scraper::Selector::parse("a[role=doc-noteref]").unwrap(),
+                ) {
+                    let (route, anchor) = reference
+                        .value()
+                        .attr("href")
+                        .unwrap()
+                        .split_once('#')
+                        .unwrap();
+                    let target = if route.is_empty() {
+                        file.path()
+                    } else {
+                        root.join(route)
+                    };
+                    let target = tokio::fs::read_to_string(target).await?;
+                    assert_eq!(
+                        target.matches(&format!("id=\"{anchor}\"")).count(),
+                        1,
+                        "{renderer}: unambiguous note target"
+                    );
+                }
+                if let (Some(note), Some(last_figure)) = (
+                    body.find("id=\"grapharch-diagram-note\""),
+                    body.rfind("</figure>"),
+                ) {
+                    assert!(note > last_figure, "note after diagrams");
+                }
             }
         }
         assert_eq!(notes, 1, "{renderer}: one shared note");
@@ -95,6 +126,7 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
         );
         let mut files = tokio::fs::read_dir(&root).await?;
         let mut documents = 0;
+        let mut empty_documents = 0;
         while let Some(file) = files.next_entry().await? {
             if file.path().extension().is_some_and(|e| e == "typ") {
                 let typst = tokio::fs::read_to_string(file.path()).await?;
@@ -115,8 +147,16 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
                                 )
                                 .unwrap()
                     );
+                } else {
+                    empty_documents += 1;
                 }
             }
+        }
+        if renderer == "bookshelf" {
+            assert!(
+                empty_documents > 0,
+                "book without class diagrams has no note"
+            );
         }
         if renderer == "specification" || renderer == "bookshelf" {
             assert!(documents > 0, "{renderer}: PDF note");
@@ -142,7 +182,8 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let PublishOutcome::Published(publication) = Publisher::new(restored)
+    let publisher = Publisher::new(restored);
+    let PublishOutcome::Published(publication) = publisher
         .render(&plan, &output.path().join("after"))
         .await?
     else {
@@ -164,5 +205,61 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
         html.contains("href=\"diagram-notes.html#grapharch-diagram-note\"")
     );
     assert!(!html.contains("These diagrams present asserted OWL"));
+    let PublishOutcome::Published(again) = publisher
+        .render(&plan, &output.path().join("again"))
+        .await?
+    else {
+        panic!("published")
+    };
+    assert_eq!(
+        html,
+        tokio::fs::read_to_string(again.directory.join("index.html")).await?
+    );
+    assert_eq!(
+        note,
+        tokio::fs::read_to_string(again.directory.join("diagram-notes.html"))
+            .await?
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn publication_without_diagrams_has_no_note_artifact() -> Result<()> {
+    let source = tempfile::tempdir()?;
+    tokio::fs::write(
+        source.path().join("index.md"),
+        "# Plain page\n\nNo diagram is selected.\n",
+    )
+    .await?;
+    let output = tempfile::tempdir()?;
+    let (dataset, plan) = grapharch::publication::quick_build::BuildRequest {
+        source: source.path().into(),
+        output: output.path().join("before"),
+    }
+    .collect()
+    .await?;
+    let archive = output.path().join("graph.nq");
+    dataset.export(archive.clone()).await?;
+    source.close()?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .render(&plan, &output.path().join("after"))
+        .await?
+    else {
+        panic!("published")
+    };
+    assert!(
+        !publication
+            .manifest
+            .files
+            .iter()
+            .any(|f| f == "diagram-notes.html")
+    );
+    assert!(
+        !tokio::fs::read_to_string(publication.directory.join("index.html"))
+            .await?
+            .contains("doc-noteref")
+    );
     Ok(())
 }
