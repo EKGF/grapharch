@@ -1,11 +1,10 @@
-use {
-    super::*,
-    crate::publication::{
-        assembly::Assembler,
-        collect::{Collector, RdfFile, plantuml::PlantUmlFile},
-        plan::TargetPlanner,
-        render::{PublishOutcome, Publisher},
-    },
+use super::*;
+#[cfg(unix)]
+use crate::publication::{
+    assembly::Assembler,
+    collect::{Collector, RdfFile, plantuml::PlantUmlFile},
+    plan::TargetPlanner,
+    render::{PublishOutcome, Publisher},
 };
 
 #[tokio::test]
