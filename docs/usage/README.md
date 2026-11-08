@@ -22,6 +22,7 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 | Generate this documentation website | [Self-hosted documentation](self-hosting.md) |
 | Publish a standards-style specification and PDF | [Specification renderer](specification-renderer.md) |
 | Generate navigable OWL class neighborhoods | [OWL class diagrams](owl-class-diagrams.md) |
+| Document separately declared class validation shapes | [SHACL views of classes](shacl-class-views.md) |
 | Build an ontology family in CI or publish it to Pages | [GitHub Actions](github-actions.md) |
 
 The `publication` commands provide the current publishing workflows. See

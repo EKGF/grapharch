@@ -18,8 +18,9 @@ pub(super) const STYLE: &str =
      display:grid;grid-template-columns:230px \
      minmax(0,1fr);gap:50px}aside{position:sticky;top:24px;align-self:start;\
      font-size:14px}nav a{display:block;margin:8px \
-     0}a{color:#1755a4;text-underline-offset:3px}h1,h2,h3{line-height:1.25;\
-     color:#10243a}h1{font-size:2.7rem;margin:0 0 \
+     0}main{min-width:0;overflow-wrap:anywhere}a{color:#1755a4;\
+     text-underline-offset:3px}h1,h2,h3{line-height:1.25;color:#\
+     10243a}h1{font-size:2.7rem;margin:0 0 \
      12px}h2{font-size:1.7rem;margin-top:48px}header{padding-bottom:24px;\
      border-bottom:2px solid \
      #1755a4}.subtitle,footer{color:#526174}pre{overflow:auto;padding:18px;\
