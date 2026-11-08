@@ -151,6 +151,9 @@ fn source(diagram: &Diagram) -> String {
                     .expect("retained property node");
                 let range = property
                     .range
+                    .filter(|range| {
+                        range.id != super::shorthand::GENERIC_RESOURCE
+                    })
                     .map(|r| format!(" : {}", text(&r.label)))
                     .unwrap_or_default();
                 output.push_str(&format!(

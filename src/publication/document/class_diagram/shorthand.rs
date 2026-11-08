@@ -4,6 +4,8 @@ use {
     std::collections::BTreeSet,
 };
 const DOMAIN: &str = "http://www.w3.org/2000/01/rdf-schema#domain";
+pub(super) const GENERIC_RESOURCE: &str =
+    "http://www.w3.org/2000/01/rdf-schema#Resource";
 const RANGE: &str = "http://www.w3.org/2000/01/rdf-schema#range";
 
 pub(super) struct Property<'a> {
@@ -12,7 +14,10 @@ pub(super) struct Property<'a> {
     pub range:  Option<&'a Node>,
 }
 impl Property<'_> {
-    pub fn attribute(&self) -> bool { self.node.kind == "Datatype property" }
+    pub fn attribute(&self) -> bool {
+        self.node.kind == "Datatype property" ||
+            self.range.is_some_and(|range| range.id == GENERIC_RESOURCE)
+    }
 }
 pub(super) struct Shorthand<'a> {
     pub properties: Vec<Property<'a>>,
@@ -59,6 +64,7 @@ impl<'a> Shorthand<'a> {
                 .collect(); // bounded: eighteen edges.
             if domains.len() != 1 ||
                 domains[0].kind != "Class" ||
+                domains[0].id == GENERIC_RESOURCE ||
                 ranges.len() > 1
             {
                 continue;
@@ -73,6 +79,18 @@ impl<'a> Shorthand<'a> {
             consumed.extend(incident.iter().map(|(i, _)| *i));
             properties.push(Property { node, domain: domains[0], range });
         }
+        // Suppress only the generic RDF root in this presentation, never facts.
+        consumed.extend(
+            diagram
+                .edges
+                .iter()
+                .enumerate()
+                .filter(|(_, edge)| {
+                    edge.from.id == GENERIC_RESOURCE ||
+                        edge.to.id == GENERIC_RESOURCE
+                })
+                .map(|(index, _)| index),
+        );
         let mut visible = BTreeSet::from([diagram.focus.id.as_str()]); // bounded: thirty-seven nodes.
         for (index, edge) in diagram.edges.iter().enumerate() {
             if !consumed.contains(&index) {
@@ -87,6 +105,7 @@ impl<'a> Shorthand<'a> {
                 visible.insert(range.id.as_str());
             }
         }
+        visible.remove(GENERIC_RESOURCE);
         Self { properties, consumed, visible }
     }
 }

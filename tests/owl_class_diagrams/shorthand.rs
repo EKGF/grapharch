@@ -135,3 +135,32 @@ async fn datatype_without_range_does_not_invent_a_type_or_requiredness()
     assert!(!drawing.source.contains("[1]"));
     Ok(())
 }
+
+#[tokio::test]
+async fn generic_rdfs_resource_is_only_hidden_in_the_drawing() -> Result<()> {
+    let body = diagram(r#"
+ex:Core a owl:Class ; rdfs:subClassOf rdfs:Resource, ex:Resource .
+ex:Resource a owl:Class .
+ex:generic a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range rdfs:Resource .
+ex:ambiguous a owl:ObjectProperty ; rdfs:domain ex:Core, ex:Resource ; rdfs:range rdfs:Resource .
+"#).await?;
+    let drawing = retained(&body)?;
+    assert_eq!(drawing.diagram.edges.len(), 7);
+    assert!(drawing.diagram.edges.iter().any(|edge| {
+        edge.to.id == "http://www.w3.org/2000/01/rdf-schema#Resource"
+    }));
+    assert!(
+        !drawing.source.contains("rdfs:\\nResource"),
+        "{}",
+        drawing.source
+    );
+    assert!(drawing.source.contains("ex:\\nResource"));
+    assert!(
+        drawing
+            .source
+            .contains("{field} ex:generic [[[./grapharch-node/")
+    );
+    assert!(drawing.source.contains("ex:\\nambiguous"));
+    assert!(drawing.source.contains("rdfs:\\ndomain"));
+    Ok(())
+}
