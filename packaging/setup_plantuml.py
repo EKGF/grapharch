@@ -47,6 +47,19 @@ def launcher(root, java, jar, windows):
     return path
 
 
+def probe(command, arguments, source, environment):
+    try:
+        return subprocess.run(
+            [str(command), *arguments], input=source, capture_output=True,
+            text=True, check=True, timeout=30, env=environment,
+        ).stdout
+    except subprocess.CalledProcessError as error:
+        raise ValueError(
+            f"PlantUML probe failed ({error.returncode}): "
+            f"{(error.stdout or '')[:4096]} {(error.stderr or '')[:4096]}"
+        ) from error
+
+
 def install():
     windows = windows_platform(platform.system())
     java = Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if windows else "java")
@@ -71,14 +84,16 @@ def install():
             pending.unlink(missing_ok=True)
     verify(jar)
     command = launcher(root, java, jar, windows)
-    version = subprocess.run([str(command), "-version"], check=True, capture_output=True, text=True, timeout=30)
-    if not version.stdout.startswith(f"PlantUML version {VERSION} "):
+    environment = dict(os.environ, PLANTUML_SECURITY_PROFILE="SANDBOX")
+    # -version also probes external Graphviz and fails when dot is absent.
+    # The standard preprocessor version function requires no layout engine.
+    version = probe(command, ["-preproc", "-pipe"], "@startuml\n%version()\n@enduml\n", environment)
+    if version.splitlines() != ["@startuml", VERSION, "@enduml"]:
         raise ValueError("Installed PlantUML reports an unexpected version")
     # Verify the actual MIT build contains the required in-process UML engine.
-    environment = dict(os.environ, PLANTUML_SECURITY_PROFILE="SANDBOX")
     sample = "@startuml\n!pragma layout smetana\nclass Parent\nclass Child\nParent <|-- Child\n@enduml\n"
-    rendered = subprocess.run([str(command), "-pipe", "-tsvg", "-nometadata"], input=sample, capture_output=True, text=True, check=True, timeout=30, env=environment)
-    if "<svg" not in rendered.stdout or "Parent" not in rendered.stdout or "Child" not in rendered.stdout:
+    rendered = probe(command, ["-pipe", "-tsvg", "-nometadata"], sample, environment)
+    if "<svg" not in rendered or "Parent" not in rendered or "Child" not in rendered:
         raise ValueError("Pinned PlantUML failed the Smetana rendering probe")
     with Path(os.environ["GITHUB_PATH"]).open("a", encoding="utf-8") as output:
         output.write(str(root) + "\n")

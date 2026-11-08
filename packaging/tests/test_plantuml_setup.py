@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -27,9 +28,10 @@ class PlantUmlSetupTest(unittest.TestCase):
             (cache / "plantuml.jar").write_bytes(b"verified")
             exported = root / "github-path"
             environment = {"JAVA_HOME": str(java.parent.parent), "RUNNER_TOOL_CACHE": str(root / "cache"), "GITHUB_PATH": str(exported)}
-            with patch.dict(os.environ, environment), patch.object(setup, "SHA256", digest), patch.object(setup.platform, "system", return_value="Linux"), patch.object(setup.urllib.request, "urlopen") as download, patch.object(setup.subprocess, "run", side_effect=[SimpleNamespace(stdout=f"PlantUML version {setup.VERSION} (test)"), SimpleNamespace(stdout="<svg>Parent Child</svg>")]) as command:
+            with patch.dict(os.environ, environment), patch.object(setup, "SHA256", digest), patch.object(setup.platform, "system", return_value="Linux"), patch.object(setup.urllib.request, "urlopen") as download, patch.object(setup.subprocess, "run", side_effect=[SimpleNamespace(stdout=f"@startuml\n{setup.VERSION}\n@enduml\n"), SimpleNamespace(stdout="<svg>Parent Child</svg>")]) as command:
                 setup.install()
                 download.assert_not_called()
+                self.assertEqual(command.call_args_list[0].args[0][1:], ["-preproc", "-pipe"])
                 self.assertIn("layout smetana", command.call_args.kwargs["input"])
                 self.assertEqual(exported.read_text().strip(), str(cache))
             exported.unlink()
@@ -37,6 +39,13 @@ class PlantUmlSetupTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unexpected version"):
                     setup.install()
                 self.assertFalse(exported.exists())
+
+    def test_failed_probe_reports_bounded_diagnostics(self):
+        failure = subprocess.CalledProcessError(16, ["plantuml"], output="a" * 10000, stderr="missing layout engine")
+        with patch.object(setup.subprocess, "run", side_effect=failure):
+            with self.assertRaisesRegex(ValueError, "missing layout engine") as caught:
+                setup.probe(Path("plantuml"), [], "", {})
+        self.assertLess(len(str(caught.exception)), 4300)
 
     def test_verified_cache_is_reused_but_corruption_fails(self):
         with tempfile.TemporaryDirectory() as directory:
