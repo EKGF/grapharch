@@ -644,6 +644,23 @@ impl Collector for GitImageFile {
     }
 }
 
+struct BlobProvenance(PinnedGitBlob);
+#[async_trait]
+impl Collector for BlobProvenance {
+    fn identity(&self) -> Result<SourceIdentity<'_>> {
+        Ok(SourceIdentity {
+            project:   &self.0.revision.project,
+            processor: "urn:grapharch:git-blob-provenance",
+            source:    self.0.source(),
+        })
+    }
+
+    async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
+        self.0.provenance(stream).await?;
+        Ok(self.0.revision())
+    }
+}
+
 #[cfg(test)]
 mod reference_tests {
     use super::*;
@@ -723,22 +740,5 @@ mod reference_tests {
         assert!(blob.reference("#local").await?.is_none());
         assert!(blob.reference("https://example.org/guide").await?.is_none());
         Ok(())
-    }
-}
-
-struct BlobProvenance(PinnedGitBlob);
-#[async_trait]
-impl Collector for BlobProvenance {
-    fn identity(&self) -> Result<SourceIdentity<'_>> {
-        Ok(SourceIdentity {
-            project:   &self.0.revision.project,
-            processor: "urn:grapharch:git-blob-provenance",
-            source:    self.0.source(),
-        })
-    }
-
-    async fn produce(&self, stream: &mut ContributionStream) -> Result<String> {
-        self.0.provenance(stream).await?;
-        Ok(self.0.revision())
     }
 }
