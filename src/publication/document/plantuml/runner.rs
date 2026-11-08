@@ -22,8 +22,17 @@ async fn read(
     );
     Ok(bytes)
 }
+fn launcher(program: &OsStr, windows: bool) -> &OsStr {
+    // Rust only supplies the .exe suffix during Windows PATH lookup. Our
+    // explicitly provisioned Java launcher is a .cmd file on that platform.
+    if windows && program == OsStr::new("plantuml") {
+        OsStr::new("plantuml.cmd")
+    } else {
+        program
+    }
+}
 pub(super) fn command(program: &OsStr, args: &[&str]) -> Command {
-    let mut command = Command::new(program);
+    let mut command = Command::new(launcher(program, cfg!(windows)));
     command
         .args(args)
         .env_clear()
@@ -123,4 +132,24 @@ pub(super) fn clean_svg(bytes: &[u8]) -> Result<Vec<u8>> {
     }
     result.push_str(&source[offset..]);
     Ok(result.into_bytes())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn windows_default_uses_the_explicit_batch_launcher_extension() {
+        assert_eq!(
+            launcher(OsStr::new("plantuml"), true),
+            "plantuml.cmd"
+        );
+        assert_eq!(
+            launcher(OsStr::new("plantuml"), false),
+            "plantuml"
+        );
+        assert_eq!(
+            launcher(OsStr::new("custom.exe"), true),
+            "custom.exe"
+        );
+    }
 }
