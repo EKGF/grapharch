@@ -101,11 +101,9 @@ ex:required a <http://www.w3.org/ns/shacl#PropertyShape> ; <http://www.w3.org/ns
 #[tokio::test]
 async fn isolated_class_still_has_a_diagram_but_properties_do_not() -> Result<()>
 {
-    assert!(
-        diagram("ex:Core a owl:Class .")
-            .await?
-            .contains("```grapharch-class-diagram")
-    );
+    let body = diagram("ex:Core a owl:Class .").await?;
+    assert!(body.contains("```grapharch-class-diagram"));
+    assert!(!body.contains("No direct class, domain or range relationships"));
     assert!(
         !diagram("ex:Core a owl:ObjectProperty .")
             .await?

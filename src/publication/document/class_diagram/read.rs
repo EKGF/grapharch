@@ -133,12 +133,6 @@ BIND(?s AS ?group)
     )
     .await?;
     let projection = Projection::generate(diagram, renderer).await?;
-    if projection.diagram.edges.is_empty() && !overflow {
-        body.push_str(
-            "No direct class, domain or range relationships are asserted in \
-             the collected sources.\n\n",
-        );
-    }
     write(body, projection)?;
     Ok(())
 }
