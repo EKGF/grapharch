@@ -111,11 +111,13 @@ BIND(?s AS ?group)
         });
     }
     let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
+    let mut selected_groups = 0;
     for group in groups.into_values() {
-        if edges.len() + group.len() > 18 {
+        if selected_groups == 5 || edges.len() + group.len() > 18 {
             overflow = true;
             continue;
         }
+        selected_groups += 1;
         edges.extend(group);
     }
     body.push_str("\n\n**Class neighborhood**\n\n");
@@ -134,10 +136,10 @@ BIND(?s AS ?group)
     }
     if overflow {
         body.push_str(
-            "**Diagram limit:** showing complete relationship groups within \
-             an 18-fact budget, selected in deterministic IRI order. Omitted \
-             groups remain in the published source graph; this view is not \
-             exhaustive.\n\n",
+            "**Diagram limit:** showing up to five complete relationship \
+             groups within an 18-fact budget, selected in deterministic IRI \
+             order. Omitted groups remain in the published source graph; this \
+             view is not exhaustive.\n\n",
         );
     }
     Ok(())

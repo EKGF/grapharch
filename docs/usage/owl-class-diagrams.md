@@ -38,7 +38,7 @@ translation of OWL into closed-world UML fields:
 - SHACL shapes are not presented as OWL restrictions. This view does not assert
   validation requirements, ownership, aggregation, or composition.
 
-The diagram is deliberately local. It shows complete relationship groups within
+The diagram is deliberately local. It shows up to five complete relationship groups within
 an 18-fact budget, selected in deterministic IRI order. Domain/range facts for a
 property and facts describing a direct restriction stay together. An oversized
 group is omitted whole, with a visible limit notice; it is never cut into a

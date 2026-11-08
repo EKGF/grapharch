@@ -122,6 +122,27 @@ ex:Other a owl:Class ; rdfs:subClassOf ex:Core .
         1
     );
     assert!(body.contains("Diagram limit"));
+    #[derive(serde::Deserialize)]
+    struct Retained {
+        diagram: Neighborhood,
+    }
+    #[derive(serde::Deserialize)]
+    struct Neighborhood {
+        edges: Vec<serde::de::IgnoredAny>,
+    }
+    let json = body
+        .split("```grapharch-class-diagram\n")
+        .nth(1)
+        .unwrap()
+        .split("\n```")
+        .next()
+        .unwrap();
+    let retained: Retained = serde_json::from_str(json)?;
+    assert_eq!(
+        retained.diagram.edges.len(),
+        5,
+        "a high-degree class must stay a small navigable neighborhood"
+    );
     Ok(())
 }
 
