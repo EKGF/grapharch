@@ -16,19 +16,27 @@ async (page) => {
     if(layout.display!=='block'||layout.width<layout.sidebar*.65)throw new Error(`Library links squeezed at ${width}: ${JSON.stringify(layout)}`);
     if(!layout.beforeOutline)throw new Error('Library switcher follows page outline');
     if(layout.overflow)throw new Error('Library navigation causes page overflow');
-    const link=family.locator('a').filter({hasText:/Parties Ontology/}).first();
+    const link=family.locator('a').filter({hasText:/Parties and Situations/}).first();
     const href=await link.getAttribute('href');
-    await link.focus();await page.keyboard.press('Enter');await page.waitForLoadState('domcontentloaded');
+    await link.focus();await page.keyboard.press('Enter');await page.waitForURL(url=>url.pathname.endsWith(href));
     if(!page.url().endsWith(href))throw new Error('Keyboard library navigation failed');
     await page.locator('.family-navigation summary').click();
     await page.waitForFunction(()=>document.querySelector('.family-navigation a[aria-current=page]'));
+    if(!(await page.locator('.family-navigation a[aria-current=page]').evaluate(a=>{const box=a.getBoundingClientRect(), viewport=a.closest('[data-family-tree]').getBoundingClientRect();return box.top>=viewport.top && box.bottom<=viewport.bottom;})))throw new Error('Selected ontology is hidden outside the library scroll viewport');
     const local=page.locator('.page-outline-navigation a[href^="#"]').first();
     await local.click();
+    await page.waitForFunction(()=>document.querySelector('.page-outline-navigation a[aria-current=location]'));
     if(await page.locator('.family-navigation a[aria-current=page]').count()!==1)throw new Error('Section navigation erased current library page');
     if(await page.locator('.page-outline-navigation a[aria-current=location]').count()!==1)throw new Error('Current section not marked');
+    await page.keyboard.press('Control+k');
+    await page.locator('#spec-search-kind').selectOption('ontology');
+    await page.locator('#spec-search-query').fill('Parties and Situations');
+    await page.waitForFunction(()=>document.querySelector('#spec-search-results a'));
+    if(!(await page.locator('#spec-search-results').textContent()).includes('Parties and Situations'))throw new Error('Library ontology search failed');
+    await page.keyboard.press('Escape');
     await page.locator('.family-navigation summary').scrollIntoViewIfNeeded();
     await page.screenshot({path:`output/playwright/library-navigation-${width}.png`});
-    results.push({width,...layout});
+    results.push({viewport:width,...layout});
   }
   return results;
 }

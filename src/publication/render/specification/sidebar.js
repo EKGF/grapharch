@@ -143,6 +143,12 @@
           else { const parent=lists[p.parent]; if (!parent.children.parentNode) parent.li.append(parent.children); parent.children.append(li); }
         });
         familyTree.replaceChildren(root); addBranches(familyTree); reveal();
+        const selected = familyTree.querySelector('a[aria-current="page"]');
+        if (selected) {
+          const item = selected.getBoundingClientRect();
+          const viewport = familyTree.getBoundingClientRect();
+          familyTree.scrollTop += item.top - viewport.top - (viewport.height - item.height) / 2;
+        }
       } catch (error) { familyTree.textContent = `${familyTree.dataset.errorLabel}: ${error.message}`; }
     });
   }
