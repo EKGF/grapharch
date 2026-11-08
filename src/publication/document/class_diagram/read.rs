@@ -173,10 +173,20 @@ async fn node(
             count += 1;
             ensure!(count <= 512, "diagram node exceeds type budget");
             if let Term::NamedNode(value) = &row["value"] {
+                if value.as_str() ==
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property" &&
+                    kind == "Resource"
+                {
+                    kind = "RDF property";
+                }
                 match value.as_str().strip_prefix(OWL) {
                     Some("Class") => kind = "Class",
                     Some("ObjectProperty") => {
                         kind = "Object property";
+                        break;
+                    },
+                    Some("AnnotationProperty") => {
+                        kind = "Annotation property";
                         break;
                     },
                     Some("DatatypeProperty") => {

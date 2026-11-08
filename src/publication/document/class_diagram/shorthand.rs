@@ -33,7 +33,11 @@ impl<'a> Shorthand<'a> {
             if !visited.insert(node.id.as_str()) ||
                 !matches!(
                     node.kind.as_str(),
-                    "Object property" | "Datatype property"
+                    "Object property" |
+                        "Datatype property" |
+                        "Annotation property" |
+                        "RDF property" |
+                        "Resource"
                 )
             {
                 continue;
@@ -72,7 +76,7 @@ impl<'a> Shorthand<'a> {
             let range = ranges.first().copied();
             if range.is_some_and(|n| {
                 !matches!(n.kind.as_str(), "Class" | "Resource")
-            }) || (node.kind == "Object property" && range.is_none())
+            }) || (node.kind != "Datatype property" && range.is_none())
             {
                 continue;
             }

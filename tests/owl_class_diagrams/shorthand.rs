@@ -93,6 +93,8 @@ ex:connects a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Target .
 async fn ambiguous_or_referenced_properties_keep_explicit_assertions()
 -> Result<()> {
     for source in [
+        "ex:p a owl:AnnotationProperty ; rdfs:domain ex:Core, ex:Other ; \
+         rdfs:range ex:Target .",
         "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core, ex:Other ; \
          rdfs:range ex:Target .",
         "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \
@@ -162,5 +164,35 @@ ex:ambiguous a owl:ObjectProperty ; rdfs:domain ex:Core, ex:Resource ; rdfs:rang
     );
     assert!(drawing.source.contains("ex:\\nambiguous"));
     assert!(drawing.source.contains("rdfs:\\ndomain"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn annotation_and_generic_properties_use_declared_domain_to_range_associations()
+-> Result<()> {
+    for declaration in [
+        "a owl:AnnotationProperty ;",
+        "a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> ;",
+        "",
+    ] {
+        let body = diagram(&format!(r#"
+ex:Core a owl:Class .
+ex:evidencePredicate {declaration} rdfs:domain ex:Core ; rdfs:range <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .
+"#)).await?;
+        let drawing = retained(&body)?;
+        assert_eq!(drawing.diagram.edges.len(), 2);
+        assert!(
+            drawing.source.contains(
+                "n1 --> n0 [[./grapharch-node/n2]] : ex:\\nevidencePredicate"
+            ),
+            "{}",
+            drawing.source
+        );
+        assert!(!drawing.source.contains("rdfs:\\ndomain"));
+        assert!(!drawing.source.contains("rdfs:\\nrange"));
+        assert!(!drawing.source.contains("{field}"));
+        assert!(drawing.source.contains("Property"));
+        assert!(!body.contains("Object property"));
+    }
     Ok(())
 }
