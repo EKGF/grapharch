@@ -67,10 +67,12 @@ ex:parent a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Target .
 ex:A a sh:NodeShape ; sh:targetClass ex:Core ; sh:property
  [ sh:path ex:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ],
  [ sh:path ex:ambiguous ; sh:datatype xsd:string ],
+ [ sh:path ex:optional ; sh:datatype xsd:string ; sh:minCount 0 ; sh:maxCount 1 ],
  [ sh:path ex:parent ; sh:minCount 1 ; sh:maxCount 1 ] .
 ex:B a sh:NodeShape ; sh:targetClass ex:Core ; sh:property
  [ sh:path ex:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ],
  [ sh:path ex:ambiguous ; sh:datatype xsd:integer ],
+ [ sh:path ex:optional ; sh:datatype xsd:string ; sh:maxCount 1 ],
  [ sh:path ex:parent ; sh:minCount 1 ; sh:maxCount 1 ] .
 "#,
     )
@@ -97,6 +99,11 @@ ex:B a sh:NodeShape ; sh:targetClass ex:Core ; sh:property
         .find(|line| line.contains("{field} ex:ambiguous"))
         .unwrap();
     assert!(!ambiguous.contains(" : "));
+    let optional = source
+        .lines()
+        .find(|line| line.contains("{field} ex:optional"))
+        .unwrap();
+    assert!(optional.contains("[0..1]"));
     let association = source
         .lines()
         .find(|line| line.contains(" : ") && line.contains("parent"))

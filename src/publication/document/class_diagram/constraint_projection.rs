@@ -25,7 +25,8 @@ impl<'a> Property<'a> {
                     first.range.as_ref().map(|n| &n.id)
         });
         let same_count = fields.iter().all(|field| {
-            (field.minimum, field.maximum) == (first.minimum, first.maximum)
+            (field.minimum.unwrap_or(0), field.maximum) ==
+                (first.minimum.unwrap_or(0), first.maximum)
         });
         Self {
             property: &first.property,
