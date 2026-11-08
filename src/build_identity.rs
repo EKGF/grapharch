@@ -12,17 +12,16 @@ impl Identity {
         dirty: bool,
         release: Option<&str>,
     ) -> Result<Self, String> {
-        if let Some(revision) = revision {
-            if revision.bytes().all(|b| b == b'0') ||
-                revision.len() != 40 ||
+        if revision.is_some_and(|revision| {
+            revision.len() != 40 ||
+                revision.bytes().all(|b| b == b'0') ||
                 !revision.bytes().all(|b| {
                     b.is_ascii_digit() || (b'a'..=b'f').contains(&b)
                 })
-            {
-                return Err("generator revision must be a full lowercase Git \
-                            commit"
-                    .into());
-            }
+        }) {
+            return Err("generator revision must be a full lowercase Git \
+                        commit"
+                .into());
         }
         let (label, channel) = match (release, revision) {
             (Some(release), Some(_)) if release == version && !dirty => {
