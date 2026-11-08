@@ -31,7 +31,7 @@ BIND(IF(?p IN (<{RDFS}domain>, <{RDFS}range>), ?s, IF(?s = {subject}, ?o, ?s)) A
     let restrictions = view.pattern(&format!(r#"
 {subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
 BIND(?s AS ?group)
-?s a <{OWL}Restriction> ; ?p ?o . FILTER(?p IN (<{OWL}onProperty>, <{OWL}someValuesFrom>, <{OWL}allValuesFrom>, <{OWL}onClass>, <{OWL}onDataRange>, <{OWL}hasValue>, <{OWL}cardinality>, <{OWL}minCardinality>, <{OWL}maxCardinality>, <{OWL}qualifiedCardinality>, <{OWL}minQualifiedCardinality>, <{OWL}maxQualifiedCardinality>))
+?s a <{OWL}Restriction> ; ?p ?o . FILTER(STRSTARTS(STR(?p), "{OWL}"))
 "#), 43);
     let expressions = view.pattern(&format!(r#"
 {subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))

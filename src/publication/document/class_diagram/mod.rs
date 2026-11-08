@@ -1,6 +1,7 @@
 //! A bounded, asserted OWL neighborhood retained as typed publication content.
 mod constraint_projection;
 mod constraints;
+mod existential;
 mod layout;
 mod projection;
 pub(crate) use projection::Projection;
@@ -19,19 +20,22 @@ pub(crate) const LEGEND: &str =
      RDF properties remain independent resources even when drawn as class \
      members or labelled associations. Domain/range declarations alone do not \
      impose requiredness or cardinality. Multiple domains or ranges apply \
-     conjunctively, not as alternatives. Anonymous OWL expressions remain \
-     explicit. Types and counts from simple property shapes enrich the UML \
-     notation. Identical qualifiers are shown once; where declaring shapes \
-     disagree, the disputed type or multiplicity is omitted from the drawing \
-     and remains in the dedicated shape documentation. No shape is chosen \
-     arbitrarily and conflicting counts are not silently intersected. An \
-     absent count imposes no lower or upper bound beyond zero or unbounded, \
-     respectively. Complex constraints require the linked full shape \
-     definition. Original OWL facts and shape provenance remain in the \
-     published source graph. Some diagrams show at most five complete OWL \
-     relationship groups within an eighteen-fact budget, selected in \
-     deterministic IRI order; omitted groups remain in the published source \
-     graph. These views are not exhaustive.";
+     conjunctively, not as alternatives. Simple existential subclass \
+     restrictions use a class-scoped association labelled at least one \
+     filler; this does not constrain all property values or declare a global \
+     range. Other anonymous OWL expressions remain explicit. Types and counts \
+     from simple property shapes enrich the UML notation. Identical \
+     qualifiers are shown once; where declaring shapes disagree, the disputed \
+     type or multiplicity is omitted from the drawing and remains in the \
+     dedicated shape documentation. No shape is chosen arbitrarily and \
+     conflicting counts are not silently intersected. An absent count imposes \
+     no lower or upper bound beyond zero or unbounded, respectively. Complex \
+     constraints require the linked full shape definition. Original OWL facts \
+     and shape provenance remain in the published source graph. Some diagrams \
+     show at most five complete OWL relationship groups within an \
+     eighteen-fact budget, selected in deterministic IRI order; omitted \
+     groups remain in the published source graph. These views are not \
+     exhaustive.";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

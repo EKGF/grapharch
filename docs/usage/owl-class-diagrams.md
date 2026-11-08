@@ -17,51 +17,62 @@ is an explicit error. Rendering an already documented graph needs neither tool.
 
 The highlighted box is the documented class. Neighboring classes and properties
 link to their documentation when selected in the publication; otherwise HTTP(S)
-resources link to their original IRIs. HTML includes an expandable relationship
-list as a text alternative. PDF includes vector figures and text links below
-nonempty diagrams.
+resources link to their original IRIs. Accessible SVG descriptions and PDF image
+alternatives preserve the meaning without duplicate visible relationship tables.
+A shared endnote explains the notation and bounded scope.
 
 ## What the arrows mean
 
 Named OWL classes use UML class boxes marked `«owl:Class»`. Explicit
 OWL/RDFS labels preserve relationships that have no direct UML equivalent:
 
-- Asserted `rdfs:subClassOf` between named OWL classes uses a UML generalization
-  arrow: its hollow triangle points to the superclass. Other subclass endpoints,
+- Asserted `rdfs:subClassOf` between named class references uses a UML generalization
+  arrow: its hollow triangle points to the superclass. Anonymous subclass endpoints,
   `owl:equivalentClass`, and `owl:disjointWith` remain explicitly labeled arrows.
   No inference is performed.
 - A property with one named OWL class as its declared domain can use UML
   shorthand. A datatype property becomes an attribute row, with its declared
-  range when present. An object property with one declared range becomes a
-  labelled association. Both link to the property documentation. This is
+  range when present. A property with one declared resource range becomes a
+  labelled association; a property without a range remains an untyped member. Both link to the property documentation. This is
   presentation shorthand: RDF properties remain independent resources, and no
   requiredness, ownership, or multiplicity is inferred.
 - Multiple domains or ranges, anonymous expressions, missing domains, and
   properties referenced by other displayed relationships stay explicit. Their
   domain/range assertions apply together, not as alternative choices. The
-  accessible relationship list preserves every original assertion regardless
+  retained documentation graph preserves every original assertion regardless
   of shorthand.
-- Direct anonymous restrictions retain their `owl:onProperty`, value constraints,
+- A simple anonymous subclass restriction with one named `owl:onProperty` and
+  one named `owl:someValuesFrom` becomes a class-scoped association, labelled
+  with the property and `{at least one Filler}`. This existential qualification
+  does not mean every property value belongs to that filler, and does not create
+  a global range or an unqualified `1..*` multiplicity. Universal restrictions,
+  inverse paths, complex fillers and additional qualifiers stay explicit.
+- Other direct restrictions retain their `owl:onProperty`, value constraints,
   and cardinalities as explicit relationships. Union and intersection RDF lists
   are expanded into labeled member relationships. Anonymous expressions have
   distinct identities and numbered captions within the class neighborhood.
-- SHACL shapes are not presented as OWL restrictions. This view does not assert
-  validation requirements, ownership, aggregation, or composition.
+- Simple authored SHACL property constraints enrich the same UML attributes and
+  association multiplicities. They remain validation constraints rather than OWL
+  entailments. Conflicting qualifiers are omitted from the drawing, not silently
+  merged. Dedicated shape documentation and the retained graph preserve their
+  sources and complete constraints. No validation success, ownership,
+  aggregation or composition is claimed.
 
 The diagram is deliberately local. It shows up to five complete relationship groups within
 an 18-fact budget, selected in deterministic IRI order. Domain/range facts for a
 property and facts describing a direct restriction stay together. An oversized
-group is omitted whole, with a visible limit notice; it is never cut into a
+group is omitted whole, with the scope explained in the shared endnote; it is never cut into a
 misleading partial assertion. Full source assertions remain in the
 publication; nested expressions beyond the direct neighborhood are not expanded
 recursively. Isolated classes still receive a class box.
 
-Both engine orientations are compared against a balanced 900-by-600 figure area.
+Superclasses are placed above the focal class, subclasses below, and associations
+laterally where compatible with that hierarchy. Without a hierarchy, both engine
+orientations are compared against a balanced 900-by-600 figure area.
 The score balances readable label scaling with a penalty for tall, narrow
 figures. Layout does not remove
 assertions to fit a phone. On narrow screens, the diagram stays readable inside a
-keyboard-focusable horizontal scroll region; the relationship list also remains
-available. PDF figures retain a physical height limit.
+keyboard-focusable horizontal scroll region, with an accessible description. PDF figures retain a physical height limit.
 
 ## Reproducible publication
 

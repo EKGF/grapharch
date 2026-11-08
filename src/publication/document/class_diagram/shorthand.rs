@@ -21,9 +21,10 @@ impl Property<'_> {
     }
 }
 pub(super) struct Shorthand<'a> {
-    pub properties: Vec<Property<'a>>,
-    pub consumed:   BTreeSet<usize>,
-    pub visible:    BTreeSet<&'a str>,
+    pub properties:   Vec<Property<'a>>,
+    pub existentials: Vec<super::existential::Existential<'a>>,
+    pub consumed:     BTreeSet<usize>,
+    pub visible:      BTreeSet<&'a str>,
 }
 impl<'a> Shorthand<'a> {
     pub fn new(diagram: &'a Diagram) -> Self {
@@ -83,6 +84,10 @@ impl<'a> Shorthand<'a> {
             consumed.extend(incident.iter().map(|(i, _)| *i));
             properties.push(Property { node, domain: domains[0], range });
         }
+        let existentials = super::existential::collect(diagram);
+        for existential in &existentials {
+            consumed.extend(&existential.consumed);
+        }
         // Suppress only the generic RDF root in this presentation, never facts.
         consumed.extend(
             diagram
@@ -109,7 +114,13 @@ impl<'a> Shorthand<'a> {
                 visible.insert(range.id.as_str());
             }
         }
+        for existential in &existentials {
+            visible.extend([
+                existential.class.id.as_str(),
+                existential.filler.id.as_str(),
+            ]);
+        }
         visible.remove(GENERIC_RESOURCE);
-        Self { properties, consumed, visible }
+        Self { properties, existentials, consumed, visible }
     }
 }
