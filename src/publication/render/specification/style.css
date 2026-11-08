@@ -83,3 +83,11 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 /* Predicate identifiers get intrinsic space, capped so long IRIs still wrap. */
 .rdf-properties>thead>tr>th:first-child,.rdf-properties>tbody>tr>td:first-child{width:1%;min-width:calc(min(20ch,40vw) + 1.6rem + 1px)}
 .rdf-properties>tbody>tr>td:first-child>code{display:inline-block;max-inline-size:min(24ch,35vw);overflow-wrap:anywhere}
+
+/* Use the space beside the TOC for diagrams and reference tables. Prose keeps
+   a reading measure, growing moderately on wider screens. Screen-only so the
+   paged print layout and PDF renderer retain their own physical measures. */
+@media screen{
+  main{max-width:none;min-width:0;--prose-width:clamp(50rem,60vw,60rem)}
+  main :where(p,ul,ol,dl,blockquote,pre,.head,.publication-preamble,footer){max-width:var(--prose-width)}
+}
