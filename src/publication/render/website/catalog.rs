@@ -243,8 +243,8 @@ impl Catalog {
         }
         let binary = plan.source.has_type(&owner, "BinaryAsset").await?;
         let asset = binary || plan.source.has_type(&owner, "TextAsset").await?;
-        // bounded: separate 256-page and 256-asset indexes, at most 512
-        // entries.
+        // bounded: separate page and asset producer allowances; retained
+        // gallery output is included in the shared website asset bound.
         let count = self
             .pages
             .values()

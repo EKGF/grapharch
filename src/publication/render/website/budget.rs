@@ -1,7 +1,7 @@
 //! Artifact inventory bounds derived from the independent semantic producers.
 use anyhow::{Result, ensure};
 pub(super) const PAGES: usize = 256;
-pub(super) const ASSETS: usize = 256;
+pub(super) const ASSETS: usize = crate::publication::limits::WEBSITE_ASSETS;
 pub(super) const PROJECTIONS: usize = 256;
 pub(super) const ALIASES: usize = 2048;
 // Three base files, five bundled identity/font files, two crawler indexes,

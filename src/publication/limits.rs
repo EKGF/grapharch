@@ -12,6 +12,11 @@ pub(crate) const SPECIFICATION_LINKS: usize = 1_048_576;
 pub(crate) const TYPST_SOURCE_BYTES: u64 = 256 * 1024 * 1024;
 pub(crate) const ARTIFACT_BYTES: u64 = 128 * 1024 * 1024;
 pub(crate) const RETAINED_ASSET_BYTES: u64 = 512 * 1024 * 1024;
+// A website combines two independently bounded producers. Retained showcase
+// output files do not consume the authored-image allowance.
+pub(crate) const AUTHORED_ASSETS: usize = 256;
+pub(crate) const GALLERY_ARTIFACTS: usize = 512;
+pub(crate) const WEBSITE_ASSETS: usize = AUTHORED_ASSETS + GALLERY_ARTIFACTS;
 pub(crate) const REFERENCE_INDEX_BYTES: usize = 64 * 1024 * 1024;
 pub(crate) const SOURCE_TYPE_ASSERTIONS: usize = 262_144;
 

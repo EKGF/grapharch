@@ -28,7 +28,8 @@ impl Images {
         let mut assets = plan.assets().await?;
         while let Some(row) = assets.next().await? {
             ensure!(
-                images.assets.len() < 256,
+                images.assets.len() <
+                    crate::publication::limits::AUTHORED_ASSETS,
                 "publication exceeds image asset budget"
             );
             let id = node(&row["asset"])?;

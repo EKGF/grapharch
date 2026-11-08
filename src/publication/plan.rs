@@ -342,6 +342,11 @@ impl TargetPlanner {
         );
         let mut rows = self.dataset.select(query).await?;
         let mut count = 0;
+        let budget = if renderer == super::Renderer::Website {
+            super::limits::WEBSITE_ASSETS
+        } else {
+            super::limits::AUTHORED_ASSETS
+        };
         while let Some(row) = rows.next().await? {
             let Term::NamedNode(asset) = &row["asset"] else {
                 bail!("plan asset must be an IRI")
@@ -357,7 +362,10 @@ impl TargetPlanner {
                 );
             }
             count += 1;
-            ensure!(count <= 256, "plan exceeds 256-asset budget");
+            ensure!(
+                count <= budget,
+                "plan exceeds {budget}-asset budget"
+            );
             stream
                 .write(Quad::new(
                     selection.plan.clone(),

@@ -605,8 +605,9 @@ fn validate_artifact_count(count: usize) -> Result<()> {
     // outputs, including ontology library pages and multiple PDF editions.
     // The independent 512 MiB retained-byte budget also remains enforced.
     ensure!(
-        count <= 512,
-        "showcase gallery exceeds 512-artifact budget"
+        count <= super::limits::GALLERY_ARTIFACTS,
+        "showcase gallery exceeds {}-artifact budget",
+        super::limits::GALLERY_ARTIFACTS
     );
     Ok(())
 }
