@@ -179,10 +179,17 @@ The reference renders headings, lists, links, fenced code, tables, and GitHub
 Flavoured Markdown task lists. Headings nest beneath the resource's title.
 The rich description replaces the plain description in the detailed reference;
 without it, the existing source definitions and comments remain available.
-An ontology's short comment still provides context in the family overview.
+Ontology cards and full introductions share the same generic annotation mapping:
+`dct:abstract`, `dct:description`, `dc:description`, `skos:definition`,
+`prov:definition`, `sh:description`, then `rdfs:comment`. Cards use the first
+available summary. Without an explicit rich description, the detailed ontology
+introduction preserves all distinct paragraphs in that order, removing exact
+repetitions across predicates. This works for any ontology namespace; no
+publisher-specific content rules are required. Introductions admit up to 64
+values per predicate and 256 KiB of selected plain text.
 
 English publications select `@en` or untagged text. Identical rich
-values are accepted; distinct competing values fail with an explicit error.
+values are deduplicated; distinct rich values remain separately identifiable.
 Descriptions in another language are not substituted for missing English text.
 The original annotation and source provenance remain in the documentation graph.
 Raw HTML and unsafe links fail rendering rather than executing or silently

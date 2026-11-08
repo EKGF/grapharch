@@ -8,7 +8,9 @@ The explicit inventory contains all 48 RDF/XML documents (1,064,379 source bytes
 including domain and module metadata, aggregation ontologies and regional
 reference individuals. The source declares 216 OWL classes, 84 object properties,
 9 datatype properties and 651 named individuals. These are declaration counts,
-not a claim of distinct inferred entities.
+not a claim of distinct inferred entities. Within the BE namespace, the inputs
+explicitly declare 199 distinct classes and 92 distinct object/datatype
+properties; the source files also repeat some external declarations.
 
 The HTML publication has an overview and individual ontology pages. A combined
 PDF and the retained documentation KG are also produced. Module membership comes
