@@ -100,12 +100,25 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
     let (output, html) =
         render(Some("ontology suite"), "specification-pages").await?;
     assert!(html.contains("library-home"));
+    assert!(html.contains("library-publication-details"));
     assert!(html.contains("ontology-card"));
     assert!(html.contains("An example ontology."));
     assert!(html.contains("data-class-count=\"1\""));
     assert!(html.contains("data-property-count=\"1\""));
     assert!(!html.contains("family-navigation"));
     let document = scraper::Html::parse_document(&html);
+    assert!(
+        document
+            .select(
+                &scraper::Selector::parse("header .library-introduction")
+                    .unwrap()
+            )
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>()
+            .contains("Collection reference.")
+    );
     let selector = scraper::Selector::parse(".ontology-card h2 a").unwrap();
     let route = document
         .select(&selector)

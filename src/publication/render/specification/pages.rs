@@ -95,7 +95,7 @@ fn local_outline(home: bool) -> Outline {
         Outline::page()
     }
 }
-async fn body(
+pub(super) async fn body(
     entry: &Entry,
     plan: &Plan,
     outline: &mut Outline,
@@ -453,6 +453,26 @@ pub(in crate::publication::render) async fn write_catalog(
                 .map(|book| book.contents.as_str())
                 .unwrap_or(&p.contents);
             let home = page == 0 && library.is_some();
+            if home {
+                let home = library.as_ref().unwrap();
+                header_html = header_html.replacen(
+                    "</h1>",
+                    &format!(
+                        "</h1><div class=\"library-introduction\">{}</div>",
+                        home.introduction
+                    ),
+                    1,
+                );
+                if !home.status.is_empty() {
+                    header_html.push_str(&format!(
+                        "<details class=\"library-publication-details\"\
+                         ><summary>Status of this \
+                         document</summary>{}</details>",
+                        home.status
+                    ));
+                }
+            }
+
             let body_class = if home { " library-home" } else { "" };
             let bookshelf_link = if context.is_some() {
                 "<p><a href=\"index.html\">Back to bookshelf</a></p>".to_owned()
@@ -503,6 +523,15 @@ pub(in crate::publication::render) async fn write_catalog(
             section_open = false;
             current = Some(page);
             outline = local_outline(page == 0);
+        }
+        if library.is_some() &&
+            page == 0 &&
+            matches!(entry.kind.as_str(), "abstract" | "status")
+        {
+            if entry.first {
+                outline.component(&entry.kind, &entry.title, 1)?;
+            }
+            continue;
         }
         let file = file.as_mut().unwrap();
         if entry.first {
@@ -748,7 +777,7 @@ pub(super) async fn subjects(
     Ok(subjects)
 }
 
-fn route_links(
+pub(super) fn route_links(
     html: &str,
     catalog: &Catalog,
     current: usize,

@@ -103,3 +103,5 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 .library-resources{display:flex;flex-wrap:wrap;gap:1rem;margin:2rem 0}.toc .library-home-link a{display:block;line-height:1.4;padding:.5rem 0;font-weight:bold}
 @media(max-width:600px){.library-home{padding:1.5rem}.library-home .head{padding:1.5rem}.ontology-cards{gap:1rem}}
 @media print{.library-home{padding:0}.library-home .head{background:none;border:0;padding:0}.ontology-cards{display:block}.ontology-card{break-inside:avoid;box-shadow:none}.ontology-card>p{display:block;overflow:visible}.library-home .toc{display:none}}
+
+.library-publication-details{margin:1rem 0;color:#526174;font-size:.9rem}.library-publication-details summary{cursor:pointer;color:var(--link)}.library-publication-details summary:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}

@@ -17,8 +17,10 @@ struct Card {
 }
 
 pub(super) struct Home {
-    pub fragment: String,
-    cards:        String,
+    pub fragment:     String,
+    pub introduction: String,
+    pub status:       String,
+    cards:            String,
 }
 
 impl Home {
@@ -57,10 +59,37 @@ impl Home {
         let mut cards: BTreeMap<usize, Card> = BTreeMap::new();
         let mut seen = HashSet::new();
         let mut fragment = None;
+        let mut introduction = String::new();
+        let mut status = String::new();
         let mut entries = Entries::new(plan).await?;
         while let Some(entry) = entries.next(plan).await? {
             let page = catalog.placements[entry.placement.as_str()];
             let described = subjects(&entry, plan).await?;
+            if page == 0 && matches!(entry.kind.as_str(), "abstract" | "status")
+            {
+                let rendered = super::pages::body(
+                    &entry,
+                    plan,
+                    &mut super::outline::Outline::default(),
+                )
+                .await?;
+                let (rendered, errors) =
+                    super::pages::route_links(&rendered, catalog, page)?;
+                ensure!(
+                    errors.is_empty(),
+                    "library introduction contains unresolved references"
+                );
+                let content = format!(
+                    "<div id=\"{}\"><span id=\"{}\"></span>{rendered}</div>",
+                    plan.anchor(&entry.placement, None),
+                    plan.anchor(&entry.placement, Some(&entry.fragment))
+                );
+                if entry.kind == "abstract" {
+                    introduction.push_str(&content);
+                } else {
+                    status.push_str(&content);
+                }
+            }
             if page == 0 && described.contains(&family) {
                 fragment = Some(entry.fragment.as_str().to_owned());
             }
@@ -180,7 +209,12 @@ impl Home {
             html.len() <= crate::publication::limits::REFERENCE_INDEX_BYTES,
             "library cards exceed byte budget"
         );
-        Ok(Some(Self { fragment, cards: html }))
+        Ok(Some(Self {
+            fragment,
+            cards: html,
+            introduction,
+            status,
+        }))
     }
 
     pub fn render(&self, original: &str) -> String {
