@@ -44,6 +44,19 @@ async fn preamble_collector_extracts_only_legal_content_and_rejects_executable_m
 #[tokio::test]
 async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_layouts()
 -> anyhow::Result<()> {
+    verify_preamble("specification", "LibertinusSerif").await
+}
+
+#[tokio::test]
+async fn omg_legal_preamble_retains_its_source_and_embeds_the_formal_serif_font()
+-> anyhow::Result<()> {
+    verify_preamble("omg", "LiberationSerif").await
+}
+
+async fn verify_preamble(
+    style: &str,
+    embedded_font: &str,
+) -> anyhow::Result<()> {
     let temp = tempfile::tempdir()?;
     let path = temp.path().join("project.ttl");
     let mut source =
@@ -53,6 +66,7 @@ async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_la
 <urn:example:legal> a ga:Fragment ; ga:subject ex:subject ; ga:contribution ex:authored ; dct:title "Legal notices" ;
     ga:format "text/html" ; ga:body "<h2>Copyright and permissions</h2><p>Copyright © 2026 Example Authority.</p><h2>Terms of use</h2><p>Permission is granted subject to the complete terms in this notice.</p><h2>Warranty</h2><p>This specification is provided AS IS.</p>" .
 "#);
+    source.push_str(&format!("\nex:profile ga:style \"{style}\" .\n"));
     tokio::fs::write(&path, source).await?;
     let (dataset, plans) = showcases::specification(&path).await?;
     let archive = temp.path().join("graph.nq");
@@ -95,9 +109,10 @@ async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_la
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
     assert!(typst.contains("#let ga-legal-notices"));
+    assert!(typst.contains(&format!("#let ga-style = \"{style}\"")));
     assert!(
         typst.contains(
-            "set text(font: \"Libertinus Serif\", size: 9pt, fill: ga-muted)"
+            r#"set text(font: if ga-omg { "Liberation Serif" } else { "Libertinus Serif" }, size: 9pt, fill: ga-muted)"#
         ),
         "legal fine print must have distinct readable typography"
     );
@@ -111,12 +126,15 @@ async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_la
             typst.find("#outline(").unwrap()
     );
     assert!(typst.contains("provided AS IS"));
+    let pdf =
+        tokio::fs::read(publication.directory.join("document.pdf")).await?;
+    assert!(pdf.starts_with(b"%PDF-"));
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
-            .await?
-            .starts_with(b"%PDF-")
+        String::from_utf8_lossy(&pdf).contains(embedded_font),
+        "{style} must embed its selected legal-body font {embedded_font}"
     );
     if let Ok(destination) = std::env::var("GRAPHARCH_PREAMBLE_REVIEW") {
+        let destination = std::path::Path::new(&destination).join(style);
         tokio::fs::create_dir_all(&destination).await?;
         for name in ["index.html", "style.css", "main.typ", "document.pdf"] {
             tokio::fs::copy(
