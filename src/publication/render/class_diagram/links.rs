@@ -153,9 +153,13 @@ fn geometry(anchor: Node<'_, '_>) -> Result<Vec<Bounds>> {
                     1,
             "ambiguous diagram association link group"
         );
+        // Unlinked endpoint multiplicities are separate text elements without
+        // textLength. Only the measured association label owns this link.
         group
             .children()
-            .filter(|n| n.has_tag_name("text"))
+            .filter(|n| {
+                n.has_tag_name("text") && n.attribute("textLength").is_some()
+            })
             .collect()
     } else if rectangles.is_empty() {
         ensure!(
@@ -280,7 +284,7 @@ mod associations {
     #[test]
     fn linked_curves_use_their_exact_sibling_label_not_a_large_path_rectangle()
     {
-        let output = super::typst(r##"<svg><g class="link"><a href="#property"><polygon points="0,0 2,3 4,0"/><path d="M0,0 C0,200 300,200 300,0"/></a><text x="40" y="80" textLength="90" font-size="14">relationship</text></g></svg>"##).unwrap();
+        let output = super::typst(r##"<svg><g class="link"><a href="#property"><polygon points="0,0 2,3 4,0"/><path d="M0,0 C0,200 300,200 300,0"/></a><text x="40" y="80" textLength="90" font-size="14">relationship</text><text x="300" y="0" font-size="14">1</text></g></svg>"##).unwrap();
         assert_eq!(output.matches("#place(").count(), 1);
         assert!(output.contains("dx: ga-scale * 40, dy: ga-scale * 66"));
         assert!(
