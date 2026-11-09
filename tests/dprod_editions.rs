@@ -27,16 +27,26 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
 async fn declared_edition_targets_render_from_one_restored_source_revision()
 -> Result<()> {
     let output = tempfile::tempdir()?;
-    render_dual_editions(output.path()).await
+    render_dual_editions(output.path(), false).await
 }
 
 #[tokio::test]
 #[ignore = "retained PDF visual acceptance artifacts"]
 async fn review_dual_edition_pdfs() -> Result<()> {
-    render_dual_editions(Path::new("output/pdf/dprod-editions")).await
+    render_dual_editions(Path::new("output/pdf/dprod-editions"), false).await
 }
 
-async fn render_dual_editions(output: &Path) -> Result<()> {
+#[tokio::test]
+async fn omg_cover_metadata_can_continue_without_a_numbered_footer()
+-> Result<()> {
+    let output = tempfile::tempdir()?;
+    render_dual_editions(output.path(), true).await
+}
+
+async fn render_dual_editions(
+    output: &Path,
+    long_metadata: bool,
+) -> Result<()> {
     let source = tempfile::tempdir()?;
     copy_tree(Path::new("examples/dprod"), source.path())?;
     let definitions = source.path().join("project.ttl");
@@ -70,6 +80,15 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     ga:accentColor "#004c6d" ; ga:url "https://www.omg.org/" .
 "##,
     );
+    if long_metadata {
+        ttl = ttl.replace(
+            "DPROD OMG submission preview",
+            &format!(
+                "DPROD OMG submission preview {}",
+                "A long explicitly supplied publication title. ".repeat(80)
+            ),
+        );
+    }
     std::fs::write(definitions, ttl)?;
     let (dataset, plans) = showcases::dprod(source.path()).await?;
     assert_eq!(

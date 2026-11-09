@@ -27,7 +27,7 @@
 #set page(paper: "us-letter", margin: 1in, numbering: none,
   background: none, header: none,
   footer: context {
-    if here().page() > 1 {
+    if here().page() > 1 and page.numbering != none {
       set text(font: "Liberation Sans", size: 9pt, fill: black)
       grid(columns: (1fr, auto), column-gutter: 12pt,
         [#ga-running(ga-title, limit: 85)],
