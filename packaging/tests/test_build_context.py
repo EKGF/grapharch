@@ -6,7 +6,7 @@ import sys
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from build_context import BuildContext, prepared_context
+from build_context import BuildContext, prepared_context, release_context
 
 REVISION = 'a' * 40
 ENVIRONMENT = {'GITHUB_ACTIONS':'true','GITHUB_SHA':REVISION,'GITHUB_REPOSITORY':'EKGF/grapharch',
@@ -14,6 +14,18 @@ ENVIRONMENT = {'GITHUB_ACTIONS':'true','GITHUB_SHA':REVISION,'GITHUB_REPOSITORY'
     'GITHUB_RUN_ID':'12345','GITHUB_RUN_NUMBER':'321','GITHUB_RUN_ATTEMPT':'1'}
 
 class ContextTests(unittest.TestCase):
+    def test_release_child_requires_proof_and_retains_actual_controller_identity(self):
+        with patch.dict('os.environ', ENVIRONMENT, clear=True):
+            with patch('build_context.verify_release') as verify:
+                context = release_context('b' * 40, REVISION, 42)
+                verify.assert_called_once_with('EKGF/grapharch', 42, 'b' * 40, REVISION)
+                self.assertEqual(context.revision, 'b' * 40)
+                self.assertEqual(context.run_number, 321)
+                self.assertEqual(context.run_attempt, 1)
+            with patch('build_context.verify_release', side_effect=ValueError('unverified')):
+                with self.assertRaisesRegex(ValueError, 'unverified'):
+                    release_context('b' * 40, REVISION, 42)
+
     def test_only_compiler_jobs_prepare_identity_and_release_container_preserves_it(self):
         root = Path(__file__).parents[2]
         workflow = (root / '.github/workflows/rust-ci.yml').read_text()

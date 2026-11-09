@@ -1,5 +1,5 @@
 """Bind a generator build number to its actual GitHub producer and source."""
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import argparse
 import json
 import os
@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 from source_action import validate_checkout
+from auto_release import verify_release
 
 
 @dataclass(frozen=True)
@@ -70,13 +71,25 @@ def prepared_context(revision):
     return context
 
 
+def release_context(revision, source, run):
+    """Bind a metadata-only release checkout after verifying its actual source proof."""
+    verify_release(os.environ['GITHUB_REPOSITORY'], int(run), revision, source)
+    actual = BuildContext.current(os.environ['GITHUB_SHA'])
+    return replace(actual, revision=revision)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--revision', required=True)
+    parser.add_argument('--verified-source', default=os.environ.get('GRAPHARCH_VERIFIED_SOURCE', ''))
+    parser.add_argument('--verified-run', default=os.environ.get('GRAPHARCH_VERIFIED_RUN', ''))
     arguments = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     validate_checkout(root, arguments.revision)
-    context = BuildContext.current(arguments.revision)
+    if bool(arguments.verified_source) != bool(arguments.verified_run):
+        raise ValueError('release build context requires source and full validation run together')
+    context = (release_context(arguments.revision, arguments.verified_source, arguments.verified_run)
+               if arguments.verified_run else BuildContext.current(arguments.revision))
     with Path(os.environ['GITHUB_ENV']).open('a') as output:
         output.write('GRAPHARCH_BUILD_CONTEXT=' + context.json() + '\n')
 

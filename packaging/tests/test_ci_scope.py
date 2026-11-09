@@ -8,9 +8,9 @@ spec.loader.exec_module(scope)
 
 
 class ScopeTests(unittest.TestCase):
-    def test_docs_only_preserves_linux_docs_and_endpoint_checks(self):
+    def test_every_main_push_has_full_release_eligibility_checks(self):
         self.assertEqual(scope.select('candidate', 'push', 'refs/heads/main', ['docs/usage/index.md']),
-                         {'desktop': False, 'docs': True, 'sparql': True, 'suite': 'docs'})
+                         {'desktop': True, 'docs': True, 'sparql': True, 'suite': 'full'})
 
     def test_embedded_ontology_and_mixed_edits_require_three_operating_systems(self):
         for paths in (['docs/other/ontology/publication.ttl'], ['docs/a.md', 'src/main.rs'], None):

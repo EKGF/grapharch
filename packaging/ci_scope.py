@@ -10,7 +10,7 @@ def select(mode, event, ref, paths):
     if mode not in ('candidate', 'docs', 'sparql'):
         raise ValueError('unknown candidate scope')
     # New branches and explicit candidate dispatches deliberately verify all OSes.
-    full = mode == 'candidate' and (paths is None or any(
+    full = mode == 'candidate' and (ref == 'refs/heads/main' or paths is None or any(
         not p.startswith('docs/') or p.startswith('docs/other/ontology/')
         for p in paths))
     relevant = paths is None or any(

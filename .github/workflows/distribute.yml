@@ -9,14 +9,30 @@ on:
         required: true
         type: boolean
         default: false
+      publish-homebrew:
+        description: Update the separately owned Homebrew tap
+        type: boolean
+        default: false
       publish-packages:
-        description: Publish registry packages and update the Homebrew tap
+        description: Publish Python, npm and crates.io packages
         type: boolean
         default: false
   workflow_call:
     inputs:
+      revision:
+        type: string
+        default: ''
+      verified-source:
+        type: string
+        default: ''
+      verified-run:
+        type: string
+        default: ''
       publish:
         required: false
+        type: boolean
+        default: false
+      publish-homebrew:
         type: boolean
         default: false
       publish-packages:
@@ -27,6 +43,10 @@ on:
         required: false
 permissions:
   contents: read
+  actions: read
+env:
+  GRAPHARCH_VERIFIED_SOURCE: ${{ inputs.verified-source }}
+  GRAPHARCH_VERIFIED_RUN: ${{ inputs.verified-run }}
 concurrency:
   group: distribution-${{ github.ref }}
   cancel-in-progress: false
@@ -41,6 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.revision || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
@@ -55,11 +76,31 @@ jobs:
         with:
           node-version: '24'
       - run: node --test npm/tests/*.test.cjs
+  verify-proof:
+    runs-on: ubuntu-latest
+    needs: metadata
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
+      - name: Verify exact successful candidate and metadata-only release delta
+        if: inputs.verified-run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_RUN: ${{ inputs.verified-run }}
+          VERIFIED_SOURCE: ${{ inputs.verified-source }}
+          RELEASE_REVISION: ${{ inputs.revision }}
+        run: python3 -B packaging/auto_release.py verify --run "$VERIFIED_RUN" --source "$VERIFIED_SOURCE" --revision "$RELEASE_REVISION"
   verify-source:
+    if: inputs.verified-run == ''
     runs-on: ubuntu-24.04
     needs: metadata
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
       - uses: ./.github/actions/setup-plantuml
       - name: Install native dependencies
         timeout-minutes: 5
@@ -78,7 +119,10 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked --all-targets
   binaries:
-    needs: [metadata, verify-source]
+    needs: [metadata, verify-proof, verify-source]
+    if: >-
+      always() && needs.metadata.result == 'success' && needs.verify-proof.result == 'success'
+      && (needs.verify-source.result == 'success' || (needs.verify-source.result == 'skipped' && inputs.verified-run != ''))
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.metadata.outputs.matrix) }}
@@ -91,6 +135,9 @@ jobs:
       RUSTFLAGS: ${{ matrix.os == 'win32' && '-C target-feature=+crt-static' || '' }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
       - name: Bind the generator identity to this actual build
         shell: bash
         env:
@@ -154,6 +201,9 @@ jobs:
     needs: [metadata, binaries]
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -191,7 +241,7 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.metadata.outputs.version }}
-          target_commitish: ${{ github.sha }}
+          target_commitish: ${{ needs.metadata.outputs.revision }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
@@ -225,6 +275,9 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -246,6 +299,9 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config
       - uses: actions-rust-lang/setup-rust-toolchain@v2
@@ -255,7 +311,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
   publish-homebrew:
-    if: inputs.publish-packages == true
+    if: inputs.publish-homebrew == true
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: homebrew

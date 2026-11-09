@@ -98,3 +98,63 @@ Each release platform's wheel still supplies the same executable bytes to its
 standalone and npm packages. Consumer actions selecting a published `version`
 continue to download that verified release without compiling GraphArch;
 `source-revision` remains an explicit source-development build.
+
+## Automatic releases from main
+
+The `Automatic release` workflow accepts only a successful **push to main**
+whose exact source passed the complete three-OS Rust candidate, Linux source
+partition, real SPARQL checks, live showcases, documentation deployment,
+package checks, and commit checks. A docs-only dispatch is never release proof.
+All main pushes now select that full candidate graph.
+
+The default increment is a **patch**, for example `0.2.2` to `0.2.3`.
+Maintainers can explicitly select `minor` in the automatic-release manual
+workflow and supply the successful full candidate run ID. Automatic major
+increments are forbidden; a major release requires separate user approval of
+its exact version and scope and the existing reviewed release procedure.
+
+A serialized coordinator skips a source superseded before reservation. It
+atomically advances main and creates the immutable version tag with a
+metadata-only commit. Cargo, its package lock entry, npm, and ontology version
+metadata are synchronized. Source/run trailers make the reservation resumable.
+The repository token's pushes do not trigger another push workflow, preventing
+release loops. A racing main push rejects the atomic reservation.
+
+The existing distributor checks the exact successful source and verifies that
+its release child changed only those version fields. It therefore reuses the
+source validation instead of compiling its test suite again. Six optimized
+OS/architecture executables still need release builds; each executable feeds
+its standalone archive, Python wheel, and npm platform package. There is one
+publisher pipeline. GitHub, PyPI, npm and crates.io are requested together;
+Homebrew remains a separate opt-in operation and is not changed automatically.
+A failed registry is a failed release workflow, never a reported full success.
+
+After every requested publication succeeds, the workflow advances the Action
+convenience tags `vMAJOR` and `vMAJOR.MINOR` to the immutable release commit.
+Use `EKGF/grapharch@v0` for automatic compatible-major updates, an exact
+`@v0.2.3` for a fixed release, or a full reviewed commit SHA for immutable
+supply-chain pinning. Existing consuming repositories are not rewritten.
+
+Before the first registry publication, an owner must establish:
+
+- PyPI project `grapharch`: GitHub trusted publisher `EKGF/grapharch`, workflow
+  `automatic-release.yml`, environment `pypi`.
+- npm package `grapharch` and all six `@grapharch/cli-*` packages: ownership of
+  the `@grapharch` scope and GitHub trusted publishing for `EKGF/grapharch`,
+  workflow `automatic-release.yml`, environment `npm`, for every package.
+- crates.io crate `grapharch`: ownership and GitHub trusted publishing for
+  `EKGF/grapharch`, workflow `automatic-release.yml`, environment `crates-io`.
+- Repository Actions permissions allowing the coordinator to update main and
+  tags; protection rules must explicitly permit this trusted release workflow.
+
+No package ownership or trusted publisher is created by these source changes.
+The first publication must expose missing ownership/configuration as a hard
+error. Never substitute a source-build fallback or report an unpublished
+registry channel as available.
+
+Trusted publisher workflow identity follows the calling workflow, not merely the
+reusable file containing the upload step. See the official
+[npm trusted publishing guide](https://docs.npmjs.com/trusted-publishers/) and
+[PyPI reusable-workflow limitation](https://docs.pypi.org/trusted-publishers/troubleshooting/).
+Register `release-changelog.yml` separately if registry publication through the
+manual release entry point is also required.
