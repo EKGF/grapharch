@@ -192,3 +192,43 @@ async fn omg_specification_cover_does_not_duplicate_its_status_metadata()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn omg_typst_target_retains_supplied_editor_and_version_metadata()
+-> anyhow::Result<()> {
+    use grapharch::publication::{
+        render::{PublishOutcome, Publisher},
+        showcases,
+    };
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    tokio::fs::write(
+        &path,
+        format!(
+            "{}\nex:profile ga:style \"omg\" .",
+            include_str!("../examples/specification/project.ttl").replace(
+                "ga:renderer \"specification\"",
+                "ga:renderer \"typst\""
+            )
+        ),
+    )
+    .await?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    source.close()?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], output.path())
+        .await?
+    else {
+        panic!("expected publication")
+    };
+    let text =
+        tokio::fs::read_to_string(publication.directory.join("main.typ"))
+            .await?;
+    assert!(
+        text.contains("Alex Example"),
+        "OMG style must preserve supplied editor metadata"
+    );
+    assert!(text.contains("https://example.org/spec/2026-10-24/"));
+    Ok(())
+}

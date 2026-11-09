@@ -89,14 +89,15 @@ pub(super) async fn begin_book(
         }
     }
     let style = super::typst_style::Style::read(plan).await?;
-    let specification_metadata = matches!(
-        plan.renderer.as_str(),
-        "specification" | "bookshelf"
-    ) || (style.name == "specification" &&
-        plan.source
-            .optional(&plan.target, "publicationStatus")
-            .await?
-            .is_some());
+    let specification_metadata =
+        matches!(
+            plan.renderer.as_str(),
+            "specification" | "bookshelf"
+        ) || (matches!(style.name, "specification" | "omg") &&
+            plan.source
+                .optional(&plan.target, "publicationStatus")
+                .await?
+                .is_some());
     if specification_metadata {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     } else {

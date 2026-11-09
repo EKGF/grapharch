@@ -55,7 +55,10 @@ ex:submission a ga:Target ; dct:title "DPROD OMG submission preview" ;
     ga:subtitle "Prepared for review; not an approved OMG specification" ;
     ga:scope ex:scope ; ga:profile ex:submission-profile ; ga:renderer "typst" ;
     ga:destination "pdf/omg" ; ga:publisher ex:omg-authority ;
-    ga:publicationStatus "Submission Preview" .
+    ga:publicationStatus "Submission Preview" ;
+    ga:publicationDate "2026-10-24"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    ga:thisVersion <https://example.org/dprod/2026-10-24/> ;
+    ga:latestVersion <https://example.org/dprod/> .
 ex:submission-profile a ga:Profile ; ga:style "omg" ;
     ga:placement <urn:dprod-showcase:pdf-placement:abstract>,
         <urn:dprod-showcase:pdf-placement:overview>,

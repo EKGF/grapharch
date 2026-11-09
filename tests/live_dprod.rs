@@ -23,6 +23,14 @@ async fn remote_develop_restores_and_publishes_declared_targets()
     let publications =
         showcases::publish(&Publisher::new(restored), &plans, output).await?;
     assert_eq!(publications.len(), 5);
+    for edition in ["ekgf", "omg"] {
+        let directory = output.join("pdf").join(edition);
+        assert!(
+            tokio::fs::read(directory.join("document.pdf"))
+                .await?
+                .starts_with(b"%PDF-")
+        );
+    }
     let overview =
         tokio::fs::read_to_string(output.join("pdf/overview/main.typ")).await?;
     assert!(overview.contains("DPROD: the bigger picture"));
