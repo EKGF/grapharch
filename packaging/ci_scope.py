@@ -17,7 +17,7 @@ def select(mode, event, ref, paths):
         p.startswith(('docs/', 'examples/', 'src/', 'tests/', '.github/'))
         or p in ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'build.rs')
         for p in paths)
-    docs = mode == 'docs' or (mode == 'candidate' and relevant
+    docs = mode == 'docs' or (mode == 'candidate' and (full or relevant)
         and (event != 'push' or ref == 'refs/heads/main'))
     return {'desktop': full, 'docs': docs, 'sparql': mode != 'docs',
             'suite': 'full' if full else ('sparql' if mode == 'sparql' else 'docs')}
