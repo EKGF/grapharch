@@ -111,7 +111,13 @@ orientations are compared against a balanced 900-by-600 figure area.
 The score balances readable label scaling with a penalty for tall, narrow
 figures. Layout does not remove
 assertions to fit a phone. On narrow screens, the diagram stays readable inside a
-keyboard-focusable horizontal scroll region, with an accessible description. PDF figures retain a physical height limit.
+keyboard-focusable horizontal scroll region, with an accessible description. PDF figures retain a physical height limit. PDF class boxes,
+member names, and relationship labels are individually clickable. Subjects included
+in the PDF link to their internal document anchors; other HTTP(S) resources link
+to their original IRIs. Member hit regions take precedence over the surrounding
+class box. The retained drawing and its scale are unchanged; PDF links use native
+Typst annotations over the corresponding regions, not rasterized images or a
+single link over the whole diagram.
 
 ## Reproducible publication
 

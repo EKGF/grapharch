@@ -138,6 +138,16 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
                     usize::from(references > 0)
                 );
                 if references > 0 {
+                    assert!(
+                        typst.contains("#place(top + left, dx: ga-scale"),
+                        "{renderer}: source-free diagrams retain precise PDF \
+                         hit regions"
+                    );
+                    assert!(
+                        typst.contains("#link(label(\"urn-grapharch-anchor-"),
+                        "{renderer}: diagram links resolve to internal PDF \
+                         labels"
+                    );
                     documents += 1;
                     assert!(
                         typst.rfind("<grapharch-diagram-note>").unwrap() >

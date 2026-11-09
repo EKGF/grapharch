@@ -1,4 +1,5 @@
 //! Render retained semantic diagram blocks; no source RDF or files are read.
+mod links;
 use {
     crate::publication::document::class_diagram::{LANGUAGE, Projection, svg},
     anyhow::Result,
@@ -70,6 +71,7 @@ pub(super) fn html(source: &str) -> Result<String> {
 pub(super) fn typst(source: &str) -> Result<String> {
     let projection = Projection::parse(source)?;
     let diagram = &projection.diagram;
+    let overlays = links::typst(&svg::draw(&projection, true)?)?;
     let svg = svg::draw(&projection, false)?;
     crate::publication::image_assets::validate(
         svg.as_bytes(),
@@ -81,7 +83,11 @@ pub(super) fn typst(source: &str) -> Result<String> {
         .root_element()
         .attribute("viewBox")
         .ok_or_else(|| anyhow::anyhow!("class diagram has no viewBox"))?;
-    let mut dimensions = bounds.split_whitespace().skip(2);
+    let mut dimensions = bounds.split_whitespace();
+    anyhow::ensure!(
+        dimensions.next() == Some("0") && dimensions.next() == Some("0"),
+        "PDF diagram links require an origin-zero retained viewBox"
+    );
     let width: f64 = dimensions
         .next()
         .ok_or_else(|| anyhow::anyhow!("class diagram has no width"))?
@@ -98,15 +104,18 @@ pub(super) fn typst(source: &str) -> Result<String> {
     // become 0.75 PDF points, preserving the generator's font scale instead
     // of enlarging a compact class box merely to fill the text column.
     let mut result = format!(
-        "#block(breakable: false)[#layout(size => image(bytes({}), format: \
-         \"svg\", width: calc.min(size.width * {}, {}pt), alt: {}))\n",
-        quote(&svg),
+        "#block(breakable: false)[#layout(size => {{ let ga-width = \
+         calc.min(size.width * {}, {}pt); let ga-scale = ga-width / {width}; \
+         block(width: ga-width, height: ga-scale * {height})[#place(top + \
+         left)[#image(bytes({}), format: \"svg\", width: ga-width, alt: \
+         {})]\n{overlays}] }})\n",
         if diagram.edges.is_empty() && diagram.shapes.is_empty() {
             "0.35"
         } else {
             "1.0"
         },
         (width * 0.75).min(420.0 * width / height),
+        quote(&svg),
         quote(&svg::description(&projection)?)
     );
     result.push_str(super::diagram_notes::reference_typst());

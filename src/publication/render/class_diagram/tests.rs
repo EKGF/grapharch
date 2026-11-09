@@ -134,3 +134,38 @@ fn compact_pdf_diagrams_never_enlarge_beyond_intrinsic_readable_size() {
     let output = typst(&serde_json::to_string(&projection).unwrap()).unwrap();
     assert!(output.contains("calc.min(size.width * 1.0, 300pt)"));
 }
+
+#[tokio::test]
+async fn pdf_diagram_links_survive_native_compilation() -> anyhow::Result<()> {
+    let destination = "https://example.org/diagram-only-target";
+    let diagram = typst(&retained(destination))?;
+    let root = tempfile::tempdir()?;
+    tokio::fs::write(
+        root.path().join("main.typ"),
+        format!(
+            "#set page(width: 500pt, height: 600pt, margin: \
+             25pt)\n{diagram}\n#pagebreak()\n= Interpretation \
+             <grapharch-diagram-note>\n"
+        ),
+    )
+    .await?;
+    let pdf = crate::publication::render::engine::compile(
+        root.path().to_owned(),
+        crate::publication::render::engine::Assets::load().await?,
+        std::sync::Arc::new(tokio::sync::Semaphore::new(1)),
+    )
+    .await?;
+    if let Ok(destination) = std::env::var("GRAPHARCH_DIAGRAM_LINK_REVIEW") {
+        tokio::fs::write(destination, &pdf).await?;
+    }
+    assert!(
+        String::from_utf8_lossy(&pdf).contains("/Rect [25 575 235 155]"),
+        "diagram annotation bounds must match the unchanged 210pt by 420pt \
+         image at the page margin"
+    );
+    assert!(
+        String::from_utf8_lossy(&pdf).contains(destination),
+        "a diagram-only destination must survive as a PDF link annotation"
+    );
+    Ok(())
+}
