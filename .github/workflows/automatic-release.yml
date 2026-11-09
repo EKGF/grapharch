@@ -46,7 +46,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_RUN: ${{ inputs.verified-run || github.event.workflow_run.id }}
-          RELEASE_BUMP: ${{ inputs.bump || 'patch' }}
+          RELEASE_BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'auto' }}
         run: python3 -B packaging/auto_release.py prepare --run "$VERIFIED_RUN" --bump "$RELEASE_BUMP"
   distribute:
     needs: reserve

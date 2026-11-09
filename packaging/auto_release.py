@@ -55,6 +55,16 @@ def next_version(current, tags, bump="patch"):
     raise ValueError('automatic major releases are forbidden')
 
 
+def select_bump(message, override):
+    signals = [line.removeprefix('GraphArch-Release-Bump: ').strip()
+               for line in message.splitlines() if line.startswith('GraphArch-Release-Bump:')]
+    if len(signals) > 1 or any(signal not in ('patch', 'minor') for signal in signals):
+        raise ValueError('release signal must be a single patch or minor trailer; major requires separate approval')
+    if override not in ('auto', 'patch', 'minor'):
+        raise ValueError('unsupported release override')
+    return override if override != 'auto' else (signals[0] if signals else 'patch')
+
+
 def verify_proof(repository, run_id, source):
     run = api(f'repos/{repository}/actions/runs/{run_id}')
     jobs = api(f'repos/{repository}/actions/runs/{run_id}/jobs?per_page=100')['jobs']
@@ -72,6 +82,7 @@ def prepare(repository, run_id, output, bump):
     source = run['head_sha']
     verify_proof(repository, run_id, source)
     subprocess.run(['git', 'fetch', 'origin', 'main', '--tags'], check=True)
+    bump = select_bump(git('show', '-s', '--format=%B', source), bump)
     main = git('rev-parse', 'origin/main')
     message = git('show', '-s', '--format=%B', main)
     marker = f'GraphArch-Release-Source: {source}'
@@ -174,7 +185,7 @@ def main():
     parser.add_argument('--repository', default=os.environ.get('GITHUB_REPOSITORY'))
     parser.add_argument('--revision')
     parser.add_argument('--source')
-    parser.add_argument('--bump', choices=('patch', 'minor'), default='patch')
+    parser.add_argument('--bump', choices=('auto', 'patch', 'minor'), default='auto')
     args = parser.parse_args()
     if args.command == 'prepare':
         prepare(args.repository, args.run, Path(os.environ['GITHUB_OUTPUT']), args.bump)

@@ -108,6 +108,10 @@ package checks, and commit checks. A docs-only dispatch is never release proof.
 All main pushes now select that full candidate graph.
 
 The default increment is a **patch**, for example `0.2.2` to `0.2.3`.
+For an automatic minor release, explicitly put the trailer
+`GraphArch-Release-Bump: minor` in the main push's head commit before its full
+candidate runs. Ordinary `feat` or breaking-change markers never select a
+larger increment. Conflicting trailers and a `major` trailer fail.
 Maintainers can explicitly select `minor` in the automatic-release manual
 workflow and supply the successful full candidate run ID. Automatic major
 increments are forbidden; a major release requires separate user approval of

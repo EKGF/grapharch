@@ -5,11 +5,20 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from auto_release import eligible, next_version, REQUIRED_JOBS, verify_proof
+from auto_release import eligible, next_version, REQUIRED_JOBS, verify_proof, select_bump
 from action_refs import may_advance
 
 
 class AutomaticRelease(unittest.TestCase):
+    def test_explicit_source_signal_can_select_minor_before_automatic_reservation(self):
+        self.assertEqual(select_bump('feat(api)!: change behavior', 'auto'), 'patch')
+        self.assertEqual(select_bump('feat(api): change\n\nGraphArch-Release-Bump: minor', 'auto'), 'minor')
+        self.assertEqual(select_bump('fix(api): change', 'minor'), 'minor')
+        with self.assertRaises(ValueError):
+            select_bump('fix(api): change\n\nGraphArch-Release-Bump: major', 'auto')
+        with self.assertRaises(ValueError):
+            select_bump('GraphArch-Release-Bump: patch\nGraphArch-Release-Bump: minor', 'auto')
+
     def test_late_retry_cannot_downgrade_the_action(self):
         self.assertTrue(may_advance('0.2.3', '0.2.4'))
         self.assertTrue(may_advance('0.2.4', '0.2.4'))
