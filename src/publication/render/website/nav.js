@@ -9,7 +9,7 @@
   const key = 'grapharch:navigation:v1:' + JSON.stringify([sidebar.dataset.project, sidebar.dataset.target]);
   const breakpoint = matchMedia('(max-width:760px)');
   const mobile = () => breakpoint.matches;
-  let mobileOpen = true;
+  let mobileOpen = !sidebar.closest('.gallery-layout');
   const restore = () => {
     const saved = JSON.parse(sessionStorage.getItem(key));
     if (saved === null) return;
@@ -22,6 +22,7 @@
     navigation.scrollTop = saved.mobileScroll;
   };
   restore();
+  browse.open = !mobile() || mobileOpen;
   const save = () => {
     if (mobile()) mobileOpen = browse.open;
     sessionStorage.setItem(key, JSON.stringify({

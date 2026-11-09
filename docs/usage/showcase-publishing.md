@@ -1,5 +1,10 @@
 ---
 title: Publishing and verifying showcases
+parent: Usage
+nav_order: 17
+permalink: /usage/showcase-publishing/
+grapharch:
+  subject: urn:grapharch:docs:topic:usage:showcase-publishing
 ---
 
 # Publishing and verifying showcases

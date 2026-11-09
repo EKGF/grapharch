@@ -9,4 +9,4 @@ grapharch:
 
 # Showcase gallery
 
-Find an example for your sources and publication needs; select a card to explore its outputs and source credits ([how showcases are published](usage/showcase-publishing.md)).
+Explore publications and their sources, or [learn how showcases are published](usage/showcase-publishing.md).
