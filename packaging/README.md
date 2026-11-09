@@ -21,6 +21,13 @@ Only the source-verified compiler job prepares `GRAPHARCH_BUILD_CONTEXT`; the bu
 
 Configure GitHub environments `release`, `pypi`, `npm`, and `crates-io` with the intended unattended release permissions. Register each registry's trusted publisher for the **calling workflow**, `automatic-release.yml` for automatic releases, and the matching environment; see the exact setup below. npm publishing requires ownership of the product scope and main package. Only an explicitly requested Homebrew publication additionally uses the `homebrew` environment and narrowly scoped `HOMEBREW_TAP_TOKEN` access to `legra-ai/homebrew-tap`; automatic releases do not update that repository. No sibling checkout is modified by builds.
 
+The registry environments must use custom deployment branch policies allowing
+only the `main` branch. Keep them separate from the native `release`
+environment: a feature branch or pull request must not obtain registry
+publishing identity merely by naming the same workflow file. Owner-approved
+manual registry entry points must also run from `main` and receive their own
+trusted-publisher registration.
+
 `cargo binstall grapharch` requires the initial crates.io publication so that binstall can discover the manifest. Metadata selects the GitHub ZIP and disables quick-install and compilation strategies. Before the first published version, binstall correctly reports missing artifacts rather than compiling. Source crate packaging includes embedded ontology definitions and renderer/font assets, while excluding examples and generated outputs. Archive/package notices include both the default document fonts and bundled Liberation fonts.
 
 ## Consumer GitHub Action
