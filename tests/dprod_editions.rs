@@ -131,6 +131,10 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
             .contains("#show heading.where(level: 4): set block(below: 10pt)"),
         "deep headings need separation from following content"
     );
+    assert!(
+        submission.contains("#show heading: set block(inset: (bottom: 10pt))"),
+        "heading separation must survive the fragment container boundary"
+    );
     let pdf = tokio::fs::read(output.join("pdf/omg/document.pdf")).await?;
     assert!(
         String::from_utf8_lossy(&pdf).contains("LiberationSerif"),

@@ -2,6 +2,7 @@
 // supply a document number, or insert an authority's legal terms or logo.
 #set text(font: "Liberation Serif", size: 10pt, fill: black)
 #set par(justify: true, leading: 0.55em, spacing: 0.8em)
+#show heading: set block(inset: (bottom: 10pt))
 #show heading: set text(font: "Liberation Sans", fill: black, weight: "bold")
 #show heading.where(level: 1): set text(size: 18pt)
 #show heading.where(level: 2): set text(size: 14pt)
