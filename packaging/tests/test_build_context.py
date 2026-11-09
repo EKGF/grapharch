@@ -71,3 +71,11 @@ class ContextTests(unittest.TestCase):
             with self.assertRaises(ValueError): BuildContext.parse(dict(good,unknown='ignored'))
             with patch.dict('os.environ',{'GRAPHARCH_BUILD_CONTEXT':json.dumps(dict(good,revision='b'*40))}),self.assertRaises(ValueError):
                 prepared_context(REVISION)
+
+
+class ReleaseIdentityEntrypoint(unittest.TestCase):
+    def test_clean_checkout_identity_invocation_cannot_write_python_bytecode(self):
+        workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/distribute.yml').read_text()
+        invocations = [line.strip() for line in workflow.splitlines() if 'run:' in line and 'packaging/build_context.py' in line]
+        self.assertTrue(invocations)
+        self.assertTrue(all('python -B packaging/build_context.py' in line for line in invocations))

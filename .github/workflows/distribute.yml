@@ -113,7 +113,7 @@ jobs:
         env:
           REVIEWED_REVISION: ${{ needs.metadata.outputs.revision }}
           GH_TOKEN: ${{ github.token }}
-        run: python packaging/build_context.py --revision "$REVIEWED_REVISION"
+        run: python -B packaging/build_context.py --revision "$REVIEWED_REVISION"
       - run: cargo fmt --check
       - name: Verify portable TLS dependency graphs
         run: python packaging/check_release_dependencies.py
@@ -144,7 +144,7 @@ jobs:
         env:
           REVIEWED_REVISION: ${{ needs.metadata.outputs.revision }}
           GH_TOKEN: ${{ github.token }}
-        run: python packaging/build_context.py --revision "$REVIEWED_REVISION"
+        run: python -B packaging/build_context.py --revision "$REVIEWED_REVISION"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
