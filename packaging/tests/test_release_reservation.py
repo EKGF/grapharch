@@ -48,8 +48,14 @@ class ReleaseReservation(unittest.TestCase):
         self.git('remote', 'add', 'origin', str(self.remote))
         self.git('push', 'origin', 'main', '--tags')
 
+    def signed_fixture(self, repository, source, files, headline, body):
+        # Local Git transport fixture: API signature validation has separate unit coverage.
+        self.git('add', '--', *files)
+        self.git('commit', '-m', headline, '-m', body)
+        return self.git('rev-parse', 'HEAD')
+
     def reserve(self):
-        with patch('auto_release.api', return_value={'head_sha': self.source}), patch('auto_release.verify_proof') as proof:
+        with patch('auto_release.api', return_value={'head_sha': self.source}), patch('auto_release.verify_proof') as proof, patch('auto_release.create_signed_commit', side_effect=self.signed_fixture):
             prepare('EKGF/grapharch', 42, self.output, 'auto')
             proof.assert_called_once_with('EKGF/grapharch', 42, self.source)
 

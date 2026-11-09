@@ -7,6 +7,8 @@ import re
 import subprocess
 import tomllib
 
+from signed_commit import create as create_signed_commit
+
 REQUIRED_JOBS = {
     'scope', 'Compile the Linux candidate once', 'Linux source tests',
     'Real SPARQL NativeStore', 'Verify showcases and publish documentation',
@@ -130,12 +132,9 @@ def prepare(repository, run_id, output, bump):
         changed = git('diff', '--name-only').splitlines()
         if set(changed) != set(FILES):
             raise ValueError('release preparation changed files beyond version metadata')
-        subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
-        subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
-        subprocess.run(['git', 'add', '--', *FILES], check=True)
-        subprocess.run(['git', 'commit', '-m', f'chore(release): publish {version}',
-                        '-m', f'{marker}\nGraphArch-Release-Run: {run_id}'], check=True)
-        revision = git('rev-parse', 'HEAD')
+        revision = create_signed_commit(repository, source, FILES,
+                                        f'chore(release): publish {version} [skip ci]',
+                                        f'{marker}\nGraphArch-Release-Run: {run_id}')
         subprocess.run(['git', 'tag', '-a', f'v{version}', '-m', f'GraphArch {version}; verified source {source}'], check=True)
         # GITHUB_TOKEN pushes deliberately do not trigger another push workflow.
         # Atomic compare-and-swap rejects a racing main push without rewriting it.
