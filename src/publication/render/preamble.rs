@@ -84,7 +84,7 @@ pub(super) async fn typst(
     Ok(format!(
         r##"
 #let ga-legal-notices(body) = {{
-  set text(font: "Libertinus Serif", size: 9pt, fill: ga-muted)
+  set text(font: if ga-omg {{ "Liberation Serif" }} else {{ "Libertinus Serif" }}, size: 9pt, fill: ga-muted)
   set par(justify: true, leading: 0.5em, spacing: 0.75em)
   show heading: it => block(above: 1.5em, below: 0.7em, sticky: true)[#text(font: "Liberation Sans", size: 8.5pt, fill: ga-muted, weight: "semibold")[#it.body]]
   block(width: 100%, inset: (bottom: 14pt), stroke: (bottom: 1.5pt + ga-accent))[

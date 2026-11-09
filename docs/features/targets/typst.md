@@ -31,7 +31,7 @@ proof of standards approval.
 ## Prepare an OMG-style edition
 
 Set `ga:style "omg"` on a dedicated PDF profile. This selects a restrained
-US Letter layout with one-inch margins, a serif body, black sans-serif headings,
+US Letter layout with one-inch margins, a 10-point Liberation Serif body, black Liberation Sans headings,
 a plain ruled cover, Roman-numbered front matter and Arabic-numbered chapters.
 The PDF and its editable source are still generated entirely with Typst.
 Use a separate target and destination to retain an EKGF or reader edition from
@@ -49,7 +49,10 @@ and [OMG specification template at revision 9801480](https://github.com/ObjectMa
 It translates their presentation conventions; it does not execute LaTeX or copy
 sample legal assertions. The templates specify US Letter; the inspected Commons
 PDF has a narrower 595.56 by 792 point media box, so this is not a pixel-identical
-reproduction of that Word-generated publication.
+reproduction of that Word-generated publication. The embedded Liberation fonts
+are openly licensed, metric-compatible substitutes for its Times New Roman and
+Arial fonts; they are not the proprietary originals. Font files, hashes, and
+license notices are retained with the renderer sources.
 
 ## Publish an audience overview
 

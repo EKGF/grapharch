@@ -122,6 +122,21 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     assert!(!community.contains("DPROD OMG submission preview"));
     assert!(submission.contains("DPROD OMG submission preview"));
     assert!(submission.contains("Submission Preview"));
+    assert!(
+        submission.contains("#set text(font: \"Liberation Serif\", size: 10pt"),
+        "OMG body follows the Times-compatible 10pt reference typography"
+    );
+    assert!(
+        submission
+            .contains("#show heading.where(level: 4): set block(below: 10pt)"),
+        "deep headings need separation from following content"
+    );
+    let pdf = tokio::fs::read(output.join("pdf/omg/document.pdf")).await?;
+    assert!(
+        String::from_utf8_lossy(&pdf).contains("LiberationSerif"),
+        "the portable Times-compatible font must be embedded"
+    );
+
     assert!(submission.contains("#let ga-style = \"omg\""));
     assert!(community.contains("#let ga-style = \"reader\""));
     assert!(submission.contains("#set page(numbering: \"i\")"));

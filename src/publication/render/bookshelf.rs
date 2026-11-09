@@ -129,6 +129,10 @@ pub(super) fn compiler_digest() -> String {
     hash.update(include_str!("../../../Cargo.lock"));
     for bytes in [
         include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
+        include_bytes!("fonts/LiberationSerif-Regular.ttf").as_slice(),
+        include_bytes!("fonts/LiberationSerif-Bold.ttf").as_slice(),
+        include_bytes!("fonts/LiberationSerif-Italic.ttf").as_slice(),
+        include_bytes!("fonts/LiberationSerif-BoldItalic.ttf").as_slice(),
         include_bytes!("fonts/LiberationSans-Bold.ttf").as_slice(),
         include_bytes!("fonts/LiberationSans-Italic.ttf").as_slice(),
         include_bytes!("fonts/LiberationSans-BoldItalic.ttf").as_slice(),

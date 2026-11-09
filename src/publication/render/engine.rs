@@ -36,6 +36,11 @@ impl Assets {
             );
             let sans = [
                 include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSerif-Regular.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSerif-Bold.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSerif-Italic.ttf").as_slice(),
+                include_bytes!("fonts/LiberationSerif-BoldItalic.ttf")
+                    .as_slice(),
                 include_bytes!("fonts/LiberationSans-Bold.ttf").as_slice(),
                 include_bytes!("fonts/LiberationSans-Italic.ttf").as_slice(),
                 include_bytes!("fonts/LiberationSans-BoldItalic.ttf")

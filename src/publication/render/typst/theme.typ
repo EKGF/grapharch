@@ -8,7 +8,7 @@
 #let ga-soft = if ga-omg { rgb("#f4f4f4") } else { ga-accent.lighten(94%) }
 #let ga-heading = if ga-specification or ga-overview { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
-#set text(font: if ga-omg { "Libertinus Serif" } else { "Liberation Sans" }, size: if ga-omg { 11pt } else if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
+#set text(font: if ga-omg { "Liberation Serif" } else { "Liberation Sans" }, size: if ga-omg { 10pt } else if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
 #set par(justify: not ga-overview, leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 1em)
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 1em)
