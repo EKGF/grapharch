@@ -21,7 +21,7 @@ html[data-color-scheme="dark"] .theme-ekgf .page-neighbors a:hover{background:va
 html[data-color-scheme="dark"] .project-hero{background:linear-gradient(135deg,#252944,var(--paper) 75%)}
 html[data-color-scheme="dark"] .project-hero .project-actions>a{background:#5865c9;color:#fff}
 html[data-color-scheme="dark"] .project-hero .project-actions>a+a{background:var(--chrome);color:var(--ink)}
-html[data-color-scheme="dark"] .theme-ekgf .showcase-open{background:#5865c9;color:#fff}
+
 html[data-color-scheme="dark"] .document-provenance{border-color:var(--line)}
 html[data-color-scheme="dark"] .provenance-commits time{color:var(--muted)}
 html[data-color-scheme="dark"] blockquote.markdown-alert-note{--callout-color:#8ec8ff;--callout-background:#172a3d}

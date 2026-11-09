@@ -15,18 +15,31 @@ use {
     std::collections::BTreeMap,
 };
 
+#[derive(Default)]
+pub(super) struct Gallery {
+    pub html:    String,
+    pub details: Vec<Detail>,
+}
+
+pub(super) struct Detail {
+    pub slug:  String,
+    pub title: String,
+    pub body:  String,
+}
+
 pub(super) async fn render(
     plan: &Plan,
     catalog: &Catalog,
     page: &NamedNode,
     prefix: &str,
-) -> Result<String> {
+) -> Result<Gallery> {
     match plan.source.optional(page, "showcaseGallery").await? {
-        None => return Ok(String::new()),
+        None => return Ok(Gallery::default()),
         Some(Term::Literal(flag)) if flag.value() == "true" => {},
         _ => anyhow::bail!("showcaseGallery must be true when declared"),
     }
     let mut rows = plan.source.objects(&plan.project, "showcase").await?;
+    let mut details = Vec::new(); // bounded: one detail page per at most 16 showcases.
     let mut cards = BTreeMap::new(); // bounded: at most 16 registered showcases.
     let mut facets = discovery::Discovery::default();
     while let Some(row) = rows.next().await? {
@@ -57,6 +70,27 @@ pub(super) async fn render(
         {
             Some(Term::Literal(text)) => text.value().to_owned(),
             _ => anyhow::bail!("showcase description is required"),
+        };
+        let abstract_text = match plan
+            .source
+            .optional_by(
+                id,
+                &NamedNode::new_unchecked("http://purl.org/dc/terms/abstract"),
+            )
+            .await?
+        {
+            None => String::new(),
+            Some(Term::Literal(text)) => {
+                ensure!(
+                    text.value().len() <= 16384,
+                    "showcase abstract exceeds 16 KiB"
+                );
+                format!(
+                    "<p class=\"showcase-background\">{}</p>",
+                    esc(text.value())
+                )
+            },
+            _ => anyhow::bail!("showcase abstract must be a literal"),
         };
         let preview = plan.source.node(id, "previewArtifact").await?;
         let pdf = match plan.source.optional(id, "pdfArtifact").await? {
@@ -109,7 +143,7 @@ pub(super) async fn render(
             alternatives.insert(
                 order,
                 format!(
-                    "<li><a data-artifact href=\"{prefix}{}\">{}</a></li>",
+                    "<li><a data-artifact href=\"{}\">{}</a></li>",
                     esc(&artifact.route),
                     esc(&output_title)
                 ),
@@ -126,12 +160,8 @@ pub(super) async fn render(
             .into_values()
             .map(|(route, title)| {
                 let label = if multiple { title.as_str() } else { "PDF" };
-                super::super::pdf_download::link(
-                    &format!("{prefix}{route}"),
-                    label,
-                    "showcase-pdf",
-                )
-                .replacen("<a ", "<a data-artifact ", 1)
+                super::super::pdf_download::link(&route, label, "showcase-pdf")
+                    .replacen("<a ", "<a data-artifact ", 1)
             })
             .collect::<String>();
         let alternatives = alternatives.into_values().collect::<String>();
@@ -147,17 +177,35 @@ pub(super) async fn render(
             )
         };
         facets.merge(&discovery);
-        cards.insert(order, format!(r#"<article class="showcase-card" data-showcase="{id}"{attributes}><div class="showcase-preview"><iframe sandbox="" loading="lazy" tabindex="-1" title="Preview of {name}" src="{prefix}{preview}"></iframe></div><div class="showcase-info"><h2>{name}</h2>{chips}<p>{description}</p>{badge}<div class="showcase-actions"><a data-artifact class="showcase-open" href="{prefix}{preview}">Open HTML</a>{downloads}<a data-artifact href="{prefix}{dataset}" download>Download KG</a></div><details><summary>All publication outputs</summary><ul>{alternatives}</ul></details>{credits}</div></article>"#,
-            id=esc(id.as_str()), name=esc(&name), description=esc(&description), preview=esc(&preview.route), dataset=esc(&dataset.route)));
+        let slug = plan.source.text(id, "slug").await?;
+        ensure!(
+            !slug.is_empty() &&
+                slug.chars().all(|c| c.is_ascii_alphanumeric() || c == '-'),
+            "invalid showcase detail slug"
+        );
+        let slug = format!("showcase-{slug}");
+        let gallery_route = &catalog.page(page)?.route;
+        details.push(Detail {
+            slug: slug.clone(),
+            title: name.clone(),
+            body: format!(r#"<article class="showcase-detail" data-showcase="{id}"{attributes}><p><a href="{gallery_route}">All showcases</a></p><h1>{name}</h1>{chips}<p>{description}</p>{abstract_text}{badge}<h2>Explore this publication</h2><div class="showcase-actions"><a data-artifact href="{preview}">View HTML publication</a>{downloads}<a data-artifact href="{dataset}" download>Download KG</a></div><details open><summary>All publication outputs</summary><ul>{alternatives}</ul></details>{credits}</article>"#,
+                id=esc(id.as_str()), gallery_route=esc(if gallery_route.is_empty() { "./" } else { gallery_route }), name=esc(&name), description=esc(&description), preview=esc(&preview.route), dataset=esc(&dataset.route),
+                ),
+        });
+        cards.insert(order, format!(r#"<article class="showcase-card" data-showcase="{id}"{attributes}><a class="showcase-primary" href="{prefix}{slug}.html" aria-labelledby="showcase-title-{order}"><div class="showcase-preview"><iframe sandbox="" loading="lazy" tabindex="-1" title="Preview of {name}" src="{prefix}{preview}"></iframe></div><div class="showcase-info"><h2 id="showcase-title-{order}">{name}</h2>{chips}<p>{description}</p>{badge}</div></a></article>"#,
+            id=esc(id.as_str()), name=esc(&name), description=esc(&description), preview=esc(&preview.route)));
     }
     let controls = facets.controls(cards.len());
-    Ok(format!(
-        "<section data-showcase-gallery aria-label=\"Publication \
-         examples\">{controls}<div \
-         class=\"showcase-gallery\">{}</div></section><script>{}</script>",
-        cards.into_values().collect::<String>(),
-        include_str!("gallery.js")
-    ))
+    Ok(Gallery {
+        details,
+        html: format!(
+            "<section data-showcase-gallery aria-label=\"Publication \
+             examples\">{controls}<div \
+             class=\"showcase-gallery\">{}</div></section><script>{}</script>",
+            cards.into_values().collect::<String>(),
+            include_str!("gallery.js")
+        ),
+    })
 }
 
 fn diagnostic_badge(count: u32) -> String {

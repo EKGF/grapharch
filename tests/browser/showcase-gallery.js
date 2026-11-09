@@ -44,8 +44,43 @@ async (page) => {
     if (!(await fibo.textContent()).includes('48')) throw new Error('FIBO source scope missing');
     await root.getByRole('button', { name: 'Clear filters' }).click();
   }
+  if (await root.getByText('Open HTML', { exact: true }).count()) throw new Error('Redundant Open HTML button remains');
+  const galleryUrl = page.url();
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    const card = cards.first();
+    const primary = card.locator('a.showcase-primary');
+    if (await primary.count() !== 1 || await card.locator('a a').count()) throw new Error('Card link structure is invalid');
+    const target = await primary.evaluate(node => node.href);
+    await card.scrollIntoViewIfNeeded();
+    const box = await card.boundingBox();
+    await page.mouse.click(box.x + 8, box.y + 8);
+    await page.waitForURL(target);
+    await page.goto(galleryUrl);
+    await primary.focus();
+    const outline = await primary.evaluate(node => getComputedStyle(node).outlineStyle);
+    if (outline === 'none') throw new Error('Primary card focus is invisible');
+    await page.keyboard.press('Enter');
+    await page.waitForURL(target);
+    const detail = page.locator('.showcase-detail');
+    if (!(await detail.locator('h1').textContent())) throw new Error('Missing introduction title');
+    const publication = detail.getByRole('link', { name: 'View HTML publication', exact: true });
+    if (!(await publication.isVisible())) throw new Error('Missing primary HTML output');
+    const summary = detail.locator('details summary').first();
+    await summary.click();
+    await summary.click();
+    for (const link of await detail.locator('.showcase-actions a, details[open] a').all()) {
+      await link.scrollIntoViewIfNeeded();
+      if (!(await link.evaluate(node => {
+        const r = node.getBoundingClientRect();
+        return node.contains(document.elementFromPoint(r.left + Math.min(5, r.width / 2), r.top + r.height / 2));
+      }))) throw new Error('Output link cannot be clicked');
+    }
+    await detail.getByRole('link', { name: 'All showcases', exact: true }).click();
+    await page.waitForURL(galleryUrl);
+  }
   const outputs = await root.locator('a[data-artifact]').count();
-  if (outputs < count * 3) throw new Error('Publication downloads missing');
+  if (outputs !== 0) throw new Error('Gallery still contains output controls');
   await page.setViewportSize({ width: 390, height: 844 });
   if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Mobile gallery overflows');
   await page.evaluate(() => { document.documentElement.dataset.colorScheme = 'dark'; });

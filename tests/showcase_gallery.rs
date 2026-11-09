@@ -204,6 +204,20 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     let document = scraper::Html::parse_document(&html);
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
     assert_eq!(document.select(&cards).count(), 12);
+    assert!(!html.contains("Open HTML"));
+    for card in document.select(&cards) {
+        let primary = scraper::Selector::parse("a.showcase-primary").unwrap();
+        let links = card.select(&primary).collect::<Vec<_>>();
+        assert_eq!(links.len(), 1, "one named primary card link");
+        assert!(!links[0].text().collect::<String>().trim().is_empty());
+        assert_eq!(
+            card.select(&scraper::Selector::parse("a a").unwrap())
+                .count(),
+            0
+        );
+        assert!(links[0].value().attr("href").unwrap().ends_with(".html"));
+    }
+
     assert_eq!(
         document
             .select(
@@ -213,8 +227,22 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             .count(),
         12
     );
-    for link in document.select(
-        &scraper::Selector::parse(".showcase-card a[data-artifact]").unwrap(),
+    let mut detail_html = String::new();
+    for link in
+        document.select(&scraper::Selector::parse(".showcase-primary").unwrap())
+    {
+        let route = link.value().attr("href").unwrap();
+        assert!(route.contains("showcase-"));
+        detail_html.push_str(
+            &tokio::fs::read_to_string(publication.directory.join(route))
+                .await?,
+        );
+    }
+    assert!(!html.contains("Download KG"));
+    assert!(!html.contains("All publication outputs"));
+    let details = scraper::Html::parse_document(&detail_html);
+    for link in details.select(
+        &scraper::Selector::parse(".showcase-detail a[data-artifact]").unwrap(),
     ) {
         let path = publication
             .directory
@@ -228,7 +256,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             assert!(std::fs::read(path)?.starts_with(b"%PDF-"));
         }
     }
-    let html_only = document
+    let html_only = details
         .select(
             &scraper::Selector::parse(
                 "[data-showcase='urn:grapharch:showcase:authored']",
@@ -242,7 +270,9 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         Some("HTML|KG")
     );
     assert!(!html_only.html().contains(".pdf"));
-    for card in document.select(&cards) {
+    for card in
+        details.select(&scraper::Selector::parse(".showcase-detail").unwrap())
+    {
         let actions =
             scraper::Selector::parse(".showcase-actions a[href$='.pdf']")
                 .unwrap();
@@ -273,8 +303,8 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     assert!(html.contains("data-gallery-filter=\"output\""));
     assert!(html.contains("No showcases match"));
     assert!(html.contains("data-input=\"OWL|SHACL\""));
-    assert!(html.contains("Source and credits"));
-    assert!(html.contains("https://github.com/EKGF/dprod"));
+    assert!(detail_html.contains("Source and credits"));
+    assert!(detail_html.contains("https://github.com/EKGF/dprod"));
     assert!(html.contains("artifacts/dprod/"));
     assert!(html.contains("DPROD: native ontology and SHACL"));
     assert!(!html.contains("artifacts/rdf11/"));

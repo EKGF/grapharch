@@ -80,3 +80,13 @@ ex:fibo-be a ga:Showcase; ga:slug "fibo-be"; dct:title "FIBO Business Entities";
  ga:showcaseUseCase "Ontology reference", "Business vocabulary";
  dct:source <https://github.com/edmcouncil/fibo/tree/33a92cd34285d532c158da97bb42add089f135d3/BE>;
  dct:rights "FIBO Business Entities by EDM Council and its contributors, MIT license. The source ontologies retain their EDM Council and OMG copyright notices. This unofficial GraphArch preview records immutable source URLs and content digests." .
+
+ex:commons dct:abstract "The library collects the published ontologies directly from OMG RDF URLs. Its overview links to a specification for each ontology, with a combined PDF and exported KG. Unlike Git repository examples, source revisions are identified by URL and content digest." .
+
+ex:fibo-be dct:abstract "All 48 RDF/XML documents in the official Business Entities module are collected at an immutable repository revision: legal entities, corporations, ownership, partnerships, trusts and regional reference individuals. The source-owned module hierarchy organizes the HTML pages and combined PDF. Imports outside BE remain explicit external references; the linked source inventory records the exact revision, license and boundaries." .
+
+ex:mkdocs-bootswatch dct:abstract "The original MkDocs Bootswatch Themes sources are imported at an immutable Git revision, including twenty screenshots and the original BSD license. Navigation and search work without executing MkDocs or its theme plugins. HTML and the retained graph are provided; this website example does not advertise a PDF." .
+
+ex:code-highlighting dct:abstract "Python, Bash, JavaScript, TypeScript, JSON, JSON-LD and SPARQL examples use the same offline syntax colours in HTML and PDF. The Code examples and syntax colours guide explains fence names and practical Markdown examples." .
+
+ex:dprod dct:abstract "The EKGF community and OMG submission-preview PDF editions share the same pinned repository revision and technical chapters. Publication profiles select different front matter and publisher branding. The submission preview does not claim OMG approval or an assigned OMG document number. A separate illustrated overview explains the bigger picture and adoption path." .

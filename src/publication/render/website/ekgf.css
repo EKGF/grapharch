@@ -18,7 +18,7 @@
 .theme-ekgf .page-neighbors a,.theme-ekgf .showcase-card{background:#fff;border-radius:6px}
 .theme-ekgf .page-neighbors a:hover{border-color:#a8afd9;background:#f6f7fd}
 .theme-ekgf footer{border-color:var(--line);padding-top:1.25rem;color:var(--muted)}
-.theme-ekgf .showcase-open:hover{background:#303f9f;color:#fff}
+
 @media(max-width:760px){.theme-ekgf .site-header{gap:.85rem}.theme-ekgf h1{font-size:2rem}.theme-ekgf .brand{font-size:1.1rem}}
 @media(max-width:480px){.ekgf-identity span{display:none}.ekgf-identity svg{width:2rem;height:2rem}.theme-ekgf .site-header{gap:.75rem}.theme-ekgf .brand{gap:.4rem}}
 @media print{.ekgf-identity{display:none}.theme-ekgf{background:#fff}}

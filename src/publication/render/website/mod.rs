@@ -327,6 +327,25 @@ async fn write_page(
         let prefix = "../".repeat(page.route.matches('/').count());
         let navigation = catalog.navigation(id, &prefix)?;
         let gallery = gallery::render(plan, catalog, id, &prefix).await?;
+        for detail in &gallery.details {
+            let route = format!("{}.html", detail.slug);
+            ensure!(
+                !files.contains(&route) &&
+                    !catalog.pages.values().any(|p| p.route == route),
+                "showcase detail route collision: {route}"
+            );
+            write_report(
+                plan,
+                stage,
+                catalog,
+                header,
+                &detail.slug,
+                &detail.title,
+                detail.body.as_bytes(),
+            )
+            .await?;
+            files.push(route);
+        }
         let mut outline = String::new();
         for heading in &content.headings {
             if heading.level > 1 && heading.level <= 3 {
@@ -414,7 +433,7 @@ async fn write_page(
             breadcrumbs:    &breadcrumbs,
             heading:        &heading,
             body:           &content.html,
-            gallery:        &gallery,
+            gallery:        &gallery.html,
             previous_next:  &previous_next,
             outline:        &page_outline,
         });
