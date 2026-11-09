@@ -1,13 +1,14 @@
 // Presentation components shared by all generated content. No source text is evaluated.
+#let ga-omg = ga-style == "omg"
 #let ga-overview = ga-style == "overview"
 #let ga-specification = ga-style == "specification"
-#let ga-ink = rgb("#182b35")
-#let ga-muted = rgb("#526670")
-#let ga-line = rgb("#dce5e5")
-#let ga-soft = ga-accent.lighten(94%)
+#let ga-ink = if ga-omg { black } else { rgb("#182b35") }
+#let ga-muted = if ga-omg { black } else { rgb("#526670") }
+#let ga-line = if ga-omg { rgb("#999999") } else { rgb("#dce5e5") }
+#let ga-soft = if ga-omg { rgb("#f4f4f4") } else { ga-accent.lighten(94%) }
 #let ga-heading = if ga-specification or ga-overview { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
-#set text(font: "Liberation Sans", size: if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
+#set text(font: if ga-omg { "Libertinus Serif" } else { "Liberation Sans" }, size: if ga-omg { 11pt } else if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
 #set par(justify: not ga-overview, leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 1em)
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 1em)
@@ -24,7 +25,7 @@
 #show heading.where(level: 3): set text(size: 11.5pt, weight: "bold", fill: ga-heading)
 #show heading.where(level: 3): set block(above: 14pt, below: 7pt)
 #show heading.where(level: 4): set text(size: 10.5pt, weight: "bold", fill: ga-heading)
-#show link: set text(fill: ga-accent)
+#show link: set text(fill: if ga-omg { black } else { ga-accent })
 #show raw: set text(font: "DejaVu Sans Mono", size: 8.2pt, hyphenate: false)
 // Already highlighted runs share HTML's palette. Wrap grapheme clusters without
 // re-tokenising sliced strings, preserving multiline lexical context.
@@ -38,11 +39,11 @@
       let piece = ""
       for cluster in value.clusters() {
         if cluster in ("\n", "\r\n") {
-          text(fill: color, piece); piece = ""
+          text(fill: if ga-omg { black } else { color }, piece); piece = ""
           linebreak(); column = 0
         } else {
           if column >= capacity {
-            text(fill: color, piece); piece = ""
+            text(fill: if ga-omg { black } else { color }, piece); piece = ""
             linebreak(); column = 0
           }
           if cluster == "\t" {
@@ -51,7 +52,7 @@
           } else { piece += cluster; column += 1 }
         }
       }
-      text(fill: color, piece)
+      text(fill: if ga-omg { black } else { color }, piece)
     }
   })
 ]

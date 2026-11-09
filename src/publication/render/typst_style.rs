@@ -19,12 +19,14 @@ impl Style {
             };
         ensure!(
             requested.as_deref().is_none_or(|v| {
-                matches!(v, "specification" | "reader" | "overview")
+                matches!(v, "specification" | "reader" | "overview" | "omg")
             }),
             "unsupported PDF presentation style {}",
             requested.as_deref().unwrap_or_default()
         );
-        let name = if matches!(
+        let name = if requested.as_deref() == Some("omg") {
+            "omg"
+        } else if matches!(
             plan.renderer.as_str(),
             "specification" | "bookshelf"
         ) || requested.as_deref() == Some("specification")
@@ -35,7 +37,9 @@ impl Style {
         } else {
             "reader"
         };
-        let mut accent = if name == "overview" {
+        let mut accent = if name == "omg" {
+            "#000000".into()
+        } else if name == "overview" {
             "#4949b5".into()
         } else if name == "reader" {
             "#116659".into()

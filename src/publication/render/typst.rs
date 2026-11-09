@@ -125,6 +125,10 @@ pub(super) async fn begin_book(
     .await?;
     file.write_all(include_str!("typst/theme.typ").as_bytes())
         .await?;
+    if style.name == "omg" {
+        file.write_all(include_str!("typst/omg.typ").as_bytes())
+            .await?;
+    }
     let subtitle = match plan.source.optional(&plan.target, "subtitle").await? {
         Some(oxrdf::Term::Literal(value)) => {
             format!(
@@ -135,7 +139,7 @@ pub(super) async fn begin_book(
         None => String::new(),
         _ => anyhow::bail!("publication subtitle must be a literal"),
     };
-    if matches!(style.name, "reader" | "overview") {
+    if matches!(style.name, "reader" | "overview" | "omg") {
         if let Some(value) = plan
             .source
             .optional_by(
@@ -197,11 +201,23 @@ pub(super) async fn begin_book(
         plan.toc_depth().await?.unwrap_or(3)
     };
     let legal = super::preamble::typst(plan, diagnostics).await?;
+    let front_numbering = if style.name == "omg" {
+        "#counter(page).update(1)\n#set page(numbering: \"i\")\n"
+    } else {
+        ""
+    };
+    let body_numbering = if style.name == "omg" {
+        "#counter(page).update(1)\n#set page(numbering: \"1\")\n"
+    } else {
+        ""
+    };
     file.write_all(
         format!(
             "\n#ga-cover(ga-publisher, ga-title, [{subtitle}], \
-             [{front}])\n#pagebreak()\n{legal}#outline(title: [Contents], \
-             depth: {toc_depth})\n#pagebreak()\n#counter(heading).update(0)\n"
+             [{front}])\n#pagebreak()\n{front_numbering}{legal}#outline(title: \
+             [Contents], depth: \
+             {toc_depth})\n#pagebreak()\n{body_numbering}#counter(heading).\
+             update(0)\n"
         )
         .as_bytes(),
     )

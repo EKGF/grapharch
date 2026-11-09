@@ -45,7 +45,7 @@ ex:submission a ga:Target ; dct:title "DPROD OMG submission preview" ;
     ga:scope ex:scope ; ga:profile ex:submission-profile ; ga:renderer "typst" ;
     ga:destination "pdf/omg" ; ga:publisher ex:omg-authority ;
     ga:publicationStatus "Submission Preview" .
-ex:submission-profile a ga:Profile ; ga:style "reader" ;
+ex:submission-profile a ga:Profile ; ga:style "omg" ;
     ga:placement <urn:dprod-showcase:pdf-placement:abstract>,
         <urn:dprod-showcase:pdf-placement:overview>,
         <urn:dprod-showcase:pdf-placement:classes>,
@@ -93,6 +93,10 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     assert!(!community.contains("DPROD OMG submission preview"));
     assert!(submission.contains("DPROD OMG submission preview"));
     assert!(submission.contains("Submission Preview"));
+    assert!(submission.contains("#let ga-style = \"omg\""));
+    assert!(community.contains("#let ga-style = \"reader\""));
+    assert!(submission.contains("#set page(numbering: \"i\")"));
+    assert!(submission.contains("#set page(numbering: \"1\")"));
     assert!(submission.contains("not an approved OMG specification"));
     for relative in ["pdf/ekgf/document.pdf", "pdf/omg/document.pdf"] {
         assert!(
