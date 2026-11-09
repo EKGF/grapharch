@@ -165,3 +165,10 @@ unchanged. npm, PyPI and crates.io retries skip only artifacts whose registry
 checksums match the verified local artifact; conflicting bytes fail. Existing
 GitHub release assets are also hash-checked and never overwritten. A fresh
 rebuild with changed producer identity must not replace an immutable version.
+
+If `grapharch` has never been published to crates.io, its owner must perform the
+first authenticated publication of the verified release source, then configure
+trusted publishing for subsequent versions. OIDC cannot bootstrap a nonexistent
+crate; see the [Rust announcement](https://blog.rust-lang.org/2025/07/11/crates-io-development-update/).
+PyPI can instead register a pending publisher for a new project. npm ownership
+and publisher registration must cover the unscoped CLI and all platform packages.

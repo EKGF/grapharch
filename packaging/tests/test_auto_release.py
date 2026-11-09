@@ -6,9 +6,15 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from auto_release import eligible, next_version, REQUIRED_JOBS, verify_proof
+from action_refs import may_advance
 
 
 class AutomaticRelease(unittest.TestCase):
+    def test_late_retry_cannot_downgrade_the_action(self):
+        self.assertTrue(may_advance('0.2.3', '0.2.4'))
+        self.assertTrue(may_advance('0.2.4', '0.2.4'))
+        self.assertFalse(may_advance('0.3.0', '0.2.4'))
+
     def run_record(self):
         return dict(event='push', head_branch='main', head_sha='a' * 40,
                     conclusion='success', path='.github/workflows/rust-ci.yml',
