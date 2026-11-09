@@ -22,6 +22,9 @@ on:
       revision:
         type: string
         default: ''
+      artifact-run:
+        type: string
+        default: ''
       verified-source:
         type: string
         default: ''
@@ -48,7 +51,7 @@ env:
   GRAPHARCH_VERIFIED_SOURCE: ${{ inputs.verified-source }}
   GRAPHARCH_VERIFIED_RUN: ${{ inputs.verified-run }}
 concurrency:
-  group: distribution-${{ github.ref }}
+  group: distribution-${{ inputs.revision || github.sha }}-${{ inputs.artifact-run != '' && 'publish' || 'build' }}
   cancel-in-progress: false
 jobs:
   metadata:
@@ -66,6 +69,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Require a registry-supported publication event
+        if: inputs.publish-packages == true
+        run: |
+          python3 - <<'PY'
+          import os
+          if os.environ['GITHUB_EVENT_NAME'] not in ('push', 'release', 'workflow_dispatch'):
+              raise SystemExit('Registry publishing requires push, release or workflow_dispatch; workflow_run is not supported')
+          PY
       - id: metadata
         env:
           REQUEST_PUBLISH: ${{ inputs.publish }}
@@ -122,7 +133,7 @@ jobs:
   binaries:
     needs: [metadata, verify-proof, verify-source]
     if: >-
-      always() && needs.metadata.result == 'success' && needs.verify-proof.result == 'success'
+      always() && inputs.artifact-run == '' && needs.metadata.result == 'success' && needs.verify-proof.result == 'success'
       && (needs.verify-source.result == 'success' || (needs.verify-source.result == 'skipped' && inputs.verified-run != ''))
     strategy:
       fail-fast: false
@@ -198,10 +209,25 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 30
+  verify-artifacts:
+    if: inputs.artifact-run != ''
+    runs-on: ubuntu-latest
+    needs: [metadata, verify-proof]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+      - name: Verify the original six native builds and retained assembly
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN: ${{ inputs.artifact-run }}
+          VERIFIED_SOURCE: ${{ inputs.verified-source }}
+          VERIFIED_RUN: ${{ inputs.verified-run }}
+        run: python3 -B packaging/artifact_proof.py --run "$ARTIFACT_RUN" --source "$VERIFIED_SOURCE" --verified-run "$VERIFIED_RUN"
   assemble:
     runs-on: ubuntu-latest
-    needs: [metadata, binaries]
-    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.binaries.result == 'success' }}
+    needs: [metadata, binaries, verify-proof, verify-artifacts]
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.verify-proof.result == 'success' && ((inputs.artifact-run == '' && needs.binaries.result == 'success') || (inputs.artifact-run != '' && needs.verify-artifacts.result == 'success')) }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -214,16 +240,39 @@ jobs:
         with:
           node-version: '24'
       - uses: actions/download-artifact@v8
+        if: inputs.artifact-run == ''
         with:
           pattern: distribution-*
           path: dist
           merge-multiple: true
+      - uses: actions/download-artifact@v8
+        if: inputs.artifact-run != ''
+        with:
+          name: release-distribution
+          path: dist
+          run-id: ${{ inputs.artifact-run }}
+          github-token: ${{ github.token }}
+      - uses: actions/checkout@v7
+        if: inputs.artifact-run != ''
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: release-automation
+      - name: Verify reused manifest source and version before publishing
+        if: inputs.artifact-run != ''
+        env:
+          RELEASE_REVISION: ${{ needs.metadata.outputs.revision }}
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: python3 -B "$GITHUB_WORKSPACE/release-automation/packaging/artifact_proof.py" --directory dist --revision "$RELEASE_REVISION" --version "$RELEASE_VERSION"
       - run: python packaging/distribute.py build-main --output dist
+        if: inputs.artifact-run == ''
       - run: python packaging/distribute.py pack-npm --output dist
+        if: inputs.artifact-run == ''
       - run: python packaging/distribute.py verify-release --output dist
       - run: python packaging/distribute.py homebrew --output dist --destination dist/homebrew/grapharch.rb
+        if: inputs.artifact-run == ''
       - run: ruby -c dist/homebrew/grapharch.rb
       - uses: actions/upload-artifact@v7
+        if: inputs.artifact-run == ''
         with:
           name: release-distribution
           path: dist/
@@ -235,6 +284,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
+      actions: read
       contents: write
     steps:
       - uses: actions/checkout@v7
@@ -244,12 +294,27 @@ jobs:
         with:
           name: release-distribution
           path: dist
+          run-id: ${{ inputs.artifact-run || github.run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/checkout@v7
+        if: inputs.artifact-run != ''
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: release-automation
+      - name: Require unchanged original GitHub publication for artifact-only handoff
+        if: inputs.artifact-run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: python3 -B "$GITHUB_WORKSPACE/release-automation/packaging/release_assets.py" --version "$RELEASE_VERSION" --output dist --require-complete
       - name: Preserve immutable already-published artifact bytes
+        if: inputs.artifact-run == ''
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
         run: python3 -B packaging/release_assets.py --version "$RELEASE_VERSION" --output dist
       - uses: softprops/action-gh-release@v3
+        if: inputs.artifact-run == ''
         with:
           overwrite_files: false
           tag_name: v${{ needs.metadata.outputs.version }}
@@ -267,6 +332,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
@@ -280,6 +346,8 @@ jobs:
         with:
           name: release-distribution
           path: dist
+          run-id: ${{ inputs.artifact-run || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Reject conflicting already-published wheels before resuming
         run: python3 -B packaging/registry_state.py --output dist
       - uses: pypa/gh-action-pypi-publish@release/v1
@@ -292,6 +360,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
@@ -309,7 +378,9 @@ jobs:
         with:
           name: release-distribution
           path: dist
-      - run: python packaging/publish_npm.py --output dist
+          run-id: ${{ inputs.artifact-run || github.run_id }}
+          github-token: ${{ github.token }}
+      - run: python packaging/publish_npm.py --output "$GITHUB_WORKSPACE/dist"
   publish-crate:
     if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
@@ -341,6 +412,8 @@ jobs:
         with:
           name: release-distribution
           path: dist
+          run-id: ${{ inputs.artifact-run || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Require tap credentials
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

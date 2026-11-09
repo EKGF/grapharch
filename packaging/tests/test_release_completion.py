@@ -45,3 +45,13 @@ class Completion(unittest.TestCase):
         refs = (root / '.github/workflows/automatic-release.yml').read_text().split('  action-refs:', 1)[1]
         self.assertIn('actions: read', refs)
         self.assertIn('GH_TOKEN:', refs)
+
+    def test_verified_artifact_reuse_requires_all_real_publication_stages(self):
+        records = [job for job in self.records() if not job['name'].startswith('distribute / binaries (')]
+        with self.assertRaises(ValueError):
+            require_complete_publication(records)
+        records.append({'id': 100, 'name': 'distribute / verify-artifacts', 'conclusion': 'success'})
+        require_complete_publication(records)
+        records[0]['conclusion'] = 'skipped'
+        with self.assertRaises(ValueError):
+            require_complete_publication(records)

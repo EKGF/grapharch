@@ -1,4 +1,5 @@
 name: Automatic release
+run-name: ${{ github.event_name == 'workflow_run' && 'Prepare GraphArch release' || (inputs.publish-run != '' && 'Publish verified GraphArch artifacts' || 'Build and publish GraphArch release') }}
 on:
   workflow_run:
     workflows: ['Rust CI']
@@ -10,6 +11,10 @@ on:
         description: Successful full main-push Rust CI run to release
         required: true
         type: string
+      publish-run:
+        description: Reuse a verified assembled distribution from this release producer run
+        type: string
+        default: ''
       bump:
         description: Patch by default; minor only when explicitly selected
         type: choice
@@ -18,7 +23,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: grapharch-automatic-release
+  group: grapharch-automatic-release-${{ github.event_name == 'workflow_run' && 'build' || 'publish' }}
   cancel-in-progress: false
 jobs:
   reserve:
@@ -58,13 +63,27 @@ jobs:
     uses: ./.github/workflows/distribute.yml
     with:
       publish: true
-      publish-packages: true
+      publish-packages: ${{ github.event_name == 'workflow_dispatch' }}
+      artifact-run: ${{ inputs.publish-run }}
       revision: ${{ needs.reserve.outputs.revision }}
       verified-source: ${{ needs.reserve.outputs.source }}
       verified-run: ${{ needs.reserve.outputs.run }}
     secrets: inherit
+  dispatch-publication:
+    if: ${{ !cancelled() && github.event_name == 'workflow_run' && needs.reserve.result == 'success' && needs.distribute.result == 'success' && needs.reserve.outputs.ready == 'true' }}
+    needs: [reserve, distribute]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Publish the verified artifacts through a registry-supported event
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_RUN: ${{ needs.reserve.outputs.run }}
+        run: gh workflow run automatic-release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "verified-run=$VERIFIED_RUN" -f "publish-run=$GITHUB_RUN_ID"
   action-refs:
-    if: ${{ !cancelled() && needs.reserve.result == 'success' && needs.distribute.result == 'success' }}
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.reserve.result == 'success' && needs.distribute.result == 'success' }}
     needs: [reserve, distribute]
     runs-on: ubuntu-latest
     permissions:
@@ -75,8 +94,12 @@ jobs:
         with:
           ref: ${{ needs.reserve.outputs.revision }}
           fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: release-automation
       - name: Upgrade maintained Action references only after every channel succeeds
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ needs.reserve.outputs.version }}
-        run: python3 -B packaging/action_refs.py --version "$RELEASE_VERSION"
+        run: python3 -B "$GITHUB_WORKSPACE/release-automation/packaging/action_refs.py" --version "$RELEASE_VERSION"

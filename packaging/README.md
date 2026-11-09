@@ -131,16 +131,45 @@ atomically advances main and creates the immutable version tag with a
 metadata-only commit. Cargo, its package lock entry, npm, and ontology version
 metadata are synchronized. Source/run trailers make the reservation resumable.
 The repository token's pushes do not trigger another push workflow, preventing
-release loops. A racing main push rejects the atomic reservation.
+release loops. A racing main push rejects the atomic reservation. The version commit is created
+through GitHub’s signed-commit API; its verified signature, exact parent and
+prepared tree are checked before the atomic main/tag update.
 
 The existing distributor checks the exact successful source and verifies that
 its release child changed only those version fields. It therefore reuses the
 source validation instead of compiling its test suite again. Six optimized
 OS/architecture executables still need release builds; each executable feeds
 its standalone archive, Python wheel, and npm platform package. There is one
-publisher pipeline. GitHub, PyPI, npm and crates.io are requested together;
-Homebrew remains a separate opt-in operation and is not changed automatically.
-A failed registry is a failed release workflow, never a reported full success.
+publisher pipeline. The `workflow_run` coordinator prepares the native artifacts
+and GitHub release, then dispatches the same workflow with `workflow_dispatch`
+for registry publication. crates.io rejects `workflow_run` publishing tokens;
+the handoff uses a supported event rather than changing or bypassing its claims.
+Build and publication have separate serialized concurrency groups.
+
+The handoff reuses the original `release-distribution` artifact: it does not
+compile GraphArch, repack packages, relabel producer identity, or overwrite
+GitHub assets. It requires the same repository/main source, successful source
+proof, all six native builds, assembly and original GitHub publication. Every
+manifest must match the requested release revision/version, all package checksums
+are rechecked, and the public GitHub assets must still match. An absent, expired,
+conflicting or incomplete artifact fails explicitly. Homebrew remains a separate
+opt-in operation and is not changed automatically. A failed registry fails the
+publication run; a successful preparation run alone is not complete publication.
+
+To resume publication from an existing verified assembly, select
+`automatic-release.yml` manually with the original successful full source run
+as `verified-run` and the original native release producer run as `publish-run`.
+For example, replace the two IDs before running:
+
+```sh
+gh workflow run automatic-release.yml --ref main \
+  --field verified-run='<successful full source run ID>' \
+  --field publish-run='<original native release producer run ID>'
+```
+
+The existing immutable version reservation is resumed; it is not bumped again.
+After authentication or owner configuration is corrected, retry failed jobs in
+this publication run rather than rebuilding its native producer.
 
 After every requested publication succeeds, the workflow advances the Action
 convenience tags `vMAJOR` and `vMAJOR.MINOR` to the immutable release commit.

@@ -56,7 +56,7 @@ class AutomaticRelease(unittest.TestCase):
         self.assertIn('workflow_run:', workflow)
         self.assertIn('cancel-in-progress: false', workflow)
         self.assertIn('uses: ./.github/workflows/distribute.yml', workflow)
-        self.assertIn('publish-packages: true', workflow)
+        self.assertIn("publish-packages: ${{ github.event_name == 'workflow_dispatch' }}", workflow)
         self.assertNotIn('cargo build', workflow)
 
     def test_source_checks_must_include_package_and_commit_validation(self):
