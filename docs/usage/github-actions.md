@@ -13,9 +13,9 @@ Keep your publication configuration with your ontologies, then use one GraphArch
 step to build their specification website, PDF and documentation KG. The action
 installs and verifies an exact release before running the build.
 
-GraphArch 0.1.0 includes paginated specifications, module bookshelves, and SKOS
-vocabulary documentation. Pin both the Action revision and the native binary
-version when upgrading.
+Pin both the Action revision and the native binary version when upgrading.
+The example below selects an existing release; it is a reproducible version pin,
+not a promise to track the newest generator automatically.
 
 ## Build in one step
 
@@ -23,10 +23,10 @@ After checking out your repository, add this step:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: EKGF/grapharch@v0.1.0
+- uses: EKGF/grapharch@v0.2.2
   id: docs
   with:
-    version: '0.1.0'
+    version: '0.2.2'
     source-kind: checkout
     source: .
     output: build/docs
@@ -58,6 +58,14 @@ checks the published platform manifest against that commit, the version, target,
 and verified archive checksum before running the binary. Its `revision` output
 then records the verified release source commit. Missing or mismatched provenance
 fails the action; it never switches to a source build.
+
+An automatic release advances the Action convenience tags `vMAJOR` and
+`vMAJOR.MINOR` only after all its publication channels succeed. Once available,
+`EKGF/grapharch@v0` follows the maintained Action implementation within major
+version zero. The `version` input still selects an exact published binary;
+changing the Action reference does not silently upgrade that binary. Use an
+exact release tag or full commit SHA when the Action implementation must also
+remain immutable. Existing repository workflows are never rewritten by a release.
 
 ## Install an unreleased source revision
 
@@ -109,15 +117,15 @@ permissions:
   id-token: write
 jobs:
   documentation:
-    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@v0.1.0
+    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@v0.2.2
     with:
-      version: '0.1.0'
+      version: '0.2.2'
       source-kind: checkout
       source: .
       deploy: false
 ```
 
-For an immutable pin, replace `v0.1.0` with the release commit SHA after reviewing it. Its internal
+For an immutable pin, replace `v0.2.2` with the release commit SHA after reviewing it. Its internal
 GraphArch step is also pinned to a reviewed commit. The workflow reads the
 publication paths returned by the build; it does not recollect sources to
 assemble the deployment artifact.
