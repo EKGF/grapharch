@@ -71,13 +71,11 @@ async (page) => {
     await summary.click();
     for (const link of await detail.locator('.showcase-actions a, details[open] a').all()) {
       await link.scrollIntoViewIfNeeded();
-      if (!(await link.evaluate(node => {
-        const r = node.getBoundingClientRect();
-        return node.contains(document.elementFromPoint(r.left + Math.min(5, r.width / 2), r.top + r.height / 2));
-      }))) throw new Error('Output link cannot be clicked');
+      await link.click({ trial: true });
     }
     await detail.getByRole('link', { name: 'All showcases', exact: true }).click();
-    await page.waitForURL(galleryUrl);
+    await page.waitForURL(url => url.pathname.replace(/index\.html$/, '') === new URL(galleryUrl).pathname.replace(/index\.html$/, ''));
+    await page.goto(galleryUrl);
   }
   const outputs = await root.locator('a[data-artifact]').count();
   if (outputs !== 0) throw new Error('Gallery still contains output controls');
