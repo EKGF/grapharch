@@ -62,6 +62,19 @@ class ReleaseReservation(unittest.TestCase):
     def remote_main(self):
         return self.git('--git-dir', str(self.remote), 'rev-parse', 'refs/heads/main')
 
+    def test_runner_without_git_identity_can_create_annotated_release_tag(self):
+        self.git('config', '--unset', 'user.name')
+        self.git('config', '--unset', 'user.email')
+        self.git('config', 'user.useConfigOnly', 'true')
+        # API-generated commit has no dependency on local Git author configuration.
+        def signed_api_fixture(repository, source, files, headline, body):
+            self.git('-c', 'user.name=API fixture', '-c', 'user.email=api@example.invalid', 'add', '--', *files)
+            self.git('-c', 'user.name=API fixture', '-c', 'user.email=api@example.invalid', 'commit', '-m', headline, '-m', body)
+            return self.git('rev-parse', 'HEAD')
+        with patch.dict(os.environ, {'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_SYSTEM': os.devnull}), patch('auto_release.api', return_value={'head_sha': self.source}), patch('auto_release.verify_proof'), patch('auto_release.create_signed_commit', side_effect=signed_api_fixture):
+            prepare('EKGF/grapharch', 42, self.output, 'auto')
+        self.assertIn(f'version={self.new}', self.output.read_text())
+
     def test_reservation_is_metadata_only_and_retry_does_not_bump_twice(self):
         self.reserve()
         release = self.remote_main()

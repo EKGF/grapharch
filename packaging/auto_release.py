@@ -135,7 +135,9 @@ def prepare(repository, run_id, output, bump):
         revision = create_signed_commit(repository, source, FILES,
                                         f'chore(release): publish {version} [skip ci]',
                                         f'{marker}\nGraphArch-Release-Run: {run_id}')
-        subprocess.run(['git', 'tag', '-a', f'v{version}', '-m', f'GraphArch {version}; verified source {source}'], check=True)
+        subprocess.run(['git', '-c', 'user.name=github-actions[bot]', '-c',
+                        'user.email=41898282+github-actions[bot]@users.noreply.github.com',
+                        'tag', '-a', f'v{version}', '-m', f'GraphArch {version}; verified source {source}'], check=True)
         # GITHUB_TOKEN pushes deliberately do not trigger another push workflow.
         # Atomic compare-and-swap rejects a racing main push without rewriting it.
         subprocess.run(['git', 'push', '--atomic', 'origin', 'HEAD:refs/heads/main',
