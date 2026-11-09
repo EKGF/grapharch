@@ -103,7 +103,9 @@ async fn diagram_endpoint_types_use_other_pinned_family_members() -> Result<()>
     let mut qualified = false;
     while let Some(row) = rows.next().await? {
         if let oxrdf::Term::Literal(body) = &row["body"] {
-            qualified |= body.value().contains("at least one Whole");
+            qualified |= body.value().contains("1..*") &&
+                body.value().contains("{qualified}") &&
+                body.value().contains("Whole");
         }
     }
     assert!(
@@ -126,7 +128,7 @@ async fn diagram_endpoint_types_use_other_pinned_family_members() -> Result<()>
         let body =
             tokio::fs::read_to_string(publication.directory.join(file)).await?;
         assert!(
-            body.contains("at least one"),
+            body.contains("1..*") && body.contains("qualified"),
             "{file} lost a known cross-source object property declaration"
         );
     }

@@ -3,12 +3,12 @@ async (page) => {
   if (await figure.count() !== 1) throw new Error('Actual Commons DocumentPart diagram missing');
   const svg = figure.locator('svg');
   const text = (await svg.locator('text').allTextContents()).join(' ').replace(/\s+/g, ' ');
-  if (!text.includes('at least one') || !text.toLowerCase().includes('document') || !text.replace(/\s+/g,'').toLowerCase().includes('ismemberof')) throw new Error('Qualified existential association missing');
-  for (const machinery of ['Anonymous', 'onProperty', 'someValuesFrom', '1..*']) {
+  if (!text.includes('1..*') || !text.includes('{qualified}') || !text.toLowerCase().includes('document') || !text.replace(/\s+/g,'').toLowerCase().includes('ismemberof')) throw new Error('Qualified existential association missing');
+  for (const machinery of ['Anonymous', 'onProperty', 'someValuesFrom']) {
     if (text.includes(machinery)) throw new Error(`Unsupported visible existential notation: ${machinery}`);
   }
   const description = await svg.locator('desc').textContent();
-  if (!description.includes('someValuesFrom') || !description.includes('at least one')) throw new Error('Accessible description lost original assertion or qualified meaning');
+  if (!description.includes('someValuesFrom') || !description.includes('other values are not excluded')) throw new Error('Accessible description lost original assertion or qualified meaning');
   const bounds = await svg.evaluate(node => {
     const result = {};
     for (const group of node.querySelectorAll('g.entity')) {

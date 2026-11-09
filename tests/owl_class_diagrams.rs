@@ -229,7 +229,7 @@ ex:incoming a owl:ObjectProperty ; rdfs:label "delegates control to" ; rdfs:comm
         );
     }
     assert!(!html.contains("language-grapharch-class-diagram"));
-    assert!(html.contains("at least one"));
+    assert!(html.contains("1..*") && html.contains("qualified"));
     assert!(html.contains("presentation placeholder"));
     assert!(html.contains("delegates control to"));
     assert!(html.contains("title=\"https://example.org/incoming\""));

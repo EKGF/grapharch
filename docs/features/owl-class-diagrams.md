@@ -57,12 +57,15 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   domain/range assertions apply together, not as alternative choices. The
   retained documentation graph preserves every original assertion regardless
   of shorthand.
-- A simple anonymous subclass restriction with one explicitly declared object property in `owl:onProperty` and
-  one named `owl:someValuesFrom` becomes a class-scoped association, labelled
-  with the property, target-end `1..*`, and `{qualified}`. This existential qualification
-  does not mean every property value belongs to that filler, and does not create
-  a global range or an unqualified total multiplicity. Universal restrictions,
-  unknown property types, inverse paths, complex fillers and additional qualifiers stay explicit.
+- A simple anonymous subclass restriction with one named `owl:onProperty` and
+  one named `owl:someValuesFrom` becomes a class-scoped association when the
+  property is declared as an object property, or an undeclared/RDF predicate
+  has an explicitly collected class filler. The association uses the property
+  label, target-end `1..*`, and `{qualified}`. This does not mean every property
+  value belongs to that filler or declare a global range. No property
+  declaration is invented and no import is fetched. Universal restrictions,
+  undeclared predicates with unknown fillers, datatype predicates, inverse
+  paths, complex fillers and additional qualifiers stay explicit.
 - A simple direct subclass restriction with a named `owl:onProperty`, named
   `owl:onClass`, and `owl:minQualifiedCardinality`, `owl:qualifiedCardinality`,
   or `owl:maxQualifiedCardinality` becomes an association with `n..*`, exact `n`,
@@ -146,8 +149,3 @@ Exact zero currently remains explicit. Data counts concern distinct data values,
 not the number of lexical spellings of a literal. The original predicates,
 values and source links remain retained in either presentation.
 
-A named predicate without a collected object-property declaration can also use
-this existential notation when its named filler is a collected OWL class.
-The presentation does not invent a property declaration or fetch an import.
-An undeclared predicate with an unknown filler, a declared datatype predicate,
-or an inverse/complex expression remains explicit.
