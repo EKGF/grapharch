@@ -262,7 +262,8 @@ fn source(diagram: &Diagram) -> String {
     }
     for existential in &shorthand.existentials {
         output.push_str(&format!(
-            "n{} {} n{} [[./grapharch-node/n{}]] : {}\\n{{at least one {}}}\n",
+            "n{} {} \"1..*\" n{} [[./grapharch-node/n{}]] : \
+             {}\\n{{qualified}}\n",
             identifiers[existential.class.id.as_str()],
             layout.association_arrow(
                 &existential.class.id,
@@ -271,7 +272,6 @@ fn source(diagram: &Diagram) -> String {
             identifiers[existential.filler.id.as_str()],
             identifiers[existential.property.id.as_str()],
             label(&existential.property.label),
-            text(&existential.filler.label),
         ));
     }
     for (index, edge) in diagram.edges.iter().enumerate() {

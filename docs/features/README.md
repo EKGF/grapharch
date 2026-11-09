@@ -21,6 +21,7 @@ library of module books.
 | [Reusable content and hints](content-and-hints.md) | Connect explanations to stable subjects and arrange them differently for each publication. |
 | [Queryable documentation graph](knowledge-graph.md) | Inspect the content, relationships, provenance, and exact revision behind a publication. |
 | [Websites and PDFs](targets/README.md) | Publish final static HTML and typeset documents from the same collected knowledge. |
+| [OWL class diagrams](owl-class-diagrams.md) | Navigate class neighborhoods with UML notation, authored labels, and scoped constraints. |
 | [Quality review](quality-review.md) | Show competing annotations and missing descriptions to reviewers without discarding source statements. |
 | [Local builds and CI](workflow.md) | Use the same CLI locally and in automation, with explicit failures and ownership of generated files. |
 | [Extend GraphArch](extensibility.md) | Add focused adapters and publication styles without making every source or output follow one format. |

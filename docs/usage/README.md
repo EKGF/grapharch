@@ -21,7 +21,7 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 | Collect sources and publish from a pinned KG | [Publication pipeline](publication-pipeline.md) |
 | Generate this documentation website | [Self-hosted documentation](self-hosting.md) |
 | Publish a standards-style specification and PDF | [Specification renderer](specification-renderer.md) |
-| Generate navigable OWL class neighborhoods | [OWL class diagrams](owl-class-diagrams.md) |
+| Generate navigable OWL class neighborhoods | [OWL class diagrams](../features/owl-class-diagrams.md) |
 | Document separately declared class validation shapes | [SHACL views of classes](shacl-class-views.md) |
 | Build an ontology family in CI or publish it to Pages | [GitHub Actions](github-actions.md) |
 

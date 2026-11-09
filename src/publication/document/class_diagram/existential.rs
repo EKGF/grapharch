@@ -28,7 +28,9 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<Existential<'_>> {
         if incident.len() != 3 { return None; }
         let property = incident.iter().find(|(_, e)| e.from.id == edge.to.id && e.predicate.as_deref() == Some(ON_PROPERTY))?.1;
         let filler = incident.iter().find(|(_, e)| e.from.id == edge.to.id && e.predicate.as_deref() == Some(SOME_VALUES))?.1;
-        if property.to.kind != "Object property" ||
+        let object_view = property.to.kind == "Object property" ||
+            (matches!(property.to.kind.as_str(), "Resource" | "RDF property") && filler.to.kind == "Class");
+        if !object_view ||
             !matches!(filler.to.kind.as_str(), "Class" | "Resource") ||
             filler.to.id == super::shorthand::GENERIC_RESOURCE
         { return None; }

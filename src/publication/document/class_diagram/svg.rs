@@ -168,7 +168,9 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
              be entailed. ",
         );
     }
-    if !super::qualified_count::collect(&projection.diagram).is_empty() {
+    if !super::qualified_count::collect(&projection.diagram).is_empty() ||
+        !super::existential::collect(&projection.diagram).is_empty()
+    {
         description.push_str(
             " Qualified counts count only property values in the named target \
              class or datatype; other values are not excluded. A zero \
