@@ -95,7 +95,8 @@ fn features_form_a_current_product_catalogue_with_resolvable_navigation()
             "Websites and PDFs",
             "Quality review",
             "Local builds and CI",
-            "Extend GraphArch"
+            "Extend GraphArch",
+            "OWL class diagrams"
         ])
     );
     for page in metadata.values().filter(|page| !page.nav_exclude) {
