@@ -83,7 +83,11 @@ async fn shacl_names_and_descriptions_are_source_annotations() -> Result<()> {
         codes.is_empty(),
         "SHACL supplied both annotations: {codes:?}"
     );
-    assert!(body.contains("**Label:** profile"));
+    assert!(
+        body.contains("http://www.w3.org/ns/shacl#name") &&
+            body.contains("profile")
+    );
+    assert!(!body.contains("**Label:**"));
     assert!(
         body.contains("Identifies the ODRL profile required by this shape.")
     );
@@ -130,9 +134,19 @@ async fn annotations_from_selected_sources_are_combined_without_language_false_p
         codes.is_empty(),
         "selected sources supply English/neutral annotations"
     );
-    assert!(body.contains("**Label:** Name"));
+    assert!(
+        body.contains("http://www.w3.org/2000/01/rdf-schema#label") &&
+            body.contains("Name")
+    );
     assert!(body.contains("Explanation"));
-    assert!(!body.contains("**Label:** Naam"));
+    assert!(
+        body.contains("http://www.w3.org/ns/shacl#name") &&
+            body.contains("Naam")
+    );
+    assert!(
+        !body.contains("Uitleg"),
+        "unselected narrative language remains excluded"
+    );
     let (_, codes) = document(
         &[
             "<urn:test:resource> a sh:NodeShape ; sh:name \"Naam\"@nl ; \
@@ -161,7 +175,10 @@ async fn title_is_used_when_source_has_no_label_without_replacing_explicit_label
     )
     .await?;
     assert!(codes.is_empty());
-    assert!(body.contains("**Label:** DPROD Contracts profile"));
+    assert!(
+        body.contains("http://purl.org/dc/terms/title") &&
+            body.contains("DPROD Contracts profile")
+    );
     let (body, _) = document(
         &[
             "<urn:test:resource> rdfs:label \"Profile\"@en ; dct:title \"Long \
@@ -170,7 +187,11 @@ async fn title_is_used_when_source_has_no_label_without_replacing_explicit_label
         "en",
     )
     .await?;
-    assert!(body.contains("**Label:** Profile\n"));
+    assert!(
+        body.contains("http://www.w3.org/2000/01/rdf-schema#label") &&
+            body.contains("Profile")
+    );
+    assert!(body.contains("Long publication title"));
     Ok(())
 }
 
@@ -179,7 +200,11 @@ async fn dublin_core_namespace_aliases_and_skos_preferred_labels_are_recognised(
 -> Result<()> {
     let (body, codes) = document(&["@prefix dcterms:<http://purl.org/dc/terms/> . @prefix skos:<http://www.w3.org/2004/02/skos/core#> . <urn:test:resource> rdfs:label \"Other name\"@en ; skos:prefLabel \"Preferred name\"@en ; dcterms:title \"Publication title\"@en ; dcterms:description \"English explanation\"@en ."], "en").await?;
     assert!(codes.is_empty());
-    assert!(body.contains("**Label:** Preferred name\n"));
+    assert!(
+        body.contains("http://www.w3.org/2004/02/skos/core#prefLabel") &&
+            body.contains("Preferred name")
+    );
+    assert!(body.contains("Other name") && body.contains("Publication title"));
     let (body, codes) = document(
         &["@prefix dc:<http://purl.org/dc/elements/1.1/> . \
            <urn:test:resource> dc:title \"Legacy title\" ; dc:description \
@@ -188,7 +213,10 @@ async fn dublin_core_namespace_aliases_and_skos_preferred_labels_are_recognised(
     )
     .await?;
     assert!(codes.is_empty());
-    assert!(body.contains("**Label:** Legacy title"));
+    assert!(
+        body.contains("http://purl.org/dc/elements/1.1/title") &&
+            body.contains("Legacy title")
+    );
     assert!(body.contains("Legacy description"));
     Ok(())
 }

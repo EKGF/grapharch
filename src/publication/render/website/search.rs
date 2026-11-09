@@ -110,9 +110,16 @@ async fn append(
 fn text(body: &str) -> Result<String> {
     let mut result = String::new();
     let mut boundary = false;
+    let mut subject = false;
     for event in Parser::new_ext(body, crate::publication::markdown::options())
     {
         match event {
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(ref name)))
+                if name.as_ref() ==
+                    crate::publication::table_subject::LANGUAGE =>
+            {
+                subject = true;
+            },
             Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(ref name)))
                 if name.as_ref() == LANGUAGE =>
             {
@@ -120,6 +127,15 @@ fn text(body: &str) -> Result<String> {
             },
             Event::End(TagEnd::CodeBlock) => {
                 boundary = false;
+                subject = false;
+                result.push(' ');
+            },
+            Event::Text(value) if subject => {
+                let identity =
+                    crate::publication::table_subject::Subject::parse(&value)?;
+                result.push_str(&identity.identifier);
+                result.push(' ');
+                result.push_str(&identity.iri);
                 result.push(' ');
             },
             Event::Text(value) if boundary => {
@@ -164,4 +180,28 @@ pub(super) fn dialog(prefix: &str) -> String {
         esc(prefix),
         esc(prefix)
     )
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn table_subject_metadata_is_searchable_without_json_syntax()
+    -> anyhow::Result<()> {
+        let subject = crate::publication::table_subject::Subject::new(
+            "ex:Party".into(),
+            "https://example.org/Party".into(),
+        )?;
+        let source = format!(
+            "{}| RDF predicate | Value |\n| --- | --- |\n| rdfs:label | Party \
+             |\n",
+            subject.markdown()?
+        );
+        let text = super::text(&source)?;
+        assert!(
+            text.contains("ex:Party") &&
+                text.contains("https://example.org/Party")
+        );
+        assert!(!text.contains('{') && !text.contains("\"identifier\""));
+        Ok(())
+    }
 }

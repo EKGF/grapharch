@@ -12,7 +12,8 @@ pub(super) fn events<'a>(
 ) -> anyhow::Result<impl Iterator<Item = Event<'a>>> {
     // Bounded by the caller's per-fragment/page Markdown budget. Classify task
     // items structurally so nested and mixed lists retain their semantics.
-    let mut events = code::events(events.collect())?;
+    let mut events: Vec<_> = events.collect();
+    let subjects = super::rdf_tables::subjects(&mut events)?;
     for index in 0..events.len().saturating_sub(1) {
         if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] &&
             let Some(label) = crate::publication::badge::label(dest_url)
@@ -65,6 +66,15 @@ pub(super) fn events<'a>(
             };
             semantic_table = class.is_some();
             if let Some(class) = class {
+                if let Some(subject) = subjects.get(&index) {
+                    events[index + 1] = Event::Html(
+                        format!(
+                            "<thead>{}<tr>",
+                            super::rdf_tables::subject_html(subject)
+                        )
+                        .into(),
+                    );
+                }
                 events[index] =
                     Event::Html(format!("<table class=\"{class}\">").into());
             }
@@ -75,6 +85,7 @@ pub(super) fn events<'a>(
             semantic_table = false;
         }
     }
+    let events = code::events(events)?;
     let mut items = Vec::new();
     let mut tasks = HashSet::new();
     for (index, event) in events.iter().enumerate() {

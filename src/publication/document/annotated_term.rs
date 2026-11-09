@@ -517,7 +517,16 @@ impl Documentor for AnnotatedTermDocumentor {
                 if self.selected(value) {
                     values.push(value.value().to_owned());
                 }
-                continue;
+                if !matches!(
+                    predicate.as_str(),
+                    "http://www.w3.org/2000/01/rdf-schema#label" |
+                        "http://www.w3.org/2004/02/skos/core#prefLabel" |
+                        "http://www.w3.org/ns/shacl#name" |
+                        "http://purl.org/dc/terms/title" |
+                        "http://purl.org/dc/elements/1.1/title"
+                ) {
+                    continue;
+                }
             }
             let value = if let Some(code) = queries.capture(predicate, value)? {
                 code
@@ -678,18 +687,6 @@ impl Documentor for AnnotatedTermDocumentor {
         definitions.retain(|definition| {
             distinct_definitions.insert(definition.clone())
         });
-        let label_line = if label.is_empty() {
-            String::new()
-        } else {
-            format!(
-                "**Label:** {}",
-                label
-                    .iter()
-                    .map(|value| escape(value))
-                    .collect::<Vec<_>>()
-                    .join("; ")
-            )
-        };
         let definition_text = match markdown {
             Some(body) => {
                 super::description::nested(
@@ -740,12 +737,6 @@ impl Documentor for AnnotatedTermDocumentor {
             self.compact(&self.subject)
         };
         let mut individual_summary = String::new();
-        if self.family_reference && !individual {
-            individual_summary.push_str(&format!(
-                "\n\n**Identifier:** {}",
-                code(&self.compact(&self.subject))
-            ));
-        }
         if individual {
             let (roles, classes): (Vec<_>, Vec<_>) =
                 types
@@ -763,10 +754,6 @@ impl Documentor for AnnotatedTermDocumentor {
                     "http://www.w3.org/2002/07/owl#DatatypeProperty" |
                     "http://www.w3.org/2002/07/owl#AnnotationProperty")
                     });
-            individual_summary.push_str(&format!(
-                "\n\n**Identifier:** {}",
-                code(&self.compact(&self.subject))
-            ));
             if !classes.is_empty() {
                 individual_summary.push_str(&format!(
                     "\n\n**Instance of:** {}",
@@ -789,8 +776,8 @@ impl Documentor for AnnotatedTermDocumentor {
             }
         }
         let body = format!(
-            "{} {}\n\n{label_line}{individual_summary}\n\n{}{}\n\n**IRI:** \
-             {}\n\n{}\n\n| RDF predicate | Value |\n| --- | --- |\n{}\n",
+            "{} {}\n\n{individual_summary}\n\n{}{}\n\n{}\n\n{}| RDF predicate \
+             | Value |\n| --- | --- |\n{}\n",
             "#".repeat(
                 self.arrangement
                     .depth
@@ -801,12 +788,16 @@ impl Documentor for AnnotatedTermDocumentor {
             escape(&heading),
             definition_text,
             gaps,
-            code(self.subject.as_str()),
             notes
                 .iter()
                 .map(|note| format!("**Note:** {}", escape(note)))
                 .collect::<Vec<_>>()
                 .join("\n\n"),
+            crate::publication::table_subject::Subject::new(
+                self.compact(&self.subject),
+                self.subject.as_str().to_owned()
+            )?
+            .markdown()?,
             facts.join("\n")
         );
         let mut body = body;

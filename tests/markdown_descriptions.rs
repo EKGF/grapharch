@@ -507,3 +507,6 @@ mod introduction;
 
 #[path = "ontology_family/qualified_counts.rs"]
 mod qualified_counts;
+
+#[path = "ontology_family/identity_table.rs"]
+mod identity_table;

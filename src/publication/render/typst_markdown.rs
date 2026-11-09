@@ -12,10 +12,12 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut example = false;
     let mut heading = None;
     let mut table_head = false;
+    let mut table_subject = None;
     let mut in_table = false;
     let mut in_image = false;
     let events = super::image_variants::print_events(&markdown.events)?;
-    let (mut notes, events) = super::footnotes::Notes::read(&events)?;
+    let (mut notes, mut events) = super::footnotes::Notes::read(&events)?;
+    let subjects = super::rdf_tables::subjects(&mut events)?;
     for (index, event) in events.iter().enumerate() {
         if in_image {
             if matches!(event, Event::End(TagEnd::Image)) {
@@ -142,6 +144,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push_str(&format!("#link({destination})["));
                     },
                     Tag::Table(columns) => {
+                        table_subject = subjects.get(&index);
                         in_table = true;
                         let mut widths = columns
                             .iter()
@@ -179,6 +182,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                     Tag::TableHead => {
                         table_head = true;
                         output.push_str("table.header(");
+                        if let Some(subject) = table_subject {
+                            output.push_str(&super::rdf_tables::subject_typst(
+                                subject,
+                            ));
+                        }
                     },
                     Tag::TableRow => {},
                     Tag::TableCell => {
@@ -280,7 +288,10 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
 // Presentation-only break opportunities preserve the full label and
 // destination. Long ASCII identifier tokens have no language hyphenation
 // points. Leave ordinary prose and non-ASCII grapheme clusters untouched.
-fn table_text(value: &str, in_table: bool) -> std::borrow::Cow<'_, str> {
+pub(super) fn table_text(
+    value: &str,
+    in_table: bool,
+) -> std::borrow::Cow<'_, str> {
     if !in_table ||
         !value
             .split_whitespace()
