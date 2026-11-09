@@ -70,6 +70,10 @@ def verify_proof(repository, run_id, source):
     jobs = api(f'repos/{repository}/actions/runs/{run_id}/jobs?per_page=100')['jobs']
     if not eligible(run, jobs, repository) or run['head_sha'] != source:
         raise ValueError('release requires the exact successful full main-push candidate')
+    compiler = next(job for job in jobs if job['name'] == 'Compile the Linux candidate once')
+    if not any(step['name'] == 'Verify portable release dependency graphs' and step['conclusion'] == 'success'
+               for step in compiler.get('steps', [])):
+        raise ValueError('release proof must include the portable release dependency guard')
     checks = api(f'repos/{repository}/actions/runs?head_sha={source}&event=push&per_page=100')['workflow_runs']
     for name in ('Check Commits', 'Package checks'):
         matching = [item for item in checks if item['name'] == name]

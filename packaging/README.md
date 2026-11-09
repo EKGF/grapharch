@@ -106,6 +106,8 @@ whose exact source passed the complete three-OS Rust candidate, Linux source
 partition, real SPARQL checks, live showcases, documentation deployment,
 package checks, and commit checks. A docs-only dispatch is never release proof.
 All main pushes now select that full candidate graph.
+The reused compiler job must also have passed the portable release dependency
+guard; source proof cannot omit the TLS and unused-PDF-engine checks.
 
 The default increment is a **patch**, for example `0.2.2` to `0.2.3`.
 For an automatic minor release, explicitly put the trailer
@@ -135,7 +137,7 @@ A failed registry is a failed release workflow, never a reported full success.
 
 After every requested publication succeeds, the workflow advances the Action
 convenience tags `vMAJOR` and `vMAJOR.MINOR` to the immutable release commit.
-Use `EKGF/grapharch@v0` for automatic compatible-major updates, an exact
+Use `EKGF/grapharch@v0` to follow major version zero, an exact
 `@v0.2.3` for a fixed release, or a full reviewed commit SHA for immutable
 supply-chain pinning. Existing consuming repositories are not rewritten.
 

@@ -24,6 +24,8 @@ class CandidateWorkflows(unittest.TestCase):
         self.assertIn('GRAPHARCH_CI_SPLIT_DOCS', workflow)
         self.assertIn('GRAPHARCH_CI_ARCHIVE_SMOKE', workflow)
         self.assertIn('test_ci_transport.py', workflow)
+        self.assertIn('Verify portable release dependency graphs', workflow)
+        self.assertIn('python3 -B packaging/check_release_dependencies.py', workflow)
         for job in ('compile', 'linux-tests', 'native-store', 'docs'):
             block = workflow.split('\n  ' + job + ':', 1)[1]
             # Stop at the next job, not at nested YAML fields.

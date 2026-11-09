@@ -61,7 +61,7 @@ class AutomaticRelease(unittest.TestCase):
 
     def test_source_checks_must_include_package_and_commit_validation(self):
         run = self.run_record()
-        jobs = dict(jobs=[dict(name=name, conclusion='success') for name in REQUIRED_JOBS])
+        jobs = dict(jobs=[dict(name=name, conclusion='success', steps=[dict(name='Verify portable release dependency graphs', conclusion='success')]) for name in REQUIRED_JOBS])
         checks = dict(workflow_runs=[dict(name=name, conclusion='success', id=index)
                                     for index, name in enumerate(('Check Commits', 'Package checks'))])
         with patch('auto_release.api', side_effect=[run, jobs, checks]):
@@ -69,6 +69,14 @@ class AutomaticRelease(unittest.TestCase):
         checks['workflow_runs'][1]['conclusion'] = 'failure'
         with patch('auto_release.api', side_effect=[run, jobs, checks]):
             with self.assertRaisesRegex(ValueError, 'Package checks'):
+                verify_proof('EKGF/grapharch', 42, 'a' * 40)
+
+    def test_release_proof_must_preserve_the_portability_dependency_check(self):
+        jobs = dict(jobs=[dict(name=name, conclusion='success', steps=[]) for name in REQUIRED_JOBS])
+        checks = dict(workflow_runs=[dict(name=name, conclusion='success', id=index)
+                                    for index, name in enumerate(('Check Commits', 'Package checks'))])
+        with patch('auto_release.api', side_effect=[self.run_record(), jobs, checks]):
+            with self.assertRaisesRegex(ValueError, 'portable release dependency'):
                 verify_proof('EKGF/grapharch', 42, 'a' * 40)
 
     def test_docs_only_success_cannot_reuse_full_source_proof(self):

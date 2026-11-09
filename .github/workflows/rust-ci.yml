@@ -71,6 +71,8 @@ jobs:
       - name: Bind the generator identity to this actual build
         shell: bash
         run: python3 -B packaging/build_context.py --revision "$GRAPHARCH_CI_REVISION"
+      - name: Verify portable release dependency graphs
+        run: python3 -B packaging/check_release_dependencies.py
       - name: Format
         if: needs.scope.outputs.suite == 'full'
         run: cargo fmt --check
