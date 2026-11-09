@@ -8,7 +8,11 @@ on:
         required: true
         default: false
       publish-packages:
-        description: Publish registries and update Homebrew
+        description: Publish Python, npm and crates.io packages
+        type: boolean
+        default: false
+      publish-homebrew:
+        description: Update the separately owned Homebrew tap
         type: boolean
         default: false
 permissions:
@@ -20,4 +24,5 @@ jobs:
     with:
       publish: ${{ inputs.publish }}
       publish-packages: ${{ inputs.publish-packages }}
+      publish-homebrew: ${{ inputs.publish-homebrew }}
     secrets: inherit
