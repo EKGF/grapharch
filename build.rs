@@ -164,6 +164,10 @@ fn identity() {
         value.number
     );
     println!(
+        "cargo:rustc-env=GRAPHARCH_BUILD_ATTEMPT={}",
+        value.attempt
+    );
+    println!(
         "cargo:rustc-env=GRAPHARCH_BUILD_RUN_URL={}",
         value.run_url
     );

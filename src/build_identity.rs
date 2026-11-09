@@ -72,6 +72,7 @@ pub(crate) struct Identity {
     pub channel:  &'static str,
     pub revision: String,
     pub number:   String,
+    pub attempt:  String,
     pub run_url:  String,
     pub details:  String,
 }
@@ -102,63 +103,72 @@ impl Identity {
                         version and clean exact source revision"
                 .into());
         }
-        let (label, channel, number, run_url, details) = if let Some(ci) = ci {
-            ci.validate(revision)?;
-            if dirty {
-                return Err("CI generator source must be clean".into());
-            }
-            let number = format!("{}.{}", ci.run_number, ci.run_attempt);
-            let url = ci.url();
-            (
-                format!("{version} (build {number})"),
-                if release.is_some() { "release" } else { "ci" },
-                number.clone(),
-                url.clone(),
-                format!(
-                    "Build {number}; source commit {}; workflow {}; {url}",
-                    ci.revision, ci.workflow_ref
-                ),
-            )
-        } else if release.is_some() {
-            (
-                version.to_owned(),
-                "release",
-                String::new(),
-                String::new(),
-                format!(
-                    "Release {version}; source commit {}",
-                    revision.unwrap()
-                ),
-            )
-        } else if let Some(revision) = revision {
-            let kind = if pinned { "source" } else { "local" };
-            (
-                format!(
-                    "{version} ({kind} {}{})",
-                    &revision[..12],
-                    if dirty { " dirty" } else { "" }
-                ),
-                if pinned { "source" } else { "local" },
-                String::new(),
-                String::new(),
-                format!(
-                    "{kind} build; source commit {revision}; tracked source {}",
-                    if dirty { "modified" } else { "clean" }
-                ),
-            )
-        } else {
-            (
-                format!("{version} (source archive)"),
-                "source",
-                String::new(),
-                String::new(),
-                "Source archive; no generator commit was supplied".into(),
-            )
-        };
+        let (label, channel, number, attempt, run_url, details) =
+            if let Some(ci) = ci {
+                ci.validate(revision)?;
+                if dirty {
+                    return Err("CI generator source must be clean".into());
+                }
+                let number = ci.run_number.to_string();
+                let attempt = ci.run_attempt.to_string();
+                let url = ci.url();
+                (
+                    format!("{version} (build {number})"),
+                    if release.is_some() { "release" } else { "ci" },
+                    number.clone(),
+                    attempt.clone(),
+                    url.clone(),
+                    format!(
+                        "Build {number}; producer attempt {attempt}; source \
+                         commit {}; workflow {}; {url}",
+                        ci.revision, ci.workflow_ref
+                    ),
+                )
+            } else if release.is_some() {
+                (
+                    version.to_owned(),
+                    "release",
+                    String::new(),
+                    String::new(),
+                    String::new(),
+                    format!(
+                        "Release {version}; source commit {}",
+                        revision.unwrap()
+                    ),
+                )
+            } else if let Some(revision) = revision {
+                let kind = if pinned { "source" } else { "local" };
+                (
+                    format!(
+                        "{version} ({kind} {}{})",
+                        &revision[..12],
+                        if dirty { " dirty" } else { "" }
+                    ),
+                    if pinned { "source" } else { "local" },
+                    String::new(),
+                    String::new(),
+                    String::new(),
+                    format!(
+                        "{kind} build; source commit {revision}; tracked \
+                         source {}",
+                        if dirty { "modified" } else { "clean" }
+                    ),
+                )
+            } else {
+                (
+                    format!("{version} (source archive)"),
+                    "source",
+                    String::new(),
+                    String::new(),
+                    String::new(),
+                    "Source archive; no generator commit was supplied".into(),
+                )
+            };
         Ok(Self {
             label,
             channel,
             number,
+            attempt,
             run_url,
             details,
             revision: revision.unwrap_or("").into(),

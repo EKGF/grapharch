@@ -88,6 +88,10 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         Some(env!("GRAPHARCH_BUILD_NUMBER"))
     );
     assert_eq!(
+        version.value().attr("data-build-attempt"),
+        Some(env!("GRAPHARCH_BUILD_ATTEMPT"))
+    );
+    assert_eq!(
         version.value().attr("title"),
         Some(env!("GRAPHARCH_BUILD_DETAILS"))
     );
@@ -133,6 +137,18 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
             "Grapharch {}",
             env!("GRAPHARCH_BUILD_LABEL")
         ))
+    );
+    let producer = footer
+        .select(&scraper::Selector::parse(".generator-build").unwrap())
+        .next()
+        .expect("structured producer metadata");
+    assert_eq!(
+        producer.value().attr("data-build-attempt"),
+        Some(env!("GRAPHARCH_BUILD_ATTEMPT"))
+    );
+    assert_eq!(
+        producer.value().attr("data-build-run"),
+        Some(env!("GRAPHARCH_BUILD_RUN_URL"))
     );
     if let Ok(destination) = std::env::var("GRAPHARCH_HEADER_REVIEW") {
         tokio::fs::create_dir_all(&destination).await?;

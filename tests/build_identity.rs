@@ -19,8 +19,9 @@ fn ci_build_numbers_are_distinct_from_canonical_release_versions() {
     let identity =
         Identity::new("0.2.2", Some(REV), false, None, Some(ci(1)), true)
             .unwrap();
-    assert_eq!(identity.label, "0.2.2 (build 321.1)");
-    assert_eq!(identity.number, "321.1");
+    assert_eq!(identity.label, "0.2.2 (build 321)");
+    assert_eq!(identity.number, "321");
+    assert_eq!(identity.attempt, "1");
     assert_eq!(identity.channel, "ci");
     assert_eq!(identity.revision, REV);
     assert!(identity.details.contains(REV));
@@ -29,12 +30,18 @@ fn ci_build_numbers_are_distinct_from_canonical_release_versions() {
         identity.run_url,
         "https://github.com/EKGF/grapharch/actions/runs/123456/attempts/1"
     );
-    assert_eq!(
+    let retry =
         Identity::new("0.2.2", Some(REV), false, None, Some(ci(2)), true)
-            .unwrap()
-            .label,
-        "0.2.2 (build 321.2)"
-    );
+            .unwrap();
+    assert_eq!(retry.label, identity.label);
+    assert_eq!(retry.number, identity.number);
+    assert_eq!(retry.attempt, "2");
+    assert!(retry.details.contains("producer attempt 2"));
+    assert!(retry.run_url.ends_with("/attempts/2"));
+    assert_ne!(retry.details, identity.details);
+    let retained: CiBuild =
+        serde_json::from_str(&serde_json::to_string(&ci(2)).unwrap()).unwrap();
+    assert_eq!(retained.run_attempt, 2);
     let release = Identity::new(
         "0.2.2",
         Some(REV),
@@ -45,7 +52,7 @@ fn ci_build_numbers_are_distinct_from_canonical_release_versions() {
     )
     .unwrap();
     assert_eq!(release.channel, "release");
-    assert_eq!(release.label, "0.2.2 (build 321.1)");
+    assert_eq!(release.label, "0.2.2 (build 321)");
 }
 #[test]
 fn local_pinned_and_archive_builds_never_invent_ci_numbers() {
@@ -59,6 +66,7 @@ fn local_pinned_and_archive_builds_never_invent_ci_numbers() {
         );
         assert_eq!(local.channel, kind);
         assert!(local.number.is_empty());
+        assert!(local.attempt.is_empty());
         assert!(local.run_url.is_empty());
         let dirty = Identity::new("0.2.2", Some(REV), true, None, None, pinned)
             .unwrap();
@@ -69,6 +77,7 @@ fn local_pinned_and_archive_builds_never_invent_ci_numbers() {
     assert_eq!(archive.label, "0.2.2 (source archive)");
     assert_eq!(archive.channel, "source");
     assert!(archive.number.is_empty());
+    assert!(archive.attempt.is_empty());
     assert!(archive.revision.is_empty());
     let release = Identity::new(
         "0.2.2",

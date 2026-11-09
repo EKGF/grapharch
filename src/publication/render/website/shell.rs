@@ -79,12 +79,14 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     let project_brand = format!(
         "<a class=\"brand\" href=\"{prefix}\">{}<span class=\"brand-version\" \
          data-build-channel=\"{}\" data-generator-revision=\"{}\" \
-         data-build-number=\"{}\" title=\"{}\"><span \
-         class=\"visually-hidden\">Version </span>{}</span>{brand_context}</a>",
+         data-build-number=\"{}\" data-build-attempt=\"{}\" \
+         title=\"{}\"><span class=\"visually-hidden\">Version \
+         </span>{}</span>{brand_context}</a>",
         esc(project_title),
         esc(env!("GRAPHARCH_BUILD_CHANNEL")),
         esc(env!("GRAPHARCH_GENERATOR_REVISION")),
         esc(env!("GRAPHARCH_BUILD_NUMBER")),
+        esc(env!("GRAPHARCH_BUILD_ATTEMPT")),
         esc(env!("GRAPHARCH_BUILD_DETAILS")),
         esc(env!("GRAPHARCH_BUILD_LABEL"))
     );
