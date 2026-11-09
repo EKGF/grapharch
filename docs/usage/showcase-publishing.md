@@ -4,7 +4,7 @@ title: Publishing and verifying showcases
 
 # Publishing and verifying showcases
 
-The previews below display the actual generated HTML. All publication artifacts
+The gallery previews display the actual generated HTML. All publication artifacts
 are retained in the KG and can be rendered again after their source files are
 removed. The examples also serve as regression and live integration tests.
 
@@ -13,7 +13,7 @@ failures block a new publication. Verification retains a structured per-case
 report, KG diagnostics, and collected case graphs where available; declared
 expected-error examples are checked against their expected diagnostics.
 
-See [Examples and showcases](usage/examples.md) for runnable commands, fixture
+See [Examples and showcases](examples.md) for runnable commands, fixture
 coverage, and the limits of each demonstration.
 
 ## Describing a showcase
