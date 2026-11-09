@@ -201,6 +201,7 @@ jobs:
   assemble:
     runs-on: ubuntu-latest
     needs: [metadata, binaries]
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.binaries.result == 'success' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -230,7 +231,7 @@ jobs:
           retention-days: 30
   github-release:
     needs: [metadata, assemble]
-    if: needs.metadata.outputs.publish == 'true'
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.assemble.result == 'success' && needs.metadata.outputs.publish == 'true' }}
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -261,7 +262,7 @@ jobs:
             dist/*.json
             dist/homebrew/grapharch.rb
   publish-pypi:
-    if: inputs.publish-packages == true
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: pypi
@@ -286,7 +287,7 @@ jobs:
           packages-dir: dist/wheels
           skip-existing: true
   publish-npm:
-    if: inputs.publish-packages == true
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: npm
@@ -310,7 +311,7 @@ jobs:
           path: dist
       - run: python packaging/publish_npm.py --output dist
   publish-crate:
-    if: inputs.publish-packages == true
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: crates-io
@@ -331,7 +332,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
   publish-homebrew:
-    if: inputs.publish-homebrew == true
+    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-homebrew == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: homebrew

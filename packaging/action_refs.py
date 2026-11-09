@@ -1,5 +1,7 @@
 """Move documented Action convenience refs after complete publication."""
 import argparse
+import json
+import os
 import re
 import subprocess
 import tomllib
@@ -15,10 +17,39 @@ def may_advance(current, target):
     return release_version(current) <= release_version(target)
 
 
+def require_complete_publication(jobs):
+    # bounded: at most 1,000 job records across retries of this one release run.
+    latest = {}
+    for job in jobs:
+        if job['id'] > latest.get(job['name'], {}).get('id', -1):
+            latest[job['name']] = job
+    required = {'distribute / ' + name for name in
+                ('assemble', 'github-release', 'publish-pypi', 'publish-npm', 'publish-crate')}
+    binaries = {name for name in latest if name.startswith('distribute / binaries (')}
+    if len(binaries) != 6 or any(latest.get(name, {}).get('conclusion') != 'success'
+                                  for name in required | binaries):
+        raise ValueError('Action references require all six artifacts and every publication channel to succeed; skipped is not published')
+
+
+def verify_publication_run():
+    jobs = []
+    repository = os.environ['GITHUB_REPOSITORY']
+    run = os.environ['GITHUB_RUN_ID']
+    for page in range(1, 11):
+        endpoint = f'repos/{repository}/actions/runs/{run}/jobs?filter=all&per_page=100&page={page}'
+        records = json.loads(subprocess.check_output(['gh', 'api', endpoint], text=True))['jobs']
+        jobs.extend(records)
+        if len(records) < 100:
+            require_complete_publication(jobs)
+            return
+    raise ValueError('release job history exceeds bounded review budget')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', required=True)
     args = parser.parse_args()
+    verify_publication_run()
     major, minor, _ = release_version(args.version)
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
     tag = subprocess.check_output(['git', 'rev-parse', f'v{args.version}^{{commit}}'], text=True).strip()

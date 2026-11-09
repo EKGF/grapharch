@@ -64,10 +64,12 @@ jobs:
       verified-run: ${{ needs.reserve.outputs.run }}
     secrets: inherit
   action-refs:
+    if: ${{ !cancelled() && needs.reserve.result == 'success' && needs.distribute.result == 'success' }}
     needs: [reserve, distribute]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -75,5 +77,6 @@ jobs:
           fetch-depth: 0
       - name: Upgrade maintained Action references only after every channel succeeds
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ needs.reserve.outputs.version }}
         run: python3 -B packaging/action_refs.py --version "$RELEASE_VERSION"
