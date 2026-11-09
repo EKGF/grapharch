@@ -26,6 +26,17 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
 #[tokio::test]
 async fn declared_edition_targets_render_from_one_restored_source_revision()
 -> Result<()> {
+    let output = tempfile::tempdir()?;
+    render_dual_editions(output.path()).await
+}
+
+#[tokio::test]
+#[ignore = "retained PDF visual acceptance artifacts"]
+async fn review_dual_edition_pdfs() -> Result<()> {
+    render_dual_editions(Path::new("output/pdf/dprod-editions")).await
+}
+
+async fn render_dual_editions(output: &Path) -> Result<()> {
     let source = tempfile::tempdir()?;
     copy_tree(Path::new("examples/dprod"), source.path())?;
     let definitions = source.path().join("project.ttl");
@@ -69,10 +80,8 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let output = tempfile::tempdir()?;
     let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output.path())
-            .await?;
+        showcases::publish(&Publisher::new(restored), &plans, output).await?;
     assert_eq!(publications.len(), 4);
     let revisions: std::collections::HashSet<_> = publications
         .iter()
@@ -80,11 +89,9 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
         .collect();
     assert_eq!(revisions.len(), 1);
     let community =
-        tokio::fs::read_to_string(output.path().join("pdf/ekgf/main.typ"))
-            .await?;
+        tokio::fs::read_to_string(output.join("pdf/ekgf/main.typ")).await?;
     let submission =
-        tokio::fs::read_to_string(output.path().join("pdf/omg/main.typ"))
-            .await?;
+        tokio::fs::read_to_string(output.join("pdf/omg/main.typ")).await?;
     for body in [&community, &submission] {
         assert!(body.contains("managed, and governed collection of data"));
         assert!(body.contains("Document provenance"));
@@ -100,7 +107,7 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     assert!(submission.contains("not an approved OMG specification"));
     for relative in ["pdf/ekgf/document.pdf", "pdf/omg/document.pdf"] {
         assert!(
-            tokio::fs::read(output.path().join(relative))
+            tokio::fs::read(output.join(relative))
                 .await?
                 .starts_with(b"%PDF-")
         );
