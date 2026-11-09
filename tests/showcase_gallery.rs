@@ -270,6 +270,10 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             .next()
             .expect("detail keeps its gallery section");
         assert_eq!(active.text().collect::<String>(), "Gallery");
+        assert_eq!(
+            active.value().attr("aria-current"),
+            Some("location")
+        );
         assert!(!detail.contains("class=\"site-navigation\""));
         detail_html.push_str(&detail);
     }

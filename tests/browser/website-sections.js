@@ -14,7 +14,10 @@ async (page) => {
     await page.goto(route(path));
     const tabs = page.locator('.primary-navigation > ul > li > a');
     if ((await tabs.allTextContents()).join('|') !== 'Overview|Documentation|Gallery') throw new Error(`Wrong primary sections on ${path}`);
-    if ((await page.locator('.primary-navigation .active-section').textContent()) !== section) throw new Error(`Incorrect active section on ${path}`);
+    const current = page.locator('.primary-navigation .active-section');
+    const expectedCurrent = ['/', '/usage/', '/showcases/'].includes(path) ? 'page' : 'location';
+    if (await current.getAttribute('aria-current') !== expectedCurrent) throw new Error(`Incorrect accessible current section on ${path}`);
+    if ((await current.textContent()) !== section) throw new Error(`Incorrect active section on ${path}`);
     if (section === 'Gallery' && await page.locator('.site-navigation').count()) throw new Error('Gallery inherits documentation rail');
     if (section === 'Documentation') {
       const sidebar = await page.locator('.site-navigation').textContent();

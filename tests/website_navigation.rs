@@ -214,6 +214,13 @@ async fn sectioned_navigation_scopes_pages_after_source_removal() -> Result<()>
             .next()
             .unwrap();
         assert_eq!(active.text().collect::<String>(), current);
+        if route == "advanced/index.html" {
+            assert_eq!(
+                active.value().attr("aria-current"),
+                Some("location")
+            );
+        }
+
         assert!(html.contains("class=\"brand-version\""));
         assert!(!html.contains(absent));
         assert_eq!(

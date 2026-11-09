@@ -89,9 +89,19 @@ impl Navigations {
         active: &str,
         prefix: &str,
     ) -> Option<String> {
+        self.html_context(region, active, active, prefix)
+    }
+
+    pub fn html_context(
+        &self,
+        region: &str,
+        active: &str,
+        owner: &str,
+        prefix: &str,
+    ) -> Option<String> {
         let tree = if region == "sidebar" {
             if let Some(sections) = &self.sections {
-                sections.sidebar(active)
+                sections.sidebar(owner)
             } else {
                 self.trees.get(region)
             }
@@ -104,10 +114,11 @@ impl Navigations {
                 esc(&tree.title),
                 if region == "primary" {
                     tree.tabs(
+                        active,
                         self.sections
                             .as_ref()
-                            .map(|sections| sections.anchor(active))
-                            .unwrap_or(active),
+                            .map(|sections| sections.anchor(owner))
+                            .unwrap_or(owner),
                         prefix,
                     )
                 } else {
@@ -194,7 +205,7 @@ impl Tree {
         self.destination(&self.children[&Some(id.to_owned())][0])
     }
 
-    fn tabs(&self, active: &str, prefix: &str) -> String {
+    fn tabs(&self, active: &str, section: &str, prefix: &str) -> String {
         let mut html = String::from("<ul>");
         if let Some(roots) = self.children.get(&None) {
             for id in roots {
@@ -207,13 +218,15 @@ impl Tree {
                         .href
                         .as_deref()
                         .expect("validated destination")),
-                    if self.active(id, active) {
+                    if self.active(id, section) {
                         " class=\"active-section\""
                     } else {
                         ""
                     },
                     if destination.page.as_deref() == Some(active) {
                         " aria-current=\"page\""
+                    } else if self.active(id, section) {
+                        " aria-current=\"location\""
                     } else {
                         ""
                     },

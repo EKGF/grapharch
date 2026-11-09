@@ -134,7 +134,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     let explicit_sidebar = section_sidebar;
     let primary_navigation = header
         .navigation
-        .html("primary", active, prefix)
+        .html_context("primary", page.id, active, prefix)
         .unwrap_or_default();
     let primary_navigation = if header.navigation.sectioned() {
         format!(
