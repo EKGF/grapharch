@@ -150,6 +150,9 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     assert!(
         typst.contains("Library overview") && typst.contains("in this library")
     );
+    assert!(typst.contains("#let ga-style = \"omg\""));
+    assert!(typst.contains("#set page(numbering: \"i\")"));
+    assert!(typst.contains("#set page(numbering: \"1\")"));
     assert!(html.contains("Roles and Compositions"));
     assert!(
         tokio::fs::read(root.join("pdf/document.pdf"))

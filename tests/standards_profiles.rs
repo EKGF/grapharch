@@ -156,3 +156,39 @@ async fn release_identity_survives_source_removal_and_appears_in_html_and_pdf()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn omg_specification_cover_does_not_duplicate_its_status_metadata()
+-> anyhow::Result<()> {
+    use grapharch::publication::{
+        render::{PublishOutcome, Publisher},
+        showcases,
+    };
+    let source = tempfile::tempdir()?;
+    let path = source.path().join("project.ttl");
+    tokio::fs::write(
+        &path,
+        format!(
+            "{}\nex:profile ga:style \"omg\" .",
+            include_str!("../examples/specification/project.ttl")
+        ),
+    )
+    .await?;
+    let (dataset, plans) = showcases::specification(&path).await?;
+    source.close()?;
+    let output = tempfile::tempdir()?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .render(&plans[0], output.path())
+        .await?
+    else {
+        panic!("expected publication")
+    };
+    let text =
+        tokio::fs::read_to_string(publication.directory.join("main.typ"))
+            .await?;
+    assert!(
+        !text.contains("#strong[#text(\"Status:\")]"),
+        "specification metadata already supplies the status"
+    );
+    Ok(())
+}

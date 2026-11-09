@@ -28,6 +28,29 @@ Quality findings are grouped by warning type in a separate numbered appendix.
 Supplied content and release metadata remain source-owned; a layout is not
 proof of standards approval.
 
+## Prepare an OMG-style edition
+
+Set `ga:style "omg"` on a dedicated PDF profile. This selects a restrained
+US Letter layout with one-inch margins, a serif body, black sans-serif headings,
+a plain ruled cover, Roman-numbered front matter and Arabic-numbered chapters.
+The PDF and its editable source are still generated entirely with Typst.
+Use a separate target and destination to retain an EKGF or reader edition from
+the same pinned content revision.
+
+The style does not supply an OMG logo, approval status, document identifier,
+copyright notice, or licensing terms. Declare publication metadata and legal
+preamble explicitly; an unofficial preview stays an unofficial preview.
+The Commons gallery PDF demonstrates this profile without claiming to be the
+published OMG specification.
+
+The design references the [Commons 1.3 PDF](https://www.omg.org/spec/Commons/1.3/PDF),
+[OMG core templates at revision 7e9dbce](https://github.com/ObjectManagementGroup/mdsa-omg-core/tree/7e9dbcef362b47a1c362f93b7ee2b840fb694997),
+and [OMG specification template at revision 9801480](https://github.com/ObjectManagementGroup/mdsa-omg-spec/tree/98014805e3ea8ec7d865f91453dddaf89fb4222a).
+It translates their presentation conventions; it does not execute LaTeX or copy
+sample legal assertions. The templates specify US Letter; the inspected Commons
+PDF has a narrower 595.56 by 792 point media box, so this is not a pixel-identical
+reproduction of that Word-generated publication.
+
 ## Publish an audience overview
 
 Select `ga:style "overview"` on a PDF profile for an editorial introduction:

@@ -844,7 +844,7 @@ ga:stage a owl:DatatypeProperty ;
 
 ga:style a owl:DatatypeProperty ;
     rdfs:label "Publication presentation style"@en ;
-    skos:scopeNote "For companion websites, reader retains the default presentation and ekgf selects the EKGF identity, colors and bundled font. This choice does not change specification authority branding."@en ;
+    skos:scopeNote "For companion websites, reader retains the default presentation and ekgf selects the EKGF identity, colors and bundled font. This choice does not change specification authority branding. PDF profiles accept reader, specification, overview, or omg; omg selects restrained submission typography and does not confer approval or fabricate publication metadata."@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Records the Publication presentation style requested by a publication target or retained in its plan."@en ;
     dct:description "Records the Publication presentation style requested by a publication target or retained in its plan."@en ;

@@ -89,15 +89,15 @@ pub(super) async fn begin_book(
         }
     }
     let style = super::typst_style::Style::read(plan).await?;
-    if matches!(
+    let specification_metadata = matches!(
         plan.renderer.as_str(),
         "specification" | "bookshelf"
     ) || (style.name == "specification" &&
         plan.source
             .optional(&plan.target, "publicationStatus")
             .await?
-            .is_some())
-    {
+            .is_some());
+    if specification_metadata {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     } else {
         front.insert_str(0, &release);
@@ -139,7 +139,9 @@ pub(super) async fn begin_book(
         None => String::new(),
         _ => anyhow::bail!("publication subtitle must be a literal"),
     };
-    if matches!(style.name, "reader" | "overview" | "omg") {
+    if matches!(style.name, "reader" | "overview") ||
+        (style.name == "omg" && !specification_metadata)
+    {
         if let Some(value) = plan
             .source
             .optional_by(
