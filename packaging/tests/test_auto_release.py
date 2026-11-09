@@ -37,6 +37,8 @@ class AutomaticRelease(unittest.TestCase):
         with self.assertRaises(ValueError):
             next_version('0.2.2', ['v1.0.0'])
         with self.assertRaises(ValueError):
+            next_version('1.0.0', ['v0.2.2'])
+        with self.assertRaises(ValueError):
             next_version('0.2.2', [], 'major')
 
     def test_coordinator_is_serial_and_publisher_is_reused(self):

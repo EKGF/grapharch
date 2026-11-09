@@ -35,10 +35,16 @@ def eligible(run, jobs, repository):
 
 
 def next_version(current, tags, bump="patch"):
-    versions = [tuple(map(int, current.split('.')))]
+    source = tuple(map(int, current.split('.')))
+    published = []
     for tag in tags:
         if re.fullmatch(r'v\d+\.\d+\.\d+', tag):
-            versions.append(tuple(map(int, tag[1:].split('.'))))
+            published.append(tuple(map(int, tag[1:].split('.'))))
+    if published and max(published)[0] != source[0]:
+        raise ValueError('published major differs from source; explicit review required')
+    if not published and source[0] != 0:
+        raise ValueError('initial major release requires explicit review')
+    versions = [source, *published]
     major, minor, patch = max(versions)
     if major != versions[0][0]:
         raise ValueError('published major differs from source; explicit review required')
