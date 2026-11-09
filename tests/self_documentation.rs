@@ -102,6 +102,18 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     assert!(home.contains("aria-label=\"Documentation\""));
     assert!(home.contains("features/targets/"));
     let document = scraper::Html::parse_document(&home);
+    let goals = scraper::Selector::parse(
+        ".site-navigation nav \
+         details[data-id='urn:grapharch:docs:topic:other'] \
+         details[data-id='urn:grapharch:docs:topic:other:architecture'] \
+         a[href='design-goals/']",
+    )
+    .unwrap();
+    assert_eq!(
+        document.select(&goals).count(),
+        1,
+        "Design Goals belongs under Other / Architecture and retains its route"
+    );
     let branches =
         scraper::Selector::parse(".site-navigation nav details").unwrap();
     let identities: std::collections::HashSet<_> = document

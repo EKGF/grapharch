@@ -9,7 +9,9 @@ grapharch:
 ---
 # Architecture
 
-The delivery contract is [the architecture and deliverables specification](deliverables.md).
+The [design goals](../../design-goals/README.md) describe the priorities behind
+GraphArch. The delivery contract is
+[the architecture and deliverables specification](deliverables.md).
 It defines five stages sharing one RDF dataset:
 
 ```mermaid

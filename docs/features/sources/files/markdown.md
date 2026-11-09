@@ -9,78 +9,17 @@ grapharch:
 
 # Author explanations in Markdown
 
-GraphArch supports GitHub-flavoured Markdown for authored documentation:
-headings, links, emphasis, lists, fenced code, tables, strikethrough, task-list
-checkboxes, and GitHub-style callouts. Website frontmatter supplies topic titles,
-stable subjects, navigation order, parents, and permalinks.
+Keep guides, explanations, and examples in readable Markdown alongside your
+structured sources. GraphArch supports GitHub Flavoured Markdown, including
+tables, task lists, and labelled alerts, with retained images and supported
+diagrams for both websites and PDF documents.
 
-## Keep normal Markdown readable
+Frontmatter can give a page a stable subject and control its title, navigation,
+and route. The resulting documentation fragments live in the KG, so the same
+content can serve several publications without rereading the original files.
 
-- [x] Completed tasks retain their checked state.
-- [ ] Incomplete tasks remain unchecked.
-
-| Construct | Source example |
-| --- | --- |
-| Emphasis | `**Important**` |
-| Strikethrough | `~~Superseded~~` |
-| Fenced code | A language-labelled source example |
-
-Start a blockquote with `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or
-`[!CAUTION]` to create a labelled callout. Markers inside code stay literal.
-
-> [!NOTE]
-> The documentation you are reading is collected into a KG and published by
-> GraphArch itself.
-
-## Include retained images and diagrams
-
-Supported PNG, JPEG, and SVG images are collected into the KG. Explicit Markdown
-file collection accepts HTTPS image URLs; repository sources also resolve
-relative images at the selected Git revision. Rendering restored content does
-not reopen the source image or contact its host. Supply meaningful alternative
-text; unsafe SVG content, unsupported URLs, and oversized assets fail explicitly.
-
-Fenced Mermaid **flowcharts** become static SVG diagrams during the document
-stage. That subset supports labelled nodes, subgraphs, and edges. Other Mermaid
-diagram types, interactive links, and initialization directives are rejected.
-The same retained diagram can appear in HTML and PDF without a browser-side
-diagram service.
-
-```mermaid
-flowchart LR
-    Sources[Authored and structured sources] --> KG[(Documentation graph)]
-    KG --> Website[Website]
-    KG --> Document[PDF document]
-```
-
-## Give content a stable identity
-
-Use a `grapharch.subject` hint in frontmatter to identify the documented subject.
-Website-specific fields such as `parent`, `nav_order`, and `permalink` control
-navigation independently of the file's physical location. See
-[reusable content and hints](../../content-and-hints.md) and the
-[website build guide](../../../usage/self-hosting.md).
-
-The current pipeline does not execute MDX components or embedded scripts. Raw
-HTML in Markdown is rejected. Mermaid support is a defined flowchart subset,
-not a claim to support every Mermaid diagram type.
-
-## Examples and notes
-
-Give a fenced code block its language for syntax highlighting. Add `example`
-after the language to publish it as a numbered example in specifications,
-companion websites, and PDFs:
-
-````markdown
-```json example
-{"title": "UK Bonds", "type": "DataProduct"}
-```
-
-> [!NOTE]
-> Both JSON-LD contexts describe the same graph.
-````
-
-Examples have a pale yellow panel and an example number. Notes use a labelled,
-colored callout. Keep a blank, unquoted line between separate note blocks so
-that Markdown treats them as two notes. JSON and JSON-LD fences receive static
-syntax highlighting; the supplied code is preserved and never executed.
+See the [Markdown File Collector](../../../collectors/markdown-files.md) for
+working authoring examples, supported syntax, image and diagram handling,
+frontmatter, reusable sections, and validation boundaries. The
+[website build guide](../../../usage/self-hosting.md) covers project setup and
+publication.

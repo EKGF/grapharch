@@ -16,12 +16,13 @@ of those things appear in a publication.
 
 | Documentable thing | What GraphArch recognises today |
 |---|---|
-| [Markdown pages and guides](authored-documentation.md) | Markdown pages, topics, sections, fenced code examples, images, and supported Mermaid flowcharts |
+| [Markdown pages and guides](authored-documentation.md) | Guides, explanations, reusable sections, and illustrated narratives |
 | [Ontologies and RDF resources](ontologies.md) | OWL ontologies; OWL/RDFS classes, datatypes, properties, and named individuals; supplied labels, definitions, and relationships |
 | [Ontology families and modules](ontology-families.md) | Explicitly registered families and members, plus declared modules and their membership |
 | [SHACL shapes](shacl-shapes.md) | Named node and property shapes, with their retained constraints and nested RDF expressions |
 | [SKOS taxonomies](../usage/skos-taxonomies.md) | Concept schemes, concepts, collections, and ordered collections, with source hierarchy, labels, notes, and mappings |
 | [EKGF use-case trees](../usage/use-case-trees.md) | Actual EKGF Use Case instances, ownership and reuse links, related resources, and generated neighborhood diagrams |
+| [EKGF maturity models](../usage/maturity-models.md) | Models, pillars, capability areas, capabilities, and levels, with their declared hierarchy and authored companion explanations |
 | [Published specifications](published-specifications.md) | Published W3C specification structure, metadata, sections, and examples |
 | [SPARQL queries](sparql-queries.md) | Query text and documentation comments, published without executing the query |
 | [Legal preambles](legal-preambles.md) | Supported legal-disclosure blocks, with complete wording preserved for HTML and PDF |
@@ -31,13 +32,13 @@ of those things appear in a publication.
 A **documentable thing** is what readers learn about. A **collector** is the
 source reader that brings its content into the documentation graph. One RDF
 file can contain several documentable kinds, and the same kind can arrive from
-a file, a Git repository, or a SPARQL endpoint.
+a file, an RDF URL, a Git repository, or a SPARQL endpoint.
 
 | Documentable thing | Supporting collectors |
 |---|---|
 | Markdown pages and guides | [Markdown File Collector](../collectors/markdown-files.md), with the [Image Collector](../collectors/images.md) for images |
-| Ontologies, SHACL shapes, SKOS taxonomies, and EKGF use cases | [RDF File Collector](../collectors/rdf-files.md) or [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md); [repository scanners](../collectors/repositories.md) discover and dispatch file collectors |
-| Ontology families and modules | [RDF File Collector](../collectors/rdf-files.md) or [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md), retaining explicit family registry and module declarations |
+| Ontologies, SHACL shapes, SKOS taxonomies, EKGF use cases, and maturity models | [RDF File Collector](../collectors/rdf-files.md), [RDF URL Collector](../collectors/rdf-urls.md), or [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md); [repository scanners](../collectors/repositories.md) discover and dispatch file collectors |
+| Ontology families and modules | [RDF File Collector](../collectors/rdf-files.md), [RDF URL Collector](../collectors/rdf-urls.md), or [SPARQL Endpoint Collector](../collectors/sparql-endpoints.md), retaining explicit family registry and module declarations |
 | Published W3C specifications | [Published W3C Specification Collector](../collectors/published-specifications.md) |
 | SPARQL queries as documentation | [SPARQL File Collector](../collectors/sparql-files.md) |
 | Legal preambles | [Legal Preamble Collector](../collectors/legal-preambles.md) |
@@ -57,38 +58,29 @@ and a link to generated output. Start with a
 [SHACL rule](shacl-shapes.md#example-require-one-customer-name), or a
 [use-case tree](../usage/use-case-trees.md#example-ownership-and-reuse).
 
-The same semantic content can arrive through an RDF file, a repository, or an
+The same semantic content can arrive through an RDF file or URL, a repository, or an
 explicit SPARQL collection request. Those are ways to obtain sources; they do
 not define what the resources mean. See [Usage](../usage/README.md) for transport,
 configuration, CI, and publishing workflows.
 
-## Recognition and presentation
+## Choose the reading experience
 
-A collector retains source content and provenance in the documentation KG.
-A documentation generator describes a particular kind of resource from that collected graph.
-An assembled revision and its target plans then drive the renderers. See the
-[staged architecture](../other/architecture/README.md) for these boundaries.
+A publication's scope selects the subjects and content to include; its profile
+and renderer determine how readers encounter them. The same authored explanation
+can introduce a website and appear in a printed specification. An ontology can
+have its authoritative reference alongside a separate guide for newcomers.
+See [publication targets](../features/targets/README.md) for the available outputs.
 
-Support for a resource type does not imply every specialist presentation already
-exists. For example, the current SKOS support documents vocabulary resources and
-their source relationships. A purpose-built taxonomy browsing or print renderer
-is a separate presentation capability, not an existing tree or A–Z index.
+Recognition of a resource does not imply every specialist reading experience is
+implemented. SKOS resources, for example, have a generated vocabulary reference;
+a dedicated interactive taxonomy tree or A–Z browser is a separate capability.
+The [SKOS guide](../usage/skos-taxonomies.md) describes the current presentation.
 
-GraphArch keeps source statements rather than inventing missing explanations or
-fetching ontology imports implicitly. The [quality report](../usage/quality-review.md)
-helps reviewers find missing annotations and competing source statements.
+GraphArch retains source statements rather than inventing missing explanations
+or fetching ontology imports implicitly. The
+[quality report](../usage/quality-review.md) helps reviewers find missing
+annotations and competing source statements.
 
-## Extend the catalogue
-
-The list can grow. Contributors can add a small, specialised collector for one
-kind of source or a documentation generator for one kind of thing in the KG, retaining stable
-identities and source provenance. Existing target plans and renderers can then
-reuse those fragments, or a specialist renderer can provide a different reading
-experience.
-
-The [collector interface](https://github.com/EKGF/grapharch/blob/main/src/publication/collect/mod.rs)
-and [documentation-generation interface](https://github.com/EKGF/grapharch/blob/main/src/publication/document/mod.rs)
-are the current extension points. See [Contributing code](../other/contribute/contribute-code.md)
-and the [delivery contract](../other/architecture/deliverables.md) for contribution,
-bounded execution, revision, and test requirements.
-
+If a kind of subject is missing, see [Contributing code](../other/contribute/contribute-code.md)
+and the [delivery contract](../other/architecture/deliverables.md) for adding
+specialized collection or documentation support with retained provenance.

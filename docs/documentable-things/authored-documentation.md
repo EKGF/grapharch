@@ -9,22 +9,16 @@ grapharch:
 
 # Markdown pages and guides
 
-Write a getting-started page, a user guide, or an explanation of an ontology
-term in Markdown. GraphArch can publish that content as website pages and
-reuse it in specifications and PDFs.
+Explain how a vocabulary works, introduce a project, or help someone complete a
+task. Authored documentation gives readers the context that a generated term
+reference cannot supply on its own. GraphArch can publish those explanations as
+website pages and select the same content for specifications and PDFs.
 
 ## Example: a getting-started page
 
-Save this as `getting-started.md`:
+A guide can lead readers from the vocabulary's purpose to their first decision:
 
-````markdown
----
-title: Getting started
-permalink: /getting-started/
-grapharch:
-  subject: urn:example:guide:getting-started
----
-
+```markdown
 # Getting started
 
 Our customer vocabulary gives teams a shared definition of a customer.
@@ -34,67 +28,36 @@ Our customer vocabulary gives teams a shared definition of a customer.
 - Read the vocabulary overview.
 - Choose the terms your application needs.
 
-> [!TIP]
-> Keep explanations beside the vocabulary they describe.
-````
+## Describe a customer
 
-The website gets a **Getting started** page with a contents list and a styled
-tip. The stable subject lets the same explanation be selected for another
-publication. The file alone is content; the project's publication definitions
-choose its output and placement.
-
-For a complete working project, compare the
-[Markdown source](https://github.com/EKGF/grapharch/blob/main/examples/mixed-sources/introduction.md)
-with its [generated guide](https://ekgf.github.io/grapharch/showcases/artifacts/mixed/website/index.html)
-and [PDF](https://ekgf.github.io/grapharch/showcases/artifacts/mixed/review/document.pdf).
-To build that example from the GraphArch checkout:
-
-```sh
-cargo run --example publish_showcase -- --mixed
+Use the Customer class for the person or organization your team serves.
+Keep the customer identifier stable when their contact details change.
 ```
 
-## Supporting collectors
+The website presents a **Getting started** page with a contents list and links
+to related material. A specification can include its introduction, while a PDF
+can include the full guide. The publication plan decides which content appears
+and where; moving the source file need not change its subject identity.
 
-The [Markdown File Collector](../collectors/markdown-files.md) reads a Markdown
-file and its frontmatter. Website discovery and the
-[repository scanners](../collectors/repositories.md) select Markdown files for
-their specialised collectors. Supporting images use the
-[Image Collector](../collectors/images.md).
+## See a complete publication
 
-Documented queries are a separate kind of source: the
-[SPARQL File Collector](../collectors/sparql-files.md) reads a query file and its
-documentation comments. It does not execute the query.
+Compare the [authored source](https://github.com/EKGF/grapharch/blob/main/examples/mixed-sources/introduction.md)
+with the [generated guide](https://ekgf.github.io/grapharch/showcases/artifacts/mixed/website/index.html)
+and its [PDF](https://ekgf.github.io/grapharch/showcases/artifacts/mixed/review/document.pdf).
+That example combines an explanation with structured source material, rather
+than maintaining separate website and print copies of the prose.
 
-## Recognised content
+An authored page can also introduce an ontology family, explain a term, or
+provide a review narrative. Illustrations and examples can accompany that text;
+they remain available when publishing from an exported documentation graph.
 
-Frontmatter can give a Markdown file's
-subject a stable identity and supply page titles, navigation, and publication
-hints. Headings and sections become logical topics and ordered fragments;
-fenced code blocks also become queryable examples in the KG.
+## Collect and publish a guide
 
-GitHub-flavoured Markdown includes tables, task lists, strikethrough, and labelled
-callouts. See [Markdown source support](../features/sources/files/markdown.md)
-for syntax and boundaries. MDX execution and arbitrary embedded scripts are not
-part of this support.
+The [Markdown File Collector](../collectors/markdown-files.md) is the reference
+for authoring syntax, frontmatter, images, diagrams, reusable sections, and
+validation boundaries. It explains how to give the guide a stable identity and
+how page hints control navigation independently of the source filename.
 
-## Statements, diagrams, and assets
-
-A specialised SPARQL-file collector retains statement text and supported
-documentation pragmas as a fragment. It documents the query rather than
-executing it. An endpoint collection request is a different workflow; see
-[SPARQL endpoints](../usage/sparql-endpoints.md).
-
-Supported fenced Mermaid flowcharts are documented as static SVG assets. PNG,
-JPEG, and supported SVG images are also retained in the KG. Renderers use the
-retained bytes instead of reopening the source or contacting an image server.
-The current Mermaid subset is flowcharts; other diagram types are rejected.
-
-An authored fragment can explain an ontology term, introduce a family, supply
-legal or review material, or become a guide page. Its subject identity is
-independent of its file name and its eventual place in a website or PDF.
-
-## Publish authored content
-
-Use [self-hosted documentation](../usage/self-hosting.md) for a documentation
-website, or the [publication pipeline](../usage/publication-pipeline.md) to
-assemble authored and generated fragments into explicit target plans.
+Use the [website build guide](../usage/self-hosting.md) to publish a collection
+of guides, or the [publication pipeline](../usage/publication-pipeline.md) to
+assemble authored and generated content into selected publication targets.
