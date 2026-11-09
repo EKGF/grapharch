@@ -286,7 +286,13 @@ async fn single_ontology_front_matter_prefers_the_rich_annotation() -> Result<()
     std::fs::create_dir_all(source.path().join("other/ontology"))?;
     let definition = definitions_fixture::edit_definitions(
         include_str!("../docs/grapharch.ttl"),
-        &["showcasesSource", "collector", "include"],
+        &[
+            "showcasesSource",
+            "collector",
+            "include",
+            "navigation",
+            "layout",
+        ],
         None,
     )?;
     std::fs::write(source.path().join("grapharch.ttl"), definition)?;

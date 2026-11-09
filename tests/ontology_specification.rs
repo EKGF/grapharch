@@ -26,7 +26,7 @@ async fn ontology_spec_is_published_with_the_companion_site_from_a_restored_grap
         source.path().join("grapharch.ttl"),
         definitions_fixture::edit_definitions(
             &std::fs::read_to_string(repo.join("docs/grapharch.ttl"))?,
-            &["showcasesSource", "collector", "include"],
+            &["showcasesSource", "collector", "include", "navigation", "layout"],
             None,
         )? + "\n<urn:unrelated:ontology> a <http://www.w3.org/2002/07/owl#Ontology> .\n",
     )?;
