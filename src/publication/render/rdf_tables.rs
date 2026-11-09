@@ -8,57 +8,6 @@ pub(super) fn matches(events: &[Event<'_>], index: usize) -> bool {
     matches!(header, [Event::Start(Tag::TableHead), Event::Start(Tag::TableCell), Event::Text(predicate), Event::End(TagEnd::TableCell), Event::Start(Tag::TableCell), Event::Text(value), Event::End(TagEnd::TableCell), Event::End(TagEnd::TableHead)] if predicate.as_ref() == "RDF predicate" && value.as_ref() == "Value")
 }
 
-#[cfg(test)]
-mod tests {
-    use {
-        super::*,
-        pulldown_cmark::{Options, Parser},
-    };
-    #[test]
-    fn subject_metadata_requires_its_table_and_spans_preserve_escaped_identity()
-    -> anyhow::Result<()> {
-        let subject=crate::publication::table_subject::Subject::new("ex:<Party>".into(), "https://example.org/averylongunbrokenidentifierwithmorethan24letters".into())?;
-        let marker = subject.markdown()?;
-        let mut invalid: Vec<_> =
-            Parser::new_ext(&marker, Options::ENABLE_TABLES).collect();
-        assert!(subjects(&mut invalid).is_err());
-        let html = subject_html(&subject);
-        assert!(
-            html.contains("ex:&lt;Party&gt;") && !html.contains("ex:<Party>")
-        );
-        let typst = subject_typst(&subject);
-        assert!(typst.contains("table.cell(colspan: 2)"));
-        assert!(
-            typst.contains('\u{200b}'),
-            "identity must retain table wrapping opportunities"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn only_exact_semantic_header_pair_selects_rdf_layout() {
-        for (source, expected) in [
-            (
-                "| RDF predicate | Value |\n| --- | --- |\n| x | y |",
-                true,
-            ),
-            (
-                "| Name | Value |\n| --- | --- |\n| x | y |",
-                false,
-            ),
-            (
-                "| RDF predicate | Value | Extra |\n| --- | --- | --- |\n| x \
-                 | y | z |",
-                false,
-            ),
-        ] {
-            let events: Vec<_> =
-                Parser::new_ext(source, Options::ENABLE_TABLES).collect();
-            assert_eq!(matches(&events, 0), expected);
-        }
-    }
-}
-
 /// Bound metadata to its immediately following two-column RDF table.
 pub(super) fn subjects(
     events: &mut [Event<'_>],
@@ -120,4 +69,55 @@ pub(super) fn subject_typst(
             true
         ))
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::*,
+        pulldown_cmark::{Options, Parser},
+    };
+    #[test]
+    fn subject_metadata_requires_its_table_and_spans_preserve_escaped_identity()
+    -> anyhow::Result<()> {
+        let subject=crate::publication::table_subject::Subject::new("ex:<Party>".into(), "https://example.org/averylongunbrokenidentifierwithmorethan24letters".into())?;
+        let marker = subject.markdown()?;
+        let mut invalid: Vec<_> =
+            Parser::new_ext(&marker, Options::ENABLE_TABLES).collect();
+        assert!(subjects(&mut invalid).is_err());
+        let html = subject_html(&subject);
+        assert!(
+            html.contains("ex:&lt;Party&gt;") && !html.contains("ex:<Party>")
+        );
+        let typst = subject_typst(&subject);
+        assert!(typst.contains("table.cell(colspan: 2)"));
+        assert!(
+            typst.contains('\u{200b}'),
+            "identity must retain table wrapping opportunities"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn only_exact_semantic_header_pair_selects_rdf_layout() {
+        for (source, expected) in [
+            (
+                "| RDF predicate | Value |\n| --- | --- |\n| x | y |",
+                true,
+            ),
+            (
+                "| Name | Value |\n| --- | --- |\n| x | y |",
+                false,
+            ),
+            (
+                "| RDF predicate | Value | Extra |\n| --- | --- | --- |\n| x \
+                 | y | z |",
+                false,
+            ),
+        ] {
+            let events: Vec<_> =
+                Parser::new_ext(source, Options::ENABLE_TABLES).collect();
+            assert_eq!(matches(&events, 0), expected);
+        }
+    }
 }
