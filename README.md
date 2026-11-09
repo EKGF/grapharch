@@ -17,17 +17,18 @@ Use a prebuilt release for normal use. Download the archive for your platform
 from [GitHub Releases](https://github.com/EKGF/grapharch/releases), extract it,
 and put `grapharch` (or `grapharch.exe`) on your `PATH`.
 
-Standalone binaries are published on GitHub Releases. Package-manager channels
-have separate publication requirements; see the installation guide for their
-availability.
+Standalone binaries and the crates.io package are published. With cargo-binstall
+installed, `cargo binstall grapharch --version 0.2.4` installs the prebuilt
+executable. Python and npm publication is still pending; see the installation
+guide for channel availability.
 
 To build in GitHub Actions:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: EKGF/grapharch@v0.1.0
+- uses: EKGF/grapharch@v0.2.4
   with:
-    version: '0.1.0'
+    version: '0.2.4'
     source-kind: checkout
 ```
 

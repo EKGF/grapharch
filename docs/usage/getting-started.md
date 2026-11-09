@@ -34,10 +34,21 @@ The release platforms are:
 Musl-based Linux distributions and 32-bit systems are not included in this
 release matrix. Select the archive for the system where GraphArch will run.
 
+### Install with cargo-binstall
+
+With [cargo-binstall](https://github.com/cargo-bins/cargo-binstall) installed:
+
+```sh
+cargo binstall grapharch --version 0.2.4
+```
+
+This downloads the prebuilt executable for your system. Unsupported platforms
+or missing release files fail installation.
+
 ### Other installation channels
 
-These channels install the same CLI. They are pending publication; choose the
-package manager already used by your project once its package is available.
+Python and npm publication is still pending. Homebrew requires the separate tap
+publication. These channels install the same CLI once available:
 
 | Channel | Install or run |
 | --- | --- |
@@ -45,7 +56,6 @@ package manager already used by your project once its package is available.
 | Python with uv | `uv tool install grapharch`, or `uvx grapharch --help` for an isolated run |
 | Python with pip | `python -m pip install grapharch` |
 | npm project dependency | `npm install --save-dev grapharch`, then `npx grapharch --help` |
-| cargo-binstall | `cargo binstall grapharch` |
 
 For a repeatable CI build, pin an exact released version instead of tracking the
 latest package. A missing binary or unsupported platform is an installation

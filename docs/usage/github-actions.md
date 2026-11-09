@@ -23,10 +23,10 @@ After checking out your repository, add this step:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: EKGF/grapharch@v0.2.2
+- uses: EKGF/grapharch@v0.2.4
   id: docs
   with:
-    version: '0.2.2'
+    version: '0.2.4'
     source-kind: checkout
     source: .
     output: build/docs
@@ -117,15 +117,15 @@ permissions:
   id-token: write
 jobs:
   documentation:
-    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@v0.2.2
+    uses: EKGF/grapharch/.github/workflows/publish-family-pages.yml@v0.2.4
     with:
-      version: '0.2.2'
+      version: '0.2.4'
       source-kind: checkout
       source: .
       deploy: false
 ```
 
-For an immutable pin, replace `v0.2.2` with the release commit SHA after reviewing it. Its internal
+For an immutable pin, replace `v0.2.4` with the release commit SHA after reviewing it. Its internal
 GraphArch step is also pinned to a reviewed commit. The workflow reads the
 publication paths returned by the build; it does not recollect sources to
 assemble the deployment artifact.

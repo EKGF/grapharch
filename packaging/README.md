@@ -2,7 +2,7 @@
 
 GraphArch distributes one CLI through standalone GitHub release ZIPs, platform-specific Python wheels, and npm packages. The executable in each platform wheel is copied byte-for-byte into its ZIP and npm native package. Installation smoke checks run on every supported native runner before release assembly. Linux requires glibc 2.28 or newer; macOS requires 11 or newer; Windows uses the static runtime. x64 and ARM64 are supported. Other platforms fail explicitly.
 
-No registries have been published by this implementation. PyPI `grapharch`, npm `grapharch` and the `@grapharch` organization scope, and crates.io `grapharch` require verified publisher ownership before enabling package publication. Do not add success/version badges before these exist.
+Standalone release [v0.2.4](https://github.com/EKGF/grapharch/releases/tag/v0.2.4) and [crates.io `grapharch` 0.2.4](https://crates.io/crates/grapharch/0.2.4) are published. PyPI `grapharch`, npm `grapharch` and the `@grapharch` organization scope still require verified publisher ownership and publication. Do not add Python/npm success or version badges before those packages exist. The initial crates.io bootstrap is complete; its owner still needs to register the automatic trusted publisher for future unattended uploads.
 
 ## Validate a candidate
 
@@ -28,7 +28,7 @@ publishing identity merely by naming the same workflow file. Owner-approved
 manual registry entry points must also run from `main` and receive their own
 trusted-publisher registration.
 
-`cargo binstall grapharch` requires the initial crates.io publication so that binstall can discover the manifest. Metadata selects the GitHub ZIP and disables quick-install and compilation strategies. Before the first published version, binstall correctly reports missing artifacts rather than compiling. Source crate packaging includes embedded ontology definitions and renderer/font assets, while excluding examples and generated outputs. Archive/package notices include both the default document fonts and bundled Liberation fonts.
+`cargo binstall grapharch` requires the initial crates.io publication so that binstall can discover the manifest. Metadata selects the GitHub ZIP and disables quick-install and compilation strategies. The initial crates.io publication is available; missing supported release artifacts remain hard installation errors. Source crate packaging includes embedded ontology definitions and renderer/font assets, while excluding examples and generated outputs. Archive/package notices include both the default document fonts and bundled Liberation fonts.
 
 ## Consumer GitHub Action
 
@@ -39,7 +39,7 @@ Use one action step to install a pinned release and build an ontology family. Ch
 - uses: EKGF/grapharch@<reviewed-commit-SHA>
   id: docs
   with:
-    version: '0.2.2' # example of an existing immutable release
+    version: '0.2.4' # example of an existing immutable release
     source-kind: checkout
     source: .
     output: build/docs
