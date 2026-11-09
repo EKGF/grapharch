@@ -158,3 +158,10 @@ reusable file containing the upload step. See the official
 [PyPI reusable-workflow limitation](https://docs.pypi.org/trusted-publishers/troubleshooting/).
 Register `release-changelog.yml` separately if registry publication through the
 manual release entry point is also required.
+
+Resume a partially published release with GitHub's **re-run failed jobs** action,
+so the successful release build artifacts and original producer identity remain
+unchanged. npm, PyPI and crates.io retries skip only artifacts whose registry
+checksums match the verified local artifact; conflicting bytes fail. Existing
+GitHub release assets are also hash-checked and never overwritten. A fresh
+rebuild with changed producer identity must not replace an immutable version.

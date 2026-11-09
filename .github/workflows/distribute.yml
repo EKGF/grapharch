@@ -234,12 +234,21 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
       - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
+      - name: Preserve immutable already-published artifact bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: python3 -B packaging/release_assets.py --version "$RELEASE_VERSION" --output dist
       - uses: softprops/action-gh-release@v3
         with:
+          overwrite_files: false
           tag_name: v${{ needs.metadata.outputs.version }}
           target_commitish: ${{ needs.metadata.outputs.revision }}
           generate_release_notes: true
@@ -258,13 +267,22 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.revision || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
       - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
+      - name: Reject conflicting already-published wheels before resuming
+        run: python3 -B packaging/registry_state.py --output dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/wheels
+          skip-existing: true
   publish-npm:
     if: inputs.publish-packages == true
     needs: [metadata, github-release]
@@ -307,7 +325,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
       - id: auth
         uses: rust-lang/crates-io-auth-action@v1
-      - run: cargo publish --locked --package grapharch
+      - run: python3 -B packaging/publish_crate.py
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
   publish-homebrew:

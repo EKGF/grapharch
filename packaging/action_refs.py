@@ -14,6 +14,9 @@ head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
 tag = subprocess.check_output(['git', 'rev-parse', f'v{args.version}^{{commit}}'], text=True).strip()
 if head != tag:
     raise ValueError('Action upgrade must target its exact immutable release tag')
-subprocess.run(['git', 'push', '--atomic', 'origin',
-                f'{head}:refs/tags/v{major}', f'{head}:refs/tags/v{major}.{minor}',
-                '--force'], check=True)
+refs = [f'refs/tags/v{major}', f'refs/tags/v{major}.{minor}']
+remote = subprocess.check_output(['git', 'ls-remote', '--refs', 'origin', *refs], text=True)
+previous = {line.split()[1]: line.split()[0] for line in remote.splitlines()}
+subprocess.run(['git', 'push', '--atomic',
+                *[f'--force-with-lease={ref}:{previous.get(ref, "")}' for ref in refs],
+                'origin', *[f'{head}:{ref}' for ref in refs]], check=True)
