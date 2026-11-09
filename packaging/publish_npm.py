@@ -11,6 +11,7 @@ from registry_state import npm_published
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", type=Path, required=True)
 args = parser.parse_args()
+args.output = args.output.resolve(strict=True)
 verify_release(args.output)
 for item in PLATFORMS:
     manifest = json.loads(
