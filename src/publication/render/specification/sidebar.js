@@ -101,7 +101,10 @@
     };
     button.addEventListener('click', () => set(children.hidden));
     branches.push({li, children, set});
-    if (li.parentElement.closest('li')) set(false);
+    // Show heading levels one through three; deeper branches stay folded.
+    let depth = 1;
+    for (let ancestor = li.parentElement.closest('li'); ancestor; ancestor = ancestor.parentElement.closest('li')) depth++;
+    if (depth >= 3) set(false);
   }};
   addBranches(toc);
   const reveal = () => {
