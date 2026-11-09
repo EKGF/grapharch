@@ -1,5 +1,6 @@
 //! Independent target-specific navigation; pages remain content identities.
 mod context;
+mod sections;
 use {
     super::{
         super::{
@@ -15,6 +16,7 @@ use {
 
 pub(super) struct Navigations {
     trees:             BTreeMap<String, Tree>,
+    sections:          Option<sections::Sections>,
     pub documentation: bool,
 }
 struct Tree {
@@ -32,20 +34,14 @@ struct Entry {
 }
 impl Navigations {
     pub async fn read(plan: &Plan, catalog: &Catalog) -> Result<Self> {
-        let documentation =
-            match plan.source.optional(&plan.profile, "layout").await? {
-                None => false,
-                Some(Term::Literal(value))
-                    if value.value() == "documentation" =>
-                {
-                    true
-                },
-                _ => {
-                    anyhow::bail!(
-                        "website layout must be documentation when specified"
-                    )
-                },
-            };
+        let layout = optional_text(plan, &plan.profile, "layout").await?;
+        ensure!(
+            layout.as_deref().is_none_or(|layout| {
+                matches!(layout, "documentation" | "sectioned")
+            }),
+            "website layout must be documentation or sectioned"
+        );
+        let documentation = layout.is_some();
         let mut trees = BTreeMap::new(); // bounded: three named regions.
         let mut rows = plan.source.objects(&plan.profile, "navigation").await?;
         while let Some(row) = rows.next().await? {
@@ -65,8 +61,27 @@ impl Navigations {
             );
             trees.insert(region, Tree::read(plan, catalog, id).await?);
         }
-        Ok(Self { trees, documentation })
+        let sections = if layout.as_deref() == Some("sectioned") {
+            ensure!(
+                !trees.contains_key("sidebar"),
+                "sectioned layout derives its sidebar from page ownership; \
+                 omit independent sidebar navigation"
+            );
+            Some(sections::Sections::read(
+                trees.get("primary").ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "sectioned layout requires primary navigation"
+                    )
+                })?,
+                catalog,
+            )?)
+        } else {
+            None
+        };
+        Ok(Self { trees, sections, documentation })
     }
+
+    pub fn sectioned(&self) -> bool { self.sections.is_some() }
 
     pub fn html(
         &self,
@@ -74,12 +89,27 @@ impl Navigations {
         active: &str,
         prefix: &str,
     ) -> Option<String> {
-        self.trees.get(region).map(|tree| {
+        let tree = if region == "sidebar" {
+            if let Some(sections) = &self.sections {
+                sections.sidebar(active)
+            } else {
+                self.trees.get(region)
+            }
+        } else {
+            self.trees.get(region)
+        };
+        tree.map(|tree| {
             format!(
                 "<nav class=\"{region}-navigation\" aria-label=\"{}\">{}</nav>",
                 esc(&tree.title),
                 if region == "primary" {
-                    tree.tabs(active, prefix)
+                    tree.tabs(
+                        self.sections
+                            .as_ref()
+                            .map(|sections| sections.anchor(active))
+                            .unwrap_or(active),
+                        prefix,
+                    )
                 } else {
                     tree.html(None, active, prefix)
                 }

@@ -55,6 +55,14 @@ async fn render(
         )
         .await?;
     }
+    if config.contains("sectioned") {
+        tokio::fs::write(
+            source.path().join("advanced.md"),
+            "---\ntitle: Advanced\nparent: Guide\ngrapharch:\n  subject: \
+             urn:advanced\n---\n# Advanced\n\nNested content.\n",
+        )
+        .await?;
+    }
     let built = website::collect(
         source.path(),
         &definitions,
@@ -173,5 +181,81 @@ async fn source_path_navigation_resolves_to_collected_page_identity()
     let html = tokio::fs::read_to_string(site.join("guide/index.html")).await?;
     assert!(html.contains("href=\"../guide/#details\""));
     assert!(html.contains("Use cases"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn sectioned_navigation_scopes_pages_after_source_removal() -> Result<()>
+{
+    let config = CONFIG
+        .replace(
+            "ga:layout \"documentation\"",
+            "ga:layout \"sectioned\"",
+        )
+        .replace(
+            "ga:navigation <urn:tabs>, <urn:sidebar>",
+            "ga:navigation <urn:tabs>",
+        );
+    let (_out, site) = render(&config).await?;
+    for (route, current, absent) in [
+        ("index.html", "Introduction", "Quick reference"),
+        ("guide/index.html", "Learn", "Elsewhere"),
+        ("advanced/index.html", "Learn", "Elsewhere"),
+    ] {
+        let html = tokio::fs::read_to_string(site.join(route)).await?;
+        let doc = scraper::Html::parse_document(&html);
+        let active = doc
+            .select(
+                &scraper::Selector::parse(
+                    ".primary-navigation .active-section",
+                )
+                .unwrap(),
+            )
+            .next()
+            .unwrap();
+        assert_eq!(active.text().collect::<String>(), current);
+        assert!(html.contains("class=\"brand-version\""));
+        assert!(!html.contains(absent));
+        assert_eq!(
+            doc.select(&scraper::Selector::parse(".site-navigation").unwrap())
+                .count(),
+            usize::from(current == "Learn")
+        );
+        if current == "Learn" {
+            assert!(html.contains("Advanced"));
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn sectioned_navigation_rejects_unassigned_and_duplicate_pages()
+-> Result<()> {
+    let config = CONFIG
+        .replace(
+            "ga:layout \"documentation\"",
+            "ga:layout \"sectioned\"",
+        )
+        .replace(
+            "ga:navigation <urn:tabs>, <urn:sidebar>",
+            "ga:navigation <urn:tabs>",
+        );
+    let missing = config.replace(
+        "<urn:learn> a ga:NavigationEntry; ga:page <urn:guide>",
+        "<urn:learn> a ga:NavigationEntry; ga:url \"https://example.org/\"",
+    );
+    assert!(
+        format!("{:#}", render(&missing).await.unwrap_err())
+            .contains("no primary navigation section")
+    );
+    let duplicate = format!(
+        "{config}\n<urn:tabs> ga:navigationEntry <urn:duplicate> \
+         .\n<urn:duplicate> a ga:NavigationEntry; ga:page <urn:guide>; \
+         ga:order 3 ."
+    );
+    assert!(
+        format!("{:#}", render(&duplicate).await.unwrap_err())
+            .contains("assigns a page more than once")
+    );
     Ok(())
 }

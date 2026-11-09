@@ -99,14 +99,28 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         credit.value().attr("title"),
         Some(env!("GRAPHARCH_BUILD_DETAILS"))
     );
-    assert!(home.contains("aria-label=\"Documentation\""));
-    assert!(home.contains("features/targets/"));
-    let document = scraper::Html::parse_document(&home);
+    assert!(home.contains("Overview"));
+    let home_sidebar = credit_document
+        .select(&scraper::Selector::parse(".site-navigation").unwrap())
+        .next()
+        .unwrap();
+    assert!(
+        !home_sidebar
+            .text()
+            .collect::<String>()
+            .contains("Collectors")
+    );
+    assert!(!home_sidebar.text().collect::<String>().contains("Other"));
+
+    let navigation_page =
+        tokio::fs::read_to_string(site.join("usage/index.html")).await?;
+    assert!(navigation_page.contains("features/targets/"));
+    let document = scraper::Html::parse_document(&navigation_page);
     let goals = scraper::Selector::parse(
         ".site-navigation nav \
          details[data-id='urn:grapharch:docs:topic:other'] \
          details[data-id='urn:grapharch:docs:topic:other:architecture'] \
-         a[href='design-goals/']",
+         a[href='../design-goals/']",
     )
     .unwrap();
     assert_eq!(
@@ -175,7 +189,10 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
             .trim()
     );
 
-    assert_eq!(scripts[1].value().attr("src"), Some("search.js"));
+    assert_eq!(
+        scripts[1].value().attr("src"),
+        Some("../search.js")
+    );
     assert!(scripts[1].value().attr("defer").is_some());
     assert_eq!(scripts[1].value().attrs().count(), 2);
     assert!(scripts[1].text().collect::<String>().trim().is_empty());
@@ -218,7 +235,14 @@ fn setup(source: &Path, home: &str) -> Result<()> {
         source.join("grapharch.ttl"),
         definitions_fixture::edit_definitions(
             include_str!("../docs/grapharch.ttl"),
-            &["ontologySource", "showcasesSource", "collector", "include"],
+            &[
+                "ontologySource",
+                "showcasesSource",
+                "collector",
+                "include",
+                "navigation",
+                "layout",
+            ],
             None,
         )?,
     )?;
@@ -466,7 +490,14 @@ async fn repository_link_and_icon_follow_pinned_project_metadata() -> Result<()>
     setup(source.path(), "Repository metadata")?;
     let definitions = definitions_fixture::edit_definitions(
         include_str!("../docs/grapharch.ttl"),
-        &["ontologySource", "showcasesSource", "collector", "include"],
+        &[
+            "ontologySource",
+            "showcasesSource",
+            "collector",
+            "include",
+            "navigation",
+            "layout",
+        ],
         Some((
             "urn:grapharch:docs",
             "https://github.com/example/another-project",

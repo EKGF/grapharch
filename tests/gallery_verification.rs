@@ -10,7 +10,13 @@ fn docs(root: &Path) -> Result<std::path::PathBuf> {
         docs.join("grapharch.ttl"),
         definitions::edit_definitions(
             include_str!("../docs/grapharch.ttl"),
-            &["ontologySource", "collector", "include"],
+            &[
+                "ontologySource",
+                "navigation",
+                "layout",
+                "collector",
+                "include",
+            ],
             None,
         )?,
     )?;

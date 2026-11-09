@@ -232,7 +232,7 @@ ga:NavigationEntryShape a sh:NodeShape ; sh:targetClass ga:NavigationEntry ; sh:
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:WebsiteLayoutShape a sh:NodeShape ; sh:targetSubjectsOf ga:layout ;
-    sh:property [ sh:path ga:layout ; sh:datatype xsd:string ; sh:in ("documentation") ; sh:maxCount 1 ] .
+    sh:property [ sh:path ga:layout ; sh:datatype xsd:string ; sh:in ("documentation" "sectioned") ; sh:maxCount 1 ] .
 
 ga:ProfileNavigationShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigation ;
     sh:property [ sh:path ga:navigation ; sh:nodeKind sh:IRI ; sh:class ga:Navigation ; sh:maxCount 3 ] .

@@ -10,6 +10,14 @@ impl Navigations {
         active: &str,
         prefix: &str,
     ) -> Option<(String, String)> {
+        if let Some(sections) = &self.sections {
+            return Some(
+                sections
+                    .sidebar(active)
+                    .map(|tree| tree.context(active, prefix))
+                    .unwrap_or_default(),
+            );
+        }
         self.trees
             .get("sidebar")
             .map(|tree| tree.context(active, prefix))

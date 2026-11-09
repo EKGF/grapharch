@@ -80,3 +80,27 @@ doc:contributor-froehlich-marcel a prov:Person ; rdfs:label "Marcel Fröhlich" .
 doc:contributor-mattocks-carl a prov:Person ; rdfs:label "Carl Mattocks" .
 doc:contributor-rivett-pete a prov:Person ; rdfs:label "Pete Rivett" .
 doc:contributor-seale-tony a prov:Person ; rdfs:label "Tony Seale" .
+
+# Primary sections select existing page identities; URLs and content stay unchanged.
+doc:profile ga:layout "sectioned" ; ga:navigation doc:sections .
+doc:sections a ga:Navigation ; dct:title "GraphArch sections" ;
+    ga:navigationRegion "primary" ; ga:navigationEntry doc:overview-section,
+        doc:documentation-section, doc:gallery-section, doc:things-section,
+        doc:features-section, doc:collectors-section, doc:other-section, doc:overview-guide .
+doc:overview-section a ga:NavigationEntry ; dct:title "Overview" ; ga:order 1 ;
+    ga:page <urn:grapharch:docs:topic:index> .
+doc:documentation-section a ga:NavigationEntry ; dct:title "Documentation" ; ga:order 2 ;
+    ga:page <urn:grapharch:docs:topic:usage> .
+doc:gallery-section a ga:NavigationEntry ; dct:title "Gallery" ; ga:order 3 ;
+    ga:page <urn:grapharch:docs:topic:showcase-gallery> .
+doc:things-section a ga:NavigationEntry ; ga:order 1 ; ga:parentEntry doc:documentation-section ;
+    ga:page <urn:grapharch:docs:topic:documentable-things> .
+doc:features-section a ga:NavigationEntry ; ga:order 2 ; ga:parentEntry doc:documentation-section ;
+    ga:page <urn:grapharch:docs:topic:features> .
+doc:collectors-section a ga:NavigationEntry ; ga:order 3 ; ga:parentEntry doc:documentation-section ;
+    ga:page <urn:grapharch:docs:collectors:readme> .
+doc:other-section a ga:NavigationEntry ; ga:order 4 ; ga:parentEntry doc:documentation-section ;
+    ga:page <urn:grapharch:docs:topic:other> .
+
+doc:overview-guide a ga:NavigationEntry ; ga:order 1 ; ga:parentEntry doc:overview-section ;
+    ga:page <urn:grapharch:docs:topic:overview> .

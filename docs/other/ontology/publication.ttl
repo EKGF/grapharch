@@ -1516,8 +1516,8 @@ ga:navigationRegion a owl:DatatypeProperty ;
 ga:layout a owl:DatatypeProperty ;
     rdfs:label "Website content layout"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Selects the semantic website content arrangement independently of the visual brand selected by the profile style."@en ;
-    dct:description "Selects the semantic website content arrangement independently of the visual brand selected by the profile style."@en ;
+    skos:definition "Selects the semantic website content arrangement independently of the visual brand selected by the profile style. The documentation layout uses independent navigation regions; sectioned uses primary navigation roots to assign pages and their descendants to disjoint sections with scoped sidebars."@en ;
+    dct:description "Selects the semantic website content arrangement independently of the visual brand selected by the profile style. The documentation layout uses independent navigation regions; sectioned uses primary navigation roots to assign pages and their descendants to disjoint sections with scoped sidebars."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range xsd:string .
 

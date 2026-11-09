@@ -1,5 +1,6 @@
 ---
 title: Documentable Things catalogue
+parent: Features
 nav_order: 999
 permalink: /features/documentable-things/
 nav_exclude: true

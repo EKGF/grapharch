@@ -5,24 +5,26 @@ use super::{
 };
 
 pub(super) struct Page<'a> {
-    pub report:         bool,
-    pub panels:         &'a [String],
-    pub presentation:   &'a super::project::Presentation,
-    pub extra_head:     &'a str,
-    pub title:          &'a str,
-    pub id:             &'a str,
-    pub fragment_count: usize,
-    pub prefix:         &'a str,
-    pub navigation:     &'a str,
-    pub breadcrumbs:    &'a str,
-    pub heading:        &'a str,
-    pub body:           &'a str,
-    pub gallery:        &'a str,
-    pub previous_next:  &'a str,
-    pub outline:        &'a str,
+    pub report:           bool,
+    pub panels:           &'a [String],
+    pub presentation:     &'a super::project::Presentation,
+    pub extra_head:       &'a str,
+    pub title:            &'a str,
+    pub id:               &'a str,
+    pub navigation_owner: Option<&'a str>,
+    pub fragment_count:   usize,
+    pub prefix:           &'a str,
+    pub navigation:       &'a str,
+    pub breadcrumbs:      &'a str,
+    pub heading:          &'a str,
+    pub body:             &'a str,
+    pub gallery:          &'a str,
+    pub previous_next:    &'a str,
+    pub outline:          &'a str,
 }
 
 pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
+    let active = page.navigation_owner.unwrap_or(page.id);
     let project_title = &header.title;
     let repository = &header.repository;
     let Page {
@@ -38,7 +40,14 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     let project_page = (header.theme.project() ||
         page.presentation.explicit_hero) &&
         !page.report;
-    let layout = if project_page {
+    let section_sidebar = header.navigation.html("sidebar", active, prefix);
+    let without_sidebar =
+        header.navigation.sectioned() && section_sidebar.is_none();
+    let layout = if without_sidebar && !gallery.is_empty() {
+        "site-layout gallery-layout gallery-home"
+    } else if without_sidebar {
+        "site-layout section-landing"
+    } else if project_page {
         "project-layout"
     } else if page.report {
         "site-layout report-layout"
@@ -62,12 +71,16 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         &header.links.html(prefix),
         super::search::button(),
     );
+    let brand_context = if header.navigation.sectioned() {
+        ""
+    } else {
+        "<span class=\"brand-context\">Documentation</span>"
+    };
     let project_brand = format!(
         "<a class=\"brand\" href=\"{prefix}\">{}<span class=\"brand-version\" \
          data-build-channel=\"{}\" data-generator-revision=\"{}\" \
          data-build-number=\"{}\" title=\"{}\"><span \
-         class=\"visually-hidden\">Version </span>{}</span><span \
-         class=\"brand-context\">Documentation</span></a>",
+         class=\"visually-hidden\">Version </span>{}</span>{brand_context}</a>",
         esc(project_title),
         esc(env!("GRAPHARCH_BUILD_CHANNEL")),
         esc(env!("GRAPHARCH_GENERATOR_REVISION")),
@@ -118,12 +131,18 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
              topics\">{previous_next}</nav>"
         )
     };
-    let explicit_sidebar = header.navigation.html("sidebar", page.id, prefix);
+    let explicit_sidebar = section_sidebar;
     let primary_navigation = header
         .navigation
-        .html("primary", page.id, prefix)
+        .html("primary", active, prefix)
         .unwrap_or_default();
-    let primary_navigation = if header.navigation.documentation {
+    let primary_navigation = if header.navigation.sectioned() {
+        format!(
+            "<div class=\"project-identity-row \
+             documentation-product-row\">{project_brand}{primary_navigation}</\
+             div>"
+        )
+    } else if header.navigation.documentation {
         format!(
             "<div class=\"project-identity-row documentation-product-row\"><a \
              class=\"documentation-title\" \
@@ -135,9 +154,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     };
     let footer_navigation = header
         .navigation
-        .html("footer", page.id, prefix)
+        .html("footer", active, prefix)
         .unwrap_or_default();
-    let navigation_panel = if project_page && header.navigation.documentation {
+    let navigation_panel = if without_sidebar ||
+        (project_page && header.navigation.documentation)
+    {
         String::new()
     } else if let Some(sidebar) = explicit_sidebar {
         format!(

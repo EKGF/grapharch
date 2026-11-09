@@ -167,3 +167,21 @@ Select `grapharch.resource_sections: [articles-talks]` to present a level-two se
 Project pages use a left-aligned introduction by default. A campaign landing page opts into `grapharch.hero: landing`; `introduction` is the other supported value. These are semantic roles, with widths and typography supplied by the shared theme. All ordinary card grids share the same title, muted prose, padding, border and elevation system as feature cards. Resource lists retain their horizontal composition. Plain prose uses a narrower reading measure than card grids.
 
 `card_icons` can also identify a level-two section heading, for example an adoption step or a concept panel. Supported icons include the original network, file-json, git-branch, shield and book-open icons, plus triangle-alert, search, plug, users, megaphone, layers, store, cloud, rocket, folder-open, quote, package, database, file-box, sparkles, vote and circle-check. Decorative icons are bundled with their license and remain explicit source metadata.
+
+## Separate website sections
+
+Set `ga:layout "sectioned"` on a website profile and provide a primary
+`ga:Navigation` tree. Its root entries become the secondary navigator tabs.
+Each entry selects an existing page with `ga:page`; nested `ga:parentEntry`
+entries assign additional page roots to that section. Descendants inherit their
+section through the ordinary page hierarchy, so direct links select the same tab
+and sidebar as navigation from the home page. Pages must belong to exactly one
+section: missing or conflicting ownership fails publication.
+
+The renderer derives each section's sidebar from its selected pages. Do not also
+configure an independent sidebar tree. A section with one page has no sidebar;
+for example, a gallery landing page can stand on its own while its generated
+showcase introductions retain the gallery's active tab. All routes remain the
+existing page routes. Section names and destinations are publication data, not
+renderer-specific product names. The ordinary `documentation` layout continues
+to support independently authored primary, sidebar and footer trees.

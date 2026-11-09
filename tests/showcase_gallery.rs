@@ -133,10 +133,31 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         docs.join("grapharch.ttl"),
         definitions::edit_definitions(
             include_str!("../docs/grapharch.ttl"),
-            &["ontologySource", "collector", "include"],
+            &[
+                "ontologySource",
+                "navigation",
+                "layout",
+                "collector",
+                "include",
+            ],
             None,
         )?,
     )?;
+    let configuration =
+        tokio::fs::read_to_string(docs.join("grapharch.ttl")).await?;
+    tokio::fs::write(
+        docs.join("grapharch.ttl"),
+        format!(
+            "{configuration}\n@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n@prefix dct: <http://purl.org/dc/terms/> .\n<urn:grapharch:docs:profile> ga:layout \
+             \"sectioned\"; ga:navigation <urn:gallery:sections> \
+             .\n<urn:gallery:sections> a ga:Navigation; dct:title \
+             \"Sections\"; ga:navigationRegion \"primary\"; \
+             ga:navigationEntry <urn:gallery:tab> .\n<urn:gallery:tab> a \
+             ga:NavigationEntry; dct:title \"Gallery\"; ga:order 1; ga:page \
+             <urn:gallery:page> .\n"
+        ),
+    )
+    .await?;
     std::fs::write(
         docs.join("index.md"),
         "---\ntitle: Gallery\ngrapharch:\n  subject: urn:gallery:page\n  \
@@ -205,6 +226,8 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
     assert_eq!(document.select(&cards).count(), 12);
     assert!(!html.contains("Open HTML"));
+    assert!(!html.contains("class=\"site-navigation\""));
+    assert!(html.contains("gallery-home"));
     for card in document.select(&cards) {
         let primary = scraper::Selector::parse("a.showcase-primary").unwrap();
         let links = card.select(&primary).collect::<Vec<_>>();
@@ -233,10 +256,22 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     {
         let route = link.value().attr("href").unwrap();
         assert!(route.contains("showcase-"));
-        detail_html.push_str(
-            &tokio::fs::read_to_string(publication.directory.join(route))
-                .await?,
-        );
+        let detail =
+            tokio::fs::read_to_string(publication.directory.join(route))
+                .await?;
+        let parsed = scraper::Html::parse_document(&detail);
+        let active = parsed
+            .select(
+                &scraper::Selector::parse(
+                    ".primary-navigation .active-section",
+                )
+                .unwrap(),
+            )
+            .next()
+            .expect("detail keeps its gallery section");
+        assert_eq!(active.text().collect::<String>(), "Gallery");
+        assert!(!detail.contains("class=\"site-navigation\""));
+        detail_html.push_str(&detail);
     }
     assert!(!html.contains("Download KG"));
     assert!(!html.contains("All publication outputs"));

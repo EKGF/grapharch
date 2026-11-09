@@ -7,6 +7,6 @@ grapharch:
   showcase_gallery: true
 ---
 
-# Showcase gallery
+# See what your knowledge can become
 
-Explore publications and their sources, or [learn how showcases are published](usage/showcase-publishing.md).
+Explore real websites, ontology libraries, and documents generated from shared sources.

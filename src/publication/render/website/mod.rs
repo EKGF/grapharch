@@ -27,6 +27,13 @@ use {
     std::{collections::HashMap, path::Path, time::Instant},
 };
 
+struct Report<'a> {
+    slug:             &'a str,
+    title:            &'a str,
+    body:             &'a [u8],
+    navigation_owner: Option<&'a str>,
+}
+
 struct Header {
     title:      String,
     repository: String,
@@ -153,15 +160,12 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
                 .any(|page| page.route == super::diagram_notes::ROUTE),
             "diagram note route conflicts with a selected asset"
         );
-        write_report(
-            plan,
-            stage,
-            &catalog,
-            &header,
-            "diagram-notes",
-            "Diagram interpretation",
-            super::diagram_notes::html().as_bytes(),
-        )
+        write_report(plan, stage, &catalog, &header, Report {
+            slug:             "diagram-notes",
+            title:            "Diagram interpretation",
+            body:             super::diagram_notes::html().as_bytes(),
+            navigation_owner: None,
+        })
         .await?;
         files.push(super::diagram_notes::ROUTE.into());
     }
@@ -181,15 +185,12 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             1,
         )
         .await?;
-        write_report(
-            plan,
-            stage,
-            &catalog,
-            &header,
-            "quality-issues",
-            "Quality issues",
-            &body,
-        )
+        write_report(plan, stage, &catalog, &header, Report {
+            slug:             "quality-issues",
+            title:            "Quality issues",
+            body:             &body,
+            navigation_owner: None,
+        })
         .await?;
         files.push("quality-issues.html".into());
     }
@@ -203,15 +204,12 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     plan.provenance
         .html_heading(&mut body, "Document provenance", 1)
         .await?;
-    write_report(
-        plan,
-        stage,
-        &catalog,
-        &header,
-        "provenance",
-        "Document provenance",
-        &body,
-    )
+    write_report(plan, stage, &catalog, &header, Report {
+        slug:             "provenance",
+        title:            "Document provenance",
+        body:             &body,
+        navigation_owner: None,
+    })
     .await?;
     files.push("provenance.html".into());
     let mut assets = plan.assets().await?;
@@ -334,15 +332,12 @@ async fn write_page(
                     !catalog.pages.values().any(|p| p.route == route),
                 "showcase detail route collision: {route}"
             );
-            write_report(
-                plan,
-                stage,
-                catalog,
-                header,
-                &detail.slug,
-                &detail.title,
-                detail.body.as_bytes(),
-            )
+            write_report(plan, stage, catalog, header, Report {
+                slug:             &detail.slug,
+                title:            &detail.title,
+                body:             detail.body.as_bytes(),
+                navigation_owner: Some(id.as_str()),
+            })
             .await?;
             files.push(route);
         }
@@ -421,21 +416,22 @@ async fn write_page(
             );
         }
         let html = shell::render(plan, header, shell::Page {
-            panels:         &panels,
-            presentation:   &presentation,
-            extra_head:     &extra_head,
-            report:         false,
-            title:          &page.title,
-            id:             id.as_str(),
-            fragment_count: fragments.len(),
-            prefix:         &prefix,
-            navigation:     &navigation,
-            breadcrumbs:    &breadcrumbs,
-            heading:        &heading,
-            body:           &content.html,
-            gallery:        &gallery.html,
-            previous_next:  &previous_next,
-            outline:        &page_outline,
+            panels:           &panels,
+            presentation:     &presentation,
+            extra_head:       &extra_head,
+            report:           false,
+            title:            &page.title,
+            id:               id.as_str(),
+            navigation_owner: None,
+            fragment_count:   fragments.len(),
+            prefix:           &prefix,
+            navigation:       &navigation,
+            breadcrumbs:      &breadcrumbs,
+            heading:          &heading,
+            body:             &content.html,
+            gallery:          &gallery.html,
+            previous_next:    &previous_next,
+            outline:          &page_outline,
         });
         tokio::fs::write(output, html).await?;
     }
@@ -448,10 +444,9 @@ async fn write_report(
     stage: &Path,
     catalog: &Catalog,
     header: &Header,
-    slug: &str,
-    title: &str,
-    body: &[u8],
+    report: Report<'_>,
 ) -> Result<()> {
+    let Report { slug, title, body, navigation_owner } = report;
     let id = crate::publication::dataset::identity("website-report", &[
         plan.target.as_str(),
         slug,
@@ -465,6 +460,7 @@ async fn write_report(
         extra_head: "<meta name=\"robots\" content=\"noindex,follow\">",
         title,
         id: id.as_str(),
+        navigation_owner,
         fragment_count: 0,
         prefix: "./",
         navigation: &navigation,

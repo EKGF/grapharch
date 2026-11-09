@@ -32,3 +32,16 @@
 .showcase-primary:hover h2{color:var(--accent)}
 .showcase-primary:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
 .showcase-detail>.showcase-tags{margin:20px 0}.showcase-detail>.showcase-actions{margin:24px 0}
+/* A gallery is an exploration destination rather than a documentation chapter. */
+body[data-layout=documentation] .gallery-home main{padding-top:clamp(32px,5vw,72px)}
+.gallery-home .breadcrumbs{display:none}
+body[data-layout=documentation] .gallery-home article>h1{font-size:clamp(2.5rem,5vw,4.5rem);font-weight:750;line-height:1.08;letter-spacing:-.045em;margin:0 0 20px}
+.gallery-home main>article>p{max-width:680px;font-size:1.1rem;line-height:1.65;color:var(--muted);margin:0 0 32px}
+.gallery-home .showcase-discovery{margin:0 0 32px;padding:24px;border-radius:16px}
+.gallery-home .showcase-gallery{gap:32px}
+.gallery-home .showcase-card{border-radius:16px;box-shadow:0 4px 18px rgb(0 0 0/.06);transition:box-shadow .16s ease,transform .16s ease}
+.gallery-home .showcase-card:hover{box-shadow:0 12px 30px rgb(0 0 0/.12);transform:translateY(-2px)}
+.gallery-home .showcase-info{padding:28px}
+.gallery-home .showcase-info h2{font-size:1.35rem}
+@media(max-width:650px){.gallery-home .showcase-discovery{padding:18px;margin-bottom:24px}.gallery-home .showcase-info{padding:22px}.gallery-home .showcase-gallery{gap:24px}.gallery-home main>article>p{font-size:1rem;margin-bottom:24px}}
+@media(prefers-reduced-motion:reduce){.gallery-home .showcase-card{transition:none}.gallery-home .showcase-card:hover{transform:none}}
