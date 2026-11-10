@@ -1,3 +1,3 @@
 repository: https://github.com/EKGF/dprod.git
-ref: develop
+ref: b3498812966abbe76c098ef0309bc2c2957d18f7
 definitions: publication/standards.ttl

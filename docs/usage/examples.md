@@ -108,9 +108,10 @@ See [Use-case trees](use-case-trees.md) for the vocabulary and diagram contract.
 
 ### Live DPROD gallery
 
-The gallery reads `EKGF/dprod` directly from its remote `develop` branch.
-`examples/dprod/live.yaml` specifies only the repository, branch and location of
-its source-owned publication settings. Each build resolves one Git commit and
+The gallery reads an exact `EKGF/dprod` source commit.
+`examples/dprod/live.yaml` specifies the repository, immutable commit and location
+of its source-owned publication settings. The current pin includes the RDF
+collector and renderer identity migration tracked in EKGF/dprod#292. Each build
 collects its ontology, shapes and Markdown at that revision. A reusable local
 Git cache avoids cloning the complete repository again. Missing source files,
 invalid hints and unavailable sources stop the build; copied fixtures are never
