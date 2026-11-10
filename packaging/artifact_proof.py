@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 
-from distribute import PLATFORMS
+from distribute import PLATFORMS, npm_package
 
 
 def api(path):
@@ -60,8 +60,9 @@ def validate_directory(directory, revision, version):
             raise ValueError('native manifest exceeds bounded metadata budget')
         manifest = json.loads(path.read_text())
         if (manifest.get('source_commit') != revision or manifest.get('version') != version
-                or manifest.get('target') != item['target']):
-            raise ValueError('assembled artifact differs from the requested release source/version/target')
+                or manifest.get('target') != item['target']
+                or manifest.get('npm_package') != npm_package(item)):
+            raise ValueError('assembled artifact differs from the requested release source/version/target/npm package')
 
 
 def main():

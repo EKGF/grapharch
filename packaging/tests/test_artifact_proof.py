@@ -42,12 +42,23 @@ class ArtifactProof(unittest.TestCase):
             root = Path(temporary)
             for item in PLATFORMS:
                 (root / f'grapharch-{item["target"]}.json').write_text(json.dumps({
-                    'source_commit': 'b' * 40, 'version': '0.2.5', 'target': item['target']}))
+                    'source_commit': 'b' * 40, 'version': '0.2.5', 'target': item['target'],
+                    'npm_package': 'grapharch-' + item['key']}))
             validate_directory(root, 'b' * 40, '0.2.5')
             with self.assertRaises(ValueError):
                 validate_directory(root, 'c' * 40, '0.2.5')
             with self.assertRaises(ValueError):
                 validate_directory(root, 'b' * 40, '0.2.6')
+
+    def test_artifact_reuse_never_publishes_obsolete_package_names(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for item in PLATFORMS:
+                (root / f'grapharch-{item["target"]}.json').write_text(json.dumps({
+                    'source_commit': 'b' * 40, 'version': '0.2.7', 'target': item['target'],
+                    'npm_package': 'obsolete-package-name'}))
+            with self.assertRaises(ValueError):
+                validate_directory(root, 'b' * 40, '0.2.7')
 
     def test_workflow_run_builds_then_dispatches_the_same_publisher_without_recompiling(self):
         root = Path(__file__).parents[2]
