@@ -110,8 +110,10 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     assert!(home.contains("section-landing"));
     let diagram = credit_document
         .select(
-            &scraper::Selector::parse("img[alt='Documentation diagram']")
-                .unwrap(),
+            &scraper::Selector::parse(
+                "img[alt^='Collectors bring source documents']",
+            )
+            .unwrap(),
         )
         .next()
         .expect("homepage pipeline must be a rendered illustration");
@@ -126,10 +128,39 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         .filter_map(|node| node.text())
         .collect::<Vec<_>>()
         .join(" ");
+    for label in [
+        "Collectors",
+        "GraphArch",
+        "Knowledge",
+        "Graph",
+        "Renderers",
+        "Websites",
+        "Standards",
+        "PDFs",
+    ] {
+        assert!(
+            labels.contains(label),
+            "retained illustration is missing {label}"
+        );
+    }
+    assert_eq!(
+        illustration.root_element().attribute("role"),
+        Some("img")
+    );
+    assert!(illustration.descendants().any(|node| {
+        node.has_tag_name("desc") &&
+            node.text()
+                .is_some_and(|text| text.contains("Collectors bring"))
+    }));
     assert!(
-        labels.contains("GraphArch") &&
-            labels.contains("Knowledge") &&
-            labels.contains("Graph")
+        credit_document
+            .select(
+                &scraper::Selector::parse("article a[href='showcases/']")
+                    .unwrap()
+            )
+            .next()
+            .is_some(),
+        "homepage must lead to real showcase examples"
     );
     let primary: Vec<_> = credit_document
         .select(&scraper::Selector::parse(".primary-navigation a").unwrap())
@@ -322,6 +353,9 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     assert!(site.join("other/ontology/publication.ttl").exists());
     assert!(publication.manifest.files.len() > 50);
     assert!(publication.manifest.diagnostics.is_empty());
+    if std::env::var_os("GRAPHARCH_SELFDOC_PREVIEW").is_some() {
+        copy_documentation(site, &root.join("output/homepage-review/site"))?;
+    }
     Ok(())
 }
 

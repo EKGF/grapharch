@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title description">
+  <title id="title">From sources to publications</title>
+  <desc id="description">Collectors bring Markdown, RDF, and SPARQL into the GraphArch Knowledge Graph. Renderers use that graph to produce websites, standards, and PDFs.</desc>
+  <rect width="1200" height="620" rx="28" fill="#fafafd"/>
+  <g fill="none" stroke="#c6c5e9" stroke-width="5" stroke-linecap="round">
+    <path d="M246 190 C302 190 312 300 370 300"/>
+    <path d="M246 330 C305 330 315 300 370 300"/>
+    <path d="M246 470 C312 470 310 300 370 300"/>
+    <path d="M590 300 H718" stroke="#4947b9"/>
+    <path d="M802 300 C850 300 838 190 886 190"/>
+    <path d="M802 300 C850 300 838 330 886 330"/>
+    <path d="M802 300 C850 300 838 470 886 470"/>
+  </g>
+  <path d="m703 290 15 10-15 10" fill="none" stroke="#4947b9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#242636">
+    <g font-size="48" font-weight="700">
+      <text x="132" y="82">Collectors</text>
+      <text x="760" y="82">Renderers</text>
+    </g>
+    <g fill="#eeeef8">
+      <rect x="24" y="140" width="222" height="100" rx="18"/>
+      <rect x="24" y="280" width="222" height="100" rx="18"/>
+      <rect x="24" y="420" width="222" height="100" rx="18"/>
+    </g>
+    <g font-size="44" font-weight="500">
+      <text x="135" y="206">Markdown</text>
+      <text x="135" y="346">RDF</text>
+      <text x="135" y="486">SPARQL</text>
+    </g>
+    <circle cx="480" cy="290" r="117" fill="#eeeef8"/>
+    <g stroke="#4947b9" stroke-width="6" stroke-linecap="round">
+      <path d="m407 230 73 60 68-63M480 290l-65 61m65-61 72 56m-145-116 8 121m133-124 4 119" fill="none"/>
+    </g>
+    <g fill="#4947b9">
+      <circle cx="480" cy="290" r="30"/>
+      <circle cx="407" cy="230" r="18"/>
+      <circle cx="552" cy="346" r="18"/>
+    </g>
+    <g fill="#ff7a1a">
+      <circle cx="548" cy="227" r="19"/>
+      <circle cx="415" cy="351" r="16"/>
+    </g>
+    <g fill="#4947b9" font-size="48" font-weight="700">
+      <text x="480" y="460">GraphArch</text>
+      <text x="480" y="518">Knowledge</text>
+      <text x="480" y="576">Graph</text>
+    </g>
+    <circle cx="760" cy="300" r="46" fill="#4947b9"/>
+    <g stroke="#fff" stroke-width="7" stroke-linecap="round">
+      <path d="M742 283h36m-36 17h36m-36 17h36"/>
+    </g>
+    <circle cx="760" cy="360" r="8" fill="#ff7a1a"/>
+    <g fill="#fff" stroke="#d8d8e9" stroke-width="3">
+      <rect x="886" y="140" width="290" height="100" rx="18"/>
+      <rect x="886" y="280" width="290" height="100" rx="18"/>
+      <rect x="886" y="420" width="290" height="100" rx="18"/>
+    </g>
+    <g fill="#4947b9">
+      <circle cx="886" cy="190" r="8"/>
+      <circle cx="886" cy="330" r="8"/>
+      <circle cx="886" cy="470" r="8"/>
+    </g>
+    <g font-size="48" font-weight="500">
+      <text x="1031" y="206">Websites</text>
+      <text x="1031" y="346">Standards</text>
+      <text x="1031" y="486">PDFs</text>
+    </g>
+  </g>
+</svg>
