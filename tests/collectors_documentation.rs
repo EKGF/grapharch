@@ -55,6 +55,11 @@ async fn collectors_catalogue_has_unique_navigation_practical_examples_and_resol
             assert!(metadata.parent.is_none());
             assert_eq!(metadata.permalink, "/collectors/");
         } else {
+            assert!(
+                !metadata.title.ends_with(" Collector"),
+                "redundant collector sidebar label: {}",
+                metadata.title
+            );
             assert_eq!(metadata.parent.as_deref(), Some("Collectors"));
             assert!(
                 body.contains("```"),
@@ -181,7 +186,13 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
     let expected: Vec<_> = index
         .lines()
         .filter_map(|line| line.strip_prefix("| ["))
-        .map(|line| line.split_once("](").unwrap().0.to_owned())
+        .map(|line| {
+            line.split_once("](")
+                .unwrap()
+                .0
+                .trim_end_matches(" Collector")
+                .to_owned()
+        })
         .collect();
     assert_eq!(
         actual, expected,

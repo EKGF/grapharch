@@ -1,5 +1,5 @@
 ---
-title: Code Example Collector
+title: Code Example
 parent: Collectors
 nav_order: 9
 permalink: /collectors/code-examples/

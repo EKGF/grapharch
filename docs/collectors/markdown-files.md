@@ -1,5 +1,5 @@
 ---
-title: Markdown File Collector
+title: Markdown File
 parent: Collectors
 nav_order: 3
 permalink: /collectors/markdown-files/

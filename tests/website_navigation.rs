@@ -230,8 +230,57 @@ async fn sectioned_navigation_scopes_pages_after_source_removal() -> Result<()>
         );
         if current == "Learn" {
             assert!(html.contains("Advanced"));
+            let sidebar = doc
+                .select(
+                    &scraper::Selector::parse(".sidebar-navigation").unwrap(),
+                )
+                .next()
+                .unwrap();
+            assert!(!sidebar.text().collect::<String>().contains("Guide"));
+            let primary_home = doc
+                .select(
+                    &scraper::Selector::parse(
+                        ".primary-navigation a.active-section",
+                    )
+                    .unwrap(),
+                )
+                .next()
+                .unwrap();
+            assert_eq!(
+                primary_home.value().attr("href"),
+                Some("../guide/")
+            );
         }
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn section_with_multiple_sidebar_roots_preserves_its_groups() -> Result<()>
+{
+    let config = CONFIG
+        .replace(
+            "ga:layout \"documentation\"",
+            "ga:layout \"sectioned\"",
+        )
+        .replace(
+            "ga:navigation <urn:tabs>, <urn:sidebar>",
+            "ga:navigation <urn:tabs>",
+        ) +
+        "\n<urn:start> ga:parentEntry <urn:learn> .";
+    let (_out, site) = render(&config).await?;
+    let html = tokio::fs::read_to_string(site.join("guide/index.html")).await?;
+    let doc = scraper::Html::parse_document(&html);
+    let sidebar = doc
+        .select(&scraper::Selector::parse(".sidebar-navigation").unwrap())
+        .next()
+        .unwrap();
+    let text = sidebar.text().collect::<String>();
+    assert!(
+        text.contains("Home") &&
+            text.contains("Guide") &&
+            text.contains("Advanced")
+    );
     Ok(())
 }
 

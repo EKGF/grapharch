@@ -1,5 +1,5 @@
 ---
-title: Image Collector
+title: Image
 parent: Collectors
 nav_order: 8
 permalink: /collectors/images/

@@ -1,5 +1,5 @@
 ---
-title: SPARQL Endpoint Collector
+title: SPARQL Endpoint
 parent: Collectors
 nav_order: 5
 permalink: /collectors/sparql-endpoints/

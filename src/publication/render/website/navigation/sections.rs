@@ -82,7 +82,7 @@ impl Sections {
                 external: false,
             });
         }
-        for tree in sidebars.values_mut() {
+        for (owner, tree) in &mut sidebars {
             let ids: Vec<_> = tree.entries.keys().cloned().collect(); // bounded: selected page budget.
             for id in ids {
                 let parent = tree.entries[&id]
@@ -91,6 +91,24 @@ impl Sections {
                     .filter(|parent| tree.entries.contains_key(parent));
                 tree.entries.get_mut(&id).unwrap().parent = parent.clone();
                 tree.children.entry(parent).or_default().push(id);
+            }
+            // The primary tab already links to a sole section home. Promote
+            // its children rather than repeating that destination as a branch.
+            if let Some(roots) = tree.children.get(&None) &&
+                roots.len() == 1 &&
+                primary.destination(owner).page.as_deref() ==
+                    Some(roots[0].as_str())
+            {
+                let root = roots[0].clone();
+                let children = tree
+                    .children
+                    .remove(&Some(root.clone()))
+                    .unwrap_or_default();
+                tree.entries.remove(&root);
+                for child in &children {
+                    tree.entries.get_mut(child).unwrap().parent = None;
+                }
+                tree.children.insert(None, children);
             }
             for children in tree.children.values_mut() {
                 children.sort_by_key(|id| {
@@ -113,6 +131,6 @@ impl Sections {
         self.owners
             .get(page)
             .and_then(|owner| self.sidebars.get(owner))
-            .filter(|tree| tree.entries.len() > 1)
+            .filter(|tree| !tree.entries.is_empty())
     }
 }

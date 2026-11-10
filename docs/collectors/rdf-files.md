@@ -1,5 +1,5 @@
 ---
-title: RDF File Collector
+title: RDF File
 parent: Collectors
 nav_order: 1
 permalink: /collectors/rdf-files/

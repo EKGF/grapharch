@@ -190,6 +190,51 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     assert!(!identities.contains("urn:grapharch:docs:collectors:readme"));
     let renderer_page =
         tokio::fs::read_to_string(site.join("renderers/index.html")).await?;
+    for (section, child) in
+        [("collectors", "rdf-files"), ("renderers", "website")]
+    {
+        for (route, prefix) in [
+            (format!("{section}/index.html"), "../"),
+            (format!("{section}/{child}/index.html"), "../../"),
+        ] {
+            let html = tokio::fs::read_to_string(site.join(&route)).await?;
+            let page = scraper::Html::parse_document(&html);
+            let sidebar = page
+                .select(
+                    &scraper::Selector::parse(".sidebar-navigation").unwrap(),
+                )
+                .next()
+                .unwrap();
+            let root_label = if section == "collectors" {
+                "Collectors"
+            } else {
+                "Renderers"
+            };
+            assert_eq!(
+                sidebar
+                    .select(&scraper::Selector::parse("a").unwrap())
+                    .filter(|link| {
+                        link.text().collect::<String>() == root_label
+                    })
+                    .count(),
+                0
+            );
+            assert!(!sidebar.text().collect::<String>().contains(" Collector"));
+            let home_link = page
+                .select(
+                    &scraper::Selector::parse(
+                        ".primary-navigation a.active-section",
+                    )
+                    .unwrap(),
+                )
+                .next()
+                .unwrap();
+            assert_eq!(
+                home_link.value().attr("href"),
+                Some(format!("{prefix}{section}/").as_str())
+            );
+        }
+    }
     for route in [
         "website",
         "specification",

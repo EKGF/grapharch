@@ -1,5 +1,5 @@
 ---
-title: SPARQL File Collector
+title: SPARQL File
 parent: Collectors
 nav_order: 4
 permalink: /collectors/sparql-files/

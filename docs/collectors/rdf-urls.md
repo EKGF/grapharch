@@ -1,5 +1,5 @@
 ---
-title: RDF URL Collector
+title: RDF URL
 parent: Collectors
 nav_order: 2
 permalink: /collectors/rdf-urls/

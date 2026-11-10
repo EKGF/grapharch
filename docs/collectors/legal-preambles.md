@@ -1,5 +1,5 @@
 ---
-title: Legal Preamble Collector
+title: Legal Preamble
 parent: Collectors
 nav_order: 7
 permalink: /collectors/legal-preambles/

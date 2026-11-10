@@ -1,5 +1,5 @@
 ---
-title: Text Download Collector
+title: Text Download
 parent: Collectors
 nav_order: 10
 permalink: /collectors/text-downloads/

@@ -1,5 +1,5 @@
 ---
-title: Published W3C Specification Collector
+title: Published W3C Specification
 parent: Collectors
 nav_order: 6
 permalink: /collectors/published-specifications/

@@ -1,5 +1,5 @@
 ---
-title: Repository Publication Collector
+title: Repository Publication
 parent: Collectors
 nav_order: 11
 permalink: /collectors/repository-publications/
