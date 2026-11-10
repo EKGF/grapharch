@@ -34,7 +34,9 @@ async fn render(
         include_str!("../examples/specification/project.ttl"),
         "urn:specification:target",
         "https://ekgf.org/ontology/grapharch#renderer",
-        definitions::literal(renderer),
+        definitions::iri(&format!(
+            "https://ekgf.org/ontology/grapharch#{renderer}"
+        ))?,
     )?;
     tokio::fs::write(&path, format!("{fixture}\n{evidence}\n<urn:documented-repo> a <https://schema.org/SoftwareSourceCode> ; <https://schema.org/codeRepository> <https://example.org/not-a-build-source> ; <http://www.w3.org/ns/prov#hadMember> <urn:not-a-build-commit> .")).await?;
     let (dataset, _) = showcases::specification(&path).await?;
@@ -95,7 +97,7 @@ async fn render(
 #[tokio::test]
 async fn provenance_is_a_linked_closing_appendix_from_restored_kg() -> Result<()>
 {
-    let (output, html) = render("specification", EVIDENCE).await?;
+    let (output, html) = render("SpecificationRenderer", EVIDENCE).await?;
     let doc = scraper::Html::parse_document(&html);
     let section = doc
         .select(
@@ -165,7 +167,7 @@ async fn provenance_is_a_linked_closing_appendix_from_restored_kg() -> Result<()
 
 #[tokio::test]
 async fn non_git_sources_report_missing_git_evidence_honestly() -> Result<()> {
-    let (_, html) = render("specification", "").await?;
+    let (_, html) = render("SpecificationRenderer", "").await?;
     assert!(html.contains(
         "No Git repository revision was recorded for these sources."
     ));
@@ -178,7 +180,7 @@ async fn non_git_sources_report_missing_git_evidence_honestly() -> Result<()> {
 #[tokio::test]
 async fn paginated_spec_links_to_its_shared_provenance_appendix() -> Result<()>
 {
-    let (_, html) = render("specification-pages", EVIDENCE).await?;
+    let (_, html) = render("SpecificationPagesRenderer", EVIDENCE).await?;
     assert!(html.contains("id=\"document-provenance\""));
     assert!(html.contains("href=\"#document-provenance\""));
     Ok(())
@@ -187,7 +189,7 @@ async fn paginated_spec_links_to_its_shared_provenance_appendix() -> Result<()>
 #[tokio::test]
 #[ignore = "manual HTML/PDF visual review artifact"]
 async fn retain_provenance_review_document() -> Result<()> {
-    let (output, _) = render("specification", EVIDENCE).await?;
+    let (output, _) = render("SpecificationRenderer", EVIDENCE).await?;
     println!(
         "Provenance review: {}",
         output.keep().join("specification").display()
@@ -199,7 +201,7 @@ async fn retain_provenance_review_document() -> Result<()> {
 async fn provenance_follows_quality_and_preserves_explicit_operator_and_local_state()
 -> Result<()> {
     let evidence = format!("{EVIDENCE}\n<urn:repo> <http://www.w3.org/ns/prov#atLocation> <file:///example/local-clone/> .\n<urn:specification:target> <http://www.w3.org/ns/prov#wasGeneratedBy> <urn:build> . <urn:build> <http://www.w3.org/ns/prov#wasAssociatedWith> <urn:operator> . <urn:operator> <http://www.w3.org/2000/01/rdf-schema#label> \"Documentation CI\" .\n<urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> \"First\"@en, \"Second\"@en .");
-    let (_, html) = render("specification", &evidence).await?;
+    let (_, html) = render("SpecificationRenderer", &evidence).await?;
     let document = scraper::Html::parse_document(&html);
     let provenance = document
         .select(&scraper::Selector::parse("#document-provenance").unwrap())
@@ -221,7 +223,7 @@ async fn provenance_follows_quality_and_preserves_explicit_operator_and_local_st
 async fn tag_names_are_specific_to_the_repository_even_for_the_same_commit()
 -> Result<()> {
     let evidence = format!("{}\n<urn:repo> <https://schema.org/version> \"source-one\" .\n<urn:second-repo> a <https://schema.org/SoftwareSourceCode> ; <https://schema.org/codeRepository> <https://github.com/example/second-source> ; <http://www.w3.org/ns/prov#hadMember> <urn:commit:tip> ; <https://schema.org/version> \"source-two\" .", EVIDENCE.replace(" ; schema:version \"v1.1-preview\"", ""));
-    let (_, html) = render("specification", &evidence).await?;
+    let (_, html) = render("SpecificationRenderer", &evidence).await?;
     let document = scraper::Html::parse_document(&html);
     let sources = document
         .select(&scraper::Selector::parse(".provenance-source").unwrap())
@@ -248,7 +250,7 @@ async fn provenance_accepts_sanitized_ssh_and_git_transport_origins()
             "https://github.com/example/ontology>",
             &format!("{origin}>"),
         );
-        let (_, html) = render("specification", &evidence).await?;
+        let (_, html) = render("SpecificationRenderer", &evidence).await?;
         assert!(html.contains(origin));
     }
     Ok(())

@@ -16,7 +16,9 @@ async fn specification(renderer: &str) -> Result<String> {
         include_str!("../examples/specification/project.ttl"),
         "urn:specification:target",
         "https://ekgf.org/ontology/grapharch#renderer",
-        definitions::literal(renderer),
+        definitions::iri(&format!(
+            "https://ekgf.org/ontology/grapharch#{renderer}"
+        ))?,
     )?;
     tokio::fs::write(&path, format!("{fixture}\nex:subject <http://www.w3.org/2000/01/rdf-schema#label> \"First label\"@en, \"Other label\"@en .\n")).await?;
     let (dataset, plans) = showcases::specification(&path).await?;
@@ -76,13 +78,15 @@ fn assert_structural_links(html: &str) {
 #[tokio::test]
 async fn flat_generated_and_authored_headings_share_permalink_behavior()
 -> Result<()> {
-    assert_structural_links(&specification("specification").await?);
+    assert_structural_links(&specification("SpecificationRenderer").await?);
     Ok(())
 }
 
 #[tokio::test]
 async fn paginated_generated_and_authored_headings_share_permalink_behavior()
 -> Result<()> {
-    assert_structural_links(&specification("specification-pages").await?);
+    assert_structural_links(
+        &specification("SpecificationPagesRenderer").await?,
+    );
     Ok(())
 }

@@ -23,7 +23,9 @@ async fn authored(renderer: &str) -> Result<String> {
         include_str!("../examples/specification/project.ttl"),
         "urn:specification:target",
         "https://ekgf.org/ontology/grapharch#renderer",
-        definitions::literal(renderer),
+        definitions::iri(&format!(
+            "https://ekgf.org/ontology/grapharch#{renderer}"
+        ))?,
     )?;
     tokio::fs::write(
         &path,
@@ -110,14 +112,17 @@ fn report(html: &str, title: &str) {
 #[tokio::test]
 async fn generic_html_quality_report_follows_existing_appendices() -> Result<()>
 {
-    report(&authored("html").await?, "B. Quality issues");
+    report(
+        &authored("HtmlRenderer").await?,
+        "B. Quality issues",
+    );
     Ok(())
 }
 
 #[tokio::test]
 async fn paginated_quality_report_follows_existing_appendices() -> Result<()> {
     report(
-        &authored("specification-pages").await?,
+        &authored("SpecificationPagesRenderer").await?,
         "B. Quality issues",
     );
     Ok(())
