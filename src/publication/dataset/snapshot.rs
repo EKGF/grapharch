@@ -30,12 +30,15 @@ impl Dataset {
         self.snapshot_matching(filter).await
     }
 
-    /// Pin source assertions without feeding generated documentation back into
-    /// a documentor's input revision.
+    /// Pin source assertions and shipped engine definitions without feeding
+    /// generated documentation back into a documentor's input revision.
     pub(crate) async fn snapshot_collected_for(
         &self,
         project: &str,
     ) -> Result<NamedNode> {
+        // Definition metadata must be part of the first documentor input,
+        // not appear only after assembly and change the next identical build.
+        crate::publication::catalogue::retain(self, project).await?;
         let project = NamedNode::new(project)?;
         self.snapshot_matching(format!(
             "?version {} ?attempt . ?attempt {} {project} ; {} \"collect\"",
