@@ -175,39 +175,22 @@ impl Attempt {
             .run(move |store| {
                 store.transaction::<_, io::Error>(|mut transaction| {
                     attempt.check_pending(&transaction)?;
-                    // Existing versions are immutable. Compare both logical
-                    // quad sets.
-                    let changed = format!(
-                        "ASK {{ GRAPH <{CONTROL}> {{ {} {} ?previous }} {{ \
-                         GRAPH <{CONTROL}> {{ ?g {} {} ; {} ?original }} \
-                         GRAPH ?g {{ ?s ?p ?o }} FILTER NOT EXISTS {{ GRAPH \
-                         <{CONTROL}> {{ ?h {} ?previous ; {} ?original }} \
-                         GRAPH ?h {{ ?s ?p ?o }} }} }} UNION {{ GRAPH \
-                         <{CONTROL}> {{ ?h {} ?previous ; {} ?original }} \
-                         GRAPH ?h {{ ?s ?p ?o }} FILTER NOT EXISTS {{ GRAPH \
-                         <{CONTROL}> {{ ?g {} {} ; {} ?original }} GRAPH ?g \
-                         {{ ?s ?p ?o }} }} }} }}",
-                        attempt.version,
-                        term("data"),
-                        term("attempt"),
-                        attempt.id,
-                        term("original"),
-                        term("attempt"),
-                        term("original"),
-                        term("attempt"),
-                        term("original"),
-                        term("attempt"),
-                        attempt.id,
-                        term("original")
-                    );
-                    if let QueryResults::Boolean(true) = transaction
-                        .query(changed.as_str())
-                        .map_err(io::Error::other)?
+                    // A cold version has no old quad set to compare. Resolve
+                    // this indexed pointer before constructing a set
+                    // difference; leaving it as a SPARQL join can scan
+                    // unrelated versions.
+                    if let Some(previous) =
+                        attempt.previous_data(&transaction)?
                     {
-                        return Err(io::Error::other(
-                            "same input revision produced different \
-                             contribution content",
-                        ));
+                        if let QueryResults::Boolean(true) = transaction
+                            .query(&attempt.changed_query(&previous))
+                            .map_err(io::Error::other)?
+                        {
+                            return Err(io::Error::other(
+                                "same input revision produced different \
+                                 contribution content",
+                            ));
+                        }
                     }
                     let update = format!(
                         "DELETE {{ GRAPH <{CONTROL}> {{ {} {} ?old . {} {} {} \
@@ -241,6 +224,56 @@ impl Attempt {
                 Ok(())
             })
             .await
+    }
+
+    fn previous_data(
+        &self,
+        transaction: &Transaction<'_, '_>,
+    ) -> io::Result<Option<NamedNode>> {
+        let mut rows = transaction.quads_for_pattern(
+            Some(self.version.as_ref().into()),
+            Some(term("data").as_ref()),
+            None,
+            Some(NamedNode::new_unchecked(CONTROL).as_ref().into()),
+        );
+        let previous = rows.next().transpose()?.map(|quad| quad.object);
+        if rows.next().transpose()?.is_some() {
+            return Err(io::Error::other(
+                "version has conflicting data pointers",
+            ));
+        }
+        match previous {
+            None => Ok(None),
+            Some(oxrdf::Term::NamedNode(previous)) => Ok(Some(previous)),
+            Some(_) => {
+                Err(io::Error::other(
+                    "version data pointer must be an IRI",
+                ))
+            },
+        }
+    }
+
+    // Both attempts are constants so the immutable-version comparison cannot
+    // choose a join over every version or every physical graph in the store.
+    fn changed_query(&self, previous: &NamedNode) -> String {
+        format!(
+            "ASK {{ {{ GRAPH <{CONTROL}> {{ ?g {} {} ; {} ?original }} GRAPH \
+             ?g {{ ?s ?p ?o }} FILTER NOT EXISTS {{ GRAPH <{CONTROL}> {{ ?h \
+             {} {previous} ; {} ?original }} GRAPH ?h {{ ?s ?p ?o }} }} }} \
+             UNION {{ GRAPH <{CONTROL}> {{ ?h {} {previous} ; {} ?original }} \
+             GRAPH ?h {{ ?s ?p ?o }} FILTER NOT EXISTS {{ GRAPH <{CONTROL}> \
+             {{ ?g {} {} ; {} ?original }} GRAPH ?g {{ ?s ?p ?o }} }} }} }}",
+            term("attempt"),
+            self.id,
+            term("original"),
+            term("attempt"),
+            term("original"),
+            term("attempt"),
+            term("original"),
+            term("attempt"),
+            self.id,
+            term("original"),
+        )
     }
 
     /// Abort without replacing the active contribution, retaining failure
@@ -333,3 +366,7 @@ fn ensure_metadata_budget(size: usize) -> io::Result<()> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "attempt_tests.rs"]
+mod tests;
