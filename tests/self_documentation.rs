@@ -100,22 +100,32 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         Some(env!("GRAPHARCH_BUILD_DETAILS"))
     );
     assert!(home.contains("Overview"));
-    let home_sidebar = credit_document
-        .select(&scraper::Selector::parse(".site-navigation").unwrap())
-        .next()
-        .unwrap();
-    assert!(
-        !home_sidebar
-            .text()
-            .collect::<String>()
-            .contains("Collectors")
+    assert_eq!(
+        credit_document
+            .select(&scraper::Selector::parse(".site-navigation").unwrap())
+            .count(),
+        0,
+        "Overview is a standalone landing page, not a duplicated sidebar"
     );
-    assert!(!home_sidebar.text().collect::<String>().contains("Other"));
+    assert!(home.contains("section-landing"));
 
     let navigation_page =
         tokio::fs::read_to_string(site.join("usage/index.html")).await?;
     assert!(navigation_page.contains("features/targets/"));
     let document = scraper::Html::parse_document(&navigation_page);
+    assert_eq!(
+        document
+            .select(
+                &scraper::Selector::parse(
+                    ".site-navigation a[href='../overview/']"
+                )
+                .unwrap()
+            )
+            .count(),
+        1,
+        "The source-to-publications guide remains in Documentation"
+    );
+
     let goals = scraper::Selector::parse(
         ".site-navigation nav \
          details[data-id='urn:grapharch:docs:topic:other'] \

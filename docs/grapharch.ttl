@@ -102,5 +102,5 @@ doc:collectors-section a ga:NavigationEntry ; ga:order 3 ; ga:parentEntry doc:do
 doc:other-section a ga:NavigationEntry ; ga:order 4 ; ga:parentEntry doc:documentation-section ;
     ga:page <urn:grapharch:docs:topic:other> .
 
-doc:overview-guide a ga:NavigationEntry ; ga:order 1 ; ga:parentEntry doc:overview-section ;
+doc:overview-guide a ga:NavigationEntry ; ga:order 0 ; ga:parentEntry doc:documentation-section ;
     ga:page <urn:grapharch:docs:topic:overview> .
