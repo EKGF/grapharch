@@ -176,7 +176,8 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             .join(", ");
                         output.push_str(&format!(
                             "#ga-table(columns: ({widths}), align: \
-                             ({alignments}), "
+                             ({alignments}), header-row: {}, ",
+                            if table_subject.is_some() { 2 } else { 0 }
                         ));
                     },
                     Tag::TableHead => {

@@ -60,12 +60,12 @@
   #set text(size: if ga-overview { 14pt } else { 10.5pt })
   #it.body
 ]
-#let ga-table(columns: (), align: auto, has-header: true, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
+#let ga-table(columns: (), align: auto, has-header: true, header-row: 0, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
   #set text(size: 8.5pt)
   #set par(justify: false, leading: 0.55em, spacing: 0.4em)
   #table(columns: columns, align: align, inset: (x: 7pt, y: 6pt),
     stroke: if ga-specification { 0.4pt + ga-line } else { (x: none, y: 0.4pt + ga-line) },
-    fill: (x, y) => if has-header and y == 0 { ga-soft }, ..cells)
+    fill: (x, y) => if has-header and y == header-row { ga-soft }, ..cells)
 ]
 #let ga-callout(label, body, kind: "note") = {
   let colors = (

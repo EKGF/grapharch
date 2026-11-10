@@ -49,17 +49,18 @@ pub(super) fn subject_html(
     let identifier = super::markup::html_escape(&subject.identifier);
     let iri = super::markup::html_escape(&subject.iri);
     format!(
-        "<tr><td colspan=\"2\"><strong>Identifier:</strong> \
-         <code>{identifier}</code></td></tr><tr><td \
-         colspan=\"2\"><strong>IRI:</strong> <code>{iri}</code></td></tr>"
+        "<tr><td colspan=\"2\" \
+         style=\"text-align:center\"><code>{identifier}</code></td></\
+         tr><tr><td colspan=\"2\" \
+         style=\"text-align:center\"><code>{iri}</code></td></tr>"
     )
 }
 pub(super) fn subject_typst(
     subject: &crate::publication::table_subject::Subject,
 ) -> String {
     format!(
-        "table.cell(colspan: 2)[#strong[Identifier:] \
-         #raw({})],table.cell(colspan: 2)[#strong[IRI:] #raw({})],",
+        "table.cell(colspan: 2, align: center)[#raw({})],table.cell(colspan: \
+         2, align: center)[#raw({})],",
         super::markup::quote(&super::typst_markdown::table_text(
             &subject.identifier,
             true
@@ -89,8 +90,14 @@ mod tests {
         assert!(
             html.contains("ex:&lt;Party&gt;") && !html.contains("ex:<Party>")
         );
+        assert!(!html.contains("Identifier:") && !html.contains("IRI:"));
+        assert_eq!(html.matches("text-align:center").count(), 2);
         let typst = subject_typst(&subject);
-        assert!(typst.contains("table.cell(colspan: 2)"));
+        assert!(!typst.contains("Identifier:") && !typst.contains("IRI:"));
+        assert_eq!(typst.matches("align: center").count(), 2);
+        assert!(include_str!("typst/theme.typ").contains("y == header-row"));
+
+        assert!(typst.contains("table.cell(colspan: 2,"));
         assert!(
             typst.contains('\u{200b}'),
             "identity must retain table wrapping opportunities"

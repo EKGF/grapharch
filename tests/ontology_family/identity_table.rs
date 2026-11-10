@@ -32,7 +32,7 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
     let doc = scraper::Html::parse_document(&html);
     assert!(
         html.find("A party with authorization.").unwrap() <
-            html.find("Identifier:").unwrap()
+            html.find("<table class=\"rdf-properties\"").unwrap()
     );
     assert!(
         doc.select(&scraper::Selector::parse("h1,h2,h3,h4").unwrap())
@@ -51,12 +51,19 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
         .select(&scraper::Selector::parse("thead > tr").unwrap())
         .collect::<Vec<_>>();
     assert_eq!(rows.len(), 3);
-    for (row, label) in rows[..2].iter().zip(["Identifier:", "IRI:"]) {
+    for (row, value) in rows[..2]
+        .iter()
+        .zip(["ex:Party", "https://example.org/vocab/Party"])
+    {
         let cells = row
             .select(&scraper::Selector::parse("td[colspan='2']").unwrap())
             .collect::<Vec<_>>();
         assert_eq!(cells.len(), 1);
-        assert!(cells[0].text().collect::<String>().starts_with(label));
+        assert_eq!(cells[0].text().collect::<String>(), value);
+        assert_eq!(
+            cells[0].value().attr("style"),
+            Some("text-align:center")
+        );
     }
     let text = table.text().collect::<String>();
     assert!(text.contains("rdfs:label") && text.contains("skos:prefLabel"));
@@ -71,7 +78,19 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
     let typst =
         tokio::fs::read_to_string(publication.directory.join("main.typ"))
             .await?;
-    assert!(typst.contains("table.cell(colspan: 2)"));
+    assert!(typst.contains("table.cell(colspan: 2, align: center)"));
+    assert!(typst.contains("header-row: 2"));
+    assert!(!typst.contains("Identifier:") && !typst.contains("IRI:"));
+    if let Ok(review) = std::env::var("GRAPHARCH_TABLE_REVIEW") {
+        tokio::fs::create_dir_all(&review).await?;
+        for name in ["index.html", "main.typ", "document.pdf"] {
+            tokio::fs::copy(
+                publication.directory.join(name),
+                Path::new(&review).join(name),
+            )
+            .await?;
+        }
+    }
     assert!(
         tokio::fs::read(publication.directory.join("document.pdf"))
             .await?
