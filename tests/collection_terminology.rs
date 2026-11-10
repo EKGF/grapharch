@@ -40,7 +40,7 @@ async fn render(
 <urn:terms:profile> a ga:Profile; pub:publishesFamily <urn:terms:collection> .
 <urn:terms:collection> a gov:Family; rdfs:label "Example vocabularies" .
 {hint}
-<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer "{renderer}"; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
+<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer ga:{renderer}; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
 <urn:terms:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
 <https://example.org/vocab/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "example"; sh:namespace "https://example.org/vocab/"] .
 "##)).await?;
@@ -76,7 +76,8 @@ async fn render(
 #[tokio::test]
 async fn collection_hint_changes_overview_and_pdf_without_changing_semantics()
 -> Result<()> {
-    let (output, html) = render(Some("library"), "specification").await?;
+    let (output, html) =
+        render(Some("library"), "SpecificationRenderer").await?;
     assert!(html.contains("Library overview"));
     assert!(html.contains("in this library"));
     assert!(!html.contains("Family overview"));
@@ -97,8 +98,11 @@ async fn collection_hint_changes_overview_and_pdf_without_changing_semantics()
 #[tokio::test]
 async fn paginated_navigation_and_status_labels_follow_collection_term()
 -> Result<()> {
-    let (output, html) =
-        render(Some("ontology suite"), "specification-pages").await?;
+    let (output, html) = render(
+        Some("ontology suite"),
+        "SpecificationPagesRenderer",
+    )
+    .await?;
     assert!(html.contains("library-home"));
     assert!(html.contains("library-publication-details"));
     assert!(html.contains("ontology-card"));
@@ -183,7 +187,7 @@ async fn paginated_navigation_and_status_labels_follow_collection_term()
 
 #[tokio::test]
 async fn default_collection_term_remains_family() -> Result<()> {
-    let (_, html) = render(None, "specification-pages").await?;
+    let (_, html) = render(None, "SpecificationPagesRenderer").await?;
     assert!(html.contains("ontology-card"));
     assert!(html.contains("Family overview"));
     assert!(html.contains("in this family"));
@@ -192,7 +196,7 @@ async fn default_collection_term_remains_family() -> Result<()> {
 
 #[tokio::test]
 async fn bookshelf_search_uses_the_same_collection_hint() -> Result<()> {
-    let (output, html) = render(Some("library"), "bookshelf").await?;
+    let (output, html) = render(Some("library"), "BookshelfRenderer").await?;
     assert!(!html.contains("Family overview"));
     let search = tokio::fs::read_to_string(
         output.path().join("reference/search-index.json"),
@@ -206,7 +210,7 @@ async fn bookshelf_search_uses_the_same_collection_hint() -> Result<()> {
 #[tokio::test]
 async fn ontology_reference_explains_missing_definition_origin_after_restore()
 -> Result<()> {
-    let (output, html) = render(None, "specification").await?;
+    let (output, html) = render(None, "SpecificationRenderer").await?;
     assert!(html.contains("rdfs:isDefinedBy"));
     assert!(html.contains("Not declared in collected sources."));
     let typst =

@@ -42,7 +42,7 @@ async fn render(
 <urn:terms:profile> a ga:Profile; pub:publishesFamily <urn:terms:collection> .
 <urn:terms:collection> a gov:Family; rdfs:label "Example vocabularies" .
 {hint}
-<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer "{renderer}"; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
+<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer ga:{renderer}; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
 <urn:terms:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
 <https://example.org/zempty/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "empty"; sh:namespace "https://example.org/zempty/"] .
 <https://example.org/vocab/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "example"; sh:namespace "https://example.org/vocab/"] .
@@ -78,7 +78,11 @@ async fn render(
 
 #[tokio::test]
 async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
-    for renderer in ["specification", "specification-pages", "bookshelf"] {
+    for renderer in [
+        "SpecificationRenderer",
+        "SpecificationPagesRenderer",
+        "BookshelfRenderer",
+    ] {
         let (output, _) = render(None, renderer).await?;
         let root = output.path().join("reference");
         let mut files = tokio::fs::read_dir(&root).await?;
@@ -162,13 +166,15 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
                 }
             }
         }
-        if renderer == "bookshelf" {
+        if renderer == "BookshelfRenderer" {
             assert!(
                 empty_documents > 0,
                 "book without class diagrams has no note"
             );
         }
-        if renderer == "specification" || renderer == "bookshelf" {
+        if renderer == "SpecificationRenderer" ||
+            renderer == "BookshelfRenderer"
+        {
             assert!(documents > 0, "{renderer}: PDF note");
         }
     }
