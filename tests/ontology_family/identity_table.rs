@@ -83,7 +83,7 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
     assert!(!typst.contains("Identifier:") && !typst.contains("IRI:"));
     if let Ok(review) = std::env::var("GRAPHARCH_TABLE_REVIEW") {
         tokio::fs::create_dir_all(&review).await?;
-        for name in ["index.html", "main.typ", "document.pdf"] {
+        for name in ["index.html", "style.css", "main.typ", "document.pdf"] {
             tokio::fs::copy(
                 publication.directory.join(name),
                 Path::new(&review).join(name),
