@@ -788,8 +788,23 @@ ga:maxDepth a owl:DatatypeProperty ;
 ga:Renderer a owl:Class ;
     rdfs:label "Renderer"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A shared publication renderer definition, independent of any target's configured scope or presentation settings."@en ;
-    dct:description "A shared publication renderer definition, independent of any target's configured scope or presentation settings."@en .
+    skos:definition "A shared definition of a rendering implementation, independent of its configured uses."@en ;
+    dct:description "A shared definition of a rendering implementation, independent of its configured uses."@en .
+
+ga:PublicationRenderer a owl:Class ;
+    rdfs:subClassOf ga:Renderer ;
+    rdfs:label "Publication renderer"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A renderer that produces a whole publication from a resolved target plan."@en ;
+    dct:description "A renderer that produces a whole publication from a resolved target plan."@en .
+
+ga:FragmentRenderer a owl:Class ;
+    rdfs:subClassOf ga:Renderer ;
+    rdfs:label "Fragment renderer"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A renderer that produces an embedded part of a publication from retained content."@en ;
+    dct:description "A renderer that produces an embedded part of a publication from retained content."@en ;
+    skos:scopeNote "Fragment renderers are internal publication components, not whole-publication targets or independently configured runtime plugins."@en .
 
 ga:renderer a owl:ObjectProperty ;
     rdfs:label "Renderer"@en ;
@@ -797,7 +812,7 @@ ga:renderer a owl:ObjectProperty ;
     skos:definition "Links a target, plan, or publication job to its shared renderer definition."@en ;
     dct:description "Links a target, plan, or publication job to its shared renderer definition."@en ;
     rdfs:domain rdfs:Resource ; rdfs:range ga:Renderer ;
-    skos:scopeNote "The shipped catalogue defines the implemented renderer identities. Other definitions are semantically possible; a runtime rejects identities it does not implement."@en .
+    skos:scopeNote "The shipped catalogue defines publication and fragment renderer identities. Targets select publication renderers only. Other definitions are semantically possible; a runtime rejects identities it does not implement."@en .
 
 ga:destination a owl:DatatypeProperty ;
     rdfs:label "Output destination"@en ;

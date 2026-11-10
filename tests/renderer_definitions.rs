@@ -15,7 +15,8 @@ fn target(renderer: &str) -> Result<Target> {
         format!(
             "@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:t> \
              ga:scope <urn:s>; ga:profile <urn:p>; ga:destination \"site\"; \
-             ga:renderer {renderer}."
+             ga:renderer {renderer}. <urn:custom:WebsiteRenderer> a \
+             ga:Renderer."
         )
         .as_bytes(),
     )?;
@@ -50,6 +51,15 @@ fn literals_and_unknown_renderer_iris_are_rejected() {
     ] {
         assert!(target(renderer).is_err(), "accepted {renderer}");
     }
+}
+
+#[test]
+fn fragment_renderer_cannot_be_a_publication_target() {
+    let error = target("ga:OwlClassDiagramRenderer")
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("fragment renderer"), "{error}");
+    assert!(error.contains("publication target"), "{error}");
 }
 
 #[tokio::test]
@@ -110,6 +120,21 @@ async fn shared_definition_and_distinct_target_settings_survive_source_removal()
     restored.import(archive).await?;
     let view = RevisionView::new(restored.clone(), revision);
     assert!(view.has_type(&Renderer::Html.iri(), "Renderer").await?);
+    assert!(
+        view.has_type(&Renderer::Html.iri(), "PublicationRenderer")
+            .await?
+    );
+    assert!(
+        view.has_type(
+            &term("OwlClassDiagramRenderer"),
+            "FragmentRenderer"
+        )
+        .await?
+    );
+    assert!(
+        target("ga:OwlClassDiagramRenderer").is_err(),
+        "fragment renderers cannot be publication targets"
+    );
     let mut labels = view
         .objects_by(
             &Renderer::Html.iri(),

@@ -33,7 +33,7 @@ ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:preamble ; sh:nodeKind sh:IRI ; sh:class ga:Fragment ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:IRI ; sh:class ga:Renderer ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:IRI ; sh:class ga:PublicationRenderer ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;

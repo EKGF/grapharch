@@ -33,7 +33,10 @@ impl Renderer {
             "https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer" => Ok(Self::SpecificationPages),
             "https://ekgf.org/ontology/grapharch#BookshelfRenderer" => Ok(Self::Bookshelf),
             "https://ekgf.org/ontology/grapharch#TypstRenderer" => Ok(Self::Typst),
-            other => bail!("unsupported renderer definition {other}"),
+            "https://ekgf.org/ontology/grapharch#OwlClassDiagramRenderer" => bail!(
+                "fragment renderer {value} cannot be selected for a publication target"
+            ),
+            other => bail!("unsupported publication renderer definition {other}"),
         }
     }
 

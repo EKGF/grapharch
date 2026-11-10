@@ -14,7 +14,7 @@ graph; documentation generators interpret those sources. Renderers consume the
 selected content from a pinned graph revision, without rereading the original
 source files.
 
-## Choose a renderer
+## Publication renderers
 
 | Renderer | Useful for | Output |
 |---|---|---|
@@ -34,10 +34,20 @@ directories. Literal dispatch names are not accepted. A profile controls support
 and presentation hints. HTML and PDF are output formats: several renderers can
 produce them. An OMG-style specification does not itself imply OMG approval.
 
+## Fragment renderers
+
+Publication renderers produce complete outputs. Fragment renderers draw embedded
+parts of those outputs. Both have RDF identities under `ga:Renderer`, with
+`ga:PublicationRenderer` and `ga:FragmentRenderer` distinguishing their roles.
+
+`ga:OwlClassDiagramRenderer` is the shared UML diagram component. It draws retained
+semantic projections as SVG for HTML and Typst/PDF, with links adapted to the
+containing publication. It is selected internally when a publication contains a
+class diagram; it cannot be selected as a target's whole-publication renderer.
+These identities describe existing compiled components, not runtime plugin loading.
+
 A knowledge-graph export preserves collected content and publication plans for
-later rendering; it is not an additional renderer. Generated UML and authored
-PlantUML illustrations are retained content used within publications, rather than
-standalone website or PDF renderers.
+later rendering; it is not an additional renderer.
 
 See [websites and PDFs](../features/targets/README.md) for the shared capabilities
 and [publication families](../usage/publication-families.md) for multiple targets
