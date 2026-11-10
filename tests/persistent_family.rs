@@ -45,7 +45,7 @@ impl Fixture {
                 r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix gov:<https://ekgf.org/ontology/artifact-governance#> . @prefix pub:<https://ekgf.org/ontology/artifact-publication#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> . @prefix dct:<http://purl.org/dc/terms/> .
 <urn:project> a ga:Project;ga:target <urn:target> . <urn:scope> a ga:Scope . <urn:profile> a ga:Profile;pub:publishesFamily <urn:family> .
 <urn:family> a gov:Family;rdfs:label "Example family"@en . <https://example.org/core#> gov:inFamily <urn:family> . {members}
-<urn:target> a ga:Target;dct:title "Example reference";dct:description "A family reference.";rdfs:comment "A test draft.";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer "specification";ga:destination "specification";ga:publicationStatus "Draft";ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/spec/>;ga:latestVersion <https://example.org/spec/>;ga:license <https://creativecommons.org/publicdomain/zero/1.0/>;ga:publisher <urn:authority> .
+<urn:target> a ga:Target;dct:title "Example reference";dct:description "A family reference.";rdfs:comment "A test draft.";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>;ga:destination "specification";ga:publicationStatus "Draft";ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/spec/>;ga:latestVersion <https://example.org/spec/>;ga:license <https://creativecommons.org/publicdomain/zero/1.0/>;ga:publisher <urn:authority> .
 <urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;rdfs:label "Example Authority";ga:shortName "Example" ."#
             ),
         )?;
@@ -277,7 +277,7 @@ async fn site_cli_json_reports_the_actual_published_directory() -> Result<()> {
         r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix dct:<http://purl.org/dc/terms/> .
 <urn:site> a ga:Project;dct:title "Minimal docs";ga:scope <urn:scope>;ga:target <urn:website> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
-<urn:website> a ga:Target;dct:title "Minimal docs";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer "website";ga:destination "unusual/destination" ."#,
+<urn:website> a ga:Target;dct:title "Minimal docs";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "unusual/destination" ."#,
     )?;
     let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
         .args(["-vv", "publication", "build-site", "--source"])
@@ -743,8 +743,8 @@ async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
         &settings,
         std::fs::read_to_string(&settings)?
             .replace(
-                "ga:renderer \"specification\"",
-                "ga:renderer \"specification-pages\"",
+                "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+                "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer>",
             )
             .replace("Example reference", "An organisation's reference"),
     )?;
@@ -852,8 +852,8 @@ async fn paginated_family_cli_reports_no_pdf_in_json() -> Result<()> {
     std::fs::write(
         &settings,
         std::fs::read_to_string(&settings)?.replace(
-            "ga:renderer \"specification\"",
-            "ga:renderer \"specification-pages\"",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer>",
         ),
     )?;
     let output = tempfile::tempdir()?;
@@ -905,8 +905,8 @@ async fn paginated_routing_never_treats_literal_prose_as_an_html_link()
     std::fs::write(
         &settings,
         std::fs::read_to_string(&settings)?.replace(
-            "ga:renderer \"specification\"",
-            "ga:renderer \"specification-pages\"",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer>",
         ),
     )?;
     let built = f.build(Dataset::memory()?).await?;
@@ -926,8 +926,8 @@ fn bookshelf_fixture() -> Result<Fixture> {
     std::fs::write(
         &settings,
         std::fs::read_to_string(&settings)?.replace(
-            "ga:renderer \"specification\"",
-            "ga:renderer \"bookshelf\"",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#BookshelfRenderer>",
         ),
     )?;
     Ok(f)
@@ -1359,8 +1359,8 @@ async fn standalone_skos_scheme_can_be_a_bookshelf_book() -> Result<()> {
     tokio::fs::write(path, source).await?;
     let config = f.definitions.path().join("project.ttl");
     let definitions = tokio::fs::read_to_string(&config).await?.replace(
-        "ga:renderer \"specification\"",
-        "ga:renderer \"bookshelf\"",
+        "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+        "ga:renderer <https://ekgf.org/ontology/grapharch#BookshelfRenderer>",
     );
     tokio::fs::write(config, definitions).await?;
     let built = f.build(Dataset::memory()?).await?;

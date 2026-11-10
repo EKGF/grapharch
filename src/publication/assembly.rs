@@ -24,6 +24,7 @@ impl Assembler {
     /// Capture, validate, then promote only if inputs are still complete and
     /// unchanged.
     pub async fn assemble(&self, project: &str) -> Result<NamedNode> {
+        super::catalogue::retain(&self.dataset, project).await?;
         let snapshot = self.dataset.snapshot_for(project).await?;
         let view = RevisionView::new(self.dataset.clone(), snapshot.clone());
         ensure!(

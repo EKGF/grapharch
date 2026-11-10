@@ -242,12 +242,12 @@ impl BuildRequest {
         let (
             Term::NamedNode(project),
             Term::NamedNode(target),
-            Term::Literal(renderer),
+            Term::NamedNode(renderer),
         ) = (&row["project"], &row["target"], &row["renderer"])
         else {
             anyhow::bail!("invalid configured publication identities")
         };
-        if renderer.value() == "website" {
+        if super::Renderer::from_node(renderer)? == super::Renderer::Website {
             let built = super::website::collect(
                 root,
                 definitions,

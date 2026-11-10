@@ -79,8 +79,8 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
     tokio::fs::write(&config, format!(r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:validation:p> a ga:Project;ga:target <urn:validation:html>,<urn:validation:pdf>.
-<urn:validation:html> a ga:Target;ga:renderer "html";ga:destination "html";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
-<urn:validation:pdf> a ga:Target;ga:renderer "typst";ga:destination "pdf";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
+<urn:validation:html> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer>;ga:destination "html";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
+<urn:validation:pdf> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
 <urn:validation:s> a ga:Scope;ga:include <{class}>,<{shape}>.
 <urn:validation:f> a ga:Profile;ga:placement <urn:validation:a>,<urn:validation:b>.
 <urn:validation:a> a ga:Placement;ga:component <urn:validation:ca>;ga:order 0.

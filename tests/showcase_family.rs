@@ -50,7 +50,7 @@ fn configuration(
 <urn:example:profile> a ga:Profile; pub:publishesFamily <urn:example:family> .
 <urn:example:target> a ga:Target; dct:title "Remote family"; dct:description "A repository-backed example.";
  <http://www.w3.org/2000/01/rdf-schema#comment> "Documentation preview.";
- ga:scope <urn:example:scope>; ga:profile <urn:example:profile>; ga:renderer "specification"; ga:destination "specification";
+ ga:scope <urn:example:scope>; ga:profile <urn:example:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:destination "specification";
  ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>;
  ga:license <https://creativecommons.org/publicdomain/zero/1.0/>; ga:publicationStatus "Draft";
  ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>; ga:publisher <urn:example:authority> .

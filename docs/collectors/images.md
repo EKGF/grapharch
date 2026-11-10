@@ -70,7 +70,7 @@ explicit image job:
 @prefix ex: <urn:example:> .
 
 ex:project ga:collector ex:logo-source .
-ex:logo-source a ga:Collector ; ga:kind "image" ;
+ex:logo-source a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
     ga:source "assets/product.jpg" ; ga:sourcePath "assets/product.jpg" ;
     ga:asset ex:logo .
 ex:logo dct:title "Example product" .

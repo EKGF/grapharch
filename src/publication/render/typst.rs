@@ -184,7 +184,8 @@ pub(super) async fn begin_book(
             ));
         }
     }
-    let toc_depth = if plan.renderer == "bookshelf" {
+    let toc_depth = if plan.renderer == crate::publication::Renderer::Bookshelf
+    {
         match plan.source.optional(&plan.target, "pdfTocDepth").await? {
             None => 2,
             Some(oxrdf::Term::Literal(value))

@@ -119,8 +119,8 @@ maintaining a second RDF copy. Add a specialized source collector:
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 
 <urn:catalog> ga:collector <urn:catalog:use-cases> .
-<urn:catalog:use-cases> a ga:Collector ;
-    ga:kind "authored-use-cases" ;
+<urn:catalog:use-cases> a ga:CollectorUse ;
+    ga:collectorType ga:AuthoredUseCasesCollector ;
     ga:source "docs/use-case" .
 ```
 

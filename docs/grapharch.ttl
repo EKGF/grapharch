@@ -18,7 +18,7 @@
 doc:scope a ga:Scope .
 doc:website a ga:Target ; dct:title "Grapharch documentation" ;
     ga:scope doc:scope ; ga:profile doc:profile ;
-    ga:renderer "website" ; ga:destination "site" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
 doc:profile a ga:Profile ; ga:style "ekgf" ; ga:headerLink doc:header-specification .
 doc:header-specification dct:title "Specification" ; ga:url "spec/develop/" ; ga:order 1 .
 
@@ -28,7 +28,7 @@ doc:ontology-spec a ga:Target ;
     ga:subtitle "Vocabulary reference, model, and publication contract" ;
     ga:ontologySource "other/ontology/publication.ttl" ;
     ga:scope doc:ontology-scope ; ga:profile doc:ontology-profile ;
-    ga:renderer "specification" ; ga:destination "spec/develop" ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "spec/develop" ;
     ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ; ga:publicationStatus "Editor's Draft" ;
     ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ;
     ga:thisVersion <https://ekgf.github.io/grapharch/spec/develop/> ;
@@ -45,25 +45,25 @@ doc:ontology-profile a ga:Profile .
 
 # Explicit reference sources for the selected reused terms above.
 # Each build records the actual upstream commit or response digest in its KG.
-doc:governance-source a ga:Collector ;
-    ga:kind "git-rdf-file" ;
+doc:governance-source a ga:CollectorUse ;
+    ga:collectorType ga:GitRdfFileCollector ;
     ga:source "https://github.com/EKGF/ekg-ontologies.git" ;
     ga:sourcePath "ekgf-artifact-governance.ttl" ;
     ga:gitRef "HEAD" .
-doc:party-role-source a ga:Collector ;
-    ga:kind "rdf-url" ;
+doc:party-role-source a ga:CollectorUse ;
+    ga:collectorType ga:RdfUrlCollector ;
     ga:source "https://www.omg.org/spec/Commons/PartiesAndSituations/" ;
     ga:format "application/rdf+xml" .
-doc:role-composition-source a ga:Collector ;
-    ga:kind "rdf-url" ;
+doc:role-composition-source a ga:CollectorUse ;
+    ga:collectorType ga:RdfUrlCollector ;
     ga:source "https://www.omg.org/spec/Commons/RolesAndCompositions/" ;
     ga:format "application/rdf+xml" .
-doc:dublin-core-source a ga:Collector ;
-    ga:kind "rdf-url" ;
+doc:dublin-core-source a ga:CollectorUse ;
+    ga:collectorType ga:RdfUrlCollector ;
     ga:source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.rdf" ;
     ga:format "application/rdf+xml" .
-doc:provenance-source a ga:Collector ;
-    ga:kind "rdf-url" ;
+doc:provenance-source a ga:CollectorUse ;
+    ga:collectorType ga:RdfUrlCollector ;
     ga:source "https://www.w3.org/ns/prov-o.rdf" ;
     ga:format "application/rdf+xml" .
 <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Enterprise Knowledge Graph Forum" ;

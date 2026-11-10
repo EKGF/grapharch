@@ -63,7 +63,7 @@ ex:project ga:target ex:submission .
 ex:pdf ga:publicationStatus "Community Draft" .
 ex:submission a ga:Target ; dct:title "DPROD OMG submission preview" ;
     ga:subtitle "Prepared for review; not an approved OMG specification" ;
-    ga:scope ex:scope ; ga:profile ex:submission-profile ; ga:renderer "typst" ;
+    ga:scope ex:scope ; ga:profile ex:submission-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ;
     ga:destination "pdf/omg" ; ga:publisher ex:omg-authority ;
     ga:publicationStatus "Submission Preview" ;
     ga:publicationDate "2026-10-24"^^<http://www.w3.org/2001/XMLSchema#date> ;

@@ -24,7 +24,7 @@ const DEFINITIONS: &str = r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <https://example.org/vocab/> sh:declare [sh:prefix "ex" ; sh:namespace "https://example.org/vocab/"] .
 <urn:test:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; rdfs:label "Example Standards Council" ; ga:shortName "EX" .
 <urn:test:target> a ga:Target ; dct:title "Rich ontology reference" ; dct:description "A Markdown annotation test." ; rdfs:comment "Test preview." ;
- ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer "specification" ; ga:destination "specification" ;
+ ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "specification" ;
  ga:publisher <urn:test:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec/> ; ga:latestVersion <https://example.org/spec/> ."#;
 
 fn sources(root: &Path, rich: &str, extra: &str) -> Result<()> {

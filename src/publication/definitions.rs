@@ -24,15 +24,39 @@ pub enum Renderer {
 }
 
 impl Renderer {
-    pub(crate) fn parse(value: &str) -> Result<Self> {
-        match value {
-            "html" => Ok(Self::Html),
-            "website" => Ok(Self::Website),
-            "specification" => Ok(Self::Specification),
-            "specification-pages" => Ok(Self::SpecificationPages),
-            "bookshelf" => Ok(Self::Bookshelf),
-            "typst" => Ok(Self::Typst),
-            other => bail!("unsupported renderer {other}"),
+    /// Resolve a supported renderer definition by its exact RDF identity.
+    pub fn from_node(value: &NamedNode) -> Result<Self> {
+        match value.as_str() {
+            "https://ekgf.org/ontology/grapharch#HtmlRenderer" => Ok(Self::Html),
+            "https://ekgf.org/ontology/grapharch#WebsiteRenderer" => Ok(Self::Website),
+            "https://ekgf.org/ontology/grapharch#SpecificationRenderer" => Ok(Self::Specification),
+            "https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer" => Ok(Self::SpecificationPages),
+            "https://ekgf.org/ontology/grapharch#BookshelfRenderer" => Ok(Self::Bookshelf),
+            "https://ekgf.org/ontology/grapharch#TypstRenderer" => Ok(Self::Typst),
+            other => bail!("unsupported renderer definition {other}"),
+        }
+    }
+
+    /// Stable identity of this shared renderer definition.
+    pub fn iri(self) -> NamedNode {
+        term(match self {
+            Self::Html => "HtmlRenderer",
+            Self::Website => "WebsiteRenderer",
+            Self::Specification => "SpecificationRenderer",
+            Self::SpecificationPages => "SpecificationPagesRenderer",
+            Self::Bookshelf => "BookshelfRenderer",
+            Self::Typst => "TypstRenderer",
+        })
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Html => "html",
+            Self::Website => "website",
+            Self::Specification => "specification",
+            Self::SpecificationPages => "specification-pages",
+            Self::Bookshelf => "bookshelf",
+            Self::Typst => "typst",
         }
     }
 }
@@ -58,7 +82,7 @@ impl Target {
     pub fn read(store: &Store, id: NamedNode) -> Result<Self> {
         let scope = node(store, &id, "scope")?;
         let profile = node(store, &id, "profile")?;
-        let renderer = Renderer::parse(&text(store, &id, "renderer")?)?;
+        let renderer = Renderer::from_node(&node(store, &id, "renderer")?)?;
         let destination = PathBuf::from(text(store, &id, "destination")?);
         ensure!(
             !destination.as_os_str().is_empty(),

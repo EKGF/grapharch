@@ -184,10 +184,6 @@ impl Publisher {
     ) -> Result<PublishOutcome> {
         let _worker = self.workers.clone().acquire_owned().await?;
         let mut plan = Plan::read(self.dataset.clone(), handle).await?;
-        ensure!(
-            crate::publication::Renderer::parse(&plan.renderer).is_ok(),
-            "unsupported publication engine"
-        );
         let destination = files::prepare(&root, &plan).await?;
         let ticket = Ticket {
             session: self.session.clone(),
@@ -198,7 +194,7 @@ impl Publisher {
         };
         record::begin(&plan, &destination, &job, self.failure_mode).await?;
         let result = async {
-            if plan.renderer != "website" {
+            if plan.renderer != crate::publication::Renderer::Website {
                 plan.images = collected_images::Images::read(&plan).await?;
             }
             self.publish(&plan, destination, ticket, &job).await
@@ -243,17 +239,21 @@ impl Publisher {
         }
         let stage = Staging::new(&destination).await?;
         let result = async {
-            let image_files = if plan.renderer == "website" {
-                Vec::new()
-            } else {
-                plan.images.write(plan, &stage.path).await?
-            };
-            let website_files = if plan.renderer == "website" {
-                Some(website::write(plan, &stage.path).await?)
-            } else {
-                None
-            };
-            let page_files = if plan.renderer == "specification-pages" {
+            let image_files =
+                if plan.renderer == crate::publication::Renderer::Website {
+                    Vec::new()
+                } else {
+                    plan.images.write(plan, &stage.path).await?
+                };
+            let website_files =
+                if plan.renderer == crate::publication::Renderer::Website {
+                    Some(website::write(plan, &stage.path).await?)
+                } else {
+                    None
+                };
+            let page_files = if plan.renderer ==
+                crate::publication::Renderer::SpecificationPages
+            {
                 Some(
                     specification::pages::write(
                         plan,
@@ -265,21 +265,22 @@ impl Publisher {
             } else {
                 None
             };
-            let book_files = if plan.renderer == "bookshelf" {
-                Some(
-                    Box::pin(bookshelf::write(
-                        plan,
-                        &stage.path,
-                        &destination,
-                        self.failure_mode,
-                        self.book_executable.as_deref(),
-                        self.book_jobs,
-                    ))
-                    .await?,
-                )
-            } else {
-                None
-            };
+            let book_files =
+                if plan.renderer == crate::publication::Renderer::Bookshelf {
+                    Some(
+                        Box::pin(bookshelf::write(
+                            plan,
+                            &stage.path,
+                            &destination,
+                            self.failure_mode,
+                            self.book_executable.as_deref(),
+                            self.book_jobs,
+                        ))
+                        .await?,
+                    )
+                } else {
+                    None
+                };
             let diagnostics = if let Some((_, diagnostics)) = &book_files {
                 diagnostics.clone()
             } else if let Some((_, diagnostics)) = &page_files {
@@ -307,7 +308,9 @@ impl Publisher {
                             include_str!("diagrams.css")
                         ),
                         include_str!("provenance.css"),
-                        if plan.renderer == "bookshelf" {
+                        if plan.renderer ==
+                            crate::publication::Renderer::Bookshelf
+                        {
                             include_str!("bookshelf.css")
                         } else {
                             ""

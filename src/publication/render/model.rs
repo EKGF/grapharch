@@ -21,7 +21,7 @@ pub(super) struct Plan {
     pub revision:         NamedNode,
     pub scope:            NamedNode,
     pub profile:          NamedNode,
-    pub renderer:         String,
+    pub renderer:         crate::publication::Renderer,
     pub destination:      String,
     pub title:            String,
     link_index:           HashMap<NamedNode, String>,
@@ -118,12 +118,12 @@ impl Plan {
         let source = RevisionView::new(dataset.clone(), revision.clone());
         let scope = view.node(&handle.id, "scope").await?;
         let profile = view.node(&handle.id, "profile").await?;
-        let renderer = view.text(&handle.id, "renderer").await?;
+        let renderer = view.renderer(&handle.id).await?;
         let destination = view.text(&handle.id, "destination").await?;
         ensure!(
             source.node(&target, "scope").await? == scope &&
                 source.node(&target, "profile").await? == profile &&
-                source.text(&target, "renderer").await? == renderer &&
+                source.renderer(&target).await? == renderer &&
                 source.text(&target, "destination").await? == destination,
             "plan does not match its pinned target definition"
         );
@@ -153,7 +153,7 @@ impl Plan {
             super::abbreviations::Abbreviations::read(&plan).await?,
         );
         plan.provenance = super::provenance::Provenance::read(&plan).await?;
-        if plan.renderer != "website" {
+        if plan.renderer != crate::publication::Renderer::Website {
             plan.index_links().await?;
         }
         Ok(plan)
@@ -254,18 +254,19 @@ impl Plan {
     pub fn manifest(&self, job: &str) -> PublicationManifest {
         // Fixed document outputs; bounded retained image routes are appended
         // after their bytes are restored and verified.
-        let files = if self.renderer == "specification" {
-            vec![
-                "index.html".into(),
-                "style.css".into(),
-                "main.typ".into(),
-                "document.pdf".into(),
-            ]
-        } else if self.is_html() {
-            vec!["index.html".into(), "style.css".into()]
-        } else {
-            vec!["main.typ".into(), "document.pdf".into()]
-        };
+        let files =
+            if self.renderer == crate::publication::Renderer::Specification {
+                vec![
+                    "index.html".into(),
+                    "style.css".into(),
+                    "main.typ".into(),
+                    "document.pdf".into(),
+                ]
+            } else if self.is_html() {
+                vec!["index.html".into(), "style.css".into()]
+            } else {
+                vec!["main.typ".into(), "document.pdf".into()]
+            };
         PublicationManifest {
             version: 1,
             project: self.project.as_str().to_owned(),
@@ -275,7 +276,7 @@ impl Plan {
             plan_snapshot: self.handle.snapshot.as_str().to_owned(),
             scope: self.scope.as_str().to_owned(),
             profile: self.profile.as_str().to_owned(),
-            renderer: self.renderer.clone(),
+            renderer: self.renderer.as_str().to_owned(),
             job: job.into(),
             files,
             books: Vec::new(),

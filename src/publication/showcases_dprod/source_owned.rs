@@ -28,7 +28,7 @@ pub(super) async fn roots(view: &RevisionView) -> Result<Vec<ReferenceRoot>> {
             anyhow::bail!("publication target must be an IRI")
         };
         if !matches!(
-            view.text(target, "renderer").await?.as_str(),
+            view.renderer(target).await?.as_str(),
             "specification" | "typst"
         ) {
             continue;
@@ -173,7 +173,7 @@ pub(super) async fn legal_targets(view: &RevisionView) -> Result<Vec<String>> {
             anyhow::bail!("target must be an IRI")
         };
         if matches!(
-            view.text(target, "renderer").await?.as_str(),
+            view.renderer(target).await?.as_str(),
             "specification" | "typst"
         ) {
             let profile = view.node(target, "profile").await?;
@@ -232,10 +232,10 @@ mod tests {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix ex: <urn:dprod-showcase:> .
 ex:project ga:target ex:spec, ex:overview .
-ex:spec ga:renderer "specification"; ga:profile ex:spec-profile .
+ex:spec ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:profile ex:spec-profile .
 ex:spec-profile ga:placement ex:reference .
 ex:reference ga:sectionRole "reference"; ga:order 1 .
-ex:overview ga:renderer "typst"; ga:profile ex:overview-profile .
+ex:overview ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>; ga:profile ex:overview-profile .
 ex:overview-profile ga:style "overview" .
 "#,
         )

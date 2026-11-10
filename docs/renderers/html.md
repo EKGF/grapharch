@@ -20,7 +20,7 @@ One HTML document, its stylesheet, retained illustrations, and provenance. Use t
 Set the renderer on a publication target in your existing project configuration:
 
 ```turtle
-<urn:example:target> ga:renderer "html" .
+<urn:example:target> ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> .
 ```
 
 This is a target setting, not a complete project definition. The target also needs

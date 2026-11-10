@@ -12,7 +12,7 @@ const CONFIG: &str = r#"
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "Method"; ga:target <urn:target> .
 <urn:scope> a ga:Scope .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:profile> a ga:Profile; ga:style "ekgf"; ga:layout "documentation"; ga:navigation <urn:tabs>, <urn:sidebar> .
 <urn:tabs> a ga:Navigation; dct:title "Sections"; ga:navigationRegion "primary"; ga:navigationEntry <urn:start>, <urn:learn> .
 <urn:start> a ga:NavigationEntry; ga:page <urn:home>; ga:order 1; dct:title "Introduction" .

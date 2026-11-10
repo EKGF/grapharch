@@ -22,7 +22,7 @@ controls:
 
 ```turtle
 <urn:example:specification>
-    ga:renderer "bookshelf" ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#BookshelfRenderer> ;
     ga:destination "specification" ;
     ga:pdfWorkers 2 ;
     ga:pdfTocDepth 2 .

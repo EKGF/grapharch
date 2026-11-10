@@ -207,8 +207,8 @@ async fn omg_typst_target_retains_supplied_editor_and_version_metadata()
         format!(
             "{}\nex:profile ga:style \"omg\" .",
             include_str!("../examples/specification/project.ttl").replace(
-                "ga:renderer \"specification\"",
-                "ga:renderer \"typst\""
+                "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+                "ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>"
             )
         ),
     )

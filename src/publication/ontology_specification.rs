@@ -79,7 +79,7 @@ async fn build(
     let snapshot = dataset.snapshot_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     ensure!(
-        view.text(target, "renderer").await? == "specification",
+        view.renderer(target).await?.as_str() == "specification",
         "ontologySource requires a specification target"
     );
     let scope = view.node(target, "scope").await?;

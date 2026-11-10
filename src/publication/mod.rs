@@ -3,6 +3,7 @@
 mod anchor;
 pub mod assembly;
 mod badge;
+mod catalogue;
 pub mod cli;
 pub mod collect;
 mod collection;

@@ -109,12 +109,12 @@ impl Collector for W3cSpecificationFile {
             (
                 collector.clone(),
                 "type",
-                term("Collector").into(),
+                term("CollectorUse").into(),
             ),
             (
                 collector.clone(),
-                "kind",
-                lit("w3c-published-specification"),
+                "collectorType",
+                term("W3cPublishedSpecificationCollector").into(),
             ),
             (
                 collector.clone(),
@@ -147,7 +147,11 @@ impl Collector for W3cSpecificationFile {
             (target.clone(), "type", term("Target").into()),
             (target.clone(), "scope", scope.clone().into()),
             (target.clone(), "profile", profile.clone().into()),
-            (target.clone(), "renderer", lit("specification")),
+            (
+                target.clone(),
+                "renderer",
+                crate::publication::Renderer::Specification.iri().into(),
+            ),
             (
                 target.clone(),
                 "destination",

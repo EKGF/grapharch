@@ -39,7 +39,7 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     )
     .await?;
     let config = source.path().join("project.ttl");
-    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site". <urn:pdf> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer "typst";ga:destination "pdf". <urn:ps> a ga:Scope;ga:include <urn:evidence>. <urn:pf> a ga:Profile;ga:placement <urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:evidence>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:pdf> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf". <urn:ps> a ga:Scope;ga:include <urn:evidence>. <urn:pf> a ga:Profile;ga:placement <urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:evidence>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
     let (writer, worker) =

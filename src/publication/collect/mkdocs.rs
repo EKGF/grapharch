@@ -99,7 +99,11 @@ impl Collector for MkDocs {
             q(&self.target, "type", term("Target")),
             q(&self.target, "scope", scope.clone()),
             q(&self.target, "profile", profile.clone()),
-            q(&self.target, "renderer", lit("website")),
+            q(
+                &self.target,
+                "renderer",
+                crate::publication::Renderer::Website.iri(),
+            ),
             q(&self.target, "destination", lit("site")),
             q(&scope, "type", term("Scope")),
             q(&profile, "type", term("Profile")),
@@ -151,8 +155,12 @@ impl Collector for MkDocs {
             ]);
             for quad in [
                 q(&self.project, "collector", collector.clone()),
-                q(&collector, "type", term("Collector")),
-                q(&collector, "kind", lit("abbreviation-file")),
+                q(&collector, "type", term("CollectorUse")),
+                q(
+                    &collector,
+                    "collectorType",
+                    term("AbbreviationFileCollector"),
+                ),
                 q(&collector, "source", lit(&path)),
             ] {
                 stream.write(quad).await?;
@@ -237,11 +245,11 @@ impl Collector for MkDocs {
                 .as_str()]);
             for quad in [
                 q(&self.project, "collector", collector.clone()),
-                q(&collector, "type", term("Collector")),
+                q(&collector, "type", term("CollectorUse")),
                 q(
                     &collector,
-                    "kind",
-                    lit("documentation-navigation"),
+                    "collectorType",
+                    term("DocumentationNavigationCollector"),
                 ),
                 q(&collector, "source", lit(&config.docs)),
                 q(&collector, "navigationProfile", profile),

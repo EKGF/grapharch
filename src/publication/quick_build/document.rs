@@ -116,7 +116,7 @@ pub(super) async fn defaults(
         quad(
             target,
             "renderer",
-            Literal::new_simple_literal("website"),
+            crate::publication::Renderer::Website.iri(),
         ),
         quad(
             target,

@@ -27,7 +27,10 @@ source files.
 
 ## Renderer, style, and format
 
-`ga:renderer` chooses the publication mode. A profile controls supported styles
+`ga:renderer` links a target to a shared renderer definition IRI from the
+[renderer catalogue](../other/ontology/renderers.ttl). Multiple targets can refer
+to the same definition while selecting different scopes, profiles, and output
+directories. Literal dispatch names are not accepted. A profile controls supported styles
 and presentation hints. HTML and PDF are output formats: several renderers can
 produce them. An OMG-style specification does not itself imply OMG approval.
 

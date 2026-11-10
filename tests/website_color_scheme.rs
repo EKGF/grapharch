@@ -17,7 +17,7 @@ async fn community_color_scheme_is_shared_by_pages_and_reports_after_restore()
 @prefix ga: <https://ekgf.org/ontology/grapharch#> . @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "GraphArch"; ga:scope <urn:scope>; ga:target <urn:target>; ga:repository <https://github.com/EKGF/grapharch> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "{style}" .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:quality> dct:title "First title"@en, "Second title"@en .
 "#)).await?;
         tokio::fs::write(

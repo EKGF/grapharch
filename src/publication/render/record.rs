@@ -51,10 +51,7 @@ pub(super) async fn begin(
             term("artifactDirectory"),
             NamedNode::new(directory.as_str())?.into(),
         ),
-        (
-            term("renderer"),
-            Literal::new_simple_literal(&plan.renderer).into(),
-        ),
+        (term("renderer"), plan.renderer.iri().into()),
         (
             term("status"),
             Literal::new_simple_literal("rendering").into(),

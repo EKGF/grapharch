@@ -56,8 +56,8 @@ async fn check_navigation(with_index: bool) -> Result<()> {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "A documentation site"; ga:target <urn:target>; ga:collector <urn:pages> .
-<urn:pages> a ga:Collector; ga:kind "documentation-navigation"; ga:source "."; ga:navigationProfile <urn:profile> .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:pages> a ga:CollectorUse; ga:collectorType ga:DocumentationNavigationCollector; ga:source "."; ga:navigationProfile <urn:profile> .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:scope> a ga:Scope .
 <urn:profile> a ga:Profile; ga:layout "documentation" .
 "#).await?;
@@ -156,8 +156,8 @@ async fn excluded_generated_sources_do_not_enter_navigation_discovery()
     let config = source.path().join("project.ttl");
     tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:p> a ga:Project; ga:contentSource "docs"; ga:excludeSourcePath "generated"; ga:collector <urn:n>; ga:target <urn:t>.
-<urn:n> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:f>.
-<urn:t> a ga:Target; ga:scope <urn:s>; ga:profile <urn:f>; ga:renderer "website"; ga:destination "site".
+<urn:n> a ga:CollectorUse; ga:collectorType ga:DocumentationNavigationCollector; ga:source "docs"; ga:navigationProfile <urn:f>.
+<urn:t> a ga:Target; ga:scope <urn:s>; ga:profile <urn:f>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site".
 <urn:s> a ga:Scope. <urn:f> a ga:Profile; ga:layout "documentation"."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;

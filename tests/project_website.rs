@@ -18,7 +18,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
 <urn:project> a ga:Project; dct:title "Example project"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope .
 <urn:profile> a ga:Profile; ga:style "ekgf-project" .
-<urn:target> a ga:Target; dct:title "Project website"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; dct:title "Project website"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 "#).await?;
     tokio::fs::write(
         input.path().join("index.md"),
@@ -173,7 +173,7 @@ async fn unknown_panel_heading_fails_instead_of_silently_styling_another_section
 <urn:p> a ga:Project; dct:title "Project"; ga:scope <urn:s>; ga:target <urn:t> .
 <urn:s> a ga:Scope .
 <urn:profile> a ga:Profile; ga:style "ekgf-project" .
-<urn:t> a ga:Target; dct:title "Website"; ga:scope <urn:s>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:t> a ga:Target; dct:title "Website"; ga:scope <urn:s>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 "#).await?;
     tokio::fs::write(input.path().join("index.md"), "---\ntitle: Project\npermalink: /\ngrapharch:\n  subject: urn:home\n  panel_sections: [missing-heading]\n---\n# Project\n\n## Existing heading\n\nText.\n").await?;
     let collected =
@@ -230,7 +230,7 @@ async fn invalid_feature_card_hints_fail_publication() -> Result<()> {
 <urn:p> a ga:Project; dct:title "Project"; ga:scope <urn:s>; ga:target <urn:t> .
 <urn:s> a ga:Scope .
 <urn:profile> a ga:Profile; ga:style "ekgf-project" .
-<urn:t> a ga:Target; dct:title "Website"; ga:scope <urn:s>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:t> a ga:Target; dct:title "Website"; ga:scope <urn:s>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 "#).await?;
         tokio::fs::write(
             input.path().join("index.md"),

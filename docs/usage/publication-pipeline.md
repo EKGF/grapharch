@@ -133,7 +133,7 @@ without changing source contribution heads. A watcher and editor integration are
 still outstanding.
 
 For standards-style publication front matter and numbered navigation, use the
-[specification renderer](specification-renderer.md) with `ga:renderer "specification"`.
+[specification renderer](specification-renderer.md) with `ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>`.
 
 ## Export and restore
 

@@ -84,6 +84,16 @@ impl Field {
         Ok(())
     }
 
+    pub(crate) fn check_iri(&self, value: &NamedNode) -> Result<()> {
+        if self.name == "renderer" {
+            crate::publication::Renderer::from_node(value)?;
+        }
+        if self.name == "collectorType" {
+            crate::publication::collect::kind::CollectorKind::from_node(value)?;
+        }
+        Ok(())
+    }
+
     fn validate(&self, store: &Store, subject: &NamedNode) -> Result<()> {
         let mut count = 0;
         for object in objects(store, subject, self.name)? {
@@ -95,6 +105,7 @@ impl Field {
                 let Term::NamedNode(ref node) = object else {
                     bail!("{subject} {} must reference an IRI", self.name)
                 };
+                self.check_iri(node)?;
                 if let Some(class) = self.reference {
                     ensure!(
                         has_type(store, node, class)?,
@@ -120,7 +131,7 @@ impl Field {
 
 fn has_type(store: &Store, node: &NamedNode, class: &str) -> Result<bool> {
     if class == "Processor" &&
-        (has_type(store, node, "Collector")? ||
+        (has_type(store, node, "CollectorUse")? ||
             has_type(store, node, "Documentor")?)
     {
         return Ok(true);
@@ -154,23 +165,6 @@ pub fn validate(store: &Store) -> Result<()> {
             };
             for field in &fields {
                 field.validate(store, &subject)?;
-            }
-            if class == "Target" {
-                for quad in store.quads_for_pattern(
-                    Some(subject.as_ref().into()),
-                    Some(term("renderer").as_ref()),
-                    None,
-                    None,
-                ) {
-                    let Term::Literal(renderer) = quad?.object else {
-                        unreachable!()
-                    };
-                    ensure!(
-                        crate::publication::Renderer::parse(renderer.value())
-                            .is_ok(),
-                        "{subject} unsupported renderer {renderer}"
-                    );
-                }
             }
             if class == "Scope" {
                 validate_depth(store, &subject)?;
@@ -214,10 +208,10 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
         ("Project", vec![
             Field::many("scope", Some("Scope")),
             Field::many("target", Some("Target")),
-            Field::many("collector", Some("Collector")),
+            Field::many("collector", Some("CollectorUse")),
         ]),
-        ("Collector", vec![
-            Field::text("kind"),
+        ("CollectorUse", vec![
+            Field::one("collectorType", None),
             Field::text("source"),
         ]),
         ("Scope", vec![
@@ -229,7 +223,7 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
         ("Target", vec![
             Field::one("scope", Some("Scope")),
             Field::one("profile", Some("Profile")),
-            Field::text("renderer"),
+            Field::one("renderer", None),
             Field::text("destination"),
         ]),
         ("Profile", vec![Field::many(

@@ -94,7 +94,7 @@ async fn collected_navigation_separates_documentable_types_from_usage_without_li
 @prefix dct:<http://purl.org/dc/terms/> .
 <urn:catalogue:project> a ga:Project; dct:title "Grapharch";ga:scope <urn:catalogue:scope>;ga:target <urn:catalogue:website> .
 <urn:catalogue:scope> a ga:Scope . <urn:catalogue:profile> a ga:Profile .
-<urn:catalogue:website> a ga:Target;dct:title "Catalogue navigation";ga:scope <urn:catalogue:scope>;ga:profile <urn:catalogue:profile>;ga:renderer "website";ga:destination "site" .
+<urn:catalogue:website> a ga:Target;dct:title "Catalogue navigation";ga:scope <urn:catalogue:scope>;ga:profile <urn:catalogue:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site" .
 "#).await?;
     tokio::fs::write(
         source.path().join("index.md"),

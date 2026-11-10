@@ -20,7 +20,7 @@ A PDF compiled by the embedded Typst engine, with editable Typst source. An exte
 Set the renderer on a publication target in your existing project configuration:
 
 ```turtle
-<urn:example:target> ga:renderer "typst" .
+<urn:example:target> ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> .
 ```
 
 This is a target setting, not a complete project definition. The target also needs

@@ -45,13 +45,13 @@ settings:
 ex:project a ga:Project ; ga:target ex:spec, ex:site, ex:pdf .
 ex:spec a ga:Target ;
     ga:scope ex:reference-content ; ga:profile ex:spec-order ;
-    ga:renderer "specification" ; ga:destination "spec/develop" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "spec/develop" .
 ex:site a ga:Target ;
     ga:scope ex:guides-and-stories ; ga:profile ex:site-navigation ;
-    ga:renderer "website" ; ga:destination "companion" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "companion" .
 ex:pdf a ga:Target ;
     ga:scope ex:reference-content ; ga:profile ex:approval-document ;
-    ga:renderer "typst" ; ga:destination "documents/develop" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "documents/develop" .
 ```
 
 This snippet shows the target relationships; a complete project also declares

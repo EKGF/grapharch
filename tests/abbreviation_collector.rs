@@ -15,10 +15,10 @@ fn definitions(path: &str) -> String {
     format!(
         r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:p> a ga:Project;ga:contentSource "docs";ga:collector <urn:dictionary>;ga:target <urn:web>,<urn:pdf>.
-<urn:dictionary> a ga:Collector;ga:kind "abbreviation-file";ga:source {}.
-<urn:web> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site".
+<urn:dictionary> a ga:CollectorUse;ga:collectorType ga:AbbreviationFileCollector;ga:source {}.
+<urn:web> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site".
 <urn:s> a ga:Scope. <urn:f> a ga:Profile.
-<urn:pdf> a ga:Target;ga:scope <urn:pdfscope>;ga:profile <urn:pdfprofile>;ga:renderer "typst";ga:destination "pdf".
+<urn:pdf> a ga:Target;ga:scope <urn:pdfscope>;ga:profile <urn:pdfprofile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf".
 <urn:pdfscope> a ga:Scope;ga:include <urn:guide>. <urn:pdfprofile> a ga:Profile;ga:placement <urn:placement>.
 <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:guide>."#,
         Literal::new_simple_literal(path)

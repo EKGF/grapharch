@@ -1,6 +1,14 @@
 //! Explicit source dependencies, independent of document and renderer kinds.
 use {
-    super::{Collector, RdfFile, RdfUrl, SourceIdentity, collect_all, git},
+    super::{
+        Collector,
+        RdfFile,
+        RdfUrl,
+        SourceIdentity,
+        collect_all,
+        git,
+        kind::CollectorKind,
+    },
     crate::publication::{
         dataset::Dataset,
         view::RevisionView,
@@ -42,12 +50,14 @@ pub(crate) async fn collect(
             bail!("configured collector must be an IRI")
         };
         ensure!(
-            view.has_type(processor, "Collector").await?,
-            "configured source must be typed Collector"
+            view.has_type(processor, "CollectorUse").await?,
+            "configured source must be typed CollectorUse"
         );
-        let kind = view.text(processor, "kind").await?;
+        let kind = CollectorKind::from_node(
+            &view.node(processor, "collectorType").await?,
+        )?;
         let source = view.text(processor, "source").await?;
-        if kind == "authored-use-cases" {
+        if kind == CollectorKind::AuthoredUseCases {
             work.extend(
                 super::authored_use_cases::configured(
                     project, processor, &source, root, &view,
@@ -60,10 +70,10 @@ pub(crate) async fn collect(
             );
             continue;
         }
-        let collector: Arc<dyn Collector> = match kind.as_str() {
-            "abbreviation-file" => Arc::new(super::abbreviations::AbbreviationFile::configured(project, processor, &source, root).await?),
-            "repository-publications" => Arc::new(super::repository_publications::RepositoryPublications::configured(project, processor, &source, &view).await?),
-            "documentation-navigation" => {
+        let collector: Arc<dyn Collector> = match kind {
+            CollectorKind::AbbreviationFile => Arc::new(super::abbreviations::AbbreviationFile::configured(project, processor, &source, root).await?),
+            CollectorKind::RepositoryPublications => Arc::new(super::repository_publications::RepositoryPublications::configured(project, processor, &source, &view).await?),
+            CollectorKind::DocumentationNavigation => {
                 let relative = Path::new(&source);
                 ensure!(relative.components().all(|part| matches!(part, Component::Normal(_) | Component::CurDir)), "navigation source must be relative without traversal");
                 let path = tokio::fs::canonicalize(root.join(relative)).await?;
@@ -73,8 +83,8 @@ pub(crate) async fn collect(
                 let exclusions = crate::publication::website::discovery::exclusions(&content_root, &view, &project_id).await?;
                 Arc::new(super::pages_navigation::PagesNavigation { exclusions, project: project.into(), processor: processor.clone(), profile: view.node(processor, "navigationProfile").await?, root: path })
             },
-            "plantuml-file" => Arc::new(super::plantuml::PlantUmlFile::configured(project, processor, &source, root, &view).await?),
-            "rdf-file" => {
+            CollectorKind::PlantUmlFile => Arc::new(super::plantuml::PlantUmlFile::configured(project, processor, &source, root, &view).await?),
+            CollectorKind::RdfFile => {
                 let relative = Path::new(&source);
                 ensure!(
                     !source.is_empty() &&
@@ -94,7 +104,7 @@ pub(crate) async fn collect(
                 );
                 Arc::new(RdfFile::new(project, processor.as_str(), path)?)
             },
-            "rdf-url" => {
+            CollectorKind::RdfUrl => {
                 Arc::new(RdfUrl::new(
                     project,
                     processor.as_str(),
@@ -102,7 +112,7 @@ pub(crate) async fn collect(
                     &view.text(processor, "format").await?,
                 )?)
             },
-            "git-rdf-file" => {
+            CollectorKind::GitRdfFile => {
                 let path = view.text(processor, "sourcePath").await?;
                 let reference = view.text(processor, "gitRef").await?;
                 ensure!(
@@ -125,7 +135,7 @@ pub(crate) async fn collect(
                     reference,
                 })
             },
-            _ => bail!("unsupported configured source kind {kind}"),
+            _ => bail!("unsupported configured collectorType {kind:?}"),
         };
         work.push(collector);
         ensure!(

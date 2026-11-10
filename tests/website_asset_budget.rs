@@ -18,7 +18,7 @@ async fn fixture(count: usize) -> Result<tempfile::TempDir> {
 <urn:project> a ga:Project; dct:title "Asset publication"; ga:scope <urn:scope>; ga:target <urn:site> .
 <urn:scope> a ga:Scope .
 <urn:profile> a ga:Profile .
-<urn:site> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:site> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 "#,
     );
     // Bounded: reproduce both existing producers, up to 256 authored assets

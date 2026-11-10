@@ -19,8 +19,8 @@ classes from repository metadata.
 
 ```turtle
 <urn:example:project> ga:collector <urn:example:versions> .
-<urn:example:versions> a ga:Collector ;
-    ga:kind "repository-publications" ;
+<urn:example:versions> a ga:CollectorUse ;
+    ga:collectorType ga:RepositoryPublicationsCollector ;
     ga:source "https://github.com/example/project" ;
     ga:subject <urn:example:inventory> ;
     ga:publicationPath "project/spec/" ;

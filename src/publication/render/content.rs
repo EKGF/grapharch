@@ -150,11 +150,11 @@ pub(super) async fn write(
     stage: &Path,
     mode: crate::publication::diagnostics::FailureMode,
 ) -> Result<Vec<crate::publication::diagnostics::Diagnostic>> {
-    if plan.renderer == "typst" {
+    if plan.renderer == crate::publication::Renderer::Typst {
         write_typst(plan, stage, &plan.quality).await?;
         return Ok(plan.quality.clone());
     }
-    if plan.renderer == "specification" {
+    if plan.renderer == crate::publication::Renderer::Specification {
         return super::specification::write(plan, stage, mode).await;
     }
     let mut file = BufWriter::new(

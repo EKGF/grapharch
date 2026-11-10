@@ -1,0 +1,10 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+ga:HtmlRenderer a ga:Renderer ; rdfs:label "Single-document HTML"@en ; dct:description "One HTML document and stylesheet."@en .
+ga:WebsiteRenderer a ga:Renderer ; rdfs:label "Website"@en ; dct:description "A multipage static documentation website."@en .
+ga:SpecificationRenderer a ga:Renderer ; rdfs:label "Specification"@en ; dct:description "Standards-style HTML with a paired PDF."@en .
+ga:SpecificationPagesRenderer a ga:Renderer ; rdfs:label "Paginated specification"@en ; dct:description "Linked standards-reference HTML pages."@en .
+ga:BookshelfRenderer a ga:Renderer ; rdfs:label "Bookshelf"@en ; dct:description "Module books with individual HTML and PDF publications."@en .
+ga:TypstRenderer a ga:Renderer ; rdfs:label "PDF"@en ; dct:description "PDF and editable Typst source."@en .

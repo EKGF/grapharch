@@ -8,16 +8,16 @@
 ga:ProjectShape a sh:NodeShape ; sh:targetClass ga:Project ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ] ;
     sh:property [ sh:path ga:target ; sh:nodeKind sh:IRI ; sh:class ga:Target ] ;
-    sh:property [ sh:path ga:collector ; sh:nodeKind sh:IRI ; sh:class ga:Collector ] .
+    sh:property [ sh:path ga:collector ; sh:nodeKind sh:IRI ; sh:class ga:CollectorUse ] .
 
-ga:CollectorShape a sh:NodeShape ; sh:targetClass ga:Collector ; sh:nodeKind sh:IRI ;
+ga:CollectorUseShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:gitRef ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path ga:kind ; sh:hasValue "git-rdf-file" ] ] ]
+        [ sh:not [ sh:property [ sh:path ga:collectorType ; sh:hasValue ga:GitRdfFileCollector ] ] ]
         [ sh:property [ sh:path ga:gitRef ; sh:minCount 1 ] ;
           sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ]
     ) ;
-    sh:property [ sh:path ga:kind ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:collectorType ; sh:nodeKind sh:IRI ; sh:class ga:Collector ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
@@ -33,7 +33,7 @@ ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:preamble ; sh:nodeKind sh:IRI ; sh:class ga:Fragment ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("html" "website" "specification" "specification-pages" "bookshelf" "typst") ] ;
+    sh:property [ sh:path ga:renderer ; sh:nodeKind sh:IRI ; sh:class ga:Renderer ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
@@ -62,7 +62,7 @@ ga:FragmentShape a sh:NodeShape ; sh:targetClass ga:Fragment ; sh:nodeKind sh:IR
     sh:property [ sh:path ga:contribution ; sh:nodeKind sh:IRI ; sh:class ga:Contribution ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ContributionShape a sh:NodeShape ; sh:targetClass ga:Contribution ; sh:nodeKind sh:IRI ;
-    sh:property [ sh:path ga:processor ; sh:nodeKind sh:IRI ; sh:or ( [ sh:class ga:Collector ] [ sh:class ga:Documentor ] [ sh:class ga:Processor ] ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:processor ; sh:nodeKind sh:IRI ; sh:or ( [ sh:class ga:CollectorUse ] [ sh:class ga:Documentor ] [ sh:class ga:Processor ] ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:project ; sh:nodeKind sh:IRI ; sh:class ga:Project ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:revision ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] .
@@ -72,7 +72,7 @@ ga:ContributionShape a sh:NodeShape ; sh:targetClass ga:Contribution ; sh:nodeKi
 # HTTP(S) schemes, calendar dates, front-matter placement, and metadata budgets.
 ga:SpecificationTargetShape a sh:NodeShape ; sh:targetClass ga:Target ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path ga:renderer ; sh:in ("specification" "specification-pages" "bookshelf") ] ] ]
+        [ sh:not [ sh:property [ sh:path ga:renderer ; sh:in (ga:SpecificationRenderer ga:SpecificationPagesRenderer ga:BookshelfRenderer) ] ] ]
         [ sh:node ga:SpecificationMetadataShape ]
     ) .
 
@@ -260,9 +260,9 @@ ga:LocalDiagramRendererShape a sh:NodeShape ;
     sh:property [ sh:path ga:rendererExecutable ; sh:datatype xsd:string ;
         sh:in ( "plantuml" ) ; sh:minCount 1 ; sh:maxCount 1 ] .
 
-ga:PlantUmlCollectorShape a sh:NodeShape ; sh:targetClass ga:Collector ;
+ga:PlantUmlCollectorShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path ga:kind ; sh:hasValue "plantuml-file" ] ] ]
+        [ sh:not [ sh:property [ sh:path ga:collectorType ; sh:hasValue ga:PlantUmlFileCollector ] ] ]
         [ sh:property [ sh:path ga:rendererExecutable ; sh:hasValue "plantuml" ; sh:minCount 1 ; sh:maxCount 1 ] ;
           sh:property [ sh:path ga:destination ; sh:datatype xsd:string ; sh:pattern "^[^\\\\]+[.]svg$" ; sh:minCount 1 ; sh:maxCount 1 ] ]
     ) .

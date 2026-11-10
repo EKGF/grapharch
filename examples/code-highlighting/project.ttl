@@ -5,12 +5,12 @@
 
 ex:project a ga:Project ; dct:title "Code highlighting" ;
     ga:collector ex:collector ; ga:scope ex:scope ; ga:target ex:target .
-ex:collector a ga:Collector ; ga:kind "rdf-file" ; ga:source "project.ttl" .
+ex:collector a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:source "project.ttl" .
 ex:scope a ga:Scope ; ga:include ex:subject .
 ex:authored a ga:Contribution ; ga:processor ex:collector ; ga:project ex:project ;
     ga:source "project.ttl" ; ga:revision "code-highlighting-1" .
 ex:target a ga:Target ; dct:title "Practical code examples" ;
-    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer "specification" ;
+    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ;
     ga:destination "specification" ;
     ga:publisher ex:publisher ;
     ga:publicationStatus "Documentation Preview" ;

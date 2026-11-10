@@ -665,6 +665,7 @@ pub async fn run(
                 // bounded: standalone definitions are capped at 256 KiB, not a
                 // corpus.
                 store.load_from_reader(RdfFormat::Turtle, bytes.as_slice())?;
+                super::catalogue::load(&store)?;
                 validate(&store)
             })
             .await??;

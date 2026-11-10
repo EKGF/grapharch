@@ -15,6 +15,7 @@ mod hashing_reader;
 mod http_rdf;
 mod image;
 mod includes;
+pub(crate) mod kind;
 mod local_image;
 mod markdown_images;
 mod markdown_structure;

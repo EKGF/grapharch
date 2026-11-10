@@ -106,7 +106,7 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
 @prefix dct:<http://purl.org/dc/terms/> .
 <urn:collectors:project> a ga:Project; dct:title "Grapharch";ga:scope <urn:collectors:scope>;ga:target <urn:collectors:website> .
 <urn:collectors:scope> a ga:Scope . <urn:collectors:profile> a ga:Profile .
-<urn:collectors:website> a ga:Target;dct:title "Collectors";ga:scope <urn:collectors:scope>;ga:profile <urn:collectors:profile>;ga:renderer "website";ga:destination "site" .
+<urn:collectors:website> a ga:Target;dct:title "Collectors";ga:scope <urn:collectors:scope>;ga:profile <urn:collectors:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site" .
 "#).await?;
     tokio::fs::write(
         source.path().join("index.md"),

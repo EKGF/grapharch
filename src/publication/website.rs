@@ -294,7 +294,7 @@ pub(crate) async fn bind(
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     let target = NamedNode::new(target)?;
     ensure!(
-        view.text(&target, "renderer").await? == "website",
+        view.renderer(&target).await?.as_str() == "website",
         "build-site requires a website target"
     );
     let scope = view.node(&target, "scope").await?;
@@ -473,9 +473,9 @@ mod tests {
             &definitions,
             "@prefix ga: <https://ekgf.org/ontology/grapharch#> . \
              <urn:project> a ga:Project ; ga:target <urn:one>, <urn:two> . \
-             <urn:one> a ga:Target ; ga:renderer \"website\" ; ga:scope \
+             <urn:one> a ga:Target ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:scope \
              <urn:scope:one> ; ga:profile <urn:profile:one> ; ga:destination \
-             \"one\" . <urn:two> a ga:Target ; ga:renderer \"website\" ; \
+             \"one\" . <urn:two> a ga:Target ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; \
              ga:scope <urn:scope:two> ; ga:profile <urn:profile:two> ; \
              ga:destination \"two\" . <urn:scope:one> a ga:Scope . \
              <urn:scope:two> a ga:Scope . <urn:profile:one> a ga:Profile . \

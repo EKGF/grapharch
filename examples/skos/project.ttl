@@ -11,7 +11,7 @@
 <urn:skos:specification> a ga:Target;dct:title "Business data taxonomy";
  dct:description "A SKOS concept scheme, concepts, mappings, and an ordered collection, published from native RDF.";
  rdfs:comment "An illustrative documentation preview with fictional source data.";
- ga:scope <urn:skos:scope>;ga:profile <urn:skos:profile>;ga:renderer "specification";
+ ga:scope <urn:skos:scope>;ga:profile <urn:skos:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>;
  ga:destination "specification";ga:publicationStatus "Documentation Preview";
  ga:publicationDate "2026-10-30"^^<http://www.w3.org/2001/XMLSchema#date>;
  ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/skos/specification/>;

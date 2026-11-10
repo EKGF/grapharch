@@ -64,8 +64,8 @@ without discovering and documenting every vocabulary in that repository:
 
 <urn:example:docs> ga:collector <urn:example:governance-source> .
 
-<urn:example:governance-source> a ga:Collector ;
-    ga:kind "git-rdf-file" ;
+<urn:example:governance-source> a ga:CollectorUse ;
+    ga:collectorType ga:GitRdfFileCollector ;
     ga:source "https://github.com/EKGF/ekg-ontologies.git" ;
     ga:sourcePath "ekgf-artifact-governance.ttl" ;
     ga:gitRef "HEAD" .

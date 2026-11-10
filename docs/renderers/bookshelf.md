@@ -20,7 +20,7 @@ A catalogue of books with individual HTML specifications and PDFs. Book boundari
 Set the renderer on a publication target in your existing project configuration:
 
 ```turtle
-<urn:example:target> ga:renderer "bookshelf" .
+<urn:example:target> ga:renderer <https://ekgf.org/ontology/grapharch#BookshelfRenderer> .
 ```
 
 This is a target setting, not a complete project definition. The target also needs

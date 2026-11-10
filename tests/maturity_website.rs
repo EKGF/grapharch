@@ -63,11 +63,11 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
     tokio::fs::write(&config, r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:p> a ga:Project; ga:contentSource "docs"; ga:collector <urn:rdf>, <urn:nav>; ga:documentor <urn:maturity>, <urn:overview>; ga:target <urn:t>.
-<urn:nav> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:f>.
-<urn:rdf> a ga:Collector; ga:kind "rdf-file"; ga:source "model.ttl".
+<urn:nav> a ga:CollectorUse; ga:collectorType ga:DocumentationNavigationCollector; ga:source "docs"; ga:navigationProfile <urn:f>.
+<urn:rdf> a ga:CollectorUse; ga:collectorType ga:RdfFileCollector; ga:source "model.ttl".
 <urn:maturity> a ga:Documentor; ga:kind "maturity-model"; ga:source "fragments"; ga:route "pillar/"; ga:navigationProfile <urn:f>; ga:order 20.
 <urn:overview> a ga:Documentor; ga:kind "maturity-overview"; ga:route "intro/overview/"; ga:navigationProfile <urn:f>; ga:navigationParentPath "intro"; ga:order 5.
-<urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site".
+<urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site".
 <urn:s> a ga:Scope. <urn:f> a ga:Profile; ga:layout "documentation".
 "#).await?;
     let built =

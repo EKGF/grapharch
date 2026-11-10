@@ -25,6 +25,15 @@ impl RevisionView {
         Self { dataset, revision }
     }
 
+    /// Resolve the exact shared renderer definition selected by a target or
+    /// plan.
+    pub async fn renderer(
+        &self,
+        subject: &NamedNode,
+    ) -> Result<super::Renderer> {
+        super::Renderer::from_node(&self.node(subject, "renderer").await?)
+    }
+
     /// Stream distinct values for a normalized publication predicate.
     pub async fn objects(
         &self,
@@ -107,7 +116,7 @@ impl RevisionView {
             format!(
                 "VALUES ?class {{ {} {} {} }}",
                 term("Processor"),
-                term("Collector"),
+                term("CollectorUse"),
                 term("Documentor")
             )
         } else if class == "Authority" {
@@ -159,6 +168,7 @@ impl RevisionView {
                             let Term::NamedNode(node) = value else {
                                 bail!("{subject} {} must be an IRI", field.name)
                             };
+                            field.check_iri(node)?;
                             if let Some(reference) = field.reference {
                                 ensure!(
                                     self.has_type(node, reference).await?,
@@ -182,10 +192,7 @@ impl RevisionView {
                 }
                 if class == "Target" {
                     ensure!(
-                        crate::publication::Renderer::parse(
-                            &self.text(subject, "renderer").await?
-                        )
-                        .is_ok(),
+                        self.renderer(subject).await.is_ok(),
                         "{subject} unsupported renderer"
                     );
                     ensure!(

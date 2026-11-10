@@ -30,7 +30,7 @@ code jobs. A job identifies the file, its subject, its fragment, and its format:
 @prefix ex: <urn:example:> .
 
 ex:project ga:collector ex:query-example-source .
-ex:query-example-source a ga:Collector ; ga:kind "code" ;
+ex:query-example-source a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ;
     ga:source "examples/products.rq" ; ga:sourcePath "examples/products.rq" ;
     ga:fragment ex:query-example ; ga:subject ex:product-query ;
     ga:format "application/sparql-query" .

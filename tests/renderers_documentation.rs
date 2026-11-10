@@ -26,7 +26,18 @@ async fn renderer_catalogue_matches_implemented_modes_and_links() -> Result<()>
         let (metadata, body) = frontmatter::parse(&source)?;
         assert!(metadata.contains("parent: Renderers"));
         assert!(metadata.contains(&format!("permalink: /renderers/{file}/")));
-        assert!(body.contains(&format!("ga:renderer \"{mode}\"")));
+        let name = match mode {
+            "website" => "Website",
+            "specification" => "Specification",
+            "specification-pages" => "SpecificationPages",
+            "bookshelf" => "Bookshelf",
+            "typst" => "Typst",
+            "html" => "Html",
+            _ => unreachable!(),
+        };
+        assert!(body.contains(&format!(
+            "ga:renderer <https://ekgf.org/ontology/grapharch#{name}Renderer>"
+        )));
         for event in Parser::new(body) {
             if let Event::Start(Tag::Link { dest_url, .. }) = event {
                 let path = dest_url.split('#').next().unwrap();

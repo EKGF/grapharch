@@ -14,7 +14,7 @@ ex:family a gov:Family; rdfs:label "OMG Commons Ontology Library"; ga:collection
 ex:specification a ga:Target; dct:title "OMG Commons Ontology Library";
     dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units.";
     rdfs:comment "An unofficial GraphArch documentation preview of the ontology documents published by OMG. This generated publication is not an approved OMG specification. Source annotations and licenses are preserved; external imports are not fetched and no reasoning is performed. Each build records the source URLs and content digests in its documentation graph.";
-    ga:scope ex:scope; ga:profile ex:profile; ga:renderer "specification-pages"; ga:destination "specification";
+    ga:scope ex:scope; ga:profile ex:profile; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer>; ga:destination "specification";
     ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
     ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>;
     ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/commons/specification/>; ga:latestVersion <https://www.omg.org/spec/Commons>;
@@ -22,7 +22,7 @@ ex:specification a ga:Target; dct:title "OMG Commons Ontology Library";
 ex:pdf a ga:Target; dct:title "OMG Commons Ontology Library";
     dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units.";
     rdfs:comment "An unofficial GraphArch documentation preview of the ontology documents published by OMG. This generated publication is not an approved OMG specification. Source annotations and licenses are preserved; external imports are not fetched and no reasoning is performed. Each build records the source URLs and content digests in its documentation graph.";
-    ga:scope ex:scope; ga:profile ex:profile; ga:renderer "specification"; ga:destination "pdf";
+    ga:scope ex:scope; ga:profile ex:profile; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:destination "pdf";
     ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
     ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>;
     ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/commons/specification/>; ga:latestVersion <https://www.omg.org/spec/Commons>;

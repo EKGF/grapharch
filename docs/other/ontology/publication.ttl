@@ -46,11 +46,24 @@ ga:Project a owl:Class ;
     skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:manual> a ga:Project ;\n    ga:target <urn:manual:web> ."@en .
 
 ga:Collector a owl:Class ;
-    rdfs:label "Source collector"@en ;
+    rdfs:label "Collector definition"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A specialized processor that reads one supported kind of native source, recognizes its documentation hints, and contributes normalized RDF with source provenance."@en ;
-    dct:description "A specialized processor that reads one supported kind of native source, recognizes its documentation hints, and contributes normalized RDF with source provenance."@en ;
+    skos:definition "A reusable definition of a source collection capability, independent of any configured source."@en ;
+    dct:description "A reusable definition of a source collection capability, independent of any configured source."@en .
+
+ga:CollectorUse a owl:Class ;
+    rdfs:label "Configured collector use"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A source-bound use of a shared collector definition with its own input and supported settings."@en ;
+    dct:description "A source-bound use of a shared collector definition with its own input and supported settings."@en ;
     rdfs:subClassOf ga:Processor .
+
+ga:collectorType a owl:ObjectProperty ;
+    rdfs:label "Collector definition"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a configured collector use to its shared collection capability definition."@en ;
+    dct:description "Links a configured collector use to its shared collection capability definition."@en ;
+    rdfs:domain ga:CollectorUse ; rdfs:range ga:Collector .
 
 ga:Scope a owl:Class ;
     rdfs:label "Documentation scope"@en ;
@@ -65,7 +78,7 @@ ga:Target a owl:Class ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "A named publication configuration binding one scope, one presentation profile, a renderer, and a relative output destination."@en ;
     dct:description "A named publication configuration binding one scope, one presentation profile, a renderer, and a relative output destination."@en ;
-    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:manual:web> a ga:Target ;\n    ga:scope <urn:scope> ;\n    ga:profile <urn:reader> ;\n    ga:renderer \"html\" ;\n    ga:destination \"reader\" ."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:manual:web> a ga:Target ;\n    ga:scope <urn:scope> ;\n    ga:profile <urn:reader> ;\n    ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ;\n    ga:destination \"reader\" ."@en ;
     skos:scopeNote "A project can define separate specification, companion-website, and document targets with different scopes and profiles. Targets are publications, not merely alternative styling choices. Plans for a publication family can share one assembled input revision while retaining independent placement and execution records."@en .
 
 ga:Profile a owl:Class ;
@@ -258,7 +271,7 @@ ga:collector a owl:ObjectProperty ;
     dct:description "Associates a project with a configured collector, or a contribution attempt with the processor executing its stage."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range ga:Processor ;
-    skos:scopeNote "Project declarations use collector instances. Internal attempt metadata also uses this property for documentors and other processors; its range is therefore ga:Processor rather than ga:Collector."@en .
+    skos:scopeNote "Project declarations use configured CollectorUse instances. Internal attempt metadata also uses this property for documentors and other processors; its range is therefore ga:Processor rather than only ga:CollectorUse."@en .
 
 ga:include a owl:ObjectProperty ;
     rdfs:label "Included scope seed"@en ;
@@ -759,9 +772,9 @@ ga:gitRef a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
     dct:description "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
-    rdfs:domain ga:Collector ;
+    rdfs:domain ga:CollectorUse ;
     rdfs:range xsd:string ;
-    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:governance-source> a ga:Collector ;\n    ga:kind \"git-rdf-file\" ;\n    ga:source \"https://github.com/EKGF/ekg-ontologies.git\" ;\n    ga:sourcePath \"ekgf-artifact-governance.ttl\" ;\n    ga:gitRef \"HEAD\" ."@en .
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:governance-source> a ga:CollectorUse ;\n    ga:collectorType ga:GitRdfFileCollector ;\n    ga:source \"https://github.com/EKGF/ekg-ontologies.git\" ;\n    ga:sourcePath \"ekgf-artifact-governance.ttl\" ;\n    ga:gitRef \"HEAD\" ."@en .
 
 ga:maxDepth a owl:DatatypeProperty ;
     rdfs:label "Maximum traversal depth"@en ;
@@ -772,21 +785,26 @@ ga:maxDepth a owl:DatatypeProperty ;
     rdfs:range xsd:integer ;
     skos:scopeNote "The current implementation accepts integers from 0 through 4294967295 and requires this property when ga:traverse is present."@en .
 
-ga:renderer a owl:DatatypeProperty ;
-    rdfs:label "Renderer identifier"@en ;
+ga:Renderer a owl:Class ;
+    rdfs:label "Renderer"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Records the renderer dispatch identifier selected for a target or recorded by a publication job."@en ;
-    dct:description "Records the renderer dispatch identifier selected for a target or recorded by a publication job."@en ;
-    rdfs:domain rdfs:Resource ;
-    rdfs:range xsd:string ;
-    skos:scopeNote "Current dispatch values are html, website, specification, specification-pages, bookshelf, and typst. These are implementation identifiers rather than a closed OWL enumeration of all possible renderers."@en .
+    skos:definition "A shared publication renderer definition, independent of any target's configured scope or presentation settings."@en ;
+    dct:description "A shared publication renderer definition, independent of any target's configured scope or presentation settings."@en .
+
+ga:renderer a owl:ObjectProperty ;
+    rdfs:label "Renderer"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a target, plan, or publication job to its shared renderer definition."@en ;
+    dct:description "Links a target, plan, or publication job to its shared renderer definition."@en ;
+    rdfs:domain rdfs:Resource ; rdfs:range ga:Renderer ;
+    skos:scopeNote "The shipped catalogue defines the implemented renderer identities. Other definitions are semantically possible; a runtime rejects identities it does not implement."@en .
 
 ga:destination a owl:DatatypeProperty ;
     rdfs:label "Output destination"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Specifies a safe relative publication directory for a target or plan, or a project-relative generated asset path declared by a collector."@en ;
     dct:description "Specifies a safe relative publication directory for a target or plan, or a project-relative generated asset path declared by a collector."@en ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Target ga:Plan ga:Collector ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Target ga:Plan ga:CollectorUse ) ] ;
     rdfs:range xsd:string .
 
 ga:order a owl:DatatypeProperty ;
@@ -1416,14 +1434,14 @@ ga:publicationPath a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     dct:description "Relative directory URL containing a specification in each repository deployment."@en ;
     skos:definition "Relative directory URL containing a specification in each repository deployment."@en ;
-    rdfs:domain ga:Collector ; rdfs:range xsd:string .
+    rdfs:domain ga:CollectorUse ; rdfs:range xsd:string .
 
 ga:unlistedBranchPrefix a owl:DatatypeProperty ;
     rdfs:label "unlisted branch prefix"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     dct:description "A repository branch prefix retained for routing but omitted from the advertised publication list."@en ;
     skos:definition "A repository branch prefix retained for routing but omitted from the advertised publication list."@en ;
-    rdfs:domain ga:Collector ; rdfs:range xsd:string .
+    rdfs:domain ga:CollectorUse ; rdfs:range xsd:string .
 
 
 ga:panelSection a owl:DatatypeProperty ;
@@ -1527,7 +1545,7 @@ ga:navigationProfile a owl:ObjectProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Identifies the publication profile receiving navigation hints normalized by a configured source collector or model documentor."@en ;
     dct:description "Identifies the publication profile receiving navigation hints normalized by a configured source collector or model documentor."@en ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Collector ga:Documentor ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:Documentor ) ] ;
     rdfs:range ga:Profile .
 
 

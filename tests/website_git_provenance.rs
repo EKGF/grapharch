@@ -28,7 +28,7 @@ async fn fixture(root: &Path) -> Result<()> {
 @prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix dct:<http://purl.org/dc/terms/> .
 <urn:site:project> a ga:Project;dct:title "Example documentation";ga:scope <urn:site:scope>;ga:target <urn:site:website> .
 <urn:site:scope> a ga:Scope . <urn:site:profile> a ga:Profile .
-<urn:site:website> a ga:Target;dct:title "Documentation";ga:scope <urn:site:scope>;ga:profile <urn:site:profile>;ga:renderer "website";ga:destination "site" .
+<urn:site:website> a ga:Target;dct:title "Documentation";ga:scope <urn:site:scope>;ga:profile <urn:site:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site" .
 "#).await?;
     tokio::fs::write(
         root.join("docs/index.md"),

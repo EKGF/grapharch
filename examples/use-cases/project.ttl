@@ -4,6 +4,6 @@
 <urn:use-cases:scope> a ga:Scope .
 <urn:use-cases:profile> a ga:Profile;ga:style "reader" .
 <urn:use-cases:website> a ga:Target;dct:title "Customer insight: use cases and reusable capabilities";
- ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer "html";ga:destination "website" .
+ ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer>;ga:destination "website" .
 <urn:use-cases:pdf> a ga:Target;dct:title "EKGF use-case tree: review document";
- ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer "typst";ga:destination "review" .
+ ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "review" .

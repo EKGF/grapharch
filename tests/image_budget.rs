@@ -46,8 +46,8 @@ async fn photographic_size_png_survives_chunked_collection_and_restored_render()
     tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:photo:project> a ga:Project; ga:target <urn:photo:site>, <urn:photo:pdf> .
 <urn:photo:scope> a ga:Scope . <urn:photo:profile> a ga:Profile; ga:style "reader" .
-<urn:photo:site> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer "website"; ga:destination "site" .
-<urn:photo:pdf> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer "typst"; ga:destination "review" ."#).await?;
+<urn:photo:site> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
+<urn:photo:pdf> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>; ga:destination "review" ."#).await?;
     let collected = website::collect(
         source.path(),
         &definitions,

@@ -17,7 +17,7 @@ async fn ekgf_header_uses_community_row_and_source_owned_project_links()
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "GraphArch"; ga:scope <urn:scope>; ga:target <urn:target>; ga:repository <https://github.com/EKGF/grapharch> .
 <urn:scope> a ga:Scope .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:profile> a ga:Profile; ga:style "ekgf"; ga:headerLink <urn:spec>, <urn:guide> .
 <urn:spec> dct:title "Specification"; ga:url "spec/develop/"; ga:order 2 .
 <urn:guide> dct:title "Get started"; ga:url "https://example.org/guide/"; ga:order 1 .
@@ -120,7 +120,7 @@ async fn project_header_rejects_missing_titles_and_unsafe_urls() -> Result<()> {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> . @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "Header"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "ekgf"; ga:headerLink <urn:link> .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:link> {entry} .
 "#)).await?;
         tokio::fs::write(

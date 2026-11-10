@@ -114,8 +114,8 @@ async fn two_regular_markdown_pages_publish_shared_recorded_image_from_restored_
         r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix dct:<http://purl.org/dc/terms/> .
 <urn:test:project> a ga:Project ; dct:title "Recorded Markdown sources" ; ga:target <urn:test:site>, <urn:test:pdf> .
 <urn:test:scope> a ga:Scope . <urn:test:profile> a ga:Profile ; ga:style "reader" .
-<urn:test:site> a ga:Target ; dct:title "Recorded Markdown website" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer "website" ; ga:destination "site" .
-<urn:test:pdf> a ga:Target ; dct:title "Recorded Markdown review" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer "typst" ; ga:destination "review" .
+<urn:test:site> a ga:Target ; dct:title "Recorded Markdown website" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
+<urn:test:pdf> a ga:Target ; dct:title "Recorded Markdown review" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
 "#,
     )?;
     for (name, route) in [("Home", "/"), ("Second", "/second/")] {

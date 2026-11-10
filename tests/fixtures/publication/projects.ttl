@@ -4,17 +4,17 @@
 
 ex:ontology-project a ga:Project ; ga:scope ex:family ;
     ga:target ex:spec, ex:reader, ex:pdf ; ga:collector ex:markdown .
-ex:markdown a ga:Collector ; ga:kind "markdown-file" ; ga:source "narrative.md" .
+ex:markdown a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:source "narrative.md" .
 ex:family a ga:Scope ; ga:include ex:ontology-a, ex:ontology-b ;
     ga:exclude ex:internal ; ga:compose ex:shared ;
     ga:traverse ex:defines ; ga:maxDepth 2 .
 ex:shared a ga:Scope ; ga:include ex:shared-term .
 ex:spec a ga:Target ; ga:scope ex:family ; ga:profile ex:spec-profile ;
-    ga:renderer "html" ; ga:destination "build/spec" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "build/spec" .
 ex:reader a ga:Target ; ga:scope ex:shared ; ga:profile ex:reader-profile ;
-    ga:renderer "html" ; ga:destination "build/reader" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "build/reader" .
 ex:pdf a ga:Target ; ga:scope ex:family ; ga:profile ex:pdf-profile ;
-    ga:renderer "typst" ; ga:destination "build/pdf" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "build/pdf" .
 ex:spec-profile a ga:Profile ; ga:placement ex:spec-intro .
 ex:reader-profile a ga:Profile ; ga:placement ex:reader-intro .
 ex:pdf-profile a ga:Profile ; ga:placement ex:pdf-intro .
@@ -37,10 +37,10 @@ ex:use-cases a ga:Scope ; ga:include ex:root-use-case ; ga:traverse ex:child ; g
 ex:root-use-case ex:child ex:child-use-case .
 ex:child-use-case ex:child ex:root-use-case .
 ex:use-case-web a ga:Target ; ga:scope ex:use-cases ; ga:profile ex:empty-profile ;
-    ga:renderer "html" ; ga:destination "build/use-cases" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "build/use-cases" .
 ex:empty-profile a ga:Profile .
 
 ex:portfolio-project a ga:Project ; ga:scope ex:portfolio ; ga:target ex:portfolio-pdf .
 ex:portfolio a ga:Scope ; ga:include ex:fund-a, ex:fund-b ; ga:exclude ex:fund-b .
 ex:portfolio-pdf a ga:Target ; ga:scope ex:portfolio ; ga:profile ex:empty-profile ;
-    ga:renderer "typst" ; ga:destination "build/portfolio" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "build/portfolio" .

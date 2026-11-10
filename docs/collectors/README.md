@@ -72,3 +72,23 @@ Collector additions can be proposed through pull requests following the
 [contribution guide](../other/contribute/README.md) and the extension contract
 above. Include source and provenance handling, bounded-input regression tests,
 and a source-free rendering acceptance example.
+
+## Collector definitions and configured uses
+
+Collector definitions have canonical RDF identities, such as
+`ga:RdfFileCollector`, and are instances of `ga:Collector`. A source-bound
+configuration is a separate `ga:CollectorUse`, linked through `ga:collectorType`:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:my-project> ga:collector <urn:my-source> .
+<urn:my-source> a ga:CollectorUse ;
+    ga:collectorType ga:RdfFileCollector ;
+    ga:source "ontology.ttl" .
+```
+
+Several uses can select the same definition while retaining different sources,
+configuration, and provenance. The selector must be a supported canonical IRI;
+string selectors and unknown collector identities fail validation. A configured
+use selects an existing adapter; declaring a new RDF individual does not install
+an executable adapter.

@@ -286,8 +286,8 @@ async fn retained_image_publications_can_be_replaced_but_unowned_nested_files_ar
             "Retained badge",
         )
         .replace(
-            "ga:renderer \"specification\"",
-            &format!("ga:renderer \"{renderer}\""),
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+            &format!("ga:renderer <https://ekgf.org/ontology/grapharch#{}>", if renderer == "typst" { "TypstRenderer" } else { "HtmlRenderer" }),
         );
         std::fs::write(&path, content)?;
         let (dataset, plans) = showcases::specification(&path).await?;

@@ -5,12 +5,12 @@
 
 ex:project a ga:Project ; dct:title "Example Standards Group" ;
     ga:collector ex:collector ; ga:scope ex:scope ; ga:target ex:target .
-ex:collector a ga:Collector ; ga:kind "rdf-file" ; ga:source "project.ttl" .
+ex:collector a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:source "project.ttl" .
 ex:scope a ga:Scope ; ga:include ex:subject .
 ex:authored a ga:Contribution ; ga:processor ex:collector ; ga:project ex:project ;
     ga:source "project.ttl" ; ga:revision "specification-1" .
 ex:target a ga:Target ; dct:title "Documentation Publication Model 1.0" ;
-    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer "specification" ;
+    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ;
     ga:destination "specification" ;
     ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ; ga:publicationStatus "Editor's Draft" ;
     ga:publicationDate "2026-10-24"^^xsd:date ;
@@ -69,7 +69,7 @@ ex:model-body a ga:Fragment ; ga:subject ex:subject ; ga:format "text/markdown" 
 ## Example
 
 ```turtle
-<urn:example:target> <https://ekgf.org/ontology/grapharch#renderer> "specification" .
+<urn:example:target> <https://ekgf.org/ontology/grapharch#renderer> <https://ekgf.org/ontology/grapharch#SpecificationRenderer> .
 ```
 """ .
 ex:changes-body a ga:Fragment ; ga:subject ex:subject ; ga:format "text/markdown" ; ga:contribution ex:authored ;

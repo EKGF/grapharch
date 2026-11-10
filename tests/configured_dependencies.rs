@@ -15,7 +15,7 @@ use {
 
 fn git_source_dependency(source: &str) -> String {
     format!(
-        r#"<urn:deps:git-source> a ga:Collector; ga:kind "git-rdf-file"; ga:source {}; ga:sourcePath "ontology.ttl"; ga:gitRef "main" ."#,
+        r#"<urn:deps:git-source> a ga:CollectorUse; ga:collectorType ga:GitRdfFileCollector; ga:source {}; ga:sourcePath "ontology.ttl"; ga:gitRef "main" ."#,
         Literal::new_simple_literal(source)
     )
 }
@@ -83,7 +83,7 @@ async fn site(root: &std::path::Path, dependencies: &str) -> Result<()> {
 @prefix dct:<http://purl.org/dc/terms/> .
 <urn:deps:project> a ga:Project; dct:title "Dependencies"; ga:scope <urn:deps:scope>; ga:target <urn:deps:website> .
 <urn:deps:scope> a ga:Scope . <urn:deps:profile> a ga:Profile .
-<urn:deps:website> a ga:Target; dct:title "Dependencies"; ga:scope <urn:deps:scope>; ga:profile <urn:deps:profile>; ga:renderer "website";ga:destination "site" .
+<urn:deps:website> a ga:Target; dct:title "Dependencies"; ga:scope <urn:deps:scope>; ga:profile <urn:deps:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site" .
 {dependencies}
 "#)).await?;
     Ok(())
@@ -127,9 +127,9 @@ async fn configured_local_git_and_http_rdf_are_native_sources_before_publication
     .await?;
     site(root.path(), &format!(r#"
 <urn:deps:project> ga:collector <urn:deps:local-source>, <urn:deps:git-source>, <urn:deps:url-source> .
-<urn:deps:local-source> a ga:Collector; ga:kind "rdf-file"; ga:source "local.ttl" .
+<urn:deps:local-source> a ga:CollectorUse; ga:collectorType ga:RdfFileCollector; ga:source "local.ttl" .
 {}
-<urn:deps:url-source> a ga:Collector; ga:kind "rdf-url"; ga:source "{url}"; ga:format "text/turtle" .
+<urn:deps:url-source> a ga:CollectorUse; ga:collectorType ga:RdfUrlCollector; ga:source "{url}"; ga:format "text/turtle" .
 "#, git_source_dependency(git.path().to_str().unwrap()))).await?;
     let built = website::collect(
         root.path(),
@@ -190,7 +190,7 @@ async fn failed_http_dependency_prevents_website_assembly() -> Result<()> {
         "text/turtle",
     )
     .await?;
-    site(root.path(), &format!(r#"<urn:deps:project> ga:collector <urn:deps:bad> . <urn:deps:bad> a ga:Collector; ga:kind "rdf-url";ga:source "{url}";ga:format "text/turtle" ."#)).await?;
+    site(root.path(), &format!(r#"<urn:deps:project> ga:collector <urn:deps:bad> . <urn:deps:bad> a ga:CollectorUse; ga:collectorType ga:RdfUrlCollector;ga:source "{url}";ga:format "text/turtle" ."#)).await?;
     let error = website::collect(
         root.path(),
         &root.path().join("project.ttl"),
@@ -288,7 +288,7 @@ async fn configured_local_dependencies_cannot_escape_the_documentation_root()
         "<urn:s> <urn:p> <urn:o> .",
     )
     .await?;
-    site(&root, r#"<urn:deps:project> ga:collector <urn:deps:outside> . <urn:deps:outside> a ga:Collector;ga:kind "rdf-file";ga:source "../outside.ttl" ."#).await?;
+    site(&root, r#"<urn:deps:project> ga:collector <urn:deps:outside> . <urn:deps:outside> a ga:CollectorUse;ga:collectorType ga:RdfFileCollector;ga:source "../outside.ttl" ."#).await?;
     let error = website::collect(
         &root,
         &root.join("project.ttl"),
@@ -315,7 +315,7 @@ async fn configured_dependency_budget_and_required_git_revision_are_enforced()
     // bounded: one over the declared 32-source configuration budget.
     let mut definitions = String::new();
     for index in 0..33 {
-        definitions.push_str(&format!(r#"<urn:deps:project> ga:collector <urn:deps:source:{index}> . <urn:deps:source:{index}> a ga:Collector;ga:kind "rdf-file";ga:source "terms.ttl" .
+        definitions.push_str(&format!(r#"<urn:deps:project> ga:collector <urn:deps:source:{index}> . <urn:deps:source:{index}> a ga:CollectorUse;ga:collectorType ga:RdfFileCollector;ga:source "terms.ttl" .
 "#));
     }
     site(root.path(), &definitions).await?;
@@ -330,7 +330,7 @@ async fn configured_dependency_budget_and_required_git_revision_are_enforced()
     .err()
     .expect("excess source definitions must fail");
     assert!(format!("{error:#}").contains("32-source"));
-    site(root.path(), r#"<urn:deps:project> ga:collector <urn:deps:git> . <urn:deps:git> a ga:Collector;ga:kind "git-rdf-file";ga:source "https://example.org/repository.git";ga:sourcePath "terms.ttl" ."#).await?;
+    site(root.path(), r#"<urn:deps:project> ga:collector <urn:deps:git> . <urn:deps:git> a ga:CollectorUse;ga:collectorType ga:GitRdfFileCollector;ga:source "https://example.org/repository.git";ga:sourcePath "terms.ttl" ."#).await?;
     let error = website::collect(
         root.path(),
         &root.path().join("project.ttl"),
@@ -342,5 +342,76 @@ async fn configured_dependency_budget_and_required_git_revision_are_enforced()
     .err()
     .expect("Git source must explicitly select its revision");
     assert!(format!("{error:#}").contains("gitRef"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn canonical_collector_definition_keeps_two_source_uses_distinct()
+-> Result<()> {
+    let root = tempfile::tempdir()?;
+    tokio::fs::write(
+        root.path().join("one.ttl"),
+        "<urn:one> <urn:p> <urn:o> .",
+    )
+    .await?;
+    tokio::fs::write(
+        root.path().join("two.ttl"),
+        "<urn:two> <urn:p> <urn:o> .",
+    )
+    .await?;
+    site(root.path(), r#"<urn:deps:project> ga:collector <urn:use:one>, <urn:use:two>.
+<urn:use:one> a ga:CollectorUse;ga:collectorType ga:RdfFileCollector;ga:source "one.ttl".
+<urn:use:two> a ga:CollectorUse;ga:collectorType ga:RdfFileCollector;ga:source "two.ttl"."#).await?;
+    let built = website::collect(
+        root.path(),
+        &root.path().join("project.ttl"),
+        "urn:deps:project",
+        "urn:deps:website",
+        2,
+    )
+    .await?;
+    let archive = root.path().join("graph.nq");
+    built.dataset.export(archive.clone()).await?;
+    let text = tokio::fs::read_to_string(archive).await?;
+    for value in [
+        "urn:use:one",
+        "urn:use:two",
+        "urn:one",
+        "urn:two",
+        "#RdfFileCollector",
+    ] {
+        assert!(text.contains(value), "missing {value}");
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn collector_definition_rejects_literal_and_unknown_iri() -> Result<()> {
+    for value in [r#""rdf-file""#, "<urn:unknown:collector>"] {
+        let root = tempfile::tempdir()?;
+        site(
+            root.path(),
+            &format!(
+                "<urn:deps:project> ga:collector <urn:use>. <urn:use> a \
+                 ga:CollectorUse;ga:collectorType {value};ga:source \
+                 \"missing.ttl\"."
+            ),
+        )
+        .await?;
+        let error = website::collect(
+            root.path(),
+            &root.path().join("project.ttl"),
+            "urn:deps:project",
+            "urn:deps:website",
+            1,
+        )
+        .await
+        .err()
+        .expect("invalid identity accepted");
+        assert!(
+            error.to_string().contains("collectorType"),
+            "{error:#}"
+        );
+    }
     Ok(())
 }

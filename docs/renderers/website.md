@@ -20,7 +20,7 @@ HTML pages with topic navigation, search, retained assets, and provenance.
 Set the renderer on a publication target in your existing project configuration:
 
 ```turtle
-<urn:example:target> ga:renderer "website" .
+<urn:example:target> ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> .
 ```
 
 This is a target setting, not a complete project definition. The target also needs

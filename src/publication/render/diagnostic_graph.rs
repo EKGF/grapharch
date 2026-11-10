@@ -20,7 +20,7 @@ pub(super) fn quads(
         revision:  plan.revision.clone(),
         processor: NamedNode::new(format!(
             "urn:grapharch:renderer:{}",
-            plan.renderer
+            plan.renderer.as_str()
         ))?,
         source:    plan.handle.id.as_str().to_owned(),
     };

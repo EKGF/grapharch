@@ -452,7 +452,7 @@ async fn build(
     let target = NamedNode::new(target)?;
     ensure!(
         matches!(
-            view.text(&target, "renderer").await?.as_str(),
+            view.renderer(&target).await?.as_str(),
             "specification" | "specification-pages" | "bookshelf"
         ),
         "family target requires a specification renderer"

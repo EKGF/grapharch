@@ -26,7 +26,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 <urn:project> a ga:Project; dct:title "Project"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "ekgf-project" .
-<urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:inventory-job> a ga:Documentor; ga:project <urn:project>; ga:kind "publication-inventory"; ga:subject <urn:inventory>; ga:fragment <urn:versions-page>; ga:route "spec-versions/"; ga:sourcePath "spec-versions.md"; ga:navigationOrder 6; dct:title "Specification versions" .
 <urn:inventory> dct:modified "2026-11-02T15:00:00Z"; dct:hasPart <urn:main>,<urn:develop>,<urn:preview>,<urn:hidden> .
 <urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; ga:route "/dprod/spec/main/"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true .

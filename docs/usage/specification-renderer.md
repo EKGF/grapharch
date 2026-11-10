@@ -10,7 +10,7 @@ permalink: /usage/specification-renderer/
 
 # Specification renderer
 
-Use `ga:renderer "specification"` to publish a standards-style HTML document.
+Use `ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>` to publish a standards-style HTML document.
 This is a dedicated renderer within the Grapharch CLI, distinct from the generic
 HTML renderer's `ga:style "specification"` styling hint. It reads the same pinned
 plans and validated graph revisions; there is no ReSpec or browser-side assembly.
@@ -51,8 +51,8 @@ description properties:
 @prefix ex: <urn:example:> .
 
 ex:project ga:collector ex:dublin-core-source .
-ex:dublin-core-source a ga:Collector ;
-    ga:kind "rdf-url" ;
+ex:dublin-core-source a ga:CollectorUse ;
+    ga:collectorType ga:RdfUrlCollector ;
     ga:source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.rdf" ;
     ga:format "application/rdf+xml" .
 ex:ontology-spec ga:ontologySource "vocabulary.ttl" ;
@@ -189,7 +189,7 @@ remain in the document flow; printed output has no resize control.
 
 ## Large families: one specification page per ontology
 
-Select `ga:renderer "specification-pages"` on a family publication target to
+Select `ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer>` on a family publication target to
 publish a collection of smaller standards-style HTML pages. The family overview
 stays at `index.html`; each remaining logical component gets its own page. The
 ontology-family documentor already supplies one component per ontology and one
@@ -198,7 +198,7 @@ without guessing boundaries from filenames or splitting a generated HTML book.
 
 ```turtle
 <urn:example:specification>
-    ga:renderer "specification-pages" ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer> ;
     ga:destination "specification" .
 ```
 

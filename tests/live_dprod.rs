@@ -220,8 +220,9 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         ),
     ] {
         definitions.push_str(&format!(
-            "ex:{id} a ga:Collector ; ga:kind \"rdf\" ; ga:sourcePath \
-             \"{path}\" ; ga:source \"{path}\" ; ga:subject <{subject}> .\n"
+            "ex:{id} a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector \
+             ; ga:sourcePath \"{path}\" ; ga:source \"{path}\" ; ga:subject \
+             <{subject}> .\n"
         ));
     }
     for (id, path, key, title, route) in [
@@ -255,13 +256,13 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         ),
     ] {
         definitions.push_str(&format!(
-            "ex:{id} a ga:Collector ; ga:kind \"{}\" ; ga:sourcePath \
-             \"{path}\" ; ga:source \"{path}\" ; ga:fragment ex:{key} ; \
-             dct:identifier \"{key}\"",
+            "ex:{id} a ga:CollectorUse ; ga:collectorType ga:{} ; \
+             ga:sourcePath \"{path}\" ; ga:source \"{path}\" ; ga:fragment \
+             ex:{key} ; dct:identifier \"{key}\"",
             if route.is_some() {
-                "markdown-page"
+                "MarkdownPageCollector"
             } else {
-                "markdown"
+                "MarkdownFileCollector"
             }
         ));
         if let Some(route) = route {
@@ -277,7 +278,7 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
     )?;
     definitions.push_str(r#"
 ex:project ga:collector ex:formal-source .
-ex:formal-source a ga:Collector ; ga:kind "markdown" ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
+ex:formal-source a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
 ex:profile ga:requiredSectionRole "scope" .
 ex:pdf-profile ga:requiredSectionRole "scope" .
 "#);
@@ -317,7 +318,7 @@ ex:{profile} ga:placement <urn:dprod-showcase:{profile}:{key}> .
     std::fs::write(repo.path().join("profile.ttl"), "<https://www.omg.org/spec/DPROD/dprod/> <http://purl.org/dc/terms/title> \"RELATED PROFILE TITLE\" .")?;
     definitions.push_str(r#"
 ex:project ga:collector ex:related-profile .
-ex:related-profile a ga:Collector ; ga:kind "rdf" ; ga:sourcePath "profile.ttl" ; ga:source "profile.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
+ex:related-profile a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:sourcePath "profile.ttl" ; ga:source "profile.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
 "#);
     std::fs::write(
         repo.path().join("example.jsonld"),
@@ -326,7 +327,7 @@ ex:related-profile a ga:Collector ; ga:kind "rdf" ; ga:sourcePath "profile.ttl" 
     definitions.push_str(r#"
 @prefix doc: <urn:dprod-showcase:> .
 doc:project ga:collector doc:source-code .
-doc:source-code a ga:Collector ; ga:kind "code" ; ga:sourcePath "example.jsonld" ; ga:source "example.jsonld" ; ga:format "application/ld+json" ; ga:subject doc:example ; ga:fragment doc:example-code .
+doc:source-code a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ; ga:sourcePath "example.jsonld" ; ga:source "example.jsonld" ; ga:format "application/ld+json" ; ga:subject doc:example ; ga:fragment doc:example-code .
 doc:component:example ga:fragment doc:example-code .
 doc:example ga:order 0 . doc:example-code ga:order 1 .
 "#);

@@ -508,7 +508,7 @@ async fn assemble(
     if derive {
         let native = NamedNode::new(ontology)?;
         for target in &targets {
-            if view.text(target, "renderer").await? != "typst" {
+            if view.renderer(target).await?.as_str() != "typst" {
                 continue;
             }
             for (field, predicate) in [
@@ -549,7 +549,7 @@ async fn assemble(
     }
     bindings.complete().await?;
     for target in &targets {
-        if view.text(target, "renderer").await? == "website" {
+        if view.renderer(target).await?.as_str() == "website" {
             super::website::bind(dataset, writer, PROJECT, target.as_str())
                 .await?;
         }
@@ -747,17 +747,18 @@ pub(super) async fn collect_scan(
             let Term::NamedNode(definition) = definition else {
                 anyhow::bail!("collector must be IRI")
             };
-            let kind = view.text(&definition, "kind").await?;
+            ensure!(view.has_type(&definition, "CollectorUse").await?, "configured DPROD collector must be typed CollectorUse");
+            let kind = super::collect::kind::CollectorKind::from_node(&view.node(&definition, "collectorType").await?)?;
             let path = view.text(&definition, "sourcePath").await?;
             let blob = scan.blob(Path::new(&path)).await?;
-            match kind.as_str() {
-                "image" => {
+            match kind {
+                super::collect::kind::CollectorKind::Image => {
                     work.push(blob.image_collector(
                         definition.as_str(),
                         view.node(&definition, "asset").await?,
                     )?);
                 },
-                "code" => {
+                super::collect::kind::CollectorKind::CodeFile => {
                     let fragment = view.node(&definition, "fragment").await?;
                     ensure!(
                         fragments.insert(fragment),
@@ -772,7 +773,7 @@ pub(super) async fn collect_scan(
                         &view.text(&definition, "format").await?,
                     )?));
                 },
-                "rdf" => {
+                super::collect::kind::CollectorKind::RdfFile => {
                     subjects.insert(
                         path,
                         (
@@ -782,16 +783,16 @@ pub(super) async fn collect_scan(
                     );
                     work.push(blob.rdf_collector(definition.as_str())?);
                 },
-                "markdown" | "markdown-page" => {
+                super::collect::kind::CollectorKind::MarkdownFile | super::collect::kind::CollectorKind::MarkdownPage => {
                     let fragment = view.node(&definition, "fragment").await?;
                     let mut collector =
                         super::collect::git::GitMarkdownFile::new(
                             blob,
                             definition.as_str(),
                             fragment.clone(),
-                            kind == "markdown-page",
+                            kind == super::collect::kind::CollectorKind::MarkdownPage,
                         )?;
-                    if kind == "markdown-page" {
+                    if kind == super::collect::kind::CollectorKind::MarkdownPage {
                         let title = view
                             .optional_by(
                                 &definition,
@@ -826,7 +827,7 @@ pub(super) async fn collect_scan(
                     );
                     work.push(Arc::new(collector));
                 },
-                _ => anyhow::bail!("unsupported DPROD collector kind {kind}"),
+                _ => anyhow::bail!("unsupported DPROD collector collectorType {kind:?}"),
             }
         }
         collect_all(work, &writer, 4).await?;

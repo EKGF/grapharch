@@ -19,10 +19,10 @@ const DEFINITIONS: &str = r#"
 <urn:project> a ga:Project; dct:title "Shared content"; ga:scope <urn:site-scope>; ga:target <urn:site>, <urn:pdf> .
 <urn:site-scope> a ga:Scope .
 <urn:site-profile> a ga:Profile; ga:style "ekgf-project" .
-<urn:site> a ga:Target; dct:title "Shared website"; ga:scope <urn:site-scope>; ga:profile <urn:site-profile>; ga:renderer "website"; ga:destination "site" .
+<urn:site> a ga:Target; dct:title "Shared website"; ga:scope <urn:site-scope>; ga:profile <urn:site-profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:pdf-scope> a ga:Scope; ga:include <urn:shared:page>; ga:traverse ga:topic; ga:maxDepth 1 .
 <urn:pdf-profile> a ga:Profile; ga:style "overview"; ga:placement <urn:pdf-placement> .
-<urn:pdf> a ga:Target; dct:title "Shared overview"; ga:scope <urn:pdf-scope>; ga:profile <urn:pdf-profile>; ga:renderer "typst"; ga:destination "pdf" .
+<urn:pdf> a ga:Target; dct:title "Shared overview"; ga:scope <urn:pdf-scope>; ga:profile <urn:pdf-profile>; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>; ga:destination "pdf" .
 <urn:pdf-placement> a ga:Placement; ga:component <urn:shared:component>; ga:order 1 .
 <urn:shared:component> a ga:Component; dct:title "Shared explanation"; ga:fragment <urn:shared:section> .
 "#;

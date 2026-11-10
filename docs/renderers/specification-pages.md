@@ -20,7 +20,7 @@ An HTML library landing page and linked sections with shared navigation and sear
 Set the renderer on a publication target in your existing project configuration:
 
 ```turtle
-<urn:example:target> ga:renderer "specification-pages" .
+<urn:example:target> ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer> .
 ```
 
 This is a target setting, not a complete project definition. The target also needs

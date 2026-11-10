@@ -78,8 +78,9 @@ pub fn configure(example: &Path, repository: &Path) -> Result<()> {
         ),
     ] {
         definitions.push_str(&format!(
-            "ex:{id} a ga:Collector ; ga:kind \"rdf\" ; ga:sourcePath \
-             \"{path}\" ; ga:source \"{path}\" ; ga:subject <{subject}> .\n"
+            "ex:{id} a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector \
+             ; ga:sourcePath \"{path}\" ; ga:source \"{path}\" ; ga:subject \
+             <{subject}> .\n"
         ));
     }
     for (id, path, key, title, route) in [
@@ -113,13 +114,13 @@ pub fn configure(example: &Path, repository: &Path) -> Result<()> {
         ),
     ] {
         definitions.push_str(&format!(
-            "ex:{id} a ga:Collector ; ga:kind \"{}\" ; ga:sourcePath \
-             \"{path}\" ; ga:source \"{path}\" ; ga:fragment ex:{key} ; \
-             dct:identifier \"{key}\"",
+            "ex:{id} a ga:CollectorUse ; ga:collectorType ga:{} ; \
+             ga:sourcePath \"{path}\" ; ga:source \"{path}\" ; ga:fragment \
+             ex:{key} ; dct:identifier \"{key}\"",
             if route.is_some() {
-                "markdown-page"
+                "MarkdownPageCollector"
             } else {
-                "markdown"
+                "MarkdownFileCollector"
             }
         ));
         if let Some(route) = route {
@@ -135,7 +136,7 @@ pub fn configure(example: &Path, repository: &Path) -> Result<()> {
     )?;
     definitions.push_str(r#"
 ex:project ga:collector ex:formal-source .
-ex:formal-source a ga:Collector ; ga:kind "markdown" ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
+ex:formal-source a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
 ex:profile ga:requiredSectionRole "scope" .
 ex:pdf-profile ga:requiredSectionRole "scope" .
 "#);

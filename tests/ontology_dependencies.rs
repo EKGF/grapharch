@@ -36,13 +36,13 @@ async fn source(selected: &str) -> Result<tempfile::TempDir> {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:p> a ga:Project ; dct:title "Dependency test" ; ga:target <urn:site>, <urn:spec> ; ga:scope <urn:site-scope> ; ga:collector <urn:external>, <urn:properties>, <urn:typing-only> .
-<urn:external> a ga:Collector ; ga:kind "rdf-file" ; ga:source "external.ttl" .
-<urn:properties> a ga:Collector ; ga:kind "rdf-file" ; ga:source "properties.ttl" .
-<urn:typing-only> a ga:Collector ; ga:kind "rdf-file" ; ga:source "typing-only.ttl" .
+<urn:external> a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:source "external.ttl" .
+<urn:properties> a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:source "properties.ttl" .
+<urn:typing-only> a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:source "typing-only.ttl" .
 <urn:site-scope> a ga:Scope . <urn:site-profile> a ga:Profile .
-<urn:site> a ga:Target ; dct:title "Site" ; ga:scope <urn:site-scope> ; ga:profile <urn:site-profile> ; ga:renderer "website" ; ga:destination "site" .
+<urn:site> a ga:Target ; dct:title "Site" ; ga:scope <urn:site-scope> ; ga:profile <urn:site-profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
 <urn:spec-scope> a ga:Scope ; ga:include {selected} . <urn:spec-profile> a ga:Profile .
-<urn:spec> a ga:Target ; dct:title "Owned specification" ; ga:ontologySource "owned.ttl" ; ga:scope <urn:spec-scope> ; ga:profile <urn:spec-profile> ; ga:renderer "specification" ; ga:destination "spec" ; ga:publisher <urn:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec> ; ga:latestVersion <https://example.org/spec> .
+<urn:spec> a ga:Target ; dct:title "Owned specification" ; ga:ontologySource "owned.ttl" ; ga:scope <urn:spec-scope> ; ga:profile <urn:spec-profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "spec" ; ga:publisher <urn:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec> ; ga:latestVersion <https://example.org/spec> .
 <urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example Authority" ; ga:shortName "Example" ; ga:accentColor "#123456" .
 "##)).await?;
     Ok(root)

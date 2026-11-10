@@ -53,8 +53,8 @@ outside its content directory:
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 
 <urn:project> ga:collector <urn:project:abbreviations> .
-<urn:project:abbreviations> a ga:Collector ;
-    ga:kind "abbreviation-file" ;
+<urn:project:abbreviations> a ga:CollectorUse ;
+    ga:collectorType ga:AbbreviationFileCollector ;
     ga:source "abbreviations.md" .
 ```
 

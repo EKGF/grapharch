@@ -31,8 +31,8 @@ Add a collector to the project in a website's publication definitions:
 
 <urn:example:docs> ga:collector <urn:example:commons-roles> .
 
-<urn:example:commons-roles> a ga:Collector ;
-    ga:kind "rdf-url" ;
+<urn:example:commons-roles> a ga:CollectorUse ;
+    ga:collectorType ga:RdfUrlCollector ;
     ga:source "https://www.omg.org/spec/Commons/RolesAndCompositions/" ;
     ga:format "application/rdf+xml" .
 ```

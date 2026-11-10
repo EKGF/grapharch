@@ -29,8 +29,8 @@ Declare each diagram explicitly in the project's publication definitions:
     ga:contentSource "docs" ;
     ga:collector <urn:manual:lifecycle-diagram> .
 
-<urn:manual:lifecycle-diagram> a ga:Collector ;
-    ga:kind "plantuml-file" ;
+<urn:manual:lifecycle-diagram> a ga:CollectorUse ;
+    ga:collectorType ga:PlantUmlFileCollector ;
     ga:source "docs/diagrams/src/lifecycle.puml" ;
     ga:destination "docs/diagrams/out/lifecycle.svg" ;
     ga:rendererExecutable "plantuml" .

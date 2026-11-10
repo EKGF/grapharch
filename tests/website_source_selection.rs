@@ -20,7 +20,7 @@ async fn authored_exclusions_are_applied_before_source_budget() -> Result<()> {
     let config = r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 <urn:project> a ga:Project; ga:target <urn:target>; ga:excludeSourcePath "generated", "future-output" .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
 "#;
     tokio::fs::write(&defs, config).await?;
@@ -79,9 +79,9 @@ async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
     tokio::fs::write(&definitions, r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 <urn:project> a ga:Project; ga:contentSource "docs"; ga:includeRoot "."; ga:target <urn:target>; ga:collector <urn:nav>, <urn:rdf> .
-<urn:nav> a ga:Collector; ga:kind "documentation-navigation"; ga:source "docs"; ga:navigationProfile <urn:profile> .
-<urn:rdf> a ga:Collector; ga:kind "rdf-file"; ga:source "metadata/model.ttl" .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:nav> a ga:CollectorUse; ga:collectorType ga:DocumentationNavigationCollector; ga:source "docs"; ga:navigationProfile <urn:profile> .
+<urn:rdf> a ga:CollectorUse; ga:collectorType ga:RdfFileCollector; ga:source "metadata/model.ttl" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
 "#).await?;
     let built = website::collect(

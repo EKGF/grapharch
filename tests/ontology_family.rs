@@ -369,7 +369,7 @@ async fn family_accepts_native_rdfxml_and_namespace_hints_without_parsing_xml_ca
         &definitions,
         r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix artgov:<https://ekgf.org/ontology/artifact-governance#> . @prefix artpub:<https://ekgf.org/ontology/artifact-publication#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> . @prefix dct:<http://purl.org/dc/terms/> . @prefix sh:<http://www.w3.org/ns/shacl#> .
 <urn:test:project> a ga:Project ; ga:target <urn:test:target> . <urn:test:scope> a ga:Scope . <urn:test:profile> a ga:Profile ; artpub:publishesFamily <urn:test:family> . <urn:test:family> a artgov:Family ; rdfs:label "Finance family"@en . <urn:test:reference> a artgov:Reference ; artgov:inFamily <urn:test:family> ; artgov:refersTo <https://example.org/finance/> . <https://example.org/finance/> sh:declare [ sh:prefix "fin" ; sh:namespace "https://example.org/finance/" ] .
-<urn:test:target> a ga:Target ; dct:title "Finance reference" ; dct:description "A native RDF/XML family test." ; rdfs:comment "Test preview." ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer "specification" ; ga:destination "specification" ."#,
+<urn:test:target> a ga:Target ; dct:title "Finance reference" ; dct:description "A native RDF/XML family test." ; rdfs:comment "Test preview." ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "specification" ."#,
     )?;
     let built = ontology_family::collect(
         &source,

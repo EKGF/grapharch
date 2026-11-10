@@ -237,8 +237,8 @@ source root:
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 <urn:project> ga:collector <urn:directory-navigation> .
-<urn:directory-navigation> a ga:Collector ;
-    ga:kind "documentation-navigation" ; ga:source "." ;
+<urn:directory-navigation> a ga:CollectorUse ;
+    ga:collectorType ga:DocumentationNavigationCollector ; ga:source "." ;
     ga:navigationProfile <urn:profile> .
 ```
 

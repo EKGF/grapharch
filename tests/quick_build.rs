@@ -166,7 +166,7 @@ async fn configured_website_keeps_explicit_destination_and_title() -> Result<()>
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "Chosen title"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "chosen" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "chosen" .
 <urn:profile> a ga:Profile .
 "#).await?;
     tokio::fs::write(

@@ -4,16 +4,16 @@
 
 ex:project a ga:Project ; dct:title "Grapharch documentation graph" ;
     ga:collector ex:collector ; ga:scope ex:scope ; ga:target ex:spec, ex:reader, ex:pdf .
-ex:collector a ga:Collector ; ga:kind "rdf-file" ; ga:source "project.ttl" .
+ex:collector a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:source "project.ttl" .
 ex:scope a ga:Scope ; ga:include ex:overview, ex:contract, ex:glossary, ex:references .
 ex:authored a ga:Contribution ; ga:processor ex:collector ; ga:project ex:project ;
     ga:source "project.ttl" ; ga:revision "showcase-1" .
 ex:spec a ga:Target ; dct:title "Documentation graph specification" ; ga:scope ex:scope ;
-    ga:profile ex:spec-profile ; ga:renderer "html" ; ga:destination "specification" .
+    ga:profile ex:spec-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "specification" .
 ex:reader a ga:Target ; dct:title "A guide to the documentation graph" ; ga:scope ex:scope ;
-    ga:profile ex:reader-profile ; ga:renderer "html" ; ga:destination "reader" .
+    ga:profile ex:reader-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "reader" .
 ex:pdf a ga:Target ; dct:title "Documentation graph - review draft" ; ga:scope ex:scope ;
-    ga:profile ex:spec-profile ; ga:renderer "typst" ; ga:destination "review" .
+    ga:profile ex:spec-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
 ex:spec-profile a ga:Profile ; ga:style "specification" ;
     ga:placement ex:spec-overview, ex:spec-contract, ex:spec-glossary, ex:spec-references .
 ex:reader-profile a ga:Profile ; ga:style "reader" ;

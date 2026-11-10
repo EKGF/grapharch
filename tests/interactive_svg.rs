@@ -18,7 +18,7 @@ async fn interactive_svg_keeps_original_bytes_and_projects_validated_links_after
     tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:interactive:project> a ga:Project; ga:target <urn:interactive:site> .
 <urn:interactive:scope> a ga:Scope . <urn:interactive:profile> a ga:Profile .
-<urn:interactive:site> a ga:Target; ga:scope <urn:interactive:scope>; ga:profile <urn:interactive:profile>; ga:renderer "website"; ga:destination "site" ."#).await?;
+<urn:interactive:site> a ga:Target; ga:scope <urn:interactive:scope>; ga:profile <urn:interactive:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" ."#).await?;
     tokio::fs::write(source.path().join("diagram.svg"), SVG).await?;
     tokio::fs::write(
         source.path().join("index.md"),
@@ -115,7 +115,7 @@ async fn unresolved_svg_navigation_prevents_partial_publication() -> Result<()>
     tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:interactive:project> a ga:Project; ga:target <urn:interactive:site> .
 <urn:interactive:scope> a ga:Scope . <urn:interactive:profile> a ga:Profile .
-<urn:interactive:site> a ga:Target; ga:scope <urn:interactive:scope>; ga:profile <urn:interactive:profile>; ga:renderer "website"; ga:destination "site" ."#).await?;
+<urn:interactive:site> a ga:Target; ga:scope <urn:interactive:scope>; ga:profile <urn:interactive:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" ."#).await?;
     tokio::fs::write(source.path().join("diagram.svg"), SVG).await?;
     tokio::fs::write(
         source.path().join("index.md"),

@@ -19,7 +19,7 @@ async fn metadata_queries_do_not_multiply_by_each_fragment_property()
             .await?;
     }
     let definitions = source.path().join("project.ttl");
-    tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> a ga:Target;ga:renderer "website";ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &definitions, "urn:p", "urn:t", 2)
             .await?;

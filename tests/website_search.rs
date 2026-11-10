@@ -31,7 +31,7 @@ async fn retained_search(documentation: bool) -> Result<()> {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "Knowledge guide"; ga:target <urn:site> .
-<urn:site> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:site> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:scope> a ga:Scope .
 <urn:profile> a ga:Profile; ga:style "ekgf"; ga:layout "documentation" .
 "#).await?;

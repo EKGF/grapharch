@@ -21,7 +21,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
 <urn:brand:project> a ga:Project; dct:title "Grapharch"; ga:scope <urn:brand:scope>; ga:target <urn:brand:target> .
 <urn:quality:example> dct:title "First title"@en, "Second title"@en .
 <urn:brand:scope> a ga:Scope . <urn:brand:profile> a ga:Profile {style} .
-<urn:brand:target> a ga:Target; dct:title "Docs"; ga:scope <urn:brand:scope>; ga:profile <urn:brand:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:brand:target> a ga:Target; dct:title "Docs"; ga:scope <urn:brand:scope>; ga:profile <urn:brand:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 "#)).await?;
         tokio::fs::write(
             input.path().join("index.md"),

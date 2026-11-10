@@ -31,7 +31,7 @@ async fn ekgf_products_share_the_same_community_shell() -> Result<()> {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "{name}"; ga:target <urn:target> .
-<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "{style}" {layout} .
 "#)).await?;
         tokio::fs::write(
@@ -89,7 +89,7 @@ async fn authored_landing_and_documentation_share_one_theme() -> Result<()> {
     tokio::fs::write(&definitions, r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 <urn:p> a ga:Project; ga:target <urn:t> .
-<urn:t> a ga:Target; ga:scope <urn:s>; ga:profile <urn:f>; ga:renderer "website"; ga:destination "site" .
+<urn:t> a ga:Target; ga:scope <urn:s>; ga:profile <urn:f>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:s> a ga:Scope . <urn:f> a ga:Profile; ga:style "ekgf"; ga:layout "documentation" .
 "#).await?;
     tokio::fs::write(

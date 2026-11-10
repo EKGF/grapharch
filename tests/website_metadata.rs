@@ -18,7 +18,7 @@ async fn website_metadata_survives_kg_restore_and_indexes_visible_pages()
 <urn:project> a ga:Project; dct:title "Example project"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope .
 <urn:profile> a ga:Profile; ga:style "ekgf-project" .
-<urn:target> a ga:Target; dct:title "Project website"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site"; ga:thisVersion <https://example.org/project/> .
+<urn:target> a ga:Target; dct:title "Project website"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site"; ga:thisVersion <https://example.org/project/> .
 "#).await?;
     tokio::fs::write(
         input.path().join("index.md"),
@@ -126,7 +126,7 @@ async fn malformed_canonical_bases_fail_publication() -> Result<()> {
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "Example"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
-<urn:target> a ga:Target; dct:title "Website"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer "website"; ga:destination "site"; ga:thisVersion <{base}> ."#)).await?;
+<urn:target> a ga:Target; dct:title "Website"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site"; ga:thisVersion <{base}> ."#)).await?;
         tokio::fs::write(
             input.path().join("index.md"),
             "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: \

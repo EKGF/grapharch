@@ -86,8 +86,7 @@ impl TargetPlanner {
         self.check_destinations(&view, &project).await?;
         let scope = view.node(target, "scope").await?;
         let profile = view.node(target, "profile").await?;
-        let renderer = view.text(target, "renderer").await?;
-        let renderer_kind = super::Renderer::parse(&renderer)?;
+        let renderer_kind = view.renderer(target).await?;
         let mut requirements =
             match requirements::Requirements::read(&view, &profile, target)
                 .await
@@ -139,10 +138,7 @@ impl TargetPlanner {
                 term("inputRevision"),
                 self.revision.clone().into(),
             ),
-            (
-                term("renderer"),
-                Literal::new_simple_literal(renderer).into(),
-            ),
+            (term("renderer"), renderer_kind.iri().into()),
             (
                 term("destination"),
                 Literal::new_simple_literal(destination).into(),

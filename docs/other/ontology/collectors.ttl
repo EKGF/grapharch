@@ -1,0 +1,61 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# Adapter definitions are shared; source settings belong to ga:CollectorUse.
+
+ga:AbbreviationFileCollector a ga:Collector ;
+    rdfs:label "Abbreviation file collector"@en ;
+    dct:description "Reads an authored Markdown abbreviation dictionary and retains its source-owned meanings as SKOS concepts."@en .
+
+ga:AuthoredUseCasesCollector a ga:Collector ;
+    rdfs:label "Authored use cases collector"@en ;
+    dct:description "Reads bounded Markdown use-case trees and retains authored ownership, reuse relationships, and page hints."@en .
+
+ga:RepositoryPublicationsCollector a ga:Collector ;
+    rdfs:label "Repository publications collector"@en ;
+    dct:description "Collects declared GitHub pull-request and Vercel publication metadata for source-owned publication version navigation."@en .
+
+ga:DocumentationNavigationCollector a ga:Collector ;
+    rdfs:label "Documentation navigation collector"@en ;
+    dct:description "Reads page order and navigation hints from a documentation directory without changing authored page content."@en .
+
+ga:PlantUmlFileCollector a ga:Collector ;
+    rdfs:label "PlantUML file collector"@en ;
+    dct:description "Collects authored PlantUML diagrams and their bounded local include closure, retaining the rendered SVG and source provenance."@en .
+
+ga:RdfFileCollector a ga:Collector ;
+    rdfs:label "RDF file collector"@en ;
+    dct:description "Parses an explicitly selected RDF file into native assertions, preserving its source and revision."@en .
+
+ga:RdfUrlCollector a ga:Collector ;
+    rdfs:label "RDF URL collector"@en ;
+    dct:description "Fetches an explicitly configured HTTP RDF document using its declared media type and retains native assertions and response provenance."@en .
+
+ga:GitRdfFileCollector a ga:Collector ;
+    rdfs:label "Git RDF file collector"@en ;
+    dct:description "Resolves a declared Git revision and collects a selected RDF blob with immutable repository provenance."@en .
+
+ga:MarkdownFileCollector a ga:Collector ;
+    rdfs:label "Markdown file collector"@en ;
+    dct:description "Collects Markdown prose, supported authored constructs, and source-owned documentation hints into retained fragments."@en .
+
+ga:SparqlFileCollector a ga:Collector ;
+    rdfs:label "SPARQL file collector"@en ;
+    dct:description "Collects authored SPARQL text as a documentation fragment without executing the query."@en .
+
+ga:W3cPublishedSpecificationCollector a ga:Collector ;
+    rdfs:label "Published W3C specification collector"@en ;
+    dct:description "Imports supported sections, examples, references, and publication metadata from a saved published W3C HTML specification."@en .
+
+ga:ImageCollector a ga:Collector ;
+    rdfs:label "Image collector"@en ;
+    dct:description "Retains supported source image bytes and their provenance for publication without re-reading the source during rendering."@en .
+
+ga:CodeFileCollector a ga:Collector ;
+    rdfs:label "Code file collector"@en ;
+    dct:description "Collects an explicitly selected source-code example as retained text without executing it."@en .
+
+ga:MarkdownPageCollector a ga:Collector ;
+    rdfs:label "Markdown page collector"@en ;
+    dct:description "Collects Markdown content with an explicitly configured page title and route in source-owned repository publications."@en .

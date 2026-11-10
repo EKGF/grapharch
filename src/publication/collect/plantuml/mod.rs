@@ -125,7 +125,10 @@ pub async fn bindings(
         let Term::NamedNode(processor) = &row["value"] else {
             anyhow::bail!("collector must be an IRI");
         };
-        if view.text(processor, "kind").await? != "plantuml-file" {
+        if super::kind::CollectorKind::from_node(
+            &view.node(processor, "collectorType").await?,
+        )? != super::kind::CollectorKind::PlantUmlFile
+        {
             continue;
         }
         let destination = output_path(
@@ -285,7 +288,7 @@ mod tests {
         let definitions = root.path().join("project.ttl");
         tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:uml:project> a ga:Project; ga:contentSource "docs"; ga:collector <urn:uml:collector> .
-<urn:uml:collector> a ga:Collector; ga:kind "plantuml-file"; ga:source "docs/diagram.puml"; ga:destination "docs/diagrams/out/diagram.svg"; ga:rendererExecutable "plantuml" ."#).await?;
+<urn:uml:collector> a ga:CollectorUse; ga:collectorType ga:PlantUmlFileCollector; ga:source "docs/diagram.puml"; ga:destination "docs/diagrams/out/diagram.svg"; ga:rendererExecutable "plantuml" ."#).await?;
         let dataset = Dataset::memory()?;
         let (writer, worker) =
             GraphWriter::spawn(dataset.clone(), 4, 1024 * 1024)?;

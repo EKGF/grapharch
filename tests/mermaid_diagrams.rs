@@ -91,7 +91,7 @@ const DEFINITIONS: &str = r#"
 <urn:diagram:project> a ga:Project ; dct:title "Diagrams" ; ga:scope <urn:diagram:scope> ; ga:target <urn:diagram:site> .
 <urn:diagram:scope> a ga:Scope .
 <urn:diagram:profile> a ga:Profile .
-<urn:diagram:site> a ga:Target ; dct:title "Diagrams" ; ga:scope <urn:diagram:scope> ; ga:profile <urn:diagram:profile> ; ga:renderer "website" ; ga:destination "site" .
+<urn:diagram:site> a ga:Target ; dct:title "Diagrams" ; ga:scope <urn:diagram:scope> ; ga:profile <urn:diagram:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
 "#;
 
 #[tokio::test]

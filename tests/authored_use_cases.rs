@@ -39,7 +39,7 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
     )
     .await?;
     let definitions = source.path().join("grapharch.ttl");
-    tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:contentSource "docs";ga:collector <urn:cases>;ga:target <urn:t>, <urn:pdf>. <urn:pdf> a ga:Target;ga:renderer "typst";ga:destination "pdf";ga:scope <urn:s>;ga:profile <urn:f>. <urn:cases> a ga:Collector;ga:kind "authored-use-cases";ga:source "docs/use-case". <urn:t> a ga:Target;ga:renderer "website";ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:contentSource "docs";ga:collector <urn:cases>;ga:target <urn:t>, <urn:pdf>. <urn:pdf> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf";ga:scope <urn:s>;ga:profile <urn:f>. <urn:cases> a ga:CollectorUse;ga:collectorType ga:AuthoredUseCasesCollector;ga:source "docs/use-case". <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &definitions, "urn:p", "urn:t", 2)
             .await?;
@@ -167,7 +167,7 @@ async fn invalid_authored_relationships_fail_with_source_evidence() -> Result<()
         )
         .await?;
         let config = source.path().join("project.ttl");
-        tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:Collector;ga:kind "authored-use-cases";ga:source "use-case". <urn:t> a ga:Target;ga:renderer "website";ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+        tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:CollectorUse;ga:collectorType ga:AuthoredUseCasesCollector;ga:source "use-case". <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
         let error =
             match website::collect(source.path(), &config, "urn:p", "urn:t", 2)
                 .await
@@ -204,7 +204,7 @@ async fn native_assets_have_a_separate_budget_from_authored_pages() -> Result<()
         .await?;
     }
     let config = source.path().join("project.ttl");
-    tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:Collector;ga:kind "authored-use-cases";ga:source "cases". <urn:t> a ga:Target;ga:renderer "website";ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:CollectorUse;ga:collectorType ga:AuthoredUseCasesCollector;ga:source "cases". <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 4).await?;
     let publisher = Publisher::new(built.dataset);

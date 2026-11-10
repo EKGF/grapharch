@@ -32,10 +32,19 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     // Exercise an HTML-only publication alongside genuine multi-PDF examples.
     let authored = source.path().join("examples/showcase/project.ttl");
     let text = std::fs::read_to_string(&authored)?;
-    assert_eq!(text.matches("ga:renderer \"typst\"").count(), 1);
+    assert_eq!(
+        text.matches(
+            "ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>"
+        )
+        .count(),
+        1
+    );
     std::fs::write(
         &authored,
-        text.replace("ga:renderer \"typst\"", "ga:renderer \"html\""),
+        text.replace(
+            "ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer>",
+        ),
     )?;
     let registry = source.path().join("examples/showcases.ttl");
     let text = std::fs::read_to_string(&registry)?;

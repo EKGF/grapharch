@@ -16,7 +16,7 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
 @prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix dct:<http://purl.org/dc/terms/> .
 <urn:header:project> a ga:Project;dct:title "Grapharch";ga:repository <https://github.com/EKGF/grapharch>;ga:scope <urn:header:scope>;ga:target <urn:header:website> .
 <urn:header:scope> a ga:Scope . <urn:header:profile> a ga:Profile .
-<urn:header:website> a ga:Target;dct:title "Documentation";ga:scope <urn:header:scope>;ga:profile <urn:header:profile>;ga:renderer "website";ga:destination "site" .
+<urn:header:website> a ga:Target;dct:title "Documentation";ga:scope <urn:header:scope>;ga:profile <urn:header:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site" .
 "#).await?;
     tokio::fs::write(
         source.path().join("index.md"),

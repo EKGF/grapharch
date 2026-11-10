@@ -19,10 +19,10 @@ async fn retained_abbreviation_schemes_project_into_html_without_changing_pdf_te
     tokio::fs::write(&definitions, r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:p> a ga:Project;ga:target <urn:web>,<urn:pdf>;ga:collector <urn:dictionary>.
-<urn:dictionary> a ga:Collector;ga:kind "rdf-file";ga:source "dictionary.ttl".
-<urn:web> a ga:Target;ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer "website";ga:destination "site".
+<urn:dictionary> a ga:CollectorUse;ga:collectorType ga:RdfFileCollector;ga:source "dictionary.ttl".
+<urn:web> a ga:Target;ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site".
 <urn:scope> a ga:Scope. <urn:profile> a ga:Profile.
-<urn:pdf> a ga:Target;ga:scope <urn:pdfscope>;ga:profile <urn:pdfprofile>;ga:renderer "typst";ga:destination "pdf".
+<urn:pdf> a ga:Target;ga:scope <urn:pdfscope>;ga:profile <urn:pdfprofile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf".
 <urn:pdfscope> a ga:Scope;ga:include <urn:guide>.
 <urn:pdfprofile> a ga:Profile;ga:placement <urn:placement>.
 <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1.

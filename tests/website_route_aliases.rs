@@ -6,7 +6,7 @@ use {
         website,
     },
 };
-const CONFIG: &str = r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer "website";ga:destination "site". <urn:s> a ga:Scope. <urn:f> a ga:Profile. <urn:section> ga:routeAlias "old/section/"."#;
+const CONFIG: &str = r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:s> a ga:Scope. <urn:f> a ga:Profile. <urn:section> ga:routeAlias "old/section/"."#;
 #[tokio::test]
 async fn aliases_redirect_to_retained_page_sections_without_sources()
 -> Result<()> {
