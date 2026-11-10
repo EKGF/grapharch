@@ -323,7 +323,7 @@ async fn independent_standards_pdf_preserves_publication_metadata() -> Result<()
         include_str!("../examples/specification/project.ttl"),
         "urn:specification:target",
         "https://ekgf.org/ontology/grapharch#renderer",
-        definitions::literal("typst"),
+        definitions::iri("https://ekgf.org/ontology/grapharch#TypstRenderer")?,
     )?;
     let fixture =
         format!("{fixture}\nex:profile ga:style \"specification\" .\n");
