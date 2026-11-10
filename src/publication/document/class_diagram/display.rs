@@ -19,7 +19,7 @@ pub(super) async fn apply(
     for node in diagram.nodes() {
         if matches!(
             node.kind.as_str(),
-            "OWL expression" | "Literal value"
+            "OWL expression" | "OWL union" | "Literal value"
         ) {
             continue;
         }

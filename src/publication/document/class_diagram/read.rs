@@ -143,10 +143,18 @@ BIND(?s AS ?group)
     }
     let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
     let mut group_ends = Vec::new(); // bounded: five complete groups.
-    for group in groups.into_values() {
+    let mut unions = HashSet::new(); // bounded: at most five admitted union domains.
+    for mut group in groups.into_values() {
+        let union = super::union_domain::expand(
+            dataset, metadata, &mut group, &nodes, prefixes, documented,
+        )
+        .await?;
         if group_ends.len() == 5 || edges.len() + group.len() > 18 {
             overflow = true;
             continue;
+        }
+        if let Some(union) = union {
+            unions.insert(union);
         }
         edges.extend(group);
         group_ends.push(edges.len());
@@ -158,6 +166,11 @@ BIND(?s AS ?group)
         shapes: Vec::new(),
         limited: overflow,
     };
+    for node in diagram.nodes_mut() {
+        if unions.contains(&node.id) {
+            node.kind = "OWL union".into();
+        }
+    }
     diagram.shapes = super::constraints::collect(
         &diagram, dataset, view, metadata, prefixes, documented,
     )

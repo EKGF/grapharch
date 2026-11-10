@@ -149,7 +149,22 @@ fn source(diagram: &Diagram) -> String {
         } else {
             "#FFFFFF"
         };
-        let label = label(&node.label);
+        let label = if node.kind == "OWL union" {
+            let mut members = diagram
+                .edges
+                .iter()
+                .filter(|edge| {
+                    edge.from.id == node.id &&
+                        edge.predicate.as_deref() ==
+                            Some(super::union_domain::UNION)
+                })
+                .map(|edge| edge.to.label.as_str())
+                .collect::<Vec<_>>(); // bounded: eight complete union members.
+            members.sort_unstable();
+            label(&members.join(" or "))
+        } else {
+            label(&node.label)
+        };
         // Opaque links resolve after layout; source URLs never enter PlantUML.
         if node.kind == "Class" {
             output.push_str(&format!(
@@ -204,6 +219,11 @@ fn source(diagram: &Diagram) -> String {
                 &identifiers,
             );
             output.push_str("}\n");
+        } else if node.kind == "OWL union" {
+            output.push_str(&format!(
+                "rectangle \"{label}\" as n{index} \
+                 [[./grapharch-node/n{index}]] {color}\n"
+            ));
         } else {
             output.push_str(&format!(
                 "rectangle \"<<{}>>\\n{label}\" as n{index} \

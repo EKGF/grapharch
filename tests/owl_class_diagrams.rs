@@ -558,3 +558,6 @@ mod qualified_maximum;
 
 #[path = "owl_class_diagrams/qualified_data.rs"]
 mod qualified_data;
+
+#[path = "owl_class_diagrams/union_domains.rs"]
+mod union_domains;

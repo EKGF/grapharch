@@ -91,7 +91,7 @@ impl<'a> Shorthand<'a> {
                 continue;
             }
             if domains.len() != 1 ||
-                domains[0].kind != "Class" ||
+                !matches!(domains[0].kind.as_str(), "Class" | "OWL union") ||
                 domains[0].id == GENERIC_RESOURCE ||
                 ranges.len() > 1
             {
@@ -103,7 +103,30 @@ impl<'a> Shorthand<'a> {
             }) {
                 continue;
             }
+            // Union boxes represent association sources, not UML classes
+            // with fields. Keep attribute declarations explicit.
+            if domains[0].kind == "OWL union" &&
+                (node.kind == "Datatype property" ||
+                    range.is_none() ||
+                    range.is_some_and(|r| r.id == GENERIC_RESOURCE))
+            {
+                continue;
+            }
             consumed.extend(incident.iter().map(|(i, _)| *i));
+            if domains[0].kind == "OWL union" {
+                consumed.extend(
+                    diagram
+                        .edges
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, edge)| {
+                            edge.from.id == domains[0].id &&
+                                edge.predicate.as_deref() ==
+                                    Some(super::union_domain::UNION)
+                        })
+                        .map(|(index, _)| index),
+                );
+            }
             properties.push(Property { node, domain: domains[0], range });
         }
         let existences = super::nested_existence::collect(diagram);
