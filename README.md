@@ -19,8 +19,8 @@ and put `grapharch` (or `grapharch.exe`) on your `PATH`.
 
 Standalone binaries and the crates.io package are published. With cargo-binstall
 installed, `cargo binstall grapharch --version 0.2.4` installs the prebuilt
-executable. Python and npm publication is still pending; see the installation
-guide for channel availability.
+executable. See the installation guide for Python/npm commands and the
+published versions available from each registry.
 
 To build in GitHub Actions:
 

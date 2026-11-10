@@ -47,8 +47,9 @@ or missing release files fail installation.
 
 ### Other installation channels
 
-Python and npm publication is still pending. Homebrew requires the separate tap
-publication. These channels install the same CLI once available:
+These commands require a published package version; see [PyPI](https://pypi.org/project/grapharch/)
+and [npm](https://www.npmjs.com/package/grapharch) for available versions.
+Homebrew requires its separate tap publication. Each channel installs the same CLI:
 
 | Channel | Install or run |
 | --- | --- |

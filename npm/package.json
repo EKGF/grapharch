@@ -25,12 +25,12 @@
     "test": "node --test tests/*.test.cjs"
   },
   "optionalDependencies": {
-    "@grapharch/cli-linux-x64": "0.2.6",
-    "@grapharch/cli-linux-arm64": "0.2.6",
-    "@grapharch/cli-darwin-x64": "0.2.6",
-    "@grapharch/cli-darwin-arm64": "0.2.6",
-    "@grapharch/cli-win32-x64": "0.2.6",
-    "@grapharch/cli-win32-arm64": "0.2.6"
+    "grapharch-linux-x64": "0.2.6",
+    "grapharch-linux-arm64": "0.2.6",
+    "grapharch-darwin-x64": "0.2.6",
+    "grapharch-darwin-arm64": "0.2.6",
+    "grapharch-win32-x64": "0.2.6",
+    "grapharch-win32-arm64": "0.2.6"
   },
   "publishConfig": {
     "access": "public"

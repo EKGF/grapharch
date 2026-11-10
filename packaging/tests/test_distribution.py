@@ -14,6 +14,27 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DistributionTests(unittest.TestCase):
+    def test_wrapper_names_every_native_package_without_an_organization_scope(self):
+        manifest = json.loads((ROOT / 'npm/package.json').read_text())
+        platforms = json.loads((ROOT / 'packaging/platforms.json').read_text())
+        self.assertEqual(set(manifest['optionalDependencies']),
+                         {'grapharch-' + item['key'] for item in platforms})
+        self.assertTrue(all(value == manifest['version']
+                            for value in manifest['optionalDependencies'].values()))
+
+    def test_platform_metadata_cannot_cross_package_target_or_version(self):
+        from distribute import PLATFORMS, npm_package, verify_npm_metadata, version
+        for item in PLATFORMS:
+            metadata = {'name': npm_package(item), 'version': version(),
+                        'os': [item['os']], 'cpu': [item['cpu']]}
+            if 'libc' in item:
+                metadata['libc'] = [item['libc']]
+            verify_npm_metadata(metadata, item)
+            for key, value in [('name', 'grapharch-wrong-target'), ('version', '99.0.0'),
+                               ('os', ['wrong-os']), ('cpu', ['wrong-cpu'])]:
+                with self.assertRaises(ValueError):
+                    verify_npm_metadata(dict(metadata, **{key: value}), item)
+
     def test_failed_release_jobs_do_not_publish_immutable_partial_compiler_caches(self):
         workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
         for name, following in (("verify-source", "binaries"), ("binaries", "assemble")):
@@ -85,7 +106,7 @@ class DistributionTests(unittest.TestCase):
             package = json.loads(
                 (work / "dist/npm/cli-darwin-arm64/package.json").read_text()
             )
-            self.assertEqual(package["name"], "@grapharch/cli-darwin-arm64")
+            self.assertEqual(package["name"], "grapharch-darwin-arm64")
             self.assertEqual(package["cpu"], ["arm64"])
             self.assertEqual(
                 (work / "dist/npm/cli-darwin-arm64/bin/grapharch").read_bytes(),

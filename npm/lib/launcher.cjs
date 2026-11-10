@@ -5,7 +5,7 @@ const {spawn} = require('node:child_process');
 const manifest = require('../package.json');
 
 function platformPackage({platform, arch, glibc}) {
-  const name = `@grapharch/cli-${platform}-${arch}`;
+  const name = `grapharch-${platform}-${arch}`;
   if (!Object.hasOwn(manifest.optionalDependencies, name)) {
     throw new Error(`unsupported platform ${platform}/${arch}; no GraphArch package is published for it`);
   }

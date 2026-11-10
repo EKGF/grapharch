@@ -35,6 +35,8 @@ def npm_published(name, version, archive):
     metadata = read_json(f'https://registry.npmjs.org/{urllib.parse.quote(name, safe="")}/{version}')
     if metadata is None:
         return False
+    if metadata.get('name') != name or metadata.get('version') != version:
+        raise ValueError(f'npm registry identity differs from {name}@{version}')
     expected = 'sha512-' + base64.b64encode(digest(archive, 'sha512').digest()).decode()
     if metadata['dist']['integrity'] != expected:
         raise ValueError(f'npm {name}@{version} already exists with different bytes')

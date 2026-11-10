@@ -2,7 +2,7 @@
 
 GraphArch distributes one CLI through standalone GitHub release ZIPs, platform-specific Python wheels, and npm packages. The executable in each platform wheel is copied byte-for-byte into its ZIP and npm native package. Installation smoke checks run on every supported native runner before release assembly. Linux requires glibc 2.28 or newer; macOS requires 11 or newer; Windows uses the static runtime. x64 and ARM64 are supported. Other platforms fail explicitly.
 
-Standalone release [v0.2.4](https://github.com/EKGF/grapharch/releases/tag/v0.2.4) and [crates.io `grapharch` 0.2.4](https://crates.io/crates/grapharch/0.2.4) are published. PyPI `grapharch`, npm `grapharch` and the `@grapharch` organization scope still require verified publisher ownership and publication. Do not add Python/npm success or version badges before those packages exist. The initial crates.io bootstrap is complete; its owner still needs to register the automatic trusted publisher for future unattended uploads.
+Standalone release [v0.2.4](https://github.com/EKGF/grapharch/releases/tag/v0.2.4) and [crates.io `grapharch` 0.2.4](https://crates.io/crates/grapharch/0.2.4) are published. PyPI `grapharch`, npm `grapharch` and its six unscoped native packages still require verified publisher ownership and publication. Do not add Python/npm success or version badges before those packages exist. The initial crates.io bootstrap is complete. Unattended uploads require the owner-configured trusted publisher described below.
 
 ## Validate a candidate
 
@@ -181,8 +181,10 @@ Before the first registry publication, an owner must establish:
 
 - PyPI project `grapharch`: GitHub trusted publisher `EKGF/grapharch`, workflow
   `automatic-release.yml`, environment `pypi`.
-- npm package `grapharch` and all six `@grapharch/cli-*` packages: ownership of
-  the `@grapharch` scope and GitHub trusted publishing for `EKGF/grapharch`,
+- npm package `grapharch` and six unscoped native packages `grapharch-linux-x64`,
+  `grapharch-linux-arm64`, `grapharch-darwin-x64`, `grapharch-darwin-arm64`,
+  `grapharch-win32-x64`, and `grapharch-win32-arm64`: authenticated package
+  ownership and GitHub trusted publishing for `EKGF/grapharch`,
   workflow `automatic-release.yml`, environment `npm`, for every package.
 - crates.io crate `grapharch`: ownership and GitHub trusted publishing for
   `EKGF/grapharch`, workflow `automatic-release.yml`, environment `crates-io`.

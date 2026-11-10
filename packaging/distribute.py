@@ -63,6 +63,19 @@ def ontology_metadata() -> tuple[Path, str, str, str]:
     return path, text, iri[0], info[0]
 
 
+def npm_package(item: dict) -> str:
+    return f"grapharch-{item['key']}"
+
+
+def verify_npm_metadata(metadata: dict, item: dict) -> None:
+    expected = {"name": npm_package(item), "version": version(),
+                "os": [item["os"]], "cpu": [item["cpu"]]}
+    if "libc" in item:
+        expected["libc"] = [item["libc"]]
+    if any(metadata.get(key) != value for key, value in expected.items()):
+        raise ValueError("npm platform package metadata differs from its declared target/version")
+
+
 def check() -> None:
     expected = version()
     _, _, ontology_iri, ontology_info = ontology_metadata()
@@ -78,7 +91,7 @@ def check() -> None:
         raise ValueError(
             "npm version differs from Cargo.toml; run packaging/distribute.py sync-version"
         )
-    packages = {f"@grapharch/cli-{p['key']}": expected for p in PLATFORMS}
+    packages = {npm_package(p): expected for p in PLATFORMS}
     if manifest["optionalDependencies"] != packages:
         raise ValueError(
             "npm platform dependencies differ from the declared platform matrix/version"
@@ -105,7 +118,7 @@ def sync_version() -> None:
     manifest = json.loads(path.read_text())
     manifest["version"] = expected
     manifest["optionalDependencies"] = {
-        f"@grapharch/cli-{p['key']}": expected for p in PLATFORMS
+        npm_package(p): expected for p in PLATFORMS
     }
     path.write_text(json.dumps(manifest, indent=2) + "\n")
     check()
@@ -221,7 +234,7 @@ def build(binary: Path | None, wheel: Path | None, target: str, output: Path) ->
         shutil.copyfile(executable, shipped)
         shipped.chmod(0o755)
         metadata = {
-            "name": f"@grapharch/cli-{item['key']}",
+            "name": npm_package(item),
             "version": version(),
             "description": f"GraphArch executable for {item['key']}",
             "license": "MIT",
@@ -288,8 +301,9 @@ def build(binary: Path | None, wheel: Path | None, target: str, output: Path) ->
 def verify(output: Path, target: str) -> None:
     item = platform(target)
     manifest = json.loads((output / f"grapharch-{target}.json").read_text())
-    if manifest["version"] != version() or manifest["target"] != target:
-        raise ValueError("release manifest identifies a different version/target")
+    if (manifest["version"] != version() or manifest["target"] != target
+            or manifest.get("npm_package") != npm_package(item)):
+        raise ValueError("release manifest identifies a different version/target/npm package")
     archive = output / f"grapharch-{target}.zip"
     digest = sha256(archive)
     if (
@@ -305,6 +319,8 @@ def verify(output: Path, target: str) -> None:
         for name, digest in manifest["notices"].items():
             if hashlib.sha256(zipped.read(f"licenses/{name}")).hexdigest() != digest:
                 raise ValueError("archive license notice mismatch")
+    staged_metadata = json.loads((output / "npm" / f"cli-{item['key']}" / "package.json").read_text())
+    verify_npm_metadata(staged_metadata, item)
     native = output / "npm" / f"cli-{item['key']}" / "bin" / binary_name(item)
     if sha256(native) != manifest["binary_sha256"]:
         raise ValueError("npm platform package contains a different executable")
@@ -319,6 +335,10 @@ def verify(output: Path, target: str) -> None:
         ):
             raise ValueError("npm package checksum mismatch")
         with tarfile.open(package, "r:gz") as packed:
+            package_metadata = packed.extractfile("package/package.json")
+            if package_metadata is None:
+                raise ValueError("packed npm package has no metadata")
+            verify_npm_metadata(json.load(package_metadata), item)
             member = packed.extractfile(f"package/bin/{binary_name(item)}")
             if (
                 member is None

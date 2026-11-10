@@ -29,7 +29,7 @@ class ReleaseProof(unittest.TestCase):
         Path('Cargo.toml').write_text(f'[package]\nname = "grapharch"\nversion = "{self.old}"\n')
         Path('Cargo.lock').write_text(f'[[package]]\nname = "grapharch"\nversion = "{self.old}"\n')
         Path('npm').mkdir()
-        Path('npm/package.json').write_text(json.dumps({'version': self.old, 'optionalDependencies': {'@grapharch/cli-test': self.old}}))
+        Path('npm/package.json').write_text(json.dumps({'version': self.old, 'optionalDependencies': {'grapharch-test': self.old}}))
         Path('docs/other/ontology').mkdir(parents=True)
         Path('docs/other/ontology/publication.ttl').write_text(
             f'<urn:ontology> owl:versionIRI <https://ekgf.org/ontology/grapharch/{self.old}> ;\n'

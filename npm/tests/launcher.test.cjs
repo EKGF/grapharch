@@ -7,9 +7,12 @@ const {test} = require('node:test');
 const {platformPackage, resolveBinary} = require('../lib/launcher.cjs');
 
 test('selects only a declared operating system, architecture, and libc', () => {
-  assert.equal(platformPackage({platform:'linux', arch:'x64', glibc:'2.28'}), '@grapharch/cli-linux-x64');
-  assert.equal(platformPackage({platform:'darwin', arch:'arm64'}), '@grapharch/cli-darwin-arm64');
-  assert.equal(platformPackage({platform:'win32', arch:'x64'}), '@grapharch/cli-win32-x64');
+  assert.equal(platformPackage({platform:'linux', arch:'x64', glibc:'2.28'}), 'grapharch-linux-x64');
+  assert.equal(platformPackage({platform:'darwin', arch:'arm64'}), 'grapharch-darwin-arm64');
+  assert.equal(platformPackage({platform:'win32', arch:'x64'}), 'grapharch-win32-x64');
+  assert.equal(platformPackage({platform:'linux', arch:'arm64', glibc:'2.40'}), 'grapharch-linux-arm64');
+  assert.equal(platformPackage({platform:'darwin', arch:'x64'}), 'grapharch-darwin-x64');
+  assert.equal(platformPackage({platform:'win32', arch:'arm64'}), 'grapharch-win32-arm64');
   assert.throws(() => platformPackage({platform:'linux', arch:'x64'}), /glibc/);
   assert.throws(() => platformPackage({platform:'linux', arch:'x64', glibc:'2.17'}), /2.28/);
   assert.throws(() => platformPackage({platform:'freebsd', arch:'x64'}), /unsupported/i);
@@ -20,11 +23,11 @@ test('uses only the exact package/version binary; never a PATH fallback', () => 
   const root=mkdtempSync(join(tmpdir(),'grapharch-launcher-'));
   try {
     mkdirSync(join(root,'bin'));
-    writeFileSync(join(root,'package.json'),JSON.stringify({name:'@grapharch/cli-darwin-arm64',version:require('../package.json').version}));
+    writeFileSync(join(root,'package.json'),JSON.stringify({name:'grapharch-darwin-arm64',version:require('../package.json').version}));
     writeFileSync(join(root,'bin/grapharch'),'fixture');chmodSync(join(root,'bin/grapharch'),0o755);
     const options={platform:'darwin',arch:'arm64',resolve:()=>join(root,'package.json')};
     assert.equal(resolveBinary(options),join(root,'bin/grapharch'));
-    writeFileSync(join(root,'package.json'),JSON.stringify({name:'@grapharch/cli-darwin-arm64',version:'9.9.9'}));
+    writeFileSync(join(root,'package.json'),JSON.stringify({name:'grapharch-darwin-arm64',version:'9.9.9'}));
     assert.throws(()=>resolveBinary(options),/version/);
     assert.throws(()=>resolveBinary({...options,resolve:()=>{throw Error('missing')}}),/platform package/);
   } finally {rmSync(root,{recursive:true,force:true});}

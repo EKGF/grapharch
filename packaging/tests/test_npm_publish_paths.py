@@ -21,8 +21,8 @@ class NpmPaths(unittest.TestCase):
             output = Path('dist')
             output.mkdir()
             (output / 'grapharch-test.json').write_text(json.dumps({
-                'npm_package': '@grapharch/cli-test', 'version': '0.2.5',
-                'npm_archive': 'grapharch-cli-test-0.2.5.tgz'}))
+                'npm_package': 'grapharch-test', 'version': '0.2.5',
+                'npm_archive': 'grapharch-test-0.2.5.tgz'}))
             (output / 'grapharch-npm.json').write_text(json.dumps({
                 'version': '0.2.5', 'archive': 'grapharch-0.2.5.tgz'}))
             with patch('distribute.PLATFORMS', [{'target': 'test'}]), patch('distribute.verify_release'), patch('distribute.npm_command', return_value=['npm']), patch('registry_state.npm_published', return_value=False), patch('subprocess.run') as execute, patch.object(sys, 'argv', ['publish_npm.py', '--output', 'dist']):

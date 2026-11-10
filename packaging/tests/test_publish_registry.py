@@ -30,9 +30,9 @@ class RegistryState(unittest.TestCase):
             archive = Path(temporary) / 'package.tgz'
             archive.write_bytes(b'validated artifact')
             integrity = 'sha512-' + base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()
-            with patch('registry_state.read_json', return_value={'dist': {'integrity': integrity}}):
+            with patch('registry_state.read_json', return_value={'name':'grapharch','version':'0.2.3','dist': {'integrity': integrity}}):
                 self.assertTrue(npm_published('grapharch', '0.2.3', archive))
-            with patch('registry_state.read_json', return_value={'dist': {'integrity': 'sha512-wrong'}}):
+            with patch('registry_state.read_json', return_value={'name':'grapharch','version':'0.2.3','dist': {'integrity': 'sha512-wrong'}}):
                 with self.assertRaisesRegex(ValueError, 'different bytes'):
                     npm_published('grapharch', '0.2.3', archive)
             with patch('registry_state.read_json', return_value=None):
@@ -49,3 +49,14 @@ class RegistryState(unittest.TestCase):
             with patch('registry_state.read_json', return_value=metadata):
                 with self.assertRaisesRegex(ValueError, 'different bytes'):
                     pypi_published('0.2.3', wheel)
+
+    def test_npm_registry_identity_is_exact_even_when_bytes_match(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            archive = Path(temporary) / 'package.tgz'
+            archive.write_bytes(b'verified artifact')
+            integrity = 'sha512-' + base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()
+            for name, version in [('other-package', '0.2.7'), ('grapharch-linux-x64', '0.2.6')]:
+                record = {'name': name, 'version': version, 'dist': {'integrity': integrity}}
+                with patch('registry_state.read_json', return_value=record):
+                    with self.assertRaises(ValueError):
+                        npm_published('grapharch-linux-x64', '0.2.7', archive)
