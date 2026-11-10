@@ -275,6 +275,28 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             Some("location")
         );
         assert!(!detail.contains("class=\"site-navigation\""));
+        assert!(!detail.contains("All showcases"));
+        let trail = parsed
+            .select(&scraper::Selector::parse(".breadcrumbs").unwrap())
+            .next()
+            .unwrap();
+        assert!(trail.text().collect::<String>().starts_with("Showcase"));
+        let links = parsed
+            .select(
+                &scraper::Selector::parse(".showcase-detail a[data-artifact]")
+                    .unwrap(),
+            )
+            .map(|a| a.value().attr("href").unwrap())
+            .collect::<Vec<_>>();
+        let unique = links
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(
+            links.len(),
+            unique.len(),
+            "outputs must appear exactly once"
+        );
         detail_html.push_str(&detail);
     }
     assert!(!html.contains("Download KG"));
@@ -312,29 +334,17 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     for card in
         details.select(&scraper::Selector::parse(".showcase-detail").unwrap())
     {
-        let actions =
-            scraper::Selector::parse(".showcase-actions a[href$='.pdf']")
-                .unwrap();
         let outputs =
-            scraper::Selector::parse("details a[href$='.pdf']").unwrap();
-        let visible = card.select(&actions).collect::<Vec<_>>();
-        let all = card.select(&outputs).collect::<Vec<_>>();
-        assert_eq!(
-            visible.len(),
-            all.len(),
-            "every PDF edition must be visible on {}",
-            card.value().attr("data-showcase").unwrap()
-        );
-        if all.len() > 1 {
-            for link in visible {
-                assert_ne!(
-                    link.text().collect::<String>(),
-                    "PDF",
-                    "multiple PDFs need distinct titles"
-                );
+            scraper::Selector::parse(".showcase-outputs a[href$='.pdf']")
+                .unwrap();
+        let pdfs = card.select(&outputs).collect::<Vec<_>>();
+        if pdfs.len() > 1 {
+            for link in pdfs {
+                assert_ne!(link.text().collect::<String>(), "PDF");
             }
         }
     }
+
     assert!(html.contains("id=\"showcase-search\""));
     assert!(html.contains("aria-live=\"polite\""));
     assert!(html.contains("data-gallery-filter=\"input\""));

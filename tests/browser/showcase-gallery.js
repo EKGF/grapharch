@@ -64,16 +64,19 @@ async (page) => {
     await page.waitForURL(target);
     const detail = page.locator('.showcase-detail');
     if (!(await detail.locator('h1').textContent())) throw new Error('Missing introduction title');
-    const publication = detail.getByRole('link', { name: 'View HTML publication', exact: true });
+    const publication = detail.locator('.showcase-outputs a[href$=".html"]').first();
     if (!(await publication.isVisible())) throw new Error('Missing primary HTML output');
-    const summary = detail.locator('details summary').first();
-    await summary.click();
-    await summary.click();
-    for (const link of await detail.locator('.showcase-actions a, details[open] a').all()) {
+    if (await page.locator('.site-navigation').count()) throw new Error('Detail shows documentation navigation');
+    if (!(await page.locator('.breadcrumbs').innerText()).startsWith('Showcase')) throw new Error('Wrong detail breadcrumb');
+    const hrefs = await detail.locator('a[data-artifact]').evaluateAll(nodes => nodes.map(n => n.href));
+    if (new Set(hrefs).size !== hrefs.length) throw new Error('Duplicate publication outputs');
+    const margins = await detail.locator('.showcase-tags li').evaluateAll(nodes => nodes.map(n => getComputedStyle(n).marginTop));
+    if (margins.some(margin => margin !== '0px')) throw new Error('Inconsistent tag spacing');
+    for (const link of await detail.locator('.showcase-outputs a').all()) {
       await link.scrollIntoViewIfNeeded();
       await link.click({ trial: true });
     }
-    await detail.getByRole('link', { name: 'All showcases', exact: true }).click();
+    await page.locator('.primary-navigation').getByRole('link', { name: 'Gallery', exact: true }).click();
     await page.waitForURL(url => url.pathname.replace(/index\.html$/, '') === new URL(galleryUrl).pathname.replace(/index\.html$/, ''));
     await page.goto(galleryUrl);
   }

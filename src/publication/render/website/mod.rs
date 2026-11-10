@@ -32,6 +32,7 @@ struct Report<'a> {
     title:            &'a str,
     body:             &'a [u8],
     navigation_owner: Option<&'a str>,
+    breadcrumb_root:  Option<(&'a str, &'a str)>,
 }
 
 struct Header {
@@ -165,6 +166,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             title:            "Diagram interpretation",
             body:             super::diagram_notes::html().as_bytes(),
             navigation_owner: None,
+            breadcrumb_root:  None,
         })
         .await?;
         files.push(super::diagram_notes::ROUTE.into());
@@ -190,6 +192,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             title:            "Quality issues",
             body:             &body,
             navigation_owner: None,
+            breadcrumb_root:  None,
         })
         .await?;
         files.push("quality-issues.html".into());
@@ -209,6 +212,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         title:            "Document provenance",
         body:             &body,
         navigation_owner: None,
+        breadcrumb_root:  None,
     })
     .await?;
     files.push("provenance.html".into());
@@ -337,6 +341,7 @@ async fn write_page(
                 title:            &detail.title,
                 body:             detail.body.as_bytes(),
                 navigation_owner: Some(id.as_str()),
+                breadcrumb_root:  Some(("Showcase", &catalog.page(id)?.route)),
             })
             .await?;
             files.push(route);
@@ -423,6 +428,7 @@ async fn write_page(
             title:            &page.title,
             id:               id.as_str(),
             navigation_owner: None,
+            breadcrumb_root:  None,
             fragment_count:   fragments.len(),
             prefix:           &prefix,
             navigation:       &navigation,
@@ -446,7 +452,13 @@ async fn write_report(
     header: &Header,
     report: Report<'_>,
 ) -> Result<()> {
-    let Report { slug, title, body, navigation_owner } = report;
+    let Report {
+        slug,
+        title,
+        body,
+        navigation_owner,
+        breadcrumb_root,
+    } = report;
     let id = crate::publication::dataset::identity("website-report", &[
         plan.target.as_str(),
         slug,
@@ -461,6 +473,7 @@ async fn write_report(
         title,
         id: id.as_str(),
         navigation_owner,
+        breadcrumb_root,
         fragment_count: 0,
         prefix: "./",
         navigation: &navigation,

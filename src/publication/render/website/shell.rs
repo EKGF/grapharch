@@ -15,6 +15,7 @@ pub(super) struct Page<'a> {
     pub fragment_count:   usize,
     pub prefix:           &'a str,
     pub navigation:       &'a str,
+    pub breadcrumb_root:  Option<(&'a str, &'a str)>,
     pub breadcrumbs:      &'a str,
     pub heading:          &'a str,
     pub body:             &'a str,
@@ -196,12 +197,16 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         page.body.into()
     };
     let heading = if project_page { "" } else { heading };
+    let (root_label, root_route) =
+        page.breadcrumb_root.unwrap_or(("Docs", prefix));
     let trail = if project_page {
         String::new()
     } else {
         format!(
-            "<div class=\"breadcrumbs\"><a href=\"{prefix}\">Docs</a><span \
+            "<div class=\"breadcrumbs\"><a href=\"{}\">{}</a><span \
              aria-hidden=\"true\">/</span>{breadcrumbs}<span>{}</span></div>",
+            esc(root_route),
+            esc(root_label),
             esc(page.title)
         )
     };
