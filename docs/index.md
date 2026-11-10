@@ -11,7 +11,7 @@ permalink: /
 
 Documentation from the sources you already maintain.
 
-![Collectors bring source documents into the GraphArch Knowledge Graph; renderers produce websites, standards, and PDFs.](assets/publication-flow.svg)
+![Ontologies, taxonomies, use cases, datasets, and shapes flow through Collectors into the GraphArch Knowledge Graph. Renderers produce websites, standards, and PDFs.](assets/publication-flow.svg)
 
 [Get started](usage/getting-started.md) · [Explore the gallery](showcases.md)
 

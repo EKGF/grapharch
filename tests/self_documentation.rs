@@ -111,7 +111,7 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     let diagram = credit_document
         .select(
             &scraper::Selector::parse(
-                "img[alt^='Collectors bring source documents']",
+                "img[alt^='Ontologies, taxonomies, use cases']",
             )
             .unwrap(),
         )
@@ -129,6 +129,11 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         .collect::<Vec<_>>()
         .join(" ");
     for label in [
+        "Ontologies",
+        "Taxonomies",
+        "Use cases",
+        "Datasets",
+        "Shapes",
         "Collectors",
         "GraphArch",
         "Knowledge",
@@ -149,8 +154,9 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     );
     assert!(illustration.descendants().any(|node| {
         node.has_tag_name("desc") &&
-            node.text()
-                .is_some_and(|text| text.contains("Collectors bring"))
+            node.text().is_some_and(|text| {
+                text.contains("Ontologies, taxonomies, use cases")
+            })
     }));
     assert!(
         credit_document

@@ -1,69 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title description">
-  <title id="title">From sources to publications</title>
-  <desc id="description">Collectors bring Markdown, RDF, and SPARQL into the GraphArch Knowledge Graph. Renderers use that graph to produce websites, standards, and PDFs.</desc>
-  <rect width="1200" height="620" rx="28" fill="#fafafd"/>
-  <g fill="none" stroke="#c6c5e9" stroke-width="5" stroke-linecap="round">
-    <path d="M246 190 C302 190 312 300 370 300"/>
-    <path d="M246 330 C305 330 315 300 370 300"/>
-    <path d="M246 470 C312 470 310 300 370 300"/>
-    <path d="M590 300 H718" stroke="#4947b9"/>
-    <path d="M802 300 C850 300 838 190 886 190"/>
-    <path d="M802 300 C850 300 838 330 886 330"/>
-    <path d="M802 300 C850 300 838 470 886 470"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" role="img" aria-labelledby="title description">
+  <title id="title">From documentable things to publications</title>
+  <desc id="description">Ontologies, taxonomies, use cases, datasets, and shapes feed collectors. Collectors contribute to the GraphArch Knowledge Graph. Renderers use that graph to produce websites, standards, and PDFs. The matching Collectors and Renderers modules connect through the graph from left to right.</desc>
+  <rect width="1000" height="620" rx="28" fill="#fafafd"/>
+  <g fill="none" stroke="#4947b9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M167 320v58m-10-14 10 14 10-14"/>
+    <path d="M310 430h51m-14-10 14 10-14 10"/>
+    <path d="M635 430h51m-14-10 14 10-14 10"/>
+    <path d="M832 382v-42H690V79m132 282 10-14 10 14"/>
+    <path d="M690 79h26m-12-9 12 9-12 9"/>
+    <path d="M690 177h26m-12-9 12 9-12 9"/>
+    <path d="M690 275h26m-12-9 12 9-12 9"/>
   </g>
-  <path d="m703 290 15 10-15 10" fill="none" stroke="#4947b9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
   <g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#242636">
-    <g font-size="48" font-weight="700">
-      <text x="132" y="82">Collectors</text>
-      <text x="760" y="82">Renderers</text>
+    <g id="documentable-things" font-weight="500">
+      <text x="145" y="72" font-size="44" fill="#4947b9">Ontologies</text>
+      <text x="200" y="128" font-size="42">Taxonomies</text>
+      <text x="132" y="182" font-size="46" fill="#ba4a00">Use cases</text>
+      <text x="204" y="238" font-size="42">Datasets</text>
+      <text x="142" y="294" font-size="44" fill="#4947b9">Shapes</text>
     </g>
-    <g fill="#eeeef8">
-      <rect x="24" y="140" width="222" height="100" rx="18"/>
-      <rect x="24" y="280" width="222" height="100" rx="18"/>
-      <rect x="24" y="420" width="222" height="100" rx="18"/>
+    <g id="collectors-module">
+      <rect x="25" y="382" width="285" height="96" rx="18" fill="#eeeef8" stroke="#4947b9" stroke-width="3"/>
+      <text x="167" y="445" font-size="48" font-weight="700" fill="#4947b9">Collectors</text>
     </g>
-    <g font-size="44" font-weight="500">
-      <text x="135" y="206">Markdown</text>
-      <text x="135" y="346">RDF</text>
-      <text x="135" y="486">SPARQL</text>
+    <rect x="365" y="290" width="270" height="305" rx="28" fill="#eeeef8"/>
+    <g id="knowledge-graph" fill="#4947b9" stroke="#4947b9" stroke-width="5" stroke-linecap="round">
+      <path d="m449 333 51 43 49-43m-49 43-46 43m46-43 50 43m-101-86 5 86m95-86 1 86" fill="none"/>
+      <circle cx="500" cy="376" r="21"/>
+      <circle cx="449" cy="333" r="13"/>
+      <circle cx="550" cy="419" r="13"/>
+      <circle cx="549" cy="333" r="13" fill="#ff7a1a" stroke="none"/>
+      <circle cx="454" cy="419" r="13" fill="#ff7a1a" stroke="none"/>
     </g>
-    <circle cx="480" cy="290" r="117" fill="#eeeef8"/>
-    <g stroke="#4947b9" stroke-width="6" stroke-linecap="round">
-      <path d="m407 230 73 60 68-63M480 290l-65 61m65-61 72 56m-145-116 8 121m133-124 4 119" fill="none"/>
+    <g fill="#4947b9" font-size="42" font-weight="700">
+      <text x="500" y="485">GraphArch</text>
+      <text x="500" y="531">Knowledge</text>
+      <text x="500" y="577">Graph</text>
     </g>
-    <g fill="#4947b9">
-      <circle cx="480" cy="290" r="30"/>
-      <circle cx="407" cy="230" r="18"/>
-      <circle cx="552" cy="346" r="18"/>
+    <g id="renderers-module">
+      <rect x="690" y="382" width="285" height="96" rx="18" fill="#eeeef8" stroke="#4947b9" stroke-width="3"/>
+      <text x="832" y="445" font-size="48" font-weight="700" fill="#4947b9">Renderers</text>
     </g>
-    <g fill="#ff7a1a">
-      <circle cx="548" cy="227" r="19"/>
-      <circle cx="415" cy="351" r="16"/>
-    </g>
-    <g fill="#4947b9" font-size="48" font-weight="700">
-      <text x="480" y="460">GraphArch</text>
-      <text x="480" y="518">Knowledge</text>
-      <text x="480" y="576">Graph</text>
-    </g>
-    <circle cx="760" cy="300" r="46" fill="#4947b9"/>
-    <g stroke="#fff" stroke-width="7" stroke-linecap="round">
-      <path d="M742 283h36m-36 17h36m-36 17h36"/>
-    </g>
-    <circle cx="760" cy="360" r="8" fill="#ff7a1a"/>
-    <g fill="#fff" stroke="#d8d8e9" stroke-width="3">
-      <rect x="886" y="140" width="290" height="100" rx="18"/>
-      <rect x="886" y="280" width="290" height="100" rx="18"/>
-      <rect x="886" y="420" width="290" height="100" rx="18"/>
-    </g>
-    <g fill="#4947b9">
-      <circle cx="886" cy="190" r="8"/>
-      <circle cx="886" cy="330" r="8"/>
-      <circle cx="886" cy="470" r="8"/>
-    </g>
-    <g font-size="48" font-weight="500">
-      <text x="1031" y="206">Websites</text>
-      <text x="1031" y="346">Standards</text>
-      <text x="1031" y="486">PDFs</text>
+    <g id="publications" font-size="44" font-weight="500">
+      <g fill="#fff" stroke="#d8d8e9" stroke-width="3">
+        <rect x="720" y="42" width="250" height="74" rx="16"/>
+        <rect x="720" y="140" width="250" height="74" rx="16"/>
+        <rect x="720" y="238" width="250" height="74" rx="16"/>
+      </g>
+      <text x="845" y="94">Websites</text>
+      <text x="845" y="192">Standards</text>
+      <text x="845" y="290">PDFs</text>
     </g>
   </g>
 </svg>
