@@ -108,6 +108,42 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         "Overview is a standalone landing page, not a duplicated sidebar"
     );
     assert!(home.contains("section-landing"));
+    let diagram = credit_document
+        .select(
+            &scraper::Selector::parse("img[alt='Documentation diagram']")
+                .unwrap(),
+        )
+        .next()
+        .expect("homepage pipeline must be a rendered illustration");
+    let svg = tokio::fs::read_to_string(
+        site.join(diagram.value().attr("src").unwrap()),
+    )
+    .await?;
+    let illustration = roxmltree::Document::parse(&svg)?;
+    let labels = illustration
+        .descendants()
+        .filter(|node| node.is_text())
+        .filter_map(|node| node.text())
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        labels.contains("GraphArch") &&
+            labels.contains("Knowledge") &&
+            labels.contains("Graph")
+    );
+    let primary: Vec<_> = credit_document
+        .select(&scraper::Selector::parse(".primary-navigation a").unwrap())
+        .map(|link| link.text().collect::<String>())
+        .collect();
+    assert_eq!(primary, [
+        "Overview",
+        "Documentation",
+        "Collectors",
+        "Renderers",
+        "Gallery"
+    ]);
+
+    assert!(!home.contains("language-mermaid"));
 
     let navigation_page =
         tokio::fs::read_to_string(site.join("usage/index.html")).await?;
@@ -150,6 +186,27 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         })
         .collect();
     assert!(identities.contains("urn:grapharch:docs:topic:usage"));
+    assert!(!identities.contains("urn:grapharch:docs:renderers:readme"));
+    assert!(!identities.contains("urn:grapharch:docs:collectors:readme"));
+    let renderer_page =
+        tokio::fs::read_to_string(site.join("renderers/index.html")).await?;
+    for route in [
+        "website",
+        "specification",
+        "specification-pages",
+        "bookshelf",
+        "pdf",
+        "html",
+    ] {
+        assert!(renderer_page.contains(&format!("{route}/")));
+        assert!(
+            tokio::fs::try_exists(
+                site.join(format!("renderers/{route}/index.html"))
+            )
+            .await?
+        );
+    }
+
     assert!(identities.contains("urn:grapharch:docs:topic:other"));
     assert_eq!(
         identities.len(),

@@ -14,6 +14,9 @@ documentation graph. A project can provide an authoritative reference,
 explanatory companion site, and review document with different arrangements of
 shared content.
 
+See the [renderer catalogue](../../renderers/README.md) for the implemented
+renderer modes and their output artifacts.
+
 ## Publication styles
 
 | Style | Useful when readers need | Output |

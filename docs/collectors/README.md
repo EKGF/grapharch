@@ -67,3 +67,8 @@ provenance, obey resource budgets, and support rendering after the original sour
 has been removed. A new RDF resource kind may instead need a documentation generator over
 existing RDF collection. See [extensibility](../features/extensibility.md) and the
 [architecture](../other/architecture/README.md).
+
+Collector additions can be proposed through pull requests following the
+[contribution guide](../other/contribute/README.md) and the extension contract
+above. Include source and provenance handling, bounded-input regression tests,
+and a source-free rendering acceptance example.

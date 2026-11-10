@@ -86,20 +86,22 @@ doc:profile ga:layout "sectioned" ; ga:navigation doc:sections .
 doc:sections a ga:Navigation ; dct:title "GraphArch sections" ;
     ga:navigationRegion "primary" ; ga:navigationEntry doc:overview-section,
         doc:documentation-section, doc:gallery-section, doc:things-section,
-        doc:features-section, doc:collectors-section, doc:other-section, doc:overview-guide .
+        doc:features-section, doc:collectors-section, doc:renderers-section, doc:other-section, doc:overview-guide .
 doc:overview-section a ga:NavigationEntry ; dct:title "Overview" ; ga:order 1 ;
     ga:page <urn:grapharch:docs:topic:index> .
 doc:documentation-section a ga:NavigationEntry ; dct:title "Documentation" ; ga:order 2 ;
     ga:page <urn:grapharch:docs:topic:usage> .
-doc:gallery-section a ga:NavigationEntry ; dct:title "Gallery" ; ga:order 3 ;
+doc:gallery-section a ga:NavigationEntry ; dct:title "Gallery" ; ga:order 5 ;
     ga:page <urn:grapharch:docs:topic:showcase-gallery> .
 doc:things-section a ga:NavigationEntry ; ga:order 1 ; ga:parentEntry doc:documentation-section ;
     ga:page <urn:grapharch:docs:topic:documentable-things> .
 doc:features-section a ga:NavigationEntry ; ga:order 2 ; ga:parentEntry doc:documentation-section ;
     ga:page <urn:grapharch:docs:topic:features> .
-doc:collectors-section a ga:NavigationEntry ; ga:order 3 ; ga:parentEntry doc:documentation-section ;
+doc:collectors-section a ga:NavigationEntry ; dct:title "Collectors" ; ga:order 3 ;
     ga:page <urn:grapharch:docs:collectors:readme> .
-doc:other-section a ga:NavigationEntry ; ga:order 4 ; ga:parentEntry doc:documentation-section ;
+doc:renderers-section a ga:NavigationEntry ; dct:title "Renderers" ; ga:order 4 ;
+    ga:page <urn:grapharch:docs:renderers:readme> .
+doc:other-section a ga:NavigationEntry ; ga:order 5 ; ga:parentEntry doc:documentation-section ;
     ga:page <urn:grapharch:docs:topic:other> .
 
 doc:overview-guide a ga:NavigationEntry ; ga:order 0 ; ga:parentEntry doc:documentation-section ;
