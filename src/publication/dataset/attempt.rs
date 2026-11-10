@@ -180,17 +180,15 @@ impl Attempt {
                     // difference; leaving it as a SPARQL join can scan
                     // unrelated versions.
                     if let Some(previous) =
-                        attempt.previous_data(&transaction)?
-                    {
-                        if let QueryResults::Boolean(true) = transaction
+                        attempt.previous_data(&transaction)? &&
+                        let QueryResults::Boolean(true) = transaction
                             .query(&attempt.changed_query(&previous))
                             .map_err(io::Error::other)?
-                        {
-                            return Err(io::Error::other(
-                                "same input revision produced different \
-                                 contribution content",
-                            ));
-                        }
+                    {
+                        return Err(io::Error::other(
+                            "same input revision produced different \
+                             contribution content",
+                        ));
                     }
                     let update = format!(
                         "DELETE {{ GRAPH <{CONTROL}> {{ {} {} ?old . {} {} {} \
