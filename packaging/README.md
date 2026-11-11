@@ -32,24 +32,25 @@ trusted-publisher registration.
 
 ## Consumer GitHub Action
 
-Use one action step to install a pinned release and build an ontology family. Check out the consuming repository first, then pin the action itself to a reviewed commit SHA:
+Use one action step to install a pinned release and build an ontology family. Check out the consuming repository first, then pin the action to the commit SHA of a release:
 
 ```yaml
-- uses: actions/checkout@v4
-- uses: EKGF/grapharch@<reviewed-commit-SHA>
+- uses: actions/checkout@v7
+- uses: EKGF/grapharch@<release-commit-sha> # vX.Y.Z
   id: docs
   with:
-    version: '0.2.4' # example of an existing immutable release
     source-kind: checkout
     source: .
     output: build/docs
 ```
 
+`packaging/action_selection.py` derives the engine from the action itself: the version from the action's `Cargo.toml` and the commit from `github.action_ref` (a full SHA), or from `HEAD` of a clean local action checkout. Install then requires the release manifest's `source_commit` to equal that commit. Explicit `version` with `expected-revision` selects another release with the same verification; `source-revision` builds the local checkout instead.
+
 The default `mode` is `build-family`. `source-kind` defaults to `directory`; choose `checkout` explicitly to collect a local Git repository with provenance. GraphArch discovers the project and target from publication hints in the source RDF. To use external publication definitions instead, supply `definitions`, `project` and `target` together. The output root defaults to `build/docs`. Paths with spaces are supported; all CLI arguments are passed directly without shell interpretation. The build requires a release supporting `build-family --json` report schema version 1.
 
 Outputs `publication-path`, `pdf-path` and `kg-path` are canonical absolute paths validated to exist beneath the chosen output root. The publication directory contains `index.html`; the KG is checked separately. `pdf-path` is empty when the renderer does not produce a single collection PDF. Upload `publication-path` as the website, and optionally include the separate `kg-path` archive in deployment packaging. The action does not deploy or reread sources to assemble outputs.
 
-Use `mode: install` for setup alone, then invoke any CLI command yourself. `version` is required and exact, without `v`; `cache` defaults to `true`. Outputs `version` and the absolute `binary-path` are available in both modes. The verified installation directory is added to PATH. A checksum is fetched and checked even on cache hits. Unsupported platforms, missing artifacts, corrupt archives and version mismatches fail without compilation or alternate downloads. Invalid inputs fail before downloading; CLI failures preserve their exit status. No registry credentials are needed.
+Use `mode: install` for setup alone, then invoke any CLI command yourself. `version` and `expected-revision` are optional and supplied together; `cache` defaults to `true`. Outputs `version`, `revision` and the absolute `binary-path` are available in both modes. The verified installation directory is added to PATH. A checksum is fetched and checked even on cache hits. Unsupported platforms, missing artifacts, corrupt archives and version mismatches fail without compilation or alternate downloads. Invalid inputs fail before downloading; CLI failures preserve their exit status. No registry credentials are needed.
 
 ## Local UML rendering dependency
 
@@ -173,9 +174,10 @@ this publication run rather than rebuilding its native producer.
 
 After every requested publication succeeds, the workflow advances the Action
 convenience tags `vMAJOR` and `vMAJOR.MINOR` to the immutable release commit.
-Use `EKGF/grapharch@v0` to follow major version zero, an exact
-`@v0.2.3` for a fixed release, or a full reviewed commit SHA for immutable
-supply-chain pinning. Existing consuming repositories are not rewritten.
+`EKGF/grapharch@v0` follows the Action implementation within major version
+zero; with a moving reference, supply `version` and `expected-revision`. The
+release commit SHA, kept current by Dependabot, selects the action and its
+binary together. Existing consuming repositories are not rewritten.
 
 Before the first registry publication, an owner must establish:
 

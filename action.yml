@@ -1,14 +1,14 @@
 name: Publish documentation with GraphArch
-description: Build documentation with a verified release or exact GraphArch source revision
+description: Build documentation with the verified GraphArch release of this action commit
 inputs:
   version:
-    description: Exact published version, without a leading v
+    description: Exact published version without a leading v, supplied with expected-revision; omit both to install the release of this action commit
     required: false
   expected-revision:
-    description: Optional exact release source commit to verify against published provenance
+    description: Exact release commit SHA of version, verified against published provenance
     required: false
   source-revision:
-    description: Exact Git SHA of this action checkout, mutually exclusive with version (Linux source build)
+    description: Exact Git SHA of a local action checkout to build from source instead (Linux); excludes version
     required: false
   mode:
     description: build-family (default) or install for setup only
@@ -47,15 +47,31 @@ outputs:
 runs:
   using: composite
   steps:
+    # Composite run steps see the action's own ref only through env
+    # (actions/runner#2473). Capture it before any nested action runs.
+    - id: identity
+      shell: bash
+      env:
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
+      run: |
+        if printf 'repository=%s\nref=%s\n' "$ACTION_REPOSITORY" "$ACTION_REF" >> "$GITHUB_OUTPUT"; then :; else
+          printf 'GraphArch selection: cannot record the action reference\n' >&2
+          exit 1
+        fi
     - uses: actions/setup-python@v7
       with:
         python-version: '3.12'
-    - name: Validate generator selection
+    - id: select
+      name: Select the generator
       shell: bash
       env:
         GRAPHARCH_VERSION: ${{ inputs.version }}
+        GRAPHARCH_EXPECTED_REVISION: ${{ inputs.expected-revision }}
         GRAPHARCH_SOURCE_REVISION: ${{ inputs.source-revision }}
-      run: python "$GITHUB_ACTION_PATH/packaging/source_action.py" validate
+        GRAPHARCH_ACTION_REPOSITORY: ${{ steps.identity.outputs.repository }}
+        GRAPHARCH_ACTION_REF: ${{ steps.identity.outputs.ref }}
+      run: python -B "$GITHUB_ACTION_PATH/packaging/action_selection.py"
     - name: Validate publication inputs
       shell: bash
       env:
@@ -66,39 +82,38 @@ runs:
         GRAPHARCH_PROJECT: ${{ inputs.project }}
         GRAPHARCH_TARGET: ${{ inputs.target }}
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
-      run: python "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
+      run: python -B "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
     - uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: '21'
     - name: Set up local UML renderer
       shell: bash
-      run: python "$GITHUB_ACTION_PATH/packaging/setup_plantuml.py"
+      run: python -B "$GITHUB_ACTION_PATH/packaging/setup_plantuml.py"
     - id: platform
-      if: inputs.version != ''
+      if: steps.select.outputs.kind == 'release'
       shell: bash
       env:
-        GRAPHARCH_VERSION: ${{ inputs.version }}
-      run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" identify
+        GRAPHARCH_VERSION: ${{ steps.select.outputs.version }}
+      run: python -B "$GITHUB_ACTION_PATH/packaging/setup_action.py" identify
     - uses: actions/cache@v6
-      if: inputs.version != '' && inputs.cache == 'true'
+      if: steps.select.outputs.kind == 'release' && inputs.cache == 'true'
       with:
-        path: ${{ runner.tool_cache }}/grapharch/${{ inputs.version }}/${{ steps.platform.outputs.target }}
-        key: grapharch-release-${{ inputs.version }}-${{ steps.platform.outputs.target }}-v1
+        path: ${{ runner.tool_cache }}/grapharch/${{ steps.select.outputs.version }}/${{ steps.platform.outputs.target }}
+        key: grapharch-release-${{ steps.select.outputs.version }}-${{ steps.platform.outputs.target }}-v1
     - id: install
-      if: inputs.version != ''
+      if: steps.select.outputs.kind == 'release'
       shell: bash
       env:
-        GRAPHARCH_VERSION: ${{ inputs.version }}
-        GRAPHARCH_EXPECTED_REVISION: ${{ inputs.expected-revision }}
-      run: python "$GITHUB_ACTION_PATH/packaging/setup_action.py" install
+        GRAPHARCH_VERSION: ${{ steps.select.outputs.version }}
+        GRAPHARCH_EXPECTED_REVISION: ${{ steps.select.outputs.revision }}
+      run: python -B "$GITHUB_ACTION_PATH/packaging/setup_action.py" install
     - id: source-install
-      if: inputs.source-revision != ''
+      if: steps.select.outputs.kind == 'source'
       shell: bash
       env:
-        GRAPHARCH_VERSION: ${{ inputs.version }}
-        GRAPHARCH_SOURCE_REVISION: ${{ inputs.source-revision }}
-      run: python "$GITHUB_ACTION_PATH/packaging/source_action.py" install
+        GRAPHARCH_SOURCE_REVISION: ${{ steps.select.outputs.revision }}
+      run: python -B "$GITHUB_ACTION_PATH/packaging/source_action.py" install
     - id: build
       shell: bash
       env:
@@ -110,4 +125,4 @@ runs:
         GRAPHARCH_PROJECT: ${{ inputs.project }}
         GRAPHARCH_TARGET: ${{ inputs.target }}
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
-      run: python "$GITHUB_ACTION_PATH/packaging/build_action.py"
+      run: python -B "$GITHUB_ACTION_PATH/packaging/build_action.py"

@@ -8,20 +8,14 @@ import sys
 import tomllib
 
 
-def validate_selection(version, revision):
-    if bool(version) == bool(revision):
-        raise ValueError('supply exactly one of version or source-revision')
-    if version:
-        if not re.fullmatch(r'\d+\.\d+\.\d+', version):
-            raise ValueError('version must be an exact MAJOR.MINOR.PATCH release without v')
-        return 'release'
+def exact_revision(revision):
     if not re.fullmatch(r'[a-f0-9]{40}', revision) or revision == '0' * 40:
         raise ValueError('source-revision must be an exact nonzero lowercase Git SHA')
-    return 'source'
+    return revision
 
 
 def validate_checkout(root, revision):
-    validate_selection('', revision)
+    exact_revision(revision)
     actual = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip()
     if actual != revision:
         raise ValueError('action checkout does not match source-revision')
@@ -31,7 +25,7 @@ def validate_checkout(root, revision):
                                        '--ignored', '--exclude-standard', '--',
                                        'src', 'packaging', '.cargo'], text=True)
     if dirty or ignored:
-        raise ValueError('source action requires a clean checkout without extra executable inputs')
+        raise ValueError('the action requires a clean checkout without extra executable inputs')
 
 
 def install(root, revision):
@@ -59,16 +53,10 @@ def install(root, revision):
 
 
 def main():
-    version = os.environ.get('GRAPHARCH_VERSION', '')
-    revision = os.environ.get('GRAPHARCH_SOURCE_REVISION', '')
-    mode = validate_selection(version, revision)
-    if sys.argv[1] == 'validate':
-        if mode == 'source':
-            validate_checkout(Path(os.environ['GITHUB_ACTION_PATH']), revision)
-    elif sys.argv[1] == 'install' and mode == 'source':
-        install(Path(os.environ['GITHUB_ACTION_PATH']), revision)
-    else:
-        raise ValueError('expected validate, or install with source-revision')
+    if sys.argv[1:] != ['install']:
+        raise ValueError('expected install')
+    revision = exact_revision(os.environ.get('GRAPHARCH_SOURCE_REVISION', ''))
+    install(Path(os.environ['GITHUB_ACTION_PATH']), revision)
 
 
 if __name__ == '__main__':

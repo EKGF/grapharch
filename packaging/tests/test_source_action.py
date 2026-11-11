@@ -52,9 +52,11 @@ class SourceActionTests(unittest.TestCase):
             self.assertIn('revision=' + 'a' * 40, (root / 'outputs').read_text())
             self.assertIn('binary-path=', (root / 'outputs').read_text())
 
-    def test_install_selectors_are_mutually_exclusive_and_exact(self):
-        for version, revision in [('', ''), ('0.1.0', 'a' * 40), ('', 'main'), ('latest', '')]:
-            with self.subTest(version=version, revision=revision), self.assertRaises(ValueError):
-                source.validate_selection(version, revision)
-        self.assertEqual(source.validate_selection('0.1.0', ''), 'release')
-        self.assertEqual(source.validate_selection('', 'a' * 40), 'source')
+    def test_source_install_requires_an_exact_revision(self):
+        for revision in ('', 'main', '0' * 40):
+            with self.subTest(revision=revision), \
+                    patch.dict(os.environ, {'GRAPHARCH_SOURCE_REVISION': revision}), \
+                    patch.object(source.sys, 'argv', ['source_action.py', 'install']), \
+                    patch.object(source, 'install') as build, self.assertRaises(ValueError):
+                source.main()
+            build.assert_not_called()
