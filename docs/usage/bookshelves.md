@@ -63,6 +63,11 @@ ontology declaration.
 term dictionaries out of the printed contents without removing their definitions
 from the book. Values from one to eight are accepted.
 
+A link in one book to a subject documented in another book opens that book's
+HTML chapter. Book PDFs are published beside the HTML pages, so the link is
+relative to the PDF and works wherever the bookshelf is deployed. A book PDF
+saved on its own cannot follow such links.
+
 ## Parallel PDF compilation
 
 One coordinator collects and documents the sources once, pins the revision, and

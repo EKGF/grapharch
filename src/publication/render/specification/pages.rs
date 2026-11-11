@@ -13,7 +13,7 @@ use {
     },
     crate::publication::{
         diagnostics::{Diagnostic, FailureMode, Severity},
-        native_html,
+        native_html::{self, Links},
     },
     anyhow::{Result, ensure},
     serde::Serialize,
@@ -103,7 +103,7 @@ pub(super) async fn body(
     let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
     if entry.format == "text/html" {
         Ok(
-            native_html::read(&entry.body, None, &mut |depth| {
+            native_html::read(&entry.body, Links::Publication, &mut |depth| {
                 outline.heading_number(depth)
             })?
             .html,

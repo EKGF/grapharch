@@ -36,7 +36,12 @@ impl Preamble {
         );
         let html = match plan.source.text(&fragment, "format").await?.as_str() {
             "text/html" => {
-                native_html::read(&body, None, &mut |_| Ok(None))?.html
+                native_html::read(
+                    &body,
+                    native_html::Links::Publication,
+                    &mut |_| Ok(None),
+                )?
+                .html
             },
             "text/markdown" => {
                 let markdown =

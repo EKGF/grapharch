@@ -2,6 +2,7 @@
 //! Executable document machinery is never admitted into shared publication
 //! content.
 use {
+    super::href::Href,
     anyhow::{Result, ensure},
     scraper::{ElementRef, Html},
     sha2::{Digest, Sha256},
@@ -24,9 +25,43 @@ pub(crate) struct Fragment {
     pub links:    Vec<String>,
 }
 
+/// How a fragment's links are interpreted. See [`Href`] for the policy.
+#[derive(Clone, Copy)]
+pub(crate) enum Links<'a> {
+    /// HTML imported by a collector from a published document. Its relative
+    /// references name resources of that document's own site and resolve
+    /// against its source URL.
+    Source(&'a Url),
+    /// Content published by this target: authored, or already resolved by its
+    /// collector. Relative references stay relative to the containing page.
+    Publication,
+}
+
+impl Links<'_> {
+    fn href(self, value: &str) -> Result<String> {
+        let Self::Source(base) = self else {
+            Href::authored(value)?;
+            return Ok(value.to_owned());
+        };
+        let url = base.join(value)?;
+        if url.origin() == base.origin() &&
+            url.path() == base.path() &&
+            url.query() == base.query() &&
+            let Some(fragment) = url.fragment()
+        {
+            return Ok(format!("#{fragment}"));
+        }
+        ensure!(
+            matches!(url.scheme(), "https" | "http" | "mailto"),
+            "unsupported published HTML link"
+        );
+        Ok(url.to_string())
+    }
+}
+
 pub(crate) fn read(
     body: &str,
-    base: Option<&Url>,
+    links: Links<'_>,
     number: &mut dyn FnMut(usize) -> Result<Option<String>>,
 ) -> Result<Fragment> {
     ensure!(
@@ -40,13 +75,18 @@ pub(crate) fn read(
         ids:      HashSet::new(),
         links:    Vec::new(),
     };
-    children(document.root_element(), base, number, &mut result)?;
+    children(
+        document.root_element(),
+        links,
+        number,
+        &mut result,
+    )?;
     Ok(result)
 }
 
 fn children(
     element: ElementRef<'_>,
-    base: Option<&Url>,
+    links: Links<'_>,
     number: &mut dyn FnMut(usize) -> Result<Option<String>>,
     out: &mut Fragment,
 ) -> Result<()> {
@@ -54,7 +94,7 @@ fn children(
         if let Some(text) = node.value().as_text() {
             out.html.push_str(&escape(text));
         } else if let Some(element) = ElementRef::wrap(node) {
-            emit(element, base, number, out)?;
+            emit(element, links, number, out)?;
         }
     }
     Ok(())
@@ -62,7 +102,7 @@ fn children(
 
 fn emit(
     element: ElementRef<'_>,
-    base: Option<&Url>,
+    links: Links<'_>,
     number: &mut dyn FnMut(usize) -> Result<Option<String>>,
     out: &mut Fragment,
 ) -> Result<()> {
@@ -193,27 +233,7 @@ fn emit(
             out.html
                 .push_str(&format!(" {attribute}=\"{}\"", escape(value)));
         } else if attribute == "href" {
-            let value = if let Some(base) = base {
-                let url = base.join(value)?;
-                if url.origin() == base.origin() &&
-                    url.path() == base.path() &&
-                    url.query() == base.query() &&
-                    url.fragment().is_some()
-                {
-                    format!("#{}", url.fragment().unwrap())
-                } else {
-                    url.to_string()
-                }
-            } else {
-                value.to_owned()
-            };
-            if !value.starts_with('#') {
-                let url = Url::parse(&value)?;
-                ensure!(
-                    matches!(url.scheme(), "https" | "http" | "mailto"),
-                    "unsupported published HTML link"
-                );
-            }
+            let value = links.href(value)?;
             out.links.push(value.clone());
             out.html.push_str(&format!(" href=\"{}\"", escape(&value)));
         } else if attribute == "style" {
@@ -263,7 +283,7 @@ fn emit(
             .push_str(&escape(&element.text().collect::<String>()));
         out.html.push_str("</code>");
     } else {
-        children(element, base, number, out)?;
+        children(element, links, number, out)?;
     }
     if !matches!(name, "br" | "hr" | "col" | "wbr") {
         out.html.push_str(&format!("</{name}>"));
@@ -374,14 +394,56 @@ mod tests {
              id=\"grammar-heading\"><bdi class=\"secno\">5.3 \
              </bdi>Grammar</h3></div><div class=\"header-wrapper\"><h3 \
              id=\"terminals\">Productions for terminals</h3></div></section>";
-        let normalized = read(source, None, &mut |_| Ok(None))?;
+        let normalized = read(source, Links::Publication, &mut |_| Ok(None))?;
         let mut numbered = 0;
-        let rendered = read(&normalized.html, None, &mut |_| {
+        let rendered = read(&normalized.html, Links::Publication, &mut |_| {
             numbered += 1;
             Ok(Some("5.3".into()))
         })?;
         assert_eq!(numbered, 1);
         assert!(rendered.html.contains(">Productions for terminals</h3>"));
+        Ok(())
+    }
+
+    #[test]
+    fn publication_links_stay_relative_to_the_page() -> Result<()> {
+        let body = "<a href=\"../pdf/ekgf/document.pdf\">EKGF</a> <a \
+                    href=\"#intro\">Intro</a> <a \
+                    href=\"https://ekgf.org/\">EKGF</a>";
+        let fragment = read(body, Links::Publication, &mut |_| Ok(None))?;
+        assert_eq!(fragment.links, [
+            "../pdf/ekgf/document.pdf",
+            "#intro",
+            "https://ekgf.org/"
+        ]);
+        assert!(fragment.html.contains("href=\"../pdf/ekgf/document.pdf\""));
+        for href in ["/pdf/document.pdf", "javascript:alert(1)"] {
+            assert!(
+                read(
+                    &format!("<a href=\"{href}\">x</a>"),
+                    Links::Publication,
+                    &mut |_| Ok(None)
+                )
+                .is_err(),
+                "{href} is not a portable published link"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn imported_links_resolve_against_their_source_document() -> Result<()> {
+        let base = Url::parse("https://www.w3.org/TR/rdf12-n-triples/")?;
+        let fragment = read(
+            "<a href=\"../rdf12-concepts/\">Concepts</a><a \
+             href=\"#grammar\">Grammar</a>",
+            Links::Source(&base),
+            &mut |_| Ok(None),
+        )?;
+        assert_eq!(fragment.links, [
+            "https://www.w3.org/TR/rdf12-concepts/",
+            "#grammar"
+        ]);
         Ok(())
     }
 }

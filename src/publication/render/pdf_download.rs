@@ -1,5 +1,5 @@
 //! Consistent, explicitly labelled PDF downloads across publication surfaces.
-use super::markup::html_escape;
+use {super::markup::html_escape, crate::publication::href::Href};
 
 pub(super) fn link(href: &str, label: &str, class: &str) -> String {
     format!(
@@ -28,7 +28,7 @@ pub(super) fn metadata_links(html: &str) -> String {
     let mut downloads = String::new();
     for anchor in document.select(&selector) {
         let href = anchor.value().attr("href").expect("selected href");
-        if url::Url::parse(href).is_ok_and(|url| url.path().ends_with(".pdf")) &&
+        if Href::parse(href).is_ok_and(|href| href.is_pdf()) &&
             seen.insert(href)
         {
             let label = anchor.text().collect::<String>();
@@ -36,4 +36,22 @@ pub(super) fn metadata_links(html: &str) -> String {
         }
     }
     downloads
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn relative_pdf_links_get_download_controls_with_the_same_href() {
+        let downloads = super::metadata_links(
+            "<dd><a href=\"../pdf/ekgf/document.pdf\">EKGF</a><br><a \
+             href=\"https://example.org/omg.pdf\">OMG</a><a \
+             href=\"../index.html\">Home</a></dd>",
+        );
+        assert_eq!(
+            downloads.matches("class=\"pdf-download\"").count(),
+            2
+        );
+        assert!(downloads.contains("href=\"../pdf/ekgf/document.pdf\""));
+        assert!(downloads.contains("href=\"https://example.org/omg.pdf\""));
+    }
 }

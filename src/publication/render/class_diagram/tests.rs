@@ -137,7 +137,18 @@ fn compact_pdf_diagrams_never_enlarge_beyond_intrinsic_readable_size() {
 
 #[tokio::test]
 async fn pdf_diagram_links_survive_native_compilation() -> anyhow::Result<()> {
-    let destination = "https://example.org/diagram-only-target";
+    for destination in [
+        "https://example.org/diagram-only-target",
+        "./section-other-book.html#class",
+    ] {
+        diagram_link_survives_native_compilation(destination).await?;
+    }
+    Ok(())
+}
+
+async fn diagram_link_survives_native_compilation(
+    destination: &str,
+) -> anyhow::Result<()> {
     let diagram = typst(&retained(destination))?;
     let root = tempfile::tempdir()?;
     tokio::fs::write(

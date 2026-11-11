@@ -160,8 +160,12 @@ impl Collector for HtmlPreambleFile {
                 );
                 Ok((
                     title,
-                    native_html::read(&body, Some(&base), &mut |_| Ok(None))?
-                        .html,
+                    native_html::read(
+                        &body,
+                        native_html::Links::Source(&base),
+                        &mut |_| Ok(None),
+                    )?
+                    .html,
                 ))
             })
             .await??;

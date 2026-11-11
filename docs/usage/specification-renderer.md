@@ -106,6 +106,18 @@ If any person in a role has an order, every person in that role must have a dist
 nonnegative `xsd:integer` order. Published W3C collection records source order.
 At most 64 people per role are accepted. Text fields and URLs have a 4096-byte runtime limit.
 
+Ordered `ga:MetadataRow` resources can replace the default header rows. A row with
+`ga:field "custom"` supplies its value as declarative HTML in `ga:body`. Links in
+such authored HTML, and in authored HTML fragments, may be relative. They stay
+relative to the published page. A sibling target's PDF linked as
+`../pdf/ekgf/document.pdf` is therefore reached in production, in a preview, in
+the showcase gallery, and in a local build. `ga:thisVersion` identifies the
+publication; it is never the base of these links. Links starting with `/` are
+rejected, because their target depends on where a host mounts the output. HTML
+collected from a published document is different: its collector resolves that
+document's relative links against its source URL. Header rows linking to a PDF
+also get a PDF download control, and the header's links are retained in the PDF.
+
 Publication metadata is validated before publishing. An invalid publication
 does not replace the last successful generation.
 
