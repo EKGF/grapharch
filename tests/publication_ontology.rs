@@ -1,4 +1,9 @@
 //! The vocabulary is the public contract for both authored and exported RDF.
+#[path = "support/family_repository.rs"]
+mod family_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
+
 use {
     anyhow::Result,
     oxigraph::{io::RdfFormat, sparql::QueryResults, store::Store},
@@ -198,10 +203,12 @@ fn embedded_turtle_examples_are_parseable() -> Result<()> {
 
 #[tokio::test]
 async fn collected_dataset_uses_declared_property_kinds() -> Result<()> {
-    let (dataset, _) = grapharch::publication::showcases::dprod(
+    let fixture = revision_fixture::RevisionFixture::new(
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/dprod"),
-    )
-    .await?;
+    )?;
+    let (dataset, _) = fixture
+        .collect(grapharch::publication::revision_build::TargetSelection::All)
+        .await?;
     let store = ontology()?;
     let mut rows = dataset.select(
         "SELECT DISTINCT ?predicate (isLiteral(?value) AS ?literal) WHERE { GRAPH ?g { ?s ?predicate ?value } FILTER(STRSTARTS(STR(?predicate), 'https://ekgf.org/ontology/grapharch#')) }".into()

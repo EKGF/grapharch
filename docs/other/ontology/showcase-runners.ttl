@@ -8,9 +8,9 @@ ga:AuthoredShowcaseRunner a ga:ShowcaseRunner ;
     rdfs:label "Authored RDF showcase"@en ;
     dct:description "Collects authored RDF containing fragment bodies and publication definitions."@en .
 
-ga:DprodShowcaseRunner a ga:ShowcaseRunner ;
-    rdfs:label "DPROD source-owned showcase"@en ;
-    dct:description "Collects one exact DPROD repository revision with its source-owned publication definitions."@en .
+ga:RevisionBuildShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Exact-revision showcase"@en ;
+    dct:description "Builds one exact content commit with publication definitions from an exact controlling commit of the same repository."@en .
 
 ga:MkdocsShowcaseRunner a ga:ShowcaseRunner ;
     rdfs:label "MkDocs site showcase"@en ;

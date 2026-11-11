@@ -1,3 +1,7 @@
 repository: https://github.com/EKGF/dprod.git
-ref: 39155734ed3f79578e460e63eab6d31e9913206c
-definitions: publication/standards.ttl
+commit: 39155734ed3f79578e460e63eab6d31e9913206c
+definitions:
+  commit: 39155734ed3f79578e460e63eab6d31e9913206c
+  path: publication/definitions/develop.ttl
+project: urn:dprod-showcase:project
+targets: all

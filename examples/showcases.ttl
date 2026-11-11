@@ -21,7 +21,7 @@ ex:rdf12 a ga:Showcase ; ga:slug "rdf12" ; dct:title "W3C RDF 1.2 N-Triples" ;
     ga:expectedDiagnostic "unresolved-native-reference" .
 ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and SHACL" ;
     dct:description "A pinned DPROD working-draft revision becomes a standards reference, companion guide, an EKGF community PDF and an OMG submission-preview PDF. Both specification editions share the same technical chapters; a separate illustrated overview explains the bigger picture and adoption path. All outputs retain the pinned source revision." ;
-    ga:order 4 ; ga:showcaseRunner ga:DprodShowcaseRunner ; ga:source "dprod/live.yaml" ;
+    ga:order 4 ; ga:showcaseRunner ga:RevisionBuildShowcaseRunner ; ga:source "dprod/live.yaml" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/ekgf/document.pdf" .
 
 # TEMPORARY PIN until the EKG migration lands upstream: ekg-ontologies main emits

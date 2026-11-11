@@ -27,6 +27,7 @@ use {
 mod request;
 mod selection;
 mod trust;
+pub(crate) use request::exact_commit;
 pub use {
     request::{BuildManifest, BuildRequest},
     selection::TargetSelection,

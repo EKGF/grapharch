@@ -277,8 +277,8 @@ async fn build_case(
     );
     let (child, plans) = match case.runner {
         ShowcaseRunner::Authored => showcases::authored(&source).await?,
-        ShowcaseRunner::Dprod => {
-            showcases::dprod_remote(
+        ShowcaseRunner::RevisionBuild => {
+            showcases::revision_build(
                 &source,
                 &root
                     .parent()

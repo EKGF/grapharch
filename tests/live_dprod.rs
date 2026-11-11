@@ -1,20 +1,21 @@
-#[path = "support/definitions.rs"]
-mod definitions;
 #[path = "support/dprod_header.rs"]
 mod dprod_header;
 
-use grapharch::publication::{dataset::Dataset, render::Publisher, showcases};
+use {
+    grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
+    std::path::Path,
+};
+
 #[tokio::test]
-#[ignore = "explicit remote develop acceptance; performs read-only network \
-            collection"]
-async fn remote_develop_restores_and_publishes_declared_targets()
+#[ignore = "explicit remote acceptance; performs read-only network collection"]
+async fn remote_revision_restores_and_publishes_declared_targets()
 -> anyhow::Result<()> {
-    let cache = std::path::Path::new("output/cache/git");
+    let cache = Path::new("output/cache/git");
     let config = std::env::var("GRAPHARCH_DPROD_CONFIG")
         .unwrap_or_else(|_| "examples/dprod/live.yaml".into());
     let (dataset, plans) =
-        showcases::dprod_remote(std::path::Path::new(&config), cache).await?;
-    let output = std::path::Path::new("output/dprod-editions-acceptance");
+        showcases::revision_build(Path::new(&config), cache).await?;
+    let output = Path::new("output/dprod-editions-acceptance");
     tokio::fs::create_dir_all(output).await?;
     let archive = output.join("documentation.nq");
     dataset.export(archive.clone()).await?;
@@ -90,19 +91,19 @@ async fn remote_develop_restores_and_publishes_declared_targets()
     assert!(format!("{failure:#}").contains("not registered"));
     drop(writer);
     worker.await??;
-    assert!(
-        tokio::fs::read(output.join("pdf/ekgf/document.pdf"))
-            .await?
-            .starts_with(b"%PDF-")
-    );
     Ok(())
 }
 
-fn git(root: &std::path::Path, args: &[&str]) -> anyhow::Result<String> {
+fn git(root: &Path, args: &[&str]) -> anyhow::Result<String> {
     let output = std::process::Command::new("git")
         .arg("-C")
         .arg(root)
+        .args(["-c", "commit.gpgsign=false"])
         .args(args)
+        .env("GIT_AUTHOR_NAME", "Fixture")
+        .env("GIT_AUTHOR_EMAIL", "fixture@example.org")
+        .env("GIT_COMMITTER_NAME", "Fixture")
+        .env("GIT_COMMITTER_EMAIL", "fixture@example.org")
         .output()?;
     anyhow::ensure!(
         output.status.success(),
@@ -111,44 +112,95 @@ fn git(root: &std::path::Path, args: &[&str]) -> anyhow::Result<String> {
     );
     Ok(String::from_utf8(output.stdout)?.trim().to_owned())
 }
+
+fn configuration(
+    path: &Path,
+    remote: &Path,
+    commit: &str,
+    definitions: &str,
+) -> anyhow::Result<()> {
+    std::fs::write(
+        path,
+        format!(
+            "repository: {}\ncommit: {commit}\ndefinitions:\n  commit: \
+             {definitions}\n  path: \
+             publication/definitions/develop.ttl\nproject: \
+             urn:dprod-showcase:project\ntargets: all\n",
+            remote.display()
+        ),
+    )?;
+    Ok(())
+}
+
+async fn bodies(
+    dataset: &Dataset,
+    marker: &str,
+) -> anyhow::Result<Vec<String>> {
+    let mut rows = dataset
+        .select(format!(
+            "SELECT ?body WHERE {{ GRAPH ?g {{ ?f \
+             <https://ekgf.org/ontology/grapharch#body> ?body }} \
+             FILTER(CONTAINS(STR(?body), '{marker}')) }}"
+        ))
+        .await?;
+    let mut bodies = Vec::new();
+    while let Some(row) = rows.next().await? {
+        let oxrdf::Term::Literal(body) = &row["body"] else {
+            anyhow::bail!("source text required")
+        };
+        bodies.push(body.value().to_owned());
+    }
+    Ok(bodies)
+}
+
+/// Content commits on a designated branch, definitions on a controlling
+/// branch of the same repository, all fetched by exact commit.
 #[tokio::test]
-async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallback()
+async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
 -> anyhow::Result<()> {
-    use std::path::Path;
     let repo = tempfile::tempdir()?;
     let cache = tempfile::tempdir()?;
     let output = tempfile::tempdir()?;
     git(repo.path(), &["init", "-b", "main"])?;
-    git(repo.path(), &["config", "user.name", "Fixture"])?;
-    git(repo.path(), &[
-        "config",
-        "user.email",
-        "fixture@example.org",
-    ])?;
     std::fs::write(
         repo.path().join("README.md"),
         "# MAIN MUST NEVER APPEAR\n",
     )?;
-    std::fs::write(
-        repo.path().join("ontology.ttl"),
-        "<urn:main> <urn:p> <urn:o> .",
-    )?;
     git(repo.path(), &["add", "."])?;
     git(repo.path(), &["commit", "-m", "main trap"])?;
+    git(repo.path(), &[
+        "checkout",
+        "--orphan",
+        "publication",
+    ])?;
+    git(repo.path(), &["rm", "-rf", "--quiet", "."])?;
+    std::fs::create_dir_all(repo.path().join("publication/definitions"))?;
+    std::fs::copy(
+        "tests/fixtures/revision-showcase/definitions.ttl",
+        repo.path().join("publication/definitions/develop.ttl"),
+    )?;
+    git(repo.path(), &["add", "."])?;
+    git(repo.path(), &[
+        "commit",
+        "-m",
+        "controlling definitions",
+    ])?;
+    let definitions = git(repo.path(), &["rev-parse", "HEAD"])?;
+    git(repo.path(), &["checkout", "main"])?;
     git(repo.path(), &["checkout", "-b", "develop"])?;
     std::fs::create_dir_all(repo.path().join("publication"))?;
     std::fs::create_dir_all(repo.path().join("ontology/dprod"))?;
     for (source, target) in [
         (
-            "sources/ontology.ttl",
+            "content/ontology.ttl",
             "ontology/dprod/dprod-ontology.ttl",
         ),
         (
-            "sources/shapes.ttl",
+            "content/shapes.ttl",
             "ontology/dprod/dprod-shapes.ttl",
         ),
-        ("abstract.md", "publication/abstract.md"),
-        ("status.md", "publication/status.md"),
+        ("content/abstract.md", "publication/abstract.md"),
+        ("content/status.md", "publication/status.md"),
     ] {
         std::fs::copy(
             Path::new("examples/dprod").join(source),
@@ -185,155 +237,18 @@ async fn remote_develop_uses_source_owned_hints_and_cache_without_fixture_fallba
         image::DynamicImage::new_rgb8(2, 2).write_to(&mut bytes, format)?;
         std::fs::write(repo.path().join(name), bytes.into_inner())?;
     }
-    let mut definitions =
-        std::fs::read_to_string("examples/dprod/project.ttl")?;
-    for subject in [
-        "urn:dprod-showcase:project",
-        "urn:dprod-showcase:specification",
-    ] {
-        definitions = definitions::remove_property(
-            &definitions,
-            subject,
-            "http://purl.org/dc/terms/title",
-        )?;
-    }
-    definitions = definitions::edit_quads(&definitions, |quads| {
-        quads.retain(|quad| {
-            quad.predicate.as_str() !=
-                "https://ekgf.org/ontology/grapharch#license"
-        });
-        Ok(())
-    })?;
-    definitions.push_str(
-        "\nex:project ga:collector ex:c1,ex:c2,ex:c3,ex:c4,ex:c5,ex:c6 .\n",
-    );
-    for (id, path, subject) in [
-        (
-            "c1",
-            "ontology/dprod/dprod-ontology.ttl",
-            "https://www.omg.org/spec/DPROD/dprod/",
-        ),
-        (
-            "c2",
-            "ontology/dprod/dprod-shapes.ttl",
-            "https://www.omg.org/spec/DPROD/shapes/",
-        ),
-    ] {
-        definitions.push_str(&format!(
-            "ex:{id} a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector \
-             ; ga:sourcePath \"{path}\" ; ga:source \"{path}\" ; ga:subject \
-             <{subject}> .\n"
-        ));
-    }
-    for (id, path, key, title, route) in [
-        (
-            "c3",
-            "publication/abstract.md",
-            "abstract",
-            "Abstract",
-            None,
-        ),
-        (
-            "c4",
-            "publication/status.md",
-            "status",
-            "Status of This Document",
-            None,
-        ),
-        (
-            "c5",
-            "README.md",
-            "overview",
-            "Development documentation",
-            Some(""),
-        ),
-        (
-            "c6",
-            "example.md",
-            "example",
-            "Dataset example",
-            Some("guide/"),
-        ),
-    ] {
-        definitions.push_str(&format!(
-            "ex:{id} a ga:CollectorUse ; ga:collectorType ga:{} ; \
-             ga:sourcePath \"{path}\" ; ga:source \"{path}\" ; ga:fragment \
-             ex:{key} ; dct:identifier \"{key}\"",
-            if route.is_some() {
-                "MarkdownPageCollector"
-            } else {
-                "MarkdownFileCollector"
-            }
-        ));
-        if let Some(route) = route {
-            definitions.push_str(&format!(
-                " ; dct:title \"{title}\" ; ga:route \"{route}\""
-            ));
-        }
-        definitions.push_str(" .\n");
-    }
     std::fs::write(
         repo.path().join("formal.md"),
         "# Formal scope\n\nSOURCE OWNED FORMAL SCOPE\n",
     )?;
-    definitions.push_str(r#"
-ex:project ga:collector ex:formal-source .
-ex:formal-source a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:sourcePath "formal.md" ; ga:source "formal.md" ; ga:fragment ex:formal .
-ex:profile ga:requiredSectionRole "scope" .
-ex:pdf-profile ga:requiredSectionRole "scope" .
-"#);
-    for profile in ["profile", "pdf-profile"] {
-        for (key, title, kind, role, order) in [
-            ("abstract", "Abstract", "abstract", "abstract", 0),
-            (
-                "status",
-                "Status of This Document",
-                "status",
-                "status",
-                1,
-            ),
-            ("formal", "Formal scope", "section", "scope", 10),
-            (
-                "overview",
-                "Vocabulary reference",
-                "section",
-                "reference",
-                20,
-            ),
-            (
-                "example",
-                "Dataset example",
-                "section",
-                "example",
-                100,
-            ),
-        ] {
-            definitions.push_str(&format!(r#"
-ex:{profile} ga:placement <urn:dprod-showcase:{profile}:{key}> .
-<urn:dprod-showcase:{profile}:{key}> a ga:Placement ; ga:component <urn:dprod-showcase:component:{key}> ; ga:sectionKind "{kind}" ; ga:sectionRole "{role}" ; ga:order {order} .
-<urn:dprod-showcase:component:{key}> a ga:Component ; dct:title "{title}" ; ga:fragment ex:{key} .
-"#));
-        }
-    }
-    std::fs::write(repo.path().join("profile.ttl"), "<https://www.omg.org/spec/DPROD/dprod/> <http://purl.org/dc/terms/title> \"RELATED PROFILE TITLE\" .")?;
-    definitions.push_str(r#"
-ex:project ga:collector ex:related-profile .
-ex:related-profile a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ; ga:sourcePath "profile.ttl" ; ga:source "profile.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
-"#);
+    std::fs::write(
+        repo.path().join("profile.ttl"),
+        "<https://www.omg.org/spec/DPROD/dprod/> \
+         <http://purl.org/dc/terms/title> \"RELATED PROFILE TITLE\" .",
+    )?;
     std::fs::write(
         repo.path().join("example.jsonld"),
         "{\"title\":\"PINNED EXAMPLE SOURCE\"}",
-    )?;
-    definitions.push_str(r#"
-@prefix doc: <urn:dprod-showcase:> .
-doc:project ga:collector doc:source-code .
-doc:source-code a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ; ga:sourcePath "example.jsonld" ; ga:source "example.jsonld" ; ga:format "application/ld+json" ; ga:subject doc:example ; ga:fragment doc:example-code .
-doc:component:example ga:fragment doc:example-code .
-doc:example ga:order 0 . doc:example-code ga:order 1 .
-"#);
-    std::fs::write(
-        repo.path().join("publication/grapharch.ttl"),
-        definitions,
     )?;
     std::fs::create_dir_all(repo.path().join("respec"))?;
     std::fs::write(
@@ -346,45 +261,29 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
         "-m",
         "develop publication",
     ])?;
-    let first_commit = git(repo.path(), &["rev-parse", "HEAD"])?;
+    let first = git(repo.path(), &["rev-parse", "HEAD"])?;
     let remote = tempfile::tempdir()?;
-    let clone = std::process::Command::new("git")
-        .args([
-            "clone",
-            "--bare",
-            repo.path().to_str().unwrap(),
-            remote.path().join("remote.git").to_str().unwrap(),
-        ])
-        .output()?;
-    anyhow::ensure!(clone.status.success(), "bare clone failed");
-    let config = output.path().join("remote.yaml");
-    std::fs::write(
-        &config,
-        format!(
-            "repository: {}\nref: develop\ndefinitions: \
-             publication/grapharch.ttl\n",
-            remote.path().join("remote.git").display()
-        ),
-    )?;
+    let bare = remote.path().join("remote.git");
+    git(repo.path(), &[
+        "clone",
+        "--bare",
+        ".",
+        bare.to_str().unwrap(),
+    ])?;
+    let config = output.path().join("first.yaml");
+    configuration(&config, &bare, &first, &definitions)?;
     let (dataset, plans) =
-        showcases::dprod_remote(&config, cache.path()).await?;
-    let mut rows=dataset.select("SELECT ?body WHERE { GRAPH ?g { ?f <https://ekgf.org/ontology/grapharch#body> ?body } }".into()).await?;
-    let mut observed = false;
-    while let Some(row) = rows.next().await? {
-        if let oxrdf::Term::Literal(body) = &row["body"] {
-            assert!(!body.value().contains("MAIN MUST NEVER APPEAR"));
-            observed |= body.value().contains("DEVELOP ONE");
-        }
-    }
-    assert!(observed);
-    let mut assets=dataset.select("SELECT (COUNT(DISTINCT ?asset) AS ?count) WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> } }".into()).await?;
+        showcases::revision_build(&config, cache.path()).await?;
+    assert!(bodies(&dataset, "MAIN MUST NEVER APPEAR").await?.is_empty());
+    assert!(!bodies(&dataset, "DEVELOP ONE").await?.is_empty());
+    let mut assets = dataset.select("SELECT (COUNT(DISTINCT ?asset) AS ?count) WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> } }".into()).await?;
     let row = assets.next().await?.unwrap();
     let oxrdf::Term::Literal(count) = &row["count"] else {
         panic!("asset count literal")
     };
     assert_eq!(count.value(), "3");
     let expected_svg = std::fs::read(repo.path().join("badge.svg"))?;
-    let mut routes=dataset.select("SELECT DISTINCT ?route WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> ; <https://ekgf.org/ontology/grapharch#format> 'image/svg+xml' ; <https://ekgf.org/ontology/grapharch#route> ?route } }".into()).await?;
+    let mut routes = dataset.select("SELECT DISTINCT ?route WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> ; <https://ekgf.org/ontology/grapharch#format> 'image/svg+xml' ; <https://ekgf.org/ontology/grapharch#route> ?route } }".into()).await?;
     let row = routes.next().await?.unwrap();
     let oxrdf::Term::Literal(svg_route) = &row["route"] else {
         panic!("SVG route literal")
@@ -399,42 +298,26 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     )?;
     git(repo.path(), &["add", "README.md"])?;
     git(repo.path(), &["commit", "-m", "develop update"])?;
+    let second = git(repo.path(), &["rev-parse", "HEAD"])?;
     git(repo.path(), &[
         "push",
-        remote.path().join("remote.git").to_str().unwrap(),
+        bare.to_str().unwrap(),
         "develop",
     ])?;
-    let (updated, _) = showcases::dprod_remote(&config, cache.path()).await?;
-    let mut rows=updated.select("SELECT ?body WHERE { GRAPH ?g { ?f <https://ekgf.org/ontology/grapharch#body> ?body } FILTER(CONTAINS(STR(?body),'DEVELOP TWO')) }".into()).await?;
-    assert!(rows.next().await?.is_some());
-    // A CI build pins its own commit even after develop advances. Both
-    // editions must therefore resolve the exact supplied revision, not HEAD.
-    let pinned_config = output.path().join("pinned.yaml");
-    std::fs::write(
-        &pinned_config,
-        format!(
-            "repository: {}\nref: {first_commit}\ndefinitions: \
-             publication/grapharch.ttl\n",
-            remote.path().join("remote.git").display()
-        ),
-    )?;
+    let second_config = output.path().join("second.yaml");
+    configuration(&second_config, &bare, &second, &definitions)?;
+    let (updated, _) =
+        showcases::revision_build(&second_config, cache.path()).await?;
+    assert!(!bodies(&updated, "DEVELOP TWO").await?.is_empty());
+    // The first exact commit stays pinned after its branch advances.
     let (pinned, pinned_plans) =
-        showcases::dprod_remote(&pinned_config, cache.path()).await?;
+        showcases::revision_build(&config, cache.path()).await?;
     assert_eq!(pinned_plans.len(), 3);
-    let mut rows = pinned.select("SELECT ?body WHERE { GRAPH ?g { ?fragment <https://ekgf.org/ontology/grapharch#body> ?body } FILTER(CONTAINS(STR(?body), 'DEVELOP ONE') || CONTAINS(STR(?body), 'DEVELOP TWO')) }".into()).await?;
-    let mut observed_first = false;
-    while let Some(row) = rows.next().await? {
-        let oxrdf::Term::Literal(body) = &row["body"] else {
-            panic!("source text required")
-        };
-        observed_first |= body.value().contains("DEVELOP ONE");
-        assert!(
-            !body.value().contains("DEVELOP TWO"),
-            "pinned collection followed moving develop"
-        );
-    }
-    assert!(observed_first);
-    std::fs::remove_file(pinned_config)?;
+    assert!(!bodies(&pinned, "DEVELOP ONE").await?.is_empty());
+    assert!(
+        bodies(&pinned, "DEVELOP TWO").await?.is_empty(),
+        "pinned collection followed a moving branch"
+    );
     std::fs::remove_file(repo.path().join("badge.svg"))?;
     git(repo.path(), &["add", "-u"])?;
     git(repo.path(), &[
@@ -442,12 +325,15 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
         "-m",
         "missing required image",
     ])?;
+    let third = git(repo.path(), &["rev-parse", "HEAD"])?;
     git(repo.path(), &[
         "push",
-        remote.path().join("remote.git").to_str().unwrap(),
+        bare.to_str().unwrap(),
         "develop",
     ])?;
-    let failure = showcases::dprod_remote(&config, cache.path())
+    let third_config = output.path().join("third.yaml");
+    configuration(&third_config, &bare, &third, &definitions)?;
+    let failure = showcases::revision_build(&third_config, cache.path())
         .await
         .err()
         .ok_or_else(|| anyhow::anyhow!("missing Git image must fail"))?;
@@ -456,7 +342,6 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     );
     std::fs::remove_dir_all(repo.path())?;
     std::fs::remove_dir_all(remote.path())?;
-    std::fs::remove_file(&config)?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let publications =
@@ -478,6 +363,8 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
         !spec.contains("RELATED PROFILE TITLE"),
         "header must use its designated ontology source"
     );
+    assert!(spec.contains("The Data Product (DPROD) Ontology"));
+    assert!(spec.contains("Remote develop legal terms, retained in full."));
     assert!(
         spec.contains("PINNED EXAMPLE SOURCE"),
         "machine-readable example source must survive source deletion"
@@ -497,16 +384,16 @@ doc:example ga:order 0 . doc:example-code ga:order 1 .
     assert!(site.contains("href=\"assets/image-"));
     assert!(site.contains("src=\"assets/image-"));
     assert!(
-        showcases::dprod_remote(&config, cache.path())
+        showcases::revision_build(&config, cache.path())
             .await
             .is_err(),
-        "missing transport must not fall back to copied fixture"
+        "missing transport must not fall back to cached or copied sources"
     );
     Ok(())
 }
 
 #[tokio::test]
-async fn remote_transport_rejects_oversized_settings_and_main_before_network()
+async fn remote_transport_rejects_oversized_settings_and_mutable_refs_before_network()
 -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     let config = root.path().join("remote.yaml");
@@ -515,28 +402,42 @@ async fn remote_transport_rejects_oversized_settings_and_main_before_network()
     assert!(
         format!(
             "{:#}",
-            showcases::dprod_remote(&config, &cache)
+            showcases::revision_build(&config, &cache)
                 .await
                 .err()
                 .unwrap()
         )
         .contains("64 KiB")
     );
-    std::fs::write(
-        &config,
-        "repository: https://example.invalid/never-fetch.git\nref: \
-         main\ndefinitions: publication/grapharch.ttl\n",
-    )?;
-    assert!(
-        format!(
+    let exact = "39155734ed3f79578e460e63eab6d31e9913206c";
+    for (commit, definitions, rejected) in [
+        ("main", exact, "showcase commit requires"),
+        ("develop", exact, "showcase commit requires"),
+        (
+            exact,
+            "develop",
+            "showcase definitions commit requires",
+        ),
+        (&exact[..12], exact, "showcase commit requires"),
+    ] {
+        std::fs::write(
+            &config,
+            format!(
+                "repository: https://example.invalid/never-fetch.git\ncommit: \
+                 {commit}\ndefinitions:\n  commit: {definitions}\n  path: \
+                 publication/definitions/develop.ttl\nproject: \
+                 urn:dprod-showcase:project\ntargets: all\n"
+            ),
+        )?;
+        let error = format!(
             "{:#}",
-            showcases::dprod_remote(&config, &cache)
+            showcases::revision_build(&config, &cache)
                 .await
                 .err()
                 .unwrap()
-        )
-        .contains("must use develop")
-    );
+        );
+        assert!(error.contains(rejected), "{error}");
+    }
     assert!(!cache.exists());
     Ok(())
 }

@@ -8,7 +8,7 @@ async fn shipped_publication_definitions_use_the_imported_authority_class()
     for path in [
         "docs/grapharch.ttl",
         "examples/specification/project.ttl",
-        "examples/dprod/project.ttl",
+        "examples/dprod/definitions.ttl",
         "examples/skos/project.ttl",
         "examples/fibo/prepare.py",
     ] {

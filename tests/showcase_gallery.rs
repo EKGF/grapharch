@@ -7,8 +7,8 @@ mod family_repository;
 #[path = "support/family_showcase.rs"]
 mod family_showcase;
 
-#[path = "support/dprod_repository.rs"]
-mod dprod_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
 
 use {
     anyhow::Result,
@@ -112,11 +112,19 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         "urn:fibo-be:family",
         "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LegalPersons/",
     ).await?;
-    let dprod_repository = tempfile::tempdir()?;
-    dprod_repository::configure(
+    let mut dprod = revision_fixture::RevisionFixture::new(
         &source.path().join("examples/dprod"),
-        dprod_repository.path(),
     )?;
+    // The registered gallery case links the EKGF edition of the live PDF.
+    dprod.edit_definitions(|text| {
+        definitions::set_property(
+            &text,
+            "urn:dprod-showcase:pdf",
+            "https://ekgf.org/ontology/grapharch#destination",
+            definitions::literal("pdf/ekgf"),
+        )
+    })?;
+    dprod.showcase(&source.path().join("examples/dprod/live.yaml"))?;
     let mkdocs_repository = tempfile::tempdir()?;
     let mkdocs_root = mkdocs_repository.path();
     tokio::fs::create_dir(mkdocs_root.join("docs")).await?;
@@ -232,7 +240,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     std::fs::remove_dir_all(repository.path())?;
     std::fs::remove_dir_all(commons_repository.path())?;
     tokio::fs::remove_dir_all(fibo_repository.path()).await?;
-    std::fs::remove_dir_all(dprod_repository.path())?;
+    dprod.close()?;
     tokio::fs::remove_dir_all(mkdocs_repository.path()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;

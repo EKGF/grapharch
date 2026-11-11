@@ -1,5 +1,9 @@
 #[path = "support/definitions.rs"]
 mod definitions;
+#[path = "support/family_repository.rs"]
+mod family_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
 
 use {
     anyhow::Result,
@@ -9,28 +13,13 @@ use {
         dataset::Dataset,
         plan::TargetPlanner,
         render::Publisher,
+        revision_build::TargetSelection,
         showcases,
         writer::GraphWriter,
     },
     oxrdf::NamedNode,
     std::{path::Path, sync::Arc},
 };
-
-fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
-    std::fs::create_dir_all(destination)?;
-    for entry in std::fs::read_dir(source)? {
-        let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            copy_tree(
-                &entry.path(),
-                &destination.join(entry.file_name()),
-            )?;
-        } else {
-            std::fs::copy(entry.path(), destination.join(entry.file_name()))?;
-        }
-    }
-    Ok(())
-}
 
 #[tokio::test]
 async fn declared_edition_targets_render_from_one_restored_source_revision()
@@ -56,11 +45,10 @@ async fn render_dual_editions(
     output: &Path,
     long_metadata: bool,
 ) -> Result<()> {
-    let source = tempfile::tempdir()?;
-    copy_tree(Path::new("examples/dprod"), source.path())?;
-    let definitions = source.path().join("project.ttl");
+    let mut fixture =
+        revision_fixture::RevisionFixture::new(Path::new("examples/dprod"))?;
     let mut ttl = definitions::set_property(
-        &std::fs::read_to_string(&definitions)?,
+        &std::fs::read_to_string(fixture.definitions())?,
         "urn:dprod-showcase:pdf",
         "https://ekgf.org/ontology/grapharch#destination",
         definitions::literal("pdf/ekgf"),
@@ -98,8 +86,8 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
             ),
         );
     }
-    std::fs::write(definitions, ttl)?;
-    let (dataset, plans) = showcases::dprod(source.path()).await?;
+    fixture.edit_definitions(|_| Ok(ttl))?;
+    let (dataset, plans) = fixture.collect(TargetSelection::All).await?;
     assert_eq!(
         plans.len(),
         4,
@@ -108,7 +96,7 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     let saved = tempfile::tempdir()?;
     let archive = saved.path().join("source.nq");
     dataset.export(archive.clone()).await?;
-    source.close()?;
+    fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let publications =

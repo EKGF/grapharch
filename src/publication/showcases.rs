@@ -480,6 +480,15 @@ pub async fn dprod_remote(
     super::showcases_dprod::collect_remote(source, cache).await
 }
 
+/// Build an exact-revision showcase: definitions from a controlling commit,
+/// content from a designated commit of the same repository.
+pub async fn revision_build(
+    source: &Path,
+    cache: &Path,
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    super::showcases_revision::build(source, cache).await
+}
+
 /// Collect and plan the standalone native SKOS showcase.
 pub async fn skos(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
     super::showcases_semantic::skos(source).await

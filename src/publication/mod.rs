@@ -33,6 +33,7 @@ pub mod scope;
 pub mod showcases;
 mod showcases_dprod;
 mod showcases_mkdocs;
+mod showcases_revision;
 mod showcases_semantic;
 mod table_subject;
 mod temporal;

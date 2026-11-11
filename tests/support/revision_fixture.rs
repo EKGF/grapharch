@@ -22,18 +22,6 @@ pub const DEFINITIONS: &str = "publication/definitions.ttl";
 /// Generator revision declared by the test orchestrator.
 pub const GENERATOR: &str = "1111111111111111111111111111111111111111";
 
-/// Example files and their location in the pinned content tree.
-const CONTENT: [(&str, &str); 8] = [
-    ("sources/ontology.ttl", "ontology.ttl"),
-    ("sources/shapes.ttl", "shapes.ttl"),
-    ("sources/dataset-schema.md", "dataset-schema.md"),
-    ("sources/LICENSE.txt", "LICENSE.txt"),
-    ("abstract.md", "abstract.md"),
-    ("status.md", "status.md"),
-    ("overview.md", "overview.md"),
-    ("website", "website"),
-];
-
 pub struct RevisionFixture {
     root:                   tempfile::TempDir,
     pub repository:         String,
@@ -42,21 +30,12 @@ pub struct RevisionFixture {
 }
 
 impl RevisionFixture {
-    /// Pin `example`'s content and definitions in two separate repositories.
+    /// Pin `example`'s `content/` tree and its `definitions.ttl` in two
+    /// separate repositories.
     pub fn new(example: &Path) -> Result<Self> {
         let root = tempfile::tempdir()?;
-        let content = root.path().join("content-source");
-        for (source, target) in CONTENT {
-            let (source, target) = (example.join(source), content.join(target));
-            if source.is_dir() {
-                family_repository::copy_tree(&source, &target)?;
-            } else {
-                std::fs::create_dir_all(target.parent().unwrap())?;
-                std::fs::copy(source, target)?;
-            }
-        }
         let (repository, commit) = family_repository::bare_copy(
-            &content,
+            &example.join("content"),
             &root.path().join("content"),
         )?;
         let controlling = root.path().join("controlling");
@@ -140,6 +119,31 @@ impl RevisionFixture {
         ])?;
         self.definitions_commit =
             family_repository::git(&checkout, &["rev-parse", "HEAD"])?;
+        Ok(())
+    }
+
+    /// Configure an exact-revision showcase at `path`: the controlling commit
+    /// joins the content repository, as a controlling branch would.
+    pub fn showcase(&self, path: &Path) -> Result<()> {
+        family_repository::git(&self.controlling(), &[
+            "push",
+            &self.repository,
+            "HEAD:refs/heads/publication",
+        ])?;
+        std::fs::write(
+            path,
+            format!(
+                "repository: {}\ncommit: {}\ndefinitions:\n  commit: {}\n  \
+                 path: {DEFINITIONS}\nproject: {PROJECT}\ntargets: all\n",
+                self.repository, self.commit, self.definitions_commit
+            ),
+        )?;
+        Ok(())
+    }
+
+    /// Delete both repositories and the transport cache.
+    pub fn close(self) -> Result<()> {
+        self.root.close()?;
         Ok(())
     }
 
