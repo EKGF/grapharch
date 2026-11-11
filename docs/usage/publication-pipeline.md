@@ -283,7 +283,10 @@ A content contribution that asserts publication definition vocabulary, such
 as `ga:target`, `ga:placement`, `ga:renderer` or a `ga:Target`, or that
 describes a resource the definitions declare, is rejected: only the
 controlling definitions define publications. `ga:includedIn` places the
-subjects of a collector use's `ga:fragment` in a scope. A
+subjects of a collector use's `ga:fragment` in a scope. It is required on
+every collector use that names a `ga:fragment`, including Markdown files and
+pages, code examples and legal preambles: a fragment outside every scope would
+be collected and never published, so a missing inclusion fails the build. A
 `ga:VocabularyReferenceDocumentor` use generates term fragments into the
 components of its authored `ga:ReferenceSection` resources; placements are
 authored in each profile. `ga:metadataSource` and `ga:derivedMetadata` derive

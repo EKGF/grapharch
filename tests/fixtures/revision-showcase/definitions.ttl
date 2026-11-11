@@ -65,7 +65,8 @@ doc:source:code a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ;
     ga:source "example.jsonld" ; ga:sourcePath "example.jsonld" ; ga:format "application/ld+json" ;
     ga:subject doc:example-subject ; ga:fragment doc:example-code ; ga:includedIn doc:scope .
 doc:source:legal-preamble a ga:CollectorUse ; ga:collectorType ga:HtmlPreambleCollector ;
-    ga:source "respec/template.html" ; ga:sourcePath "respec/template.html" ; ga:fragment doc:legal-preamble .
+    ga:source "respec/template.html" ; ga:sourcePath "respec/template.html" ; ga:fragment doc:legal-preamble ;
+    ga:includedIn doc:scope .
 
 doc:reference a ga:DocumentorUse ; ga:documentorType ga:VocabularyReferenceDocumentor ;
     ga:subject <https://www.omg.org/spec/DPROD/dprod/> ; ga:includedIn doc:scope ;

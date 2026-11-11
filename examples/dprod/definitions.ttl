@@ -55,13 +55,13 @@ ex:collector:shapes a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ;
     ga:source "shapes.ttl" ; ga:sourcePath "shapes.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/shapes/> .
 ex:collector:website:index a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ;
     ga:source "website/index.md" ; ga:sourcePath "website/index.md" ; ga:fragment ex:fragment:website:index ;
-    dct:title "DPROD" ; ga:route "" .
+    dct:title "DPROD" ; ga:route "" ; ga:includedIn ex:website-scope .
 ex:collector:website:getting-started a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ;
     ga:source "website/guides/getting-started.md" ; ga:sourcePath "website/guides/getting-started.md" ; ga:fragment ex:fragment:website:getting-started ;
-    dct:title "Getting started" ; ga:route "guides/getting-started/" .
+    dct:title "Getting started" ; ga:route "guides/getting-started/" ; ga:includedIn ex:website-scope .
 ex:collector:website:stories a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ;
     ga:source "website/stories.md" ; ga:sourcePath "website/stories.md" ; ga:fragment ex:fragment:website:stories ;
-    dct:title "Why a shared description matters" ; ga:route "stories/" .
+    dct:title "Why a shared description matters" ; ga:route "stories/" ; ga:includedIn ex:website-scope .
 
 # Generated vocabulary reference: authored sections select terms by type.
 ex:reference a ga:DocumentorUse ; ga:documentorType ga:VocabularyReferenceDocumentor ;

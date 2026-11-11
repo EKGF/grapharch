@@ -94,6 +94,33 @@ fn git_revision_hint_has_public_metadata_and_collector_constraints()
 }
 
 #[test]
+fn fragment_contributing_collector_uses_require_a_scope_inclusion() -> Result<()>
+{
+    let store = ontology()?;
+    store.load_from_reader(
+        RdfFormat::Turtle,
+        include_bytes!("../docs/other/ontology/publication.shacl.ttl")
+            .as_slice(),
+    )?;
+    let choice = "ga:IncludedInFragmentShape <http://www.w3.org/ns/shacl#targetClass> ga:CollectorUse ; <http://www.w3.org/ns/shacl#xone> ?choices . ?choices <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?choice . ?choice <http://www.w3.org/ns/shacl#property> ?fragment, ?inclusion . ?fragment <http://www.w3.org/ns/shacl#path> ga:fragment ; <http://www.w3.org/ns/shacl#maxCount> ?fragments . ?inclusion <http://www.w3.org/ns/shacl#path> ga:includedIn";
+    assert!(
+        ask(&store, &format!("{choice} ; <http://www.w3.org/ns/shacl#minCount> 1 . ?fragment <http://www.w3.org/ns/shacl#minCount> 1"))?,
+        "a use naming its fragment must name a scope including it"
+    );
+    assert!(
+        ask(
+            &store,
+            &format!(
+                "{choice} ; <http://www.w3.org/ns/shacl#maxCount> 0 . \
+                 FILTER(?fragments = 0)"
+            )
+        )?,
+        "a use without a fragment cannot claim a scope inclusion"
+    );
+    Ok(())
+}
+
+#[test]
 fn ontology_has_publication_metadata_and_human_definitions() -> Result<()> {
     let store = ontology()?;
     assert!(ask(

@@ -52,7 +52,8 @@ async fn included_uses_add_their_fragment_subjects_to_the_named_scope()
                                  .\nt:abstract-source a ga:CollectorUse ; \
                                  ga:fragment t:abstract ; ga:includedIn \
                                  t:scope .\nt:notes-source a ga:CollectorUse \
-                                 ; ga:fragment t:notes .\n")
+                                 ; ga:fragment t:notes ; ga:includedIn \
+                                 t:other .\nt:other a ga:Scope .\n")
     .await?;
     result?;
     let view = RevisionView::new(
@@ -88,6 +89,12 @@ async fn inclusions_need_a_contributed_fragment_and_a_declared_scope()
             "t:project ga:collector t:use .\nt:use a ga:CollectorUse ; \
              ga:fragment t:abstract ; ga:includedIn t:undeclared .",
             "references undefined ga:Scope",
+        ),
+        (
+            "t:project ga:collector t:use . t:scope a ga:Scope .\nt:use a \
+             ga:CollectorUse ; ga:fragment t:abstract .",
+            "<urn:test:use> contributes fragment <urn:test:abstract> but \
+             declares no ga:includedIn",
         ),
     ] {
         let (_, result) = run(definitions).await?;

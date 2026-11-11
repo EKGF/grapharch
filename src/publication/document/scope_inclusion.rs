@@ -7,7 +7,7 @@ use {
         view::RevisionView,
         writer::{ContributionStream, GraphWriter},
     },
-    anyhow::{Context, Result, bail, ensure},
+    anyhow::{Result, bail, ensure},
     oxrdf::{GraphName, NamedNode, Quad, Term},
 };
 
@@ -66,16 +66,19 @@ async fn write(
     }
     uses.sort();
     for processor in &uses {
-        let scopes = scopes(definitions, processor).await?;
-        if scopes.is_empty() {
-            continue;
-        }
-        let fragment = definitions
-            .node(processor, "fragment")
-            .await
-            .with_context(|| {
-                format!("{processor} ga:includedIn requires its ga:fragment")
-            })?;
+        let fragment = match definitions.optional(processor, "fragment").await?
+        {
+            Some(Term::NamedNode(fragment)) => fragment,
+            Some(_) => bail!("{processor} ga:fragment must be an IRI"),
+            None => {
+                ensure!(
+                    scopes(definitions, processor).await?.is_empty(),
+                    "{processor} ga:includedIn requires its ga:fragment"
+                );
+                continue;
+            },
+        };
+        let scopes = fragment_scopes(definitions, processor, &fragment).await?;
         let mut subjects = view.objects(&fragment, "subject").await?;
         let mut count = 0;
         while let Some(row) = subjects.next().await? {
@@ -105,6 +108,24 @@ async fn write(
         );
     }
     Ok(())
+}
+
+/// The scopes a use that contributes `fragment` is included in. A fragment
+/// outside every scope would be collected and silently never published, so
+/// at least one inclusion is required.
+pub(crate) async fn fragment_scopes(
+    definitions: &RevisionView,
+    processor: &NamedNode,
+    fragment: &NamedNode,
+) -> Result<Vec<NamedNode>> {
+    let scopes = scopes(definitions, processor).await?;
+    ensure!(
+        !scopes.is_empty(),
+        "{processor} contributes fragment {fragment} but declares no \
+         ga:includedIn; every fragment-contributing collector use must name \
+         the ga:Scope that publishes it"
+    );
+    Ok(scopes)
 }
 
 /// The scopes one configured use is included in, validated against the

@@ -1842,7 +1842,7 @@ ga:includedIn a owl:ObjectProperty ;
     dct:description "Includes the subjects of the fragments contributed by a configured collector or documentor use in a documentation scope, without the use choosing a placement."@en ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:DocumentorUse ) ] ;
     rdfs:range ga:Scope ;
-    skos:scopeNote "A collector use with ga:includedIn must declare the ga:fragment it contributes; a document-stage binding then includes that fragment's collected ga:subject values. A documentor use includes the subjects of every fragment it generates. Fragments without an inclusion remain outside the scope and are not published by its targets."@en ;
+    skos:scopeNote "Required on every collector use that declares the ga:fragment it contributes, and allowed only there: a fragment outside every scope would be collected and never published, so a missing inclusion fails the build. A document-stage binding includes that fragment's collected ga:subject values. A documentor use includes the subjects of every fragment it generates."@en ;
     skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix ex: <https://example.org/doc/> .
 ex:abstract-source a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;

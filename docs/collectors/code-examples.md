@@ -33,15 +33,16 @@ ex:project ga:collector ex:query-example-source .
 ex:query-example-source a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ;
     ga:source "examples/products.rq" ; ga:sourcePath "examples/products.rq" ;
     ga:fragment ex:query-example ; ga:subject ex:product-query ;
-    ga:format "application/sparql-query" .
+    ga:format "application/sparql-query" ; ga:includedIn ex:scope .
 ```
 
 Use one of `application/ld+json`, `application/json`, `text/turtle`,
 `application/sparql-query`, or `text/plain`. This is the configured publishing
 workflow of an
 [exact-revision build](../usage/publication-pipeline.md#exact-revision-builds),
-not a standalone `--kind code` CLI command. Publication definitions still choose
-where the fragment appears.
+not a standalone `--kind code` CLI command. `ga:includedIn` is required: it
+names the scope that publishes the fragment. Publication definitions still
+choose where the fragment appears.
 
 For code fenced inside Markdown, use the
 [Markdown File Collector](markdown-files.md). For a query file with documentation

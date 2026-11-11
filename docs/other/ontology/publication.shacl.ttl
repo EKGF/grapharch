@@ -22,9 +22,12 @@ ga:CollectorUseShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ; sh:nodeKi
     sh:property [ sh:path ga:includedIn ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:maxCount 16 ] .
 
 ga:IncludedInFragmentShape a sh:NodeShape ;
-    rdfs:comment "A collector use included in a scope must name the fragment it contributes."@en ;
+    rdfs:comment "A collector use names the fragment it contributes exactly when it names the scopes that include it. A fragment outside every scope would be collected and never published."@en ;
     sh:targetClass ga:CollectorUse ;
-    sh:or ( [ sh:property [ sh:path ga:includedIn ; sh:maxCount 0 ] ] [ sh:property [ sh:path ga:fragment ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ] ) .
+    sh:xone (
+        [ sh:property [ sh:path ga:includedIn ; sh:maxCount 0 ] ; sh:property [ sh:path ga:fragment ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path ga:fragment ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ; sh:property [ sh:path ga:includedIn ; sh:minCount 1 ] ]
+    ) .
 
 ga:NativeMetadataShape a sh:NodeShape ;
     rdfs:comment "Derived native metadata names exactly one collector use and at least one derivable predicate."@en ;

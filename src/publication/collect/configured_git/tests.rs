@@ -128,18 +128,21 @@ async fn count(dataset: &Dataset, pattern: &str) -> Result<String> {
 
 const USES: &str = r#"
 t:project ga:collector t:ontology, t:page, t:notes, t:code, t:legal .
+t:scope a ga:Scope .
 t:ontology a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ;
     ga:source "ontology.ttl" ; ga:sourcePath "ontology.ttl" ; ga:subject t:Ontology .
 t:page a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ;
     ga:source "docs/page.md" ; ga:sourcePath "docs/page.md" ; ga:fragment t:page-fragment ;
-    dct:title "Page" ; ga:route "page/" .
+    ga:includedIn t:scope ; dct:title "Page" ; ga:route "page/" .
 t:notes a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;
-    ga:source "docs/notes.md" ; ga:sourcePath "docs/notes.md" ; ga:fragment t:notes-fragment .
+    ga:source "docs/notes.md" ; ga:sourcePath "docs/notes.md" ; ga:fragment t:notes-fragment ;
+    ga:includedIn t:scope .
 t:code a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ;
     ga:source "example.json" ; ga:sourcePath "example.json" ; ga:format "application/json" ;
-    ga:subject t:example ; ga:fragment t:code-fragment .
+    ga:subject t:example ; ga:fragment t:code-fragment ; ga:includedIn t:scope .
 t:legal a ga:CollectorUse ; ga:collectorType ga:HtmlPreambleCollector ;
-    ga:source "template.html" ; ga:sourcePath "template.html" ; ga:fragment t:legal-preamble .
+    ga:source "template.html" ; ga:sourcePath "template.html" ; ga:fragment t:legal-preamble ;
+    ga:includedIn t:scope .
 "#;
 
 #[tokio::test]
@@ -187,9 +190,9 @@ async fn configured_uses_build_existing_collectors_over_the_pinned_tree()
 async fn invalid_uses_name_their_collector_use() -> Result<()> {
     for (definitions, expected) in [
         (
-            r#"t:project ga:collector t:a, t:b .
-t:a a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:source "docs/notes.md" ; ga:sourcePath "docs/notes.md" ; ga:fragment t:same .
-t:b a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:source "docs/page.md" ; ga:sourcePath "docs/page.md" ; ga:fragment t:same ."#,
+            r#"t:project ga:collector t:a, t:b . t:scope a ga:Scope .
+t:a a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:source "docs/notes.md" ; ga:sourcePath "docs/notes.md" ; ga:fragment t:same ; ga:includedIn t:scope .
+t:b a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ; ga:source "docs/page.md" ; ga:sourcePath "docs/page.md" ; ga:fragment t:same ; ga:includedIn t:scope ."#,
             "duplicate authored fragment <urn:test:same>",
         ),
         (
@@ -198,8 +201,8 @@ t:query a ga:CollectorUse ; ga:collectorType ga:SparqlFileCollector ; ga:source 
             "configured collector use <urn:test:query>",
         ),
         (
-            r#"t:project ga:collector t:page .
-t:page a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ; ga:source "docs/page.md" ; ga:sourcePath "docs/page.md" ; ga:fragment t:page-fragment ; ga:route "page/" ."#,
+            r#"t:project ga:collector t:page . t:scope a ga:Scope .
+t:page a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ; ga:source "docs/page.md" ; ga:sourcePath "docs/page.md" ; ga:fragment t:page-fragment ; ga:includedIn t:scope ; ga:route "page/" ."#,
             "page collector requires dct:title",
         ),
         (
@@ -219,6 +222,63 @@ t:untyped ga:collectorType ga:RdfFileCollector ; ga:source "ontology.ttl" ; ga:s
         };
         assert!(error.contains(expected), "{expected}: {error}");
     }
+    Ok(())
+}
+
+/// A fragment outside every scope is collected but never published, so a
+/// use that contributes a fragment must name the scopes it is included in.
+#[tokio::test]
+async fn fragment_contributing_uses_require_a_scope_inclusion() -> Result<()> {
+    for (kind, settings) in [
+        (
+            "MarkdownFileCollector",
+            r#"ga:source "docs/notes.md" ; ga:sourcePath "docs/notes.md""#,
+        ),
+        (
+            "MarkdownPageCollector",
+            r#"ga:source "docs/page.md" ; ga:sourcePath "docs/page.md" ; dct:title "Page" ; ga:route "page/""#,
+        ),
+        (
+            "CodeFileCollector",
+            r#"ga:source "example.json" ; ga:sourcePath "example.json" ; ga:format "application/json" ; ga:subject t:example"#,
+        ),
+        (
+            "HtmlPreambleCollector",
+            r#"ga:source "template.html" ; ga:sourcePath "template.html""#,
+        ),
+    ] {
+        let definitions = format!(
+            "t:project ga:collector t:use .\nt:use a ga:CollectorUse ; \
+             ga:collectorType ga:{kind} ; {settings} ; ga:fragment t:fragment \
+             ."
+        );
+        let error = match run(&definitions).await {
+            Ok(_) => bail!("accepted {kind} without ga:includedIn"),
+            Err(error) => format!("{error:#}"),
+        };
+        assert!(
+            error.contains(
+                "<urn:test:use> contributes fragment <urn:test:fragment> but \
+                 declares no ga:includedIn"
+            ),
+            "{kind}: {error}"
+        );
+    }
+    let error = match run("t:project ga:collector t:use .\nt:use a \
+                           ga:CollectorUse ; ga:collectorType \
+                           ga:MarkdownFileCollector ; ga:source \
+                           \"docs/notes.md\" ; ga:sourcePath \
+                           \"docs/notes.md\" ; ga:fragment t:fragment ; \
+                           ga:includedIn t:undeclared .")
+    .await
+    {
+        Ok(_) => bail!("accepted an undeclared scope"),
+        Err(error) => format!("{error:#}"),
+    };
+    assert!(
+        error.contains("references undefined ga:Scope"),
+        "{error}"
+    );
     Ok(())
 }
 

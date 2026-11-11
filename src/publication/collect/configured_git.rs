@@ -10,6 +10,7 @@ use {
         kind::CollectorKind,
     },
     crate::publication::{
+        document::scope_inclusion,
         limits::AUTHORED_ASSETS,
         view::RevisionView,
         writer::GraphWriter,
@@ -165,6 +166,8 @@ impl Use<'_> {
         fragments: &mut HashSet<NamedNode>,
     ) -> Result<NamedNode> {
         let fragment = self.view.node(self.processor, "fragment").await?;
+        scope_inclusion::fragment_scopes(self.view, self.processor, &fragment)
+            .await?;
         ensure!(
             fragments.insert(fragment.clone()),
             "duplicate authored fragment {fragment}"
