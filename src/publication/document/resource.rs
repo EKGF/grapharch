@@ -257,7 +257,7 @@ impl ResourceDocumentor {
             .write(Quad::new(
                 self.processor.clone(),
                 NamedNode::new_unchecked(RDF_TYPE),
-                term("Documentor"),
+                term("DocumentorUse"),
                 GraphName::DefaultGraph,
             ))
             .await?;

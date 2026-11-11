@@ -62,7 +62,7 @@ impl MaturityModelDocumentor {
             )
             .await?;
         for quad in [
-            q(&self.processor, "type", term("Documentor")),
+            q(&self.processor, "type", term("DocumentorUse")),
             q(&contribution, "type", term("Contribution")),
             q(&contribution, "project", self.project.clone()),
             q(&contribution, "processor", self.processor.clone()),

@@ -1,7 +1,12 @@
 //! Bounded publication inventory shared by document generation and host
 //! routing.
 use {
-    crate::publication::{dataset::Dataset, term, view::RevisionView},
+    crate::publication::{
+        dataset::Dataset,
+        document::kind::DocumentorKind,
+        term,
+        view::RevisionView,
+    },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
     serde::{Deserialize, Serialize},
@@ -309,10 +314,11 @@ pub(crate) async fn configured_job(
 ) -> Result<Option<Job>> {
     let pattern = view.pattern(
         &format!(
-            "?job a {}; {} {project}; {} \"publication-inventory\"",
-            term("Documentor"),
+            "?job a {}; {} {project}; {} <{}>",
+            term("DocumentorUse"),
             term("project"),
-            term("kind")
+            term("documentorType"),
+            DocumentorKind::PUBLICATION_INVENTORY
         ),
         0,
     );

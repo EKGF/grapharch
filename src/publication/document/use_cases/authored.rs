@@ -177,7 +177,7 @@ pub(crate) async fn document(
             subject.as_str(),
         ]);
         for quad in [
-            q(&processor, "type", term("Documentor")),
+            q(&processor, "type", term("DocumentorUse")),
             q(&contribution, "type", term("Contribution")),
             q(&contribution, "project", NamedNode::new(project)?),
             q(&contribution, "processor", processor.clone()),

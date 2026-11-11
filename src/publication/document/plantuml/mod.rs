@@ -61,11 +61,6 @@ async fn document_with(
             assets.len() < 32 && assets.insert(asset.clone()),
             "PlantUML source budget exceeded or outputs collide"
         );
-        ensure!(
-            view.text(diagram, "rendererExecutable").await? == "plantuml",
-            "PlantUML only permits the explicitly configured local plantuml \
-             tool"
-        );
         let code = view.text(diagram, "body").await?;
         ensure!(
             code.len() <= 128 * 1024,

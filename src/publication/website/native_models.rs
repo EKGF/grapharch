@@ -10,6 +10,7 @@ use {
         document::{
             Documentor,
             MaturityModelDocumentor,
+            kind::DocumentorKind,
             maturity::pages::Page,
         },
         view::RevisionView,
@@ -62,11 +63,13 @@ pub(super) async fn collect(
             bail!("documentor must be an IRI")
         };
         ensure!(
-            view.has_type(processor, "Documentor").await?,
-            "configured documentor must be typed Documentor"
+            view.has_type(processor, "DocumentorUse").await?,
+            "configured documentor must be typed DocumentorUse"
         );
-        let kind = view.text(processor, "kind").await?;
-        if kind == "maturity-overview" {
+        let kind = DocumentorKind::from_node(
+            &view.node(processor, "documentorType").await?,
+        )?;
+        if kind == DocumentorKind::MaturityOverview {
             let doc = MaturityModelDocumentor::new(
                 dataset.clone(),
                 snapshot.clone(),
@@ -86,8 +89,9 @@ pub(super) async fn collect(
             continue;
         }
         ensure!(
-            kind == "maturity-model",
-            "unsupported configured documentor kind: {kind}"
+            kind == DocumentorKind::MaturityModel,
+            "configured project documentor {processor} must use a website \
+             documentor definition, not {kind:?}"
         );
         let source = view.text(processor, "source").await?;
         ensure!(

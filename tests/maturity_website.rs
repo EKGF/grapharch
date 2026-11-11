@@ -65,8 +65,8 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
 <urn:p> a ga:Project; ga:contentSource "docs"; ga:collector <urn:rdf>, <urn:nav>; ga:documentor <urn:maturity>, <urn:overview>; ga:target <urn:t>.
 <urn:nav> a ga:CollectorUse; ga:collectorType ga:DocumentationNavigationCollector; ga:source "docs"; ga:navigationProfile <urn:f>.
 <urn:rdf> a ga:CollectorUse; ga:collectorType ga:RdfFileCollector; ga:source "model.ttl".
-<urn:maturity> a ga:Documentor; ga:kind "maturity-model"; ga:source "fragments"; ga:route "pillar/"; ga:navigationProfile <urn:f>; ga:order 20.
-<urn:overview> a ga:Documentor; ga:kind "maturity-overview"; ga:route "intro/overview/"; ga:navigationProfile <urn:f>; ga:navigationParentPath "intro"; ga:order 5.
+<urn:maturity> a ga:DocumentorUse; ga:documentorType ga:MaturityModelDocumentor; ga:source "fragments"; ga:route "pillar/"; ga:navigationProfile <urn:f>; ga:order 20.
+<urn:overview> a ga:DocumentorUse; ga:documentorType ga:MaturityOverviewDocumentor; ga:route "intro/overview/"; ga:navigationProfile <urn:f>; ga:navigationParentPath "intro"; ga:order 5.
 <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site".
 <urn:s> a ga:Scope. <urn:f> a ga:Profile; ga:layout "documentation".
 "#).await?;
@@ -132,5 +132,40 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
         ),
         "{capability}"
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn configured_documentors_require_a_shared_definition_iri() -> Result<()>
+{
+    for selector in [
+        r#"ga:kind "maturity-overview""#,
+        r#"ga:documentorType "maturity-overview""#,
+        "ga:documentorType ga:PublicationInventoryDocumentor",
+    ] {
+        let source = tempfile::tempdir()?;
+        tokio::fs::create_dir_all(source.path().join("docs")).await?;
+        tokio::fs::write(source.path().join("docs/index.md"), "# Home").await?;
+        let config = source.path().join("project.ttl");
+        tokio::fs::write(&config, format!(r#"
+@prefix ga:<https://ekgf.org/ontology/grapharch#>.
+<urn:p> a ga:Project; ga:contentSource "docs"; ga:documentor <urn:overview>; ga:target <urn:t>.
+<urn:overview> a ga:DocumentorUse; {selector}; ga:route "overview/"; ga:navigationProfile <urn:f>.
+<urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer ga:WebsiteRenderer;ga:destination "site".
+<urn:s> a ga:Scope. <urn:f> a ga:Profile; ga:layout "documentation".
+"#)).await?;
+        let failure =
+            website::collect(source.path(), &config, "urn:p", "urn:t", 2)
+                .await
+                .err()
+                .unwrap_or_else(|| {
+                    panic!("{selector} must not select a documentor")
+                });
+        let report = format!("{failure:#}");
+        assert!(
+            report.contains("documentor"),
+            "{selector}: {report}"
+        );
+    }
     Ok(())
 }

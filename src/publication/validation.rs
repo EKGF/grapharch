@@ -91,6 +91,11 @@ impl Field {
         if self.name == "collectorType" {
             crate::publication::collect::kind::CollectorKind::from_node(value)?;
         }
+        if self.name == "documentorType" {
+            crate::publication::document::kind::DocumentorKind::from_node(
+                value,
+            )?;
+        }
         Ok(())
     }
 
@@ -132,7 +137,7 @@ impl Field {
 fn has_type(store: &Store, node: &NamedNode, class: &str) -> Result<bool> {
     if class == "Processor" &&
         (has_type(store, node, "CollectorUse")? ||
-            has_type(store, node, "Documentor")?)
+            has_type(store, node, "DocumentorUse")?)
     {
         return Ok(true);
     }
@@ -209,7 +214,17 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::many("scope", Some("Scope")),
             Field::many("target", Some("Target")),
             Field::many("collector", Some("CollectorUse")),
+            Field::many("documentor", Some("DocumentorUse")),
         ]),
+        // Engine-owned documentation stages are uses without a configured
+        // definition; a configured definition must still be supported.
+        ("DocumentorUse", vec![Field {
+            name:      "documentorType",
+            required:  false,
+            multiple:  false,
+            reference: None,
+            literal:   false,
+        }]),
         ("CollectorUse", vec![
             Field::one("collectorType", None),
             Field::text("source"),

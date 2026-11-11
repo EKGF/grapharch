@@ -39,8 +39,8 @@ builds can also invoke the documentor through an explicit project definition:
 
 ```turtle
 <urn:project> ga:documentor <urn:maturity-pages> .
-<urn:maturity-pages> a ga:Documentor ;
-    ga:kind "maturity-model" ;
+<urn:maturity-pages> a ga:DocumentorUse ;
+    ga:documentorType ga:MaturityModelDocumentor ;
     ga:source "docs-fragments" ;
     ga:route "pillar/" .
 ```
@@ -78,7 +78,7 @@ read one subject at a time. Exceeding a limit fails with an explicit error.
 
 ## Taxonomy overview
 
-A second configured documentor with `ga:kind "maturity-overview"` and
+A second configured documentor with `ga:documentorType ga:MaturityOverviewDocumentor` and
 `ga:route "intro/overview/"` publishes a single hierarchy table from the pinned
 model. It lists each capability with its pillar, area, number and `rdfs:comment`
 (measurable ability), linking to native detail pages. It needs no companion

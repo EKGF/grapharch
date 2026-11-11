@@ -63,7 +63,7 @@ done
         );
     tokio::fs::write(&definitions, format!(r#"{authored}
 ex:project ga:collector ex:uml .
-ex:uml a ga:CollectorUse; ga:collectorType ga:PlantUmlFileCollector; ga:source "diagram.puml"; ga:destination "diagrams/out/diagram.svg"; ga:rendererExecutable "plantuml" .
+ex:uml a ga:CollectorUse; ga:collectorType ga:PlantUmlFileCollector; ga:source "diagram.puml"; ga:destination "diagrams/out/diagram.svg" .
 ex:scope ga:include {asset} .
 ex:intro-body ga:asset {asset}; ga:reference ex:uml-reference .
 ex:uml-reference a ga:ExternalReference; dct:identifier "diagrams/out/diagram.svg"; ga:url "{asset_url}"; ga:asset {asset} .

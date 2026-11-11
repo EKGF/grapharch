@@ -15,6 +15,9 @@ fn ontology() -> Result<Store> {
     for catalogue in [
         include_bytes!("../docs/other/ontology/renderers.ttl").as_slice(),
         include_bytes!("../docs/other/ontology/collectors.ttl").as_slice(),
+        include_bytes!("../docs/other/ontology/documentors.ttl").as_slice(),
+        include_bytes!("../docs/other/ontology/showcase-runners.ttl")
+            .as_slice(),
     ] {
         store.load_from_reader(RdfFormat::Turtle, catalogue)?;
     }
@@ -156,7 +159,8 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
             &format!(
                 "ga:{name} a ?kind . VALUES ?kind {{ owl:Class \
                  owl:ObjectProperty owl:DatatypeProperty \
-                 owl:AnnotationProperty ga:Renderer ga:Collector }}"
+                 owl:AnnotationProperty ga:Renderer ga:Collector \
+                 ga:Documentor ga:ShowcaseRunner }}"
             ),
         )? {
             missing.push(name);

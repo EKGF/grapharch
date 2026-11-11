@@ -1,0 +1,41 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# Runner definitions are shared; each ga:Showcase supplies its own source.
+
+ga:AuthoredShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Authored RDF showcase"@en ;
+    dct:description "Collects authored RDF containing fragment bodies and publication definitions."@en .
+
+ga:DprodShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "DPROD source-owned showcase"@en ;
+    dct:description "Collects one exact DPROD repository revision with its source-owned publication definitions."@en .
+
+ga:MkdocsShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "MkDocs site showcase"@en ;
+    dct:description "Collects a remote MkDocs documentation site with its navigation."@en .
+
+ga:OntologyFamilyShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Ontology family showcase"@en ;
+    dct:description "Collects a registered family of RDF ontologies from a remote repository or explicit documents."@en .
+
+ga:SkosShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "SKOS taxonomy showcase"@en ;
+    dct:description "Collects native SKOS Turtle split across source files."@en .
+
+ga:UseCasesShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Use-case showcase"@en ;
+    dct:description "Collects use-case instances and documents their trees and diagrams."@en .
+
+ga:MixedSourcesShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Mixed-source showcase"@en ;
+    dct:description "Runs specialized Markdown, SPARQL, OWL, and publication-definition collectors concurrently."@en .
+
+ga:SpecificationShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Specification showcase"@en ;
+    dct:description "Collects authored publication metadata and Markdown fragments for a standards-style specification."@en .
+
+ga:W3cSpecificationShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "W3C specification showcase"@en ;
+    dct:description "Collects a published W3C specification from its original HTML."@en .

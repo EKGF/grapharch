@@ -21,6 +21,7 @@ use {
     anyhow::{Result, ensure},
     oxigraph::{io::RdfFormat, store::Store},
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
+    runner::ShowcaseRunner,
     std::{
         collections::{BTreeSet, HashMap},
         path::{Component, Path},
@@ -32,7 +33,7 @@ use {
 struct Case {
     id:       NamedNode,
     key:      String,
-    kind:     String,
+    runner:   ShowcaseRunner,
     source:   String,
     preview:  Option<String>,
     pdf:      Option<String>,
@@ -274,9 +275,9 @@ async fn build_case(
         source.starts_with(root),
         "showcase source escapes its declared root"
     );
-    let (child, plans) = match case.kind.as_str() {
-        "authored" => showcases::authored(&source).await?,
-        "dprod" => {
+    let (child, plans) = match case.runner {
+        ShowcaseRunner::Authored => showcases::authored(&source).await?,
+        ShowcaseRunner::Dprod => {
             showcases::dprod_remote(
                 &source,
                 &root
@@ -288,7 +289,7 @@ async fn build_case(
             )
             .await?
         },
-        "mkdocs" => {
+        ShowcaseRunner::Mkdocs => {
             showcases::mkdocs(
                 &source,
                 &root
@@ -302,7 +303,7 @@ async fn build_case(
             )
             .await?
         },
-        "ontology-family" => {
+        ShowcaseRunner::OntologyFamily => {
             showcases::family(
                 &source,
                 &root
@@ -316,12 +317,13 @@ async fn build_case(
             )
             .await?
         },
-        "skos" => showcases::skos(&source).await?,
-        "use-cases" => showcases::use_cases(&source).await?,
-        "mixed" => showcases::mixed(&source).await?,
-        "specification" => showcases::specification(&source).await?,
-        "w3c" => showcases::w3c(&source).await?,
-        other => anyhow::bail!("unsupported showcase kind {other}"),
+        ShowcaseRunner::Skos => showcases::skos(&source).await?,
+        ShowcaseRunner::UseCases => showcases::use_cases(&source).await?,
+        ShowcaseRunner::MixedSources => showcases::mixed(&source).await?,
+        ShowcaseRunner::Specification => {
+            showcases::specification(&source).await?
+        },
+        ShowcaseRunner::W3cSpecification => showcases::w3c(&source).await?,
     };
     let mode = if case.expected.is_empty() {
         FailureMode::FailFast
@@ -583,7 +585,7 @@ fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
             })
             .collect::<Result<_>>()?;
         cases.push(Case {
-            kind: text(&store, &id, "kind")?,
+            runner: runner(&store, &id)?,
             id,
             key,
             source,
@@ -611,6 +613,24 @@ fn validate_artifact_count(count: usize) -> Result<()> {
     );
     Ok(())
 }
+
+fn runner(store: &Store, id: &NamedNode) -> Result<ShowcaseRunner> {
+    let mut runners = objects(store, id, "showcaseRunner")?;
+    let Some(runner) = runners.next().transpose()? else {
+        anyhow::bail!("{id} missing showcaseRunner")
+    };
+    ensure!(
+        runners.next().transpose()?.is_none(),
+        "{id} has conflicting showcaseRunner values"
+    );
+    let Term::NamedNode(runner) = runner else {
+        anyhow::bail!("{id} showcaseRunner must be an IRI")
+    };
+    ShowcaseRunner::from_node(&runner)
+}
+
+#[path = "gallery_runner.rs"]
+mod runner;
 
 #[cfg(test)]
 #[path = "gallery_tests.rs"]

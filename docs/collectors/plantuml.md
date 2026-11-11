@@ -32,8 +32,7 @@ Declare each diagram explicitly in the project's publication definitions:
 <urn:manual:lifecycle-diagram> a ga:CollectorUse ;
     ga:collectorType ga:PlantUmlFileCollector ;
     ga:source "docs/diagrams/src/lifecycle.puml" ;
-    ga:destination "docs/diagrams/out/lifecycle.svg" ;
-    ga:rendererExecutable "plantuml" .
+    ga:destination "docs/diagrams/out/lifecycle.svg" .
 ```
 
 Both paths are relative to the project root. The destination must be beneath

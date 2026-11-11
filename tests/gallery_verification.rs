@@ -70,8 +70,8 @@ async fn website_reports_every_failed_showcase_instead_of_abandoning_later_cases
     registry(
         root.path(),
         r#"
-<urn:case:first> a ga:Showcase;ga:slug "first";ga:kind "authored";ga:source "missing-first.ttl" .
-<urn:case:second> a ga:Showcase;ga:slug "second";ga:kind "authored";ga:source "missing-second.ttl" .
+<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "missing-first.ttl" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "missing-second.ttl" .
 "#,
     )?;
     let docs = docs(root.path())?;
@@ -94,6 +94,44 @@ async fn website_reports_every_failed_showcase_instead_of_abandoning_later_cases
 }
 
 #[tokio::test]
+async fn showcase_kind_literals_are_rejected_instead_of_selecting_a_runner()
+-> Result<()> {
+    for selector in [
+        r#"ga:kind "authored""#,
+        r#"ga:showcaseRunner "authored""#,
+        "ga:showcaseRunner ga:UnknownShowcaseRunner",
+    ] {
+        let root = tempfile::tempdir()?;
+        registry(
+            root.path(),
+            &format!(
+                r#"
+<urn:case:first> a ga:Showcase;ga:slug "first";{selector};ga:source "authored.ttl" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl" .
+"#
+            ),
+        )?;
+        let docs = docs(root.path())?;
+        let failure = grapharch::publication::website::collect(
+            &docs,
+            &docs.join("grapharch.ttl"),
+            "urn:grapharch:docs",
+            "urn:grapharch:docs:website",
+            2,
+        )
+        .await
+        .err()
+        .unwrap_or_else(|| panic!("{selector} must not select a runner"));
+        let report = format!("{failure:#}");
+        assert!(
+            report.contains("showcaseRunner"),
+            "{selector}: {report}"
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
 async fn verification_keeps_healthy_case_and_error_kg_when_another_case_fails()
 -> Result<()> {
     use grapharch::publication::{dataset::Dataset, showcases};
@@ -101,8 +139,8 @@ async fn verification_keeps_healthy_case_and_error_kg_when_another_case_fails()
     registry(
         root.path(),
         r#"
-<urn:case:first> a ga:Showcase;ga:slug "first";ga:kind "authored";ga:source "missing.ttl" .
-<urn:case:second> a ga:Showcase;ga:slug "second";ga:kind "authored";ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf" .
+<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "missing.ttl" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf" .
 "#,
     )?;
     std::fs::copy(
@@ -202,8 +240,8 @@ async fn collected_case_kg_survives_a_later_verification_failure() -> Result<()>
     registry(
         root.path(),
         r#"
-<urn:case:first> a ga:Showcase;ga:slug "first";ga:kind "authored";ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf";ga:expectedDiagnostic "expected-but-absent" .
-<urn:case:second> a ga:Showcase;ga:slug "second";ga:kind "authored";ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf" .
+<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf";ga:expectedDiagnostic "expected-but-absent" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf" .
 "#,
     )?;
     std::fs::copy(

@@ -38,8 +38,8 @@ below the version-list heading.
     dcat:accessURL <https://example.org/spec/develop/> ;
     ga:advertised true ; ga:order 1 .
 
-<urn:example:versions-page> a ga:Documentor ;
-    ga:project <urn:example:project> ; ga:kind "publication-inventory" ;
+<urn:example:versions-page> a ga:DocumentorUse ;
+    ga:project <urn:example:project> ; ga:documentorType ga:PublicationInventoryDocumentor ;
     ga:subject <urn:example:inventory> ; ga:fragment <urn:example:page> ;
     dct:title "Specification versions" ; ga:route "spec-versions/" ;
     ga:sourcePath "spec-versions.md" ; ga:navigationOrder 6 .

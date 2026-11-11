@@ -877,7 +877,7 @@ impl Documentor for AnnotatedTermDocumentor {
             (
                 processor.clone(),
                 NamedNode::new_unchecked(RDF_TYPE),
-                term("Documentor").into(),
+                term("DocumentorUse").into(),
             ),
             (
                 contribution.clone(),

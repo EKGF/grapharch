@@ -373,7 +373,7 @@ async fn rich_term_revisions_reuse_persisted_contributions_when_unrelated_source
         "unchanged source contributions must reuse their publication plan"
     );
     async fn revisions(dataset: &Dataset) -> Result<Vec<String>> {
-        let mut rows = dataset.select("PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT DISTINCT ?revision WHERE { GRAPH ?g { ?c ga:source 'https://example.org/vocab/Class' ; ga:revision ?revision ; ga:processor ?p . ?p a ga:Documentor } } ORDER BY ?revision".into()).await?;
+        let mut rows = dataset.select("PREFIX ga:<https://ekgf.org/ontology/grapharch#> SELECT DISTINCT ?revision WHERE { GRAPH ?g { ?c ga:source 'https://example.org/vocab/Class' ; ga:revision ?revision ; ga:processor ?p . ?p a ga:DocumentorUse } } ORDER BY ?revision".into()).await?;
         let mut result = Vec::new();
         while let Some(row) = rows.next().await? {
             result.push(row["revision"].to_string());

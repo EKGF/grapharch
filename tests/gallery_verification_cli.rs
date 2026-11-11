@@ -9,8 +9,8 @@ async fn verification_cli_checks_every_case_and_keeps_failure_evidence()
         r#"
 @prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:gallery:project> ga:showcase <urn:case:first>, <urn:case:second> .
-<urn:case:first> a ga:Showcase; ga:slug "first"; ga:kind "authored"; ga:source "missing-first.ttl" .
-<urn:case:second> a ga:Showcase; ga:slug "second"; ga:kind "authored"; ga:source "missing-second.ttl" .
+<urn:case:first> a ga:Showcase; ga:slug "first"; ga:showcaseRunner ga:AuthoredShowcaseRunner; ga:source "missing-first.ttl" .
+<urn:case:second> a ga:Showcase; ga:slug "second"; ga:showcaseRunner ga:AuthoredShowcaseRunner; ga:source "missing-second.ttl" .
 "#,
     )?;
     let output = tempfile::tempdir()?;

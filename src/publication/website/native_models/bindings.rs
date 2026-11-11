@@ -62,7 +62,7 @@ pub(super) async fn write(
         )
         .await?;
     for quad in [
-        q(&owner, "type", term("Documentor")),
+        q(&owner, "type", term("DocumentorUse")),
         q(&contribution, "type", term("Contribution")),
         q(&contribution, "project", NamedNode::new(project)?),
         q(&contribution, "processor", owner.clone()),

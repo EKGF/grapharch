@@ -252,7 +252,7 @@ impl Documentor for UseCaseDocumentor {
             let reference =
                 identity("use-case-diagram-reference", &[fragment.as_str()]);
             for quad in [
-                q(&self.processor, "type", term("Documentor")),
+                q(&self.processor, "type", term("DocumentorUse")),
                 q(&contribution, "type", term("Contribution")),
                 q(&contribution, "project", self.project.clone()),
                 q(&contribution, "processor", self.processor.clone()),

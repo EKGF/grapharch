@@ -1,0 +1,17 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# Definitions are shared; project settings belong to ga:DocumentorUse.
+
+ga:MaturityModelDocumentor a ga:Documentor ;
+    rdfs:label "Maturity model documentor"@en ;
+    dct:description "Generates one website page per collected maturity pillar, capability area, and capability, composed with authored companion fragments."@en .
+
+ga:MaturityOverviewDocumentor a ga:Documentor ;
+    rdfs:label "Maturity overview documentor"@en ;
+    dct:description "Generates one website overview page summarizing the collected maturity model."@en .
+
+ga:PublicationInventoryDocumentor a ga:Documentor ;
+    rdfs:label "Publication inventory documentor"@en ;
+    dct:description "Generates the specification versions page from collected repository publication metadata."@en .

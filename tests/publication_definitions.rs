@@ -99,7 +99,7 @@ fn depth_with_string_datatype_is_rejected() -> anyhow::Result<()> {
 #[test]
 fn stage_contributions_can_be_owned_by_a_documentor() -> anyhow::Result<()> {
     let store = fixture()?;
-    store.update("DELETE WHERE { <urn:example:authored> <https://ekgf.org/ontology/grapharch#processor> ?old }; INSERT DATA { <urn:example:documentor> a <https://ekgf.org/ontology/grapharch#Documentor> . <urn:example:authored> <https://ekgf.org/ontology/grapharch#processor> <urn:example:documentor> }")?;
+    store.update("DELETE WHERE { <urn:example:authored> <https://ekgf.org/ontology/grapharch#processor> ?old }; INSERT DATA { <urn:example:documentor> a <https://ekgf.org/ontology/grapharch#DocumentorUse> . <urn:example:authored> <https://ekgf.org/ontology/grapharch#processor> <urn:example:documentor> }")?;
     validate(&store)
 }
 

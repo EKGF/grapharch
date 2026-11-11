@@ -34,7 +34,8 @@ and development status.
 
 A **Project** configures collectors and documentation generators. Collectors
 read source content; documentation generators turn collected RDF into reusable
-fragments. The ontology calls these generators `ga:Documentor`. Renderers then
+fragments. The ontology names their shared definitions `ga:Documentor` and
+their project-bound uses `ga:DocumentorUse`. Renderers then
 present the selected fragments as HTML or PDF.
 Their **Contributions** retain source and processor provenance.
 
@@ -57,9 +58,9 @@ OWL and RDFS define the vocabulary's classes, properties, and logical
 relationships. The companion SHACL shapes express constraints on publication
 definitions, such as required properties and allowed values.
 
-For example, a collector definition must supply exactly one `ga:kind` and one
-`ga:source`. These requirements are expressed in `ga:CollectorShape` in the
-[SHACL file](publication.shacl.ttl).
+For example, a configured collector use must supply exactly one
+`ga:collectorType` IRI and one `ga:source`. These requirements are expressed in
+`ga:CollectorUseShape` in the [SHACL file](publication.shacl.ttl).
 
 Domains and ranges stay broad where a property is deliberately shared. For
 example, `ga:subject` can identify any domain resource. A narrow domain would

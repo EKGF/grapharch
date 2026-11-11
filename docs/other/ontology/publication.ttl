@@ -151,11 +151,24 @@ ga:Processor a owl:Class ;
     skos:scopeNote "Processor identity denotes a configured contribution owner; it does not imply a separate operating-system process or separately distributed binary."@en .
 
 ga:Documentor a owl:Class ;
-    rdfs:label "Specialized RDF fragment generator"@en ;
+    rdfs:label "Documentor definition"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A specialized processor that reads already collected RDF and generates documentation fragments for identified resources without interpreting source-native syntax."@en ;
-    dct:description "A specialized processor that reads already collected RDF and generates documentation fragments for identified resources without interpreting source-native syntax."@en ;
+    skos:definition "A reusable definition of a documentation generation capability that reads already collected RDF and generates documentation fragments without interpreting source-native syntax."@en ;
+    dct:description "A reusable definition of a documentation generation capability that reads already collected RDF and generates documentation fragments without interpreting source-native syntax."@en .
+
+ga:DocumentorUse a owl:Class ;
+    rdfs:label "Documentor use"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A processor that applies a documentor definition within one project, either as a configured project documentor or as an engine-owned documentation stage."@en ;
+    dct:description "A processor that applies a documentor definition within one project, either as a configured project documentor or as an engine-owned documentation stage."@en ;
     rdfs:subClassOf ga:Processor .
+
+ga:documentorType a owl:ObjectProperty ;
+    rdfs:label "Documentor definition"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a configured documentor use to its shared documentation generation capability definition."@en ;
+    dct:description "Links a configured documentor use to its shared documentation generation capability definition."@en ;
+    rdfs:domain ga:DocumentorUse ; rdfs:range ga:Documentor .
 
 ga:ScopePlan a owl:Class ;
     rdfs:label "Resolved scope plan"@en ;
@@ -237,6 +250,19 @@ ga:Showcase a owl:Class ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "An executable documentation example connecting native inputs and expected diagnostics to generated previews, PDFs, other outputs, and an exported dataset."@en ;
     dct:description "An executable documentation example connecting native inputs and expected diagnostics to generated previews, PDFs, other outputs, and an exported dataset."@en .
+
+ga:ShowcaseRunner a owl:Class ;
+    rdfs:label "Showcase runner definition"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A reusable definition of the source preparation pipeline that turns a showcase input into publication plans."@en ;
+    dct:description "A reusable definition of the source preparation pipeline that turns a showcase input into publication plans."@en .
+
+ga:showcaseRunner a owl:ObjectProperty ;
+    rdfs:label "Showcase runner"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links an executable showcase to the shared runner definition that prepares its sources."@en ;
+    dct:description "Links an executable showcase to the shared runner definition that prepares its sources."@en ;
+    rdfs:domain ga:Showcase ; rdfs:range ga:ShowcaseRunner .
 
 ga:BinaryAsset a owl:Class ;
     rdfs:label "Chunked publication artifact"@en ;
@@ -749,14 +775,6 @@ ga:attempt a owl:ObjectProperty ;
     rdfs:range rdfs:Resource .
 
 # Literal-valued properties
-
-ga:kind a owl:DatatypeProperty ;
-    rdfs:label "Implementation kind"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Records the implementation dispatch key identifying a collector or showcase pipeline kind."@en ;
-    dct:description "Records the implementation dispatch key identifying a collector or showcase pipeline kind."@en ;
-    rdfs:domain rdfs:Resource ;
-    rdfs:range xsd:string .
 
 ga:source a owl:DatatypeProperty ;
     rdfs:label "Source identifier"@en ;
@@ -1560,7 +1578,7 @@ ga:navigationProfile a owl:ObjectProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Identifies the publication profile receiving navigation hints normalized by a configured source collector or model documentor."@en ;
     dct:description "Identifies the publication profile receiving navigation hints normalized by a configured source collector or model documentor."@en ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:Documentor ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:DocumentorUse ) ] ;
     rdfs:range ga:Profile .
 
 
@@ -1612,14 +1630,7 @@ ga:documentor a owl:ObjectProperty ;
     skos:definition "Associates a project with an explicit documentor configuration for generating documentation from collected source semantics."@en ;
     dct:description "Associates a project with an explicit documentor configuration for generating documentation from collected source semantics."@en ;
     rdfs:domain ga:Project ;
-    rdfs:range ga:Documentor .
-ga:rendererExecutable a owl:DatatypeProperty ;
-    rdfs:label "Local diagram renderer"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Identifies the locally installed renderer explicitly selected for a collected diagram source."@en ;
-    dct:description "Identifies the locally installed renderer explicitly selected for a collected diagram source."@en ;
-    rdfs:domain rdfs:Resource ; rdfs:range xsd:string ;
-    skos:scopeNote "The PlantUML collector accepts only the fixed tool name plantuml. Source metadata does not authorize arbitrary shell commands, renderer downloads, network includes, or execution during HTML/PDF rendering."@en .
+    rdfs:range ga:DocumentorUse .
 
 
 ga:navigationParentPath a owl:DatatypeProperty ;
@@ -1628,7 +1639,7 @@ ga:navigationParentPath a owl:DatatypeProperty ;
     skos:definition "Places the root entry generated by a documentor beneath a directory-navigation entry identified by its content-root-relative source path."@en ;
     dct:description "Places the root entry generated by a documentor beneath a directory-navigation entry identified by its content-root-relative source path."@en ;
     skos:scopeNote "The parent belongs to the documentor's navigationProfile sidebar. The path identifies navigation placement, not content ownership; absent parents fail validation."@en ;
-    rdfs:domain ga:Documentor ;
+    rdfs:domain ga:DocumentorUse ;
     rdfs:range xsd:string .
 
 ga:routeAlias a owl:DatatypeProperty ;

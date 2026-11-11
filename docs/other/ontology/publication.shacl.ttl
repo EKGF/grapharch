@@ -62,7 +62,7 @@ ga:FragmentShape a sh:NodeShape ; sh:targetClass ga:Fragment ; sh:nodeKind sh:IR
     sh:property [ sh:path ga:contribution ; sh:nodeKind sh:IRI ; sh:class ga:Contribution ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ContributionShape a sh:NodeShape ; sh:targetClass ga:Contribution ; sh:nodeKind sh:IRI ;
-    sh:property [ sh:path ga:processor ; sh:nodeKind sh:IRI ; sh:or ( [ sh:class ga:CollectorUse ] [ sh:class ga:Documentor ] [ sh:class ga:Processor ] ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:processor ; sh:nodeKind sh:IRI ; sh:or ( [ sh:class ga:CollectorUse ] [ sh:class ga:DocumentorUse ] [ sh:class ga:Processor ] ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:project ; sh:nodeKind sh:IRI ; sh:class ga:Project ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:revision ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] .
@@ -254,17 +254,19 @@ ga:IncludeRootShape a sh:NodeShape ; sh:targetSubjectsOf ga:includeRoot ;
 
 ga:ConfiguredDocumentorShape a sh:NodeShape ;
     sh:targetSubjectsOf ga:documentor ;
-    sh:property [ sh:path ga:documentor ; sh:nodeKind sh:IRI ; sh:class ga:Documentor ] .
-ga:LocalDiagramRendererShape a sh:NodeShape ;
-    sh:targetSubjectsOf ga:rendererExecutable ;
-    sh:property [ sh:path ga:rendererExecutable ; sh:datatype xsd:string ;
-        sh:in ( "plantuml" ) ; sh:minCount 1 ; sh:maxCount 1 ] .
+    sh:property [ sh:path ga:documentor ; sh:nodeKind sh:IRI ; sh:class ga:DocumentorUse ] .
+ga:ConfiguredDocumentorUseShape a sh:NodeShape ;
+    sh:targetObjectsOf ga:documentor ;
+    sh:property [ sh:path ga:documentorType ; sh:nodeKind sh:IRI ; sh:class ga:Documentor ; sh:minCount 1 ; sh:maxCount 1 ] .
+ga:DocumentorTypeShape a sh:NodeShape ;
+    sh:targetSubjectsOf ga:documentorType ;
+    sh:class ga:DocumentorUse ;
+    sh:property [ sh:path ga:documentorType ; sh:nodeKind sh:IRI ; sh:class ga:Documentor ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:PlantUmlCollectorShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ;
     sh:or (
         [ sh:not [ sh:property [ sh:path ga:collectorType ; sh:hasValue ga:PlantUmlFileCollector ] ] ]
-        [ sh:property [ sh:path ga:rendererExecutable ; sh:hasValue "plantuml" ; sh:minCount 1 ; sh:maxCount 1 ] ;
-          sh:property [ sh:path ga:destination ; sh:datatype xsd:string ; sh:pattern "^[^\\\\]+[.]svg$" ; sh:minCount 1 ; sh:maxCount 1 ] ]
+        [ sh:property [ sh:path ga:destination ; sh:datatype xsd:string ; sh:pattern "^[^\\\\]+[.]svg$" ; sh:minCount 1 ; sh:maxCount 1 ] ]
     ) .
 
 
@@ -293,6 +295,7 @@ ga:AbbreviationSelectionShape a sh:NodeShape ;
         sh:minCount 1 ; sh:maxCount 8 ] .
 
 ga:ShowcaseDiscoveryShape a sh:NodeShape ; sh:targetClass ga:Showcase ;
+    sh:property [ sh:path ga:showcaseRunner ; sh:nodeKind sh:IRI ; sh:class ga:ShowcaseRunner ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:showcaseInput ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;
     sh:property [ sh:path ga:showcaseCapability ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;
     sh:property [ sh:path ga:showcaseUseCase ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;

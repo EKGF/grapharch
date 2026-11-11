@@ -117,7 +117,7 @@ impl RevisionView {
                 "VALUES ?class {{ {} {} {} }}",
                 term("Processor"),
                 term("CollectorUse"),
-                term("Documentor")
+                term("DocumentorUse")
             )
         } else if class == "Authority" {
             format!(

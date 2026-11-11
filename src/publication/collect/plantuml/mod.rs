@@ -57,12 +57,6 @@ impl PlantUmlFile {
         root: &Path,
         view: &RevisionView,
     ) -> Result<Self> {
-        let executable = view.text(processor, "rendererExecutable").await?;
-        ensure!(
-            executable == "plantuml",
-            "PlantUML requires rendererExecutable \"plantuml\" on PATH; \
-             arbitrary source-selected commands are forbidden"
-        );
         let root = tokio::fs::canonicalize(root).await?;
         let content = match view
             .optional(&NamedNode::new(project)?, "contentSource")
@@ -208,11 +202,6 @@ impl Collector for PlantUmlFile {
                 Literal::new_simple_literal(&self.output).into(),
             ),
             quad(&diagram, "asset", self.asset.clone().into()),
-            quad(
-                &diagram,
-                "rendererExecutable",
-                Literal::new_simple_literal("plantuml").into(),
-            ),
         ] {
             stream.write(value).await?;
         }
@@ -288,7 +277,7 @@ mod tests {
         let definitions = root.path().join("project.ttl");
         tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:uml:project> a ga:Project; ga:contentSource "docs"; ga:collector <urn:uml:collector> .
-<urn:uml:collector> a ga:CollectorUse; ga:collectorType ga:PlantUmlFileCollector; ga:source "docs/diagram.puml"; ga:destination "docs/diagrams/out/diagram.svg"; ga:rendererExecutable "plantuml" ."#).await?;
+<urn:uml:collector> a ga:CollectorUse; ga:collectorType ga:PlantUmlFileCollector; ga:source "docs/diagram.puml"; ga:destination "docs/diagrams/out/diagram.svg" ."#).await?;
         let dataset = Dataset::memory()?;
         let (writer, worker) =
             GraphWriter::spawn(dataset.clone(), 4, 1024 * 1024)?;
