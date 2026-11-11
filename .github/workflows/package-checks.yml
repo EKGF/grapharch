@@ -1,8 +1,8 @@
 name: Package checks
 on:
+  # Every main push: the automatic release requires this run for its source.
   push:
     branches: [main]
-    paths: ['action.yml', 'npm/**', 'packaging/**', 'pyproject.toml', 'Cargo.toml', 'cog.toml', '.github/workflows/package-checks.yml', '.github/workflows/distribute.yml']
   pull_request:
     paths: ['action.yml', 'npm/**', 'packaging/**', 'pyproject.toml', 'Cargo.toml', 'cog.toml', '.github/workflows/package-checks.yml', '.github/workflows/distribute.yml']
 permissions:
