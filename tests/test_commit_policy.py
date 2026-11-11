@@ -48,6 +48,37 @@ class CommitRangeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), f"{self.base}..{self.head}")
 
+    def replace_published_head(self):
+        """Publish a malformed head, then rewrite it away as a forced update."""
+        self.git("-c", "commit.gpgsign=false", "commit", "--allow-empty", "-qm", "malformed squash title")
+        replaced = self.git("rev-parse", "HEAD").strip()
+        self.git("reset", "-q", "--hard", self.base)
+        self.git("-c", "commit.gpgsign=false", "commit", "--allow-empty", "-qm", "fix: rewritten work")
+        self.head = self.git("rev-parse", "HEAD").strip()
+        return replaced
+
+    def test_forced_push_checks_commits_introduced_since_the_common_ancestor(self):
+        replaced = self.replace_published_head()
+        result = self.script("push", before=replaced)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), f"{self.base}..{self.head}")
+
+    def test_forced_push_fetches_a_replaced_head_absent_from_the_clone(self):
+        replaced = self.replace_published_head()
+        origin = self.directory / "origin.git"
+        self.git("init", "-q", "--bare", str(origin))
+        self.git("push", "-q", str(origin), f"{replaced}:refs/heads/replaced", f"{self.head}:refs/heads/main")
+        self.git("--git-dir", str(origin), "update-ref", "-d", "refs/heads/replaced")
+        self.git("--git-dir", str(origin), "config", "uploadpack.allowAnySHA1InWant", "true")
+        clone = self.directory / "clone"
+        self.git("clone", "-q", "--no-local", str(origin), str(clone))
+        self.assertNotEqual(subprocess.run(["git", "-C", str(clone), "cat-file", "-e", f"{replaced}^{{commit}}"],
+                                           capture_output=True).returncode, 0)
+        self.directory = clone
+        result = self.script("push", before=replaced)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), f"{self.base}..{self.head}")
+
     def test_unknown_base_and_injected_revision_are_hard_errors(self):
         for before in ("f" * 40, "HEAD;echo invalid", ""):
             result = self.script("push", before=before)
