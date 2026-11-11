@@ -152,7 +152,9 @@ parallelism, records unexpected failures as KG diagnostics, and exits nonzero if
 any case fails. It retains `report.json`, `verification.nq`, and each available
 case’s artifacts and KG. A collection failure may prevent a case KG from being
 available; the report says so explicitly. Repository failures include the observed
-commit and source location.
+commit and source location. A case also fails when a relative `href` or `src` in
+its published HTML does not name a file that the same case publishes, such as a
+PDF edition that was not built. Absolute links are not fetched.
 
 The GraphArch website workflow runs these live checks on changes and nightly.
 It uploads the evidence even when verification fails and blocks publication of

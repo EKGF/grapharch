@@ -2305,6 +2305,7 @@ dependencies = [
  "futures",
  "gix",
  "hex",
+ "html5ever",
  "ignore",
  "image",
  "lazy_static",
