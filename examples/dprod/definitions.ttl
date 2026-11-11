@@ -23,7 +23,6 @@ ex:specification a ga:Target ; dct:title "DPROD ontology and SHACL reference" ;
     ga:subtitle "Generated from native RDF sources" ;
     ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer ga:SpecificationRenderer ; ga:destination "specification" ;
     ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ; ga:publicationStatus "Reference Preview" ;
-    ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/dprod/specification/> ;
     ga:latestVersion <https://www.omg.org/spec/DPROD/> ;
     ga:editorDraft <https://github.com/EKGF/dprod> ;
     ga:license <https://creativecommons.org/licenses/by/4.0/> ;

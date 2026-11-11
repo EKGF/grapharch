@@ -10,7 +10,12 @@ use {
         collect::git::{self, CommittedDefinitions},
         dataset::Dataset,
         plan::ResolvedPlan,
-        revision_build::{self, RevisionInputs, TargetSelection},
+        revision_build::{
+            self,
+            PublicationUrl,
+            RevisionInputs,
+            TargetSelection,
+        },
     },
     std::path::{Path, PathBuf},
 };
@@ -21,6 +26,8 @@ pub const PROJECT: &str = "urn:dprod-showcase:project";
 pub const DEFINITIONS: &str = "publication/definitions.ttl";
 /// Generator revision declared by the test orchestrator.
 pub const GENERATOR: &str = "1111111111111111111111111111111111111111";
+/// Deployment base supplied by the test orchestrator, never by definitions.
+pub const PUBLICATION_URL: &str = "https://example.org/dprod/spec/develop/";
 
 pub struct RevisionFixture {
     root:                   tempfile::TempDir,
@@ -152,6 +159,15 @@ impl RevisionFixture {
         &self,
         targets: TargetSelection,
     ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+        self.collect_at(targets, PUBLICATION_URL).await
+    }
+
+    /// Collect and plan through the library for one deployment base.
+    pub async fn collect_at(
+        &self,
+        targets: TargetSelection,
+        publication_url: &str,
+    ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
         let content = git::remote_documentation(
             &self.repository,
             &self.commit,
@@ -170,6 +186,7 @@ impl RevisionFixture {
             definitions,
             project: oxrdf::NamedNode::new(PROJECT)?,
             targets,
+            publication_url: PublicationUrl::try_new(publication_url)?,
         })
         .await
     }
@@ -203,6 +220,7 @@ impl RevisionFixture {
             ),
             ("--project", PROJECT),
             ("--generator-revision", GENERATOR),
+            ("--publication-url", PUBLICATION_URL),
             ("--git-cache", cache.to_str().unwrap()),
             ("--output-root", output.to_str().unwrap()),
         ];

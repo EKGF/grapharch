@@ -468,12 +468,14 @@ pub async fn publish(
 }
 
 /// Build an exact-revision showcase: definitions from a controlling commit,
-/// content from a designated commit of the same repository.
+/// content from a designated commit of the same repository, deployed at
+/// `publication_url`.
 pub async fn revision_build(
     source: &Path,
     cache: &Path,
+    publication_url: super::revision_build::PublicationUrl,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    super::showcases_revision::build(source, cache).await
+    super::showcases_revision::build(source, cache, publication_url).await
 }
 
 /// Collect and plan the standalone native SKOS showcase.

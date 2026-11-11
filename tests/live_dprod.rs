@@ -2,9 +2,22 @@
 mod dprod_header;
 
 use {
-    grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
+    grapharch::publication::{
+        dataset::Dataset,
+        render::Publisher,
+        revision_build::PublicationUrl,
+        showcases,
+    },
     std::path::Path,
 };
+
+/// The gallery's deployed location for the DPROD showcase.
+fn deployment() -> PublicationUrl {
+    PublicationUrl::try_new(
+        "https://ekgf.github.io/grapharch/showcases/artifacts/dprod/",
+    )
+    .unwrap()
+}
 
 #[tokio::test]
 #[ignore = "explicit remote acceptance; performs read-only network collection"]
@@ -14,7 +27,8 @@ async fn remote_revision_restores_and_publishes_declared_targets()
     let config = std::env::var("GRAPHARCH_DPROD_CONFIG")
         .unwrap_or_else(|_| "examples/dprod/live.yaml".into());
     let (dataset, plans) =
-        showcases::revision_build(Path::new(&config), cache).await?;
+        showcases::revision_build(Path::new(&config), cache, deployment())
+            .await?;
     let output = Path::new("output/dprod-editions-acceptance");
     tokio::fs::create_dir_all(output).await?;
     let archive = output.join("documentation.nq");
@@ -273,7 +287,7 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
     let config = output.path().join("first.yaml");
     configuration(&config, &bare, &first, &definitions)?;
     let (dataset, plans) =
-        showcases::revision_build(&config, cache.path()).await?;
+        showcases::revision_build(&config, cache.path(), deployment()).await?;
     assert!(bodies(&dataset, "MAIN MUST NEVER APPEAR").await?.is_empty());
     assert!(!bodies(&dataset, "DEVELOP ONE").await?.is_empty());
     let mut assets = dataset.select("SELECT (COUNT(DISTINCT ?asset) AS ?count) WHERE { GRAPH ?g { ?asset a <https://ekgf.org/ontology/grapharch#BinaryAsset> } }".into()).await?;
@@ -307,11 +321,12 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
     let second_config = output.path().join("second.yaml");
     configuration(&second_config, &bare, &second, &definitions)?;
     let (updated, _) =
-        showcases::revision_build(&second_config, cache.path()).await?;
+        showcases::revision_build(&second_config, cache.path(), deployment())
+            .await?;
     assert!(!bodies(&updated, "DEVELOP TWO").await?.is_empty());
     // The first exact commit stays pinned after its branch advances.
     let (pinned, pinned_plans) =
-        showcases::revision_build(&config, cache.path()).await?;
+        showcases::revision_build(&config, cache.path(), deployment()).await?;
     assert_eq!(pinned_plans.len(), 3);
     assert!(!bodies(&pinned, "DEVELOP ONE").await?.is_empty());
     assert!(
@@ -333,10 +348,11 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
     ])?;
     let third_config = output.path().join("third.yaml");
     configuration(&third_config, &bare, &third, &definitions)?;
-    let failure = showcases::revision_build(&third_config, cache.path())
-        .await
-        .err()
-        .ok_or_else(|| anyhow::anyhow!("missing Git image must fail"))?;
+    let failure =
+        showcases::revision_build(&third_config, cache.path(), deployment())
+            .await
+            .err()
+            .ok_or_else(|| anyhow::anyhow!("missing Git image must fail"))?;
     assert!(
         format!("{failure:#}").contains("missing required Git blob badge.svg")
     );
@@ -384,7 +400,7 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
     assert!(site.contains("href=\"assets/image-"));
     assert!(site.contains("src=\"assets/image-"));
     assert!(
-        showcases::revision_build(&config, cache.path())
+        showcases::revision_build(&config, cache.path(), deployment())
             .await
             .is_err(),
         "missing transport must not fall back to cached or copied sources"
@@ -402,7 +418,7 @@ async fn remote_transport_rejects_oversized_settings_and_mutable_refs_before_net
     assert!(
         format!(
             "{:#}",
-            showcases::revision_build(&config, &cache)
+            showcases::revision_build(&config, &cache, deployment())
                 .await
                 .err()
                 .unwrap()
@@ -431,7 +447,7 @@ async fn remote_transport_rejects_oversized_settings_and_mutable_refs_before_net
         )?;
         let error = format!(
             "{:#}",
-            showcases::revision_build(&config, &cache)
+            showcases::revision_build(&config, &cache, deployment())
                 .await
                 .err()
                 .unwrap()

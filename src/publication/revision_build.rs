@@ -24,11 +24,13 @@ use {
     oxrdf::{NamedNode, Term},
 };
 
+mod location;
 mod request;
 mod selection;
 mod trust;
 pub(crate) use request::exact_commit;
 pub use {
+    location::PublicationUrl,
     request::{BuildManifest, BuildRequest},
     selection::TargetSelection,
 };
@@ -42,13 +44,16 @@ const DOCUMENTOR_USES: usize = 8;
 /// verified definitions file, both bound to the same project.
 pub struct RevisionInputs {
     /// Content pinned at the designated commit; read as data only.
-    pub content:     RepositoryScan,
+    pub content:         RepositoryScan,
     /// Definitions pinned at the controlling commit.
-    pub definitions: CommittedDefinitions,
+    pub definitions:     CommittedDefinitions,
     /// Project defined by the controlling definitions.
-    pub project:     NamedNode,
+    pub project:         NamedNode,
     /// Targets to resolve.
-    pub targets:     TargetSelection,
+    pub targets:         TargetSelection,
+    /// Deployed URL of the build output; each selected target's version
+    /// derives from it.
+    pub publication_url: PublicationUrl,
 }
 
 /// Collect content through the configured collectors, generate configured
@@ -134,6 +139,14 @@ impl Build<'_> {
             self.dataset,
             &definitions,
             project,
+            self.writer,
+        )
+        .await?;
+        location::derive(
+            &definitions,
+            project,
+            &targets,
+            &self.inputs.publication_url,
             self.writer,
         )
         .await?;

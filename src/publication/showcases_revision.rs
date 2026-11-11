@@ -6,7 +6,12 @@ use {
         collect::git::{self, CommittedDefinitions},
         dataset::Dataset,
         plan::ResolvedPlan,
-        revision_build::{self, RevisionInputs, TargetSelection},
+        revision_build::{
+            self,
+            PublicationUrl,
+            RevisionInputs,
+            TargetSelection,
+        },
     },
     anyhow::{Context, Result, ensure},
     oxrdf::NamedNode,
@@ -75,6 +80,7 @@ impl Targets {
 pub(super) async fn build(
     configuration: &Path,
     cache: &Path,
+    publication_url: PublicationUrl,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
     let mut bytes = Vec::new();
     tokio::fs::File::open(configuration)
@@ -117,6 +123,7 @@ pub(super) async fn build(
         definitions,
         project,
         targets,
+        publication_url,
     })
     .await
 }

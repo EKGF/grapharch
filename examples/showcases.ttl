@@ -1,6 +1,9 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
+# Where the gallery deploys showcase artifacts; an exact-revision showcase is
+# published beneath it at its slug, whatever its own definitions say.
+<urn:grapharch:docs> ga:showcaseArtifactsUrl <https://ekgf.github.io/grapharch/showcases/artifacts/> .
 <urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch, ex:fibo-be .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;

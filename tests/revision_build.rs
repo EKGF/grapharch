@@ -10,6 +10,7 @@ use {
 };
 
 const SPECIFICATION: &str = "urn:dprod-showcase:specification";
+const BASE: &str = revision_fixture::PUBLICATION_URL;
 const PDF: &str = "urn:dprod-showcase:pdf";
 
 fn fixture() -> Result<RevisionFixture> {
@@ -436,6 +437,176 @@ async fn content_cannot_define_or_redefine_publications() -> Result<()> {
             "{error}"
         );
     }
+    Ok(())
+}
+
+/// Deployment location is a build input, never source content: each selected
+/// target's `ga:thisVersion` derives from `--publication-url` and its
+/// destination, with the renderer's entry point.
+#[tokio::test]
+async fn publication_url_derives_the_version_of_every_selected_target()
+-> Result<()> {
+    let fixture = fixture()?;
+    let output = tempfile::tempdir()?;
+    let root = output.path().join("published");
+    let manifest = succeeded(&fixture.build(&root, &["--all-targets"]).await?)?;
+    assert_eq!(manifest["publication_url"], BASE);
+    let html = spec(&root)?;
+    assert!(
+        html.contains(&format!(
+            "<dt>This version:</dt><dd><a href=\"{BASE}specification/\""
+        )),
+        "the specification is published at its destination directory"
+    );
+    let website = std::fs::read_to_string(root.join("website/index.html"))?;
+    assert!(
+        website.contains(&format!(
+            "<link rel=\"canonical\" href=\"{BASE}website/\">"
+        )),
+        "the website canonical location derives from the same base"
+    );
+    let graph = std::fs::read_to_string(root.join("documentation.nq"))?;
+    for (target, version) in [
+        (SPECIFICATION, format!("{BASE}specification/")),
+        (
+            "urn:dprod-showcase:website",
+            format!("{BASE}website/"),
+        ),
+        (PDF, format!("{BASE}pdf/document.pdf")),
+    ] {
+        assert!(
+            graph.contains(&format!(
+                "<{target}> <https://ekgf.org/ontology/grapharch#thisVersion> \
+                 <{version}>"
+            )),
+            "{target} must record its derived version {version}"
+        );
+    }
+    assert!(
+        !html.contains("showcases/artifacts/dprod"),
+        "no deployment location may come from the definitions"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn definitions_cannot_declare_the_version_of_a_selected_target()
+-> Result<()> {
+    let mut fixture = fixture()?;
+    fixture.edit_definitions(|text| {
+        Ok(format!(
+            "{text}\n<{PDF}> <https://ekgf.org/ontology/grapharch#thisVersion> \
+             <https://example.org/elsewhere/document.pdf> .\n"
+        ))
+    })?;
+    let output = tempfile::tempdir()?;
+    let root = output.path().join("pdf");
+    let error = failed(&fixture.build(&root, &["--target", PDF]).await?);
+    assert!(
+        error.contains(&format!(
+            "<{PDF}> declares ga:thisVersion <https://example.org/elsewhere/document.pdf>"
+        )) && error.contains("--publication-url"),
+        "an explicit version conflicts with the derived one: {error}"
+    );
+    assert!(!root.exists());
+    succeeded(
+        &fixture
+            .build(&output.path().join("specification"), &[
+                "--target",
+                SPECIFICATION,
+            ])
+            .await?,
+    )?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn publication_urls_must_be_absolute_directories_before_any_transport()
+-> Result<()> {
+    let fixture = fixture()?;
+    let output = tempfile::tempdir()?;
+    let root = output.path().join("published");
+    for value in [
+        "https://example.org/dprod/spec/develop",
+        "ftp://example.org/dprod/",
+        "https://reader@example.org/dprod/",
+        "https://example.org/dprod/?preview=1",
+        "https://example.org/dprod/#top",
+        "dprod/spec/develop/",
+    ] {
+        let error = failed(
+            &fixture
+                .build_with(&root, &["--all-targets"], &[
+                    ("--publication-url", value),
+                    (
+                        "--git-repository",
+                        "https://example.invalid/never.git",
+                    ),
+                ])
+                .await?,
+        );
+        assert!(
+            error.contains("--publication-url") &&
+                error.contains(
+                    "an absolute HTTP(S) directory URL ending in /, without \
+                     credentials, query or fragment"
+                ),
+            "{value}: {error}"
+        );
+    }
+    assert!(!fixture.cache().exists());
+    assert!(!root.exists());
+    Ok(())
+}
+
+/// Authored links between co-built artifacts stay relative to the page while
+/// the canonical version beside them is the derived absolute location.
+#[tokio::test]
+async fn authored_edition_links_stay_relative_beside_derived_versions()
+-> Result<()> {
+    let mut fixture = fixture()?;
+    fixture.edit_definitions(|text| {
+        Ok(format!(
+            r##"{text}
+ex:specification ga:metadataRow ex:row:version, ex:row:latest, ex:row:editions .
+ex:row:version a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
+ex:row:latest a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
+ex:row:editions a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ; dct:title "PDF edition:" ;
+    ga:body """<a href="../pdf/document.pdf">Review PDF</a>""" .
+"##
+        ))
+    })?;
+    let output = tempfile::tempdir()?;
+    let root = output.path().join("published");
+    succeeded(&fixture.build(&root, &["--all-targets"]).await?)?;
+    let page = root.join("specification/index.html");
+    let html = std::fs::read_to_string(&page)?;
+    let document = scraper::Html::parse_document(&html);
+    let selector =
+        scraper::Selector::parse("dl.publication-metadata a[href]").unwrap();
+    let hrefs: Vec<_> = document
+        .select(&selector)
+        .map(|link| link.attr("href").unwrap().to_owned())
+        .collect();
+    assert!(
+        hrefs.contains(&format!("{BASE}specification/")),
+        "{hrefs:?}"
+    );
+    assert!(
+        hrefs.iter().any(|href| href == "../pdf/document.pdf"),
+        "the authored edition link must stay relative: {hrefs:?}"
+    );
+    let resolved = url::Url::from_file_path(&page)
+        .unwrap()
+        .join("../pdf/document.pdf")?
+        .to_file_path()
+        .unwrap();
+    assert!(
+        resolved.starts_with(&root) &&
+            std::fs::read(&resolved)?.starts_with(b"%PDF-"),
+        "the relative edition link resolves to the built PDF: {}",
+        resolved.display()
+    );
     Ok(())
 }
 

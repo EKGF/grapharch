@@ -305,7 +305,10 @@ such as `ga:thisVersion` is canonical metadata: it appears as the version link,
 canonical link and sitemap entry. It is never the base of a link between
 artifacts of the same output, such as a specification's link to a sibling PDF
 edition. Such links stay relative to their page, so one output works in
-production, previews, the showcase gallery and local builds.
+production, previews, the showcase gallery and local builds. In an
+exact-revision build the deployment location is an input of the build, not
+source content: `ga:thisVersion` derives from the supplied publication URL and
+each target's destination, and a definition that declares it is a conflict.
 
 ## Deliverables and acceptance criteria
 

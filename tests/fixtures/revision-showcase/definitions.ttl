@@ -20,7 +20,6 @@ doc:specification a ga:Target ; ga:subtitle "Generated from native RDF sources" 
     ga:scope doc:scope ; ga:profile doc:profile ; ga:renderer ga:SpecificationRenderer ;
     ga:destination "specification" ; ga:preamble doc:legal-preamble ;
     ga:publicationStatus "Reference Preview" ; ga:publisher doc:publisher ;
-    ga:thisVersion <https://example.org/dprod/spec/develop/> ;
     ga:latestVersion <https://example.org/dprod/spec/> ;
     ga:editorDraft <https://example.org/dprod/repository> ;
     ga:copyright "Synthetic exact-revision fixture." ;

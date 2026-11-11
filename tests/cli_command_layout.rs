@@ -20,6 +20,11 @@ fn revision_build_future_is_bounded() {
         targets:            Vec::new(),
         all_targets:        false,
         generator_revision: String::new(),
+        publication_url:
+            grapharch::publication::revision_build::PublicationUrl::try_new(
+                "https://example.org/",
+            )
+            .unwrap(),
         git_cache:          std::path::PathBuf::new(),
         output_root:        std::path::PathBuf::new(),
     };

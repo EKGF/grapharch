@@ -1177,6 +1177,17 @@ ga:showcasesSource a owl:DatatypeProperty ;
     rdfs:domain ga:Project ;
     rdfs:range xsd:string .
 
+ga:showcaseArtifactsUrl a owl:ObjectProperty ;
+    rdfs:label "Deployed showcase artifacts location"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the deployed directory URL under which a project's showcase gallery publishes each showcase's artifacts, beneath the showcase's ga:slug."@en ;
+    dct:description "Identifies the deployed directory URL under which a project's showcase gallery publishes each showcase's artifacts, beneath the showcase's ga:slug."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "The gallery supplies an exact-revision showcase's publication URL as this location followed by its slug and a slash; the showcased definitions never declare where they are deployed. It is an absolute HTTP(S) directory URL without credentials, query or fragment, and is required when the registry contains an exact-revision showcase."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:example:docs> ga:showcaseArtifactsUrl <https://example.org/docs/showcases/artifacts/> ."""@en .
+
 ga:showcaseGallery a owl:DatatypeProperty ;
     rdfs:label "Render showcase collection on this page"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

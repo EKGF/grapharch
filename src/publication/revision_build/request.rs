@@ -1,7 +1,7 @@
 //! The `publication build-revision` request: verified inputs, a staged build
 //! from the restored KG only, and atomic promotion with a build record.
 use {
-    super::{RevisionInputs, TargetSelection},
+    super::{PublicationUrl, RevisionInputs, TargetSelection},
     crate::publication::{
         collect::git::{self, CommittedDefinitions},
         dataset::Dataset,
@@ -49,6 +49,10 @@ pub struct BuildRequest {
     /// Exact generator revision declared by the trusted build workflow.
     #[arg(long)]
     pub generator_revision: String,
+    /// Deployed URL of the output root; every selected target's
+    /// `ga:thisVersion` derives from it and the target's destination.
+    #[arg(long, value_name = "URL")]
+    pub publication_url:    PublicationUrl,
     /// Bare Git transport cache.
     #[arg(long)]
     pub git_cache:          PathBuf,
@@ -60,14 +64,15 @@ pub struct BuildRequest {
 /// Complete build record; the executable digest identifies the actual engine.
 #[derive(Serialize)]
 pub struct BuildManifest {
-    version:      u8,
-    project:      String,
-    selection:    TargetSelection,
-    content:      ContentRecord,
-    definitions:  DefinitionsRecord,
-    generator:    GeneratorRecord,
-    graph:        &'static str,
-    publications: Vec<BuiltTarget>,
+    version:         u8,
+    project:         String,
+    selection:       TargetSelection,
+    publication_url: String,
+    content:         ContentRecord,
+    definitions:     DefinitionsRecord,
+    generator:       GeneratorRecord,
+    graph:           &'static str,
+    publications:    Vec<BuiltTarget>,
 }
 
 #[derive(Serialize)]
@@ -210,6 +215,7 @@ impl BuildRequest {
             definitions,
             project: project.clone(),
             targets: selection.clone(),
+            publication_url: self.publication_url.clone(),
         })
         .await?;
         let graph = staging.join("documentation.nq");
@@ -237,6 +243,7 @@ impl BuildRequest {
             version: 2,
             project: project.into_string(),
             selection,
+            publication_url: self.publication_url.to_string(),
             content: content_record,
             definitions: definitions_record,
             generator: GeneratorRecord {

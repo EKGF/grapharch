@@ -111,6 +111,11 @@ impl Field {
         if self.name == "collectorType" {
             crate::publication::collect::kind::CollectorKind::from_node(value)?;
         }
+        if self.name == "showcaseArtifactsUrl" {
+            crate::publication::revision_build::PublicationUrl::try_new(
+                value.as_str(),
+            )?;
+        }
         if self.name == "documentorType" {
             crate::publication::document::kind::DocumentorKind::from_node(
                 value,
@@ -240,6 +245,7 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::many("documentor", Some("DocumentorUse")),
             Field::optional("metadataSource", Some("CollectorUse")),
             Field::many("derivedMetadata", None),
+            Field::optional("showcaseArtifactsUrl", None),
         ]),
         // Engine-owned documentation stages are uses without a configured
         // definition; a configured definition must still be supported.

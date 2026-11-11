@@ -261,6 +261,7 @@ grapharch publication build-revision \
   --project urn:dprod-showcase:project \
   --all-targets \
   --generator-revision <exact-generator-commit> \
+  --publication-url https://ekgf.github.io/dprod/spec/develop/ \
   --git-cache output/git-cache \
   --output-root output/publication --json
 ```
@@ -276,6 +277,21 @@ working tree. Content is fetched into the bare cache and read as data only.
 Select targets with one or more `--target <IRI>` options, published in the
 given order, or with `--all-targets`, which publishes every target the
 project registers in IRI order. Exactly one form is required.
+
+Where the output is deployed is a build input, never source content.
+`--publication-url` names the deployed URL of the output root: an absolute
+HTTP(S) directory URL ending in `/`, without credentials, query or fragment.
+Each selected target's `ga:thisVersion` is derived from it and the target's
+`ga:destination`: the destination directory, with a trailing `/`, for HTML
+renderers (specification, website, HTML, specification pages and bookshelf),
+and the destination's `document.pdf` for a Typst target. With the URL above, a
+specification at `specification` is `…/spec/develop/specification/` and a PDF
+at `pdf/ekgf` is `…/spec/develop/pdf/ekgf/document.pdf`. A definitions file
+that declares `ga:thisVersion` on a selected target is rejected as a conflict
+with the derived value. Other version links, such as `ga:latestVersion` and
+`ga:editorDraft`, remain authored metadata, and authored links between
+co-built targets stay relative to the page. The same output therefore works at
+any deployment base the orchestrator chooses.
 
 The definitions name every collector use with `ga:collector`, each reading
 one `ga:sourcePath` of the content tree; the content cannot add collectors.
@@ -309,7 +325,7 @@ Every selected target is rendered from a restored `documentation.nq`. The new
 output directory appears only after all targets succeed; a failed build
 removes its staging directory, and an existing output is rejected.
 `build-provenance.json` (version 2) records the project, the target selection,
-the content repository and commit, the definitions repository, path, commit,
+the publication URL, the content repository and commit, the definitions repository, path, commit,
 blob and SHA-256 digest, the declared generator revision with its version and
 executable digest, the graph file, and each publication manifest with its
 destination.
