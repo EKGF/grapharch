@@ -18,6 +18,7 @@ pub(crate) mod shacl_class_view;
 mod shacl_queries;
 pub(crate) mod skos;
 pub(crate) mod use_cases;
+mod vocabulary_reference;
 use {
     super::{dataset::Dataset, writer::GraphWriter},
     anyhow::Result,
@@ -30,6 +31,7 @@ pub use {
     maturity::MaturityModelDocumentor,
     mermaid::MermaidDocumentor,
     use_cases::UseCaseDocumentor,
+    vocabulary_reference::VocabularyReferenceDocumentor,
 };
 
 /// A generator of semantic documentation fragments from collected RDF only.

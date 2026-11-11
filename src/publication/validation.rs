@@ -88,6 +88,13 @@ impl Field {
         if self.name == "order" {
             unsigned(value, "order")?;
         }
+        if self.name == "definedTermsOnly" {
+            ensure!(
+                literal.datatype().as_str() ==
+                    "http://www.w3.org/2001/XMLSchema#boolean",
+                "{subject} definedTermsOnly requires an xsd:boolean literal"
+            );
+        }
         if self.name == "destination" {
             ensure!(
                 !literal.value().is_empty(),
@@ -277,6 +284,17 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             },
             Field::one("component", Some("Component")),
             Field::text("order"),
+        ]),
+        ("ReferenceSection", vec![
+            Field::optional("termType", None),
+            Field::optional("component", Some("Component")),
+            Field {
+                name:      "definedTermsOnly",
+                required:  false,
+                multiple:  false,
+                reference: None,
+                literal:   true,
+            },
         ]),
         ("Component", vec![Field::many(
             "fragment",

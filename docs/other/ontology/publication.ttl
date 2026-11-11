@@ -1263,8 +1263,8 @@ ga:ontologySource a owl:DatatypeProperty ;
 ga:ReferenceSection a owl:Class ;
     rdfs:label "Reference section"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A source-owned title and ordering override for one kind of resource section in an ontology family reference."@en ;
-    dct:description "A source-owned title and ordering override for one kind of resource section in an ontology family reference."@en .
+    skos:definition "An authored section of a vocabulary reference: a title and ordering override for one resource category of an ontology family reference, or the term type and component filled by a vocabulary reference documentor."@en ;
+    dct:description "An authored section of a vocabulary reference: a title and ordering override for one resource category of an ontology family reference, or the term type and component filled by a vocabulary reference documentor."@en .
 
 
 ga:overviewTitle a owl:AnnotationProperty ;
@@ -1279,9 +1279,9 @@ ga:overviewTitle a owl:AnnotationProperty ;
 ga:referenceSection a owl:ObjectProperty ;
     rdfs:label "Reference section override"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Associates an ontology with a named reference section override controlling the title and order of one resource category."@en ;
-    dct:description "Associates an ontology with a named reference section override controlling the title and order of one resource category."@en ;
-    rdfs:domain owl:Ontology ;
+    skos:definition "Associates an ontology or a vocabulary reference documentor use with an authored reference section controlling one resource category."@en ;
+    dct:description "Associates an ontology or a vocabulary reference documentor use with an authored reference section controlling one resource category."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( owl:Ontology ga:DocumentorUse ) ] ;
     rdfs:range ga:ReferenceSection .
 
 
@@ -1871,3 +1871,30 @@ ga:derivedMetadata a owl:ObjectProperty ;
 @prefix ex: <https://example.org/doc/> .
 ex:specification ga:metadataSource ex:ontology-source ;
     ga:derivedMetadata dct:title, dct:description, ga:license, ga:publicationDate ."""@en .
+
+ga:termType a owl:ObjectProperty ;
+    rdfs:label "Reference term type"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the RDF class whose collected instances a vocabulary reference documentor documents in one reference section."@en ;
+    dct:description "Selects the RDF class whose collected instances a vocabulary reference documentor documents in one reference section."@en ;
+    rdfs:domain ga:ReferenceSection ;
+    rdfs:range rdfs:Class ;
+    skos:scopeNote "A term declared with several selected types appears once, in the section with the lowest ga:order. SKOS concepts follow their canonical documented scheme; concepts without a documented scheme belong to the section whose term type is skos:Concept, and are an error without one. The documentor fills the section's ga:component; its placement is authored in each profile."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix ex: <https://example.org/doc/> .
+ex:reference a ga:DocumentorUse ; ga:documentorType ga:VocabularyReferenceDocumentor ;
+    ga:subject <https://example.org/ontology/> ; ga:includedIn ex:scope ;
+    ga:referenceSection ex:classes, ex:annotation-properties .
+ex:classes a ga:ReferenceSection ; ga:termType owl:Class ; ga:order 1 ;
+    ga:component ex:classes-component .
+ex:annotation-properties a ga:ReferenceSection ; ga:termType owl:AnnotationProperty ;
+    ga:definedTermsOnly true ; ga:order 4 ; ga:component ex:annotation-properties-component ."""@en .
+
+ga:definedTermsOnly a owl:DatatypeProperty ;
+    rdfs:label "Defined terms only"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Restricts a reference section to terms that declare rdfs:isDefinedBy a collected owl:Ontology, excluding local declarations of imported vocabulary terms."@en ;
+    dct:description "Restricts a reference section to terms that declare rdfs:isDefinedBy a collected owl:Ontology, excluding local declarations of imported vocabulary terms."@en ;
+    rdfs:domain ga:ReferenceSection ;
+    rdfs:range xsd:boolean .
