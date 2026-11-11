@@ -22,6 +22,7 @@ pub(crate) enum CollectorKind {
     MarkdownPage,
     OrcidPerson,
     GitHubContributor,
+    HtmlPreamble,
 }
 impl CollectorKind {
     pub(crate) fn from_node(node: &NamedNode) -> Result<Self> {
@@ -42,6 +43,7 @@ impl CollectorKind {
             "https://ekgf.org/ontology/grapharch#MarkdownPageCollector" => Ok(Self::MarkdownPage),
             "https://ekgf.org/ontology/grapharch#OrcidPersonCollector" => Ok(Self::OrcidPerson),
             "https://ekgf.org/ontology/grapharch#GitHubContributorCollector" => Ok(Self::GitHubContributor),
+            "https://ekgf.org/ontology/grapharch#HtmlPreambleCollector" => Ok(Self::HtmlPreamble),
             _=>bail!("unsupported collectorType IRI {node}"),
         }
     }

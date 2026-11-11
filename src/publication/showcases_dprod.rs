@@ -809,16 +809,31 @@ pub(super) async fn collect_scan(
         }
         collect_all(work, &writer, 4).await?;
         let legal_targets = source_owned::legal_targets(&view).await?;
-        let legal_refs =
-            legal_targets.iter().map(String::as_str).collect::<Vec<_>>(); // bounded: at most 16 targets.
-        super::collect::HtmlPreambleFile::from_git(
+        let preamble = super::collect::HtmlPreambleFile::from_git(
             PROJECT,
             "urn:dprod-showcase:collector:preamble",
             &scan.blob(Path::new("respec/template.html")).await?,
-            &legal_refs,
-        )?
-        .collect(&writer)
-        .await?;
+            node("legal-preamble"),
+        )?;
+        preamble.collect(&writer).await?;
+        let mut legal = writer
+            .begin(
+                PROJECT,
+                "urn:dprod-showcase:preamble-bindings",
+                "urn:dprod-showcase:preamble-bindings",
+                &format!("preamble-bindings-v1:{legal_targets:?}"),
+            )
+            .await?;
+        for target in &legal_targets {
+            legal
+                .write(quad(
+                    &NamedNode::new(target)?,
+                    "preamble",
+                    preamble.fragment_id(),
+                ))
+                .await?;
+        }
+        legal.complete().await?;
         let ontology = subjects
             .get("ontology/dprod/dprod-ontology.ttl")
             .ok_or_else(|| anyhow::anyhow!("ontology hint missing"))?;
