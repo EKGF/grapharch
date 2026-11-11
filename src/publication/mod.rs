@@ -28,6 +28,7 @@ pub mod orcid;
 pub mod plan;
 pub mod quick_build;
 pub mod render;
+pub mod revision_build;
 pub mod scope;
 pub mod showcases;
 mod showcases_dprod;

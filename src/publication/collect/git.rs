@@ -66,6 +66,14 @@ struct Revision {
     local_location: Option<String>,
     working_tree:   bool,
 }
+impl RepositoryScan {
+    /// Project owning this scan's contributions.
+    pub fn project(&self) -> &str { &self.revision.project }
+
+    /// Public, credential-free origin of the scanned repository.
+    pub fn origin(&self) -> &str { &self.revision.origin }
+}
+
 impl Revision {
     fn read(
         project: &str,

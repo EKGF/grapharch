@@ -84,6 +84,9 @@ impl CommittedDefinitions {
     /// Provenance of the controlling revision, under its own processor.
     pub fn provenance(&self) -> Arc<dyn Collector> { self.provenance.clone() }
 
+    /// Project owning the definitions contributions.
+    pub fn project(&self) -> &str { self.blob.project() }
+
     /// Public origin of the controlling repository.
     pub fn repository(&self) -> &str { self.blob.origin() }
 

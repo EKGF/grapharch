@@ -25,3 +25,24 @@ fn exact_repository_build_future_is_bounded() {
         "repository build future occupies {size} bytes"
     );
 }
+
+#[test]
+fn revision_build_future_is_bounded() {
+    let request = grapharch::publication::revision_build::BuildRequest {
+        git_repository:     String::new(),
+        git_commit:         String::new(),
+        definitions:        std::path::PathBuf::new(),
+        definitions_commit: String::new(),
+        project:            String::new(),
+        targets:            Vec::new(),
+        all_targets:        false,
+        generator_revision: String::new(),
+        git_cache:          std::path::PathBuf::new(),
+        output_root:        std::path::PathBuf::new(),
+    };
+    let size = std::mem::size_of_val(&request.build());
+    assert!(
+        size <= 16 * 1024,
+        "revision build future occupies {size} bytes"
+    );
+}
