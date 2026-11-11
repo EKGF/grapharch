@@ -26,7 +26,7 @@ impl RepositoryScan {
     }
 }
 impl PinnedGitBlob {
-    async fn at(
+    pub(super) async fn at(
         root: PathBuf,
         revision: Arc<Revision>,
         relative: &Path,
@@ -86,6 +86,15 @@ impl PinnedGitBlob {
     }
 
     pub fn commit(&self) -> &str { &self.revision.commit }
+
+    /// Git object identity of this blob.
+    pub fn blob_id(&self) -> String { self.blob.to_string() }
+
+    /// Repository-relative path of this blob.
+    pub fn path(&self) -> &str { &self.relative }
+
+    /// Public origin of the pinned repository.
+    pub fn origin(&self) -> &str { &self.revision.origin }
 
     pub fn source(&self) -> &str { &self.source }
 
