@@ -22,7 +22,7 @@ maintain a second implementation of collection or publication.
 | `w3c-rdf12-n-triples/` | Pinned RDF 1.2 N-Triples Working Draft | Published-document collector, assembly, specification target | HTML and PDF, native anchors and queryable constructs, plus a diagnostic addendum for an upstream broken reference |
 | `specification/` | Authored RDF containing publication metadata and Markdown fragments | RDF collection, assembly, specification target plan | Standards-style HTML with nested numbered ToC, publisher front matter, abstract, status, and appendix |
 | `dprod/` | Pinned DPROD ontology, SHACL shapes, and dataset-schema Markdown from the DPROD repository | RDF and Markdown collection, 53 annotated-term fragments, assembly, three target plans | Specification HTML, companion website, review PDF, exported KG |
-| `ekg-ontologies/` | Pinned commit of a configured remote ontology repository; separate offline acceptance corpus | Parallel RDF collection and source-annotation documentation, explicit family membership, cross-ontology links | Family specification, PDF, exported KG with annotation-gap diagnostics |
+| `ekg-ontologies/` | Latest default branch of a configured remote ontology repository; separate offline acceptance corpus | Parallel RDF collection and source-annotation documentation, explicit family membership, cross-ontology links | Family specification, PDF, exported KG with annotation-gap diagnostics |
 | `skos/` | Native SKOS Turtle, split across source files | Scheme recognition, preferred labels, concepts and ordered collections | Standards-style HTML, PDF, exported KG |
 | `use-cases/` | Actual EKGF UseCase instances in Turtle | Use-case documentor, ownership/reuse validation, retained SVG neighborhoods | Reader HTML, review PDF, exported KG |
 | `mixed-sources/` | Separate Markdown, SPARQL, OWL, and publication-definition files | Four specialized collectors scheduled concurrently, OWL class documentor, assembly, two target plans | Reader HTML, review PDF |
@@ -75,10 +75,9 @@ authored showcase.
 
 The [ontology-family guide](ontology-families.md) shows how to run the EKGF family
 from a remote repository, a local checkout, or the separate offline acceptance corpus.
-The published gallery fetches the exact commit declared in
-`examples/ekg-ontologies/showcase.yaml`; its downloadable KG records that commit.
-The current pin includes the renderer identity migration on the
-`publication/grapharch-renderer-iris` branch of EKGF/ekg-ontologies.
+The published gallery fetches the latest default branch declared in
+`examples/ekg-ontologies/showcase.yaml`; its downloadable KG records the concrete
+commit observed by each build.
 
 ## Adding a showcase
 

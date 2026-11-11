@@ -232,8 +232,8 @@ specification, companion-site, and approval-PDF publications are described in
 
 These projects are examples and test cases for the general pipeline:
 
-- **EKGF ontology family:** the gallery fetches an exact commit of the remote
-  repository and records it in the downloadable KG. A separate
+- **EKGF ontology family:** the gallery follows the remote repository's latest
+  default branch and records its resolved commit in the downloadable KG. A separate
   offline fixture covers 24 ontologies and 704
   named resources. See
   [the examples guide](examples.md), or browse the

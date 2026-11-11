@@ -2,4 +2,4 @@
 source:
   kind: git
   url: https://github.com/EKGF/ekg-ontologies.git
-  ref: 6bd93ab7c9430804e99b3913f0926d0070eb44a3
+  ref: HEAD
