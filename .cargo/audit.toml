@@ -1,0 +1,14 @@
+# Advisories with no released fix anywhere in GraphArch's dependency chain.
+# Every other advisory stays enforced by the Dependency Audit workflow.
+[advisories]
+ignore = [
+    # quick-xml < 0.41: quadratic duplicate-attribute check on start tags.
+    # Pulled in by oxigraph 0.5 (oxrdfxml, sparesults; RDF/XML sources and
+    # SPARQL XML results) and typst (hayagriva -> citationberg). No released
+    # version of either uses quick-xml >= 0.41; oxigraph 0.6.0-dev does.
+    # Remove once oxigraph 0.6 and typst ship a fixed quick-xml.
+    "RUSTSEC-2026-0194",
+    # quick-xml < 0.41: unbounded namespace-declaration allocation in NsReader.
+    # Same dependency chains and removal condition as RUSTSEC-2026-0194.
+    "RUSTSEC-2026-0195",
+]
