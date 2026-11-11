@@ -21,7 +21,7 @@ maintain a second implementation of collection or publication.
 | `showcase/` | Authored RDF containing Markdown fragment bodies and publication definitions | RDF collection, assembly, three target plans | Specification HTML, reader HTML, review PDF |
 | `w3c-rdf12-n-triples/` | Pinned RDF 1.2 N-Triples Working Draft | Published-document collector, assembly, specification target | HTML and PDF, native anchors and queryable constructs, plus a diagnostic addendum for an upstream broken reference |
 | `specification/` | Authored RDF containing publication metadata and Markdown fragments | RDF collection, assembly, specification target plan | Standards-style HTML with nested numbered ToC, publisher front matter, abstract, status, and appendix |
-| `dprod/` | Pinned DPROD ontology, SHACL shapes, and dataset-schema Markdown from the DPROD repository | RDF and Markdown collection, 53 annotated-term fragments, assembly, three target plans | Specification HTML, companion website, review PDF, exported KG |
+| `dprod/` | A `content/` tree with the pinned DPROD ontology, SHACL shapes and dataset-schema Markdown, plus separate `definitions.ttl` | Exact-revision build from two Git repositories: configured Git collectors, vocabulary reference documentor, three target plans | Specification HTML, companion website, review PDF, exported KG |
 | `ekg-ontologies/` | Latest default branch of a configured remote ontology repository; separate offline acceptance corpus | Parallel RDF collection and source-annotation documentation, explicit family membership, cross-ontology links | Family specification, PDF, exported KG with annotation-gap diagnostics |
 | `skos/` | Native SKOS Turtle, split across source files | Scheme recognition, preferred labels, concepts and ordered collections | Standards-style HTML, PDF, exported KG |
 | `use-cases/` | Actual EKGF UseCase instances in Turtle | Use-case documentor, ownership/reuse validation, retained SVG neighborhoods | Reader HTML, review PDF, exported KG |
@@ -35,14 +35,16 @@ cargo run --example publish_showcase -- --skos
 cargo run --example publish_showcase -- --use-cases
 cargo run --example publish_showcase -- --mixed
 cargo run --example publish_showcase -- --specification
-cargo run --example publish_showcase -- --dprod
 cargo run --example publish_showcase -- --w3c --keep-going
 cargo test --test showcases
 ```
 
 Pass an optional positional output root to any invocation. Defaults are
-`output/pdf/grapharch-showcase`, `output/pdf/grapharch-mixed-sources`, `output/pdf/grapharch-specification`, and
-`output/pdf/grapharch-dprod`, and `output/pdf/grapharch-w3c-rdf12-n-triples`.
+`output/pdf/grapharch-showcase`, `output/pdf/grapharch-mixed-sources`, `output/pdf/grapharch-specification`,
+and `output/pdf/grapharch-w3c-rdf12-n-triples`. The DPROD example is an
+exact-revision build; its tests commit `content/` and `definitions.ttl` to two
+Git repositories and run `grapharch publication build-revision`
+(`cargo test --test revision_build --test dprod_showcase`).
 The RDF 1.2 keep-going run deliberately exits nonzero after producing diagnostic
 artifacts because its upstream source has an unresolved link.
 Each output root includes `documentation.nq`, an export containing the retained
@@ -96,8 +98,10 @@ named as a reference in the [compatibility map](../other/architecture/respec-com
 
 The DPROD fixture documents four OWL classes, thirteen object properties, one datatype
 property, one SKOS concept scheme, six SHACL node shapes, and twenty-eight property
-shapes. Its test deletes the sources and renders from a restored graph. Source
-files are unchanged copies pinned to a DPROD commit with checked digests. This is
+shapes. Its `content/` tree carries no GraphArch configuration; `definitions.ttl`
+configures the collectors, reference sections and placements. Its test deletes
+both repositories and the cache and renders from a restored graph. Source files
+are unchanged copies pinned to a DPROD commit with checked digests. This is
 a [three-publication family](publication-families.md) and derivative reference preview, not a full migration of the DPROD specification
 or an official OMG publication.
 
@@ -111,20 +115,20 @@ See [Use-case trees](use-case-trees.md) for the vocabulary and diagram contract.
 
 ### Live DPROD gallery
 
-The gallery reads an exact `EKGF/dprod` source commit.
-`examples/dprod/live.yaml` specifies the repository, immutable commit and location
-of its source-owned publication settings. The current pin includes the RDF
-component identity migration tracked in EKGF/dprod#292. Each build
-collects its ontology, shapes and Markdown at that revision. A reusable local
-Git cache avoids cloning the complete repository again. Missing source files,
-invalid hints and unavailable sources stop the build; copied fixtures are never
-used as a replacement.
+The gallery case is an exact-revision build of `EKGF/dprod`.
+`examples/dprod/live.yaml` names the repository, the exact content commit, the
+exact controlling commit and path of DPROD's GraphArch definitions, the project
+and the target selection. The `ga:RevisionBuildShowcaseRunner` fetches both
+commits through a reusable bare Git cache; branch names are rejected. Content
+comes only from the content commit; the definitions come only from the
+controlling commit. Missing source files, invalid definitions and unavailable
+sources stop the build; copied fixtures are never used as a replacement.
 
-The standards draft uses `publication/standards.ttl` in DPROD. Its source-owned
-placements select the formal prose and worked examples independently from the
-companion website. Required section roles check the actual selected fragments;
-collecting a file alone does not satisfy a requirement. Generated vocabulary
-groups are nested under the explicitly declared reference section.
+The definitions place the formal prose and worked examples independently from
+the companion website. Required section roles check the actual selected
+fragments; collecting a file alone does not satisfy a requirement. The
+generated vocabulary reference fills components whose placements are authored
+beneath the declared reference section.
 
 The comparison baseline is [OMG DPROD 1.0 beta 2](https://www.omg.org/spec/DPROD/1.0/Beta2/PDF).
 The draft sources cover scope, conformance, references, terms, symbols,
@@ -136,14 +140,13 @@ not a claim of OMG approval for 1.1.
 
 A separately registered release target requires an authority-assigned document
 identifier, release date, version URL, and formal approval status. The showcase
-publishes the three draft targets; it does not fill in missing release metadata.
+publishes the draft targets; it does not fill in missing release metadata.
 
 Repository links resolve to published companion pages where available, or to
 verified files at the same commit on GitHub. Images are collected into the
 publication KG, checked for supported content and size, and restored from that
 KG when producing HTML and PDF. Renderers do not fetch images or reopen Git.
 
-The older pinned corpus in `examples/dprod/` remains an offline regression
-fixture for `publish_showcase --dprod`; the live gallery uses the remote source.
-Run its network acceptance explicitly with
-`cargo test --test live_dprod -- --ignored`.
+The pinned corpus in `examples/dprod/` remains an offline regression fixture;
+the live gallery uses the remote repository. Run its network acceptance
+explicitly with `cargo test --test live_dprod -- --ignored`.

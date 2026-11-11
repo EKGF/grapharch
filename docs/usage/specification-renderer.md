@@ -292,11 +292,13 @@ theme. It does not become a numbered technical chapter. HTML and Markdown
 fragments are supported; unsupported formats and missing legal fragments fail
 the publication rather than silently omitting the notices.
 
-For a ReSpec migration, `HtmlPreambleFile` collects the unique
-`details.preamble-section` block without running scripts or template code.
-The DPROD live showcase reads that block from `respec/template.html` in the same
-cached `develop` commit as its ontology and shapes. Its legal wording is not
-copied into GraphArch's repository.
+For a ReSpec migration, the
+[legal preamble collector](../collectors/legal-preambles.md) collects the
+unique `details.preamble-section` block without running scripts or template
+code. The DPROD live showcase reads that block from `respec/template.html` in
+the same exact content commit as its ontology and shapes, through a collector
+use in its controlling definitions. Its legal wording is not copied into
+GraphArch's repository.
 
 ## Contents navigation and search
 

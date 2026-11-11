@@ -37,11 +37,29 @@ The adapter requires the unique `details.preamble-section` element. Preserve the
 authoritative wording; this example illustrates markup, not legal advice or
 replacement license language. Its base URL resolves supported source links.
 
-There is currently no `publication collect --kind preamble` CLI switch. Library
-integrations call `HtmlPreambleFile::new` with the source path, base URL, and
-explicit target IRIs, or `HtmlPreambleFile::from_git` for a pinned repository blob.
-The DPROD showcase invokes that adapter for its legal template and selected
-targets; arbitrary repository templates are not automatically treated as legal
+In an [exact-revision build](../usage/publication-pipeline.md#exact-revision-builds),
+a collector use with `ga:HtmlPreambleCollector` names the template's
+`ga:sourcePath` and the `ga:fragment` it contributes. The collector never
+chooses targets: each target that shows the notices references that fragment
+with `ga:preamble`, and a profile can require it with `ga:requiredMetadata
+ga:preamble`:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix ex: <urn:example:> .
+
+ex:project ga:collector ex:legal-source .
+ex:legal-source a ga:CollectorUse ; ga:collectorType ga:HtmlPreambleCollector ;
+    ga:source "respec/template.html" ; ga:sourcePath "respec/template.html" ;
+    ga:fragment ex:legal-preamble .
+ex:specification ga:preamble ex:legal-preamble .
+ex:profile ga:requiredMetadata ga:preamble .
+```
+
+There is no `publication collect --kind preamble` CLI switch. Library
+integrations call `HtmlPreambleFile::new` with the source path, base URL and
+fragment IRI, or `HtmlPreambleFile::from_git` for a pinned repository blob.
+Arbitrary repository templates are not automatically treated as legal
 preambles. See [the architecture](../other/architecture/README.md) for the
 collector-to-KG handoff and [publication profiles](../usage/specification-renderer.md)
 for target metadata.

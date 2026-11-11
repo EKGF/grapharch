@@ -61,8 +61,7 @@ validation remains mandatory.
 
 ## Configure a product logo
 
-The DPROD showcase's source-owned publication definitions demonstrate an
-explicit image job:
+Publication definitions configure an explicit image job:
 
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
@@ -77,12 +76,12 @@ ex:logo dct:title "Example product" .
 ex:specification ga:productLogo ex:logo .
 ```
 
-This uses that showcase's configured publishing workflow; it is not a standalone
-`--kind image` CLI command or automatic family-build discovery. Product logos
-are separate from authority logos and render at 100 CSS pixels in the
-specification header. See the
-[DPROD publication definitions](https://github.com/EKGF/dprod/blob/develop/publication/standards.ttl)
-for the complete working example.
+This uses the configured publishing workflow of an
+[exact-revision build](../usage/publication-pipeline.md#exact-revision-builds);
+it is not a standalone `--kind image` CLI command or automatic family-build
+discovery. Product logos are separate from authority logos and render at 100
+CSS pixels in the specification header. Images referenced by configured
+Markdown are collected from the same pinned commit without a separate job.
 
 ## Interactive SVG navigation
 

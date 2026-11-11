@@ -22,8 +22,8 @@ JSON example does not interpret arbitrary JSON records as documentable things.
 
 ## Configure a code example
 
-The DPROD showcase's source-owned publication definitions demonstrate explicit
-code jobs. A job identifies the file, its subject, its fragment, and its format:
+Publication definitions configure explicit code jobs. A job identifies the
+file, its subject, its fragment, and its format:
 
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
@@ -38,8 +38,8 @@ ex:query-example-source a ga:CollectorUse ; ga:collectorType ga:CodeFileCollecto
 
 Use one of `application/ld+json`, `application/json`, `text/turtle`,
 `application/sparql-query`, or `text/plain`. This is the configured publishing
-workflow shown in the
-[DPROD example](https://github.com/EKGF/dprod/blob/develop/publication/standards.ttl),
+workflow of an
+[exact-revision build](../usage/publication-pipeline.md#exact-revision-builds),
 not a standalone `--kind code` CLI command. Publication definitions still choose
 where the fragment appears.
 
