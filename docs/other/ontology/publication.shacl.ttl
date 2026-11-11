@@ -18,7 +18,19 @@ ga:CollectorUseShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ; sh:nodeKi
           sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ]
     ) ;
     sh:property [ sh:path ga:collectorType ; sh:nodeKind sh:IRI ; sh:class ga:Collector ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] .
+    sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:includedIn ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:maxCount 16 ] .
+
+ga:IncludedInFragmentShape a sh:NodeShape ;
+    rdfs:comment "A collector use included in a scope must name the fragment it contributes."@en ;
+    sh:targetClass ga:CollectorUse ;
+    sh:or ( [ sh:property [ sh:path ga:includedIn ; sh:maxCount 0 ] ] [ sh:property [ sh:path ga:fragment ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ] ) .
+
+ga:NativeMetadataShape a sh:NodeShape ;
+    rdfs:comment "Derived native metadata names exactly one collector use and at least one derivable predicate."@en ;
+    sh:targetSubjectsOf ga:metadataSource, ga:derivedMetadata ;
+    sh:property [ sh:path ga:metadataSource ; sh:nodeKind sh:IRI ; sh:class ga:CollectorUse ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:derivedMetadata ; sh:minCount 1 ; sh:in ( <http://purl.org/dc/terms/title> <http://purl.org/dc/terms/description> ga:license ga:publicationDate ) ] .
 
 ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:include ; sh:nodeKind sh:IRI ] ;

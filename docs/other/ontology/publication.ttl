@@ -1834,3 +1834,40 @@ ga:commitHistoryComplete a owl:DatatypeProperty ;
     dct:description "Records whether a repository contributor collection examined the complete history rather than stopping at its page budget."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:boolean .
+
+ga:includedIn a owl:ObjectProperty ;
+    rdfs:label "Included in scope"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Includes the subjects of the fragments contributed by a configured collector or documentor use in a documentation scope, without the use choosing a placement."@en ;
+    dct:description "Includes the subjects of the fragments contributed by a configured collector or documentor use in a documentation scope, without the use choosing a placement."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:DocumentorUse ) ] ;
+    rdfs:range ga:Scope ;
+    skos:scopeNote "A collector use with ga:includedIn must declare the ga:fragment it contributes; a document-stage binding then includes that fragment's collected ga:subject values. A documentor use includes the subjects of every fragment it generates. Fragments without an inclusion remain outside the scope and are not published by its targets."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix ex: <https://example.org/doc/> .
+ex:abstract-source a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;
+    ga:source "abstract.md" ; ga:sourcePath "abstract.md" ; ga:fragment ex:abstract ;
+    ga:includedIn ex:scope ."""@en .
+
+ga:metadataSource a owl:ObjectProperty ;
+    rdfs:label "Native metadata source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the configured collector use whose collected subject supplies the derived native header metadata of a project or publication target."@en ;
+    dct:description "Selects the configured collector use whose collected subject supplies the derived native header metadata of a project or publication target."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Project ga:Target ) ] ;
+    rdfs:range ga:CollectorUse ;
+    skos:scopeNote "Values are read only from that collector use's own contribution, at its ga:subject, so another source describing the same resource cannot change the header. Each derived predicate requires exactly one native value."@en .
+
+ga:derivedMetadata a owl:ObjectProperty ;
+    rdfs:label "Derived native metadata"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a header predicate whose value is derived from the selected native metadata source rather than supplied explicitly in publication definitions."@en ;
+    dct:description "Identifies a header predicate whose value is derived from the selected native metadata source rather than supplied explicitly in publication definitions."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Project ga:Target ) ] ;
+    rdfs:range rdf:Property ;
+    skos:scopeNote "The mapping is fixed: dct:title from dct:title, dct:description from dct:description, ga:license from dct:license and ga:publicationDate from dct:issued. A missing or multi-valued native value is an error. An explicit definition value for a derived predicate is a conflict error, never an override."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.org/doc/> .
+ex:specification ga:metadataSource ex:ontology-source ;
+    ga:derivedMetadata dct:title, dct:description, ga:license, ga:publicationDate ."""@en .

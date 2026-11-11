@@ -34,6 +34,19 @@ impl Field {
         }
     }
 
+    const fn optional(
+        name: &'static str,
+        reference: Option<&'static str>,
+    ) -> Self {
+        Self {
+            name,
+            required: false,
+            multiple: false,
+            reference,
+            literal: false,
+        }
+    }
+
     const fn some(name: &'static str) -> Self {
         Self {
             name,
@@ -218,19 +231,19 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::many("target", Some("Target")),
             Field::many("collector", Some("CollectorUse")),
             Field::many("documentor", Some("DocumentorUse")),
+            Field::optional("metadataSource", Some("CollectorUse")),
+            Field::many("derivedMetadata", None),
         ]),
         // Engine-owned documentation stages are uses without a configured
         // definition; a configured definition must still be supported.
-        ("DocumentorUse", vec![Field {
-            name:      "documentorType",
-            required:  false,
-            multiple:  false,
-            reference: None,
-            literal:   false,
-        }]),
+        ("DocumentorUse", vec![
+            Field::optional("documentorType", None),
+            Field::many("includedIn", Some("Scope")),
+        ]),
         ("CollectorUse", vec![
             Field::one("collectorType", None),
             Field::text("source"),
+            Field::many("includedIn", Some("Scope")),
         ]),
         ("Scope", vec![
             Field::many("include", None),
@@ -243,6 +256,8 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::one("profile", Some("Profile")),
             Field::one("renderer", None),
             Field::text("destination"),
+            Field::optional("metadataSource", Some("CollectorUse")),
+            Field::many("derivedMetadata", None),
         ]),
         ("Profile", vec![
             Field::many("placement", Some("Placement")),
