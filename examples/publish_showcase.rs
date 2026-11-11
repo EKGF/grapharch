@@ -11,22 +11,19 @@ use {
 struct Arguments {
     /// Collect Markdown, SPARQL, and OWL rather than the authored RDF
     /// showcase.
-    #[arg(long, conflicts_with_all = ["specification", "w3c", "dprod"])]
+    #[arg(long, conflicts_with_all = ["specification", "w3c"])]
     mixed:         bool,
     /// Publish the standards-style specification showcase.
-    #[arg(long, conflicts_with_all = ["w3c", "dprod"])]
+    #[arg(long, conflicts_with = "w3c")]
     specification: bool,
     /// Collect and render the pinned W3C RDF 1.2 N-Triples publication.
-    #[arg(long, conflicts_with = "dprod")]
-    w3c:           bool,
-    /// Generate a reference from the pinned native DPROD ontology and shapes.
     #[arg(long)]
-    dprod:         bool,
+    w3c:           bool,
     /// Publish the native SKOS taxonomy showcase.
-    #[arg(long, conflicts_with_all = ["mixed", "specification", "w3c", "dprod", "use_cases"])]
+    #[arg(long, conflicts_with_all = ["mixed", "specification", "w3c", "use_cases"])]
     skos:          bool,
     /// Publish actual EKGF RDF use-case instances and their diagrams.
-    #[arg(long, conflicts_with_all = ["mixed", "specification", "w3c", "dprod"])]
+    #[arg(long, conflicts_with_all = ["mixed", "specification", "w3c"])]
     use_cases:     bool,
     /// Continue with explicit diagnostic previews; exit nonzero on errors.
     #[arg(long, conflicts_with = "fail_fast")]
@@ -47,8 +44,6 @@ async fn main() -> anyhow::Result<()> {
         support::use_cases(Path::new("examples/use-cases")).await?
     } else if arguments.w3c {
         support::w3c(Path::new("examples/w3c-rdf12-n-triples")).await?
-    } else if arguments.dprod {
-        support::dprod(Path::new("examples/dprod")).await?
     } else if arguments.specification {
         support::specification(Path::new("examples/specification/project.ttl"))
             .await?
@@ -95,8 +90,6 @@ impl Arguments {
                     "output/pdf/grapharch-use-cases"
                 } else if self.w3c {
                     "output/pdf/grapharch-w3c-rdf12-n-triples"
-                } else if self.dprod {
-                    "output/pdf/grapharch-dprod"
                 } else if self.specification {
                     "output/pdf/grapharch-specification"
                 } else if self.mixed {

@@ -93,13 +93,6 @@ pub enum PublicationCommand {
         #[command(flatten)]
         request: Box<super::revision_build::BuildRequest>,
     },
-    /// Build source-owned DPROD targets from one exact repository commit.
-    BuildDprod {
-        #[arg(long)]
-        json:    bool,
-        #[command(flatten)]
-        request: super::dprod::BuildRequest,
-    },
     /// Pin a worker executable in an isolated process without opening a KG.
     #[command(hide = true)]
     PrepareBookWorker {
@@ -363,14 +356,6 @@ pub async fn run(
             println!("{}", package.display());
         },
         PublicationCommand::BuildRevision { json, request } => {
-            let manifest = request.build().await?;
-            if *json {
-                println!("{}", serde_json::to_string(&manifest)?);
-            } else {
-                println!("{}", request.output_root.display());
-            }
-        },
-        PublicationCommand::BuildDprod { json, request } => {
             let manifest = request.build().await?;
             if *json {
                 println!("{}", serde_json::to_string(&manifest)?);

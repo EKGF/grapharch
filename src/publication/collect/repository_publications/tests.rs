@@ -11,16 +11,16 @@ fn open_same_repository_previews_are_advertised_but_old_routes_survive() {
         {"url":"fork.vercel.app","created":2,"meta":{"githubCommitRef":"fork"}}
     ])).unwrap();
     let pulls = serde_json::from_value::<Vec<PullRequest>>(serde_json::json!([
-        {"head":{"ref":"feature/new","repo":{"full_name":"EKGF/dprod"}}},
-        {"head":{"ref":"dependabot/a","repo":{"full_name":"EKGF/dprod"}}},
-        {"head":{"ref":"fork","repo":{"full_name":"someone/dprod"}}}
+        {"head":{"ref":"feature/new","repo":{"full_name":"example/vocabulary"}}},
+        {"head":{"ref":"dependabot/a","repo":{"full_name":"example/vocabulary"}}},
+        {"head":{"ref":"fork","repo":{"full_name":"someone/vocabulary"}}}
     ]))
     .unwrap();
     let versions = discover(
         deployments,
         pulls,
-        "EKGF/dprod",
-        "dprod/spec/",
+        "example/vocabulary",
+        "vocabulary/spec/",
         &["dependabot/".into()],
         &[],
     )
@@ -30,7 +30,7 @@ fn open_same_repository_previews_are_advertised_but_old_routes_survive() {
     assert_eq!(advertised.len(), 1);
     assert_eq!(
         advertised[0].url,
-        "https://new.vercel.app/dprod/spec/"
+        "https://new.vercel.app/vocabulary/spec/"
     );
     assert_eq!(advertised[0].slug, "feature-new");
 }
@@ -45,7 +45,7 @@ fn colliding_branch_slugs_fail_instead_of_overwriting_routes() {
         discover(
             deployments,
             vec![],
-            "EKGF/dprod",
+            "example/vocabulary",
             "spec/",
             &[],
             &[]

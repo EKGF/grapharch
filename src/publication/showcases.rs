@@ -268,11 +268,6 @@ async fn family_targets(
     Ok((built.dataset, plans))
 }
 
-/// Collect the pinned native DPROD ontology, shapes, and authored fragments.
-pub async fn dprod(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    super::showcases_dprod::collect(source).await
-}
-
 pub async fn authored(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
     let dataset = Dataset::memory()?;
     let (writer, worker) =
@@ -470,14 +465,6 @@ pub async fn publish(
         }
     }
     Ok(publications)
-}
-
-/// Build the live DPROD showcase exclusively from its remote develop revision.
-pub async fn dprod_remote(
-    source: &Path,
-    cache: &Path,
-) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    super::showcases_dprod::collect_remote(source, cache).await
 }
 
 /// Build an exact-revision showcase: definitions from a controlling commit,
