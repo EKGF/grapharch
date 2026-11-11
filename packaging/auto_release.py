@@ -67,6 +67,11 @@ def select_bump(message, override):
     return override if override != 'auto' else (signals[0] if signals else 'patch')
 
 
+# Workflows whose successful push run on the exact source commit authorizes a
+# release. Each must therefore run on every main push.
+REQUIRED_PUSH_CHECKS = ('Check Commits', 'Package checks')
+
+
 def verify_proof(repository, run_id, source):
     run = api(f'repos/{repository}/actions/runs/{run_id}')
     jobs = api(f'repos/{repository}/actions/runs/{run_id}/jobs?per_page=100')['jobs']
@@ -77,7 +82,7 @@ def verify_proof(repository, run_id, source):
                for step in compiler.get('steps', [])):
         raise ValueError('release proof must include the portable release dependency guard')
     checks = api(f'repos/{repository}/actions/runs?head_sha={source}&event=push&per_page=100')['workflow_runs']
-    for name in ('Check Commits', 'Package checks'):
+    for name in REQUIRED_PUSH_CHECKS:
         matching = [item for item in checks if item['name'] == name]
         if not matching or max(matching, key=lambda item: item['id'])['conclusion'] != 'success':
             raise ValueError(f'release requires successful {name} for the same source')
