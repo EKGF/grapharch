@@ -43,6 +43,22 @@ pub(super) fn events<'a>(
             events[index + 1] = Event::InlineHtml("".into());
         }
     }
+    for index in 0..events.len() {
+        if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] &&
+            let Some(lexical) =
+                crate::publication::temporal::lexical(dest_url)
+        {
+            let open = format!("<time datetime=\"{lexical}\">");
+            let end = events[index..]
+                .iter()
+                .position(|event| matches!(event, Event::End(TagEnd::Link)))
+                .ok_or_else(|| {
+                    anyhow::anyhow!("unterminated temporal value")
+                })?;
+            events[index] = Event::InlineHtml(open.into());
+            events[index + end] = Event::InlineHtml("</time>".into());
+        }
+    }
     for index in 0..events.len().saturating_sub(1) {
         if let Event::Start(Tag::Image { dest_url, .. }) = &events[index] &&
             let Some(icon) =

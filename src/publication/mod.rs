@@ -33,6 +33,7 @@ mod showcases_dprod;
 mod showcases_mkdocs;
 mod showcases_semantic;
 mod table_subject;
+mod temporal;
 mod validation;
 pub mod view;
 pub mod website;

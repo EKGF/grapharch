@@ -11,6 +11,7 @@ pub mod plantuml;
 pub(crate) mod publication_inventory;
 mod query_display;
 mod resource;
+mod run_in_headings;
 pub(crate) mod shacl_class_view;
 mod shacl_queries;
 pub(crate) mod skos;

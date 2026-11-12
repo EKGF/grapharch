@@ -178,7 +178,10 @@ impl<'a> Markdown<'a> {
                     }
                 },
                 Event::Start(Tag::Link { dest_url, .. }) => {
-                    if crate::publication::badge::label(dest_url).is_some() {
+                    if crate::publication::badge::label(dest_url).is_some() ||
+                        crate::publication::temporal::lexical(dest_url)
+                            .is_some()
+                    {
                         continue;
                     }
                     if let Some(anchor) =

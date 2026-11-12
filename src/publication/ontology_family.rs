@@ -10,7 +10,11 @@ use {
             git::{FamilyTargets, TargetSelection},
         },
         dataset::{Dataset, identity},
-        document::{AnnotatedTermDocumentor, Documentor},
+        document::{
+            AnnotatedTermDocumentor,
+            Documentor,
+            namespace_bindings::NamespaceBindings,
+        },
         plan::{ResolvedPlan, TargetPlanner},
         term,
         view::RevisionView,
@@ -25,6 +29,7 @@ use {
         sync::Arc,
     },
 };
+mod declarations;
 mod modules;
 mod reference;
 
@@ -556,7 +561,9 @@ async fn build(
         "family has no explicit artifact or reference membership; recognition \
          rules are not applied implicitly"
     );
-    let mut prefixes = standard_prefixes();
+    let mut prefixes = NamespaceBindings::well_known();
+    // bounded: 64 aliases per member within the family resource budget.
+    let mut aliases_declared = Vec::new();
     let mut members = Vec::new();
     let mut known = HashSet::new();
     let mut scheme_terms = HashSet::new(); // bounded: FAMILY_RESOURCES shared terms.
@@ -616,46 +623,14 @@ async fn build(
                 known.len() <= super::limits::FAMILY_RESOURCES,
                 "family exceeds vocabulary resource budget"
             );
-            let declaration=view.pattern(&format!("{ontology} <http://www.w3.org/ns/shacl#declare> ?declaration . ?declaration <http://www.w3.org/ns/shacl#prefix> ?prefix ; <http://www.w3.org/ns/shacl#namespace> ?namespace"),0);
-            let mut names = dataset
-                .select(format!(
-                    "SELECT DISTINCT ?prefix ?namespace WHERE {{ \
-                     {declaration} }}"
-                ))
-                .await?;
-            let row = names.next().await?.ok_or_else(|| {
-                anyhow::anyhow!(
-                    "ontology {ontology} requires explicit sh:declare \
-                     namespace metadata"
-                )
-            })?;
-            ensure!(
-                names.next().await?.is_none(),
-                "ontology namespace declaration is ambiguous"
-            );
-            let (Term::Literal(prefix), Term::Literal(namespace)) =
-                (&row["prefix"], &row["namespace"])
-            else {
-                anyhow::bail!("namespace metadata must be literal")
-            };
-            let (prefix, namespace) = (
-                prefix.value().to_owned(),
-                namespace.value().to_owned(),
-            );
-            ensure!(
-                !prefix.is_empty() && !namespace.is_empty(),
-                "namespace metadata cannot be empty"
-            );
-            ensure!(
-                !prefixes.iter().any(
-                    |(existing_namespace, existing_prefix)| {
-                        existing_prefix == &prefix &&
-                            existing_namespace != &namespace
-                    }
-                ),
-                "family namespace prefix {prefix} is ambiguous"
-            );
-            prefixes.insert(namespace.clone(), prefix.clone());
+            let declarations = declarations::MemberDeclarations::read(
+                dataset, &view, ontology,
+            )
+            .await?;
+            let declarations::Declaration { prefix, namespace } =
+                declarations.own;
+            prefixes.declare(&namespace, &prefix)?;
+            aliases_declared.extend(declarations.aliases);
             // Scheme membership may span files. Read the pinned collected
             // project, not only the declaration file, without reading generated
             // fragments.
@@ -788,7 +763,15 @@ async fn build(
     let skos =
         super::document::skos::SchemeArrangement::read(dataset, &view, &known)
             .await?;
-    let prefixes = Arc::new(prefixes);
+    // Aliases apply after every member's own namespace, so they never replace
+    // one; the first lexical alias of a namespace wins.
+    aliases_declared.sort_by(|a: &declarations::Declaration, b| {
+        (&a.namespace, &a.prefix).cmp(&(&b.namespace, &b.prefix))
+    });
+    for alias in aliases_declared {
+        prefixes.declare_alias(&alias.namespace, &alias.prefix)?;
+    }
+    let prefixes = Arc::new(prefixes.into_map());
     let known = Arc::new(known);
     let owner = identity("family-bindings", &[project, target.as_str()]);
     let contribution = identity("contribution", &[
@@ -1479,43 +1462,6 @@ fn fragment(
         q(&fragment, "contribution", contribution.clone()),
         q(&fragment, "order", Literal::from(order)),
     ]);
-}
-fn standard_prefixes() -> BTreeMap<String, String> {
-    [
-        (
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-            "rdf",
-        ),
-        ("http://www.w3.org/2000/01/rdf-schema#", "rdfs"),
-        ("http://www.w3.org/2002/07/owl#", "owl"),
-        ("http://www.w3.org/2001/XMLSchema#", "xsd"),
-        ("http://www.w3.org/ns/shacl#", "sh"),
-        ("http://www.w3.org/2004/02/skos/core#", "skos"),
-        ("http://purl.org/dc/terms/", "dct"),
-        (
-            "https://www.omg.org/spec/Commons/PartiesAndSituations/",
-            "cmns-pts",
-        ),
-        (
-            "https://www.omg.org/spec/Commons/RolesAndCompositions/",
-            "cmns-rlcmp",
-        ),
-        (
-            "https://www.omg.org/spec/Commons/Organizations/",
-            "cmns-org",
-        ),
-        (
-            "https://www.omg.org/spec/Commons/Classifiers/",
-            "cmns-cls",
-        ),
-        (
-            "https://www.omg.org/spec/Commons/Designators/",
-            "cmns-dsg",
-        ),
-    ]
-    .into_iter()
-    .map(|(namespace, prefix)| (namespace.into(), prefix.into()))
-    .collect()
 }
 
 // The manifest records only this builder's ownership; it never scans/removes

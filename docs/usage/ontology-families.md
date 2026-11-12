@@ -122,6 +122,18 @@ it does not infer a family from an arbitrary folder or namespace prefix. Each
 ontology source file must declare one named ontology. Each ontology needs one
 unambiguous English `rdfs:label` for its chapter title. Namespace and prefix hints
 use `sh:declare` and can be supplied separately without editing the source files.
+An ontology may declare further display prefixes for vocabularies it reuses;
+with several declarations, the one whose namespace is the ontology IRI names
+the ontology itself. Turtle `@prefix` lines are parser syntax and are not kept
+in the documentation KG. Well-known vocabularies (including `rdf`, `rdfs`,
+`owl`, `xsd`, `sh`, `skos`, `dc`, `dct`, `dcat`, `prov`, `vann`, `foaf`,
+`schema`, `time`, `odrl`, and `org`) are compacted without a declaration; a
+source declaration of the same prefix or namespace takes precedence.
+
+Typed `xsd:date` and `xsd:dateTime` values read as dates, for example
+`8 April 2020` and `8 April 2020, 00:00:01 UTC`; HTML keeps the exact value in
+`<time datetime>`. A date-time keeps its time even at midnight. Untyped strings
+are shown as written; type a date in the source to have it read as one.
 
 ## Choose collection terminology
 
@@ -186,7 +198,11 @@ An account records **agreed responsibilities**.
 ```
 
 The reference renders headings, lists, links, fenced code, tables, and GitHub
-Flavoured Markdown task lists. Headings nest beneath the resource's title.
+Flavoured Markdown task lists. In an ontology's description, headings nest
+beneath the chapter title. A class, property, or individual description is the
+content of that term's entry, so its headings appear as bold run-in headings:
+they add no numbered section, table-of-contents or sidebar entry, or PDF
+bookmark, and their text is kept.
 The rich description replaces the plain description in the detailed reference;
 without it, the existing source definitions and comments remain available.
 Ontology cards and full introductions share the same generic annotation mapping:

@@ -218,3 +218,57 @@ async fn explicit_config_is_validated_before_unconfigured_discovery_limits()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn website_reference_compacts_dublin_core_and_renders_dates() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("stamped.ttl");
+    tokio::fs::write(
+        &source,
+        r#"@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+<https://example.org/pets> a owl:Ontology; rdfs:label "Pets" .
+<https://example.org/pets#Pet> a owl:Class; rdfs:label "Pet";
+ rdfs:comment "An animal kept for company.";
+ dc:date "2020-04-08T00:00:01Z"^^xsd:dateTime .
+"#,
+    )
+    .await?;
+    let result = Command::new(env!("CARGO_BIN_EXE_grapharch"))
+        .arg("build")
+        .arg(&source)
+        .arg("--output")
+        .arg(root.path().join("output"))
+        .output()
+        .await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let mut pages = vec![root.path().join("output/site")];
+    let mut html = String::new();
+    while let Some(directory) = pages.pop() {
+        let mut entries = tokio::fs::read_dir(&directory).await?;
+        while let Some(entry) = entries.next_entry().await? {
+            let path = entry.path();
+            if entry.file_type().await?.is_dir() {
+                pages.push(path);
+            } else if path.extension().is_some_and(|e| e == "html") {
+                html.push_str(&tokio::fs::read_to_string(&path).await?);
+            }
+        }
+    }
+    assert!(
+        html.contains("dc:date"),
+        "Dublin Core name not compacted"
+    );
+    assert!(!html.contains("http://purl.org/dc/elements/1.1/date"));
+    assert!(html.contains(
+        r#"<time datetime="2020-04-08T00:00:01Z">8 April 2020, 00:00:01 UTC</time>"#
+    ));
+    Ok(())
+}
