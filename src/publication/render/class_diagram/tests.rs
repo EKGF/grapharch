@@ -170,7 +170,7 @@ async fn diagram_link_survives_native_compilation(
         tokio::fs::write(destination, &pdf).await?;
     }
     assert!(
-        String::from_utf8_lossy(&pdf).contains("/Rect [25 575 235 155]"),
+        String::from_utf8_lossy(&pdf).contains("/Rect[25 155 235 575]"),
         "diagram annotation bounds must match the unchanged 210pt by 420pt \
          image at the page margin"
     );

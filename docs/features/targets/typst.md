@@ -28,6 +28,37 @@ Quality findings are grouped by warning type in a separate numbered appendix.
 Supplied content and release metadata remain source-owned; a layout is not
 proof of standards approval.
 
+## Tagged, accessible PDF
+
+Every PDF, including each bookshelf book, is a tagged PDF: it carries a logical
+structure tree for headings, paragraphs, lists, tables, figures and links, a
+document language, and bookmarks that repeat the heading numbers. Images and
+diagrams carry alternative text from their retained titles.
+
+Document metadata comes from the pinned target definition, never from the build
+machine. The title is the document or book title. The authors are the target's
+`ga:author` people, or else the publishing authority. Repeat `ga:keyword` on the
+target for keywords; each value is one `xsd:string`. The creation date is the
+target's `ga:publicationDate`; an undated target embeds no date. The same pinned
+plan therefore produces byte-identical PDFs.
+
+To require [PDF/UA-1](https://www.iso.org/standard/64599.html), add
+`ga:pdfStandard ga:PdfUa1` to the PDF profile:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
+<urn:example:pdf-profile> a ga:Profile ;
+    ga:pdfStandard ga:PdfUa1 .
+```
+
+Typst checks the requirement while exporting each PDF. It requires a title,
+alternative text for images, and consecutive heading levels, and makes viewers
+display the document title. A violation fails the publication; it does not
+produce a non-conforming PDF. Typst's automated checks cannot establish
+everything PDF/UA asks of authors, such as a meaningful reading order or useful
+alternative text, so review the result with an accessibility checker.
+
 ## Prepare an OMG-style edition
 
 Set `ga:style "omg"` on a dedicated PDF profile. This selects a restrained

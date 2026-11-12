@@ -31,6 +31,13 @@ pub(super) fn diagram_with_links(
         0,
     )
     .ok_or_else(|| anyhow::anyhow!("invalid embedded diagram font"))?;
+    // Liberation Sans has no variation axes: the instance only exposes the
+    // static glyph metrics.
+    let font = font.clone().instantiate(
+        font.info().variant,
+        typst::layout::Abs::pt(13.0),
+        &typst::text::FontVariations::default(),
+    );
     let measure = |label: &str| -> Result<usize> {
         let face = font.ttf();
         let mut advance = 0u32;

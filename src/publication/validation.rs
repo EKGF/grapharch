@@ -96,6 +96,9 @@ impl Field {
                 value,
             )?;
         }
+        if self.name == "pdfStandard" {
+            crate::publication::render::PdfStandard::from_node(value)?;
+        }
         Ok(())
     }
 
@@ -241,10 +244,10 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::one("renderer", None),
             Field::text("destination"),
         ]),
-        ("Profile", vec![Field::many(
-            "placement",
-            Some("Placement"),
-        )]),
+        ("Profile", vec![
+            Field::many("placement", Some("Placement")),
+            Field::many("pdfStandard", None),
+        ]),
         ("OntologyModule", vec![Field::many(
             "moduleMember",
             None,

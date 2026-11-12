@@ -12,15 +12,16 @@ use {
     tracing::info,
     typst::{
         Library,
+        LibraryExt,
         World,
         diag::FileError,
-        foundations::{Bytes, Datetime},
-        layout::PagedDocument,
-        syntax::{FileId, Source, VirtualPath},
+        foundations::{Bytes, Datetime, Duration},
+        syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot},
         text::{Font, FontBook},
         utils::LazyHash,
     },
-    typst_kit::fonts::{FontSlot, Fonts},
+    typst_kit::fonts::{FontStore, embedded, system},
+    typst_layout::PagedDocument,
     typst_pdf::PdfOptions,
 };
 
@@ -37,10 +38,8 @@ enum Now {
 pub struct TypstGenerator {
     output_dir:         PathBuf,
     pdf_output:         PathBuf,
-    /// Metadata about discovered fonts.
-    font_book:          LazyHash<FontBook>,
-    /// Locations of and storage for lazily loaded fonts.
-    fonts:              Vec<FontSlot>,
+    /// Discovered fonts, their metadata and lazily loaded font data.
+    fonts:              FontStore,
     library:            LazyHash<Library>,
     /// The temp directory for storing the Typst source files
     #[allow(dead_code)]
@@ -54,13 +53,10 @@ pub struct TypstGenerator {
 impl TypstGenerator {
     /// Create a new generator with the given output directory
     pub fn new(output_dir: PathBuf, pdf_output: PathBuf) -> Self {
-        let fonts = Fonts::searcher().include_system_fonts(true).search();
-
         Self {
             output_dir,
             pdf_output,
-            font_book: LazyHash::new(fonts.book),
-            fonts: fonts.fonts,
+            fonts: Self::fonts(),
             library: LazyHash::new(Library::default()),
             temp_dir: None,
             now: Now::System(OnceLock::new()),
@@ -72,18 +68,23 @@ impl TypstGenerator {
     pub fn with_temp_dir(pdf_output: PathBuf) -> anyhow::Result<Self> {
         let temp_dir = tempfile::tempdir()?;
         let output_dir = temp_dir.path().to_path_buf();
-        let fonts = Fonts::searcher().include_system_fonts(true).search();
-
         Ok(Self {
             output_dir,
             pdf_output,
-            font_book: LazyHash::new(fonts.book),
-            fonts: fonts.fonts,
+            fonts: Self::fonts(),
             library: LazyHash::new(Library::default()),
             temp_dir: Some(temp_dir),
             now: Now::System(OnceLock::new()),
             markdown_converter: MarkdownToTypstConverter::new(),
         })
+    }
+
+    /// Typst's embedded fonts followed by the installed system fonts.
+    fn fonts() -> FontStore {
+        let mut fonts = FontStore::new();
+        fonts.extend(embedded());
+        fonts.extend(system());
+        fonts
     }
 
     fn compile_to_pdf(&self) -> anyhow::Result<()> {
@@ -133,15 +134,18 @@ impl TypstGenerator {
 impl World for TypstGenerator {
     fn library(&self) -> &LazyHash<Library> { &self.library }
 
-    fn book(&self) -> &LazyHash<FontBook> { &self.font_book }
+    fn book(&self) -> &LazyHash<FontBook> { self.fonts.book() }
 
-    fn main(&self) -> FileId { FileId::new(None, VirtualPath::new("main.typ")) }
+    fn main(&self) -> FileId {
+        FileId::new(RootedPath::new(
+            VirtualRoot::Project,
+            VirtualPath::new("main.typ").expect("main.typ is a valid path"),
+        ))
+    }
 
     fn source(&self, id: FileId) -> Result<Source, FileError> {
         let vpath = id.vpath();
-        let path_str = vpath.as_rooted_path().to_string_lossy();
-        let rel_path = path_str.trim_start_matches('/');
-        let path = self.output_dir.join(rel_path);
+        let path = vpath.realize(&self.output_dir)?;
 
         info!(
             "Typst requesting source file: {:?} (resolved to {})",
@@ -170,9 +174,7 @@ impl World for TypstGenerator {
 
     fn file(&self, id: FileId) -> Result<Bytes, FileError> {
         let vpath = id.vpath();
-        let path_str = vpath.as_rooted_path().to_string_lossy();
-        let rel_path = path_str.trim_start_matches('/');
-        let path = self.output_dir.join(rel_path);
+        let path = vpath.realize(&self.output_dir)?;
 
         info!(
             "Typst requesting file: {:?} (resolved to {})",
@@ -200,9 +202,9 @@ impl World for TypstGenerator {
     }
 
     /// Try to access the font with the given index in the font book.
-    fn font(&self, index: usize) -> Option<Font> { self.fonts[index].get() }
+    fn font(&self, index: usize) -> Option<Font> { self.fonts.font(index) }
 
-    fn today(&self, offset: Option<i64>) -> Option<Datetime> {
+    fn today(&self, offset: Option<Duration>) -> Option<Datetime> {
         let now = match &self.now {
             Now::Fixed(time) => time,
             Now::System(time) => time.get_or_init(Utc::now),
@@ -212,8 +214,16 @@ impl World for TypstGenerator {
         // zone.
         let with_offset = match offset {
             None => now.with_timezone(&Local).fixed_offset(),
-            Some(hours) => {
-                let seconds = i32::try_from(hours).ok()?.checked_mul(3600)?;
+            Some(offset) => {
+                let seconds = offset.seconds().trunc();
+                if !seconds.is_finite() ||
+                    seconds < f64::from(i32::MIN) ||
+                    seconds > f64::from(i32::MAX)
+                {
+                    return None;
+                }
+                // The whole-second offset was checked to fit in an i32.
+                let seconds = seconds as i32;
                 now.with_timezone(&FixedOffset::east_opt(seconds)?)
             },
         };

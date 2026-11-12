@@ -1,6 +1,9 @@
 //! Literal prose and explicit source links; source strings never become markup.
 use super::{
-    super::markup::{html_escape, quote},
+    super::{
+        markup::{html_escape, quote},
+        typst_breaks::Breakable,
+    },
     evidence::Evidence,
 };
 
@@ -68,14 +71,14 @@ pub(super) fn typst(entries: &[Evidence]) -> String {
             quote(entry.value.value())
         ));
         let source = entry.source_text();
+        let source_text = Breakable::identifier(source).text();
         if let Some(target) = target(source) {
             output.push_str(&format!(
-                "#link({})[#text({})]",
-                quote(&target),
-                quote(&wrappable(source))
+                "#link({})[{source_text}]",
+                quote(&target)
             ));
         } else {
-            output.push_str(&format!("#text({})", quote(&wrappable(source))));
+            output.push_str(&source_text);
         }
         output.push_str("#parbreak()\n");
     }
@@ -103,18 +106,6 @@ fn escape(value: &str) -> String {
             '<' => output.push_str("&lt;"),
             '&' => output.push_str("&amp;"),
             _ => output.push(ch),
-        }
-    }
-    output
-}
-
-pub(super) fn wrappable(value: &str) -> String {
-    // Invisible legal line-break opportunities preserve the full identifier.
-    let mut output = String::new();
-    for (index, ch) in value.chars().enumerate() {
-        output.push(ch);
-        if "/#_-:.".contains(ch) || index % 24 == 23 {
-            output.push('\u{200b}');
         }
     }
     output

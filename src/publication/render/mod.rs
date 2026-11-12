@@ -12,6 +12,7 @@ mod content_blocks;
 mod credit;
 mod diagnostic_graph;
 mod diagram_notes;
+mod document_metadata;
 mod engine;
 mod files;
 mod html;
@@ -21,14 +22,17 @@ mod markup;
 mod model;
 mod native_typst;
 mod pdf_download;
+mod pdf_standard;
 mod people;
 mod preamble;
 mod provenance;
+mod publication_date;
 mod quality;
 mod rdf_tables;
 mod record;
 mod specification;
 mod typst;
+mod typst_breaks;
 mod typst_markdown;
 mod typst_style;
 mod website;
@@ -42,7 +46,6 @@ pub use model::{BookPublication, PublicationManifest};
 pub(crate) fn book_compiler_fingerprint() -> String {
     bookshelf::compiler_digest()
 }
-pub(crate) use model::title as page_title;
 use {
     crate::publication::{
         dataset::Dataset,
@@ -63,6 +66,7 @@ use {
     tokio::sync::{Mutex, OnceCell, Semaphore},
     uuid::Uuid,
 };
+pub(crate) use {model::title as page_title, pdf_standard::PdfStandard};
 
 /// A successfully promoted artifact generation.
 pub struct Publication {

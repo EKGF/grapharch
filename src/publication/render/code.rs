@@ -29,7 +29,8 @@ static THEME: LazyLock<Theme> = LazyLock::new(|| {
     }
     for (selector, color) in [
         (
-            "string, source.json string, source.rq string, source.ttl string, \
+            "string, source.json string, source.json meta.mapping.value.json \
+             string.quoted.double.json, source.rq string, source.ttl string, \
              string.unquoted.iri",
             Color { r: 20, g: 107, b: 54, a: 255 },
         ),
@@ -48,12 +49,13 @@ static THEME: LazyLock<Theme> = LazyLock::new(|| {
             a: 255,
         }),
         ("comment", Color { r: 91, g: 101, b: 117, a: 255 }),
-        ("meta.mapping.key.json string", Color {
-            r: 104,
-            g: 54,
-            b: 181,
-            a: 255,
-        }),
+        // More specific than Typst's own JSON key and value selectors, which
+        // win ties and would otherwise outrank this palette.
+        (
+            "meta.mapping.key.json string, source.json meta.mapping.key.json \
+             string.quoted.double.json",
+            Color { r: 104, g: 54, b: 181, a: 255 },
+        ),
         ("source.rq variable", Color {
             r: 104,
             g: 54,
@@ -271,6 +273,11 @@ mod tests {
         .unwrap();
         let key = key.expect("JSON key token");
         let value = value.expect("JSON string value token");
+        assert_eq!(
+            [(key.r, key.g, key.b), (value.r, value.g, value.b)],
+            [(104, 54, 181), (20, 107, 54)],
+            "GraphArch's palette must outrank Typst's JSON selectors"
+        );
         assert!(
             key.b > key.r && key.r > key.g,
             "keys need a saturated purple distinct from green values: {key:?}"

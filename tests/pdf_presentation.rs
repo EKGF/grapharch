@@ -94,10 +94,15 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     let typst =
         std::fs::read_to_string(publication.directory.join("main.typ"))?;
     assert!(
-        typst.contains('\u{200b}'),
+        typst.contains("#ga-wrap("),
         "Long table identifiers require legal line-break opportunities"
     );
-    assert!(typst.replace('\u{200b}', "").contains(shape_label));
+    assert!(
+        typst
+            .replace("\", \"", "")
+            .contains(&format!("#ga-wrap(\"{shape_label}\")")),
+        "break opportunities must preserve the complete identifier"
+    );
     assert!(typst.contains("#link(\"https://example.org/shapes/reject\")"));
     assert!(
         typst.contains("#let ga-style = \"reader\""),

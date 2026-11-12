@@ -1,7 +1,10 @@
 use {
-    super::super::{markup::html_escape, model::Plan},
+    super::super::{
+        markup::html_escape,
+        model::Plan,
+        publication_date::PublicationDate,
+    },
     anyhow::{Result, ensure},
-    chrono::NaiveDate,
     oxrdf::{NamedNode, Term},
 };
 
@@ -42,27 +45,9 @@ pub(in crate::publication::render) async fn header(
         })
         .unwrap_or_default();
     let status = required(plan, &plan.target, "publicationStatus").await?;
-    let date = match plan
-        .source
-        .optional(&plan.target, "publicationDate")
-        .await?
-    {
-        Some(Term::Literal(date))
-            if date.datatype().as_str() ==
-                "http://www.w3.org/2001/XMLSchema#date" =>
-        {
-            date
-        },
-        _ => anyhow::bail!("publicationDate must be an xsd:date"),
-    };
-    let parsed =
-        NaiveDate::parse_from_str(date.value(), "%Y-%m-%d").map_err(|_| {
-            anyhow::anyhow!("publicationDate must be a valid YYYY-MM-DD date")
-        })?;
-    ensure!(
-        parsed.format("%Y-%m-%d").to_string() == date.value(),
-        "publicationDate must use YYYY-MM-DD"
-    );
+    let date = PublicationDate::read(plan).await?.ok_or_else(|| {
+        anyhow::anyhow!("publicationDate must be an xsd:date")
+    })?;
     let authority = super::authority::Authority::read(plan).await?;
     let status_html = if let Some(url) =
         plan.source.optional(&plan.target, "statusUrl").await?
@@ -122,8 +107,8 @@ pub(in crate::publication::render) async fn header(
         html_escape(&authority.name),
         logos,
         html_escape(&document_title),
-        html_escape(date.value()),
-        parsed.format("%-d %B %Y")
+        date.iso(),
+        date.long()
     );
     let mut defaults = String::new();
     for (field, label) in [

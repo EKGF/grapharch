@@ -2,7 +2,7 @@
 name = "grapharch"
 version = "0.2.9"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 description = "GraphArch is a tool to generate documentation for a given graph (knowledge graph, shape graph or ontology) as either a website or a PDF"
 authors = ["Jacobus Geluk <jacobus.geluk@ekgf.org>"]
 license = "MIT"
@@ -42,11 +42,12 @@ const_format = "0.2.34"
 clap = { version = "4.5.32", features = ["derive"] }
 clap-verbosity-flag = { version = "3.0.2", features = ["tracing"] }
 syntect = { version = "5.2.0", default-features = false, features = ["parsing", "regex-fancy", "yaml-load"] }
-typst = "0.13.1"
-typst-pdf = "0.13.1"
+typst = "0.15.1"
+typst-pdf = "0.15.1"
+typst-layout = "0.15.1"
 chrono = "0.4"
 quick-error = "2.0.1"
-typst-kit = { version = "0.13.1", default-features = false, features = ["embed-fonts"] }
+typst-kit = { version = "0.15.1", default-features = false, features = ["embedded-fonts", "scan-fonts"] }
 regex = "1.11.1"
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 fs2 = "0.4"
@@ -65,6 +66,10 @@ pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }.zip"
 bin-dir = "{ bin }{ binary-ext }"
 pkg-fmt = "zip"
 disabled-strategies = ["quick-install", "compile"]
+
+[dev-dependencies]
+# Parses generated PDFs in tests; the same release Typst uses for PDF images.
+hayro-syntax = { version = "0.7.2", default-features = false, features = ["std"] }
 
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }

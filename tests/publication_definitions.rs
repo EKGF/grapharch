@@ -120,3 +120,32 @@ fn placement_orders_require_integer_datatypes_not_numeric_strings()
     assert!(validate(&store).is_err());
     Ok(())
 }
+
+#[test]
+fn profile_pdf_standard_is_a_supported_standard_identity() -> anyhow::Result<()>
+{
+    let store = fixture()?;
+    store.update("INSERT DATA { <urn:example:spec-profile> <https://ekgf.org/ontology/grapharch#pdfStandard> <https://ekgf.org/ontology/grapharch#PdfUa1> }")?;
+    validate(&store)?;
+    store.update("INSERT DATA { <urn:example:spec-profile> <https://ekgf.org/ontology/grapharch#pdfStandard> <https://ekgf.org/ontology/grapharch#PdfA4> }")?;
+    assert!(
+        validate(&store)
+            .unwrap_err()
+            .to_string()
+            .contains("unsupported PDF standard")
+    );
+    Ok(())
+}
+
+#[test]
+fn profile_pdf_standard_selector_strings_are_rejected() -> anyhow::Result<()> {
+    let store = fixture()?;
+    store.update("INSERT DATA { <urn:example:spec-profile> <https://ekgf.org/ontology/grapharch#pdfStandard> \"ua-1\" }")?;
+    assert!(
+        validate(&store)
+            .unwrap_err()
+            .to_string()
+            .contains("pdfStandard must reference an IRI")
+    );
+    Ok(())
+}
