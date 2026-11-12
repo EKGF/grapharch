@@ -67,6 +67,21 @@ impl Fixture {
         .await
     }
 }
+/// The published file a relative `href` names when it appears on `page`.
+fn published_file(page: &str, href: &str) -> String {
+    let root = url::Url::parse("https://output.invalid/root/").unwrap();
+    let url = root.join(page).unwrap().join(href).unwrap();
+    let path = url
+        .path()
+        .strip_prefix("/root/")
+        .unwrap_or_else(|| panic!("{href} on {page} leaves the output"));
+    if path.is_empty() || path.ends_with('/') {
+        format!("{path}index.html")
+    } else {
+        path.into()
+    }
+}
+
 #[tokio::test]
 async fn unchanged_family_builds_reuse_revision_and_plan_in_a_shared_store()
 -> Result<()> {
@@ -783,8 +798,22 @@ async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
     };
     let core = route("core ontology");
     let extra = route("extra ontology");
-    assert_ne!(core, extra);
+    assert_eq!(
+        (core.as_str(), extra.as_str()),
+        ("core/index.html", "extra/index.html"),
+        "each ontology page is routed by the namespace prefix its family binds"
+    );
+    assert!(
+        p.manifest
+            .files
+            .iter()
+            .all(|file| !file.starts_with("section-")),
+        "hash-named page routes must be gone: {:?}",
+        p.manifest.files
+    );
     let html = std::fs::read_to_string(p.directory.join(&core))?;
+    assert!(html.contains("href=\"../style.css\""));
+    assert!(html.contains("data-search-index=\"../search-index.json\""));
     assert!(html.contains("<h1>core ontology</h1>"));
     assert!(html.contains("core term"));
     assert!(!html.contains("data-page-body=\"extra ontology\""));
@@ -794,7 +823,7 @@ async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
             .any(|a| {
                 a.value()
                     .attr("href")
-                    .is_some_and(|h| h.starts_with(&format!("{extra}#")))
+                    .is_some_and(|h| h.starts_with(&format!("../{extra}#")))
             }),
         "cross-ontology reference must point at its owning page"
     );
@@ -817,10 +846,14 @@ async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
                 continue;
             }
             let (path, id) = href.split_once('#').unwrap_or((href, ""));
-            let path = if path.is_empty() { file } else { path };
+            let path = if path.is_empty() {
+                file.clone()
+            } else {
+                published_file(file, path)
+            };
             assert!(
-                p.directory.join(path).exists(),
-                "missing route {path}"
+                p.directory.join(&path).exists(),
+                "missing route {path} linked from {file}"
             );
             if !id.is_empty() {
                 let target = scraper::Html::parse_document(
@@ -841,6 +874,100 @@ async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
             PublishOutcome::Published(_)
         ),
         "paginated target must be replaceable on a subsequent run"
+    );
+    Ok(())
+}
+
+/// Publish the fixture with the paginated renderer after `edit` changes the
+/// extra ontology's source.
+async fn paginated_family(
+    edit: impl FnOnce(String) -> String,
+) -> Result<(
+    tempfile::TempDir,
+    grapharch::publication::render::PublishOutcome,
+)> {
+    use grapharch::publication::render::Publisher;
+    let f = Fixture::new()?;
+    let source = f.root.path().join("extra.ttl");
+    std::fs::write(&source, edit(std::fs::read_to_string(&source)?))?;
+    let settings = f.definitions.path().join("project.ttl");
+    std::fs::write(
+        &settings,
+        std::fs::read_to_string(&settings)?.replace(
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
+            "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer>",
+        ),
+    )?;
+    let built = f.build(Dataset::memory()?).await?;
+    let output = tempfile::tempdir()?;
+    let outcome = Publisher::new(built.dataset.clone())
+        .render(&built.plan, output.path())
+        .await?;
+    Ok((output, outcome))
+}
+
+#[tokio::test]
+async fn paginated_family_pages_use_an_authored_page_slug() -> Result<()> {
+    use grapharch::publication::render::PublishOutcome;
+    let (_output, PublishOutcome::Published(p)) = paginated_family(|text| {
+        format!(
+            "{text}\n<https://example.org/extra#> \
+             <https://ekgf.org/ontology/grapharch#pageSlug> \"more-terms\" ."
+        )
+    })
+    .await?
+    else {
+        panic!("not published")
+    };
+    for route in ["core/index.html", "more-terms/index.html"] {
+        assert!(
+            p.manifest.files.iter().any(|file| file == route),
+            "missing {route} in {:?}",
+            p.manifest.files
+        );
+    }
+    let home = std::fs::read_to_string(p.directory.join("index.html"))?;
+    assert!(home.contains("href=\"more-terms/index.html\""));
+    Ok(())
+}
+
+#[tokio::test]
+async fn paginated_family_page_slug_collisions_name_both_ontologies()
+-> Result<()> {
+    let error = paginated_family(|text| {
+        format!(
+            "{text}\n<https://example.org/extra#> \
+             <https://ekgf.org/ontology/grapharch#pageSlug> \"core\" ."
+        )
+    })
+    .await
+    .err()
+    .expect("two pages cannot share one route");
+    let message = format!("{error:#}");
+    assert!(
+        message.contains("core/") &&
+            message.contains("https://example.org/core#") &&
+            message.contains("https://example.org/extra#"),
+        "{message}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn paginated_family_rejects_a_prefix_that_is_not_a_page_slug()
+-> Result<()> {
+    let error = paginated_family(|text| {
+        text.replace("sh:prefix \"extra\"", "sh:prefix \"Extra\"")
+    })
+    .await
+    .err()
+    .expect("an uppercase prefix is not a page slug");
+    let message = format!("{error:#}");
+    assert!(
+        message.contains("https://example.org/extra#") &&
+            message.contains("\"Extra\"") &&
+            message.contains("ga:pageSlug"),
+        "{message}"
     );
     Ok(())
 }
@@ -1003,14 +1130,14 @@ async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_
                 "cross-book PDF links must not depend on the canonical \
                  thisVersion deployment"
             );
-            let (_, rest) = typst.split_once("#link(\"./section-").expect(
+            let (_, rest) = typst.split_once("#link(\"./extra/").expect(
                 "cross-book PDF links go to the corresponding HTML chapter",
             );
             let (route, _) = rest.split_once('#').unwrap();
             assert!(
-                p.directory.join(format!("section-{route}")).is_file(),
+                p.directory.join(format!("extra/{route}")).is_file(),
                 "a cross-book link resolves beside the book PDF to a \
-                 published chapter: section-{route}"
+                 published chapter: extra/{route}"
             );
         }
     }
@@ -1186,7 +1313,10 @@ async fn bookshelf_parent_boundary_and_incremental_book_reuse() -> Result<()> {
             "book TOC links must identify their ontology page"
         );
         let target = scraper::Html::parse_document(&std::fs::read_to_string(
-            p.directory.join(route),
+            p.directory.join(published_file(
+                books[0]["html"].as_str().unwrap(),
+                route,
+            )),
         )?);
         assert!(
             target

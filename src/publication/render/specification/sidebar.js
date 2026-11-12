@@ -128,7 +128,11 @@
         const response = await fetch(toc.dataset.searchIndex);
         if (!response.ok) throw new Error(`Search index HTTP ${response.status}`);
         entries = await response.json();
-        if (!Array.isArray(entries) || entries.length > 262144 || entries.some(e => typeof e.title !== 'string' || typeof e.href !== 'string' || typeof e.kind !== 'string' || !/^(?:#[^\s]+|[a-z0-9-]+\.html(?:#[^\s]+)?)$/.test(e.href))) throw new Error('Invalid specification search index');
+        if (!Array.isArray(entries) || entries.length > 262144 || entries.some(e => typeof e.title !== 'string' || typeof e.href !== 'string' || typeof e.kind !== 'string' || !/^(?:#[^\s]+|(?:[a-z0-9]+(?:[-_][a-z0-9]+)*\/)?index\.html(?:#[^\s]+)?)$/.test(e.href))) throw new Error('Invalid specification search index');
+        // Index routes are relative to the publication root, where the index
+        // itself is published; resolve them for the page that loaded it.
+        const root = new URL(toc.dataset.searchIndex, location.href);
+        entries = entries.map(e => e.href.startsWith('#') ? e : {...e, href: new URL(e.href, root).href});
       } else {
         entries = [...document.querySelectorAll('main h2,main h3,main h4,main h5,main h6')].filter(h => !h.closest('nav,dialog,header')).map(h => {
           const section = h.closest('section');

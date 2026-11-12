@@ -45,6 +45,7 @@ ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI 
 ga:PlacementShape a sh:NodeShape ; sh:targetClass ga:Placement ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:sectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 1 ] ;
     sh:property [sh:path ga:parentPlacement; sh:nodeKind sh:IRI; sh:class ga:Placement; sh:maxCount 1] ;
+    sh:property [ sh:path ga:pageSlug ; sh:datatype xsd:string ; sh:pattern "^[a-z0-9]+([-_][a-z0-9]+)*$" ; sh:maxLength 128 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:component ; sh:nodeKind sh:IRI ; sh:class ga:Component ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:order ; sh:nodeKind sh:Literal ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .
 

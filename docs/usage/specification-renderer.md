@@ -221,10 +221,16 @@ status, date, and source hints keep their existing meaning. Run the normal
 
 Each ontology page has the familiar specification header, local numbered
 sections, and a local contents list. Family navigation retains the module tree.
-Routes use stable placement identities, and links between documented terms point
-to the page and anchor that own the referenced content. Styles, images, page
-routes, and the shared `search-index.json` use relative URLs and work beneath a
-GitHub Pages project path. Rendering requires only the resolved plan and its
+Each page is published as `<slug>/index.html`. An ontology page uses the
+namespace prefix its family binds (`sh:declare`), so the `ekg-use-case` ontology
+is published at `ekg-use-case/index.html`; other pages, such as modules and the
+coverage appendix, use their titles. See
+[page routes](../renderers/specification-pages.md#page-routes) for the rules and
+for declaring a slug with `ga:pageSlug`. Links between documented terms point
+to the page and anchor that own the referenced content; in-page anchors do not
+depend on the route. Styles, images, page routes, and the shared
+`search-index.json` use relative URLs and work beneath a GitHub Pages project
+path. Rendering requires only the resolved plan and its
 pinned KG, including when the original source files have been deleted.
 
 This renderer publishes HTML **without compiling a PDF**. Use a separate PDF or

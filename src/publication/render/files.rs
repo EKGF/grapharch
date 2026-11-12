@@ -235,7 +235,7 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 "invalid website artifact ownership"
             );
         }
-        verify_tree(destination, destination, &names, &mut 0)?;
+        Tree::new(&names).verify(destination, destination, &mut 0)?;
     } else {
         ensure!(
             manifest.files.len() <=
@@ -280,13 +280,9 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
             ) && (matches!(
                 name.as_str(),
                 "search-index.json" | "navigation.json"
-            ) || name
-                .strip_prefix("section-")
-                .and_then(|value| value.strip_suffix(".html"))
-                .is_some_and(|hash| {
-                    hash.len() == 64 &&
-                        hash.bytes().all(|b| b.is_ascii_hexdigit())
-                }));
+            ) ||
+                super::specification::route::PageRoute::parse(name)
+                    .is_some());
             let image = name.starts_with("assets/") &&
                 [".svg", ".png", ".jpg", ".jpeg"]
                     .iter()
@@ -296,7 +292,7 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 "invalid publication artifact ownership"
             );
         }
-        verify_tree(destination, destination, &names, &mut 0)?;
+        Tree::new(&names).verify(destination, destination, &mut 0)?;
     }
     Ok(true)
 }
@@ -321,45 +317,63 @@ pub(super) fn validate_artifact_path(value: &str) -> Result<()> {
     Ok(())
 }
 
-fn verify_tree(
-    root: &Path,
-    directory: &Path,
-    owned: &std::collections::HashSet<&str>,
-    visited: &mut usize,
-) -> Result<()> {
-    for entry in fs::read_dir(directory)? {
-        *visited += 1;
-        ensure!(
-            *visited <= crate::publication::limits::PUBLICATION_FILES * 2,
-            "publication output exceeds filesystem-entry budget"
-        );
-        let entry = entry?;
-        let path = entry.path();
-        let name = path
-            .strip_prefix(root)?
-            .to_str()
-            .ok_or_else(|| anyhow::anyhow!("non-UTF-8 website artifact"))?
-            .replace('\\', "/");
-        let kind = entry.file_type()?;
-        if kind.is_dir() {
-            validate_artifact_path(&name)?;
-            ensure!(
-                owned
-                    .iter()
-                    .any(|file| file.starts_with(&format!("{name}/"))),
-                "output contains an unowned directory: {name}"
-            );
-            verify_tree(root, &path, owned, visited)?;
-        } else {
-            ensure!(
-                kind.is_file() &&
-                    (name == "manifest.yaml" ||
-                        owned.contains(name.as_str())),
-                "output contains an unowned artifact: {name}"
-            );
-        }
+/// The files a publication owns, and every directory that contains one.
+struct Tree<'a> {
+    files:       &'a std::collections::HashSet<&'a str>,
+    directories: std::collections::HashSet<&'a str>, /* bounded: at most 16
+                                                      * ancestors of each
+                                                      * owned file. */
+}
+
+impl<'a> Tree<'a> {
+    fn new(files: &'a std::collections::HashSet<&'a str>) -> Self {
+        let directories = files
+            .iter()
+            .flat_map(|file| {
+                file.match_indices('/').map(|(index, _)| &file[..index])
+            })
+            .collect();
+        Self { files, directories }
     }
-    Ok(())
+
+    fn verify(
+        &self,
+        root: &Path,
+        directory: &Path,
+        visited: &mut usize,
+    ) -> Result<()> {
+        for entry in fs::read_dir(directory)? {
+            *visited += 1;
+            ensure!(
+                *visited <= crate::publication::limits::PUBLICATION_FILES * 2,
+                "publication output exceeds filesystem-entry budget"
+            );
+            let entry = entry?;
+            let path = entry.path();
+            let name = path
+                .strip_prefix(root)?
+                .to_str()
+                .ok_or_else(|| anyhow::anyhow!("non-UTF-8 website artifact"))?
+                .replace('\\', "/");
+            let kind = entry.file_type()?;
+            if kind.is_dir() {
+                validate_artifact_path(&name)?;
+                ensure!(
+                    self.directories.contains(name.as_str()),
+                    "output contains an unowned directory: {name}"
+                );
+                self.verify(root, &path, visited)?;
+            } else {
+                ensure!(
+                    kind.is_file() &&
+                        (name == "manifest.yaml" ||
+                            self.files.contains(name.as_str())),
+                    "output contains an unowned artifact: {name}"
+                );
+            }
+        }
+        Ok(())
+    }
 }
 
 fn read_optional<T: serde::de::DeserializeOwned>(
@@ -557,10 +571,12 @@ mod recovery_tests {
                 "navigation.json".into(),
             ];
             for i in 0..pages {
-                files.push(format!("section-{i:064x}.html"));
+                files.push(format!("page-{i}/index.html"));
             }
             for file in &files {
-                fs::write(root.path().join(file), b"")?;
+                let path = root.path().join(file);
+                fs::create_dir_all(path.parent().unwrap())?;
+                fs::write(path, b"")?;
             }
             let manifest = PublicationManifest {
                 version: 1,

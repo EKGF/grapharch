@@ -1381,6 +1381,17 @@ ga:requiredSectionRole a owl:DatatypeProperty ;
     rdfs:range xsd:string .
 
 
+ga:pageSlug a owl:DatatypeProperty ;
+    rdfs:label "Page slug"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the directory of the page that a paginated specification publishes for a placement, or for a documented ontology or module, so the page is published as <slug>/index.html. The value is used unchanged and must be lowercase ASCII letters and digits in runs separated by single hyphens or underscores; two pages of one publication cannot share a slug."@en ;
+    dct:description "Names the directory of the page that a paginated specification publishes for a placement, or for a documented ontology or module, so the page is published as <slug>/index.html. The value is used unchanged and must be lowercase ASCII letters and digits in runs separated by single hyphens or underscores; two pages of one publication cannot share a slug."@en ;
+    skos:scopeNote "Without an explicit slug, an ontology-family page is named by the namespace prefix the family binds for its ontology, and any other page by its title, lowercased with every run of other characters replaced by one hyphen."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<https://example.org/ontology/use-case#> ga:pageSlug \"use-cases\" ."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+
 ga:sectionRole a owl:DatatypeProperty ;
     rdfs:label "Publication section role"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

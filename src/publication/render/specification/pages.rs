@@ -10,14 +10,18 @@ use {
         metadata,
         native,
         outline::{Outline, Toc, markdown_html},
+        route::{PageRoute, PageSlug},
     },
     crate::publication::{
         diagnostics::{Diagnostic, FailureMode, Severity},
         native_html::{self, Links},
     },
-    anyhow::{Result, ensure},
+    anyhow::{Context, Result, ensure},
     serde::Serialize,
-    std::{collections::HashMap, path::Path},
+    std::{
+        collections::{HashMap, hash_map},
+        path::Path,
+    },
     tokio::{
         fs::File,
         io::{AsyncWriteExt, BufWriter},
@@ -34,7 +38,7 @@ pub(in crate::publication::render) struct SearchEntry {
 }
 pub(in crate::publication::render) struct Page {
     pub(in crate::publication::render) title:  String,
-    pub(in crate::publication::render) route:  String,
+    pub(in crate::publication::render) route:  PageRoute,
     pub(in crate::publication::render) kind:   String,
     pub(in crate::publication::render) parent: Option<usize>,
     toc:                                       Toc,
@@ -84,8 +88,63 @@ impl Catalog {
         Ok(if page == current {
             format!("#{id}")
         } else {
-            format!("{}#{id}", self.pages[page].route)
+            format!(
+                "{}#{id}",
+                self.pages[page].route.href_from(&self.pages[current].route)
+            )
         })
+    }
+}
+
+/// The page slugs claimed so far, with the page that claimed each one.
+#[derive(Default)]
+struct Slugs(HashMap<PageSlug, String>);
+
+impl Slugs {
+    /// Claim the route of a new page: its placement's explicit
+    /// `ga:pageSlug`, otherwise its title. Explicit slugs are never
+    /// normalized; invalid values and collisions are errors.
+    async fn claim(&mut self, entry: &Entry, plan: &Plan) -> Result<PageRoute> {
+        let subjects = subjects(entry, plan).await?;
+        let owner = match subjects.as_slice() {
+            [subject] => format!("{} <{}>", entry.title, subject.as_str()),
+            _ => format!("{} <{}>", entry.title, entry.placement.as_str()),
+        };
+        let slug =
+            match plan.source.optional(&entry.placement, "pageSlug").await? {
+                Some(oxrdf::Term::Literal(slug)) => {
+                    PageSlug::try_new(slug.value()).with_context(|| {
+                        format!(
+                            "ga:pageSlug of the page for {owner} is invalid"
+                        )
+                    })?
+                },
+                None => {
+                    PageSlug::from_title(&entry.title).with_context(|| {
+                        format!("the page for {owner} needs a ga:pageSlug")
+                    })?
+                },
+                Some(_) => {
+                    anyhow::bail!(
+                        "ga:pageSlug of the page for {owner} must be a literal"
+                    )
+                },
+            };
+        match self.0.entry(slug) {
+            hash_map::Entry::Occupied(claimed) => {
+                anyhow::bail!(
+                    "page route {}/ of {owner} collides with {}; declare a \
+                     distinct ga:pageSlug",
+                    claimed.key(),
+                    claimed.get()
+                )
+            },
+            hash_map::Entry::Vacant(vacant) => {
+                let route = PageRoute::Page(vacant.key().clone());
+                vacant.insert(owner);
+                Ok(route)
+            },
+        }
     }
 }
 fn local_outline(home: bool) -> Outline {
@@ -123,7 +182,7 @@ pub(in crate::publication::render) async fn catalog(
     let mut catalog = Catalog {
         pages:      vec![Page {
             title:    plan.title.clone(),
-            route:    "index.html".into(),
+            route:    PageRoute::Home,
             kind:     "section".into(),
             parent:   None,
             toc:      Toc::new(),
@@ -139,6 +198,7 @@ pub(in crate::publication::render) async fn catalog(
     let mut page = 0;
     let mut first_section = false;
     let mut outline = Outline::default();
+    let mut slugs = Slugs::default();
     while let Some(entry) = entries.next(plan).await? {
         diagrams |=
             super::super::diagram_notes::contains(&entry.body, &entry.format);
@@ -152,20 +212,12 @@ pub(in crate::publication::render) async fn catalog(
                     );
                     page = catalog.pages.len();
                     let kind = kind(&entry, plan).await?;
+                    let route = slugs.claim(&entry, plan).await?;
                     catalog.pages.push(Page {
-                        title:    entry.title.clone(),
-                        route:    format!(
-                            "section-{}.html",
-                            crate::publication::dataset::identity("page", &[
-                                entry.placement.as_str()
-                            ])
-                            .as_str()
-                            .rsplit(':')
-                            .next()
-                            .unwrap()
-                        ),
-                        kind:     kind.into(),
-                        parent:   match plan
+                        title: entry.title.clone(),
+                        route,
+                        kind: kind.into(),
+                        parent: match plan
                             .source
                             .optional(&entry.placement, "parentPlacement")
                             .await?
@@ -186,7 +238,7 @@ pub(in crate::publication::render) async fn catalog(
                             None => None,
                             _ => anyhow::bail!("page parent must be an IRI"),
                         },
-                        toc:      Toc::new(),
+                        toc: Toc::new(),
                         contents: String::new(),
                     });
                     outline = local_outline(false);
@@ -204,7 +256,10 @@ pub(in crate::publication::render) async fn catalog(
             p.contents.push_str(&p.toc.entry(1, &id, &label)?);
             catalog.search.push(SearchEntry {
                 title:      entry.title.clone(),
-                href:       format!("{}#{id}", catalog.pages[page].route),
+                href:       format!(
+                    "{}#{id}",
+                    catalog.pages[page].route.path()
+                ),
                 kind:       catalog.pages[page].kind.clone(),
                 context:    plan.title.clone(),
                 identifier: subjects(&entry, plan)
@@ -251,7 +306,7 @@ pub(in crate::publication::render) async fn catalog(
             }
             catalog.search.push(SearchEntry {
                 title,
-                href: format!("{}#{id}", p.route),
+                href: format!("{}#{id}", p.route.path()),
                 kind: "section".into(),
                 context: p.title.clone(),
                 identifier: String::new(),
@@ -303,6 +358,18 @@ pub(in crate::publication::render) fn book_contents(
     catalog: &Catalog,
     members: &[usize],
 ) -> Result<String> {
+    // Book members are never the home page, so every member page shares one
+    // directory depth and therefore one valid set of relative links.
+    let from = members
+        .first()
+        .map(|i| &catalog.pages[*i].route)
+        .ok_or_else(|| anyhow::anyhow!("book has no member pages"))?;
+    ensure!(
+        members
+            .iter()
+            .all(|i| catalog.pages[*i].route.root() == from.root()),
+        "book member pages must share one directory depth"
+    );
     let mut html = String::from("<ol>");
     let has_ontology =
         members.iter().any(|i| catalog.pages[*i].kind != "module");
@@ -320,7 +387,10 @@ pub(in crate::publication::render) fn book_contents(
             })?;
         html.push_str(&entries.replace(
             "href=\"#",
-            &format!("href=\"{}#", html_escape(&page.route)),
+            &format!(
+                "href=\"{}#",
+                html_escape(&page.route.href_from(from))
+            ),
         ));
         ensure!(
             html.len() <= crate::publication::limits::REFERENCE_INDEX_BYTES,
@@ -333,7 +403,7 @@ pub(in crate::publication::render) fn book_contents(
 
 pub(in crate::publication::render) struct BookContext {
     pub title:    String,
-    pub route:    String,
+    pub route:    PageRoute,
     pub pdf:      Option<String>,
     pub contents: std::sync::Arc<String>,
     pub search:   String,
@@ -368,7 +438,7 @@ pub(in crate::publication::render) async fn write_catalog(
         .map(|p| {
             Navigation {
                 title:  &p.title,
-                href:   &p.route,
+                href:   p.route.path(),
                 parent: p.parent,
             }
         })
@@ -390,6 +460,7 @@ pub(in crate::publication::render) async fn write_catalog(
     let mut file: Option<BufWriter<File>> = None;
     let mut outline = Outline::default();
     let mut diagnostics = plan.quality.clone();
+    let mut root = "";
     while let Some(entry) = entries.next(plan).await? {
         let page = catalog.placements[entry.placement.as_str()];
         if books.is_some() && page == 0 {
@@ -409,27 +480,36 @@ pub(in crate::publication::render) async fn write_catalog(
                             .owners
                             .get(super::super::diagram_notes::ID)
                             .copied(),
+                    root,
                 )
                 .await?;
             }
             let p = &catalog.pages[page];
-            files.push(p.route.clone());
+            root = p.route.root();
+            let path = p.route.path();
+            if let Some(directory) = stage.join(&path).parent() {
+                tokio::fs::create_dir_all(directory).await?;
+            }
             let mut next =
-                BufWriter::new(File::create(stage.join(&p.route)).await?);
+                BufWriter::new(File::create(stage.join(&path)).await?);
+            files.push(path);
             let context = books.and_then(|books| books.get(&page));
             let book_breadcrumb = context
                 .filter(|b| b.route != p.route)
                 .map(|b| {
                     format!(
                         "<a href=\"{}\">{}</a> / ",
-                        html_escape(&b.route),
+                        html_escape(&b.route.href_from(&p.route)),
                         html_escape(&b.title)
                     )
                 })
                 .unwrap_or_default();
-            let search_index = context
-                .map(|b| b.search.as_str())
-                .unwrap_or("search-index.json");
+            let search_index = format!(
+                "{root}{}",
+                context
+                    .map(|b| b.search.as_str())
+                    .unwrap_or("search-index.json")
+            );
             let mut header_html = page_header(
                 &header.html,
                 &p.title,
@@ -479,13 +559,18 @@ pub(in crate::publication::render) async fn write_catalog(
                 }
             }
 
+            // Every root-relative reference of the shared header, such as a
+            // product logo or a book PDF, is rebased onto this page.
+            header_html = p.route.rebase_html(&header_html)?;
             let body_class = if home { " library-home" } else { "" };
             let bookshelf_link = if context.is_some() {
-                "<p><a href=\"index.html\">Back to bookshelf</a></p>".to_owned()
+                format!(
+                    "<p><a href=\"{root}index.html\">Back to bookshelf</a></p>"
+                )
             } else if page != 0 {
                 format!(
-                    "<p class=\"library-home-link\"><a href=\"index.html\">← \
-                     {overview_title}</a></p>"
+                    "<p class=\"library-home-link\"><a \
+                     href=\"{root}index.html\">← {overview_title}</a></p>"
                 )
             } else {
                 String::new()
@@ -502,13 +587,13 @@ pub(in crate::publication::render) async fn write_catalog(
                      content=\"width=device-width,initial-scale=1\"><meta \
                      name=\"grapharch-revision\" content=\"{}\"><title>{} · \
                      {}</title><link rel=\"stylesheet\" \
-                     href=\"style.css\"><link rel=\"icon\" \
+                     href=\"{root}style.css\"><link rel=\"icon\" \
                      href=\"data:,\"></head><body class=\"specification \
                      specification-pages{body_class}\" \
                      style=\"--authority-color:{}\"><a class=\"skip-link\" \
                      href=\"#document\">Skip to document</a><main \
                      id=\"document\"><p class=\"family-breadcrumb\"><a \
-                     href=\"index.html\">{}</a> / \
+                     href=\"{root}index.html\">{}</a> / \
                      {book_breadcrumb}{}</p>{header_html}<nav id=\"toc\" \
                      class=\"toc\" role=\"doc-toc\" \
                      aria-labelledby=\"toc-title\" \
@@ -617,6 +702,7 @@ pub(in crate::publication::render) async fn write_catalog(
             current == Some(0),
             current ==
                 catalog.owners.get(super::super::diagram_notes::ID).copied(),
+            root,
         )
         .await?;
     }
@@ -627,6 +713,7 @@ async fn end(
     plan: &Plan,
     home: bool,
     diagrams: bool,
+    root: &str,
 ) -> Result<()> {
     if home && !plan.quality.is_empty() {
         let title = super::super::content::quality_appendix_title(plan).await?;
@@ -639,7 +726,11 @@ async fn end(
         .await?;
     } else if !plan.quality.is_empty() {
         file.write_all(
-            b"<p><a href=\"index.html#quality-issues\">Quality issues</a></p>",
+            format!(
+                "<p><a href=\"{root}index.html#quality-issues\">Quality \
+                 issues</a></p>"
+            )
+            .as_bytes(),
         )
         .await?;
     }
@@ -651,7 +742,14 @@ async fn end(
             )
             .await?;
     } else {
-        file.write_all(b"<p><a href=\"index.html#document-provenance\">Document provenance</a></p>").await?;
+        file.write_all(
+            format!(
+                "<p><a href=\"{root}index.html#document-provenance\">Document \
+                 provenance</a></p>"
+            )
+            .as_bytes(),
+        )
+        .await?;
     }
     super::super::diagram_notes::append_html(file, diagrams).await?;
     file.write_all(
@@ -755,7 +853,7 @@ pub(super) async fn kind(entry: &Entry, plan: &Plan) -> Result<&'static str> {
 #[derive(Serialize)]
 struct Navigation<'a> {
     title:  &'a str,
-    href:   &'a str,
+    href:   String,
     parent: Option<usize>,
 }
 
@@ -788,24 +886,34 @@ pub(super) fn route_links(
     catalog: &Catalog,
     current: usize,
 ) -> Result<(String, Vec<(String, String)>)> {
-    // Parse one capped fragment. Mutate only actual HTML link attributes;
+    // Parse one capped fragment. Mutate only actual HTML URL attributes;
     // quoted source examples and code text must never be interpreted as links.
+    // Anchor links go to the page that owns the anchor; every other
+    // root-relative reference is rebased onto the current page.
+    let route = &catalog.pages[current].route;
     let mut document = scraper::Html::parse_fragment(html);
-    let selector = scraper::Selector::parse("a[href]").unwrap();
-    let nodes: Vec<_> = document.select(&selector).map(|a| a.id()).collect();
+    let selector = scraper::Selector::parse("[href],[src]").unwrap();
+    let nodes: Vec<_> = document.select(&selector).map(|a| a.id()).collect(); // bounded: one capped fragment.
     let mut errors = Vec::new();
     for id in nodes {
         let mut node = document.tree.get_mut(id).unwrap();
         let scraper::Node::Element(element) = node.value() else {
             unreachable!()
         };
+        let link = &*element.name.local == "a";
         for (name, value) in element.attrs.iter_mut() {
-            if &*name.local != "href" {
+            if !matches!(&*name.local, "href" | "src") {
                 continue;
             }
             let Some(anchor) = value.strip_prefix('#') else {
+                if let Some(rebased) = route.rebase(value)? {
+                    *value = rebased.into();
+                }
                 continue;
             };
+            if !link || &*name.local != "href" {
+                continue;
+            }
             match catalog.href(anchor, current) {
                 Ok(href) => *value = href.into(),
                 Err(error) => {

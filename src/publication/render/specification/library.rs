@@ -155,7 +155,7 @@ impl Home {
                     let page = &catalog.pages[*index];
                     html.push_str(&format!(
                         "<a href=\"{}\">{}</a>",
-                        html_escape(&page.route),
+                        html_escape(&page.route.path()),
                         html_escape(&page.title)
                     ));
                 }
@@ -173,7 +173,7 @@ impl Home {
                      id=\"ontology-card-title-{index}\">{}</h2>",
                     card.classes,
                     card.properties,
-                    html_escape(&page.route),
+                    html_escape(&page.route.path()),
                     html_escape(&page.title)
                 ));
                 if !card.summary.is_empty() {
@@ -203,7 +203,7 @@ impl Home {
         {
             html.push_str(&format!(
                 "<a href=\"{}\">{}</a>",
-                html_escape(&page.route),
+                html_escape(&page.route.path()),
                 html_escape(&page.title)
             ));
         }

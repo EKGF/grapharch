@@ -103,7 +103,7 @@ async fn books(plan: &Plan, catalog: &Catalog) -> Result<Vec<Book>> {
             id: subject.as_str().into(),
             plan: book.as_str().into(),
             title: catalog.pages[root].title.clone(),
-            html: catalog.pages[root].route.clone(),
+            html: catalog.pages[root].route.path(),
             source: format!("book-{hash}.typ"),
             pdf: None,
             status: "pending".into(),
@@ -332,7 +332,10 @@ pub(super) async fn write(
                 // reader resolves this relative link against the book's own
                 // location, wherever the bookshelf is deployed. The explicit
                 // ./ form is also a valid class diagram link.
-                Ok(format!("./{}#{id}", catalog.pages[page].route))
+                Ok(format!(
+                    "./{}#{id}",
+                    catalog.pages[page].route.path()
+                ))
             };
             for event in &mut markdown.events {
                 if let pulldown_cmark::Event::Start(
@@ -608,7 +611,7 @@ pub(super) async fn write(
             .iter()
             .flat_map(|p| {
                 search_by_page
-                    .get(catalog.pages[*p].route.as_str())
+                    .get(catalog.pages[*p].route.path().as_str())
                     .into_iter()
                     .flatten()
                     .copied()
@@ -626,7 +629,7 @@ pub(super) async fn write(
         for p in &b.members {
             contexts.insert(*p, BookContext {
                 title:    b.title.clone(),
-                route:    b.html.clone(),
+                route:    catalog.pages[b.root].route.clone(),
                 pdf:      b.pdf.clone(),
                 contents: contents.clone(),
                 search:   search.clone(),
@@ -697,7 +700,7 @@ async fn catalogue(
             let series = &catalog.pages[parent];
             html.push_str(&format!(
                 "<section class=\"book-shelf\"><h3><a href=\"{}\">{}</a></h3>",
-                html_escape(&series.route),
+                html_escape(&series.route.path()),
                 html_escape(&series.title)
             ));
         } else {
@@ -734,7 +737,7 @@ async fn catalogue(
         if !books.iter().any(|b| b.root == i) {
             html.push_str(&format!(
                 "<a href=\"{}\">{}</a>",
-                html_escape(&p.route),
+                html_escape(&p.route.path()),
                 html_escape(&p.title)
             ));
         }
@@ -773,7 +776,7 @@ async fn catalogue(
         if i != 0 {
             publication_details.push_str(&format!(
                 "<p><a href=\"{}\">{}</a></p>",
-                html_escape(&p.route),
+                html_escape(&p.route.path()),
                 html_escape(&p.title)
             ));
         }
