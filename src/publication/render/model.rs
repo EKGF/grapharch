@@ -30,6 +30,8 @@ pub(super) struct Plan {
     pub quality_evidence: super::quality::EvidenceIndex,
     pub quality:          Vec<crate::publication::diagnostics::Diagnostic>,
     pub provenance:       super::provenance::Provenance,
+    /// Entry files of the project's targets, for links by target IRI.
+    pub targets:          crate::publication::target_links::TargetLinks,
 }
 
 /// Per-book result carried with its parent's atomic publication manifest.
@@ -170,11 +172,19 @@ impl Plan {
             quality,
             quality_evidence,
             provenance: Default::default(),
+            targets: Default::default(),
         };
         plan.abbreviations = std::sync::Arc::new(
             super::abbreviations::Abbreviations::read(&plan).await?,
         );
         plan.provenance = super::provenance::Provenance::read(&plan).await?;
+        plan.targets = crate::publication::target_links::TargetLinks::read(
+            &plan.dataset,
+            &plan.source,
+            &plan.project,
+            &plan.target,
+        )
+        .await?;
         if plan.renderer != crate::publication::Renderer::Website {
             plan.index_links().await?;
         }
@@ -439,6 +449,10 @@ impl Plan {
                  {destination}"
             )
         })?;
+        // Specification, page and PDF content renders at the destination root.
+        if let Some(href) = self.targets.resolve(iri.as_str(), "index.html")? {
+            return Ok(href);
+        }
         if let Some(anchor) = self.link_index.get(&iri) {
             return Ok(anchor.clone());
         }

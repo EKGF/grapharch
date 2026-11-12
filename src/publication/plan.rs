@@ -667,11 +667,19 @@ impl TargetPlanner {
                 }
                 let other = destination_path(view, peer).await?;
                 ensure!(
-                    !destination.starts_with(&other) &&
-                        !other.starts_with(&destination),
-                    "targets {target} and {peer} have overlapping output \
-                     destinations; explicit composition is required"
+                    other != destination,
+                    "targets {target} and {peer} share the output destination \
+                     {}",
+                    destination.display()
                 );
+                if other.starts_with(&destination) {
+                    ensure!(
+                        constraints::contains(view, target, peer).await?,
+                        "targets {target} and {peer} have overlapping output \
+                         destinations; explicit composition is required: \
+                         declare {target} ga:containsTarget {peer}"
+                    );
+                }
             }
         }
         Ok(())

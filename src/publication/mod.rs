@@ -36,6 +36,7 @@ mod showcases_mkdocs;
 mod showcases_revision;
 mod showcases_semantic;
 mod table_subject;
+mod target_links;
 mod temporal;
 mod theme;
 mod validation;

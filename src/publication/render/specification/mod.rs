@@ -102,9 +102,11 @@ pub(super) async fn write(
             .await?;
         }
         let body = if entry.format == "text/html" {
-            native_html::read(&entry.body, Links::Publication, &mut |depth| {
-                outline.heading_number(depth)
-            })?
+            native_html::read(
+                &entry.body,
+                Links::Publication(&plan.targets),
+                &mut |depth| outline.heading_number(depth),
+            )?
             .html
         } else if let Some(markdown) = markdown(&entry, plan, &anchor).await? {
             markdown_html(&markdown, &mut outline)?
@@ -234,7 +236,7 @@ async fn toc(
         if entry.format == "text/html" {
             let fragment = native_html::read(
                 &entry.body,
-                Links::Publication,
+                Links::Publication(&plan.targets),
                 &mut |_| Ok(None),
             )?;
             for id in fragment.ids {

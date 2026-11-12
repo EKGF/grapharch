@@ -108,8 +108,8 @@ fn repository(root: &Path, site: Site) -> Result<String> {
     )?;
     std::fs::write(
         source.join("publication/site/guide.md"),
-        "---\ntitle: Guide\n---\n# Guide\n\nWebsite page from the \
-         repository.\n",
+        "---\ntitle: Guide\n---\n# Guide\n\nWebsite page from the repository. \
+         Open the [reference](urn:example:spec).\n",
     )?;
     Ok(family_repository::bare_copy(&source, &root.join("remote"))?.0)
 }
@@ -318,5 +318,21 @@ async fn family_showcase_builds_a_website_from_the_declared_page_source()
         .map(|file| std::fs::read_to_string(site.directory.join(file)))
         .collect::<std::io::Result<String>>()?;
     assert!(pages.contains("Website page from the repository."));
+    // A target IRI resolves from the page to the target's entry file.
+    let guide = site
+        .manifest
+        .files
+        .iter()
+        .find(|file| file.ends_with("index.html") && file.contains('/'))
+        .expect("the guide page");
+    let depth = guide.matches('/').count();
+    let guide = std::fs::read_to_string(site.directory.join(guide))?;
+    assert!(
+        guide.contains(&format!(
+            "href=\"{}spec/main/index.html\"",
+            "../".repeat(depth + 1)
+        )),
+        "{guide}"
+    );
     Ok(())
 }

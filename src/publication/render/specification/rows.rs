@@ -77,10 +77,11 @@ pub(in crate::publication::render) async fn read(
             );
             // Relative links name artifacts beside this publication. They stay
             // relative to the page; ga:thisVersion is not their base.
-            let fragment =
-                native_html::read(&body, Links::Publication, &mut |_| {
-                    Ok(None)
-                })?;
+            let fragment = native_html::read(
+                &body,
+                Links::Publication(&plan.targets),
+                &mut |_| Ok(None),
+            )?;
             ensure!(
                 fragment.ids.is_empty() && fragment.headings.is_empty(),
                 "metadata rows cannot introduce document anchors or headings"

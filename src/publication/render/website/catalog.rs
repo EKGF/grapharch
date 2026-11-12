@@ -43,6 +43,8 @@ pub(super) struct Catalog {
     pub references: HashMap<(String, String), (String, String, Option<String>)>,
     pub presentations:    HashSet<(String, String)>,
     pub projections:      HashMap<String, super::interactive_svg::Projection>,
+    /// Entry files of the project's targets, for links by target IRI.
+    pub targets:          crate::publication::target_links::TargetLinks,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -58,6 +60,7 @@ impl Catalog {
             references:       HashMap::new(),
             presentations:    HashSet::new(),
             projections:      HashMap::new(),
+            targets:          plan.targets.clone(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;

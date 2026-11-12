@@ -303,6 +303,8 @@ ga:SourceExclusionsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePa
     sh:property [ sh:path ga:excludeSourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] .
 
 
+ga:ContainsTargetShape a sh:NodeShape ; sh:targetSubjectsOf ga:containsTarget ;
+    sh:property [ sh:path ga:containsTarget ; sh:nodeKind sh:IRI ; sh:class ga:Target ; sh:maxCount 64 ] .
 ga:DocumentationGraphPathShape a sh:NodeShape ; sh:targetSubjectsOf ga:documentationGraphPath ;
     sh:property [ sh:path ga:documentationGraphPath ; sh:datatype xsd:string ; sh:minLength 4 ; sh:maxLength 1024 ; sh:maxCount 1 ;
         sh:pattern "^[^/\\\\.][^\\\\]*\\.nq$" ] .

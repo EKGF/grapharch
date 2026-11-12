@@ -24,6 +24,7 @@ mod markdown_html;
 mod markup;
 mod model;
 mod native_typst;
+mod nested;
 mod notices;
 mod pdf_download;
 mod pdf_standard;
@@ -238,6 +239,7 @@ impl Publisher {
             destination.clone(),
             ticket.clone(),
             self.coordination.clone(),
+            plan.targets.nested().to_vec(),
         )
         .await?
         {
@@ -392,6 +394,7 @@ impl Publisher {
                 destination.clone(),
                 ticket,
                 self.coordination.clone(),
+                plan.targets.nested().to_vec(),
             )
             .await?
             {
