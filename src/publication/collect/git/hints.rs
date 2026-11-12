@@ -243,11 +243,16 @@ impl PublicationHints {
                 continue;
             }
             let used = self.profile(target)?;
+            // A family renderer with its own family profile receives its own
+            // bindings; any other target must share the family profile.
             ensure!(
-                used == profile,
+                used == profile ||
+                    (self.binds_family(target)? &&
+                        self.families.contains(used.as_str())),
                 "target {target} uses profile {used}, not the family profile \
-                 {profile}; a family build publishes only targets of the \
-                 family profile, so select the family targets explicitly"
+                 {profile}; a family build publishes the family profiles' \
+                 targets and websites only, so select the family targets \
+                 explicitly"
             );
         }
         Ok(FamilyTargets::new(selected, primary))

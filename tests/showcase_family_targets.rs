@@ -336,3 +336,54 @@ async fn family_showcase_builds_a_website_from_the_declared_page_source()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn a_pdf_edition_with_its_own_family_profile_is_bound_too() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("source");
+    std::fs::create_dir_all(source.join("publication"))?;
+    std::fs::write(source.join("ontology.ttl"), ONTOLOGY)?;
+    let review = "ga:profile <urn:example:profile>;\n ga:renderer \
+                  ga:SpecificationRenderer; ga:destination \"review\";";
+    let hints = hints(Site::Absent);
+    assert_eq!(hints.matches(review).count(), 1, "{hints}");
+    let hints = hints.replace(
+        review,
+        "ga:profile <urn:example:pdf-profile>;\n ga:renderer \
+         ga:TypstRenderer; ga:destination \"review\";",
+    );
+    assert!(hints.contains("ga:TypstRenderer"), "{hints}");
+    std::fs::write(
+        source.join("publication/grapharch.ttl"),
+        format!(
+            "{hints}\n<urn:example:pdf-profile> a \
+             <https://ekgf.org/ontology/grapharch#Profile>; \
+             <https://ekgf.org/ontology/artifact-publication#publishesFamily> \
+             <urn:example:family>; \
+             <https://ekgf.org/ontology/grapharch#style> \"specification\" .\n"
+        ),
+    )?;
+    let url =
+        family_repository::bare_copy(&source, &root.path().join("remote"))?.0;
+    let config = showcase(root.path(), &url, None)?;
+    let (dataset, plans) =
+        showcases::family(&config, &root.path().join("cache")).await?;
+    let output = root.path().join("output");
+    std::fs::create_dir(&output)?;
+    let output = output.canonicalize()?;
+    let publisher = Publisher::new(dataset);
+    for plan in &plans {
+        let PublishOutcome::Published(_) =
+            publisher.render(plan, &output).await?
+        else {
+            panic!("expected a publication")
+        };
+    }
+    assert!(output.join("review/document.pdf").is_file());
+    assert!(
+        !output.join("review/index.html").exists(),
+        "a PDF-only edition"
+    );
+    Ok(())
+}
