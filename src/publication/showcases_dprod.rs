@@ -5,7 +5,11 @@ use {
         assembly::Assembler,
         collect::{Collector, MarkdownFile, RdfFile, collect_all},
         dataset::Dataset,
-        document::{AnnotatedTermDocumentor, Documentor},
+        document::{
+            AnnotatedTermDocumentor,
+            Documentor,
+            namespace_bindings::NamespaceBindings,
+        },
         plan::{ResolvedPlan, TargetPlanner},
         term,
         view::RevisionView,
@@ -195,41 +199,13 @@ async fn assemble(
         },
         Authored::Fixture(_) => view.clone(),
     };
-    let prefixes = BTreeMap::from([
-        (ontology.into(), "dprod".into()),
-        (shapes.into(), "dprod-shapes".into()),
-        (
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#".into(),
-            "rdf".into(),
-        ),
-        (
-            "http://www.w3.org/2000/01/rdf-schema#".into(),
-            "rdfs".into(),
-        ),
-        (
-            "http://www.w3.org/2001/XMLSchema#".into(),
-            "xsd".into(),
-        ),
-        (
-            "http://www.w3.org/2002/07/owl#".into(),
-            "owl".into(),
-        ),
-        (
-            "http://www.w3.org/2004/02/skos/core#".into(),
-            "skos".into(),
-        ),
-        ("http://www.w3.org/ns/shacl#".into(), "sh".into()),
-        ("http://www.w3.org/ns/dcat#".into(), "dcat".into()),
-        ("http://www.w3.org/ns/prov#".into(), "prov".into()),
-        ("http://purl.org/dc/terms/".into(), "dct".into()),
-        (
-            "http://www.w3.org/ns/odrl/2/".into(),
-            "odrl".into(),
-        ),
-    ]);
     let prefixes = Arc::new(
-        super::document::namespace_bindings::read(dataset, &view, prefixes)
-            .await?,
+        NamespaceBindings::well_known()
+            .with_default(ontology, "dprod")
+            .with_default(shapes, "dprod-shapes")
+            .read_declarations(dataset, &view)
+            .await?
+            .into_map(),
     );
     let mut groups = Vec::new();
     let mut known = HashSet::new();

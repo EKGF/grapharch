@@ -1,5 +1,10 @@
 use {
-    crate::publication::{RDF_TYPE, dataset::identity, term},
+    crate::publication::{
+        RDF_TYPE,
+        dataset::identity,
+        document::namespace_bindings::NamespaceBindings,
+        term,
+    },
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
 };
 
@@ -52,53 +57,28 @@ pub(super) fn placement(
     ));
 }
 
+/// Display bindings for one ontology specification: the well-known
+/// vocabularies, the artifact-governance vocabulary its metadata uses, and the
+/// ontology's own preferred namespace, which outranks both.
 pub(super) fn prefixes(
-    namespace: &[String],
-) -> std::sync::Arc<std::collections::BTreeMap<String, String>> {
-    std::sync::Arc::new(std::collections::BTreeMap::from([
-        (
-            "https://ekgf.org/ontology/artifact-governance#".into(),
-            "artgov".into(),
-        ),
-        (
-            "https://www.omg.org/spec/Commons/PartiesAndSituations/".into(),
-            "cmns-pts".into(),
-        ),
-        (
-            "https://www.omg.org/spec/Commons/RolesAndCompositions/".into(),
-            "cmns-rlcmp".into(),
-        ),
-        (namespace[0].clone(), namespace[1].clone()),
-        (
-            "http://www.w3.org/2002/07/owl#".into(),
-            "owl".into(),
-        ),
-        (
-            "http://www.w3.org/2000/01/rdf-schema#".into(),
-            "rdfs".into(),
-        ),
-        (
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#".into(),
-            "rdf".into(),
-        ),
-        (
-            "http://www.w3.org/2001/XMLSchema#".into(),
-            "xsd".into(),
-        ),
-        ("http://purl.org/dc/terms/".into(), "dct".into()),
-        ("http://www.w3.org/ns/prov#".into(), "prov".into()),
-        (
-            "http://www.w3.org/2004/02/skos/core#".into(),
-            "skos".into(),
-        ),
-    ]))
+    namespace: &str,
+    prefix: &str,
+) -> anyhow::Result<NamespaceBindings> {
+    let mut bindings = NamespaceBindings::well_known().with_default(
+        "https://ekgf.org/ontology/artifact-governance#",
+        "artgov",
+    );
+    bindings.declare(namespace, prefix)?;
+    Ok(bindings)
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn reused_commons_role_terms_have_readable_identifiers() {
-        let prefixes = super::prefixes(&["urn:example:".into(), "ex".into()]);
+        let prefixes = super::prefixes("urn:example:", "ex")
+            .expect("valid declaration")
+            .into_map();
         assert_eq!(
             prefixes
                 .get("https://www.omg.org/spec/Commons/RolesAndCompositions/"),

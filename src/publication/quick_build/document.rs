@@ -3,7 +3,11 @@ use {
     crate::publication::{
         collect::Collector,
         dataset::{Dataset, Stage, identity},
-        document::{AnnotatedTermDocumentor, Documentor},
+        document::{
+            AnnotatedTermDocumentor,
+            Documentor,
+            namespace_bindings::NamespaceBindings,
+        },
         term,
         view::RevisionView,
         writer::GraphWriter,
@@ -159,29 +163,12 @@ pub(super) async fn rdf_pages(
         }
     }
     let known = Arc::new(known);
-    let prefixes = Arc::new(BTreeMap::from([
-        (
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#".into(),
-            "rdf".into(),
-        ),
-        (
-            "http://www.w3.org/2000/01/rdf-schema#".into(),
-            "rdfs".into(),
-        ),
-        (
-            "http://www.w3.org/2002/07/owl#".into(),
-            "owl".into(),
-        ),
-        (
-            "http://www.w3.org/2001/XMLSchema#".into(),
-            "xsd".into(),
-        ),
-        ("http://www.w3.org/ns/shacl#".into(), "sh".into()),
-        (
-            "http://www.w3.org/2004/02/skos/core#".into(),
-            "skos".into(),
-        ),
-    ]));
+    let prefixes = Arc::new(
+        NamespaceBindings::well_known()
+            .read_declarations(dataset, &view)
+            .await?
+            .into_map(),
+    );
     let diagram_renderer = Arc::new(
         crate::publication::document::plantuml::LocalRenderer::new(
             std::ffi::OsStr::new("plantuml"),

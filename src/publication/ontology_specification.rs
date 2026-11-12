@@ -124,7 +124,12 @@ async fn build(
         };
         namespace_values.push(value.value().to_owned());
     }
-    let prefixes = structure::prefixes(&namespace_values);
+    let prefixes = Arc::new(
+        structure::prefixes(&namespace_values[0], &namespace_values[1])?
+            .read_declarations(dataset, &source_view)
+            .await?
+            .into_map(),
+    );
     let mut groups = Vec::new();
     let mut known = HashSet::new(); // bounded: coordinated resource and identity-byte budgets.
     let mut identity_bytes = 0usize;

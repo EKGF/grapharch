@@ -131,6 +131,14 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             ));
                             continue;
                         }
+                        if crate::publication::temporal::lexical(dest_url)
+                            .is_some()
+                        {
+                            // The display text renders every lexical
+                            // component of the date or date-time.
+                            output.push_str("#text[");
+                            continue;
+                        }
                         if let Some(label) =
                             crate::publication::anchor::label(dest_url)
                         {

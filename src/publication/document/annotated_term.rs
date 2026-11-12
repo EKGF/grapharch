@@ -327,7 +327,7 @@ impl AnnotatedTermDocumentor {
                     ))
                 },
                 Term::NamedNode(iri) => Ok(code(&self.compact(iri))),
-                Term::Literal(value) => Ok(escape(value.value())),
+                Term::Literal(value) => literal_value(value),
                 _ => anyhow::bail!("unsupported source RDF value"),
             }
         })
@@ -575,7 +575,7 @@ impl Documentor for AnnotatedTermDocumentor {
                             } else {
                                 String::new()
                             };
-                        format!("{}{}", escape(value.value()), suffix)
+                        format!("{}{}", literal_value(value)?, suffix)
                     },
                     Term::BlankNode(_) => {
                         self.union(&view, predicate, value, &mut references)
@@ -688,16 +688,7 @@ impl Documentor for AnnotatedTermDocumentor {
             distinct_definitions.insert(definition.clone())
         });
         let definition_text = match markdown {
-            Some(body) => {
-                super::description::nested(
-                    &body,
-                    self.arrangement
-                        .depth
-                        .unwrap_or(if self.family_reference { 2 } else { 1 })
-                        as usize +
-                        2,
-                )?
-            },
+            Some(body) => super::run_in_headings::run_in(&body)?,
             None => {
                 definitions
                     .iter()
@@ -1032,6 +1023,18 @@ impl Documentor for AnnotatedTermDocumentor {
         stream.complete().await?;
         Ok(())
     }
+}
+/// A literal's Markdown value: typed dates and date-times read as dates,
+/// keeping their exact lexical form; every other literal stays verbatim.
+fn literal_value(value: &oxrdf::Literal) -> Result<String> {
+    Ok(
+        match crate::publication::temporal::TemporalLiteral::from_literal(
+            value,
+        )? {
+            Some(temporal) => temporal.markdown(),
+            None => escape(value.value()),
+        },
+    )
 }
 pub(super) fn escape(text: &str) -> String {
     let mut result = String::new();
