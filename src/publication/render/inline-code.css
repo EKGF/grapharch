@@ -1,0 +1,6 @@
+/* Inline code is one token across HTML renderers: it moves to the next line
+   whole instead of breaking at punctuation such as the `?` of `?customer`.
+   Only a token wider than its line wraps inside. Inline blocks do not inherit
+   a link's underline, so a linked token takes it explicitly. */
+:not(pre)>code{display:inline-block;max-inline-size:100%;overflow-wrap:anywhere}
+a code{text-decoration:inherit}
