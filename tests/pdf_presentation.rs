@@ -308,7 +308,7 @@ async fn long_authority_and_status_fit_the_pdf_ribbon() -> Result<()> {
         "#let ga-ribbon = \"{authority} {status}\""
     )));
     assert!(
-        typst.contains("(ribbon-height - 12mm) / ribbon-measure"),
+        typst.contains("(ribbon-height - 2 * ribbon-padding) / ribbon-measure"),
         "ribbon text must fit its available measure without truncating \
          metadata"
     );
