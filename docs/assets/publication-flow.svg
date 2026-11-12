@@ -2,9 +2,9 @@
   <title id="flow-title">GraphArch collects documentable things and renders publications</title>
   <desc id="flow-description">Collectors gather documentable things, such as ontologies, taxonomies, use cases, datasets, shapes, Markdown, PlantUML diagrams, code examples, images, Git history, W3C specifications, MkDocs sites, SPARQL endpoints, data contracts, spreadsheets, OpenAPI descriptions, glossaries, and business capabilities into the GraphArch knowledge graph. Renderers turn that graph into static outputs such as a documentation website, a specification website, PDF, Excel, Word documents, reports, slide decks, a bookshelf, dashboards, EPUB, data catalogs, release notes, diagrams, and search indexes.</desc>
   <style>
-    svg { --accent: #404db5; --ink: #333338; --muted: #62626d; --warm: #b04800; --node: #ff6f00; --halo: #404db5; }
+    svg { color-scheme: light; --accent: #404db5; --ink: #333338; --muted: #62626d; --warm: #b04800; --node: #ff6f00; --halo: #404db5; }
     @media (prefers-color-scheme: dark) {
-      svg { --accent: #a8b2ff; --ink: #e4e4e7; --muted: #b4b4bf; --warm: #ffad66; --node: #ffad66; --halo: #a8b2ff; }
+      svg { color-scheme: dark; --accent: #a8b2ff; --ink: #e4e4e7; --muted: #b4b4bf; --warm: #ffad66; --node: #ffad66; --halo: #a8b2ff; }
     }
     text { font-family: Roboto, "Helvetica Neue", Arial, Helvetica, sans-serif; text-anchor: middle; }
     .hero { fill: var(--accent); font-weight: 700; }
@@ -22,7 +22,7 @@
     .ring-dashed { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .5; }
     .caption-title { fill: var(--accent); font-weight: 700; font-size: 28px; }
     .caption-text { fill: var(--muted); font-weight: 400; font-size: 21px; }
-    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
     a:hover .caption-title { text-decoration: underline; }
   </style>
   <defs>

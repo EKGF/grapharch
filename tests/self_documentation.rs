@@ -175,7 +175,8 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         illustration.descendants().any(|node| {
             node.has_tag_name("style") &&
                 node.text().is_some_and(|css| {
-                    css.contains("prefers-color-scheme: dark")
+                    css.contains("prefers-color-scheme: dark") &&
+                        css.contains("color-scheme: dark;")
                 })
         }),
         "homepage illustration must follow the selected color scheme"
