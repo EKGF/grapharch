@@ -135,13 +135,16 @@
       place(bottom + left, rect(width: 100%, height: 3mm, fill: ga-accent, stroke: none))
     }
     if ga-ribbon != none {
+      // Like the website's .authority-banner, the label reads bottom to top
+      // and ends a fixed padding below the ribbon's top end (website: 1.5rem
+      // at a 0.875rem label, about 1.7em; 6mm at the 9pt label).
+      let ribbon-padding = 6mm
       let ribbon-measure = measure(text(size: 9pt, weight: "bold", ga-ribbon)).width
-      let ribbon-height = calc.min(160mm, calc.max(82mm, ribbon-measure + 12mm))
-      place(top + left, block(width: 8mm, height: ribbon-height, fill: ga-accent)[
-        #place(center + horizon, rotate(-90deg, reflow: true)[
-          #text(size: calc.min(9pt, (ribbon-height - 12mm) / ribbon-measure * 9pt), fill: white, weight: "bold")[#text(ga-ribbon)]
-        ])
-      ])
+      let ribbon-height = calc.min(160mm, calc.max(82mm, ribbon-measure + 2 * ribbon-padding))
+      place(top + left, block(width: 8mm, height: ribbon-height, inset: (y: ribbon-padding), fill: ga-accent,
+        align(top + center, rotate(-90deg, reflow: true)[
+          #text(size: calc.min(9pt, (ribbon-height - 2 * ribbon-padding) / ribbon-measure * 9pt), fill: white, weight: "bold")[#text(ga-ribbon)]
+        ])))
     }
   },
   header: context {

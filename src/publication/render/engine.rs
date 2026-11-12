@@ -174,6 +174,9 @@ pub(super) async fn compile_file(
 }
 
 #[cfg(test)]
+mod ribbon_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     #[tokio::test]
