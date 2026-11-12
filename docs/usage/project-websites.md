@@ -8,7 +8,7 @@ grapharch:
 ---
 # Project websites from Markdown
 
-A website profile can select `ga:style "ekgf-project"` to publish a project
+A website profile can select `ga:theme ga:EkgfProjectTheme` to publish a project
 landing site with the EKGF identity, without documentation sidebars. The regular
 `"ekgf"` style remains appropriate for documentation with a navigation rail.
 Both styles generate static HTML, CSS, local fonts, and small navigation scripts;
@@ -16,7 +16,7 @@ there is no application framework or Node.js runtime in the published artifact.
 
 ```turtle
 <urn:example:profile> a ga:Profile ;
-    ga:style "ekgf-project" ;
+    ga:theme ga:EkgfProjectTheme ;
     ga:headerLink <urn:example:specification> .
 <urn:example:specification> dct:title "Specification" ;
     ga:url "spec/" ; ga:order 1 .

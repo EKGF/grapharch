@@ -25,7 +25,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
 @prefix doap: <http://usefulinc.com/ns/doap#> .
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 <urn:project> a ga:Project; dct:title "Project"; ga:scope <urn:scope>; ga:target <urn:target> .
-<urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "ekgf-project" .
+<urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:theme ga:EkgfProjectTheme .
 <urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:inventory-job> a ga:DocumentorUse; ga:project <urn:project>; ga:documentorType ga:PublicationInventoryDocumentor; ga:subject <urn:inventory>; ga:fragment <urn:versions-page>; ga:route "spec-versions/"; ga:sourcePath "spec-versions.md"; ga:navigationOrder 6; dct:title "Specification versions" .
 <urn:inventory> dct:modified "2026-11-02T15:00:00Z"; dct:hasPart <urn:main>,<urn:develop>,<urn:preview>,<urn:hidden> .

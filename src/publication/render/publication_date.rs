@@ -49,6 +49,11 @@ impl PublicationDate {
         self.0.format("%-d %B %Y").to_string()
     }
 
+    /// The English month and year, for example `October 2026`.
+    pub(super) fn month_year(self) -> String {
+        self.0.format("%B %Y").to_string()
+    }
+
     /// A Typst `datetime` value for document metadata.
     pub(super) fn typst(self) -> String {
         format!(

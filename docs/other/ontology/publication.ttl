@@ -893,24 +893,6 @@ ga:stage a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     skos:scopeNote "Current contribution stage values are collect, document, and plan. Assembly and rendering have separate revision and job records."@en .
 
-ga:style a owl:DatatypeProperty ;
-    rdfs:label "Publication presentation style"@en ;
-    skos:scopeNote "For companion websites, reader retains the default presentation and ekgf selects the EKGF identity, colors and bundled font. This choice does not change specification authority branding. PDF profiles accept reader, specification, overview, or omg; omg selects restrained submission typography and does not confer approval or fabricate publication metadata."@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Records the Publication presentation style requested by a publication target or retained in its plan."@en ;
-    dct:description "Records the Publication presentation style requested by a publication target or retained in its plan."@en ;
-    rdfs:domain rdfs:Resource ;
-    rdfs:range xsd:string .
-
-ga:preamble a owl:ObjectProperty ;
-    rdfs:label "Legal preamble"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Links a publication target to its complete legal-notices fragment, displayed as a disclosure in specification HTML and as dedicated PDF front matter."@en ;
-    dct:description "Links a publication target to its complete legal-notices fragment, displayed as a disclosure in specification HTML and as dedicated PDF front matter."@en ;
-    rdfs:comment "The linked fragment supplies its own title, body, source provenance, and HTML or Markdown format. Legal wording is retained as source content, independently of renderer styling."@en ;
-    rdfs:domain ga:Target ;
-    rdfs:range ga:Fragment .
-
 ga:sectionKind a owl:DatatypeProperty ;
     rdfs:label "Publication section kind"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
@@ -2069,3 +2051,1120 @@ ga:definedTermsOnly a owl:DatatypeProperty ;
     dct:description "Restricts a reference section to terms that declare rdfs:isDefinedBy a collected owl:Ontology, excluding local declarations of imported vocabulary terms."@en ;
     rdfs:domain ga:ReferenceSection ;
     rdfs:range xsd:boolean .
+
+
+
+
+
+
+# House-style themes. Tokens are declarative; the renderer validates them and maps them to Typst.
+ga:Theme a owl:Class ;
+    rdfs:label "Theme"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An IRI-identified publication house style whose declarative tokens set page geometry, typography, tables, numbering, contents, notices and cover layout."@en ;
+    dct:description "An IRI-identified publication house style whose declarative tokens set page geometry, typography, tables, numbering, contents, notices and cover layout."@en .
+
+ga:theme a owl:ObjectProperty ;
+    rdfs:label "Theme"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the house style of the publications that use a profile; without it renderers use their catalogue default theme."@en ;
+    dct:description "Selects the house style of the publications that use a profile; without it renderers use their catalogue default theme."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:Theme .
+
+ga:baseTheme a owl:ObjectProperty ;
+    rdfs:label "Base theme"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the theme whose tokens this theme inherits; a declared token overrides the inherited value and every chain ends at a catalogue theme."@en ;
+    dct:description "Names the theme whose tokens this theme inherits; a declared token overrides the inherited value and every chain ends at a catalogue theme."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range ga:Theme .
+
+ga:paper a owl:DatatypeProperty ;
+    rdfs:label "Paper"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF page size; the value is a3, a4, a5, us-letter or us-legal."@en ;
+    dct:description "Specifies the PDF page size; the value is a3, a4, a5, us-letter or us-legal."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:marginTop a owl:DatatypeProperty ;
+    rdfs:label "Margin top"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the top page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the top page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:marginBottom a owl:DatatypeProperty ;
+    rdfs:label "Margin bottom"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the bottom page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the bottom page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:marginLeft a owl:DatatypeProperty ;
+    rdfs:label "Margin left"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the left page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the left page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:marginRight a owl:DatatypeProperty ;
+    rdfs:label "Margin right"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the right page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the right page margin; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:footerDescent a owl:DatatypeProperty ;
+    rdfs:label "Footer descent"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the distance of the footer below the text area; the value is a length or a percentage."@en ;
+    dct:description "Specifies the distance of the footer below the text area; the value is a length or a percentage."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:coverBands a owl:DatatypeProperty ;
+    rdfs:label "Cover bands"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether the cover shows decorative side and bottom accent bands."@en ;
+    dct:description "Specifies whether the cover shows decorative side and bottom accent bands."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:statusRibbon a owl:DatatypeProperty ;
+    rdfs:label "Status ribbon"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether pages carry a vertical status ribbon."@en ;
+    dct:description "Specifies whether pages carry a vertical status ribbon."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:runningHeader a owl:DatatypeProperty ;
+    rdfs:label "Running header"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether pages after the cover carry a running header with publisher and chapter."@en ;
+    dct:description "Specifies whether pages after the cover carry a running header with publisher and chapter."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:accent a owl:DatatypeProperty ;
+    rdfs:label "Accent"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the theme accent colour used when the authority supplies none; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the theme accent colour used when the authority supplies none; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:authorityAccent a owl:DatatypeProperty ;
+    rdfs:label "Authority accent"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether the publishing authority's accent colour replaces the theme accent."@en ;
+    dct:description "Specifies whether the publishing authority's accent colour replaces the theme accent."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:inkColor a owl:DatatypeProperty ;
+    rdfs:label "Ink color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the body text colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the body text colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:mutedColor a owl:DatatypeProperty ;
+    rdfs:label "Muted color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of secondary text; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the colour of secondary text; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:ruleColor a owl:DatatypeProperty ;
+    rdfs:label "Rule color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of thin rules and borders; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the colour of thin rules and borders; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:panelColor a owl:DatatypeProperty ;
+    rdfs:label "Panel color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the background colour of quotations and cover panels; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the background colour of quotations and cover panels; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:headingColor a owl:DatatypeProperty ;
+    rdfs:label "Heading color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the heading text colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the heading text colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:linkColor a owl:DatatypeProperty ;
+    rdfs:label "Link color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of hyperlinks; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the colour of hyperlinks; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:linkUnderline a owl:DatatypeProperty ;
+    rdfs:label "Link underline"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether hyperlinks are underlined."@en ;
+    dct:description "Specifies whether hyperlinks are underlined."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:bodyFont a owl:DatatypeProperty ;
+    rdfs:label "Body font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the body text font family; the value is an embedded font family name."@en ;
+    dct:description "Specifies the body text font family; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:bodySize a owl:DatatypeProperty ;
+    rdfs:label "Body size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the body text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the body text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:justify a owl:DatatypeProperty ;
+    rdfs:label "Justify"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether body paragraphs are justified."@en ;
+    dct:description "Specifies whether body paragraphs are justified."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:hyphenate a owl:DatatypeProperty ;
+    rdfs:label "Hyphenate"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether body text is hyphenated."@en ;
+    dct:description "Specifies whether body text is hyphenated."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:leading a owl:DatatypeProperty ;
+    rdfs:label "Leading"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the line spacing within paragraphs; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the line spacing within paragraphs; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:paragraphSpacing a owl:DatatypeProperty ;
+    rdfs:label "Paragraph spacing"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the space between paragraphs; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the space between paragraphs; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:headingFont a owl:DatatypeProperty ;
+    rdfs:label "Heading font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the heading font family; the value is an embedded font family name."@en ;
+    dct:description "Specifies the heading font family; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:numberHeadings a owl:DatatypeProperty ;
+    rdfs:label "Number headings"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether chapter and section headings are numbered."@en ;
+    dct:description "Specifies whether chapter and section headings are numbered."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:headingNumberGap a owl:DatatypeProperty ;
+    rdfs:label "Heading number gap"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the fixed width of the heading number column; when absent the number and title are separated by a space; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the fixed width of the heading number column; when absent the number and title are separated by a space; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:chapterPageBreak a owl:DatatypeProperty ;
+    rdfs:label "Chapter page break"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether each top-level chapter starts on a new page."@en ;
+    dct:description "Specifies whether each top-level chapter starts on a new page."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:heading1Size a owl:DatatypeProperty ;
+    rdfs:label "Heading 1 size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of chapter headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of chapter headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:heading1Weight a owl:DatatypeProperty ;
+    rdfs:label "Heading 1 weight"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the weight of chapter headings; the value is regular, medium, semibold or bold."@en ;
+    dct:description "Specifies the weight of chapter headings; the value is regular, medium, semibold or bold."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:heading2Size a owl:DatatypeProperty ;
+    rdfs:label "Heading 2 size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of second-level headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of second-level headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:heading2Weight a owl:DatatypeProperty ;
+    rdfs:label "Heading 2 weight"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the weight of second-level headings; the value is regular, medium, semibold or bold."@en ;
+    dct:description "Specifies the weight of second-level headings; the value is regular, medium, semibold or bold."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:heading3Size a owl:DatatypeProperty ;
+    rdfs:label "Heading 3 size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of third-level headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of third-level headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:heading4Size a owl:DatatypeProperty ;
+    rdfs:label "Heading 4 size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of fourth-level headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of fourth-level headings; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tableTextSize a owl:DatatypeProperty ;
+    rdfs:label "Table text size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the text size in tables; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the text size in tables; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tableHeaderFill a owl:DatatypeProperty ;
+    rdfs:label "Table header fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the fill colour of table header rows; the value is a #RRGGBB colour, accent, accent-tint, or none."@en ;
+    dct:description "Specifies the fill colour of table header rows; the value is a #RRGGBB colour, accent, accent-tint, or none."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tableHeaderText a owl:DatatypeProperty ;
+    rdfs:label "Table header text"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the text colour of table header rows; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the text colour of table header rows; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tableGrid a owl:DatatypeProperty ;
+    rdfs:label "Table grid"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether tables have a full grid rather than horizontal rules."@en ;
+    dct:description "Specifies whether tables have a full grid rather than horizontal rules."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:tableRuleColor a owl:DatatypeProperty ;
+    rdfs:label "Table rule color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of table rules; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the colour of table rules; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:captionFont a owl:DatatypeProperty ;
+    rdfs:label "Caption font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the caption font family; the value is an embedded font family name."@en ;
+    dct:description "Specifies the caption font family; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:captionSize a owl:DatatypeProperty ;
+    rdfs:label "Caption size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the caption text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the caption text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:captionBold a owl:DatatypeProperty ;
+    rdfs:label "Caption bold"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether figure and table captions are set in bold."@en ;
+    dct:description "Specifies whether figure and table captions are set in bold."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:tableCaptionAbove a owl:DatatypeProperty ;
+    rdfs:label "Table caption above"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether table captions are placed above their tables."@en ;
+    dct:description "Specifies whether table captions are placed above their tables."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:codeFont a owl:DatatypeProperty ;
+    rdfs:label "Code font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the font family for code; the value is an embedded font family name."@en ;
+    dct:description "Specifies the font family for code; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:codeSize a owl:DatatypeProperty ;
+    rdfs:label "Code size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the code text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the code text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:codeFill a owl:DatatypeProperty ;
+    rdfs:label "Code fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the background colour of code blocks; the value is a #RRGGBB colour, accent, accent-tint, or none."@en ;
+    dct:description "Specifies the background colour of code blocks; the value is a #RRGGBB colour, accent, accent-tint, or none."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:codeRuleColor a owl:DatatypeProperty ;
+    rdfs:label "Code rule color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of the rule beside code blocks; the value is a #RRGGBB colour, accent, accent-tint, or none."@en ;
+    dct:description "Specifies the colour of the rule beside code blocks; the value is a #RRGGBB colour, accent, accent-tint, or none."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:codeHighlight a owl:DatatypeProperty ;
+    rdfs:label "Code highlight"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether code keeps its syntax colours."@en ;
+    dct:description "Specifies whether code keeps its syntax colours."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:codeInset a owl:DatatypeProperty ;
+    rdfs:label "Code inset"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the horizontal inset of code blocks; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the horizontal inset of code blocks; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:quoteRuleColor a owl:DatatypeProperty ;
+    rdfs:label "Quote rule color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of the rule beside block quotations; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the colour of the rule beside block quotations; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:quoteTextSize a owl:DatatypeProperty ;
+    rdfs:label "Quote text size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the text size of block quotations; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the text size of block quotations; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:quoteInsetX a owl:DatatypeProperty ;
+    rdfs:label "Quote inset x"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the horizontal inset of block quotations; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the horizontal inset of block quotations; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:quoteInsetY a owl:DatatypeProperty ;
+    rdfs:label "Quote inset y"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the vertical inset of block quotations; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the vertical inset of block quotations; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tintedCallouts a owl:DatatypeProperty ;
+    rdfs:label "Tinted callouts"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether callouts and examples use tinted backgrounds rather than plain borders."@en ;
+    dct:description "Specifies whether callouts and examples use tinted backgrounds rather than plain borders."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:footerFont a owl:DatatypeProperty ;
+    rdfs:label "Footer font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the footer font family; the value is an embedded font family name."@en ;
+    dct:description "Specifies the footer font family; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:footerSize a owl:DatatypeProperty ;
+    rdfs:label "Footer size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the footer text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the footer text size; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:footerColor a owl:DatatypeProperty ;
+    rdfs:label "Footer color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the footer text colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the footer text colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:footerRule a owl:DatatypeProperty ;
+    rdfs:label "Footer rule"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a rule separates the footer from the text."@en ;
+    dct:description "Specifies whether a rule separates the footer from the text."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:footerShowsText a owl:DatatypeProperty ;
+    rdfs:label "Footer shows text"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether the footer shows the target's footer text, or else its title."@en ;
+    dct:description "Specifies whether the footer shows the target's footer text, or else its title."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:pageNumberColor a owl:DatatypeProperty ;
+    rdfs:label "Page number color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the page number colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    dct:description "Specifies the page number colour; the value is a #RRGGBB colour, accent for the resolved accent, or accent-tint for a light tint of it."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:pageNumberBold a owl:DatatypeProperty ;
+    rdfs:label "Page number bold"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether footer page numbers are set in bold."@en ;
+    dct:description "Specifies whether footer page numbers are set in bold."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:pageOfTotal a owl:DatatypeProperty ;
+    rdfs:label "Page of total"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether page numbers show the total page count."@en ;
+    dct:description "Specifies whether page numbers show the total page count."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:outerPageNumber a owl:DatatypeProperty ;
+    rdfs:label "Outer page number"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether page numbers sit on the outer edge, left on even and right on odd pages."@en ;
+    dct:description "Specifies whether page numbers sit on the outer edge, left on even and right on odd pages."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:frontNumbering a owl:DatatypeProperty ;
+    rdfs:label "Front numbering"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the page numbering of the cover and front matter; the cover counts as the first page and shows no number; the value is a page numbering pattern: 1, i, I, a or A."@en ;
+    dct:description "Specifies the page numbering of the cover and front matter; the cover counts as the first page and shows no number; the value is a page numbering pattern: 1, i, I, a or A."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:bodyNumbering a owl:DatatypeProperty ;
+    rdfs:label "Body numbering"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the page numbering restarted at one at the first numbered chapter; the value is a page numbering pattern: 1, i, I, a or A."@en ;
+    dct:description "Specifies the page numbering restarted at one at the first numbered chapter; the value is a page numbering pattern: 1, i, I, a or A."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tocTitle a owl:DatatypeProperty ;
+    rdfs:label "Toc title"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the title of the table of contents; the value is nonempty text."@en ;
+    dct:description "Specifies the title of the table of contents; the value is nonempty text."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tocTitleAlign a owl:DatatypeProperty ;
+    rdfs:label "Toc title align"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the alignment of the contents title; the value is left, center or right."@en ;
+    dct:description "Specifies the alignment of the contents title; the value is left, center or right."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tocTitleSize a owl:DatatypeProperty ;
+    rdfs:label "Toc title size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of the contents title; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of the contents title; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tocTitleFont a owl:DatatypeProperty ;
+    rdfs:label "Toc title font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the font family of the contents title; the value is an embedded font family name."@en ;
+    dct:description "Specifies the font family of the contents title; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tocFont a owl:DatatypeProperty ;
+    rdfs:label "Toc font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the font family of contents entries; the value is an embedded font family name."@en ;
+    dct:description "Specifies the font family of contents entries; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:tocEntrySize a owl:DatatypeProperty ;
+    rdfs:label "Toc entry size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of top-level contents entries; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of top-level contents entries; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:contentsDepth a owl:DatatypeProperty ;
+    rdfs:label "Contents depth"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the heading depth listed in the contents unless the target or profile declares ga:tocDepth."@en ;
+    dct:description "Specifies the heading depth listed in the contents unless the target or profile declares ga:tocDepth."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:integer .
+
+ga:annexLabel a owl:DatatypeProperty ;
+    rdfs:label "Annex label"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the heading pattern of top-level appendices, such as Annex {letter}: {title}; when absent appendices are numbered A, B; the value is text containing the {letter} and {title} placeholders."@en ;
+    dct:description "Specifies the heading pattern of top-level appendices, such as Annex {letter}: {title}; when absent appendices are numbered A, B; the value is text containing the {letter} and {title} placeholders."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:annexNormativity a owl:DatatypeProperty ;
+    rdfs:label "Annex normativity"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether appendix headings show the placement's ga:normativity line."@en ;
+    dct:description "Specifies whether appendix headings show the placement's ga:normativity line."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:annexCentered a owl:DatatypeProperty ;
+    rdfs:label "Annex centered"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether appendix headings are centred."@en ;
+    dct:description "Specifies whether appendix headings are centred."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:annexRectoStart a owl:DatatypeProperty ;
+    rdfs:label "Annex recto start"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether each appendix starts on an odd page, with ga:blankPageText on any inserted page."@en ;
+    dct:description "Specifies whether each appendix starts on an odd page, with ga:blankPageText on any inserted page."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:blankPageText a owl:DatatypeProperty ;
+    rdfs:label "Blank page text"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the text on a page left blank before a recto appendix; the value is nonempty text."@en ;
+    dct:description "Specifies the text on a page left blank before a recto appendix; the value is nonempty text."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeFont a owl:DatatypeProperty ;
+    rdfs:label "Notice font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the font family of front-matter notices; the value is an embedded font family name."@en ;
+    dct:description "Specifies the font family of front-matter notices; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeSize a owl:DatatypeProperty ;
+    rdfs:label "Notice size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the text size of front-matter notices; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the text size of front-matter notices; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeJustify a owl:DatatypeProperty ;
+    rdfs:label "Notice justify"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether notice paragraphs are justified."@en ;
+    dct:description "Specifies whether notice paragraphs are justified."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:noticeTitleFont a owl:DatatypeProperty ;
+    rdfs:label "Notice title font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the font family of notice titles; the value is an embedded font family name."@en ;
+    dct:description "Specifies the font family of notice titles; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeTitleSize a owl:DatatypeProperty ;
+    rdfs:label "Notice title size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of notice titles; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of notice titles; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeTitleRule a owl:DatatypeProperty ;
+    rdfs:label "Notice title rule"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a notice title is set as a large ruled title rather than as a notice heading."@en ;
+    dct:description "Specifies whether a notice title is set as a large ruled title rather than as a notice heading."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:noticeHeadingFont a owl:DatatypeProperty ;
+    rdfs:label "Notice heading font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the font family of headings within notices; the value is an embedded font family name."@en ;
+    dct:description "Specifies the font family of headings within notices; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeHeadingSize a owl:DatatypeProperty ;
+    rdfs:label "Notice heading size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the size of headings within notices; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    dct:description "Specifies the size of headings within notices; the value is a length with a pt, mm, cm, in or em unit."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeHeadingAlign a owl:DatatypeProperty ;
+    rdfs:label "Notice heading align"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the alignment of headings within notices; the value is left, center or right."@en ;
+    dct:description "Specifies the alignment of headings within notices; the value is left, center or right."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:noticeHeadingUppercase a owl:DatatypeProperty ;
+    rdfs:label "Notice heading uppercase"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether headings within notices are upper-cased."@en ;
+    dct:description "Specifies whether headings within notices are upper-cased."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:coverFont a owl:DatatypeProperty ;
+    rdfs:label "Cover font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the default font family on the cover; the value is an embedded font family name."@en ;
+    dct:description "Specifies the default font family on the cover; the value is an embedded font family name."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:specificationCover a owl:DatatypeProperty ;
+    rdfs:label "Specification cover"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a status-bearing target shows specification metadata in the cover summary."@en ;
+    dct:description "Specifies whether a status-bearing target shows specification metadata in the cover summary."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
+
+ga:CoverBlock a owl:Class ;
+    rdfs:label "Cover block"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "One ordered block of a theme cover, placing one element of the target publication identity with declared presentation values."@en ;
+    dct:description "One ordered block of a theme cover, placing one element of the target publication identity with declared presentation values."@en .
+
+ga:CoverElement a owl:Class ;
+    rdfs:label "Cover element"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The kind of target identity value, rule or space that a cover block places on the cover."@en ;
+    dct:description "The kind of target identity value, rule or space that a cover block places on the cover."@en .
+
+ga:CoverSpace a ga:CoverElement ;
+    rdfs:label "Cover space"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Vertical space of the block ga:space, placed by a cover block."@en ;
+    dct:description "Vertical space of the block ga:space, placed by a cover block."@en .
+
+ga:CoverPublisher a ga:CoverElement ;
+    rdfs:label "Cover publisher"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The publishing authority name, placed by a cover block."@en ;
+    dct:description "The publishing authority name, placed by a cover block."@en .
+
+ga:CoverLogo a ga:CoverElement ;
+    rdfs:label "Cover logo"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The publishing authority ga:logo at the block height, placed by a cover block."@en ;
+    dct:description "The publishing authority ga:logo at the block height, placed by a cover block."@en .
+
+ga:CoverDate a ga:CoverElement ;
+    rdfs:label "Cover date"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The target ga:publicationDate in the block date format, placed by a cover block."@en ;
+    dct:description "The target ga:publicationDate in the block date format, placed by a cover block."@en .
+
+ga:CoverTitle a ga:CoverElement ;
+    rdfs:label "Cover title"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The document title, placed by a cover block."@en ;
+    dct:description "The document title, placed by a cover block."@en .
+
+ga:CoverSubtitle a ga:CoverElement ;
+    rdfs:label "Cover subtitle"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The target ga:subtitle when one is declared, placed by a cover block."@en ;
+    dct:description "The target ga:subtitle when one is declared, placed by a cover block."@en .
+
+ga:CoverVersion a ga:CoverElement ;
+    rdfs:label "Cover version"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The target ga:releaseVersion inserted into the block text pattern, placed by a cover block."@en ;
+    dct:description "The target ga:releaseVersion inserted into the block text pattern, placed by a cover block."@en .
+
+ga:CoverRule a ga:CoverElement ;
+    rdfs:label "Cover rule"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A horizontal rule with the block stroke, colour and width, placed by a cover block."@en ;
+    dct:description "A horizontal rule with the block stroke, colour and width, placed by a cover block."@en .
+
+ga:CoverBar a ga:CoverElement ;
+    rdfs:label "Cover bar"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A short filled bar with the block width, height and colour, placed by a cover block."@en ;
+    dct:description "A short filled bar with the block width, height and colour, placed by a cover block."@en .
+
+ga:CoverRows a ga:CoverElement ;
+    rdfs:label "Cover rows"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The ordered ga:metadataRow labels and values of the target, placed by a cover block."@en ;
+    dct:description "The ordered ga:metadataRow labels and values of the target, placed by a cover block."@en .
+
+ga:CoverSummary a ga:CoverElement ;
+    rdfs:label "Cover summary"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The renderer publication summary of status, release and description, placed by a cover block."@en ;
+    dct:description "The renderer publication summary of status, release and description, placed by a cover block."@en .
+
+ga:CoverText a ga:CoverElement ;
+    rdfs:label "Cover text"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Fixed text supplied by the theme in ga:coverText, placed by a cover block."@en ;
+    dct:description "Fixed text supplied by the theme in ga:coverText, placed by a cover block."@en .
+
+ga:DateFormat a owl:Class ;
+    rdfs:label "Date format"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A way of writing a publication date on a cover, such as month and year."@en ;
+    dct:description "A way of writing a publication date on a cover, such as month and year."@en .
+
+ga:MonthYearDate a ga:DateFormat ;
+    rdfs:label "Month and year"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Writes a date as its English month and year, for example March 2026."@en ;
+    dct:description "Writes a date as its English month and year, for example March 2026."@en .
+
+ga:DayMonthYearDate a ga:DateFormat ;
+    rdfs:label "Day, month and year"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Writes a date as day, English month and year, for example 31 March 2026."@en ;
+    dct:description "Writes a date as day, English month and year, for example 31 March 2026."@en .
+
+ga:IsoDate a ga:DateFormat ;
+    rdfs:label "ISO date"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Writes a date in the ISO 8601 calendar form YYYY-MM-DD, for example 2026-03-31."@en ;
+    dct:description "Writes a date in the ISO 8601 calendar form YYYY-MM-DD, for example 2026-03-31."@en .
+
+ga:coverBlock a owl:ObjectProperty ;
+    rdfs:label "Cover block"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds an ordered block to a theme cover; the most specific theme declaring cover blocks supplies the whole cover."@en ;
+    dct:description "Adds an ordered block to a theme cover; the most specific theme declaring cover blocks supplies the whole cover."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range ga:CoverBlock .
+
+ga:coverElement a owl:ObjectProperty ;
+    rdfs:label "Cover element"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the target identity value, rule or space placed by a cover block."@en ;
+    dct:description "Names the target identity value, rule or space placed by a cover block."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range ga:CoverElement .
+
+ga:dateFormat a owl:ObjectProperty ;
+    rdfs:label "Date format"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects how a cover date block writes the target publication date."@en ;
+    dct:description "Selects how a cover date block writes the target publication date."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range ga:DateFormat .
+
+ga:fontSize a owl:DatatypeProperty ;
+    rdfs:label "Font size"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the text size of a cover block as a length with a unit."@en ;
+    dct:description "Specifies the text size of a cover block as a length with a unit."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:fontWeight a owl:DatatypeProperty ;
+    rdfs:label "Font weight"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the weight of cover block text: regular, medium, semibold or bold."@en ;
+    dct:description "Specifies the weight of cover block text: regular, medium, semibold or bold."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:italic a owl:DatatypeProperty ;
+    rdfs:label "Italic"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether the text of a cover block is set in italics."@en ;
+    dct:description "Specifies whether the text of a cover block is set in italics."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:boolean .
+
+ga:alignment a owl:DatatypeProperty ;
+    rdfs:label "Alignment"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the horizontal alignment of a cover block: left, center or right."@en ;
+    dct:description "Specifies the horizontal alignment of a cover block: left, center or right."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:color a owl:DatatypeProperty ;
+    rdfs:label "Color"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the colour of a cover block as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the colour of a cover block as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:fontFamily a owl:DatatypeProperty ;
+    rdfs:label "Font family"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the embedded font family of a cover block, overriding the theme cover font."@en ;
+    dct:description "Specifies the embedded font family of a cover block, overriding the theme cover font."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:tracking a owl:DatatypeProperty ;
+    rdfs:label "Tracking"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the letter spacing of cover block text as a length with a unit."@en ;
+    dct:description "Specifies the letter spacing of cover block text as a length with a unit."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:width a owl:DatatypeProperty ;
+    rdfs:label "Width"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the width of a cover rule or bar as a length or percentage."@en ;
+    dct:description "Specifies the width of a cover rule or bar as a length or percentage."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:height a owl:DatatypeProperty ;
+    rdfs:label "Height"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the height of a cover logo or bar as a length with a unit."@en ;
+    dct:description "Specifies the height of a cover logo or bar as a length with a unit."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:stroke a owl:DatatypeProperty ;
+    rdfs:label "Stroke"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the line thickness of a cover rule as a length with a unit."@en ;
+    dct:description "Specifies the line thickness of a cover rule as a length with a unit."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:space a owl:DatatypeProperty ;
+    rdfs:label "Space"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the vertical extent of a cover space block as a length or a fraction such as 1fr."@en ;
+    dct:description "Specifies the vertical extent of a cover space block as a length or a fraction such as 1fr."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:panel a owl:DatatypeProperty ;
+    rdfs:label "Panel"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether the cover summary is set in a tinted panel."@en ;
+    dct:description "Specifies whether the cover summary is set in a tinted panel."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:boolean .
+
+ga:coverText a owl:DatatypeProperty ;
+    rdfs:label "Cover text"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Supplies the fixed text placed by a cover text block."@en ;
+    dct:description "Supplies the fixed text placed by a cover text block."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:textPattern a owl:DatatypeProperty ;
+    rdfs:label "Text pattern"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Supplies the text of a cover version block; {version} is replaced by the target release version."@en ;
+    dct:description "Supplies the text of a cover version block; {version} is replaced by the target release version."@en ;
+    rdfs:domain ga:CoverBlock ;
+    rdfs:range xsd:string .
+
+ga:Notice a owl:Class ;
+    rdfs:label "Notice"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An ordered front-matter notice of a publication target: either a source fragment or a list of copyright holders."@en ;
+    dct:description "An ordered front-matter notice of a publication target: either a source fragment or a list of copyright holders."@en .
+
+ga:CopyrightHolder a owl:Class ;
+    rdfs:label "Copyright holder"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An ordered copyright holder of a publication, written as Copyright © years, name."@en ;
+    dct:description "An ordered copyright holder of a publication, written as Copyright © years, name."@en .
+
+ga:notice a owl:ObjectProperty ;
+    rdfs:label "Notice"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds an ordered front-matter notice to a target, shown before the contents in PDF and as disclosures in specification HTML."@en ;
+    dct:description "Adds an ordered front-matter notice to a target, shown before the contents in PDF and as disclosures in specification HTML."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:Notice .
+
+ga:copyrightHolder a owl:ObjectProperty ;
+    rdfs:label "Copyright holder"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds an ordered copyright holder to a copyright notice."@en ;
+    dct:description "Adds an ordered copyright holder to a copyright notice."@en ;
+    rdfs:domain ga:Notice ;
+    rdfs:range ga:CopyrightHolder .
+
+ga:holderName a owl:DatatypeProperty ;
+    rdfs:label "Holder name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the name of a copyright holder exactly as it appears in the notice."@en ;
+    dct:description "Records the name of a copyright holder exactly as it appears in the notice."@en ;
+    rdfs:domain ga:CopyrightHolder ;
+    rdfs:range xsd:string .
+
+ga:copyrightYears a owl:DatatypeProperty ;
+    rdfs:label "Copyright years"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the years of a copyright holder, such as 2024-2025, as they appear in the notice."@en ;
+    dct:description "Records the years of a copyright holder, such as 2024-2025, as they appear in the notice."@en ;
+    rdfs:domain ga:CopyrightHolder ;
+    rdfs:range xsd:string .
+
+ga:footerText a owl:DatatypeProperty ;
+    rdfs:label "Footer text"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Supplies the page footer text of a PDF target when its theme shows footer text; without it the title is shown."@en ;
+    dct:description "Supplies the page footer text of a PDF target when its theme shows footer text; without it the title is shown."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:string .
+
+ga:normativity a owl:DatatypeProperty ;
+    rdfs:label "Normativity"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records whether an appendix placement is normative or informative, shown beneath an annex heading when the theme asks for it."@en ;
+    dct:description "Records whether an appendix placement is normative or informative, shown beneath an annex heading when the theme asks for it."@en ;
+    rdfs:domain ga:Placement ;
+    rdfs:range xsd:string .
+
+ga:requiredMetadataField a owl:DatatypeProperty ;
+    rdfs:label "Required metadata field"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names a ga:field that every target of the profile must present in an ordered metadata row, such as thisVersion."@en ;
+    dct:description "Names a ga:field that every target of the profile must present in an ordered metadata row, such as thisVersion."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:string .
+
+ga:w3cFrontMatter a owl:DatatypeProperty ;
+    rdfs:label "W 3c front matter"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether publications of the profile follow the W3C convention of Abstract and Status of This Document before the numbered sections, which family publications then generate from the target description and comment; defaults to true."@en ;
+    dct:description "Specifies whether publications of the profile follow the W3C convention of Abstract and Status of This Document before the numbered sections, which family publications then generate from the target description and comment; defaults to true."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:familyOverview a owl:DatatypeProperty ;
+    rdfs:label "Family overview"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a family PDF includes the generated overview chapter listing the member ontologies; defaults to true, and the HTML reference keeps it."@en ;
+    dct:description "Specifies whether a family PDF includes the generated overview chapter listing the member ontologies; defaults to true, and the HTML reference keeps it."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:coverageAppendix a owl:DatatypeProperty ;
+    rdfs:label "Coverage appendix"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a family PDF includes the generated documentation coverage appendix; defaults to true, and the HTML reference keeps it."@en ;
+    dct:description "Specifies whether a family PDF includes the generated documentation coverage appendix; defaults to true, and the HTML reference keeps it."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:qualityAppendix a owl:DatatypeProperty ;
+    rdfs:label "Quality appendix"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a PDF includes inline quality warnings and the quality issues appendix; defaults to true, and findings stay in the KG."@en ;
+    dct:description "Specifies whether a PDF includes inline quality warnings and the quality issues appendix; defaults to true, and findings stay in the KG."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:diagramNote a owl:DatatypeProperty ;
+    rdfs:label "Diagram note"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a PDF includes diagram note references and the diagram interpretation note; defaults to true."@en ;
+    dct:description "Specifies whether a PDF includes diagram note references and the diagram interpretation note; defaults to true."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:familyPlacement a owl:ObjectProperty ;
+    rdfs:label "Family placement"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names an authored placement under which the generated family chapters are nested, so authored clauses can precede them."@en ;
+    dct:description "Names an authored placement under which the generated family chapters are nested, so authored clauses can precede them."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:Placement .
+
+ga:familyOverviewOrder a owl:DatatypeProperty ;
+    rdfs:label "Family overview order"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies a top-level placement order for the generated family overview, which is then not nested under ga:familyPlacement."@en ;
+    dct:description "Specifies a top-level placement order for the generated family overview, which is then not nested under ga:familyPlacement."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:integer .
+
+ga:familyBaseOrder a owl:DatatypeProperty ;
+    rdfs:label "Family base order"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the placement order of the first generated family part when chapters are nested under ga:familyPlacement."@en ;
+    dct:description "Specifies the placement order of the first generated family part when chapters are nested under ga:familyPlacement."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:integer .
+

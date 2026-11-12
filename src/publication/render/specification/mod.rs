@@ -1,6 +1,6 @@
 //! Standards-style HTML. Content and publication identity come from the pinned
 //! graph; this renderer owns document structure, numbering and presentation.
-mod authority;
+pub(in crate::publication::render) mod authority;
 mod config;
 mod library;
 pub(in crate::publication::render) mod metadata;
@@ -8,7 +8,7 @@ mod native;
 mod outline;
 pub(super) mod pages;
 pub(super) mod route;
-mod rows;
+pub(in crate::publication::render) mod rows;
 
 use {
     super::{
@@ -61,7 +61,8 @@ pub(super) async fn write(
         .await?;
     let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
-    let mut outline = Outline::default();
+    let mut outline =
+        Outline::document(plan.profile_flag("w3cFrontMatter").await?);
     let mut open = false;
     let mut navigation = false;
     let mut diagnostics = Vec::new();
@@ -186,7 +187,8 @@ async fn toc(
     file.write_all(include_str!("navigation.html").as_bytes())
         .await?;
     let mut entries = Entries::new(plan).await?;
-    let mut outline = Outline::default();
+    let mut outline =
+        Outline::document(plan.profile_flag("w3cFrontMatter").await?);
     let mut toc = Toc::new();
     let front_matter = config::flag(plan, "tocFrontMatter").await?;
     let toc_depth = plan.toc_depth().await?.unwrap_or(usize::MAX);

@@ -17,8 +17,8 @@ pub(super) fn reference_html() -> &'static str {
      href=\"#grapharch-diagram-note\">[1]</a></sup>"
 }
 pub(super) fn reference_typst() -> &'static str {
-    "#align(right)[#text(size: \
-     7pt)[#link(label(\"grapharch-diagram-note\"))[Diagram note]]]\n"
+    "#if ga-diagram-note [#align(right)[#text(size: \
+     7pt)[#link(label(\"grapharch-diagram-note\"))[Diagram note]]]]\n"
 }
 pub(super) fn html() -> String {
     format!(

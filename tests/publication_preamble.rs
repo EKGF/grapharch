@@ -36,7 +36,7 @@ async fn preamble_collector_extracts_only_legal_content_and_rejects_executable_m
     assert!(
         view.objects_by(
             &oxrdf::NamedNode::new("urn:legal:target")?,
-            &grapharch::publication::term("preamble"),
+            &grapharch::publication::term("notice"),
         )
         .await?
         .next()
@@ -57,31 +57,77 @@ async fn preamble_collector_extracts_only_legal_content_and_rejects_executable_m
 }
 
 #[tokio::test]
-async fn legal_preamble_survives_source_removal_and_has_distinct_html_and_pdf_layouts()
+async fn legal_notice_survives_source_removal_and_has_distinct_html_and_pdf_layouts()
 -> anyhow::Result<()> {
-    verify_preamble("specification", "LibertinusSerif").await
+    verify_notices("ga:SpecificationTheme", "LibertinusSerif", "").await
 }
 
 #[tokio::test]
-async fn omg_legal_preamble_retains_its_source_and_embeds_the_formal_serif_font()
+async fn consumer_theme_notices_retain_their_source_and_embed_the_formal_serif_font()
 -> anyhow::Result<()> {
-    verify_preamble("omg", "LiberationSerif").await
+    verify_notices(
+        "<urn:example:submission-theme:theme>",
+        "LiberationSerif",
+        include_str!("fixtures/submission-theme.ttl"),
+    )
+    .await
 }
 
-async fn verify_preamble(
-    style: &str,
-    embedded_font: &str,
-) -> anyhow::Result<()> {
+#[tokio::test]
+async fn ordered_notices_put_copyright_holders_first_without_a_fixed_banner()
+-> anyhow::Result<()> {
+    let typst = render_notices(
+        "ga:SpecificationTheme",
+        "",
+        r#"
+<urn:specification:target> ga:notice <urn:example:holders> .
+<urn:example:holders> ga:order 1 ;
+    ga:copyrightHolder <urn:example:second>, <urn:example:first> .
+<urn:example:first> ga:order 1 ; ga:holderName "Adaptive Analytics, Inc." ; ga:copyrightYears "2024-2025" .
+<urn:example:second> ga:order 2 ; ga:holderName "Object Management Group, Inc." ; ga:copyrightYears "2022-2026" .
+"#,
+    )
+    .await?
+    .1;
+    let first = typst
+        .find("Copyright © 2024-2025, Adaptive Analytics, Inc.")
+        .expect("first holder");
+    let second = typst
+        .find("Copyright © 2022-2026, Object Management Group, Inc.")
+        .expect("second holder");
+    let terms = typst.find("Legal notices").expect("legal notice title");
+    assert!(
+        first < second && second < terms,
+        "notices follow ga:order"
+    );
+    assert!(
+        !typst.contains("LEGAL NOTICES"),
+        "no engine-supplied banner"
+    );
+    assert!(
+        typst.find("#ga-notices[").unwrap() < typst.find("#outline(").unwrap()
+    );
+    Ok(())
+}
+
+async fn render_notices(
+    theme: &str,
+    theme_definitions: &str,
+    extra: &str,
+) -> anyhow::Result<(String, String, Vec<u8>, String)> {
     let temp = tempfile::tempdir()?;
     let path = temp.path().join("project.ttl");
     let mut source =
         tokio::fs::read_to_string("examples/specification/project.ttl").await?;
     source.push_str(r#"
-<urn:specification:target> ga:preamble <urn:example:legal> .
+<urn:specification:target> ga:notice <urn:example:legal-notice> .
+<urn:example:legal-notice> ga:order 2 ; ga:fragment <urn:example:legal> .
 <urn:example:legal> a ga:Fragment ; ga:subject ex:subject ; ga:contribution ex:authored ; dct:title "Legal notices" ;
     ga:format "text/html" ; ga:body "<h2>Copyright and permissions</h2><p>Copyright © 2026 Example Authority.</p><h2>Terms of use</h2><p>Permission is granted subject to the complete terms in this notice.</p><h2>Warranty</h2><p>This specification is provided AS IS.</p>" .
 "#);
-    source.push_str(&format!("\nex:profile ga:style \"{style}\" .\n"));
+    source.push_str(extra);
+    source.push_str(theme_definitions);
+    source.push_str(&format!("\nex:profile ga:theme {theme} .\n"));
     tokio::fs::write(&path, source).await?;
     let (dataset, plans) = showcases::specification(&path).await?;
     let archive = temp.path().join("graph.nq");
@@ -95,24 +141,34 @@ async fn verify_preamble(
     else {
         panic!("publication required")
     };
-    let html =
-        tokio::fs::read_to_string(publication.directory.join("index.html"))
-            .await?;
+    let read = |name: &str| publication.directory.join(name);
+    Ok((
+        tokio::fs::read_to_string(read("index.html")).await?,
+        tokio::fs::read_to_string(read("main.typ")).await?,
+        tokio::fs::read(read("document.pdf")).await?,
+        tokio::fs::read_to_string(read("style.css")).await?,
+    ))
+}
+
+async fn verify_notices(
+    theme: &str,
+    embedded_font: &str,
+    theme_definitions: &str,
+) -> anyhow::Result<()> {
+    let (html, typst, pdf, css) =
+        render_notices(theme, theme_definitions, "").await?;
     let document = scraper::Html::parse_document(&html);
     let selector =
         scraper::Selector::parse("details.publication-preamble").unwrap();
     let panel = document
         .select(&selector)
         .next()
-        .expect("preamble must be an accessible disclosure");
+        .expect("notice must be an accessible disclosure");
     assert!(
         panel.value().attr("open").is_none(),
         "legal panel is collapsed by default"
     );
     assert!(panel.text().collect::<String>().contains("provided AS IS"));
-    let css =
-        tokio::fs::read_to_string(publication.directory.join("style.css"))
-            .await?;
     assert!(
         css.contains(".publication-preamble>summary"),
         "legal disclosure needs its own visual treatment"
@@ -120,44 +176,28 @@ async fn verify_preamble(
     assert!(css.contains(
         ".legal-content :is(p,li){text-align:justify;text-align-last:left}"
     ));
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
-    assert!(typst.contains("#let ga-legal-notices"));
-    assert!(typst.contains(&format!("#let ga-style = \"{style}\"")));
+    assert!(typst.contains("#ga-notice-title[#text(\"Legal notices\")]"));
+    assert!(!typst.contains("LEGAL NOTICES"));
     assert!(
         typst.contains(
-            r#"set text(font: if ga-omg { "Liberation Serif" } else { "Libertinus Serif" }, size: 9pt, fill: ga-muted)"#
+            "#ga-notice-heading(ga-theme.notice_heading_size)[#text(\"Terms \
+             of use\")]"
         ),
-        "legal fine print must have distinct readable typography"
+        "notice headings take the theme's notice heading style"
     );
     assert!(
-        typst.contains("#text(font: \"Liberation Sans\", size: 8.5pt"),
-        "legal section labels remain distinct from legal body text"
+        typst.contains(
+            "#[\n#show heading: set text(font: ga-theme.toc_title_font"
+        )
     );
-    assert!(typst.contains("set par(justify: true"));
     assert!(
-        typst.find("#ga-legal-notices[").unwrap() <
-            typst.find("#outline(").unwrap()
+        typst.find("#ga-notices[").unwrap() < typst.find("#outline(").unwrap()
     );
     assert!(typst.contains("provided AS IS"));
-    let pdf =
-        tokio::fs::read(publication.directory.join("document.pdf")).await?;
     assert!(pdf.starts_with(b"%PDF-"));
     assert!(
         String::from_utf8_lossy(&pdf).contains(embedded_font),
-        "{style} must embed its selected legal-body font {embedded_font}"
+        "{theme} must embed its selected notice font {embedded_font}"
     );
-    if let Ok(destination) = std::env::var("GRAPHARCH_PREAMBLE_REVIEW") {
-        let destination = std::path::Path::new(&destination).join(style);
-        tokio::fs::create_dir_all(&destination).await?;
-        for name in ["index.html", "style.css", "main.typ", "document.pdf"] {
-            tokio::fs::copy(
-                publication.directory.join(name),
-                std::path::Path::new(&destination).join(name),
-            )
-            .await?;
-        }
-    }
     Ok(())
 }

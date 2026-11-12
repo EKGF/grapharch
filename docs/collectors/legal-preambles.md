@@ -41,9 +41,9 @@ In an [exact-revision build](../usage/publication-pipeline.md#exact-revision-bui
 a collector use with `ga:HtmlPreambleCollector` names the template's
 `ga:sourcePath`, the `ga:fragment` it contributes and, as for every
 fragment-contributing use, the `ga:includedIn` scope. The collector never
-chooses targets: each target that shows the notices references that fragment
-with `ga:preamble`, and a profile can require it with `ga:requiredMetadata
-ga:preamble`:
+chooses targets: each target that shows the notices lists that fragment in an
+ordered `ga:notice`, and a profile can require notices with `ga:requiredMetadata
+ga:notice`:
 
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
@@ -53,8 +53,9 @@ ex:project ga:collector ex:legal-source .
 ex:legal-source a ga:CollectorUse ; ga:collectorType ga:HtmlPreambleCollector ;
     ga:source "respec/template.html" ; ga:sourcePath "respec/template.html" ;
     ga:fragment ex:legal-preamble ; ga:includedIn ex:scope .
-ex:specification ga:preamble ex:legal-preamble .
-ex:profile ga:requiredMetadata ga:preamble .
+ex:specification ga:notice ex:legal-notice .
+ex:legal-notice ga:order 1 ; ga:fragment ex:legal-preamble .
+ex:profile ga:requiredMetadata ga:notice .
 ```
 
 There is no `publication collect --kind preamble` CLI switch. Library

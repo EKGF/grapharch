@@ -59,35 +59,77 @@ produce a non-conforming PDF. Typst's automated checks cannot establish
 everything PDF/UA asks of authors, such as a meaningful reading order or useful
 alternative text, so review the result with an accessibility checker.
 
-## Prepare an OMG-style edition
+## Choose or define a theme
 
-Set `ga:style "omg"` on a dedicated PDF profile. This selects a restrained
-US Letter layout with one-inch margins, a 10-point Liberation Serif body, black Liberation Sans headings,
-a plain ruled cover, Roman-numbered front matter and Arabic-numbered chapters.
-The PDF and its editable source are still generated entirely with Typst.
-Use a separate target and destination to retain an EKGF or reader edition from
-the same pinned content revision.
+A profile selects its house style with `ga:theme`. Themes are RDF resources
+identified by IRIs. GraphArch ships `ga:ReaderTheme` (the default for PDF and
+websites), `ga:SpecificationTheme` (the default for specifications; it follows
+the publisher's accent colour), `ga:OverviewTheme`, `ga:EkgfTheme` and
+`ga:EkgfProjectTheme` in its [theme catalogue](../../other/ontology/themes.ttl).
+The EKGF themes select the EKGF website identity; for PDF they use the reader
+tokens.
 
-The style does not supply an OMG logo, approval status, document identifier,
-copyright notice, or licensing terms. Declare publication metadata and legal
-preamble explicitly; an unofficial preview stays an unofficial preview.
-The Commons gallery PDF demonstrates this profile without claiming to be the
-published OMG specification.
+A consumer theme refines a catalogue theme with `ga:baseTheme` and declares
+only the tokens it changes:
 
-The design references the [Commons 1.3 PDF](https://www.omg.org/spec/Commons/1.3/PDF),
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
+<urn:example:house> a ga:Theme ;
+    ga:baseTheme ga:SpecificationTheme ;
+    ga:paper "us-letter" ; ga:marginLeft "0.79in" ;
+    ga:bodyFont "Liberation Serif" ; ga:justify false ; ga:hyphenate false ;
+    ga:headingNumberGap "0.5in" ;
+    ga:tableHeaderFill "#4e80bc" ; ga:tableHeaderText "#ffffff" ; ga:tableGrid true ;
+    ga:footerShowsText true ; ga:outerPageNumber true ; ga:pageOfTotal false ;
+    ga:frontNumbering "i" ; ga:bodyNumbering "1" ;
+    ga:tocTitle "Table of Contents" ; ga:tocTitleAlign "center" ; ga:contentsDepth 2 ;
+    ga:annexLabel "Annex {letter}: {title}" ; ga:annexNormativity true ;
+    ga:annexRectoStart true ; ga:blankPageText "This page intentionally left blank." .
+
+<urn:example:pdf-profile> a ga:Profile ; ga:theme <urn:example:house> .
+```
+
+Tokens cover page size and margins; colours; body, heading, code, caption,
+footer, contents and notice fonts and sizes; justification and hyphenation;
+heading numbering, a fixed number column and chapter page breaks; table header
+fill, text and grid; link colour and underlining; the footer text
+(`ga:footerText` on the target, else the title) and a page number on the outer
+edge; front and body page numbering; the contents title, alignment and depth;
+and annex labels, a normativity line from the placement's `ga:normativity`, and
+recto starts. [The vocabulary](../../other/ontology/publication.ttl) defines each
+token and its value syntax. GraphArch validates every value and maps it to a
+Typst value; no supplied text is evaluated. An invalid value, an unknown token,
+a missing token or a theme that does not refine a catalogue theme fails the
+publication.
+
+The cover is an ordered list of `ga:coverBlock` entries. Each places one
+element: space, the publisher, its logo (`ga:logo`, PNG or SVG), the
+publication date in a chosen format, the title, the subtitle, a version line,
+a rule, a bar, the target's ordered metadata rows with their definition labels,
+the specification summary, or fixed text. The values come from the target, so
+a theme supplies no document number, status or legal wording.
+
+The bundled fonts are Liberation Sans, Serif and Mono, metric-compatible
+substitutes for Arial, Times New Roman and Courier New, plus Typst's embedded
+fonts. They are openly licensed; they are not the proprietary originals.
+
+## The OMG Commons edition
+
+The [Commons showcase](https://github.com/EKGF/grapharch/tree/main/examples/omg-commons)
+declares OMG's house style as a consumer theme, OMG's notices, preface and
+copyright holders, the OMG logo, and the Commons 1.3 release metadata. Its
+profile sets `ga:w3cFrontMatter false`, omits the family overview, coverage,
+quality and diagram-note material from the PDF, and nests the ontology chapters
+under an authored clause. Its cover states that it is a GraphArch rendering of
+Commons 1.3. The design references the
+[Commons 1.3 PDF](https://www.omg.org/spec/Commons/1.3/PDF),
 [OMG core templates at revision 7e9dbce](https://github.com/ObjectManagementGroup/mdsa-omg-core/tree/7e9dbcef362b47a1c362f93b7ee2b840fb694997),
 and [OMG specification template at revision 9801480](https://github.com/ObjectManagementGroup/mdsa-omg-spec/tree/98014805e3ea8ec7d865f91453dddaf89fb4222a).
-It translates their presentation conventions; it does not execute LaTeX or copy
-sample legal assertions. The templates specify US Letter; the inspected Commons
-PDF has a narrower 595.56 by 792 point media box, so this is not a pixel-identical
-reproduction of that Word-generated publication. The embedded Liberation fonts
-are openly licensed, metric-compatible substitutes for its Times New Roman and
-Arial fonts; they are not the proprietary originals. Font files, hashes, and
-license notices are retained with the renderer sources.
 
 ## Publish an audience overview
 
-Select `ga:style "overview"` on a PDF profile for an editorial introduction:
+Select `ga:theme ga:OverviewTheme` on a PDF profile for an editorial introduction:
 a prominent cover, indigo accent, orange cover marker, larger chapter openings,
 and a more relaxed reading measure. Choose a separate scope and placements for
 purpose, concepts, adoption, and selected examples. The same sources can supply

@@ -34,28 +34,19 @@ impl Assets {
                 fonts.font(0).is_some(),
                 "Typst requires the embedded font assets"
             );
-            let liberation = [
-                include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-Regular.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-Bold.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-Italic.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-BoldItalic.ttf")
-                    .as_slice(),
-                include_bytes!("fonts/LiberationSans-Bold.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSans-Italic.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSans-BoldItalic.ttf")
-                    .as_slice(),
-            ]
-            .into_iter()
-            .map(|bytes| {
-                Font::new(Bytes::new(bytes), 0)
-                    .map(|font| {
-                        let info = font.info().clone();
-                        (font, info)
-                    })
-                    .ok_or_else(|| anyhow::anyhow!("invalid embedded PDF font"))
-            })
-            .collect::<Result<Vec<_>>>()?;
+            let liberation = super::fonts::EMBEDDED
+                .into_iter()
+                .map(|bytes| {
+                    Font::new(Bytes::new(bytes), 0)
+                        .map(|font| {
+                            let info = font.info().clone();
+                            (font, info)
+                        })
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("invalid embedded PDF font")
+                        })
+                })
+                .collect::<Result<Vec<_>>>()?;
             fonts.extend(liberation);
             Ok(Arc::new(Self {
                 library: LazyHash::new(Library::default()),

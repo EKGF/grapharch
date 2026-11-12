@@ -19,6 +19,15 @@ pub(super) struct Outline {
 impl Outline {
     pub(super) fn page() -> Self { Self { frontmatter: 2, ..Self::default() } }
 
+    /// A document outline. A W3C-style profile requires Abstract and Status
+    /// of This Document before the numbered sections; others start with them.
+    pub(super) fn document(w3c_front_matter: bool) -> Self {
+        Self {
+            frontmatter: if w3c_front_matter { 0 } else { 2 },
+            ..Self::default()
+        }
+    }
+
     pub fn component(
         &mut self,
         kind: &str,

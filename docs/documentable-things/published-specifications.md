@@ -61,7 +61,7 @@ scripts or template language.
 
 A specification renderer can show that fragment as a disclosure, while the PDF
 renderer gives it dedicated legal front matter. See
-[legal preamble publication](../usage/specification-renderer.md#legal-preamble)
+[front-matter notices](../usage/specification-renderer.md#front-matter-notices)
 for the fragment and target relationship.
 
 ## Publication authority is independent

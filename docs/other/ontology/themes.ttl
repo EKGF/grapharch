@@ -1,0 +1,178 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Built-in house styles. A profile selects one with ga:theme; a consumer theme
+# refines one with ga:baseTheme and overrides only the tokens it changes.
+
+ga:ReaderTheme a ga:Theme ;
+    rdfs:label "Reader"@en ;
+    dct:description "Companion-site slate and teal palette with a reading-oriented cover; the default for PDF and website targets."@en ;
+    ga:coverBlock <https://ekgf.org/ontology/grapharch/theme/reader#top>, <https://ekgf.org/ontology/grapharch/theme/reader#publisher>, <https://ekgf.org/ontology/grapharch/theme/reader#publisher-gap>, <https://ekgf.org/ontology/grapharch/theme/reader#publisher-rule>, <https://ekgf.org/ontology/grapharch/theme/reader#title-gap>, <https://ekgf.org/ontology/grapharch/theme/reader#title>, <https://ekgf.org/ontology/grapharch/theme/reader#subtitle>, <https://ekgf.org/ontology/grapharch/theme/reader#bar-gap>, <https://ekgf.org/ontology/grapharch/theme/reader#bar>, <https://ekgf.org/ontology/grapharch/theme/reader#summary-gap>, <https://ekgf.org/ontology/grapharch/theme/reader#summary> ;
+    ga:paper "a4" ;
+    ga:marginTop "25mm" ;
+    ga:marginBottom "23mm" ;
+    ga:marginLeft "23mm" ;
+    ga:marginRight "23mm" ;
+    ga:footerDescent "30%" ;
+    ga:coverBands "true"^^xsd:boolean ;
+    ga:statusRibbon "true"^^xsd:boolean ;
+    ga:runningHeader "true"^^xsd:boolean ;
+    ga:accent "#116659" ;
+    ga:authorityAccent "false"^^xsd:boolean ;
+    ga:inkColor "#182b35" ;
+    ga:mutedColor "#526670" ;
+    ga:ruleColor "#dce5e5" ;
+    ga:panelColor "accent-tint" ;
+    ga:headingColor "#182b35" ;
+    ga:linkColor "accent" ;
+    ga:linkUnderline "false"^^xsd:boolean ;
+    ga:bodyFont "Liberation Sans" ;
+    ga:bodySize "10.5pt" ;
+    ga:justify "true"^^xsd:boolean ;
+    ga:hyphenate "true"^^xsd:boolean ;
+    ga:leading "0.7em" ;
+    ga:paragraphSpacing "1.3em" ;
+    ga:headingFont "Liberation Sans" ;
+    ga:numberHeadings "true"^^xsd:boolean ;
+    ga:chapterPageBreak "true"^^xsd:boolean ;
+    ga:heading1Size "26pt" ;
+    ga:heading1Weight "bold" ;
+    ga:heading2Size "16pt" ;
+    ga:heading2Weight "bold" ;
+    ga:heading3Size "11.5pt" ;
+    ga:heading4Size "10.5pt" ;
+    ga:tableTextSize "8.5pt" ;
+    ga:tableHeaderFill "accent-tint" ;
+    ga:tableHeaderText "#182b35" ;
+    ga:tableGrid "false"^^xsd:boolean ;
+    ga:tableRuleColor "#dce5e5" ;
+    ga:captionFont "Liberation Sans" ;
+    ga:captionSize "9pt" ;
+    ga:captionBold "true"^^xsd:boolean ;
+    ga:tableCaptionAbove "true"^^xsd:boolean ;
+    ga:codeFont "DejaVu Sans Mono" ;
+    ga:codeSize "8.2pt" ;
+    ga:codeFill "accent-tint" ;
+    ga:codeRuleColor "accent" ;
+    ga:codeHighlight "true"^^xsd:boolean ;
+    ga:codeInset "10pt" ;
+    ga:quoteRuleColor "accent" ;
+    ga:quoteTextSize "10.5pt" ;
+    ga:quoteInsetX "11pt" ;
+    ga:quoteInsetY "8pt" ;
+    ga:tintedCallouts "true"^^xsd:boolean ;
+    ga:footerFont "Liberation Sans" ;
+    ga:footerSize "8pt" ;
+    ga:footerColor "#526670" ;
+    ga:footerRule "true"^^xsd:boolean ;
+    ga:footerShowsText "false"^^xsd:boolean ;
+    ga:pageNumberColor "accent" ;
+    ga:pageNumberBold "true"^^xsd:boolean ;
+    ga:pageOfTotal "true"^^xsd:boolean ;
+    ga:outerPageNumber "false"^^xsd:boolean ;
+    ga:tocTitle "Contents" ;
+    ga:tocTitleAlign "left" ;
+    ga:tocTitleSize "26pt" ;
+    ga:tocTitleFont "Liberation Sans" ;
+    ga:tocFont "Liberation Sans" ;
+    ga:tocEntrySize "10.5pt" ;
+    ga:contentsDepth "3"^^xsd:integer ;
+    ga:annexNormativity "false"^^xsd:boolean ;
+    ga:annexCentered "false"^^xsd:boolean ;
+    ga:annexRectoStart "false"^^xsd:boolean ;
+    ga:noticeFont "Libertinus Serif" ;
+    ga:noticeSize "9pt" ;
+    ga:noticeJustify "true"^^xsd:boolean ;
+    ga:noticeTitleFont "Liberation Sans" ;
+    ga:noticeTitleSize "21pt" ;
+    ga:noticeTitleRule "true"^^xsd:boolean ;
+    ga:noticeHeadingFont "Liberation Sans" ;
+    ga:noticeHeadingSize "8.5pt" ;
+    ga:noticeHeadingAlign "left" ;
+    ga:noticeHeadingUppercase "false"^^xsd:boolean ;
+    ga:coverFont "Liberation Sans" ;
+    ga:specificationCover "false"^^xsd:boolean .
+<https://ekgf.org/ontology/grapharch/theme/reader#top> a ga:CoverBlock ; ga:order 1; ga:coverElement ga:CoverSpace; ga:space "12mm" .
+<https://ekgf.org/ontology/grapharch/theme/reader#publisher> a ga:CoverBlock ; ga:order 2; ga:coverElement ga:CoverPublisher; ga:fontSize "9pt"; ga:fontWeight "bold"; ga:color "accent"; ga:tracking "0.9pt" .
+<https://ekgf.org/ontology/grapharch/theme/reader#publisher-gap> a ga:CoverBlock ; ga:order 3; ga:coverElement ga:CoverSpace; ga:space "6mm" .
+<https://ekgf.org/ontology/grapharch/theme/reader#publisher-rule> a ga:CoverBlock ; ga:order 4; ga:coverElement ga:CoverRule; ga:stroke "0.6pt"; ga:color "accent" .
+<https://ekgf.org/ontology/grapharch/theme/reader#title-gap> a ga:CoverBlock ; ga:order 5; ga:coverElement ga:CoverSpace; ga:space "13mm" .
+<https://ekgf.org/ontology/grapharch/theme/reader#title> a ga:CoverBlock ; ga:order 6; ga:coverElement ga:CoverTitle; ga:fontSize "40pt"; ga:fontWeight "bold"; ga:color "#182b35" .
+<https://ekgf.org/ontology/grapharch/theme/reader#subtitle> a ga:CoverBlock ; ga:order 7; ga:coverElement ga:CoverSubtitle; ga:fontSize "16pt"; ga:color "#526670" .
+<https://ekgf.org/ontology/grapharch/theme/reader#bar-gap> a ga:CoverBlock ; ga:order 8; ga:coverElement ga:CoverSpace; ga:space "8mm" .
+<https://ekgf.org/ontology/grapharch/theme/reader#bar> a ga:CoverBlock ; ga:order 9; ga:coverElement ga:CoverBar; ga:width "16mm"; ga:height "1.5mm"; ga:color "accent" .
+<https://ekgf.org/ontology/grapharch/theme/reader#summary-gap> a ga:CoverBlock ; ga:order 10; ga:coverElement ga:CoverSpace; ga:space "9mm" .
+<https://ekgf.org/ontology/grapharch/theme/reader#summary> a ga:CoverBlock ; ga:order 11; ga:coverElement ga:CoverSummary; ga:fontSize "9pt"; ga:panel "true"^^xsd:boolean .
+
+ga:SpecificationTheme a ga:Theme ;
+    rdfs:label "Specification"@en ;
+    dct:description "Standards-style layout following the publishing authority's accent colour, with publication metadata on the cover."@en ;
+    ga:baseTheme ga:ReaderTheme ;
+    ga:coverBlock <https://ekgf.org/ontology/grapharch/theme/specification#top>, <https://ekgf.org/ontology/grapharch/theme/specification#publisher>, <https://ekgf.org/ontology/grapharch/theme/specification#publisher-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#publisher-rule>, <https://ekgf.org/ontology/grapharch/theme/specification#title-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#title>, <https://ekgf.org/ontology/grapharch/theme/specification#subtitle>, <https://ekgf.org/ontology/grapharch/theme/specification#bar-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#bar>, <https://ekgf.org/ontology/grapharch/theme/specification#summary-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#summary> ;
+    ga:accent "#005a9c" ;
+    ga:authorityAccent "true"^^xsd:boolean ;
+    ga:bodySize "10pt" ;
+    ga:headingColor "accent" ;
+    ga:heading1Size "19pt" ;
+    ga:heading1Weight "regular" ;
+    ga:heading2Size "13pt" ;
+    ga:tableGrid "true"^^xsd:boolean ;
+    ga:tocTitleSize "19pt" ;
+    ga:tocEntrySize "10pt" ;
+    ga:specificationCover "true"^^xsd:boolean .
+<https://ekgf.org/ontology/grapharch/theme/specification#top> a ga:CoverBlock ; ga:order 1; ga:coverElement ga:CoverSpace; ga:space "12mm" .
+<https://ekgf.org/ontology/grapharch/theme/specification#publisher> a ga:CoverBlock ; ga:order 2; ga:coverElement ga:CoverPublisher; ga:fontSize "9pt"; ga:fontWeight "bold"; ga:color "accent"; ga:tracking "0.9pt" .
+<https://ekgf.org/ontology/grapharch/theme/specification#publisher-gap> a ga:CoverBlock ; ga:order 3; ga:coverElement ga:CoverSpace; ga:space "6mm" .
+<https://ekgf.org/ontology/grapharch/theme/specification#publisher-rule> a ga:CoverBlock ; ga:order 4; ga:coverElement ga:CoverRule; ga:stroke "0.6pt"; ga:color "accent" .
+<https://ekgf.org/ontology/grapharch/theme/specification#title-gap> a ga:CoverBlock ; ga:order 5; ga:coverElement ga:CoverSpace; ga:space "13mm" .
+<https://ekgf.org/ontology/grapharch/theme/specification#title> a ga:CoverBlock ; ga:order 6; ga:coverElement ga:CoverTitle; ga:fontSize "34pt"; ga:fontWeight "bold"; ga:color "accent" .
+<https://ekgf.org/ontology/grapharch/theme/specification#subtitle> a ga:CoverBlock ; ga:order 7; ga:coverElement ga:CoverSubtitle; ga:fontSize "16pt"; ga:color "#526670" .
+<https://ekgf.org/ontology/grapharch/theme/specification#bar-gap> a ga:CoverBlock ; ga:order 8; ga:coverElement ga:CoverSpace; ga:space "8mm" .
+<https://ekgf.org/ontology/grapharch/theme/specification#bar> a ga:CoverBlock ; ga:order 9; ga:coverElement ga:CoverBar; ga:width "16mm"; ga:height "1.5mm"; ga:color "accent" .
+<https://ekgf.org/ontology/grapharch/theme/specification#summary-gap> a ga:CoverBlock ; ga:order 10; ga:coverElement ga:CoverSpace; ga:space "9mm" .
+<https://ekgf.org/ontology/grapharch/theme/specification#summary> a ga:CoverBlock ; ga:order 11; ga:coverElement ga:CoverSummary; ga:fontSize "9pt"; ga:panel "true"^^xsd:boolean .
+
+ga:OverviewTheme a ga:Theme ;
+    rdfs:label "Overview"@en ;
+    dct:description "Editorial introduction with an indigo accent, an orange cover marker and larger chapter openings."@en ;
+    ga:baseTheme ga:ReaderTheme ;
+    ga:coverBlock <https://ekgf.org/ontology/grapharch/theme/overview#top>, <https://ekgf.org/ontology/grapharch/theme/overview#publisher>, <https://ekgf.org/ontology/grapharch/theme/overview#bar-gap>, <https://ekgf.org/ontology/grapharch/theme/overview#bar>, <https://ekgf.org/ontology/grapharch/theme/overview#title-gap>, <https://ekgf.org/ontology/grapharch/theme/overview#title>, <https://ekgf.org/ontology/grapharch/theme/overview#subtitle-gap>, <https://ekgf.org/ontology/grapharch/theme/overview#subtitle>, <https://ekgf.org/ontology/grapharch/theme/overview#summary-gap>, <https://ekgf.org/ontology/grapharch/theme/overview#summary>, <https://ekgf.org/ontology/grapharch/theme/overview#foot>, <https://ekgf.org/ontology/grapharch/theme/overview#tagline> ;
+    ga:accent "#4949b5" ;
+    ga:bodySize "11pt" ;
+    ga:justify "false"^^xsd:boolean ;
+    ga:hyphenate "false"^^xsd:boolean ;
+    ga:leading "0.8em" ;
+    ga:numberHeadings "false"^^xsd:boolean ;
+    ga:headingColor "accent" ;
+    ga:heading1Size "31pt" ;
+    ga:quoteRuleColor "#ff9900" ;
+    ga:quoteTextSize "14pt" ;
+    ga:quoteInsetX "16pt" ;
+    ga:quoteInsetY "13pt" ;
+    ga:tocTitleSize "31pt" ;
+    ga:tocEntrySize "11pt" .
+<https://ekgf.org/ontology/grapharch/theme/overview#top> a ga:CoverBlock ; ga:order 1; ga:coverElement ga:CoverSpace; ga:space "8mm" .
+<https://ekgf.org/ontology/grapharch/theme/overview#publisher> a ga:CoverBlock ; ga:order 2; ga:coverElement ga:CoverPublisher; ga:fontSize "10pt"; ga:fontWeight "bold"; ga:color "accent"; ga:tracking "1.3pt" .
+<https://ekgf.org/ontology/grapharch/theme/overview#bar-gap> a ga:CoverBlock ; ga:order 3; ga:coverElement ga:CoverSpace; ga:space "30mm" .
+<https://ekgf.org/ontology/grapharch/theme/overview#bar> a ga:CoverBlock ; ga:order 4; ga:coverElement ga:CoverBar; ga:width "24mm"; ga:height "2mm"; ga:color "#ff9900" .
+<https://ekgf.org/ontology/grapharch/theme/overview#title-gap> a ga:CoverBlock ; ga:order 5; ga:coverElement ga:CoverSpace; ga:space "9mm" .
+<https://ekgf.org/ontology/grapharch/theme/overview#title> a ga:CoverBlock ; ga:order 6; ga:coverElement ga:CoverTitle; ga:fontSize "43pt"; ga:fontWeight "bold"; ga:color "#182b35" .
+<https://ekgf.org/ontology/grapharch/theme/overview#subtitle-gap> a ga:CoverBlock ; ga:order 7; ga:coverElement ga:CoverSpace; ga:space "7mm" .
+<https://ekgf.org/ontology/grapharch/theme/overview#subtitle> a ga:CoverBlock ; ga:order 8; ga:coverElement ga:CoverSubtitle; ga:fontSize "16pt"; ga:color "#526670" .
+<https://ekgf.org/ontology/grapharch/theme/overview#summary-gap> a ga:CoverBlock ; ga:order 9; ga:coverElement ga:CoverSpace; ga:space "12mm" .
+<https://ekgf.org/ontology/grapharch/theme/overview#summary> a ga:CoverBlock ; ga:order 10; ga:coverElement ga:CoverSummary; ga:fontSize "10pt"; ga:panel "true"^^xsd:boolean .
+<https://ekgf.org/ontology/grapharch/theme/overview#foot> a ga:CoverBlock ; ga:order 11; ga:coverElement ga:CoverSpace; ga:space "1fr" .
+<https://ekgf.org/ontology/grapharch/theme/overview#tagline> a ga:CoverBlock ; ga:order 12; ga:coverElement ga:CoverText; ga:fontSize "9pt"; ga:color "#526670"; ga:coverText "A practical introduction" .
+
+ga:EkgfTheme a ga:Theme ;
+    rdfs:label "EKGF"@en ;
+    dct:description "EKGF community identity for companion websites; PDF tokens are those of the reader theme."@en ;
+    ga:baseTheme ga:ReaderTheme .
+
+ga:EkgfProjectTheme a ga:Theme ;
+    rdfs:label "EKGF project"@en ;
+    dct:description "EKGF community identity for a project website with project navigation."@en ;
+    ga:baseTheme ga:EkgfTheme .
+

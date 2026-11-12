@@ -128,16 +128,7 @@ pub(super) fn compiler_digest() -> String {
     hash.update(include_str!("engine.rs"));
     hash.update(include_str!("pdf_standard.rs"));
     hash.update(include_str!("../../../Cargo.lock"));
-    for bytes in [
-        include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSerif-Regular.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSerif-Bold.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSerif-Italic.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSerif-BoldItalic.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSans-Bold.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSans-Italic.ttf").as_slice(),
-        include_bytes!("fonts/LiberationSans-BoldItalic.ttf").as_slice(),
-    ] {
+    for bytes in super::fonts::EMBEDDED {
         hash.update(bytes);
     }
     hex::encode(hash.finalize())
@@ -247,6 +238,7 @@ pub(super) async fn write(
         file.flush().await?;
         files.push(b.source.clone());
     }
+    let style = typst::EntryStyle::read(plan).await?;
     let mut active: Option<(usize, BufWriter<File>)> = None;
     let mut opened = vec![false; books.len()];
     let mut diagram_notes = vec![false; books.len()];
@@ -358,6 +350,7 @@ pub(super) async fn write(
             &anchor,
             markdown.as_ref(),
             0,
+            &style,
             &[],
         )
         .await?;

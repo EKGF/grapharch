@@ -1,54 +1,63 @@
-// Presentation components shared by all generated content. No source text is evaluated.
-#let ga-omg = ga-style == "omg"
-#let ga-overview = ga-style == "overview"
-#let ga-specification = ga-style == "specification"
-#let ga-ink = if ga-omg { black } else { rgb("#182b35") }
-#let ga-muted = if ga-omg { black } else { rgb("#526670") }
-#let ga-line = if ga-omg { rgb("#999999") } else { rgb("#dce5e5") }
-#let ga-soft = if ga-omg { rgb("#f4f4f4") } else { ga-accent.lighten(94%) }
-#let ga-heading = if ga-specification or ga-overview { ga-accent } else { ga-ink }
+// Presentation components shared by all generated content. Values come from
+// the validated `ga-theme` token dictionary. No source text is evaluated.
+#let T = ga-theme
+#let ga-ink = T.ink_color
+#let ga-muted = T.muted_color
+#let ga-line = T.rule_color
+#let ga-soft = T.panel_color
+#let ga-heading = T.heading_color
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
 // Line-break opportunities inside long identifiers. An empty inline box is a
 // Unicode contingent break; unlike U+200B it adds no character to the text
 // that readers copy, search and hear.
 #let ga-wrap(..pieces) = pieces.pos().join(box())
 #let ga-wrap-raw(..pieces) = pieces.pos().map(raw).join(box())
-#set text(font: if ga-omg { "Liberation Serif" } else { "Liberation Sans" }, size: if ga-omg { 10pt } else if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
-#set par(justify: not ga-overview, leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em)
+#set text(font: T.body_font, size: T.body_size, fill: ga-ink, lang: "en", hyphenate: T.hyphenate)
+#set par(justify: T.justify, leading: T.leading, spacing: T.paragraph_spacing)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 1em)
 #set enum(indent: 1.5em, body-indent: 0.5em, spacing: 1em)
-#set heading(numbering: if ga-overview { none } else { "1.1" })
+#set heading(numbering: if T.number_headings { "1.1" } else { none })
 #show heading: set block(sticky: true)
 #show heading: set par(justify: false)
+#show heading: set text(font: T.heading_font, fill: ga-heading)
+#show heading: it => if T.heading_number_gap == none or it.numbering == none { it } else {
+  grid(columns: (T.heading_number_gap, 1fr), counter(heading).display(it.numbering), it.body)
+}
 // Space belongs to the fragment container: heading above-spacing collapses
 // when the heading is the first element of a breakable fragment block.
 #let ga-section(level, body) = block(inset: (top: if level == 1 { 22pt } else if level == 2 { 16pt } else { 12pt }), above: 0pt, breakable: true, body)
-#show heading.where(level: 1): set text(size: if ga-overview { 31pt } else if ga-specification { 19pt } else { 26pt }, weight: if ga-specification { "regular" } else { "bold" }, fill: ga-heading)
+#show heading.where(level: 1): set text(size: T.heading_1_size, weight: T.heading_1_weight)
 #show heading.where(level: 1): set block(above: 28pt, below: 16pt)
-#show heading.where(level: 2): set text(size: if ga-specification { 13pt } else { 16pt }, weight: "bold", fill: ga-heading)
+#show heading.where(level: 2): set text(size: T.heading_2_size, weight: T.heading_2_weight)
 #show heading.where(level: 2): set block(above: 21pt, below: 11pt)
-#show heading.where(level: 3): set text(size: 11.5pt, weight: "bold", fill: ga-heading)
+#show heading.where(level: 3): set text(size: T.heading_3_size, weight: "bold")
 #show heading.where(level: 3): set block(above: 14pt, below: 7pt)
-#show heading.where(level: 4): set text(size: 10.5pt, weight: "bold", fill: ga-heading)
-#show link: set text(fill: if ga-omg { black } else { ga-accent })
-#show raw: set text(font: "DejaVu Sans Mono", size: 8.2pt, hyphenate: false)
+#show heading.where(level: 4): set text(size: T.heading_4_size, weight: "bold")
+#show link: set text(fill: T.link_color)
+#show link: it => if T.link_underline { underline(it) } else { it }
+#show raw: set text(font: T.code_font, size: T.code_size, hyphenate: false)
+#show figure.caption: set text(font: T.caption_font, size: T.caption_size, weight: if T.caption_bold { "bold" } else { "regular" })
+#show figure.where(kind: table): set figure.caption(position: if T.table_caption_above { top } else { bottom })
+#show outline.entry: set text(font: T.toc_font)
+#show outline.entry.where(level: 1): set text(size: T.toc_entry_size)
 // Already highlighted runs share HTML's palette. Wrap grapheme clusters without
 // re-tokenising sliced strings, preserving multiline lexical context.
-#let ga-code(runs) = block(width: 100%, breakable: true, inset: (x: 10pt, y: 9pt), fill: ga-soft, stroke: (left: 2pt + ga-accent), radius: 3pt)[
-  #set text(font: "DejaVu Sans Mono", size: 8.2pt, ligatures: false, hyphenate: false)
+#let ga-code(runs) = block(width: 100%, breakable: true, inset: (x: T.code_inset, y: 9pt), fill: T.code_fill, stroke: if T.code_rule_color == none { none } else { (left: 2pt + T.code_rule_color) }, radius: if T.code_fill == none { 0pt } else { 3pt })[
+  #set text(font: T.code_font, size: T.code_size, ligatures: false, hyphenate: false)
   #set par(justify: false)
   #layout(size => {
     let capacity = calc.max(1, calc.floor(size.width / measure(text("M")).width))
     let column = 0
     for (value, color) in runs {
+      let fill = if T.code_highlight { color } else { ga-ink }
       let piece = ""
       for cluster in value.clusters() {
         if cluster in ("\n", "\r\n") {
-          text(fill: if ga-omg { black } else { color }, piece); piece = ""
+          text(fill: fill, piece); piece = ""
           linebreak(); column = 0
         } else {
           if column >= capacity {
-            text(fill: if ga-omg { black } else { color }, piece); piece = ""
+            text(fill: fill, piece); piece = ""
             linebreak(); column = 0
           }
           if cluster == "\t" {
@@ -57,22 +66,23 @@
           } else { piece += cluster; column += 1 }
         }
       }
-      text(fill: if ga-omg { black } else { color }, piece)
+      text(fill: fill, piece)
     }
   })
 ]
-#show quote.where(block: true): it => block(width: 100%, breakable: true, above: 12pt, below: 12pt, inset: (x: if ga-overview { 16pt } else { 11pt }, y: if ga-overview { 13pt } else { 8pt }), fill: ga-soft, stroke: (left: 2pt + if ga-overview { rgb("#ff9900") } else { ga-accent }))[
-  #set text(size: if ga-overview { 14pt } else { 10.5pt })
+#show quote.where(block: true): it => block(width: 100%, breakable: true, above: 12pt, below: 12pt, inset: (x: T.quote_inset_x, y: T.quote_inset_y), fill: ga-soft, stroke: (left: 2pt + T.quote_rule_color))[
+  #set text(size: T.quote_text_size)
   #it.body
 ]
 #let ga-table(columns: (), align: auto, has-header: true, header-row: 0, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
-  #set text(size: 8.5pt)
+  #set text(size: T.table_text_size)
   #set par(justify: false, leading: 0.55em, spacing: 0.4em)
+  #show table.cell: it => if has-header and it.y == header-row { text(fill: T.table_header_text, it) } else { it }
   #table(columns: columns, align: align, inset: (x: 7pt, y: 6pt),
-    stroke: if ga-specification { 0.4pt + ga-line } else { (x: none, y: 0.4pt + ga-line) },
-    fill: (x, y) => if has-header and y == header-row { ga-soft }, ..cells)
+    stroke: if T.table_grid { 0.4pt + T.table_rule_color } else { (x: none, y: 0.4pt + T.table_rule_color) },
+    fill: (x, y) => if has-header and y == header-row { T.table_header_fill }, ..cells)
 ]
-#let ga-callout(label, body, kind: "note") = {
+#let ga-callout(label, body, kind: "note") = if T.tinted_callouts {
   let colors = (
     note: (rgb("#175a98"), rgb("#f1f6fc")),
     tip: (rgb("#176644"), rgb("#eff8f2")),
@@ -85,56 +95,61 @@
     #block(sticky: true, below: 6pt)[#text(size: 9pt, weight: "bold", fill: tint)[#label]]
     #body
   ]
+} else {
+  block(width: 100%, breakable: true, above: 10pt, below: 10pt, inset: 9pt, stroke: 0.4pt + ga-line)[
+    #block(sticky: true, below: 5pt)[#strong[#label]]
+    #body
+  ]
 }
-#let ga-cover(publisher, title, subtitle, front) = {
-  if ga-overview {
-    set par(justify: false)
-    v(8mm)
-    text(size: 10pt, weight: "bold", fill: ga-accent, tracking: 1.3pt, publisher)
-    v(30mm)
-    rect(width: 24mm, height: 2mm, fill: rgb("#ff9900"), stroke: none)
-    v(9mm)
-    text(size: 43pt, weight: "bold", fill: ga-ink, title)
-    v(7mm)
-    subtitle
-    v(12mm)
-    block(width: 100%, inset: 7mm, fill: ga-soft, radius: 4mm)[
-      #set text(size: 10pt)
-      #set par(justify: false, spacing: 0.8em)
-      #front
+#let ga-example(body) = {
+  counter("ga-example").step()
+  if T.tinted_callouts {
+    block(width: 100%, breakable: true, above: 12pt, below: 12pt, inset: (x: 11pt, y: 9pt), fill: rgb("#fcfaee"), stroke: (left: 2pt + rgb("#b69a28")))[
+      #block(sticky: true, below: 6pt)[#text(size: 9pt, weight: "bold", fill: rgb("#685415"))[Example #context counter("ga-example").display()]]
+      #body
     ]
-    v(1fr)
-    text(size: 9pt, fill: ga-muted)[A practical introduction]
   } else {
-  v(12mm)
-  block(width: 100%, inset: (bottom: 6mm), stroke: (bottom: 0.6pt + ga-accent))[
-    #text(size: 9pt, weight: "bold", fill: ga-accent, tracking: 0.9pt)[#text(publisher)]
-  ]
-  v(13mm)
-  block(width: 100%)[#set par(leading: 0.4em)
-    #set par(justify: false)
-    #text(size: if ga-specification { 34pt } else { 40pt }, weight: "bold", fill: ga-heading)[#text(title)]
-  ]
-  subtitle
-  v(8mm)
-  rect(width: 16mm, height: 1.5mm, fill: ga-accent, stroke: none)
-  if front != [] {
-    v(9mm)
-    block(width: 100%, inset: (x: 6mm, y: 5mm), fill: ga-soft, radius: (top-right: 4mm, bottom-left: 4mm))[
-      #set text(size: 9pt)
-      #set par(justify: false, leading: 0.6em, spacing: 0.7em)
-      #front
+    block(width: 100%, breakable: true, above: 10pt, below: 10pt, inset: 9pt, stroke: 0.4pt + ga-line)[
+      #block(sticky: true, below: 5pt)[Example #context counter("ga-example").display()]
+      #body
     ]
   }
+}
+// Notice front matter: unnumbered and absent from the contents.
+#let ga-notice-heading(size, body) = block(width: 100%, above: 1.5em, below: 0.7em, sticky: true)[
+  #align(T.notice_heading_align)[#text(font: T.notice_heading_font, size: size, weight: "bold")[#if T.notice_heading_uppercase { upper(body) } else { body }]]
+]
+#let ga-notices(body) = {
+  set text(font: T.notice_font, size: T.notice_size, fill: ga-ink)
+  set par(justify: T.notice_justify, leading: 0.5em, spacing: 0.75em)
+  set heading(numbering: none, outlined: false)
+  show heading: it => ga-notice-heading(T.notice_heading_size, it.body)
+  body
+}
+#let ga-notice-title(title) = {
+  if T.notice_title_rule {
+    block(width: 100%, inset: (bottom: 10pt), stroke: (bottom: 1.5pt + ga-accent))[
+      #text(font: T.notice_title_font, size: T.notice_title_size, weight: "bold")[#title]
+    ]
+    v(10pt)
+  } else {
+    ga-notice-heading(T.notice_title_size, title)
   }
 }
-#set page(paper: "a4", margin: (left: 23mm, right: 23mm, top: 25mm, bottom: 23mm),
+#let ga-blank-page(notice) = context {
+  if calc.odd(counter(page).get().first()) {
+    pagebreak()
+    align(center + horizon)[#notice]
+    pagebreak()
+  } else { pagebreak() }
+}
+#set page(paper: T.paper, margin: (left: T.margin_left, right: T.margin_right, top: T.margin_top, bottom: T.margin_bottom), footer-descent: T.footer_descent,
   background: context {
-    if counter(page).get().first() == 1 {
+    if T.cover_bands and counter(page).get().first() == 1 and here().page() == 1 {
       place(top + right, rect(width: 15mm, height: 100%, fill: ga-soft, stroke: none))
       place(bottom + left, rect(width: 100%, height: 3mm, fill: ga-accent, stroke: none))
     }
-    if ga-ribbon != none {
+    if T.status_ribbon and ga-ribbon != none {
       // Like the website's .authority-banner, the label reads bottom to top
       // and ends a fixed padding below the ribbon's top end (website: 1.5rem
       // at a 0.875rem label, about 1.7em; 6mm at the 9pt label).
@@ -148,7 +163,7 @@
     }
   },
   header: context {
-    if counter(page).get().first() > 1 {
+    if T.running_header and here().page() > 1 {
       set text(size: 8pt, fill: ga-muted)
       let chapters = query(heading.where(level: 1))
       // Generated chapter headings are in flow/page order. Find the first
@@ -177,19 +192,19 @@
     }
   },
   footer: context {
-    if counter(page).get().first() > 1 {
-      set text(size: 8pt, fill: ga-muted)
-      line(length: 100%, stroke: 0.5pt + ga-accent)
-      v(5pt)
-      align(right)[#text(fill: ga-accent, weight: "bold")[#counter(page).display("1 / 1", both: true)]]
+    let numbered = T.front_numbering == none or page.numbering != none
+    if here().page() > 1 and numbered {
+      set text(font: T.footer_font, size: T.footer_size, fill: T.footer_color)
+      if T.footer_rule {
+        line(length: 100%, stroke: 0.5pt + ga-accent)
+        v(5pt)
+      }
+      let number = text(fill: T.page_number_color, weight: if T.page_number_bold { "bold" } else { "regular" })[#if T.page_of_total { counter(page).display("1 / 1", both: true) } else { counter(page).display(if page.numbering == none { "1" } else { page.numbering }) }]
+      let label = if T.footer_shows_text { ga-running(ga-footer-text, limit: 85) } else { [] }
+      if T.outer_page_number and calc.even(counter(page).get().first()) {
+        grid(columns: (auto, 1fr), column-gutter: 12pt, number, align(right)[#label])
+      } else {
+        grid(columns: (1fr, auto), column-gutter: 12pt, label, align(right)[#number])
+      }
     }
   })
-
-#let ga-example(body) = {
-  counter("ga-example").step()
-  block(width: 100%, breakable: true, above: 12pt, below: 12pt, inset: (x: 11pt, y: 9pt), fill: rgb("#fcfaee"), stroke: (left: 2pt + rgb("#b69a28")))[
-    #block(sticky: true, below: 6pt)[#text(size: 9pt, weight: "bold", fill: rgb("#685415"))[Example #context counter("ga-example").display()]]
-    #body
-  ]
-}
-

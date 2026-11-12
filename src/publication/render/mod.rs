@@ -9,6 +9,7 @@ mod code;
 mod collected_images;
 mod content;
 mod content_blocks;
+mod cover;
 mod credit;
 mod credits;
 mod diagnostic_graph;
@@ -16,16 +17,17 @@ mod diagram_notes;
 mod document_metadata;
 mod engine;
 mod files;
+mod fonts;
 mod html;
 mod image_data;
 mod markdown_html;
 mod markup;
 mod model;
 mod native_typst;
+mod notices;
 mod pdf_download;
 mod pdf_standard;
 mod people;
-mod preamble;
 mod provenance;
 mod publication_date;
 mod quality;
@@ -35,7 +37,6 @@ mod specification;
 mod typst;
 mod typst_breaks;
 mod typst_markdown;
-mod typst_style;
 mod website;
 pub(crate) async fn prepare_book_worker(root: &Path) -> Result<()> {
     book_worker::prepare(root).await
@@ -250,6 +251,15 @@ impl Publisher {
                 } else {
                     plan.images.write(plan, &stage.path).await?
                 };
+            let cover_logo = if matches!(
+                plan.renderer.as_str(),
+                "typst" | "specification" | "bookshelf"
+            ) {
+                let theme = typst::theme(plan).await?;
+                cover::write_logo(plan, &theme, &stage.path).await?
+            } else {
+                None
+            };
             let website_files =
                 if plan.renderer == crate::publication::Renderer::Website {
                     Some(website::write(plan, &stage.path).await?)
@@ -364,6 +374,7 @@ impl Publisher {
                     bookshelf::manifest_books(plan, &stage.path).await?;
             }
             manifest.files.extend(image_files);
+            manifest.files.extend(cover_logo);
             manifest.files.push(
                 crate::publication::icon::write_licenses(&stage.path).await?,
             );

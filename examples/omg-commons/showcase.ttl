@@ -8,51 +8,51 @@
     ga:showcaseProject <urn:omg-commons:project> ;
     ga:showcaseTargets ( <urn:omg-commons:specification> <urn:omg-commons:pdf> ) ;
     ga:rdfDocument
-        <https://www.omg.org/spec/Commons/AboutCommons.rdf>,
-        <https://www.omg.org/spec/Commons/AnnotationVocabulary.rdf>,
-        <https://www.omg.org/spec/Commons/BusinessAuthorizations.rdf>,
-        <https://www.omg.org/spec/Commons/Classifiers.rdf>,
-        <https://www.omg.org/spec/Commons/CodesAndCodeSets.rdf>,
-        <https://www.omg.org/spec/Commons/Collections.rdf>,
-        <https://www.omg.org/spec/Commons/ContextualDesignators.rdf>,
-        <https://www.omg.org/spec/Commons/ContextualIdentifiers.rdf>,
-        <https://www.omg.org/spec/Commons/DatesAndTimes.rdf>,
-        <https://www.omg.org/spec/Commons/Designators.rdf>,
-        <https://www.omg.org/spec/Commons/Documents.rdf>,
-        <https://www.omg.org/spec/Commons/Identifiers.rdf>,
-        <https://www.omg.org/spec/Commons/Languages.rdf>,
-        <https://www.omg.org/spec/Commons/Locations.rdf>,
-        <https://www.omg.org/spec/Commons/Organizations.rdf>,
-        <https://www.omg.org/spec/Commons/PartiesAndSituations.rdf>,
-        <https://www.omg.org/spec/Commons/QuantitiesAndUnits.rdf>,
-        <https://www.omg.org/spec/Commons/RegistrationAuthorities.rdf>,
-        <https://www.omg.org/spec/Commons/RegulatoryAgencies.rdf>,
-        <https://www.omg.org/spec/Commons/RolesAndCompositions.rdf>,
-        <https://www.omg.org/spec/Commons/SitesAndFacilities.rdf>,
-        <https://www.omg.org/spec/Commons/StructuredCollections.rdf>,
-        <https://www.omg.org/spec/Commons/TextDatatype.rdf>,
-        <https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime.rdf> .
-<https://www.omg.org/spec/Commons/AboutCommons.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/AnnotationVocabulary.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/BusinessAuthorizations.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Classifiers.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/CodesAndCodeSets.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Collections.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/ContextualDesignators.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/ContextualIdentifiers.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/DatesAndTimes.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Designators.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Documents.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Identifiers.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Languages.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Locations.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/Organizations.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/PartiesAndSituations.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/QuantitiesAndUnits.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/RegistrationAuthorities.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/RegulatoryAgencies.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/RolesAndCompositions.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/SitesAndFacilities.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/StructuredCollections.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/TextDatatype.rdf> ga:format "application/rdf+xml" .
-<https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime.rdf> ga:format "application/rdf+xml" .
+        <https://www.omg.org/spec/Commons/20250801/AboutCommons.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/AnnotationVocabulary.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/BusinessAuthorizations.rdf>,
+        <https://www.omg.org/spec/Commons/20240801/Classifiers.rdf>,
+        <https://www.omg.org/spec/Commons/20221101/CodesAndCodeSets.rdf>,
+        <https://www.omg.org/spec/Commons/20221101/Collections.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/ContextualDesignators.rdf>,
+        <https://www.omg.org/spec/Commons/20221101/ContextualIdentifiers.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/DatesAndTimes.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/Designators.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/Documents.rdf>,
+        <https://www.omg.org/spec/Commons/20221101/Identifiers.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/Languages.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/Locations.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/Organizations.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/PartiesAndSituations.rdf>,
+        <https://www.omg.org/spec/Commons/20240801/QuantitiesAndUnits.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/RegistrationAuthorities.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/RegulatoryAgencies.rdf>,
+        <https://www.omg.org/spec/Commons/20230801/RolesAndCompositions.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/SitesAndFacilities.rdf>,
+        <https://www.omg.org/spec/Commons/20250801/StructuredCollections.rdf>,
+        <https://www.omg.org/spec/Commons/20221101/TextDatatype.rdf>,
+        <https://www.omg.org/spec/Commons/20220501/MappingDatesAndTimesToOWLTime.rdf> .
+<https://www.omg.org/spec/Commons/20250801/AboutCommons.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/AnnotationVocabulary.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/BusinessAuthorizations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20240801/Classifiers.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20221101/CodesAndCodeSets.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20221101/Collections.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/ContextualDesignators.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20221101/ContextualIdentifiers.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/DatesAndTimes.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/Designators.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/Documents.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20221101/Identifiers.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/Languages.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/Locations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/Organizations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/PartiesAndSituations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20240801/QuantitiesAndUnits.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/RegistrationAuthorities.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/RegulatoryAgencies.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20230801/RolesAndCompositions.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/SitesAndFacilities.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20250801/StructuredCollections.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20221101/TextDatatype.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/20220501/MappingDatesAndTimesToOWLTime.rdf> ga:format "application/rdf+xml" .

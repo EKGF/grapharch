@@ -162,7 +162,7 @@ GraphArch's own documentation selects the EKGF website theme in its source
 publication profile:
 
 ```turtle
-doc:profile a ga:Profile ; ga:style "ekgf" .
+doc:profile a ga:Profile ; ga:theme ga:EkgfTheme .
 ```
 
 The theme uses the EKGF graph mark, OMG identity, indigo and orange palette,
@@ -176,7 +176,7 @@ select this theme; specification and PDF authority branding remain separate.
 
 For a documentation site, select `ga:layout "documentation"` on its profile.
 The layout keeps site identity, section navigation, a page tree, and the local
-heading outline distinct; `ga:style "ekgf"` independently selects EKGF branding.
+heading outline distinct; `ga:theme ga:EkgfTheme` independently selects EKGF branding.
 
 A profile can select one `ga:Navigation` for each `ga:navigationRegion`:
 `"primary"`, `"sidebar"`, or `"footer"`. Each tree contains identified

@@ -207,7 +207,7 @@ model. The profile chooses content and presentation; it does not rewrite prose.
 <urn:example:overview-scope> a ga:Scope ;
     ga:include <urn:example:product-guide> ;
     ga:traverse ga:topic ; ga:maxDepth 1 .
-<urn:example:overview-profile> a ga:Profile ; ga:style "overview" ;
+<urn:example:overview-profile> a ga:Profile ; ga:theme ga:OverviewTheme ;
     ga:placement <urn:example:overview-placement> .
 <urn:example:overview-placement> a ga:Placement ; ga:order 1 ;
     ga:component <urn:example:identity-component> .

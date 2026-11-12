@@ -58,6 +58,18 @@ impl RevisionView {
             .await
     }
 
+    /// Stream every logical statement about one subject, ordered by predicate
+    /// and value. Callers bound how many statements they accept.
+    pub async fn statements(&self, subject: &NamedNode) -> Result<Rows> {
+        let pattern = self.pattern(&format!("{subject} ?predicate ?value"), 0);
+        self.dataset
+            .select(format!(
+                "SELECT DISTINCT ?predicate ?value WHERE {{ {pattern} }} \
+                 ORDER BY ?predicate ?value"
+            ))
+            .await
+    }
+
     /// Read an optional singleton, rejecting ambiguity across contributions.
     pub async fn optional(
         &self,
