@@ -80,9 +80,8 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         ),
     )?;
     let text = std::fs::read_to_string(&registry)?;
-    // Temporary ekg-ontologies 6bd93ab pin until the EKG migration lands
-    // upstream: the live entry previews spec/develop and has no PDF.
-    let live = "ga:previewPath \"spec/develop/index.html\"";
+    let live = "ga:previewPath \"site/spec/main/index.html\" ; ga:pdfPath \
+                \"site/pdf/document.pdf\"";
     assert_eq!(text.matches(live).count(), 1);
     std::fs::write(
         &registry,
