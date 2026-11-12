@@ -610,7 +610,8 @@ mod recovery_tests {
             register(
                 destination.clone(),
                 first.clone(),
-                coordination.clone()
+                coordination.clone(),
+                Vec::new()
             )
             .await?
         );
@@ -622,7 +623,15 @@ mod recovery_tests {
             job: Uuid::new_v4().to_string(),
             ..first
         };
-        assert!(register(destination.clone(), next, coordination).await?);
+        assert!(
+            register(
+                destination.clone(),
+                next,
+                coordination,
+                Vec::new()
+            )
+            .await?
+        );
         assert_eq!(
             tokio::fs::read_to_string(destination.join("index.html")).await?,
             "Previous valid page"
