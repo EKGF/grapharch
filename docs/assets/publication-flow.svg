@@ -1,55 +1,118 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" role="img" aria-labelledby="title description">
-  <title id="title">From documentable things to publications</title>
-  <desc id="description">Ontologies, taxonomies, use cases, datasets, and shapes feed collectors. Collectors contribute to the GraphArch Knowledge Graph. Renderers use that graph to produce websites, standards, and PDFs. The matching Collectors and Renderers modules connect through the graph from left to right.</desc>
-  <rect width="1000" height="620" rx="28" fill="#fafafd"/>
-  <g fill="none" stroke="#4947b9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M167 320v58m-10-14 10 14 10-14"/>
-    <path d="M310 430h51m-14-10 14 10-14 10"/>
-    <path d="M635 430h51m-14-10 14 10-14 10"/>
-    <path d="M832 382v-42H690V79m132 282 10-14 10 14"/>
-    <path d="M690 79h26m-12-9 12 9-12 9"/>
-    <path d="M690 177h26m-12-9 12 9-12 9"/>
-    <path d="M690 275h26m-12-9 12 9-12 9"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="630" viewBox="0 -30 1000 630" role="img" aria-labelledby="flow-title flow-description">
+  <title id="flow-title">GraphArch collects documentable things and renders publications</title>
+  <desc id="flow-description">Collectors gather documentable things, such as ontologies, taxonomies, use cases, datasets, shapes, Markdown, PlantUML diagrams, code examples, images, Git history, W3C specifications, MkDocs sites, SPARQL endpoints, data contracts, spreadsheets, OpenAPI descriptions, glossaries, and business capabilities into the GraphArch knowledge graph. Renderers turn that graph into static outputs such as a documentation website, a specification website, PDF, Excel, Word documents, reports, slide decks, a bookshelf, dashboards, EPUB, data catalogs, release notes, diagrams, and search indexes.</desc>
+  <style>
+    svg { color-scheme: light; --accent: #404db5; --ink: #333338; --muted: #62626d; --warm: #b04800; --node: #ff6f00; --halo: #404db5; }
+    @media (prefers-color-scheme: dark) {
+      svg { color-scheme: dark; --accent: #a8b2ff; --ink: #e4e4e7; --muted: #b4b4bf; --warm: #ffad66; --node: #ffad66; --halo: #a8b2ff; }
+    }
+    text { font-family: Roboto, "Helvetica Neue", Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .hero { fill: var(--accent); font-weight: 700; }
+    .major { fill: var(--ink); font-weight: 600; }
+    .minor { fill: var(--muted); font-weight: 500; }
+    .warm { fill: var(--warm); font-weight: 600; }
+    .lead { fill: var(--accent); font-weight: 500; }
+    .stop-accent { stop-color: var(--halo); }
+    .strand { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; opacity: .38; }
+    .chevron { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .edge { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; }
+    .node { fill: var(--accent); }
+    .node-warm { fill: var(--node); }
+    .ring { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: .28; }
+    .ring-dashed { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .5; }
+    .caption-title { fill: var(--accent); font-weight: 700; font-size: 28px; }
+    .caption-text { fill: var(--muted); font-weight: 400; font-size: 21px; }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    a:hover .caption-title { text-decoration: underline; }
+  </style>
+  <defs>
+    <linearGradient id="collect-band" x1="20" y1="0" x2="410" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" class="stop-accent" stop-opacity="0"/>
+      <stop offset="1" class="stop-accent" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="render-band" x1="590" y1="0" x2="980" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" class="stop-accent" stop-opacity=".16"/>
+      <stop offset="1" class="stop-accent" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="graph-halo" cx="500" cy="228" r="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" class="stop-accent" stop-opacity=".2"/>
+      <stop offset=".72" class="stop-accent" stop-opacity=".1"/>
+      <stop offset="1" class="stop-accent" stop-opacity=".02"/>
+    </radialGradient>
+  </defs>
+
+  <g id="flow" aria-hidden="true">
+    <path d="M20 -14C220 -14 320 196 410 210V246C320 260 220 476 20 476Z" fill="url(#collect-band)"/>
+    <path d="M980 -14C780 -14 680 196 590 210V246C680 260 780 476 980 476Z" fill="url(#render-band)"/>
+    <path class="strand" d="M330 228C360 228 380 228 404 228"/>
+    <path class="strand" d="M596 228C620 228 640 228 670 228"/>
+    <path class="chevron" d="M371 219l9 9-9 9"/>
+    <path class="chevron" d="M621 219l9 9-9 9"/>
   </g>
-  <g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#242636">
-    <g id="documentable-things" font-weight="500">
-      <text x="145" y="72" font-size="44" fill="#4947b9">Ontologies</text>
-      <text x="200" y="128" font-size="42">Taxonomies</text>
-      <text x="132" y="182" font-size="46" fill="#ba4a00">Use cases</text>
-      <text x="204" y="238" font-size="42">Datasets</text>
-      <text x="142" y="294" font-size="44" fill="#4947b9">Shapes</text>
+
+  <g id="documentable-things">
+    <text class="minor" x="100" y="16" font-size="26">W3C specs</text>
+    <text class="minor" x="262" y="16" font-size="26">MkDocs sites</text>
+    <text class="minor" x="96" y="66" font-size="28">Markdown</text>
+    <text class="minor" x="258" y="66" font-size="28">PlantUML</text>
+    <text class="major" x="132" y="114" font-size="38">Taxonomies</text>
+    <text class="minor" x="304" y="112" font-size="28">Images</text>
+    <text class="hero" x="168" y="174" font-size="54">Ontologies</text>
+    <text class="warm" x="102" y="226" font-size="38">Use cases</text>
+    <text class="major" x="268" y="226" font-size="34">Shapes</text>
+    <text class="minor" x="168" y="272" font-size="28">SPARQL endpoints</text>
+    <text class="major" x="108" y="322" font-size="40">Datasets</text>
+    <text class="minor" x="274" y="320" font-size="28">Git history</text>
+    <text class="lead" x="90" y="366" font-size="30">Glossaries</text>
+    <text class="lead" x="268" y="366" font-size="28">Spreadsheets</text>
+    <text class="minor" x="104" y="410" font-size="26">Code examples</text>
+    <text class="minor" x="276" y="410" font-size="28">OpenAPI</text>
+    <text class="major" x="166" y="456" font-size="30">Business capabilities</text>
+    <text class="minor" x="166" y="500" font-size="26">Data contracts</text>
+  </g>
+
+  <g id="knowledge-graph" aria-hidden="true">
+    <circle cx="500" cy="228" r="104" fill="url(#graph-halo)"/>
+    <circle class="ring" cx="500" cy="228" r="104"/>
+    <circle class="ring-dashed" cx="500" cy="228" r="122"/>
+    <g transform="translate(500 228) scale(1.3)">
+      <path class="edge" d="M-51-43 0 0 49-43M0 0-46 43M0 0 50 43M-51-43-46 43M49-43 50 43"/>
+      <circle class="node" r="21"/>
+      <circle class="node" cx="-51" cy="-43" r="13"/>
+      <circle class="node" cx="50" cy="43" r="13"/>
+      <circle class="node-warm" cx="49" cy="-43" r="13"/>
+      <circle class="node-warm" cx="-46" cy="43" r="13"/>
     </g>
-    <g id="collectors-module">
-      <rect x="25" y="382" width="285" height="96" rx="18" fill="#eeeef8" stroke="#4947b9" stroke-width="3"/>
-      <text x="167" y="445" font-size="48" font-weight="700" fill="#4947b9">Collectors</text>
-    </g>
-    <rect x="365" y="290" width="270" height="305" rx="28" fill="#eeeef8"/>
-    <g id="knowledge-graph" fill="#4947b9" stroke="#4947b9" stroke-width="5" stroke-linecap="round">
-      <path d="m449 333 51 43 49-43m-49 43-46 43m46-43 50 43m-101-86 5 86m95-86 1 86" fill="none"/>
-      <circle cx="500" cy="376" r="21"/>
-      <circle cx="449" cy="333" r="13"/>
-      <circle cx="550" cy="419" r="13"/>
-      <circle cx="549" cy="333" r="13" fill="#ff7a1a" stroke="none"/>
-      <circle cx="454" cy="419" r="13" fill="#ff7a1a" stroke="none"/>
-    </g>
-    <g fill="#4947b9" font-size="42" font-weight="700">
-      <text x="500" y="485">GraphArch</text>
-      <text x="500" y="531">Knowledge</text>
-      <text x="500" y="577">Graph</text>
-    </g>
-    <g id="renderers-module">
-      <rect x="690" y="382" width="285" height="96" rx="18" fill="#eeeef8" stroke="#4947b9" stroke-width="3"/>
-      <text x="832" y="445" font-size="48" font-weight="700" fill="#4947b9">Renderers</text>
-    </g>
-    <g id="publications" font-size="44" font-weight="500">
-      <g fill="#fff" stroke="#d8d8e9" stroke-width="3">
-        <rect x="720" y="42" width="250" height="74" rx="16"/>
-        <rect x="720" y="140" width="250" height="74" rx="16"/>
-        <rect x="720" y="238" width="250" height="74" rx="16"/>
-      </g>
-      <text x="845" y="94">Websites</text>
-      <text x="845" y="192">Standards</text>
-      <text x="845" y="290">PDFs</text>
-    </g>
+  </g>
+
+  <g id="publications">
+    <text class="minor" x="790" y="16" font-size="26">Word document</text>
+    <text class="minor" x="740" y="66" font-size="28">Slide deck</text>
+    <text class="minor" x="900" y="66" font-size="28">EPUB</text>
+    <text class="hero" x="830" y="120" font-size="40">Documentation</text>
+    <text class="hero" x="830" y="160" font-size="40">website</text>
+    <text class="major" x="836" y="216" font-size="36">Spec website</text>
+    <text class="warm" x="726" y="270" font-size="48">PDF</text>
+    <text class="major" x="880" y="268" font-size="36">Excel</text>
+    <text class="minor" x="792" y="316" font-size="28">Release notes</text>
+    <text class="major" x="726" y="364" font-size="34">Report</text>
+    <text class="lead" x="880" y="362" font-size="30">Dashboard</text>
+    <text class="minor" x="752" y="410" font-size="28">Data catalog</text>
+    <text class="lead" x="912" y="410" font-size="28">Bookshelf</text>
+    <text class="minor" x="832" y="456" font-size="28">Search index</text>
+    <text class="minor" x="836" y="500" font-size="26">Diagrams</text>
+  </g>
+
+  <g id="captions">
+    <a href="../collectors/README.md">
+      <text class="caption-title" x="190" y="560">Collectors</text>
+    </a>
+    <text class="caption-text" x="190" y="590">gather documentable things</text>
+    <text class="caption-title" x="500" y="560">GraphArch</text>
+    <text class="caption-text" x="500" y="590">one knowledge graph</text>
+    <a href="../renderers/README.md">
+      <text class="caption-title" x="810" y="560">Renderers</text>
+    </a>
+    <text class="caption-text" x="810" y="590">publish static outputs</text>
   </g>
 </svg>

@@ -111,14 +111,15 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     let diagram = credit_document
         .select(
             &scraper::Selector::parse(
-                "img[alt^='Ontologies, taxonomies, use cases']",
+                "object.interactive-svg[aria-label^='Collectors gather \
+                 documentable things']",
             )
             .unwrap(),
         )
         .next()
-        .expect("homepage pipeline must be a rendered illustration");
+        .expect("homepage flow must be a rendered interactive illustration");
     let svg = tokio::fs::read_to_string(
-        site.join(diagram.value().attr("src").unwrap()),
+        site.join(diagram.value().attr("data").unwrap()),
     )
     .await?;
     let illustration = roxmltree::Document::parse(&svg)?;
@@ -134,18 +135,21 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
         "Use cases",
         "Datasets",
         "Shapes",
+        "Git history",
+        "Business capabilities",
         "Collectors",
         "GraphArch",
-        "Knowledge",
-        "Graph",
+        "knowledge graph",
         "Renderers",
-        "Websites",
-        "Standards",
-        "PDFs",
+        "Documentation",
+        "Spec website",
+        "PDF",
+        "Excel",
+        "Report",
     ] {
         assert!(
             labels.contains(label),
-            "retained illustration is missing {label}"
+            "homepage illustration is missing {label}"
         );
     }
     assert_eq!(
@@ -155,9 +159,28 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     assert!(illustration.descendants().any(|node| {
         node.has_tag_name("desc") &&
             node.text().is_some_and(|text| {
-                text.contains("Ontologies, taxonomies, use cases")
+                text.contains("Collectors gather documentable things")
             })
     }));
+    let links = illustration
+        .descendants()
+        .filter(|node| node.has_tag_name("a"))
+        .map(|node| (node.attribute("href"), node.attribute("target")))
+        .collect::<Vec<_>>();
+    assert_eq!(links, [
+        (Some("../collectors/"), Some("_top")),
+        (Some("../renderers/"), Some("_top"))
+    ]);
+    assert!(
+        illustration.descendants().any(|node| {
+            node.has_tag_name("style") &&
+                node.text().is_some_and(|css| {
+                    css.contains("prefers-color-scheme: dark") &&
+                        css.contains("color-scheme: dark;")
+                })
+        }),
+        "homepage illustration must follow the selected color scheme"
+    );
     assert!(
         credit_document
             .select(
