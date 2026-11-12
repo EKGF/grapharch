@@ -1119,7 +1119,7 @@ async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_
             p.directory.join(book["source"].as_str().unwrap()),
         )?;
         assert!(
-            typst.contains("#outline(title: [Contents], depth: 2)"),
+            typst.contains("#outline(title: none, depth: 2)"),
             "book contents list chapters and sections by default"
         );
         if book["title"] == "Core book" {

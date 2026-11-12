@@ -169,10 +169,7 @@ async fn annexes_use_label_pattern_normativity_and_recto_start() -> Result<()> {
 async fn annex_without_normativity_fails_fast() -> Result<()> {
     let definitions =
         house("").replace("ex:changes ga:normativity \"informative\" .", "");
-    let error = render(definitions)
-        .await
-        .err()
-        .expect("missing normativity");
+    let error = render(definitions).await.expect_err("missing normativity");
     assert!(format!("{error:#}").contains("requires ga:normativity"));
     Ok(())
 }
@@ -210,7 +207,7 @@ async fn invalid_and_removed_theme_values_fail_fast() -> Result<()> {
             "unsupported token ga:pageColour",
         ),
     ] {
-        let error = render(definitions).await.err().expect("invalid theme");
+        let error = render(definitions).await.expect_err("invalid theme");
         assert!(
             format!("{error:#}").contains(message),
             "{error:#} lacks {message}"

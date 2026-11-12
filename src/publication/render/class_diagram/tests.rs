@@ -154,8 +154,8 @@ async fn diagram_link_survives_native_compilation(
     tokio::fs::write(
         root.path().join("main.typ"),
         format!(
-            "#set page(width: 500pt, height: 600pt, margin: \
-             25pt)\n{diagram}\n#pagebreak()\n= Interpretation \
+            "#let ga-diagram-note = true\n#set page(width: 500pt, height: \
+             600pt, margin: 25pt)\n{diagram}\n#pagebreak()\n= Interpretation \
              <grapharch-diagram-note>\n"
         ),
     )

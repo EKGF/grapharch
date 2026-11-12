@@ -341,8 +341,7 @@ pub(super) async fn entry(
     entry: &Entry,
     anchor: &str,
     markdown: Option<&Markdown<'_>>,
-    appendix: u32,
-    style: &EntryStyle,
+    (appendix, style): (u32, &EntryStyle),
     diagnostics: &[crate::publication::diagnostics::Diagnostic],
 ) -> Result<()> {
     if entry.first {

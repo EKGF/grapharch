@@ -257,8 +257,10 @@ pub(super) async fn write(
                 &entry,
                 &anchor,
                 markdown.as_ref(),
-                entries.appendix,
-                style.as_ref().expect("Typst entry style"),
+                (
+                    entries.appendix,
+                    style.as_ref().expect("Typst entry style"),
+                ),
                 &[],
             )
             .await?;
@@ -343,8 +345,7 @@ pub(super) async fn write_typst(
             &entry,
             &anchor,
             markdown.as_ref(),
-            entries.appendix,
-            &style,
+            (entries.appendix, &style),
             diagnostics,
         )
         .await?;

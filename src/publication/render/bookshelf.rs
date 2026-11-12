@@ -349,8 +349,7 @@ pub(super) async fn write(
             &entry,
             &anchor,
             markdown.as_ref(),
-            0,
-            &style,
+            (0, &style),
             &[],
         )
         .await?;

@@ -43,8 +43,11 @@ impl Lineage {
                 themes.len() < MAX_DEPTH,
                 "theme chain exceeds {MAX_DEPTH} themes"
             );
+            // Catalogue themes are engine identities; views of a collection
+            // stage need not contain the retained catalogue.
             ensure!(
-                view.has_type(&current, "Theme").await?,
+                Builtin::from_iri(&current).is_some() ||
+                    view.has_type(&current, "Theme").await?,
                 "{current} is not a declared ga:Theme"
             );
             themes.push(current.clone());

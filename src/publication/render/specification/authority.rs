@@ -117,7 +117,10 @@ impl Logo {
             }
             Ok(bytes)
         })
-        .await??;
+        .await?
+        .map_err(|error| {
+            error.context("authority logo is not a valid PNG or SVG image")
+        })?;
         Ok(Some(Self { data_uri, bytes, extension }))
     }
 }

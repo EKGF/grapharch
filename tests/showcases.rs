@@ -225,7 +225,7 @@ async fn incomplete_or_unsafe_specification_metadata_preserves_previous_output()
         (
             "data:image/png;base64,",
             "data:image/svg+xml;base64,",
-            "PNG",
+            "valid PNG or SVG",
         ),
         (
             "https://example.org/spec/2026-10-24/",

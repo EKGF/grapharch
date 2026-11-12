@@ -47,7 +47,7 @@ impl Kind {
                 );
                 Ok(depth.to_string())
             },
-            _ => self.literal(token, &string(token, value)?),
+            _ => self.literal(token, string(token, value)?),
         }
     }
 
@@ -91,7 +91,7 @@ impl Kind {
                 closed(token, value, &[
                     "regular", "medium", "semibold", "bold",
                 ])
-                .map(|value| quote(value))
+                .map(quote)
             },
             Self::Align => {
                 closed(token, value, &["left", "center", "right"])
@@ -105,11 +105,10 @@ impl Kind {
                     "us-letter",
                     "us-legal",
                 ])
-                .map(|value| quote(value))
+                .map(quote)
             },
             Self::Numbering => {
-                closed(token, value, &["1", "i", "I", "a", "A"])
-                    .map(|value| quote(value))
+                closed(token, value, &["1", "i", "I", "a", "A"]).map(quote)
             },
             Self::Bool | Self::Depth => unreachable!("typed literals"),
         }
