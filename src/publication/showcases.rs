@@ -340,7 +340,7 @@ pub async fn w3c(sources: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
     let configuration =
         ShowcaseConfiguration::read(&sources.join("showcase.ttl")).await?;
     configuration.accept_only("W3C specification", &[])?;
-    let document = sources.join("source.html");
+    let document = tokio::fs::canonicalize(sources.join("source.html")).await?;
     let copied = configuration.copied_sources()?;
     let source = copied
         .iter()
