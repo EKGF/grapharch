@@ -15,6 +15,7 @@ mod redirects;
 mod repository;
 mod search;
 mod shell;
+mod site_link;
 mod theme;
 use {
     super::{

@@ -181,9 +181,18 @@ heading outline distinct; `ga:style "ekgf"` independently selects EKGF branding.
 A profile can select one `ga:Navigation` for each `ga:navigationRegion`:
 `"primary"`, `"sidebar"`, or `"footer"`. Each tree contains identified
 `ga:navigationEntry` occurrences. An occurrence has its own `ga:order`, optional
-`ga:parentEntry`, and optional `dct:title` label. It refers to a `ga:page` or an
-absolute HTTP(S)/mailto `ga:url`. A section without a destination must have
-children and a title. Parent entries must belong to the same tree.
+`ga:parentEntry`, and optional `dct:title` label. It refers to a `ga:page` or a
+`ga:url`. A section without a destination must have children and a title.
+Parent entries must belong to the same tree.
+
+A `ga:url` is either an absolute `http`, `https` or `mailto` URL, or a URL
+relative to the website root, such as `spec/main/` for a publication deployed
+beside the website. GraphArch links a relative URL relative to each page, so it
+keeps working wherever the hosting profile mounts the site; the definitions
+never name the deployment location. A leading slash would bypass that mount
+and is rejected, as are backslashes, parent (`..`) segments and any target
+that resolves outside the website root. `ga:headerLink` entries follow the
+same rules, without `mailto`.
 
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
@@ -192,11 +201,13 @@ children and a title. Parent entries must belong to the same tree.
 <urn:profile> ga:layout "documentation" ; ga:navigation <urn:sections> .
 <urn:sections> a ga:Navigation ; dct:title "Sections" ;
     ga:navigationRegion "primary" ;
-    ga:navigationEntry <urn:introduction>, <urn:concepts> .
+    ga:navigationEntry <urn:introduction>, <urn:concepts>, <urn:specification> .
 <urn:introduction> a ga:NavigationEntry ; ga:order 1 ;
     dct:title "Introduction" ; ga:page <urn:home> .
 <urn:concepts> a ga:NavigationEntry ; ga:order 2 ;
     dct:title "Concepts" ; ga:page <urn:concept-page> .
+<urn:specification> a ga:NavigationEntry ; ga:order 3 ;
+    dct:title "Specification" ; ga:url "spec/main/" .
 ```
 
 For existing content, an entry can use `ga:sourcePath "index.md"` instead of

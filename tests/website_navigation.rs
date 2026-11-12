@@ -315,3 +315,86 @@ async fn sectioned_navigation_rejects_unassigned_and_duplicate_pages()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn relative_navigation_urls_follow_the_website_root_from_every_page()
+-> Result<()> {
+    let config = CONFIG.replace(
+        "<urn:external> a ga:NavigationEntry; ga:url \"https://example.org/\"",
+        "<urn:external> a ga:NavigationEntry; ga:url \"spec/main/\"",
+    ) + "\n<urn:sidebar> ga:navigationEntry <urn:pdf>, \
+                      <urn:mail> .\n<urn:pdf> a ga:NavigationEntry; ga:url \
+                      \"documents/main/document.pdf\"; ga:order 4; dct:title \
+                      \"PDF\" .\n<urn:mail> a ga:NavigationEntry; ga:url \
+                      \"mailto:team@example.org\"; ga:order 5; dct:title \
+                      \"Mail\" .";
+    let (_out, site) = render(&config).await?;
+    for route in ["index.html", "guide/index.html"] {
+        let html = tokio::fs::read_to_string(site.join(route)).await?;
+        let document = scraper::Html::parse_document(&html);
+        // The deployment mount is unknown to the definitions; any mount works.
+        let page = url::Url::parse(&format!(
+            "https://host.example/any/mount/{route}"
+        ))?;
+        let targets = document
+            .select(&scraper::Selector::parse(".site-navigation a").unwrap())
+            .map(|link| {
+                let href = link.value().attr("href").unwrap();
+                (
+                    link.text().collect::<String>(),
+                    page.join(href).map(String::from),
+                    href.to_owned(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let target = |label: &str| {
+            targets
+                .iter()
+                .find(|(text, _, _)| text == label)
+                .unwrap_or_else(|| panic!("{label} missing on {route}"))
+        };
+        assert_eq!(
+            target("Elsewhere").1.as_deref().unwrap(),
+            "https://host.example/any/mount/spec/main/"
+        );
+        assert_eq!(
+            target("PDF").1.as_deref().unwrap(),
+            "https://host.example/any/mount/documents/main/document.pdf"
+        );
+        assert_eq!(target("Mail").2, "mailto:team@example.org");
+        assert!(!target("Elsewhere").2.starts_with('/'));
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn navigation_rejects_host_relative_and_unsafe_urls() -> Result<()> {
+    for url in [
+        "/spec/main/",
+        "//cdn.example.org/spec/",
+        "../outside/",
+        "spec/../../outside/",
+        "%2e%2e/outside/",
+        "spec\\\\main/",
+        "javascript:alert(1)",
+        "ftp://example.org/",
+        "http://[::1/",
+    ] {
+        let config = CONFIG.replace(
+            "ga:url \"https://example.org/\"",
+            &format!("ga:url \"{url}\""),
+        );
+        let message = format!(
+            "{:#}",
+            render(&config)
+                .await
+                .err()
+                .unwrap_or_else(|| panic!("navigation URL accepted: {url}"))
+        );
+        assert!(
+            message.contains("navigation URL"),
+            "{url}: {message}"
+        );
+    }
+    Ok(())
+}

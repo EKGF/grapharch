@@ -63,8 +63,12 @@ impl Tree {
             if let Some(id) = neighbor {
                 let entry = &self.entries[*id];
                 previous_next.push_str(&format!(
-                    "<a href=\"{prefix}{}\"><small>{direction}</small>{}</a>",
-                    esc(entry.href.as_deref().expect("page destination")),
+                    "<a href=\"{}\"><small>{direction}</small>{}</a>",
+                    esc(&entry
+                        .href
+                        .as_ref()
+                        .expect("page destination")
+                        .href(prefix)),
                     esc(&entry.label)
                 ));
             }
@@ -79,10 +83,9 @@ impl Tree {
         for entry in ancestors.into_iter().rev() {
             if let Some(href) = &entry.href {
                 breadcrumbs.push_str(&format!(
-                    "<a href=\"{}{href}\">{}</a>",
-                    if entry.external { "" } else { prefix },
+                    "<a href=\"{}\">{}</a>",
+                    esc(&href.href(prefix)),
                     esc(&entry.label),
-                    href = esc(href)
                 ));
             } else {
                 breadcrumbs

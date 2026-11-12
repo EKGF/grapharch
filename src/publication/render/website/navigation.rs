@@ -8,6 +8,7 @@ use {
             model::{Plan, node},
         },
         catalog::Catalog,
+        site_link::{NAVIGATION_SCHEMES, SiteLink},
     },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
@@ -25,12 +26,11 @@ struct Tree {
     children: BTreeMap<Option<String>, Vec<String>>,
 }
 struct Entry {
-    label:    String,
-    parent:   Option<String>,
-    order:    u32,
-    href:     Option<String>,
-    page:     Option<String>,
-    external: bool,
+    label:  String,
+    parent: Option<String>,
+    order:  u32,
+    href:   Option<SiteLink>,
+    page:   Option<String>,
 }
 impl Navigations {
     pub async fn read(plan: &Plan, catalog: &Catalog) -> Result<Self> {
@@ -212,12 +212,12 @@ impl Tree {
                 let entry = &self.entries[id];
                 let destination = self.destination(id);
                 html.push_str(&format!(
-                    "<li><a href=\"{}{}\"{}{}>{}</a></li>",
-                    if destination.external { "" } else { prefix },
-                    esc(destination
+                    "<li><a href=\"{}\"{}{}>{}</a></li>",
+                    esc(&destination
                         .href
-                        .as_deref()
-                        .expect("validated destination")),
+                        .as_ref()
+                        .expect("validated destination")
+                        .href(prefix)),
                     if self.active(id, section) {
                         " class=\"active-section\""
                     } else {
@@ -253,9 +253,8 @@ impl Tree {
                 let current = entry.page.as_deref() == Some(active);
                 let content = if let Some(href) = &entry.href {
                     format!(
-                        "<a href=\"{}{}\"{}>{}</a>",
-                        if entry.external { "" } else { prefix },
-                        esc(href),
+                        "<a href=\"{}\"{}>{}</a>",
+                        esc(&href.href(prefix)),
                         if current {
                             " aria-current=\"page\""
                         } else {
@@ -298,7 +297,7 @@ impl Entry {
         );
         let anchor = optional_text(plan, id, "headingAnchor").await?;
         let explicit_label = label(plan, id).await?;
-        let (href, page, label, external) = if let Some(value) = page {
+        let (href, page, label) = if let Some(value) = page {
             let page = catalog.page(node(&value)?)?;
             ensure!(
                 !page.asset,
@@ -312,14 +311,13 @@ impl Entry {
                 );
             }
             (
-                Some(format!(
+                Some(SiteLink::page(format!(
                     "{}{}",
                     page.route,
                     anchor.map(|a| format!("#{a}")).unwrap_or_default()
-                )),
+                ))),
                 Some(page.id.as_str().into()),
                 explicit_label.unwrap_or_else(|| page.title.clone()),
-                false,
             )
         } else {
             ensure!(
@@ -330,13 +328,11 @@ impl Entry {
                 let Term::Literal(value) = value else {
                     anyhow::bail!("navigation URL must be a literal")
                 };
-                let parsed = url::Url::parse(value.value())?;
-                ensure!(
-                    matches!(parsed.scheme(), "http" | "https" | "mailto") &&
-                        !value.value().chars().any(char::is_control),
-                    "unsafe navigation URL"
-                );
-                Some(value.value().to_owned())
+                Some(SiteLink::authored(
+                    value.value(),
+                    NAVIGATION_SCHEMES,
+                    "navigation",
+                )?)
             } else {
                 None
             };
@@ -345,10 +341,9 @@ impl Entry {
                 None,
                 explicit_label.ok_or_else(|| {
                     anyhow::anyhow!(
-                        "navigation section or external link requires a title"
+                        "navigation section or URL entry requires a title"
                     )
                 })?,
-                true,
             )
         };
         let parent = plan
@@ -363,7 +358,7 @@ impl Entry {
             })?,
             "navigation order",
         )?;
-        Ok(Self { label, parent, order, href, page, external })
+        Ok(Self { label, parent, order, href, page })
     }
 }
 async fn label(plan: &Plan, id: &NamedNode) -> Result<Option<String>> {
