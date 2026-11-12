@@ -79,7 +79,8 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             include_str!("style.css"),
             concat!(
                 include_str!("../callouts.css"),
-                include_str!("../diagrams.css")
+                include_str!("../diagrams.css"),
+                include_str!("../inline-code.css")
             ),
             include_str!("../provenance.css"),
             theme.css(),

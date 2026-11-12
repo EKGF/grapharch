@@ -310,7 +310,8 @@ impl Publisher {
                         "{style}\n{}\n{}\n{}",
                         concat!(
                             include_str!("callouts.css"),
-                            include_str!("diagrams.css")
+                            include_str!("diagrams.css"),
+                            include_str!("inline-code.css")
                         ),
                         include_str!("provenance.css"),
                         if plan.renderer ==
