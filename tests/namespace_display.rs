@@ -1,3 +1,8 @@
+#[path = "support/family_repository.rs"]
+mod family_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
+
 use {
     anyhow::Result,
     grapharch::publication::{
@@ -5,7 +10,7 @@ use {
         dataset::Dataset,
         document::{AnnotatedTermDocumentor, Documentor},
         render::{PublishOutcome, Publisher},
-        showcases,
+        revision_build::TargetSelection,
         view::RevisionView,
         writer::GraphWriter,
     },
@@ -60,30 +65,11 @@ async fn compact_identifiers_use_the_most_specific_namespace() -> Result<()> {
 #[tokio::test]
 async fn dprod_reference_honours_source_declared_nested_shape_namespaces()
 -> Result<()> {
-    let source = tempfile::tempdir()?;
-    for path in [
-        "project.ttl",
-        "abstract.md",
-        "status.md",
-        "overview.md",
-        "sources/ontology.ttl",
-        "sources/shapes.ttl",
-        "sources/dataset-schema.md",
-        "website/index.md",
-        "website/stories.md",
-        "website/guides/getting-started.md",
-    ] {
-        let destination = source.path().join(path);
-        tokio::fs::create_dir_all(destination.parent().unwrap()).await?;
-        tokio::fs::copy(
-            std::path::Path::new("examples/dprod").join(path),
-            destination,
-        )
-        .await?;
-    }
-    let path = source.path().join("sources/shapes.ttl");
-    let mut data = tokio::fs::read_to_string(&path).await?;
-    data.push_str(r#"
+    let mut fixture = revision_fixture::RevisionFixture::new(
+        std::path::Path::new("examples/dprod"),
+    )?;
+    fixture.edit_content("shapes.ttl", |mut data| {
+        data.push_str(r#"
 <https://www.omg.org/spec/DPROD/dprod/contracts/shapes/>
  a owl:Ontology ;
  sh:declare [ sh:prefix "contracts-shapes" ; sh:namespace "https://www.omg.org/spec/DPROD/dprod/contracts/shapes/" ] .
@@ -91,12 +77,17 @@ async fn dprod_reference_honours_source_declared_nested_shape_namespaces()
  a sh:NodeShape ; rdfs:label "Data contract shape"@en ;
  dct:description "Constraints on a contract."@en .
 "#);
-    tokio::fs::write(path, data).await?;
-    let (dataset, plans) = showcases::dprod(source.path()).await?;
+        Ok(data)
+    })?;
+    let (dataset, plans) = fixture
+        .collect(TargetSelection::targets(vec![NamedNode::new(
+            "urn:dprod-showcase:specification",
+        )?])?)
+        .await?;
     let output = tempfile::tempdir()?;
     let archive = output.path().join("source.nq");
     dataset.export(archive.clone()).await?;
-    source.close()?;
+    fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)

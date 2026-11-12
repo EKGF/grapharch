@@ -1,0 +1,135 @@
+# Controlling definitions for the synthetic exact-revision showcase. The
+# content commits they describe carry no GraphArch configuration.
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix doc: <urn:dprod-showcase:> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+doc:project a ga:Project ; ga:scope doc:scope ;
+    ga:target doc:specification, doc:website, doc:pdf ;
+    ga:metadataSource doc:source:ontology ; ga:derivedMetadata dct:title ;
+    ga:collector doc:source:ontology, doc:source:shapes, doc:source:related-profile,
+        doc:source:abstract, doc:source:status, doc:source:formal, doc:source:readme,
+        doc:source:example, doc:source:code, doc:source:legal-preamble ;
+    ga:documentor doc:reference .
+doc:scope a ga:Scope .
+
+doc:specification a ga:Target ; ga:subtitle "Generated from native RDF sources" ;
+    ga:scope doc:scope ; ga:profile doc:profile ; ga:renderer ga:SpecificationRenderer ;
+    ga:destination "specification" ; ga:preamble doc:legal-preamble ;
+    ga:publicationStatus "Reference Preview" ; ga:publisher doc:publisher ;
+    ga:latestVersion <https://example.org/dprod/spec/> ;
+    ga:editorDraft <https://example.org/dprod/repository> ;
+    ga:copyright "Synthetic exact-revision fixture." ;
+    ga:metadataSource doc:source:ontology ;
+    ga:derivedMetadata dct:title, dct:description, ga:license, ga:publicationDate .
+doc:publisher a <https://ekgf.org/ontology/artifact-governance#Authority> ;
+    <http://www.w3.org/2000/01/rdf-schema#label> "Enterprise Knowledge Graph Forum" ;
+    ga:shortName "EKGF" ; ga:accentColor "#2b5f9f" ; ga:url "https://ekgf.org/" .
+doc:website a ga:Target ; dct:title "DPROD: ideas and guides" ;
+    ga:scope doc:website-scope ; ga:profile doc:website-profile ;
+    ga:renderer ga:WebsiteRenderer ; ga:destination "website" .
+doc:website-scope a ga:Scope .
+doc:website-profile a ga:Profile .
+doc:pdf a ga:Target ; dct:title "DPROD review edition" ;
+    ga:scope doc:scope ; ga:profile doc:pdf-profile ; ga:renderer ga:TypstRenderer ;
+    ga:destination "pdf" ; ga:preamble doc:legal-preamble ; ga:publisher doc:publisher ;
+    ga:metadataSource doc:source:ontology ; ga:derivedMetadata ga:license, ga:publicationDate .
+
+doc:source:ontology a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ;
+    ga:source "ontology/dprod/dprod-ontology.ttl" ; ga:sourcePath "ontology/dprod/dprod-ontology.ttl" ;
+    ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
+doc:source:shapes a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ;
+    ga:source "ontology/dprod/dprod-shapes.ttl" ; ga:sourcePath "ontology/dprod/dprod-shapes.ttl" ;
+    ga:subject <https://www.omg.org/spec/DPROD/shapes/> .
+doc:source:related-profile a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ;
+    ga:source "profile.ttl" ; ga:sourcePath "profile.ttl" ; ga:subject <https://www.omg.org/spec/DPROD/dprod/> .
+doc:source:abstract a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;
+    ga:source "publication/abstract.md" ; ga:sourcePath "publication/abstract.md" ;
+    ga:fragment doc:abstract ; ga:includedIn doc:scope .
+doc:source:status a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;
+    ga:source "publication/status.md" ; ga:sourcePath "publication/status.md" ;
+    ga:fragment doc:status ; ga:includedIn doc:scope .
+doc:source:formal a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;
+    ga:source "formal.md" ; ga:sourcePath "formal.md" ; ga:fragment doc:formal ; ga:includedIn doc:scope .
+doc:source:readme a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ;
+    ga:source "README.md" ; ga:sourcePath "README.md" ; ga:fragment doc:overview ;
+    dct:title "Development documentation" ; ga:route "" ; ga:includedIn doc:scope .
+doc:source:example a ga:CollectorUse ; ga:collectorType ga:MarkdownPageCollector ;
+    ga:source "example.md" ; ga:sourcePath "example.md" ; ga:fragment doc:example ;
+    dct:title "Dataset example" ; ga:route "guide/" ; ga:includedIn doc:scope .
+doc:source:code a ga:CollectorUse ; ga:collectorType ga:CodeFileCollector ;
+    ga:source "example.jsonld" ; ga:sourcePath "example.jsonld" ; ga:format "application/ld+json" ;
+    ga:subject doc:example-subject ; ga:fragment doc:example-code ; ga:includedIn doc:scope .
+doc:source:legal-preamble a ga:CollectorUse ; ga:collectorType ga:HtmlPreambleCollector ;
+    ga:source "respec/template.html" ; ga:sourcePath "respec/template.html" ; ga:fragment doc:legal-preamble ;
+    ga:includedIn doc:scope .
+
+doc:reference a ga:DocumentorUse ; ga:documentorType ga:VocabularyReferenceDocumentor ;
+    ga:subject <https://www.omg.org/spec/DPROD/dprod/> ; ga:includedIn doc:scope ;
+    ga:referenceSection doc:section:classes, doc:section:object-properties,
+        doc:section:datatype-properties, doc:section:annotation-properties,
+        doc:section:named-individuals, doc:section:concept-schemes, doc:section:concepts,
+        doc:section:node-shapes, doc:section:property-shapes .
+doc:section:classes a ga:ReferenceSection ; ga:termType owl:Class ; ga:order 1 ; ga:component doc:component:classes .
+doc:section:object-properties a ga:ReferenceSection ; ga:termType owl:ObjectProperty ; ga:order 2 ; ga:component doc:component:object-properties .
+doc:section:datatype-properties a ga:ReferenceSection ; ga:termType owl:DatatypeProperty ; ga:order 3 ; ga:component doc:component:datatype-properties .
+doc:section:annotation-properties a ga:ReferenceSection ; ga:termType owl:AnnotationProperty ; ga:definedTermsOnly true ; ga:order 4 ; ga:component doc:component:annotation-properties .
+doc:section:named-individuals a ga:ReferenceSection ; ga:termType owl:NamedIndividual ; ga:definedTermsOnly true ; ga:order 5 ; ga:component doc:component:named-individuals .
+doc:section:concept-schemes a ga:ReferenceSection ; ga:termType skos:ConceptScheme ; ga:order 6 ; ga:component doc:component:concept-schemes .
+doc:section:concepts a ga:ReferenceSection ; ga:termType skos:Concept ; ga:definedTermsOnly true ; ga:order 7 ; ga:component doc:component:concepts .
+doc:section:node-shapes a ga:ReferenceSection ; ga:termType sh:NodeShape ; ga:order 8 ; ga:component doc:component:node-shapes .
+doc:section:property-shapes a ga:ReferenceSection ; ga:termType sh:PropertyShape ; ga:order 9 ; ga:component doc:component:property-shapes .
+
+doc:component:abstract a ga:Component ; dct:title "Abstract" ; ga:fragment doc:abstract .
+doc:component:status a ga:Component ; dct:title "Status of This Document" ; ga:fragment doc:status .
+doc:component:formal a ga:Component ; dct:title "Formal scope" ; ga:fragment doc:formal .
+doc:component:overview a ga:Component ; dct:title "Vocabulary reference" ; ga:fragment doc:overview .
+doc:component:example a ga:Component ; dct:title "Dataset example" ; ga:fragment doc:example, doc:example-code .
+doc:example ga:order 0 . doc:example-code ga:order 1 .
+doc:component:classes a ga:Component ; dct:title "OWL classes" .
+doc:component:object-properties a ga:Component ; dct:title "Object properties" .
+doc:component:datatype-properties a ga:Component ; dct:title "Datatype properties" .
+doc:component:annotation-properties a ga:Component ; dct:title "Annotation properties" .
+doc:component:named-individuals a ga:Component ; dct:title "Named individuals" .
+doc:component:concept-schemes a ga:Component ; dct:title "Concept schemes" .
+doc:component:concepts a ga:Component ; dct:title "Concepts without a documented scheme" .
+doc:component:node-shapes a ga:Component ; dct:title "SHACL node shapes" .
+doc:component:property-shapes a ga:Component ; dct:title "SHACL property shapes" .
+
+doc:profile a ga:Profile ; ga:requiredSectionRole "scope" ; ga:requiredMetadata ga:preamble .
+doc:pdf-profile a ga:Profile ; ga:requiredSectionRole "scope" ; ga:requiredMetadata ga:preamble .
+
+# Authored placements; the generated reference fills the nested components.
+doc:profile:abstract a ga:Placement ; ga:component doc:component:abstract ; ga:sectionKind "abstract" ; ga:sectionRole "abstract" ; ga:order 0 .
+doc:profile:status a ga:Placement ; ga:component doc:component:status ; ga:sectionKind "status" ; ga:sectionRole "status" ; ga:order 1 .
+doc:profile:formal a ga:Placement ; ga:component doc:component:formal ; ga:sectionKind "section" ; ga:sectionRole "scope" ; ga:order 10 .
+doc:profile:overview a ga:Placement ; ga:component doc:component:overview ; ga:sectionKind "section" ; ga:sectionRole "reference" ; ga:order 20 .
+doc:profile:example a ga:Placement ; ga:component doc:component:example ; ga:sectionKind "section" ; ga:sectionRole "example" ; ga:order 100 .
+doc:profile:generated:classes a ga:Placement ; ga:component doc:component:classes ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 21 .
+doc:profile:generated:object-properties a ga:Placement ; ga:component doc:component:object-properties ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 22 .
+doc:profile:generated:datatype-properties a ga:Placement ; ga:component doc:component:datatype-properties ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 23 .
+doc:profile:generated:annotation-properties a ga:Placement ; ga:component doc:component:annotation-properties ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 24 .
+doc:profile:generated:named-individuals a ga:Placement ; ga:component doc:component:named-individuals ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 25 .
+doc:profile:generated:concept-schemes a ga:Placement ; ga:component doc:component:concept-schemes ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 26 .
+doc:profile:generated:concepts a ga:Placement ; ga:component doc:component:concepts ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 27 .
+doc:profile:generated:node-shapes a ga:Placement ; ga:component doc:component:node-shapes ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 28 .
+doc:profile:generated:property-shapes a ga:Placement ; ga:component doc:component:property-shapes ; ga:parentPlacement doc:profile:overview ; ga:sectionKind "section" ; ga:order 29 .
+doc:profile ga:placement doc:profile:abstract, doc:profile:status, doc:profile:formal, doc:profile:overview, doc:profile:example, doc:profile:generated:classes, doc:profile:generated:object-properties, doc:profile:generated:datatype-properties, doc:profile:generated:annotation-properties, doc:profile:generated:named-individuals, doc:profile:generated:concept-schemes, doc:profile:generated:concepts, doc:profile:generated:node-shapes, doc:profile:generated:property-shapes .
+doc:pdf-profile:abstract a ga:Placement ; ga:component doc:component:abstract ; ga:sectionKind "abstract" ; ga:sectionRole "abstract" ; ga:order 0 .
+doc:pdf-profile:status a ga:Placement ; ga:component doc:component:status ; ga:sectionKind "status" ; ga:sectionRole "status" ; ga:order 1 .
+doc:pdf-profile:formal a ga:Placement ; ga:component doc:component:formal ; ga:sectionKind "section" ; ga:sectionRole "scope" ; ga:order 10 .
+doc:pdf-profile:overview a ga:Placement ; ga:component doc:component:overview ; ga:sectionKind "section" ; ga:sectionRole "reference" ; ga:order 20 .
+doc:pdf-profile:example a ga:Placement ; ga:component doc:component:example ; ga:sectionKind "section" ; ga:sectionRole "example" ; ga:order 100 .
+doc:pdf-profile:generated:classes a ga:Placement ; ga:component doc:component:classes ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 21 .
+doc:pdf-profile:generated:object-properties a ga:Placement ; ga:component doc:component:object-properties ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 22 .
+doc:pdf-profile:generated:datatype-properties a ga:Placement ; ga:component doc:component:datatype-properties ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 23 .
+doc:pdf-profile:generated:annotation-properties a ga:Placement ; ga:component doc:component:annotation-properties ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 24 .
+doc:pdf-profile:generated:named-individuals a ga:Placement ; ga:component doc:component:named-individuals ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 25 .
+doc:pdf-profile:generated:concept-schemes a ga:Placement ; ga:component doc:component:concept-schemes ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 26 .
+doc:pdf-profile:generated:concepts a ga:Placement ; ga:component doc:component:concepts ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 27 .
+doc:pdf-profile:generated:node-shapes a ga:Placement ; ga:component doc:component:node-shapes ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 28 .
+doc:pdf-profile:generated:property-shapes a ga:Placement ; ga:component doc:component:property-shapes ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 29 .
+doc:pdf-profile ga:placement doc:pdf-profile:abstract, doc:pdf-profile:status, doc:pdf-profile:formal, doc:pdf-profile:overview, doc:pdf-profile:example, doc:pdf-profile:generated:classes, doc:pdf-profile:generated:object-properties, doc:pdf-profile:generated:datatype-properties, doc:pdf-profile:generated:annotation-properties, doc:pdf-profile:generated:named-individuals, doc:pdf-profile:generated:concept-schemes, doc:pdf-profile:generated:concepts, doc:pdf-profile:generated:node-shapes, doc:pdf-profile:generated:property-shapes .

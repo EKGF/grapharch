@@ -7,7 +7,7 @@ plus the separately published mapping to OWL-Time,
 covering names, identifiers, roles, organizations, collections, dates, quantities
 and units, and other reusable patterns.
 
-[`showcase.yaml`](showcase.yaml) declares every source and its RDF media type.
+[`showcase.ttl`](showcase.ttl) declares every source as a `ga:rdfDocument` with its `ga:format` media type.
 [`project.ttl`](project.ttl) contains only publication settings, collection membership,
 and the native ontology namespace/prefix declarations. The collection annotates
 `ga:collectionTerm "library"`, so its overview, navigation, search and PDF use

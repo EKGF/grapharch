@@ -50,27 +50,23 @@ async fn unsupported_published_markup_cannot_replace_a_collected_revision()
     Ok(())
 }
 
-#[test]
-fn reference_inputs_match_their_recorded_digests() -> anyhow::Result<()> {
-    use {
-        base64::{Engine, engine::general_purpose::STANDARD},
-        sha2::{Digest, Sha256},
-    };
-    let metadata: serde_yaml::Value = serde_yaml::from_str(include_str!(
-        "../examples/w3c-rdf12-n-triples/reference.yaml"
-    ))?;
-    for (file, field) in [
-        ("source.html", "source_sha256"),
-        ("w3c-logo.png", "logo_sha256"),
-        ("w3c-logo.svg", "logo_source_sha256"),
-    ] {
-        let bytes =
-            std::fs::read(format!("examples/w3c-rdf12-n-triples/{file}"))?;
-        assert_eq!(
-            hex::encode(Sha256::digest(&bytes)),
-            metadata[field].as_str().unwrap()
-        );
-    }
+#[tokio::test]
+async fn reference_inputs_match_their_recorded_digests() -> anyhow::Result<()> {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    let verified = grapharch::publication::showcases::verify_copied_sources(
+        std::path::Path::new("examples/w3c-rdf12-n-triples/showcase.ttl"),
+    )
+    .await?;
+    let names: std::collections::BTreeSet<_> = verified
+        .iter()
+        .map(|path| path.file_name().unwrap().to_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(
+        names,
+        ["source.html", "w3c-logo.png", "w3c-logo.svg"]
+            .map(str::to_owned)
+            .into()
+    );
     let authority =
         include_str!("../examples/w3c-rdf12-n-triples/authority.ttl");
     let encoded = authority

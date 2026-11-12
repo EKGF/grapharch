@@ -13,6 +13,8 @@ use {
         definitions::{objects, text},
         diagnostics::FailureMode,
         render::Publisher,
+        revision_build::PublicationUrl,
+        showcase_configuration::ShowcaseConfiguration,
         showcases,
         term,
         view::RevisionView,
@@ -31,13 +33,16 @@ use {
 };
 
 struct Case {
-    id:       NamedNode,
-    key:      String,
-    runner:   ShowcaseRunner,
-    source:   String,
-    preview:  Option<String>,
-    pdf:      Option<String>,
-    expected: BTreeSet<String>,
+    id:          NamedNode,
+    key:         String,
+    runner:      ShowcaseRunner,
+    source:      String,
+    preview:     Option<String>,
+    pdf:         Option<String>,
+    expected:    BTreeSet<String>,
+    /// Deployed location of this case's artifacts, supplied to an
+    /// exact-revision build by the gallery rather than by its definitions.
+    publication: Option<PublicationUrl>,
 }
 
 /// Complete, bounded coverage of the declared showcase suite.
@@ -275,45 +280,38 @@ async fn build_case(
         source.starts_with(root),
         "showcase source escapes its declared root"
     );
+    let cache = root
+        .parent()
+        .ok_or_else(|| {
+            anyhow::anyhow!("showcase root requires a project directory")
+        })?
+        .join("output/cache/git");
     let (child, plans) = match case.runner {
         ShowcaseRunner::Authored => showcases::authored(&source).await?,
-        ShowcaseRunner::Dprod => {
-            showcases::dprod_remote(
-                &source,
-                &root
-                    .parent()
-                    .ok_or_else(|| {
-                        anyhow::anyhow!("examples root has no parent")
-                    })?
-                    .join("output/cache/git"),
+        ShowcaseRunner::RevisionBuild => {
+            super::showcases_revision::build(
+                &configuration(&case, &source).await?,
+                &cache,
+                case.publication.clone().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "revision-build showcase {} has no publication URL",
+                        case.id
+                    )
+                })?,
             )
             .await?
         },
         ShowcaseRunner::Mkdocs => {
-            showcases::mkdocs(
-                &source,
-                &root
-                    .parent()
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "showcase root requires a project directory"
-                        )
-                    })?
-                    .join("output/cache/git"),
+            super::showcases_mkdocs::configured(
+                &configuration(&case, &source).await?,
+                &cache,
             )
             .await?
         },
         ShowcaseRunner::OntologyFamily => {
-            showcases::family(
-                &source,
-                &root
-                    .parent()
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "showcase root requires a project directory"
-                        )
-                    })?
-                    .join("output/cache/git"),
+            showcases::family_configured(
+                &configuration(&case, &source).await?,
+                &cache,
             )
             .await?
         },
@@ -544,6 +542,7 @@ fn quad(subject: &NamedNode, field: &str, object: impl Into<Term>) -> Quad {
 fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
     let store = Store::new()?;
     store.load_from_reader(RdfFormat::Turtle, bytes)?;
+    let artifacts = artifacts_url(&store, project)?;
     let mut cases = Vec::new();
     let mut keys = BTreeSet::new();
     for object in objects(&store, project, "showcase")? {
@@ -595,14 +594,32 @@ fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
                 }
             })
             .collect::<Result<_>>()?;
+        let runner = runner(&store, &id)?;
+        let publication = match (runner, &artifacts) {
+            (ShowcaseRunner::RevisionBuild, Some(artifacts)) => {
+                Some(PublicationUrl::try_new(&format!(
+                    "{}{key}/",
+                    artifacts.as_str()
+                ))?)
+            },
+            (ShowcaseRunner::RevisionBuild, None) => {
+                anyhow::bail!(
+                    "{id} is an exact-revision showcase; {project} requires \
+                     ga:showcaseArtifactsUrl, the deployed location its \
+                     publication URL derives from"
+                )
+            },
+            _ => None,
+        };
         cases.push(Case {
-            runner: runner(&store, &id)?,
+            runner,
             id,
             key,
             source,
             preview,
             pdf,
             expected,
+            publication,
         });
         ensure!(
             cases.len() <= 16,
@@ -611,6 +628,43 @@ fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
     }
     ensure!(!cases.is_empty(), "showcase registry is empty");
     Ok(cases)
+}
+
+/// The run configuration a registered showcase names with `ga:source`; it
+/// must describe that same showcase.
+async fn configuration(
+    case: &Case,
+    source: &Path,
+) -> Result<ShowcaseConfiguration> {
+    let configuration = ShowcaseConfiguration::read(source).await?;
+    ensure!(
+        configuration.id() == &case.id,
+        "{} configures {}, not the registered showcase {}",
+        case.source,
+        configuration.id(),
+        case.id
+    );
+    Ok(configuration)
+}
+
+/// The deployed directory under which every showcase publishes its
+/// artifacts at its slug.
+fn artifacts_url(
+    store: &Store,
+    project: &NamedNode,
+) -> Result<Option<PublicationUrl>> {
+    let mut values = objects(store, project, "showcaseArtifactsUrl")?;
+    let Some(value) = values.next().transpose()? else {
+        return Ok(None);
+    };
+    ensure!(
+        values.next().transpose()?.is_none(),
+        "{project} has conflicting showcaseArtifactsUrl values"
+    );
+    let Term::NamedNode(url) = value else {
+        anyhow::bail!("{project} showcaseArtifactsUrl must be an IRI")
+    };
+    Ok(Some(PublicationUrl::try_new(url.as_str())?))
 }
 
 fn validate_artifact_count(count: usize) -> Result<()> {

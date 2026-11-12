@@ -20,8 +20,12 @@ use {
 
 mod blob;
 mod code;
+mod definitions;
 mod documentation;
-pub use documentation::{documentation_source, remote_documentation};
+pub use {
+    definitions::{CommittedDefinitions, DEFINITIONS_PROVENANCE},
+    documentation::{documentation_source, remote_documentation},
+};
 pub(crate) mod hints;
 mod provenance;
 mod selection;
@@ -46,8 +50,14 @@ pub struct RepositoryScan {
     revision:       Arc<Revision>,
 }
 
+/// Provenance processor of a scanned content revision.
+pub const CONTENT_PROVENANCE: &str = "urn:grapharch:git-provenance";
+
 #[derive(Clone)]
 struct Revision {
+    /// Provenance processor; content and controlling definitions differ, so
+    /// one origin observed at two commits keeps two contributions.
+    processor:      &'static str,
     project:        String,
     origin:         String,
     commit:         String,
@@ -56,6 +66,14 @@ struct Revision {
     local_location: Option<String>,
     working_tree:   bool,
 }
+impl RepositoryScan {
+    /// Project owning this scan's contributions.
+    pub fn project(&self) -> &str { &self.revision.project }
+
+    /// Public, credential-free origin of the scanned repository.
+    pub fn origin(&self) -> &str { &self.revision.origin }
+}
+
 impl Revision {
     fn read(
         project: &str,
@@ -65,6 +83,7 @@ impl Revision {
         working_tree: bool,
     ) -> Result<Self> {
         Ok(Self {
+            processor: CONTENT_PROVENANCE,
             project: project.into(),
             origin,
             commit: commit.id.to_string(),
@@ -96,31 +115,8 @@ pub async fn local_repository(
             repo.workdir() == Some(input.as_path()),
             "local repository must name the checkout root"
         );
-        let location = url::Url::from_directory_path(&input)
-            .map_err(|_| anyhow::anyhow!("invalid checkout URL"))?
-            .to_string();
-        let origin = match repo.try_find_remote("origin") {
-            Some(remote) => {
-                let remote = remote?;
-                let url = remote
-                    .url(gix::remote::Direction::Fetch)
-                    .context("origin remote has no fetch URL")?;
-                let configured = url.to_string();
-                let public = if url.scheme == gix::url::Scheme::File &&
-                    !configured.starts_with("file:")
-                {
-                    let path = input.join(std::str::from_utf8(&url.path)?);
-                    public_repository_url(
-                        path.to_str()
-                            .context("local Git origin is not UTF-8")?,
-                    )?
-                } else {
-                    public_repository_url(&configured)?
-                };
-                public.to_string()
-            },
-            None => location.clone(),
-        };
+        let location = checkout_location(&input)?;
+        let origin = origin_url(&repo, &input)?;
         let mut revision = Revision::read(
             &project,
             origin,
@@ -139,6 +135,36 @@ pub async fn local_repository(
         provenance: Arc::new(revision.clone()),
         revision: Arc::new(revision),
     })
+}
+
+fn checkout_location(root: &Path) -> Result<String> {
+    Ok(url::Url::from_directory_path(root)
+        .map_err(|_| anyhow::anyhow!("invalid checkout URL"))?
+        .to_string())
+}
+
+/// Public identity of a checkout: its sanitized `origin` fetch URL, else the
+/// checkout location itself.
+fn origin_url(repo: &gix::Repository, root: &Path) -> Result<String> {
+    let Some(remote) = repo.try_find_remote("origin") else {
+        return checkout_location(root);
+    };
+    let remote = remote?;
+    let url = remote
+        .url(gix::remote::Direction::Fetch)
+        .context("origin remote has no fetch URL")?;
+    let configured = url.to_string();
+    let public = if url.scheme == gix::url::Scheme::File &&
+        !configured.starts_with("file:")
+    {
+        let path = root.join(std::str::from_utf8(&url.path)?);
+        public_repository_url(
+            path.to_str().context("local Git origin is not UTF-8")?,
+        )?
+    } else {
+        public_repository_url(&configured)?
+    };
+    Ok(public.to_string())
 }
 
 /// Discover the enclosing clone while preserving non-Git directory sources.

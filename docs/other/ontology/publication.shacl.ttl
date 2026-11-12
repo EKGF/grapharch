@@ -18,7 +18,22 @@ ga:CollectorUseShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ; sh:nodeKi
           sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ]
     ) ;
     sh:property [ sh:path ga:collectorType ; sh:nodeKind sh:IRI ; sh:class ga:Collector ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] .
+    sh:property [ sh:path ga:source ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:includedIn ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:maxCount 16 ] .
+
+ga:IncludedInFragmentShape a sh:NodeShape ;
+    rdfs:comment "A collector use names the fragment it contributes exactly when it names the scopes that include it. A fragment outside every scope would be collected and never published."@en ;
+    sh:targetClass ga:CollectorUse ;
+    sh:xone (
+        [ sh:property [ sh:path ga:includedIn ; sh:maxCount 0 ] ; sh:property [ sh:path ga:fragment ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path ga:fragment ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ; sh:property [ sh:path ga:includedIn ; sh:minCount 1 ] ]
+    ) .
+
+ga:NativeMetadataShape a sh:NodeShape ;
+    rdfs:comment "Derived native metadata names exactly one collector use and at least one derivable predicate."@en ;
+    sh:targetSubjectsOf ga:metadataSource, ga:derivedMetadata ;
+    sh:property [ sh:path ga:metadataSource ; sh:nodeKind sh:IRI ; sh:class ga:CollectorUse ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:derivedMetadata ; sh:minCount 1 ; sh:in ( <http://purl.org/dc/terms/title> <http://purl.org/dc/terms/description> ga:license ga:publicationDate ) ] .
 
 ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:include ; sh:nodeKind sh:IRI ] ;
@@ -147,9 +162,29 @@ ga:AssetReferenceShape a sh:NodeShape ;
 
 
 ga:ReferenceSectionShape a sh:NodeShape ; sh:targetObjectsOf ga:referenceSection ; sh:nodeKind sh:IRI ;
-    sh:property [ sh:path ga:sectionKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("classes" "properties" "individuals" "shapes" "schemes" "concepts" "collections" "other") ] ;
-    sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:uniqueLang true ; sh:minLength 1 ; sh:maxLength 160 ] ;
-    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1000 ] .
+    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1000 ] ;
+    sh:xone (
+        [ rdfs:comment "An ontology family category override."@en ;
+          sh:property [ sh:path ga:sectionKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("classes" "properties" "individuals" "shapes" "schemes" "concepts" "collections" "other") ] ;
+          sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:uniqueLang true ; sh:minLength 1 ; sh:maxLength 160 ] ;
+          sh:property [ sh:path ga:termType ; sh:maxCount 0 ] ]
+        [ rdfs:comment "A section filled by a vocabulary reference documentor."@en ;
+          sh:class ga:ReferenceSection ;
+          sh:property [ sh:path ga:termType ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+          sh:property [ sh:path ga:component ; sh:nodeKind sh:IRI ; sh:class ga:Component ; sh:minCount 1 ; sh:maxCount 1 ] ;
+          sh:property [ sh:path ga:definedTermsOnly ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
+          sh:property [ sh:path ga:sectionKind ; sh:maxCount 0 ] ]
+    ) .
+
+ga:VocabularyReferenceDocumentorShape a sh:NodeShape ;
+    rdfs:comment "A vocabulary reference documentor use names its ontology context and its authored sections."@en ;
+    sh:targetClass ga:DocumentorUse ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ga:documentorType ; sh:hasValue ga:VocabularyReferenceDocumentor ] ] ]
+        [ sh:property [ sh:path ga:subject ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+          sh:property [ sh:path ga:referenceSection ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 16 ] ;
+          sh:property [ sh:path ga:includedIn ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:maxCount 16 ] ]
+    ) .
 
 
 ga:OntologyModuleShape a sh:NodeShape ; sh:targetClass ga:OntologyModule ; sh:nodeKind sh:IRI ;
@@ -302,6 +337,47 @@ ga:AbbreviationSelectionShape a sh:NodeShape ;
     sh:property [ sh:path ga:abbreviationScheme ; sh:nodeKind sh:IRI ;
         sh:class <http://www.w3.org/2004/02/skos/core#ConceptScheme> ;
         sh:minCount 1 ; sh:maxCount 8 ] .
+
+ga:ShowcaseConfigurationShape a sh:NodeShape ;
+    rdfs:comment "Showcase run settings are singletons of the expected kind; exact commits are full lowercase Git object IDs."@en ;
+    sh:targetClass ga:Showcase ;
+    sh:property [ sh:path ga:gitRepository ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:gitRef ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 1024 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:gitCommit ; sh:datatype xsd:string ; sh:pattern "^[0-9a-f]{40}$" ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:definitionsCommit ; sh:datatype xsd:string ; sh:pattern "^[0-9a-f]{40}$" ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:definitionsPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:hintsPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:showcaseProject ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:showcaseTargets ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:allTargets ; sh:datatype xsd:boolean ; sh:in ( true ) ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:rdfDocument ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:mkdocsConfiguration ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:materializedPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:licensePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedSource ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:copiedRepository ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedRevision ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedFromWorkingTree ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
+    sh:or ( [ sh:property [ sh:path ga:allTargets ; sh:maxCount 0 ] ] [ sh:property [ sh:path ga:showcaseTargets ; sh:maxCount 0 ] ] ) .
+
+ga:ShowcaseRdfDocumentShape a sh:NodeShape ;
+    rdfs:comment "A showcase RDF document declares its media type."@en ;
+    sh:targetObjectsOf ga:rdfDocument ;
+    sh:property [ sh:path ga:format ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:CopiedSourceShape a sh:NodeShape ;
+    rdfs:comment "A copied fixture file names its local path and its SHA-256 digest."@en ;
+    sh:targetObjectsOf ga:copiedSource ;
+    sh:property [ sh:path ga:localPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:contentDigest ; sh:datatype xsd:string ; sh:pattern "^[a-f0-9]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedFrom ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] .
+
+ga:ShowcaseArtifactsUrlShape a sh:NodeShape ;
+    rdfs:comment "A gallery publishes its showcases beneath one deployed absolute HTTP(S) directory."@en ;
+    sh:targetSubjectsOf ga:showcaseArtifactsUrl ;
+    sh:property [ sh:path ga:showcaseArtifactsUrl ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:pattern "^https?://[^/?#@]+(/[^?#]*)?/$" ] .
 
 ga:ShowcaseDiscoveryShape a sh:NodeShape ; sh:targetClass ga:Showcase ;
     sh:property [ sh:path ga:showcaseRunner ; sh:nodeKind sh:IRI ; sh:class ga:ShowcaseRunner ; sh:minCount 1 ; sh:maxCount 1 ] ;

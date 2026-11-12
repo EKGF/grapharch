@@ -170,7 +170,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: output/cache/git
-          key: grapharch-git-${{ runner.os }}-${{ hashFiles('examples/**/showcase.yaml') }}
+          key: grapharch-git-${{ runner.os }}-${{ hashFiles('examples/**/showcase.ttl') }}
           restore-keys: grapharch-git-${{ runner.os }}-
       - name: Verify every live showcase with the candidate engine
         id: showcase-verification

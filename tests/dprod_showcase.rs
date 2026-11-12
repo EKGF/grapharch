@@ -1,18 +1,27 @@
+#[path = "support/family_repository.rs"]
+mod family_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
 #[path = "support/mod.rs"]
 mod specification_assertions;
 
 use {
     anyhow::Result,
-    grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
+    grapharch::publication::{
+        dataset::Dataset,
+        render::Publisher,
+        revision_build::TargetSelection,
+        showcases,
+    },
     std::path::Path,
 };
 
 #[tokio::test]
 async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
 -> Result<()> {
-    let source = tempfile::tempdir()?;
-    copy_tree(Path::new("examples/dprod"), source.path())?;
-    let (dataset, plans) = showcases::dprod(source.path()).await?;
+    let fixture =
+        revision_fixture::RevisionFixture::new(Path::new("examples/dprod"))?;
+    let (dataset, plans) = fixture.collect(TargetSelection::All).await?;
     let mut shapes = dataset.select("SELECT (COUNT(DISTINCT ?shape) AS ?count) WHERE { GRAPH ?g { ?shape a ?kind } VALUES ?kind { <http://www.w3.org/ns/shacl#NodeShape> <http://www.w3.org/ns/shacl#PropertyShape> } }".into()).await?;
     let row = shapes.next().await?.unwrap();
     let oxrdf::Term::Literal(count) = &row["count"] else {
@@ -22,7 +31,7 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     let output = tempfile::tempdir()?;
     let archive = output.path().join("documentation.nq");
     dataset.export(archive.clone()).await?;
-    std::fs::remove_dir_all(source.path())?;
+    fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let publications =
@@ -89,32 +98,12 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     Ok(())
 }
 
-#[test]
-fn dprod_fixture_matches_its_pinned_native_sources() -> Result<()> {
-    use sha2::{Digest, Sha256};
-    let metadata: serde_yaml::Value =
-        serde_yaml::from_str(include_str!("../examples/dprod/reference.yaml"))?;
-    for (file, entry) in metadata["sources"].as_mapping().unwrap() {
-        let bytes = std::fs::read(
-            Path::new("examples/dprod/sources").join(file.as_str().unwrap()),
-        )?;
-        assert_eq!(
-            hex::encode(Sha256::digest(&bytes)),
-            entry["sha256"].as_str().unwrap()
-        );
-    }
-    Ok(())
-}
-
-fn copy_tree(source: &Path, target: &Path) -> Result<()> {
-    std::fs::create_dir_all(target)?;
-    for entry in std::fs::read_dir(source)? {
-        let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            copy_tree(&entry.path(), &target.join(entry.file_name()))?;
-        } else {
-            std::fs::copy(entry.path(), target.join(entry.file_name()))?;
-        }
-    }
+#[tokio::test]
+async fn dprod_fixture_matches_its_pinned_native_sources() -> Result<()> {
+    let verified = grapharch::publication::showcases::verify_copied_sources(
+        Path::new("examples/dprod/showcase.ttl"),
+    )
+    .await?;
+    assert_eq!(verified.len(), 4);
     Ok(())
 }

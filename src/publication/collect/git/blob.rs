@@ -26,7 +26,7 @@ impl RepositoryScan {
     }
 }
 impl PinnedGitBlob {
-    async fn at(
+    pub(super) async fn at(
         root: PathBuf,
         revision: Arc<Revision>,
         relative: &Path,
@@ -86,6 +86,18 @@ impl PinnedGitBlob {
     }
 
     pub fn commit(&self) -> &str { &self.revision.commit }
+
+    /// Git object identity of this blob.
+    pub fn blob_id(&self) -> String { self.blob.to_string() }
+
+    /// Repository-relative path of this blob.
+    pub fn path(&self) -> &str { &self.relative }
+
+    /// Project owning this blob's contributions.
+    pub fn project(&self) -> &str { &self.revision.project }
+
+    /// Public origin of the pinned repository.
+    pub fn origin(&self) -> &str { &self.revision.origin }
 
     pub fn source(&self) -> &str { &self.source }
 
@@ -252,10 +264,12 @@ impl PinnedGitBlob {
             .origin
             .trim_end_matches(".git")
             .trim_end_matches('/');
-        ensure!(
-            origin.starts_with("https://github.com/"),
-            "Git reference publication requires a GitHub HTTPS origin"
-        );
+        // Only a GitHub HTTPS origin has a known public browse URL. Other
+        // verified links stay relative; the renderer resolves them to a
+        // published page or rejects them.
+        if !origin.starts_with("https://github.com/") {
+            return Ok(None);
+        }
         let mut target = url::Url::parse(&format!(
             "{origin}/{}/{}/",
             if is_tree { "tree" } else { "blob" },
@@ -739,6 +753,65 @@ mod reference_tests {
         assert!(blob.reference("missing.md").await.is_err());
         assert!(blob.reference("#local").await?.is_none());
         assert!(blob.reference("https://example.org/guide").await?.is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn links_in_repositories_without_a_browse_url_are_verified_but_left_to_the_renderer()
+    -> Result<()> {
+        let source = tempfile::tempdir()?;
+        let cache = tempfile::tempdir()?;
+        let run = |args: &[&str]| -> Result<()> {
+            let output = std::process::Command::new("git")
+                .arg("-C")
+                .arg(source.path())
+                .args(["-c", "commit.gpgsign=false"])
+                .args(args)
+                .env("GIT_AUTHOR_NAME", "Fixture")
+                .env("GIT_AUTHOR_EMAIL", "fixture@example.org")
+                .env("GIT_COMMITTER_NAME", "Fixture")
+                .env("GIT_COMMITTER_EMAIL", "fixture@example.org")
+                .output()?;
+            ensure!(
+                output.status.success(),
+                "fixture git failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            Ok(())
+        };
+        run(&["init", "-b", "main"])?;
+        std::fs::create_dir(source.path().join("site"))?;
+        std::fs::write(
+            source.path().join("site/index.md"),
+            "# Home\n[Guide](guide.md)\n",
+        )?;
+        std::fs::write(source.path().join("site/guide.md"), "# Guide\n")?;
+        run(&["add", "."])?;
+        run(&["commit", "-m", "fixture"])?;
+        let commit = String::from_utf8(
+            std::process::Command::new("git")
+                .arg("-C")
+                .arg(source.path())
+                .args(["rev-parse", "HEAD"])
+                .output()?
+                .stdout,
+        )?;
+        let scan = super::super::remote_documentation(
+            source.path().to_str().unwrap(),
+            commit.trim(),
+            cache.path(),
+            "urn:test:project",
+        )
+        .await?;
+        let blob = scan.blob(Path::new("site/index.md")).await?;
+        assert!(
+            blob.reference("guide.md").await?.is_none(),
+            "a local origin has no public browse URL for repository links"
+        );
+        assert!(
+            blob.reference("missing.md").await.is_err(),
+            "links are still verified at the pinned commit"
+        );
         Ok(())
     }
 }

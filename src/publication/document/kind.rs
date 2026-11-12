@@ -10,6 +10,7 @@ pub(crate) enum DocumentorKind {
     MaturityModel,
     MaturityOverview,
     PublicationInventory,
+    VocabularyReference,
 }
 
 impl DocumentorKind {
@@ -25,6 +26,9 @@ impl DocumentorKind {
                 Ok(Self::MaturityOverview)
             },
             Self::PUBLICATION_INVENTORY => Ok(Self::PublicationInventory),
+            "https://ekgf.org/ontology/grapharch#VocabularyReferenceDocumentor" => {
+                Ok(Self::VocabularyReference)
+            },
             _ => bail!("unsupported documentorType IRI {node}"),
         }
     }
@@ -60,7 +64,7 @@ mod tests {
                 count += 1;
             }
         }
-        assert_eq!(count, 3);
+        assert_eq!(count, 4);
     }
 
     #[test]

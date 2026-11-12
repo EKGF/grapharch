@@ -67,7 +67,7 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
         definitions::iri("urn:showcase:reader-profile")?,
     )?;
     let fixture = fixture.replace("Literal brackets such as", r"## Coverage\n\n| Term | Count |\n| --- | ---: |\n| Document | 28 |\n\n> [!WARNING]\n> Review annotations must stay together.\n\nLiteral brackets such as");
-    let shape_label = "dprod-shapes:RejectMixedLifecycleStatusOnDataOfferShape";
+    let shape_label = "ex-shapes:RejectMixedLifecycleStatusOnOfferShape";
     let fixture = fixture.replace("Literal brackets such as", &format!(r"| Path | Constraints | Shape |\n| --- | --- | --- |\n| status | maxCount: 0 | [{shape_label}](https://example.org/shapes/reject) |\n\nLiteral brackets such as"));
     let long_iri = format!(
         "https://example.org/{}",

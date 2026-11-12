@@ -97,7 +97,7 @@ impl Collector for Revision {
     fn identity(&self) -> Result<SourceIdentity<'_>> {
         Ok(SourceIdentity {
             project:   &self.project,
-            processor: "urn:grapharch:git-provenance",
+            processor: self.processor,
             source:    self.local_location.as_deref().unwrap_or(&self.origin),
         })
     }

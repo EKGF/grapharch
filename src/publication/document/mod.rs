@@ -7,15 +7,18 @@ pub(crate) mod kind;
 pub(crate) mod maturity;
 mod mermaid;
 pub(crate) mod namespace_bindings;
+pub mod native_metadata;
 pub mod plantuml;
 pub(crate) mod publication_inventory;
 mod query_display;
 mod resource;
 mod run_in_headings;
+pub mod scope_inclusion;
 pub(crate) mod shacl_class_view;
 mod shacl_queries;
 pub(crate) mod skos;
 pub(crate) mod use_cases;
+mod vocabulary_reference;
 use {
     super::{dataset::Dataset, writer::GraphWriter},
     anyhow::Result,
@@ -28,6 +31,7 @@ pub use {
     maturity::MaturityModelDocumentor,
     mermaid::MermaidDocumentor,
     use_cases::UseCaseDocumentor,
+    vocabulary_reference::VocabularyReferenceDocumentor,
 };
 
 /// A generator of semantic documentation fragments from collected RDF only.

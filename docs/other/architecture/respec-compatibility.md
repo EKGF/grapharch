@@ -99,7 +99,8 @@ its fork-specific behavior needs a separate audit before a
 DPROD replacement can be called compatible.
 
 The `examples/dprod/` showcase instead collects native ontology and SHACL RDF
-and a Markdown worked example from a pinned DPROD commit. It generates 53 term
-fragments and publishes HTML and PDF from the resulting KG. This tests native
+and a Markdown worked example from a pinned DPROD commit, as an exact-revision
+build whose GraphArch definitions are kept apart from the content. It generates
+53 term fragments and publishes HTML and PDF from the resulting KG. This tests native
 DPROD inputs; it does not establish compatibility with the EKGF ReSpec fork or
 replace the complete DPROD specification.

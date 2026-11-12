@@ -67,3 +67,7 @@ ga:OrcidPersonCollector a ga:Collector ;
 ga:GitHubContributorCollector a ga:Collector ;
     rdfs:label "GitHub contributor collector"@en ;
     dct:description "Counts commit authors at the collected commit of each GitHub source repository through the GitHub REST API and retains the public login, display name and profile URL of the most active accounts, never their email addresses."@en .
+
+ga:HtmlPreambleCollector a ga:Collector ;
+    rdfs:label "HTML preamble collector"@en ;
+    dct:description "Retains the unique legal preamble disclosure of a selected HTML source as a configured fragment, without evaluating its template or scripts."@en .

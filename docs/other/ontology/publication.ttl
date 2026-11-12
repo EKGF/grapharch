@@ -790,7 +790,7 @@ ga:gitRef a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
     dct:description "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
-    rdfs:domain ga:CollectorUse ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:Showcase ) ] ;
     rdfs:range xsd:string ;
     skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:governance-source> a ga:CollectorUse ;\n    ga:collectorType ga:GitRdfFileCollector ;\n    ga:source \"https://github.com/EKGF/ekg-ontologies.git\" ;\n    ga:sourcePath \"ekgf-artifact-governance.ttl\" ;\n    ga:gitRef \"HEAD\" ."@en .
 
@@ -1177,6 +1177,177 @@ ga:showcasesSource a owl:DatatypeProperty ;
     rdfs:domain ga:Project ;
     rdfs:range xsd:string .
 
+ga:CopiedSource a owl:Class ;
+    rdfs:label "Copied fixture source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A file copied into a showcase from an upstream repository revision or a published document, with the SHA-256 digest that keeps the copy reproducible."@en ;
+    dct:description "A file copied into a showcase from an upstream repository revision or a published document, with the SHA-256 digest that keeps the copy reproducible."@en .
+
+ga:gitRepository a owl:DatatypeProperty ;
+    rdfs:label "Showcase Git repository"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the Git transport URL from which a showcase reads its content."@en ;
+    dct:description "Identifies the Git transport URL from which a showcase reads its content."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The value is a literal because Git transport URLs, including local file URLs in tests, are not necessarily IRIs. It is read as data only; nothing from the repository is executed."@en .
+
+ga:gitCommit a owl:DatatypeProperty ;
+    rdfs:label "Exact showcase content commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Pins the exact full lowercase Git commit from which a showcase reads its content."@en ;
+    dct:description "Pins the exact full lowercase Git commit from which a showcase reads its content."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Branch names, tags and abbreviated identifiers are rejected before any network access."@en .
+
+ga:definitionsCommit a owl:DatatypeProperty ;
+    rdfs:label "Exact controlling definitions commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Pins the exact full lowercase Git commit of the controlling revision whose GraphArch definitions an exact-revision showcase uses."@en ;
+    dct:description "Pins the exact full lowercase Git commit of the controlling revision whose GraphArch definitions an exact-revision showcase uses."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:definitionsPath a owl:DatatypeProperty ;
+    rdfs:label "Showcase definitions path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates the GraphArch definitions file a showcase uses."@en ;
+    dct:description "Locates the GraphArch definitions file a showcase uses."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "For an exact-revision showcase the path is relative to the tree of the controlling commit. For an ontology-family showcase it is a relative path beneath the showcase configuration and overrides the repository's own publication hints."@en .
+
+ga:hintsPath a owl:DatatypeProperty ;
+    rdfs:label "Repository publication hints path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the RDF file within a pinned repository whose publication hints identify the project an ontology-family showcase publishes."@en ;
+    dct:description "Selects the RDF file within a pinned repository whose publication hints identify the project an ontology-family showcase publishes."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Required only when the repository declares more than one ga:Project. It conflicts with local definitions."@en .
+
+ga:showcaseProject a owl:ObjectProperty ;
+    rdfs:label "Showcase project"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the GraphArch project a showcase publishes from its definitions."@en ;
+    dct:description "Identifies the GraphArch project a showcase publishes from its definitions."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:Project .
+
+ga:showcaseTargets a owl:ObjectProperty ;
+    rdfs:label "Ordered showcase targets"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Lists, in publication order, the registered targets a showcase publishes."@en ;
+    dct:description "Lists, in publication order, the registered targets a showcase publishes."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range rdf:List ;
+    skos:scopeNote "The value is an RDF list of target IRIs. For an ontology-family showcase the first target is the family publication and the others are resolved from the same revision."@en .
+
+ga:allTargets a owl:DatatypeProperty ;
+    rdfs:label "Publish every showcase target"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects every target the showcase project registers, in IRI order, instead of an ordered list."@en ;
+    dct:description "Selects every target the showcase project registers, in IRI order, instead of an ordered list."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:boolean ;
+    skos:scopeNote "Only the value true is meaningful; it is exclusive with ga:showcaseTargets."@en .
+
+ga:rdfDocument a owl:ObjectProperty ;
+    rdfs:label "Showcase RDF document"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a published RDF document an ontology-family showcase collects; the document IRI is its retrieval URL."@en ;
+    dct:description "Identifies a published RDF document an ontology-family showcase collects; the document IRI is its retrieval URL."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "Each document declares its media type with ga:format. External owl:imports are not fetched implicitly."@en .
+
+ga:mkdocsConfiguration a owl:DatatypeProperty ;
+    rdfs:label "MkDocs configuration path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates the MkDocs configuration file within the pinned repository a MkDocs showcase imports."@en ;
+    dct:description "Locates the MkDocs configuration file within the pinned repository a MkDocs showcase imports."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The file is read as data; MkDocs and Python are never run."@en .
+
+ga:materializedPath a owl:DatatypeProperty ;
+    rdfs:label "Materialized repository path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects a file or directory of the pinned repository that a MkDocs showcase reads."@en ;
+    dct:description "Selects a file or directory of the pinned repository that a MkDocs showcase reads."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:licensePath a owl:DatatypeProperty ;
+    rdfs:label "Upstream license path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates the license file within the pinned repository that a showcase publishes beside its import."@en ;
+    dct:description "Locates the license file within the pinned repository that a showcase publishes beside its import."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:copiedSource a owl:ObjectProperty ;
+    rdfs:label "Copied fixture source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a showcase to a file copied into its directory from an upstream source."@en ;
+    dct:description "Links a showcase to a file copied into its directory from an upstream source."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:CopiedSource .
+
+ga:copiedRepository a owl:ObjectProperty ;
+    rdfs:label "Copied fixture repository"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the repository from whose revision a showcase's fixture files were copied."@en ;
+    dct:description "Identifies the repository from whose revision a showcase's fixture files were copied."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range rdfs:Resource .
+
+ga:copiedRevision a owl:DatatypeProperty ;
+    rdfs:label "Copied fixture revision"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the repository revision from which a showcase's fixture files were copied."@en ;
+    dct:description "Records the repository revision from which a showcase's fixture files were copied."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "With ga:copiedFromWorkingTree true the copies were taken from a working tree based on this revision and are not described as identical to it."@en .
+
+ga:copiedFromWorkingTree a owl:DatatypeProperty ;
+    rdfs:label "Copied from a working tree"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States that a showcase's fixture files were copied from a working tree based on the recorded revision, not from the committed revision itself."@en ;
+    dct:description "States that a showcase's fixture files were copied from a working tree based on the recorded revision, not from the committed revision itself."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:boolean .
+
+ga:localPath a owl:DatatypeProperty ;
+    rdfs:label "Copied file path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates a copied fixture file relative to its showcase directory."@en ;
+    dct:description "Locates a copied fixture file relative to its showcase directory."@en ;
+    rdfs:domain ga:CopiedSource ;
+    rdfs:range xsd:string .
+
+ga:copiedFrom a owl:ObjectProperty ;
+    rdfs:label "Published document copied"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the published document a fixture file was retrieved from."@en ;
+    dct:description "Identifies the published document a fixture file was retrieved from."@en ;
+    rdfs:domain ga:CopiedSource ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "A copied published document keeps resolving its relative links against this URL."@en .
+
+ga:showcaseArtifactsUrl a owl:ObjectProperty ;
+    rdfs:label "Deployed showcase artifacts location"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the deployed directory URL under which a project's showcase gallery publishes each showcase's artifacts, beneath the showcase's ga:slug."@en ;
+    dct:description "Identifies the deployed directory URL under which a project's showcase gallery publishes each showcase's artifacts, beneath the showcase's ga:slug."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "The gallery supplies an exact-revision showcase's publication URL as this location followed by its slug and a slash; the showcased definitions never declare where they are deployed. It is an absolute HTTP(S) directory URL without credentials, query or fragment, and is required when the registry contains an exact-revision showcase."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:example:docs> ga:showcaseArtifactsUrl <https://example.org/docs/showcases/artifacts/> ."""@en .
+
 ga:showcaseGallery a owl:DatatypeProperty ;
     rdfs:label "Render showcase collection on this page"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
@@ -1231,7 +1402,7 @@ ga:contentDigest a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Records the lowercase hexadecimal SHA-256 digest of the complete decoded artifact bytes."@en ;
     dct:description "Records the lowercase hexadecimal SHA-256 digest of the complete decoded artifact bytes."@en ;
-    rdfs:domain ga:BinaryAsset ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:BinaryAsset ga:CopiedSource ) ] ;
     rdfs:range xsd:string .
 
 ga:contentSize a owl:DatatypeProperty ;
@@ -1263,8 +1434,8 @@ ga:ontologySource a owl:DatatypeProperty ;
 ga:ReferenceSection a owl:Class ;
     rdfs:label "Reference section"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A source-owned title and ordering override for one kind of resource section in an ontology family reference."@en ;
-    dct:description "A source-owned title and ordering override for one kind of resource section in an ontology family reference."@en .
+    skos:definition "An authored section of a vocabulary reference: a title and ordering override for one resource category of an ontology family reference, or the term type and component filled by a vocabulary reference documentor."@en ;
+    dct:description "An authored section of a vocabulary reference: a title and ordering override for one resource category of an ontology family reference, or the term type and component filled by a vocabulary reference documentor."@en .
 
 
 ga:overviewTitle a owl:AnnotationProperty ;
@@ -1279,9 +1450,9 @@ ga:overviewTitle a owl:AnnotationProperty ;
 ga:referenceSection a owl:ObjectProperty ;
     rdfs:label "Reference section override"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Associates an ontology with a named reference section override controlling the title and order of one resource category."@en ;
-    dct:description "Associates an ontology with a named reference section override controlling the title and order of one resource category."@en ;
-    rdfs:domain owl:Ontology ;
+    skos:definition "Associates an ontology or a vocabulary reference documentor use with an authored reference section controlling one resource category."@en ;
+    dct:description "Associates an ontology or a vocabulary reference documentor use with an authored reference section controlling one resource category."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( owl:Ontology ga:DocumentorUse ) ] ;
     rdfs:range ga:ReferenceSection .
 
 
@@ -1833,4 +2004,68 @@ ga:commitHistoryComplete a owl:DatatypeProperty ;
     skos:definition "Records whether a repository contributor collection examined the complete history rather than stopping at its page budget."@en ;
     dct:description "Records whether a repository contributor collection examined the complete history rather than stopping at its page budget."@en ;
     rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:boolean .
+
+ga:includedIn a owl:ObjectProperty ;
+    rdfs:label "Included in scope"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Includes the subjects of the fragments contributed by a configured collector or documentor use in a documentation scope, without the use choosing a placement."@en ;
+    dct:description "Includes the subjects of the fragments contributed by a configured collector or documentor use in a documentation scope, without the use choosing a placement."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:DocumentorUse ) ] ;
+    rdfs:range ga:Scope ;
+    skos:scopeNote "Required on every collector use that declares the ga:fragment it contributes, and allowed only there: a fragment outside every scope would be collected and never published, so a missing inclusion fails the build. A document-stage binding includes that fragment's collected ga:subject values. A documentor use includes the subjects of every fragment it generates."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix ex: <https://example.org/doc/> .
+ex:abstract-source a ga:CollectorUse ; ga:collectorType ga:MarkdownFileCollector ;
+    ga:source "abstract.md" ; ga:sourcePath "abstract.md" ; ga:fragment ex:abstract ;
+    ga:includedIn ex:scope ."""@en .
+
+ga:metadataSource a owl:ObjectProperty ;
+    rdfs:label "Native metadata source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the configured collector use whose collected subject supplies the derived native header metadata of a project or publication target."@en ;
+    dct:description "Selects the configured collector use whose collected subject supplies the derived native header metadata of a project or publication target."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Project ga:Target ) ] ;
+    rdfs:range ga:CollectorUse ;
+    skos:scopeNote "Values are read only from that collector use's own contribution, at its ga:subject, so another source describing the same resource cannot change the header. Each derived predicate requires exactly one native value."@en .
+
+ga:derivedMetadata a owl:ObjectProperty ;
+    rdfs:label "Derived native metadata"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a header predicate whose value is derived from the selected native metadata source rather than supplied explicitly in publication definitions."@en ;
+    dct:description "Identifies a header predicate whose value is derived from the selected native metadata source rather than supplied explicitly in publication definitions."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Project ga:Target ) ] ;
+    rdfs:range rdf:Property ;
+    skos:scopeNote "The mapping is fixed: dct:title from dct:title, dct:description from dct:description, ga:license from dct:license and ga:publicationDate from dct:issued. A missing or multi-valued native value is an error. An explicit definition value for a derived predicate is a conflict error, never an override."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.org/doc/> .
+ex:specification ga:metadataSource ex:ontology-source ;
+    ga:derivedMetadata dct:title, dct:description, ga:license, ga:publicationDate ."""@en .
+
+ga:termType a owl:ObjectProperty ;
+    rdfs:label "Reference term type"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the RDF class whose collected instances a vocabulary reference documentor documents in one reference section."@en ;
+    dct:description "Selects the RDF class whose collected instances a vocabulary reference documentor documents in one reference section."@en ;
+    rdfs:domain ga:ReferenceSection ;
+    rdfs:range rdfs:Class ;
+    skos:scopeNote "A term declared with several selected types appears once, in the section with the lowest ga:order. SKOS concepts follow their canonical documented scheme; concepts without a documented scheme belong to the section whose term type is skos:Concept, and are an error without one. The documentor fills the section's ga:component; its placement is authored in each profile."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix ex: <https://example.org/doc/> .
+ex:reference a ga:DocumentorUse ; ga:documentorType ga:VocabularyReferenceDocumentor ;
+    ga:subject <https://example.org/ontology/> ; ga:includedIn ex:scope ;
+    ga:referenceSection ex:classes, ex:annotation-properties .
+ex:classes a ga:ReferenceSection ; ga:termType owl:Class ; ga:order 1 ;
+    ga:component ex:classes-component .
+ex:annotation-properties a ga:ReferenceSection ; ga:termType owl:AnnotationProperty ;
+    ga:definedTermsOnly true ; ga:order 4 ; ga:component ex:annotation-properties-component ."""@en .
+
+ga:definedTermsOnly a owl:DatatypeProperty ;
+    rdfs:label "Defined terms only"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Restricts a reference section to terms that declare rdfs:isDefinedBy a collected owl:Ontology, excluding local declarations of imported vocabulary terms."@en ;
+    dct:description "Restricts a reference section to terms that declare rdfs:isDefinedBy a collected owl:Ontology, excluding local declarations of imported vocabulary terms."@en ;
+    rdfs:domain ga:ReferenceSection ;
     rdfs:range xsd:boolean .

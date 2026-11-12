@@ -1,6 +1,16 @@
+#[path = "support/family_repository.rs"]
+mod family_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
+
 use {
     anyhow::Result,
-    grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
+    grapharch::publication::{
+        dataset::Dataset,
+        render::Publisher,
+        revision_build::TargetSelection,
+        showcases,
+    },
     scraper::{Html, Selector},
     std::path::Path,
 };
@@ -22,10 +32,9 @@ async fn copy_tree(source: &Path, target: &Path) -> Result<()> {
 #[tokio::test]
 async fn skos_concepts_are_nested_in_schemes_with_one_canonical_entry_after_restore()
 -> Result<()> {
-    let source = tempfile::tempdir()?;
-    copy_tree(Path::new("examples/dprod"), source.path()).await?;
-    let path = source.path().join("sources/ontology.ttl");
-    let mut rdf = tokio::fs::read_to_string(&path).await?;
+    let mut fixture =
+        revision_fixture::RevisionFixture::new(Path::new("examples/dprod"))?;
+    fixture.edit_content("ontology.ttl", |mut rdf| {
     rdf.push_str(r#"
 dprod:DataContractLifecycleStatus a skos:ConceptScheme;
  rdfs:label "Contract lifecycle statuses"@en; dct:description "Statuses of a contract."@en;
@@ -38,12 +47,13 @@ dprod:Fulfilled a skos:Concept; rdfs:label "Fulfilled"@en; dct:description "Comp
 dprod:Violated a skos:Concept; rdfs:label "Violated"@en; dct:description "Not fulfilled."@en; skos:inScheme dprod:DataContractLifecycleStatus, dprod:ReviewStatuses; rdfs:isDefinedBy dprod: .
 dprod:Unassigned a skos:Concept; rdfs:label "Unassigned"@en; dct:description "Without an asserted scheme."@en; skos:broader dprod:Pending; rdfs:isDefinedBy dprod: .
 "#);
-    tokio::fs::write(path, rdf).await?;
-    let (dataset, plans) = showcases::dprod(source.path()).await?;
+    Ok(rdf)
+    })?;
+    let (dataset, plans) = fixture.collect(TargetSelection::All).await?;
     let output = tempfile::tempdir()?;
     let archive = output.path().join("kg.nq");
     dataset.export(archive.clone()).await?;
-    source.close()?;
+    fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     showcases::publish(&Publisher::new(restored), &plans, output.path())
@@ -103,17 +113,17 @@ dprod:Unassigned a skos:Concept; rdfs:label "Unassigned"@en; dct:description "Wi
 #[tokio::test]
 async fn skos_cycles_are_review_findings_with_finite_linked_navigation()
 -> Result<()> {
-    let source = tempfile::tempdir()?;
-    copy_tree(Path::new("examples/dprod"), source.path()).await?;
-    let path = source.path().join("sources/ontology.ttl");
-    let mut rdf = tokio::fs::read_to_string(&path).await?;
+    let mut fixture =
+        revision_fixture::RevisionFixture::new(Path::new("examples/dprod"))?;
+    fixture.edit_content("ontology.ttl", |mut rdf| {
     rdf.push_str(r#"
 dprod:CycleScheme a skos:ConceptScheme; rdfs:label "Cyclic scheme"@en; dct:description "An intentionally inconsistent test hierarchy."@en; rdfs:isDefinedBy dprod: .
 dprod:CycleA a skos:Concept; rdfs:label "Cycle A"@en; dct:description "First concept."@en; skos:inScheme dprod:CycleScheme; skos:broader dprod:CycleB; rdfs:isDefinedBy dprod: .
 dprod:CycleB a skos:Concept; rdfs:label "Cycle B"@en; dct:description "Second concept."@en; skos:inScheme dprod:CycleScheme; skos:narrower dprod:CycleA; skos:broader dprod:CycleA; rdfs:isDefinedBy dprod: .
 "#);
-    tokio::fs::write(path, rdf).await?;
-    let (dataset, plans) = showcases::dprod(source.path()).await?;
+    Ok(rdf)
+    })?;
+    let (dataset, plans) = fixture.collect(TargetSelection::All).await?;
     let output = tempfile::tempdir()?;
     let publications =
         showcases::publish(&Publisher::new(dataset), &plans, output.path())

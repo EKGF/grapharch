@@ -45,18 +45,40 @@ pub async fn configure(
     let repository = tempfile::tempdir()?;
     let (url, commit) =
         super::family_repository::bare_copy(sources.path(), repository.path())?;
-    let mut config: serde_yaml::Value = serde_yaml::from_str(
-        &tokio::fs::read_to_string(family.join("showcase.yaml")).await?,
-    )?;
-    let transport = config["source"].as_mapping_mut().expect("source mapping");
-    transport.clear();
-    transport.insert("kind".into(), "git".into());
-    transport.insert("url".into(), url.into());
-    transport.insert("ref".into(), commit.into());
-    tokio::fs::write(
-        family.join("showcase.yaml"),
-        serde_yaml::to_string(&config)?,
-    )
-    .await?;
+    // Replace the RDF documents with the local Git transport; the explicit
+    // definitions, project and targets stay as configured.
+    let configuration = family.join("showcase.ttl");
+    let ga = "https://ekgf.org/ontology/grapharch#";
+    let mut showcase = None;
+    let mut quads = Vec::new(); // bounded: one small showcase configuration.
+    for quad in oxrdfio::RdfParser::from_format(oxrdfio::RdfFormat::Turtle)
+        .for_slice(&tokio::fs::read(&configuration).await?)
+    {
+        let quad = quad?;
+        if quad.object.to_string() == format!("<{ga}Showcase>") {
+            showcase = Some(quad.subject.clone());
+        }
+        if ![format!("{ga}rdfDocument"), format!("{ga}format")]
+            .contains(&quad.predicate.as_str().to_owned())
+        {
+            quads.push(quad);
+        }
+    }
+    let showcase = showcase.expect("configured showcase");
+    for (setting, value) in [("gitRepository", url), ("gitRef", commit)] {
+        quads.push(oxrdf::Quad::new(
+            showcase.clone(),
+            oxrdf::NamedNode::new(format!("{ga}{setting}"))?,
+            oxrdf::Literal::new_simple_literal(value),
+            oxrdf::GraphName::DefaultGraph,
+        ));
+    }
+    let mut serializer =
+        oxrdfio::RdfSerializer::from_format(oxrdfio::RdfFormat::Turtle)
+            .for_writer(Vec::new());
+    for quad in &quads {
+        serializer.serialize_quad(quad)?;
+    }
+    tokio::fs::write(&configuration, serializer.finish()?).await?;
     Ok(repository)
 }

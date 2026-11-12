@@ -89,7 +89,7 @@ A specification target requires these graph assertions:
 | `ga:publisher` | Authority role IRI, typed `artgov:Authority`, with an English `rdfs:label` |
 | `ga:publicationStatus` | Nonempty publisher-defined status, such as `Editor's Draft` |
 | `ga:publicationDate` | Valid calendar date in `YYYY-MM-DD` form, typed `xsd:date` |
-| `ga:thisVersion` | Absolute HTTP(S) IRI identifying this document version |
+| `ga:thisVersion` | Absolute HTTP(S) IRI identifying this document version; an [exact-revision build](publication-pipeline.md#exact-revision-builds) derives it from `--publication-url` and the target's destination instead |
 | `ga:latestVersion` | Absolute HTTP(S) IRI identifying the latest publication |
 
 Optional target predicates are `ga:previousVersion`, `ga:editorDraft`, `ga:editor`,
@@ -292,11 +292,13 @@ theme. It does not become a numbered technical chapter. HTML and Markdown
 fragments are supported; unsupported formats and missing legal fragments fail
 the publication rather than silently omitting the notices.
 
-For a ReSpec migration, `HtmlPreambleFile` collects the unique
-`details.preamble-section` block without running scripts or template code.
-The DPROD live showcase reads that block from `respec/template.html` in the same
-cached `develop` commit as its ontology and shapes. Its legal wording is not
-copied into GraphArch's repository.
+For a ReSpec migration, the
+[legal preamble collector](../collectors/legal-preambles.md) collects the
+unique `details.preamble-section` block without running scripts or template
+code. The DPROD live showcase reads that block from `respec/template.html` in
+the same exact content commit as its ontology and shapes, through a collector
+use in its controlling definitions. Its legal wording is not copied into
+GraphArch's repository.
 
 ## Contents navigation and search
 

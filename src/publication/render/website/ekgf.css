@@ -38,7 +38,7 @@
 @media(max-width:480px){.ekgf-footer-grid{grid-template-columns:1fr}.theme-ekgf .ekgf-footer{padding-inline:1.25rem}.ekgf-footer-bottom{text-align:left}.theme-ekgf .brand-context{display:none}}
 @media print{.theme-ekgf .ekgf-footer,.ekgf-header-navigation{display:none}}
 
-/* The DPROD project header supplies the shared EKGF community row. The compact
+/* A project header supplies the shared EKGF community row. The compact
    product row retains documentation identity without interrupting that row. */
 .theme-ekgf{--accent:#404db5;--muted:#71717a;--line:#e4e4e7;--soft:#f0f1fa;--chrome:#f4f4f5;--ink:#333;font-size:1rem;line-height:1.6}
 .theme-ekgf .site-header{display:block;height:auto;min-height:0;padding:0;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}

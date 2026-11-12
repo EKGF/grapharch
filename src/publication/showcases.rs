@@ -1,6 +1,7 @@
 //! Shared showcase pipeline: executable examples and integration tests call
 //! exactly the same collection, planning, and publishing code.
 use {
+    super::showcase_configuration::ShowcaseConfiguration,
     crate::publication::{
         assembly::Assembler,
         collect::{
@@ -40,54 +41,36 @@ pub async fn verify_gallery(
     super::gallery::verify(dataset, root, project, output).await
 }
 
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct FamilyShowcase {
-    definitions:        Option<std::path::PathBuf>,
-    project:            Option<String>,
-    target:             Option<String>,
-    source:             FamilyShowcaseSource,
-    #[serde(default)]
-    additional_targets: Vec<String>,
-    /// Hinted targets to publish; every registered target when absent.
-    targets:            Option<Vec<String>>,
-}
+/// The GraphArch settings of an ontology-family showcase.
+const FAMILY_SETTINGS: &[&str] = &[
+    "gitRepository",
+    "gitRef",
+    "hintsPath",
+    "rdfDocument",
+    "definitionsPath",
+    "showcaseProject",
+    "showcaseTargets",
+];
 
-impl FamilyShowcase {
-    /// The repository-hinted targets this showcase publishes.
-    fn selection(&self) -> Result<super::collect::git::TargetSelection> {
-        use super::collect::git::TargetSelection;
-        let Some(targets) = &self.targets else {
-            return Ok(TargetSelection::All);
-        };
-        TargetSelection::targets(
-            targets
-                .iter()
-                .map(|target| {
-                    NamedNode::new(target).map_err(|error| {
-                        anyhow::anyhow!(
-                            "family showcase target {target} is not an IRI: \
-                             {error}"
-                        )
-                    })
-                })
-                .collect::<Result<_>>()?,
-        )
+/// Verify every copied fixture file a showcase configuration records against
+/// its SHA-256 digest, returning the verified files.
+pub async fn verify_copied_sources(
+    configuration: &Path,
+) -> Result<Vec<std::path::PathBuf>> {
+    let configuration = ShowcaseConfiguration::read(configuration).await?;
+    let copied = configuration.copied_sources()?;
+    anyhow::ensure!(
+        !copied.is_empty(),
+        "{} records no copied sources",
+        configuration.path().display()
+    );
+    // bounded: at most 64 recorded copies.
+    let mut verified = Vec::with_capacity(copied.len());
+    for source in copied {
+        source.verify().await?;
+        verified.push(source.path().to_owned());
     }
-}
-
-#[derive(serde::Deserialize)]
-#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-enum FamilyShowcaseSource {
-    RdfUrls {
-        documents: Vec<super::ontology_family::RdfUrlFamilyCollector>,
-    },
-    Git {
-        url:       String,
-        config:    Option<std::path::PathBuf>,
-        #[serde(rename = "ref")]
-        reference: String,
-    },
+    Ok(verified)
 }
 
 /// Collect an explicitly configured repository family through the shared Git
@@ -97,134 +80,170 @@ pub async fn family(
     source: &Path,
     cache: &Path,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    use {anyhow::ensure, std::path::Component, tokio::io::AsyncReadExt};
-    let source = tokio::fs::canonicalize(source).await?;
-    let root = source.parent().ok_or_else(|| {
-        anyhow::anyhow!(
-            "family showcase configuration requires a parent directory"
-        )
-    })?;
-    let mut bytes = Vec::new();
-    tokio::fs::File::open(&source)
-        .await?
-        .take(64 * 1024 + 1)
-        .read_to_end(&mut bytes)
-        .await?;
-    ensure!(
-        bytes.len() <= 64 * 1024,
-        "family showcase configuration exceeds 64 KiB"
-    );
-    let config: FamilyShowcase = serde_yaml::from_slice(&bytes)?;
-    let hinted = matches!(config.source, FamilyShowcaseSource::Git { .. }) &&
-        config.definitions.is_none() &&
-        config.project.is_none() &&
-        config.target.is_none();
-    ensure!(
-        hinted || config.targets.is_none(),
-        "family showcase targets select repository-hinted targets; explicit \
-         definitions name their target and additional_targets"
-    );
-    ensure!(
-        !hinted || config.additional_targets.is_empty(),
-        "repository hints register the published targets; select them with \
-         targets, not additional_targets"
-    );
-    let selection = config.selection()?;
-    if let FamilyShowcaseSource::RdfUrls { documents } = config.source {
-        let (Some(path), Some(project), Some(target)) =
-            (config.definitions, config.project, config.target)
-        else {
+    family_configured(&ShowcaseConfiguration::read(source).await?, cache).await
+}
+
+/// Local definitions overriding a family's own publication hints: a
+/// definitions file beside the configuration, its project, and its ordered
+/// targets, of which the first is the family publication.
+struct LocalDefinitions {
+    path:       std::path::PathBuf,
+    project:    String,
+    target:     String,
+    additional: Vec<String>,
+}
+
+impl LocalDefinitions {
+    async fn read(
+        configuration: &ShowcaseConfiguration,
+    ) -> Result<Option<Self>> {
+        let path = configuration.optional_text("definitionsPath")?;
+        let project = configuration.optional_node("showcaseProject")?;
+        match (path, project) {
+            (None, None) => Ok(None),
+            (Some(_), Some(project)) => {
+                let targets = configuration
+                    .node_list("showcaseTargets")?
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "family showcase {} with local definitions \
+                             requires ga:showcaseTargets",
+                            configuration.id()
+                        )
+                    })?;
+                let mut targets =
+                    targets.into_iter().map(NamedNode::into_string);
+                let target = targets.next().ok_or_else(|| {
+                    anyhow::anyhow!("family showcase targets cannot be empty")
+                })?;
+                Ok(Some(Self {
+                    path: configuration.local_file("definitionsPath").await?,
+                    project: project.into_string(),
+                    target,
+                    additional: targets.collect(),
+                }))
+            },
+            _ => {
+                bail!(
+                    "family showcase {} requires ga:definitionsPath and \
+                     ga:showcaseProject together",
+                    configuration.id()
+                )
+            },
+        }
+    }
+}
+
+/// The repository-hinted targets a showcase without local definitions
+/// publishes: its ordered ga:showcaseTargets, or every registered target.
+fn hinted_selection(
+    configuration: &ShowcaseConfiguration,
+) -> Result<super::collect::git::TargetSelection> {
+    use super::collect::git::TargetSelection;
+    match configuration.node_list("showcaseTargets")? {
+        None => Ok(TargetSelection::All),
+        Some(targets) => TargetSelection::targets(targets),
+    }
+}
+
+pub(super) async fn family_configured(
+    configuration: &ShowcaseConfiguration,
+    cache: &Path,
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    use anyhow::ensure;
+    configuration.accept_only("ontology-family", FAMILY_SETTINGS)?;
+    let documents = configuration.nodes("rdfDocument")?;
+    let repository = configuration.optional_text("gitRepository")?;
+    let local = LocalDefinitions::read(configuration).await?;
+    if !documents.is_empty() {
+        ensure!(
+            repository.is_none(),
+            "family showcase {} reads either RDF documents or a Git \
+             repository, not both",
+            configuration.id()
+        );
+        let Some(local) = local else {
             anyhow::bail!(
                 "RDF URL family requires definitions, project and target"
             );
         };
-        ensure!(
-            path.components()
-                .all(|part| matches!(part, Component::Normal(_))),
-            "family definitions must be relative beneath configuration"
-        );
-        let definitions = tokio::fs::canonicalize(root.join(path)).await?;
-        ensure!(
-            definitions.starts_with(root),
-            "family definitions escape configuration directory"
-        );
+        let documents = documents
+            .iter()
+            .map(|document| {
+                Ok(super::ontology_family::RdfUrlFamilyCollector {
+                    url:        document.as_str().to_owned(),
+                    media_type: configuration.text_of(document, "format")?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
         let built = super::ontology_family::collect_from(
             Dataset::memory()?,
             super::ontology_family::FamilySource::RdfUrls(&documents),
-            &definitions,
-            &project,
-            &target,
+            &local.path,
+            &local.project,
+            &local.target,
             4,
         )
         .await?;
-        return family_targets(built, &config.additional_targets).await;
+        return family_targets(built, &local.additional).await;
     }
-    let FamilyShowcaseSource::Git { url, reference, config: hints_path } =
-        config.source
-    else {
-        unreachable!()
-    };
+    let url = repository.ok_or_else(|| {
+        anyhow::anyhow!(
+            "family showcase {} requires ga:gitRepository or ga:rdfDocument",
+            configuration.id()
+        )
+    })?;
+    let reference = configuration.text("gitRef")?;
     ensure!(
-        !reference.is_empty() &&
-            reference.len() <= 1024 &&
-            !reference.chars().any(char::is_control),
+        reference.len() <= 1024 && !reference.chars().any(char::is_control),
         "family Git ref must be a nonempty bounded reference"
     );
-    let built = match (config.definitions, config.project, config.target) {
-        (None, None, None) => {
+    let hints = configuration
+        .optional_text("hintsPath")?
+        .map(std::path::PathBuf::from);
+    let (built, additional) = match local {
+        None => {
+            let selection = hinted_selection(configuration)?;
             let repository = super::collect::git::remote_publication(
                 &url,
                 &reference,
                 cache,
-                hints_path.as_deref(),
+                hints.as_deref(),
                 &selection,
             )
             .await?;
-            super::ontology_family::collect_prepared(
-                Dataset::memory()?,
-                repository,
-                4,
+            (
+                super::ontology_family::collect_prepared(
+                    Dataset::memory()?,
+                    repository,
+                    4,
+                )
+                .await?,
+                Vec::new(),
             )
-            .await?
         },
-        (Some(path), Some(project), Some(target)) => {
+        Some(local) => {
             ensure!(
-                hints_path.is_none(),
+                hints.is_none(),
                 "explicit local definitions conflict with repository hints \
                  path"
             );
-            NamedNode::new(&project)?;
-            NamedNode::new(&target)?;
-            ensure!(
-                path.components()
-                    .all(|part| matches!(part, Component::Normal(_))),
-                "family definitions must be a relative path beneath the \
-                 configuration"
-            );
-            let definitions = tokio::fs::canonicalize(root.join(path)).await?;
-            ensure!(
-                definitions.starts_with(root),
-                "family definitions escape the configuration directory"
-            );
-            super::ontology_family::collect_remote(
-                &url,
-                &reference,
-                cache,
-                &definitions,
-                &project,
-                &target,
-                4,
-            )
-            .await?
-        },
-        _ => {
-            anyhow::bail!(
-                "family showcase override requires definitions, project and \
-                 target together"
+            (
+                super::ontology_family::collect_remote(
+                    &url,
+                    &reference,
+                    cache,
+                    &local.path,
+                    &local.project,
+                    &local.target,
+                    4,
+                )
+                .await?,
+                local.additional,
             )
         },
     };
-    family_targets(built, &config.additional_targets).await
+    family_targets(built, &additional).await
 }
 
 async fn family_targets(
@@ -266,11 +285,6 @@ async fn family_targets(
     worker.await??;
     result?;
     Ok((built.dataset, plans))
-}
-
-/// Collect the pinned native DPROD ontology, shapes, and authored fragments.
-pub async fn dprod(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    super::showcases_dprod::collect(source).await
 }
 
 pub async fn authored(source: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
@@ -323,19 +337,28 @@ pub async fn w3c(sources: &Path) -> Result<(Dataset, Vec<ResolvedPlan>)> {
     let dataset = Dataset::memory()?;
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
-    #[derive(serde::Deserialize)]
-    struct Reference {
-        source: String,
-    }
-    let reference: Reference = serde_yaml::from_str(
-        &tokio::fs::read_to_string(sources.join("reference.yaml")).await?,
-    )?;
+    let configuration =
+        ShowcaseConfiguration::read(&sources.join("showcase.ttl")).await?;
+    configuration.accept_only("W3C specification", &[])?;
+    let document = tokio::fs::canonicalize(sources.join("source.html")).await?;
+    let copied = configuration.copied_sources()?;
+    let source = copied
+        .iter()
+        .find(|copied| copied.path() == document)
+        .and_then(|copied| copied.origin())
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "{} must record the published document source.html was copied \
+                 from",
+                configuration.path().display()
+            )
+        })?;
     let project = "urn:w3c-example:project";
     let collector = W3cSpecificationFile::new(
         project,
         "urn:w3c-example:collector",
-        sources.join("source.html"),
-        &reference.source,
+        document,
+        source.as_str(),
     )?;
     collector.collect(&writer).await?;
     RdfFile::new(
@@ -472,12 +495,21 @@ pub async fn publish(
     Ok(publications)
 }
 
-/// Build the live DPROD showcase exclusively from its remote develop revision.
-pub async fn dprod_remote(
+/// Build an exact-revision showcase: definitions from a controlling commit,
+/// content from a designated commit of the same repository, deployed at
+/// `publication_url`.
+pub async fn revision_build(
     source: &Path,
     cache: &Path,
+    publication_url: super::revision_build::PublicationUrl,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    super::showcases_dprod::collect_remote(source, cache).await
+    super::showcases_revision::build(
+        &super::showcase_configuration::ShowcaseConfiguration::read(source)
+            .await?,
+        cache,
+        publication_url,
+    )
+    .await
 }
 
 /// Collect and plan the standalone native SKOS showcase.

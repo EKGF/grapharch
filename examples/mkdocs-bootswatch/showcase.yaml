@@ -1,5 +1,0 @@
-repository: https://github.com/mkdocs/mkdocs-bootswatch.git
-commit: 374197dbc3b89b830075b7d67c66c9407968855a
-configuration: mkdocs.yml
-paths: [docs, mkdocs.yml, LICENSE]
-license: LICENSE

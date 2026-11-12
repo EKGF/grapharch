@@ -23,12 +23,27 @@ async fn preamble_collector_extracts_only_legal_content_and_rejects_executable_m
         "urn:legal:collector",
         path.clone(),
         "https://example.org/spec/",
-        &["urn:legal:target"],
+        oxrdf::NamedNode::new("urn:legal:preamble")?,
     )?;
     collector.collect(&writer).await?;
     let revision = dataset.snapshot_for("urn:legal:project").await?;
     let view = RevisionView::new(dataset.clone(), revision.clone());
+    assert_eq!(
+        collector.fragment_id().as_str(),
+        "urn:legal:preamble"
+    );
     let body = view.text(&collector.fragment_id(), "body").await?;
+    assert!(
+        view.objects_by(
+            &oxrdf::NamedNode::new("urn:legal:target")?,
+            &grapharch::publication::term("preamble"),
+        )
+        .await?
+        .next()
+        .await?
+        .is_none(),
+        "the collector must not choose the targets of its fragment"
+    );
     assert!(body.contains("Complete copyright notice."));
     assert!(body.contains("LICENSES"));
     assert!(body.contains("Keep all notices."));

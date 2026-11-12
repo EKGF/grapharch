@@ -88,14 +88,11 @@ arbitrary alternative PDF target is not implemented.
 
 All these renderers are part of the same Rust library and CLI. The persistent
 `publication assemble`, `publication plan`, and `publication render` operations
-can work with explicit targets. The DPROD showcase runner collects and documents
-once, then resolves and renders all three targets:
-
-```sh
-cargo run --example publish_showcase -- --dprod
-```
-
-Its output root is `output/pdf/grapharch-dprod`, with `specification/`, `website/`,
-and `pdf/` directories. The `publication build-site` convenience command builds a
+can work with explicit targets. `publication build-revision` collects and
+documents one exact content commit with definitions from an exact controlling
+commit, then resolves and renders the selected targets from a restored KG; see
+[exact-revision builds](publication-pipeline.md#exact-revision-builds). The
+DPROD showcase builds this way, with `specification/`, `website/`, and `pdf/`
+output directories. The `publication build-site` convenience command builds a
 Markdown website target; it is not yet a general project configuration runner
 for arbitrary mixed collector and documentor pipelines.

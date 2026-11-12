@@ -15,3 +15,7 @@ ga:MaturityOverviewDocumentor a ga:Documentor ;
 ga:PublicationInventoryDocumentor a ga:Documentor ;
     rdfs:label "Publication inventory documentor"@en ;
     dct:description "Generates the specification versions page from collected repository publication metadata."@en .
+
+ga:VocabularyReferenceDocumentor a ga:Documentor ;
+    rdfs:label "Vocabulary reference documentor"@en ;
+    dct:description "Generates one annotated reference fragment per collected vocabulary term, selected by the authored reference sections of a documentor use and bound to their authored components."@en .

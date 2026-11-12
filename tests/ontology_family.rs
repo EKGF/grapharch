@@ -265,22 +265,23 @@ async fn unavailable_registered_member_fails_instead_of_publishing_a_partial_fam
     Ok(())
 }
 
-#[test]
-fn family_fixture_native_sources_match_the_pinned_manifest() -> Result<()> {
-    use sha2::{Digest, Sha256};
-    let manifest: serde_yaml::Value = serde_yaml::from_str(include_str!(
-        "../examples/ekg-ontologies/reference.yaml"
-    ))?;
-    for (path, digest) in manifest["sources"].as_mapping().unwrap() {
-        let bytes = std::fs::read(
-            Path::new("examples/ekg-ontologies/sources")
-                .join(path.as_str().unwrap()),
-        )?;
-        assert_eq!(
-            hex::encode(Sha256::digest(bytes)),
-            digest.as_str().unwrap()
-        );
-    }
+#[tokio::test]
+async fn family_fixture_native_sources_match_the_pinned_manifest() -> Result<()>
+{
+    let verified = grapharch::publication::showcases::verify_copied_sources(
+        Path::new("examples/ekg-ontologies/showcase.ttl"),
+    )
+    .await?;
+    assert!(verified.iter().all(|path| {
+        path.starts_with(
+            std::fs::canonicalize("examples/ekg-ontologies/sources").unwrap(),
+        )
+    }));
+    assert_eq!(
+        verified.len(),
+        31,
+        "every recorded corpus file is verified"
+    );
     Ok(())
 }
 

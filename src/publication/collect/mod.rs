@@ -8,6 +8,7 @@ pub(crate) mod authored_use_cases;
 mod badges;
 mod blank_nodes;
 pub(crate) mod configured;
+pub mod configured_git;
 mod endpoint;
 mod figures;
 pub mod git;

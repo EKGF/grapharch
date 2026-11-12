@@ -1,4 +1,9 @@
 //! The vocabulary is the public contract for both authored and exported RDF.
+#[path = "support/family_repository.rs"]
+mod family_repository;
+#[path = "support/revision_fixture.rs"]
+mod revision_fixture;
+
 use {
     anyhow::Result,
     oxigraph::{io::RdfFormat, sparql::QueryResults, store::Store},
@@ -77,7 +82,7 @@ fn publishing_authorities_reuse_the_imported_governance_class_directly()
 fn git_revision_hint_has_public_metadata_and_collector_constraints()
 -> Result<()> {
     let store = ontology()?;
-    assert!(ask(&store, "ga:gitRef a owl:DatatypeProperty ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:CollectorUse ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition ; skos:example ?example . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40 && CONTAINS(STR(?example), 'HEAD'))")?, "the Git revision hint needs a complete source-owned vocabulary definition");
+    assert!(ask(&store, "ga:gitRef a owl:DatatypeProperty ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain/owl:unionOf/<http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ga:CollectorUse, ga:Showcase ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition ; skos:example ?example . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40 && CONTAINS(STR(?example), 'HEAD'))")?, "the Git revision hint needs a complete source-owned vocabulary definition");
     store.load_from_reader(
         RdfFormat::Turtle,
         include_bytes!("../docs/other/ontology/publication.shacl.ttl")
@@ -85,6 +90,33 @@ fn git_revision_hint_has_public_metadata_and_collector_constraints()
     )?;
     assert!(ask(&store, "ga:CollectorUseShape <http://www.w3.org/ns/shacl#property> ?shape . ?shape <http://www.w3.org/ns/shacl#path> ga:gitRef ; <http://www.w3.org/ns/shacl#datatype> <http://www.w3.org/2001/XMLSchema#string> ; <http://www.w3.org/ns/shacl#minLength> 1 ; <http://www.w3.org/ns/shacl#maxCount> 1")?, "CollectorShape must constrain optional Git revision hints");
     assert!(ask(&store, "ga:CollectorUseShape <http://www.w3.org/ns/shacl#or> ?choices . ?choices <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?choice . ?choice <http://www.w3.org/ns/shacl#property> ?ref, ?path . ?ref <http://www.w3.org/ns/shacl#path> ga:gitRef ; <http://www.w3.org/ns/shacl#minCount> 1 . ?path <http://www.w3.org/ns/shacl#path> ga:sourcePath ; <http://www.w3.org/ns/shacl#minCount> 1")?, "configured Git RDF files require a revision and source path");
+    Ok(())
+}
+
+#[test]
+fn fragment_contributing_collector_uses_require_a_scope_inclusion() -> Result<()>
+{
+    let store = ontology()?;
+    store.load_from_reader(
+        RdfFormat::Turtle,
+        include_bytes!("../docs/other/ontology/publication.shacl.ttl")
+            .as_slice(),
+    )?;
+    let choice = "ga:IncludedInFragmentShape <http://www.w3.org/ns/shacl#targetClass> ga:CollectorUse ; <http://www.w3.org/ns/shacl#xone> ?choices . ?choices <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?choice . ?choice <http://www.w3.org/ns/shacl#property> ?fragment, ?inclusion . ?fragment <http://www.w3.org/ns/shacl#path> ga:fragment ; <http://www.w3.org/ns/shacl#maxCount> ?fragments . ?inclusion <http://www.w3.org/ns/shacl#path> ga:includedIn";
+    assert!(
+        ask(&store, &format!("{choice} ; <http://www.w3.org/ns/shacl#minCount> 1 . ?fragment <http://www.w3.org/ns/shacl#minCount> 1"))?,
+        "a use naming its fragment must name a scope including it"
+    );
+    assert!(
+        ask(
+            &store,
+            &format!(
+                "{choice} ; <http://www.w3.org/ns/shacl#maxCount> 0 . \
+                 FILTER(?fragments = 0)"
+            )
+        )?,
+        "a use without a fragment cannot claim a scope inclusion"
+    );
     Ok(())
 }
 
@@ -198,10 +230,12 @@ fn embedded_turtle_examples_are_parseable() -> Result<()> {
 
 #[tokio::test]
 async fn collected_dataset_uses_declared_property_kinds() -> Result<()> {
-    let (dataset, _) = grapharch::publication::showcases::dprod(
+    let fixture = revision_fixture::RevisionFixture::new(
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/dprod"),
-    )
-    .await?;
+    )?;
+    let (dataset, _) = fixture
+        .collect(grapharch::publication::revision_build::TargetSelection::All)
+        .await?;
     let store = ontology()?;
     let mut rows = dataset.select(
         "SELECT DISTINCT ?predicate (isLiteral(?value) AS ?literal) WHERE { GRAPH ?g { ?s ?predicate ?value } FILTER(STRSTARTS(STR(?predicate), 'https://ekgf.org/ontology/grapharch#')) }".into()

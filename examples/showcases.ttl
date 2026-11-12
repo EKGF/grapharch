@@ -1,6 +1,9 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix ex: <urn:grapharch:showcase:> .
+# Where the gallery deploys showcase artifacts; an exact-revision showcase is
+# published beneath it at its slug, whatever its own definitions say.
+<urn:grapharch:docs> ga:showcaseArtifactsUrl <https://ekgf.github.io/grapharch/showcases/artifacts/> .
 <urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch, ex:fibo-be .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
@@ -21,7 +24,7 @@ ex:rdf12 a ga:Showcase ; ga:slug "rdf12" ; dct:title "W3C RDF 1.2 N-Triples" ;
     ga:expectedDiagnostic "unresolved-native-reference" .
 ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and SHACL" ;
     dct:description "A pinned DPROD working-draft revision becomes a standards reference, companion guide, an EKGF community PDF and an OMG submission-preview PDF. Both specification editions share the same technical chapters; a separate illustrated overview explains the bigger picture and adoption path. All outputs retain the pinned source revision." ;
-    ga:order 4 ; ga:showcaseRunner ga:DprodShowcaseRunner ; ga:source "dprod/live.yaml" ;
+    ga:order 4 ; ga:showcaseRunner ga:RevisionBuildShowcaseRunner ; ga:source "dprod/showcase.ttl" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/ekgf/document.pdf" .
 
 # TEMPORARY PIN until the EKG migration lands upstream: ekg-ontologies main emits
@@ -30,7 +33,7 @@ ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and
 # documents/main/document.pdf then (see ekg-ontologies/showcase.yaml).
 ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;
     dct:description "A pinned commit of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
-    ga:order 6 ; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner ; ga:source "ekg-ontologies/showcase.yaml" ;
+    ga:order 6 ; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner ; ga:source "ekg-ontologies/showcase.ttl" ;
     ga:previewPath "spec/develop/index.html" .
 
 ex:skos a ga:Showcase;ga:slug "skos";dct:title "SKOS business data taxonomy";
@@ -44,7 +47,7 @@ ex:use-cases a ga:Showcase;ga:slug "use-cases";dct:title "EKGF use-case trees";
 
 ex:commons a ga:Showcase; ga:slug "commons"; dct:title "OMG Commons Ontology Library";
     dct:description "The published OMG Commons ontologies are collected directly from their authoritative RDF URLs and become a library overview, an individual specification page per ontology, and a PDF, with native terms and source content digests.";
-    ga:order 9; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner; ga:source "omg-commons/showcase.yaml";
+    ga:order 9; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner; ga:source "omg-commons/showcase.ttl";
     ga:previewPath "specification/index.html"; ga:pdfPath "pdf/document.pdf" .
 
 ex:code-highlighting a ga:Showcase ; ga:slug "code-highlighting" ; dct:title "Multilingual code examples" ;
@@ -68,7 +71,7 @@ ex:code-highlighting ga:showcaseInput "Markdown" ; ga:showcaseCapability "Syntax
 ex:mkdocs-bootswatch a ga:Showcase ; ga:slug "mkdocs-bootswatch" ;
     dct:title "Independent MkDocs documentation" ;
     dct:description "The original MkDocs Bootswatch documentation, including its theme screenshots, imported from a pinned Git revision without running MkDocs. GraphArch supplies navigation, search, HTML and a retained documentation graph; the original BSD license remains downloadable." ;
-    ga:order 11 ; ga:showcaseRunner ga:MkdocsShowcaseRunner ; ga:source "mkdocs-bootswatch/showcase.yaml" ;
+    ga:order 11 ; ga:showcaseRunner ga:MkdocsShowcaseRunner ; ga:source "mkdocs-bootswatch/showcase.ttl" ;
     ga:previewPath "site/index.html" ;
     ga:showcaseInput "Markdown", "MkDocs" ;
     ga:showcaseCapability "Navigation", "Images", "Search" ;
@@ -78,7 +81,7 @@ ex:mkdocs-bootswatch a ga:Showcase ; ga:slug "mkdocs-bootswatch" ;
 
 ex:fibo-be a ga:Showcase; ga:slug "fibo-be"; dct:title "FIBO Business Entities";
  dct:description "The complete 48-document FIBO BE domain, including legal entities, ownership, corporations, governments and regional reference individuals. A pinned official revision becomes a paginated ontology reference, UML class diagrams and PDF; imports outside BE remain explicit external references.";
- ga:order 12; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner; ga:source "fibo-be/showcase.yaml";
+ ga:order 12; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner; ga:source "fibo-be/showcase.ttl";
  ga:previewPath "specification/index.html"; ga:pdfPath "pdf/document.pdf";
  ga:showcaseInput "OWL", "RDF/XML";
  ga:showcaseCapability "Diagrams", "Ontology families", "Cross-references";

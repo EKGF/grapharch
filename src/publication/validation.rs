@@ -34,6 +34,19 @@ impl Field {
         }
     }
 
+    const fn optional(
+        name: &'static str,
+        reference: Option<&'static str>,
+    ) -> Self {
+        Self {
+            name,
+            required: false,
+            multiple: false,
+            reference,
+            literal: false,
+        }
+    }
+
     const fn some(name: &'static str) -> Self {
         Self {
             name,
@@ -49,6 +62,26 @@ impl Field {
             name,
             required: true,
             multiple: false,
+            reference: None,
+            literal: true,
+        }
+    }
+
+    const fn optional_text(name: &'static str) -> Self {
+        Self {
+            name,
+            required: false,
+            multiple: false,
+            reference: None,
+            literal: true,
+        }
+    }
+
+    const fn texts(name: &'static str) -> Self {
+        Self {
+            name,
+            required: false,
+            multiple: true,
             reference: None,
             literal: true,
         }
@@ -75,6 +108,23 @@ impl Field {
         if self.name == "order" {
             unsigned(value, "order")?;
         }
+        if matches!(self.name, "gitCommit" | "definitionsCommit") {
+            crate::publication::revision_build::exact_commit(
+                literal.value(),
+                &format!("{subject} {}", self.name),
+            )?;
+        }
+        if matches!(
+            self.name,
+            "definedTermsOnly" | "allTargets" | "copiedFromWorkingTree"
+        ) {
+            ensure!(
+                literal.datatype().as_str() ==
+                    "http://www.w3.org/2001/XMLSchema#boolean",
+                "{subject} {} requires an xsd:boolean literal",
+                self.name
+            );
+        }
         if self.name == "destination" {
             ensure!(
                 !literal.value().is_empty(),
@@ -90,6 +140,11 @@ impl Field {
         }
         if self.name == "collectorType" {
             crate::publication::collect::kind::CollectorKind::from_node(value)?;
+        }
+        if self.name == "showcaseArtifactsUrl" {
+            crate::publication::revision_build::PublicationUrl::try_new(
+                value.as_str(),
+            )?;
         }
         if self.name == "documentorType" {
             crate::publication::document::kind::DocumentorKind::from_node(
@@ -218,19 +273,39 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::many("target", Some("Target")),
             Field::many("collector", Some("CollectorUse")),
             Field::many("documentor", Some("DocumentorUse")),
+            Field::optional("metadataSource", Some("CollectorUse")),
+            Field::many("derivedMetadata", None),
+            Field::optional("showcaseArtifactsUrl", None),
         ]),
         // Engine-owned documentation stages are uses without a configured
         // definition; a configured definition must still be supported.
-        ("DocumentorUse", vec![Field {
-            name:      "documentorType",
-            required:  false,
-            multiple:  false,
-            reference: None,
-            literal:   false,
-        }]),
+        ("DocumentorUse", vec![
+            Field::optional("documentorType", None),
+            Field::many("includedIn", Some("Scope")),
+        ]),
         ("CollectorUse", vec![
             Field::one("collectorType", None),
             Field::text("source"),
+            Field::many("includedIn", Some("Scope")),
+        ]),
+        // Showcase run settings; RDF-list and copied-source values are
+        // validated by their runner and the shipped SHACL.
+        ("Showcase", vec![
+            Field::optional_text("gitRepository"),
+            Field::optional_text("gitRef"),
+            Field::optional_text("gitCommit"),
+            Field::optional_text("definitionsCommit"),
+            Field::optional_text("definitionsPath"),
+            Field::optional_text("hintsPath"),
+            Field::optional("showcaseProject", None),
+            Field::optional_text("allTargets"),
+            Field::many("rdfDocument", None),
+            Field::optional_text("mkdocsConfiguration"),
+            Field::texts("materializedPath"),
+            Field::optional_text("licensePath"),
+            Field::optional("copiedRepository", None),
+            Field::optional_text("copiedRevision"),
+            Field::optional_text("copiedFromWorkingTree"),
         ]),
         ("Scope", vec![
             Field::many("include", None),
@@ -243,6 +318,8 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::one("profile", Some("Profile")),
             Field::one("renderer", None),
             Field::text("destination"),
+            Field::optional("metadataSource", Some("CollectorUse")),
+            Field::many("derivedMetadata", None),
         ]),
         ("Profile", vec![
             Field::many("placement", Some("Placement")),
@@ -262,6 +339,17 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             },
             Field::one("component", Some("Component")),
             Field::text("order"),
+        ]),
+        ("ReferenceSection", vec![
+            Field::optional("termType", None),
+            Field::optional("component", Some("Component")),
+            Field {
+                name:      "definedTermsOnly",
+                required:  false,
+                multiple:  false,
+                reference: None,
+                literal:   true,
+            },
         ]),
         ("Component", vec![Field::many(
             "fragment",

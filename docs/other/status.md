@@ -14,7 +14,7 @@ GraphArch generates this documentation website and the publications in the
 [showcase gallery](../showcases.md). It supports static websites, ontology
 specifications, and PDF documents from a retained documentation graph.
 
-This summary was reviewed on **9 November 2026** against the current source.
+This summary was reviewed on **11 November 2026** against the current source.
 It describes development capabilities; a tagged binary may precede them. Check
 [release notes](https://github.com/EKGF/grapharch/releases) when choosing a
 binary. The website's build identity and provenance identify its generator.
@@ -31,6 +31,7 @@ binary. The website's build identity and provenance identify its generator.
 | PDF publication | Embedded Typst produces PDF documents from retained publication content, including vector diagrams. HTML and PDF can share a publication plan. |
 | Existing documentation | [MkDocs import](../usage/mkdocs.md) translates supported configuration, navigation, Markdown, and assets into GraphArch publications without running MkDocs. |
 | Multiple publications | [Publication families](../usage/publication-families.md), [version listings](../usage/publication-versions.md), and [static hosting packages](../usage/static-hosting.md) support related outputs on a shared static host. |
+| Exact-revision builds | `publication build-revision` publishes one exact content commit with definitions from a verified controlling commit, so a published branch carries no GraphArch configuration. Content cannot assert publication definitions. See [exact-revision builds](../usage/publication-pipeline.md#exact-revision-builds). |
 | Documentation graph | Embedded stores support contribution ownership, immutable snapshots, atomic promotion, queries, and export/import. Retained sources and artifacts allow rendering after original sources are removed. |
 | Remote sources and storage | SPARQL endpoints can supply source RDF. A writable remote documentation KG requires RDF4J HTTP transactions with verified serializable isolation; query/update-only endpoints are not sufficient. See [SPARQL endpoints](../usage/sparql-endpoints.md). |
 | Quality and diagnostics | Source conflicts retain competing values and provenance. Diagnostics and explicit error-publication modes expose failures without claiming a successful clean publication. See [Quality review](../usage/quality-review.md). |

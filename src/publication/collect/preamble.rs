@@ -7,11 +7,7 @@ use {
         git::PinnedGitBlob,
         source::{FileInput, MAX_AUTHORED_BYTES},
     },
-    crate::publication::{
-        dataset::identity,
-        native_html,
-        writer::ContributionStream,
-    },
+    crate::publication::{native_html, writer::ContributionStream},
     anyhow::{Result, ensure},
     async_trait::async_trait,
     oxrdf::NamedNode,
@@ -20,12 +16,13 @@ use {
     url::Url,
 };
 
-/// Collect a single legal preamble and bind it to explicitly chosen targets.
+/// Collect a single legal preamble as an explicitly identified fragment.
+/// Publication definitions, not this collector, bind it to targets through
+/// `ga:preamble`.
 pub struct HtmlPreambleFile {
-    input:   FileInput,
-    targets: Vec<NamedNode>,
-    base:    Url,
-    blob:    Option<PinnedGitBlob>,
+    input: FileInput,
+    base:  Url,
+    blob:  Option<PinnedGitBlob>,
 }
 
 impl HtmlPreambleFile {
@@ -36,23 +33,16 @@ impl HtmlPreambleFile {
         processor: &str,
         path: PathBuf,
         base: &str,
-        targets: &[&str],
+        fragment: NamedNode,
     ) -> Result<Self> {
-        ensure!(
-            !targets.is_empty() && targets.len() <= 16,
-            "preamble requires one to sixteen targets"
-        );
         let base = Url::parse(base)?;
         ensure!(
             matches!(base.scheme(), "http" | "https" | "file"),
             "preamble base must be an HTTP(S) or file source URL"
         );
         Ok(Self {
-            input: FileInput::new(project, processor, path)?,
-            targets: targets
-                .iter()
-                .map(|target| NamedNode::new(*target))
-                .collect::<Result<_, _>>()?,
+            input: FileInput::new(project, processor, path)?
+                .select_fragment(fragment)?,
             base,
             blob: None,
         })
@@ -63,32 +53,21 @@ impl HtmlPreambleFile {
         project: &str,
         processor: &str,
         blob: &PinnedGitBlob,
-        targets: &[&str],
+        fragment: NamedNode,
     ) -> Result<Self> {
         let mut collector = Self::new(
             project,
             processor,
             PathBuf::from(blob.location()),
             blob.location(),
-            targets,
+            fragment,
         )?;
         collector.blob = Some(blob.clone());
         Ok(collector)
     }
 
-    /// Stable identity of the retained legal fragment.
-    pub fn fragment_id(&self) -> NamedNode {
-        match &self.blob {
-            Some(blob) => {
-                identity("preamble", &[
-                    self.input.project.as_str(),
-                    self.input.collector.as_str(),
-                    blob.source(),
-                ])
-            },
-            None => self.input.fragment_id(),
-        }
-    }
+    /// Configured identity of the retained legal fragment.
+    pub fn fragment_id(&self) -> NamedNode { self.input.fragment_id() }
 }
 
 #[async_trait]
@@ -169,25 +148,17 @@ impl Collector for HtmlPreambleFile {
                 ))
             })
             .await??;
-        let revision = format!(
-            "html-preamble-v1:{revision}:{}:{:?}",
-            self.base, self.targets
-        );
+        let revision = format!("html-preamble-v2:{revision}:{}", self.base);
         let fragment = self.fragment_id();
         stream
             .push(input.description(
                 &body,
                 "text/html",
-                Some(fragment.clone()),
+                Some(fragment),
                 Some(&title),
                 &revision,
             )?)
             .await?;
-        for target in &self.targets {
-            stream
-                .write(input.quad(target, "preamble", fragment.clone()))
-                .await?;
-        }
         Ok(revision)
     }
 }

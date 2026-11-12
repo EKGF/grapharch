@@ -8,7 +8,7 @@ use {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ShowcaseRunner {
     Authored,
-    Dprod,
+    RevisionBuild,
     Mkdocs,
     OntologyFamily,
     Skos,
@@ -24,8 +24,8 @@ impl ShowcaseRunner {
             "https://ekgf.org/ontology/grapharch#AuthoredShowcaseRunner" => {
                 Ok(Self::Authored)
             },
-            "https://ekgf.org/ontology/grapharch#DprodShowcaseRunner" => {
-                Ok(Self::Dprod)
+            "https://ekgf.org/ontology/grapharch#RevisionBuildShowcaseRunner" => {
+                Ok(Self::RevisionBuild)
             },
             "https://ekgf.org/ontology/grapharch#MkdocsShowcaseRunner" => {
                 Ok(Self::Mkdocs)
@@ -91,7 +91,7 @@ mod tests {
         for iri in [
             "https://ekgf.org/ontology/grapharch#ShowcaseRunner",
             "urn:grapharch:showcase:authored",
-            "urn:custom:DprodShowcaseRunner",
+            "urn:custom:RevisionBuildShowcaseRunner",
         ] {
             assert!(
                 ShowcaseRunner::from_node(&NamedNode::new_unchecked(iri))

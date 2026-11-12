@@ -84,12 +84,14 @@ impl BuildStoreOptions {
 /// dataset.
 #[derive(Subcommand)]
 pub enum PublicationCommand {
-    /// Build source-owned DPROD targets from one exact repository commit.
-    BuildDprod {
+    /// Build selected targets from definitions at an exact controlling commit
+    /// and content at an exact designated commit.
+    BuildRevision {
+        /// Emit the build record as one JSON object on stdout.
         #[arg(long)]
         json:    bool,
         #[command(flatten)]
-        request: super::dprod::BuildRequest,
+        request: Box<super::revision_build::BuildRequest>,
     },
     /// Pin a worker executable in an isolated process without opening a KG.
     #[command(hide = true)]
@@ -353,7 +355,7 @@ pub async fn run(
                     .await?;
             println!("{}", package.display());
         },
-        PublicationCommand::BuildDprod { json, request } => {
+        PublicationCommand::BuildRevision { json, request } => {
             let manifest = request.build().await?;
             if *json {
                 println!("{}", serde_json::to_string(&manifest)?);

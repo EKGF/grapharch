@@ -243,30 +243,89 @@ The dedicated specification renderer produces `index.html`, `style.css`,
 `main.typ`, and `document.pdf` from the same pinned plan. The HTML PDF icon links
 to that PDF. Publication stages and promotes the paired artifacts together.
 
-## Exact-revision DPROD builds
+## Exact-revision builds
 
-A trusted central workflow can build the DPROD source-owned targets without a
-showcase registry or executing code from the source branch:
+A trusted central workflow can publish a designated branch of a repository
+without a showcase registry, without executing code from that branch, and
+without the branch carrying any GraphArch configuration. One controlling
+branch holds every GraphArch definition. GraphArch runs once per designated
+branch: definitions come from a checkout of the controlling branch, and only
+content comes from the designated branch, at an exact commit:
 
 ```sh
-grapharch publication build-dprod \
+grapharch publication build-revision \
   --git-repository https://github.com/EKGF/dprod.git \
-  --git-ref <exact-source-commit> \
-  --definitions publication/standards.ttl \
+  --git-commit <exact-content-commit> \
+  --definitions controlling/publication/definitions/develop.ttl \
+  --definitions-commit <exact-controlling-commit> \
+  --project urn:dprod-showcase:project \
+  --all-targets \
   --generator-revision <exact-generator-commit> \
+  --publication-url https://ekgf.github.io/dprod/spec/develop/ \
   --git-cache output/git-cache \
   --output-root output/publication --json
 ```
 
-Both revision arguments require full lowercase Git commit IDs. Definitions and
-content come from the same source commit. The generator revision is declared by
-the trusted workflow; the manifest also hashes the executable actually used.
-Every configured target is rendered from a restored `documentation.nq`. The new
-output directory appears only after all targets succeed. `build-provenance.json`
-records source and configuration revisions, engine identity, target destinations,
-and each publication manifest. An existing output is rejected.
+All three revision arguments require full lowercase Git commit IDs; branch
+names and abbreviated IDs are rejected before any network access. The
+definitions checkout is verified strictly before the content is fetched: its
+`HEAD` must be `--definitions-commit`, the file must be tracked and committed
+there, and the working file must be identical to the committed blob. The
+definitions are then read from the checkout's object database, never from the
+working tree. Content is fetched into the bare cache and read as data only.
 
-Older sources without an ontology issuance date can specify an explicit
-`ga:publicationDate` on each specification/PDF target in their own publication
-configuration. This describes that publication; it does not add an issuance
-assertion to the source ontology.
+Select targets with one or more `--target <IRI>` options, published in the
+given order, or with `--all-targets`, which publishes every target the
+project registers in IRI order. Exactly one form is required.
+
+Where the output is deployed is a build input, never source content.
+`--publication-url` names the deployed URL of the output root: an absolute
+HTTP(S) directory URL ending in `/`, without credentials, query or fragment.
+Each selected target's `ga:thisVersion` is derived from it and the target's
+`ga:destination`: the destination directory, with a trailing `/`, for HTML
+renderers (specification, website, HTML, specification pages and bookshelf),
+and the destination's `document.pdf` for a Typst target. With the URL above, a
+specification at `specification` is `…/spec/develop/specification/` and a PDF
+at `pdf/ekgf` is `…/spec/develop/pdf/ekgf/document.pdf`. A definitions file
+that declares `ga:thisVersion` on a selected target is rejected as a conflict
+with the derived value. Other version links, such as `ga:latestVersion` and
+`ga:editorDraft`, remain authored metadata, and authored links between
+co-built targets stay relative to the page. The same output therefore works at
+any deployment base the orchestrator chooses.
+
+The definitions name every collector use with `ga:collector`, each reading
+one `ga:sourcePath` of the content tree; the content cannot add collectors.
+A content contribution that asserts publication definition vocabulary, such
+as `ga:target`, `ga:placement`, `ga:renderer` or a `ga:Target`, or that
+describes a resource the definitions declare, is rejected: only the
+controlling definitions define publications. `ga:includedIn` places the
+subjects of a collector use's `ga:fragment` in a scope. It is required on
+every collector use that names a `ga:fragment`, including Markdown files and
+pages, code examples and legal preambles: a fragment outside every scope would
+be collected and never published, so a missing inclusion fails the build. A
+`ga:VocabularyReferenceDocumentor` use generates term fragments into the
+components of its authored `ga:ReferenceSection` resources; placements are
+authored in each profile. `ga:metadataSource` and `ga:derivedMetadata` derive
+header values from the native source's own contribution:
+
+```turtle
+doc:specification ga:metadataSource doc:source:ontology ;
+    ga:derivedMetadata dct:title, dct:description, ga:license, ga:publicationDate .
+```
+
+The mapping is fixed: `dct:title` and `dct:description` from the same
+predicates, `ga:license` from `dct:license`, and `ga:publicationDate` from
+`dct:issued`. A missing or multi-valued native value is an error, and so is an
+explicit definition value for a derived predicate. A source without an
+issuance date instead declares an explicit `ga:publicationDate` on its targets
+and does not derive it; this describes the publication without adding an
+issuance assertion to the source ontology.
+
+Every selected target is rendered from a restored `documentation.nq`. The new
+output directory appears only after all targets succeed; a failed build
+removes its staging directory, and an existing output is rejected.
+`build-provenance.json` (version 2) records the project, the target selection,
+the publication URL, the content repository and commit, the definitions repository, path, commit,
+blob and SHA-256 digest, the declared generator revision with its version and
+executable digest, the graph file, and each publication manifest with its
+destination.
