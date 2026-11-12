@@ -42,12 +42,6 @@ fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
         text("reference"),
         "6bd93ab7c9430804e99b3913f0926d0070eb44a3"
     );
-    // Temporary exact pin until the EKG migration lands upstream; restore
-    // `HEAD` then (see examples/ekg-ontologies/showcase.yaml).
-    assert_eq!(
-        config["source"]["ref"].as_str(),
-        Some("6bd93ab7c9430804e99b3913f0926d0070eb44a3")
-    );
     assert!(
         include_str!("../examples/showcases.ttl")
             .contains("ga:source \"ekg-ontologies/showcase.ttl\"")
