@@ -92,6 +92,28 @@ pub struct PublicationManifest {
     pub diagnostics:    Vec<crate::publication::diagnostics::Diagnostic>,
 }
 
+impl PublicationManifest {
+    /// Apply the one publication outcome rule: every recorded diagnostic is
+    /// reported, warnings leave the publication successful, and any error
+    /// fails it. Every publishing command uses this rule.
+    pub fn ensure_publishable(&self) -> Result<()> {
+        use crate::publication::diagnostics::Severity;
+        for diagnostic in &self.diagnostics {
+            eprintln!("{}: {}", diagnostic.code, diagnostic.message);
+        }
+        let errors = self
+            .diagnostics
+            .iter()
+            .filter(|diagnostic| matches!(diagnostic.severity, Severity::Error))
+            .count();
+        ensure!(
+            errors == 0,
+            "publication produced with {errors} error(s)"
+        );
+        Ok(())
+    }
+}
+
 impl Plan {
     pub async fn read(dataset: Dataset, handle: ResolvedPlan) -> Result<Self> {
         let view = RevisionView::new(dataset.clone(), handle.snapshot.clone());

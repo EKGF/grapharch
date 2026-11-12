@@ -69,7 +69,11 @@ A later source edit cannot change an earlier publication's findings.
 ## Use the report in CI
 
 Warnings appear in the publication manifest as well as the KG. Warning-only
-publications succeed and are recorded as `published-with-warnings`.
+publications succeed and are recorded as `published-with-warnings`. The same
+rule applies to `build-family`, `build-site` and `publication render`: each
+reports every diagnostic on standard error and exits nonzero only when one is an
+error. Rendering an exported KG therefore reaches the same outcome as the build
+that produced it.
 `--fail-fast` and `--keep-going` continue to govern actual execution errors;
 unsupported markup, malformed input, and missing required release content
 remain errors.

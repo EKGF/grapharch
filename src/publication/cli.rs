@@ -513,6 +513,7 @@ pub async fn run(
                 .dataset
                 .export(output_root.join("documentation.nq"))
                 .await?;
+            publication.manifest.ensure_publishable()?;
             if *json {
                 print_build_json(
                     &publication,
@@ -561,6 +562,7 @@ pub async fn run(
                 .dataset
                 .export(output_root.join("documentation.nq"))
                 .await?;
+            publication.manifest.ensure_publishable()?;
             if *json {
                 print_build_json(&publication, output_root, &built.plan, None)
                     .await?;
@@ -586,17 +588,7 @@ pub async fn run(
             {
                 PublishOutcome::Published(publication) => {
                     println!("{}", publication.directory.display());
-                    for diagnostic in &publication.manifest.diagnostics {
-                        eprintln!(
-                            "{}: {}",
-                            diagnostic.code, diagnostic.message
-                        );
-                    }
-                    ensure!(
-                        publication.manifest.diagnostics.is_empty(),
-                        "publication produced with {} error(s)",
-                        publication.manifest.diagnostics.len()
-                    );
+                    publication.manifest.ensure_publishable()?;
                 },
                 PublishOutcome::Superseded => println!("superseded"),
             }

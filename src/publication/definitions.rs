@@ -52,6 +52,21 @@ impl Renderer {
         })
     }
 
+    /// Whether a family build can publish this renderer. Family bindings
+    /// produce an ordered component plan; every renderer that renders that
+    /// plan as a document publishes a family, whether as HTML pages, books
+    /// or a PDF edition. Website and plain HTML targets arrange their own
+    /// pages and cannot carry the family bindings.
+    pub(crate) fn publishes_family(self) -> bool {
+        matches!(
+            self,
+            Self::Specification |
+                Self::SpecificationPages |
+                Self::Bookshelf |
+                Self::Typst
+        )
+    }
+
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Html => "html",

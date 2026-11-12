@@ -49,7 +49,7 @@ A gallery family showcase publishes every target the hinted project registers, i
 IRI order, each into its own `ga:destination`. A `targets` list in the showcase
 configuration selects registered targets instead, in its own order. The family
 bindings belong to the profile of the first selected target with a
-specification, specification-pages or bookshelf renderer and an
+specification, specification-pages, bookshelf or Typst renderer and an
 `artpub:publishesFamily` profile; every other selected target must use that
 profile. A website or other target with its own profile is rejected rather than
 published without its content.
@@ -70,6 +70,27 @@ defined in `publication.ttl`. Generated files stay under the chosen output root;
 the source repository is not modified. With a target destination of
 `specification`, outputs include `specification/index.html`, its PDF and Typst
 source, and `documentation.nq`.
+
+A `ga:TypstRenderer` target publishes a PDF-only edition of the family: its
+destination holds the PDF, its `main.typ` source and the manifest, with no
+single-page HTML copy. Give it its own profile that declares the family and
+`ga:style "specification"` for the specification presentation, including the
+target's status and version metadata:
+
+```turtle
+<urn:example:pdf-profile> a ga:Profile, artpub:PublicationProfile ;
+    artpub:publishesFamily <urn:example:family> ;
+    ga:style "specification" .
+
+<urn:example:pdf> a ga:Target ;
+    ga:profile <urn:example:pdf-profile> ;
+    ga:renderer ga:TypstRenderer ;
+    ga:destination "pdf" .
+```
+
+The target needs the same scope, title, description, status comment and
+publication metadata as the HTML specification target. Build it with its own
+`build-family --target` run.
 
 For a remote source, replace the source option with `--git-repository URL
 --git-ref REF`, or the GitHub shortcut. Unqualified refs mean branches; use
