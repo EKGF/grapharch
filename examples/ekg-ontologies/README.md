@@ -4,7 +4,7 @@
 
 The published gallery uses [`showcase.ttl`](showcase.ttl), which selects
 `https://github.com/EKGF/ekg-ontologies.git` with `ga:gitRepository`. Its
-`ga:gitRef` is pinned to commit `6fc617cd5c017dbb3b5273f50581e3fb4d60b49e` on
+`ga:gitRef` is pinned to commit `c7d9bc2371f38c0f39b15540cfd54afaa3581118` on
 `publication/ekgf-family-website`, the migration to composed targets (website at
 `site/`, reference at `site/spec/main/`, PDF edition at `site/pdf/`), website
 pages declared with `ga:contentSource` and links by target IRI. It returns to

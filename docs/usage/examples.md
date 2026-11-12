@@ -80,7 +80,7 @@ from a remote repository, a local checkout, or the separate offline acceptance c
 The gallery normally fetches the latest default branch (`ga:gitRef "HEAD"`)
 declared in `examples/ekg-ontologies/showcase.ttl`; its downloadable KG records
 the concrete commit observed by each build. It is pinned to the ekg-ontologies
-migration commit `6fc617c` until that migration reaches the default branch. The
+migration commit `c7d9bc2` until that migration reaches the default branch. The
 repository registers a website built from its declared `ga:contentSource`
 pages, which contains the paginated family reference (`spec/main/`) and the
 Typst PDF edition (`pdf/`). Every target is published; each retains the

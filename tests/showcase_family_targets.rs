@@ -361,7 +361,8 @@ async fn a_pdf_edition_with_its_own_family_profile_is_bound_too() -> Result<()>
              <https://ekgf.org/ontology/grapharch#Profile>; \
              <https://ekgf.org/ontology/artifact-publication#publishesFamily> \
              <urn:example:family>; \
-             <https://ekgf.org/ontology/grapharch#style> \"specification\" .\n"
+             <https://ekgf.org/ontology/grapharch#theme> \
+             <https://ekgf.org/ontology/grapharch#SpecificationTheme> .\n"
         ),
     )?;
     let url =

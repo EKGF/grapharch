@@ -40,7 +40,7 @@ fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
     // `HEAD` then (see examples/ekg-ontologies/showcase.ttl).
     assert_eq!(
         text("reference"),
-        "6fc617cd5c017dbb3b5273f50581e3fb4d60b49e"
+        "c7d9bc2371f38c0f39b15540cfd54afaa3581118"
     );
     assert!(
         include_str!("../examples/showcases.ttl")
