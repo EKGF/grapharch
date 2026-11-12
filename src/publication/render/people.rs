@@ -10,7 +10,39 @@ pub(super) struct Person {
     pub name: String,
 }
 
+/// Header roles in display order. A person derived from a credit rule is
+/// listed only under the first role that credits them.
+pub(super) const ROLES: [&str; 4] =
+    ["editor", "author", "formerEditor", "contributor"];
+
+/// Explicitly declared people of a role, followed by people derived from the
+/// target's `ga:credit` rules.
 pub(super) async fn read(plan: &Plan, role: &str) -> Result<Vec<Person>> {
+    let mut listed = std::collections::BTreeSet::new(); // bounded: 64 people per role, four roles.
+    for earlier in ROLES {
+        for person in explicit(plan, earlier).await? {
+            listed.insert(person.id.clone());
+        }
+    }
+    let mut people = explicit(plan, role).await?;
+    for earlier in ROLES {
+        let derived = super::credits::derived(plan, earlier, &listed).await?;
+        for person in &derived {
+            listed.insert(person.id.clone());
+        }
+        if earlier == role {
+            people.extend(derived);
+            break;
+        }
+    }
+    ensure!(
+        people.len() <= 64,
+        "specification exceeds 64 people in one role"
+    );
+    Ok(people)
+}
+
+async fn explicit(plan: &Plan, role: &str) -> Result<Vec<Person>> {
     // bounded: publication metadata permits at most 64 people per role.
     let mut people = Vec::new();
     let mut rows = plan.source.objects(&plan.target, role).await?;
@@ -61,7 +93,7 @@ pub(super) async fn read(plan: &Plan, role: &str) -> Result<Vec<Person>> {
         .collect())
 }
 
-async fn family_name(
+pub(super) async fn family_name(
     plan: &Plan,
     person: &NamedNode,
     name: &str,

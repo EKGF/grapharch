@@ -90,6 +90,8 @@ ga:SpecificationMetadataShape a sh:NodeShape ;
     sh:property [ sh:path ga:editor ; sh:nodeKind sh:IRI ; sh:node ga:SpecificationIdentityShape ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:author ; sh:nodeKind sh:IRI ; sh:node ga:SpecificationIdentityShape ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:formerEditor ; sh:nodeKind sh:IRI ; sh:node ga:SpecificationIdentityShape ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:contributor ; sh:nodeKind sh:IRI ; sh:node ga:SpecificationIdentityShape ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:credit ; sh:nodeKind sh:IRI ; sh:node ga:CreditShape ; sh:maxCount 16 ] ;
     sh:property [ sh:path ga:license ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:copyright ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:maxLength 4096 ; sh:maxCount 1 ] .
 
@@ -307,3 +309,13 @@ ga:ShowcaseDiscoveryShape a sh:NodeShape ; sh:targetClass ga:Showcase ;
     sh:property [ sh:path ga:showcaseUseCase ; sh:datatype xsd:string ; sh:maxCount 16 ; sh:minLength 1 ; sh:maxLength 64 ] ;
     sh:property [ sh:path dct:source ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
     sh:property [ sh:path dct:rights ; sh:nodeKind sh:Literal ; sh:maxCount 1 ; sh:maxLength 1024 ] .
+
+ga:CreditShape a sh:NodeShape ;
+    sh:property [ sh:path ga:creditRole ; sh:in ( ga:editor ga:author ga:formerEditor ga:contributor ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:creditPredicate ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:OrcidPersonCollectorShape a sh:NodeShape ; sh:targetClass ga:CollectorUse ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path ga:collectorType ; sh:hasValue ga:OrcidPersonCollector ] ] ]
+        [ sh:property [ sh:path ga:personPredicate ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 16 ] ]
+    ) .

@@ -20,6 +20,8 @@ pub(crate) enum CollectorKind {
     Image,
     CodeFile,
     MarkdownPage,
+    OrcidPerson,
+    GitHubContributor,
 }
 impl CollectorKind {
     pub(crate) fn from_node(node: &NamedNode) -> Result<Self> {
@@ -38,7 +40,15 @@ impl CollectorKind {
             "https://ekgf.org/ontology/grapharch#ImageCollector" => Ok(Self::Image),
             "https://ekgf.org/ontology/grapharch#CodeFileCollector" => Ok(Self::CodeFile),
             "https://ekgf.org/ontology/grapharch#MarkdownPageCollector" => Ok(Self::MarkdownPage),
+            "https://ekgf.org/ontology/grapharch#OrcidPersonCollector" => Ok(Self::OrcidPerson),
+            "https://ekgf.org/ontology/grapharch#GitHubContributorCollector" => Ok(Self::GitHubContributor),
             _=>bail!("unsupported collectorType IRI {node}"),
         }
+    }
+
+    /// Person collectors read references from already collected
+    /// contributions, so they run after the source collectors of a build.
+    pub(crate) fn reads_collected_people(self) -> bool {
+        matches!(self, Self::OrcidPerson | Self::GitHubContributor)
     }
 }

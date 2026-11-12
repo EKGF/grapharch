@@ -33,6 +33,7 @@ explanations, and diagrams. Renderers present that content as websites or PDFs.
 | [Repository Publication Collector](repository-publications.md) | GitHub pull requests and Vercel deployment metadata | Publication version-selection pages and preserved specification routes |
 | [PlantUML Diagrams](plantuml.md) | An authored PlantUML file and bounded local include closure | Retained SVG illustrations with source and renderer provenance |
 | [Abbreviation Files](abbreviation-files.md) | An authored Markdown abbreviation dictionary | Source-owned SKOS meanings and retained dictionary provenance |
+| [Publication People](people.md) | ORCID iDs in collected sources and GitHub commit authors, through their public APIs | Editors and contributors in specification and PDF headers |
 
 [Repository Scanners](repositories.md) discover local files or pinned Git blobs
 and dispatch the matching file collectors. They provide discovery and source

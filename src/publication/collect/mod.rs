@@ -24,6 +24,7 @@ pub(crate) mod mkdocs;
 mod module_hints;
 pub(crate) mod page;
 mod pages_navigation;
+pub(crate) mod people;
 pub mod plantuml;
 mod preamble;
 pub(crate) mod published_artifact;

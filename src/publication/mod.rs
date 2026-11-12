@@ -24,6 +24,7 @@ mod mermaid;
 mod native_html;
 pub mod ontology_family;
 mod ontology_specification;
+pub mod orcid;
 pub mod plan;
 pub mod quick_build;
 pub mod render;

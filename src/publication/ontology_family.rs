@@ -465,8 +465,15 @@ async fn build(
         managed.add(id.processor, id.source, false)?;
     }
     managed.persist_inventory(writer, true).await?;
-    managed.retire(writer, false).await?;
     collect_all(work, writer, concurrency).await?;
+    let people = super::collect::people::collectors(dataset, project).await?;
+    for input in &people {
+        let id = input.identity()?;
+        managed.add(id.processor, id.source, false)?;
+    }
+    managed.persist_inventory(writer, true).await?;
+    collect_all(people, writer, concurrency).await?;
+    managed.retire(writer, false).await?;
     tracing::info!(
         elapsed_ms = started.elapsed().as_millis(),
         "family sources collected"
