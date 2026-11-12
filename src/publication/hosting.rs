@@ -7,10 +7,57 @@ use {
     std::path::{Component, Path, PathBuf},
 };
 
+/// The static host serving a package; it alone determines the output layout.
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+enum Platform {
+    /// A plain file tree, `<output-root>/static/<mount>`, uploaded as a Pages
+    /// artifact. Pages serves files only: no routes or response headers.
+    GithubPages,
+    /// The Vercel Build Output API layout, `<output-root>/.vercel/output`,
+    /// with routing in `config.json` beside `static/<mount>`.
+    Vercel,
+}
+
+impl Platform {
+    fn name(self) -> &'static str {
+        match self {
+            Self::GithubPages => "github-pages",
+            Self::Vercel => "vercel",
+        }
+    }
+
+    /// The directory holding the package, created atomically.
+    fn package_parent(self, output_root: &Path) -> PathBuf {
+        match self {
+            Self::GithubPages => output_root.to_path_buf(),
+            Self::Vercel => output_root.join(".vercel"),
+        }
+    }
+
+    fn package_name(self) -> &'static str {
+        match self {
+            Self::GithubPages => "static",
+            Self::Vercel => "output",
+        }
+    }
+
+    /// The mounted file tree inside the package.
+    fn mounted(self, package: &Path, mount: &str) -> PathBuf {
+        match self {
+            Self::GithubPages => package.join(mount),
+            Self::Vercel => package.join("static").join(mount),
+        }
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Configuration {
-    version:           u8,
+    /// Checked by [`Version`] before this schema is read.
+    #[serde(rename = "version")]
+    _version:          u8,
+    platform:          Platform,
     mount:             String,
     site:              PathBuf,
     #[serde(default)]
@@ -21,6 +68,11 @@ struct Configuration {
     file_aliases:      Vec<FileAlias>,
     inventory:         Option<PathBuf>,
     version_path:      Option<String>,
+}
+/// The version field alone, read before the versioned schema.
+#[derive(Deserialize)]
+struct Version {
+    version: u8,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -42,9 +94,8 @@ struct FileAlias {
     content_type: String,
 }
 
-/// Assemble a Vercel Build Output API package, without modifying any input.
-/// The `static/` tree can also be served by an ordinary static web host.
-/// Existing output is rejected rather than overwritten.
+/// Assemble the static package of the configured hosting platform, without
+/// modifying any input. Existing output is rejected rather than overwritten.
 pub async fn package(
     config: &Path,
     output_root: &Path,
@@ -55,12 +106,15 @@ pub async fn package(
         tokio::fs::metadata(&config).await?.len() <= 256 * 1024,
         "hosting configuration exceeds 256 KiB"
     );
-    let mut settings: Configuration =
-        serde_yaml::from_slice(&tokio::fs::read(&config).await?)?;
+    let bytes = tokio::fs::read(&config).await?;
+    let version: Version = serde_yaml::from_slice(&bytes)?;
     ensure!(
-        settings.version == 1,
-        "unsupported hosting configuration version"
+        version.version == 2,
+        "unsupported hosting configuration version {}; version 2 requires an \
+         explicit platform: github-pages or vercel",
+        version.version
     );
+    let mut settings: Configuration = serde_yaml::from_slice(&bytes)?;
     if let Some(mount) = mount {
         settings.mount = mount.into();
     }
@@ -87,10 +141,11 @@ pub async fn package(
             relative(&tree.destination)?,
         ));
     }
-    tokio::fs::create_dir_all(output_root.join(".vercel")).await?;
+    let platform = settings.platform;
+    tokio::fs::create_dir_all(platform.package_parent(output_root)).await?;
     let output_parent =
-        tokio::fs::canonicalize(output_root.join(".vercel")).await?;
-    let final_path = output_parent.join("output");
+        tokio::fs::canonicalize(platform.package_parent(output_root)).await?;
+    let final_path = output_parent.join(platform.package_name());
     ensure!(
         !tokio::fs::try_exists(&final_path).await?,
         "hosting output already exists: {}",
@@ -123,7 +178,7 @@ async fn assemble(
     mount: &str,
     stage: &Path,
 ) -> Result<()> {
-    let root = stage.join("static").join(mount);
+    let root = settings.platform.mounted(stage, mount);
     tokio::fs::create_dir_all(&root).await?;
     let mut files = files::Inventory::new();
     for (source, destination) in trees {
@@ -155,11 +210,20 @@ async fn assemble(
     );
     let config =
         routes::configuration(settings, parent, mount, &files.paths).await?;
-    tokio::fs::write(
-        stage.join("config.json"),
-        serde_json::to_vec_pretty(&config)?,
-    )
-    .await?;
+    match settings.platform {
+        Platform::Vercel => {
+            tokio::fs::write(
+                stage.join("config.json"),
+                serde_json::to_vec_pretty(&config)?,
+            )
+            .await?;
+        },
+        // Pages serves directory indexes, trailing-slash redirects and the
+        // root 404.html itself; anything else needs a router it lacks.
+        Platform::GithubPages => {
+            config.require_files_only(settings.platform.name())?
+        },
+    }
     Ok(())
 }
 

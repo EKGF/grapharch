@@ -12,6 +12,20 @@ use {
 pub(super) struct Output {
     version: u8,
     routes:  Vec<Route>,
+    /// Routes a plain file host cannot serve, named for diagnostics.
+    #[serde(skip)]
+    routed:  Vec<String>,
+}
+
+impl Output {
+    pub(super) fn require_files_only(&self, platform: &str) -> Result<()> {
+        ensure!(
+            self.routed.is_empty(),
+            "{platform} serves files only and cannot provide: {}",
+            self.routed.join(", ")
+        );
+        Ok(())
+    }
 }
 #[derive(Serialize)]
 #[serde(untagged)]
@@ -73,6 +87,7 @@ pub(super) async fn configuration(
 ) -> Result<Output> {
     // bounded: 4096 copied files and at most 1000 explicitly observed versions.
     let mut routes = Vec::new();
+    let mut routed = Vec::new(); // bounded: 64 file aliases and 1000 versions.
     for alias in &settings.file_aliases {
         let trailing = alias.path.ends_with('/');
         let path = super::relative(alias.path.trim_end_matches('/'))?;
@@ -90,6 +105,10 @@ pub(super) async fn configuration(
                 !alias.content_type.contains(['\r', '\n']),
             "invalid artifact content type"
         );
+        routed.push(format!(
+            "file alias {} with content type {}",
+            alias.path, alias.content_type
+        ));
         let path = url(mount, &path);
         let canonical = format!("{path}{}", if trailing { "/" } else { "" });
         routes.push(redirect(
@@ -184,6 +203,7 @@ pub(super) async fn configuration(
             if files.contains(&format!("{path}index.html")) {
                 continue;
             }
+            routed.push(format!("redirect of remote version {slug}"));
             let source = url(mount, &path);
             routes.push(redirect(
                 source.trim_end_matches('/').into(),
@@ -209,5 +229,5 @@ pub(super) async fn configuration(
             ..Source::default()
         }));
     }
-    Ok(Output { version: 3, routes })
+    Ok(Output { version: 3, routes, routed })
 }
