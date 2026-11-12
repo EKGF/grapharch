@@ -82,7 +82,7 @@ fn publishing_authorities_reuse_the_imported_governance_class_directly()
 fn git_revision_hint_has_public_metadata_and_collector_constraints()
 -> Result<()> {
     let store = ontology()?;
-    assert!(ask(&store, "ga:gitRef a owl:DatatypeProperty ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain ga:CollectorUse ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition ; skos:example ?example . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40 && CONTAINS(STR(?example), 'HEAD'))")?, "the Git revision hint needs a complete source-owned vocabulary definition");
+    assert!(ask(&store, "ga:gitRef a owl:DatatypeProperty ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; rdfs:domain/owl:unionOf/<http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ga:CollectorUse, ga:Showcase ; rdfs:range <http://www.w3.org/2001/XMLSchema#string> ; rdfs:label ?label ; skos:definition ?definition ; dct:description ?definition ; skos:example ?example . FILTER(lang(?label) = 'en' && lang(?definition) = 'en' && STRLEN(STR(?definition)) > 40 && CONTAINS(STR(?example), 'HEAD'))")?, "the Git revision hint needs a complete source-owned vocabulary definition");
     store.load_from_reader(
         RdfFormat::Turtle,
         include_bytes!("../docs/other/ontology/publication.shacl.ttl")

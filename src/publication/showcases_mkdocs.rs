@@ -5,18 +5,26 @@ use {
         collect::{Collector, TextAssetFile, git, mkdocs::MkDocs},
         dataset::{Dataset, identity},
         plan::ResolvedPlan,
+        showcase_configuration::ShowcaseConfiguration,
         website,
     },
     anyhow::{Result, ensure},
-    serde::Deserialize,
     std::{
         path::{Path, PathBuf},
         sync::Arc,
     },
 };
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+/// The GraphArch settings of a MkDocs showcase.
+const SETTINGS: &[&str] = &[
+    "gitRepository",
+    "gitCommit",
+    "mkdocsConfiguration",
+    "materializedPath",
+    "licensePath",
+];
+
+/// The pinned MkDocs tree a showcase imports.
 struct Source {
     repository:    String,
     commit:        String,
@@ -25,18 +33,47 @@ struct Source {
     license:       PathBuf,
 }
 
+impl Source {
+    fn read(configuration: &ShowcaseConfiguration) -> Result<Self> {
+        configuration.accept_only("MkDocs", SETTINGS)?;
+        let paths = configuration
+            .texts("materializedPath")?
+            .into_iter()
+            .map(PathBuf::from)
+            .collect::<Vec<_>>();
+        ensure!(
+            !paths.is_empty(),
+            "MkDocs showcase {} requires ga:materializedPath",
+            configuration.id()
+        );
+        Ok(Self {
+            repository: configuration.text("gitRepository")?,
+            commit: configuration.text("gitCommit")?,
+            configuration: configuration.text("mkdocsConfiguration")?.into(),
+            paths,
+            license: configuration.text("licensePath")?.into(),
+        })
+    }
+}
+
 /// Collect a pinned public documentation example without running MkDocs or
 /// Python.
 pub async fn build(
     configuration: &Path,
     cache: &Path,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    ensure!(
-        tokio::fs::metadata(configuration).await?.len() <= 64 * 1024,
-        "MkDocs showcase configuration exceeds 64 KiB"
-    );
-    let source: Source =
-        serde_yaml::from_str(&tokio::fs::read_to_string(configuration).await?)?;
+    configured(
+        &ShowcaseConfiguration::read(configuration).await?,
+        cache,
+    )
+    .await
+}
+
+pub(super) async fn configured(
+    configuration: &ShowcaseConfiguration,
+    cache: &Path,
+) -> Result<(Dataset, Vec<ResolvedPlan>)> {
+    let source = Source::read(configuration)?;
     ensure!(
         gix::hash::ObjectId::from_hex(source.commit.as_bytes()).is_ok(),
         "MkDocs showcase requires an immutable Git commit"

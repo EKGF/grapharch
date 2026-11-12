@@ -12,112 +12,63 @@ use {
             RevisionInputs,
             TargetSelection,
         },
+        showcase_configuration::ShowcaseConfiguration,
     },
-    anyhow::{Context, Result, ensure},
+    anyhow::{Result, bail, ensure},
     oxrdf::NamedNode,
-    serde::Deserialize,
     std::path::{Path, PathBuf},
-    tokio::io::AsyncReadExt,
 };
 
-const CONFIGURATION_BYTES: u64 = 64 * 1024;
+/// The GraphArch settings of an exact-revision showcase.
+const SETTINGS: &[&str] = &[
+    "gitRepository",
+    "gitCommit",
+    "definitionsCommit",
+    "definitionsPath",
+    "showcaseProject",
+    "showcaseTargets",
+    "allTargets",
+];
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Source {
-    repository:  String,
-    commit:      String,
-    definitions: Definitions,
-    project:     String,
-    targets:     Targets,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Definitions {
-    commit: String,
-    path:   PathBuf,
-}
-
-/// `all`, or an ordered list of target IRIs.
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum Targets {
-    All(String),
-    Selected(Vec<String>),
-}
-
-impl Targets {
-    fn selection(&self) -> Result<TargetSelection> {
-        match self {
-            Self::All(all) => {
-                ensure!(
-                    all == "all",
-                    "showcase targets must be `all` or a list of target IRIs"
-                );
-                Ok(TargetSelection::All)
-            },
-            Self::Selected(targets) => {
-                TargetSelection::targets(
-                    targets
-                        .iter()
-                        .map(|target| {
-                            NamedNode::new(target).with_context(|| {
-                                format!(
-                                    "showcase target {target} is not an IRI"
-                                )
-                            })
-                        })
-                        .collect::<Result<_>>()?,
-                )
-            },
-        }
+/// `ga:allTargets true`, or an ordered `ga:showcaseTargets` list.
+fn selection(configuration: &ShowcaseConfiguration) -> Result<TargetSelection> {
+    match (
+        configuration.flag("allTargets")?,
+        configuration.node_list("showcaseTargets")?,
+    ) {
+        (Some(true), None) => Ok(TargetSelection::All),
+        (None, Some(targets)) => TargetSelection::targets(targets),
+        _ => {
+            bail!(
+                "showcase {} requires either ga:allTargets true or an ordered \
+                 ga:showcaseTargets list",
+                configuration.id()
+            )
+        },
     }
 }
 
 /// Collect and plan one exact-revision showcase. Mutable references are
 /// rejected before any network access or cache creation.
 pub(super) async fn build(
-    configuration: &Path,
+    configuration: &ShowcaseConfiguration,
     cache: &Path,
     publication_url: PublicationUrl,
 ) -> Result<(Dataset, Vec<ResolvedPlan>)> {
-    let mut bytes = Vec::new();
-    tokio::fs::File::open(configuration)
-        .await?
-        .take(CONFIGURATION_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .await?;
-    ensure!(
-        bytes.len() as u64 <= CONFIGURATION_BYTES,
-        "revision showcase configuration exceeds 64 KiB"
-    );
-    let source: Source = serde_yaml::from_slice(&bytes)?;
-    revision_build::exact_commit(&source.commit, "showcase commit")?;
-    revision_build::exact_commit(
-        &source.definitions.commit,
-        "showcase definitions commit",
-    )?;
-    let project = NamedNode::new(&source.project)
-        .context("showcase project must be an IRI")?;
-    let targets = source.targets.selection()?;
-    let controlling = pinned(
-        &source.repository,
-        &source.definitions.commit,
-        cache,
-        &project,
-    )
-    .await?;
+    configuration.accept_only("exact-revision", SETTINGS)?;
+    let repository = configuration.text("gitRepository")?;
+    let commit = configuration.commit("gitCommit", "showcase commit")?;
+    let definitions_commit = configuration
+        .commit("definitionsCommit", "showcase definitions commit")?;
+    let definitions_path =
+        PathBuf::from(configuration.text("definitionsPath")?);
+    let project = configuration.node("showcaseProject")?;
+    let targets = selection(configuration)?;
+    let controlling =
+        pinned(&repository, &definitions_commit, cache, &project).await?;
     let definitions =
-        CommittedDefinitions::fetched(&controlling, &source.definitions.path)
-            .await?;
-    let content = pinned(
-        &source.repository,
-        &source.commit,
-        cache,
-        &project,
-    )
-    .await?;
+        CommittedDefinitions::fetched(&controlling, &definitions_path).await?;
+    let content = pinned(&repository, &commit, cache, &project).await?;
     revision_build::collect(RevisionInputs {
         content,
         definitions,

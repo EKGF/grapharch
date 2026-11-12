@@ -1,0 +1,58 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# The published OMG Commons ontologies, read from their authoritative URLs.
+<urn:grapharch:showcase:commons> a ga:Showcase ;
+    ga:definitionsPath "project.ttl" ;
+    ga:showcaseProject <urn:omg-commons:project> ;
+    ga:showcaseTargets ( <urn:omg-commons:specification> <urn:omg-commons:pdf> ) ;
+    ga:rdfDocument
+        <https://www.omg.org/spec/Commons/AboutCommons.rdf>,
+        <https://www.omg.org/spec/Commons/AnnotationVocabulary.rdf>,
+        <https://www.omg.org/spec/Commons/BusinessAuthorizations.rdf>,
+        <https://www.omg.org/spec/Commons/Classifiers.rdf>,
+        <https://www.omg.org/spec/Commons/CodesAndCodeSets.rdf>,
+        <https://www.omg.org/spec/Commons/Collections.rdf>,
+        <https://www.omg.org/spec/Commons/ContextualDesignators.rdf>,
+        <https://www.omg.org/spec/Commons/ContextualIdentifiers.rdf>,
+        <https://www.omg.org/spec/Commons/DatesAndTimes.rdf>,
+        <https://www.omg.org/spec/Commons/Designators.rdf>,
+        <https://www.omg.org/spec/Commons/Documents.rdf>,
+        <https://www.omg.org/spec/Commons/Identifiers.rdf>,
+        <https://www.omg.org/spec/Commons/Languages.rdf>,
+        <https://www.omg.org/spec/Commons/Locations.rdf>,
+        <https://www.omg.org/spec/Commons/Organizations.rdf>,
+        <https://www.omg.org/spec/Commons/PartiesAndSituations.rdf>,
+        <https://www.omg.org/spec/Commons/QuantitiesAndUnits.rdf>,
+        <https://www.omg.org/spec/Commons/RegistrationAuthorities.rdf>,
+        <https://www.omg.org/spec/Commons/RegulatoryAgencies.rdf>,
+        <https://www.omg.org/spec/Commons/RolesAndCompositions.rdf>,
+        <https://www.omg.org/spec/Commons/SitesAndFacilities.rdf>,
+        <https://www.omg.org/spec/Commons/StructuredCollections.rdf>,
+        <https://www.omg.org/spec/Commons/TextDatatype.rdf>,
+        <https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime.rdf> .
+<https://www.omg.org/spec/Commons/AboutCommons.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/AnnotationVocabulary.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/BusinessAuthorizations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Classifiers.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/CodesAndCodeSets.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Collections.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/ContextualDesignators.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/ContextualIdentifiers.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/DatesAndTimes.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Designators.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Documents.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Identifiers.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Languages.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Locations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/Organizations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/PartiesAndSituations.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/QuantitiesAndUnits.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/RegistrationAuthorities.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/RegulatoryAgencies.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/RolesAndCompositions.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/SitesAndFacilities.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/StructuredCollections.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/TextDatatype.rdf> ga:format "application/rdf+xml" .
+<https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime.rdf> ga:format "application/rdf+xml" .

@@ -14,6 +14,7 @@ use {
         diagnostics::FailureMode,
         render::Publisher,
         revision_build::PublicationUrl,
+        showcase_configuration::ShowcaseConfiguration,
         showcases,
         term,
         view::RevisionView,
@@ -279,17 +280,18 @@ async fn build_case(
         source.starts_with(root),
         "showcase source escapes its declared root"
     );
+    let cache = root
+        .parent()
+        .ok_or_else(|| {
+            anyhow::anyhow!("showcase root requires a project directory")
+        })?
+        .join("output/cache/git");
     let (child, plans) = match case.runner {
         ShowcaseRunner::Authored => showcases::authored(&source).await?,
         ShowcaseRunner::RevisionBuild => {
-            showcases::revision_build(
-                &source,
-                &root
-                    .parent()
-                    .ok_or_else(|| {
-                        anyhow::anyhow!("examples root has no parent")
-                    })?
-                    .join("output/cache/git"),
+            super::showcases_revision::build(
+                &configuration(&case, &source).await?,
+                &cache,
                 case.publication.clone().ok_or_else(|| {
                     anyhow::anyhow!(
                         "revision-build showcase {} has no publication URL",
@@ -300,30 +302,16 @@ async fn build_case(
             .await?
         },
         ShowcaseRunner::Mkdocs => {
-            showcases::mkdocs(
-                &source,
-                &root
-                    .parent()
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "showcase root requires a project directory"
-                        )
-                    })?
-                    .join("output/cache/git"),
+            super::showcases_mkdocs::configured(
+                &configuration(&case, &source).await?,
+                &cache,
             )
             .await?
         },
         ShowcaseRunner::OntologyFamily => {
-            showcases::family(
-                &source,
-                &root
-                    .parent()
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "showcase root requires a project directory"
-                        )
-                    })?
-                    .join("output/cache/git"),
+            showcases::family_configured(
+                &configuration(&case, &source).await?,
+                &cache,
             )
             .await?
         },
@@ -640,6 +628,23 @@ fn read(bytes: &[u8], project: &NamedNode) -> Result<Vec<Case>> {
     }
     ensure!(!cases.is_empty(), "showcase registry is empty");
     Ok(cases)
+}
+
+/// The run configuration a registered showcase names with `ga:source`; it
+/// must describe that same showcase.
+async fn configuration(
+    case: &Case,
+    source: &Path,
+) -> Result<ShowcaseConfiguration> {
+    let configuration = ShowcaseConfiguration::read(source).await?;
+    ensure!(
+        configuration.id() == &case.id,
+        "{} configures {}, not the registered showcase {}",
+        case.source,
+        configuration.id(),
+        case.id
+    );
+    Ok(configuration)
 }
 
 /// The deployed directory under which every showcase publishes its

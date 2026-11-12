@@ -790,7 +790,7 @@ ga:gitRef a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
     dct:description "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
-    rdfs:domain ga:CollectorUse ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:Showcase ) ] ;
     rdfs:range xsd:string ;
     skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:governance-source> a ga:CollectorUse ;\n    ga:collectorType ga:GitRdfFileCollector ;\n    ga:source \"https://github.com/EKGF/ekg-ontologies.git\" ;\n    ga:sourcePath \"ekgf-artifact-governance.ttl\" ;\n    ga:gitRef \"HEAD\" ."@en .
 
@@ -1177,6 +1177,166 @@ ga:showcasesSource a owl:DatatypeProperty ;
     rdfs:domain ga:Project ;
     rdfs:range xsd:string .
 
+ga:CopiedSource a owl:Class ;
+    rdfs:label "Copied fixture source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A file copied into a showcase from an upstream repository revision or a published document, with the SHA-256 digest that keeps the copy reproducible."@en ;
+    dct:description "A file copied into a showcase from an upstream repository revision or a published document, with the SHA-256 digest that keeps the copy reproducible."@en .
+
+ga:gitRepository a owl:DatatypeProperty ;
+    rdfs:label "Showcase Git repository"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the Git transport URL from which a showcase reads its content."@en ;
+    dct:description "Identifies the Git transport URL from which a showcase reads its content."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The value is a literal because Git transport URLs, including local file URLs in tests, are not necessarily IRIs. It is read as data only; nothing from the repository is executed."@en .
+
+ga:gitCommit a owl:DatatypeProperty ;
+    rdfs:label "Exact showcase content commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Pins the exact full lowercase Git commit from which a showcase reads its content."@en ;
+    dct:description "Pins the exact full lowercase Git commit from which a showcase reads its content."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Branch names, tags and abbreviated identifiers are rejected before any network access."@en .
+
+ga:definitionsCommit a owl:DatatypeProperty ;
+    rdfs:label "Exact controlling definitions commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Pins the exact full lowercase Git commit of the controlling revision whose GraphArch definitions an exact-revision showcase uses."@en ;
+    dct:description "Pins the exact full lowercase Git commit of the controlling revision whose GraphArch definitions an exact-revision showcase uses."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:definitionsPath a owl:DatatypeProperty ;
+    rdfs:label "Showcase definitions path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates the GraphArch definitions file a showcase uses."@en ;
+    dct:description "Locates the GraphArch definitions file a showcase uses."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "For an exact-revision showcase the path is relative to the tree of the controlling commit. For an ontology-family showcase it is a relative path beneath the showcase configuration and overrides the repository's own publication hints."@en .
+
+ga:hintsPath a owl:DatatypeProperty ;
+    rdfs:label "Repository publication hints path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the RDF file within a pinned repository whose publication hints identify the project an ontology-family showcase publishes."@en ;
+    dct:description "Selects the RDF file within a pinned repository whose publication hints identify the project an ontology-family showcase publishes."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Required only when the repository declares more than one ga:Project. It conflicts with local definitions."@en .
+
+ga:showcaseProject a owl:ObjectProperty ;
+    rdfs:label "Showcase project"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the GraphArch project a showcase publishes from its definitions."@en ;
+    dct:description "Identifies the GraphArch project a showcase publishes from its definitions."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:Project .
+
+ga:showcaseTargets a owl:ObjectProperty ;
+    rdfs:label "Ordered showcase targets"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Lists, in publication order, the registered targets a showcase publishes."@en ;
+    dct:description "Lists, in publication order, the registered targets a showcase publishes."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range rdf:List ;
+    skos:scopeNote "The value is an RDF list of target IRIs. For an ontology-family showcase the first target is the family publication and the others are resolved from the same revision."@en .
+
+ga:allTargets a owl:DatatypeProperty ;
+    rdfs:label "Publish every showcase target"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects every target the showcase project registers, in IRI order, instead of an ordered list."@en ;
+    dct:description "Selects every target the showcase project registers, in IRI order, instead of an ordered list."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:boolean ;
+    skos:scopeNote "Only the value true is meaningful; it is exclusive with ga:showcaseTargets."@en .
+
+ga:rdfDocument a owl:ObjectProperty ;
+    rdfs:label "Showcase RDF document"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a published RDF document an ontology-family showcase collects; the document IRI is its retrieval URL."@en ;
+    dct:description "Identifies a published RDF document an ontology-family showcase collects; the document IRI is its retrieval URL."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "Each document declares its media type with ga:format. External owl:imports are not fetched implicitly."@en .
+
+ga:mkdocsConfiguration a owl:DatatypeProperty ;
+    rdfs:label "MkDocs configuration path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates the MkDocs configuration file within the pinned repository a MkDocs showcase imports."@en ;
+    dct:description "Locates the MkDocs configuration file within the pinned repository a MkDocs showcase imports."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "The file is read as data; MkDocs and Python are never run."@en .
+
+ga:materializedPath a owl:DatatypeProperty ;
+    rdfs:label "Materialized repository path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects a file or directory of the pinned repository that a MkDocs showcase reads."@en ;
+    dct:description "Selects a file or directory of the pinned repository that a MkDocs showcase reads."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:licensePath a owl:DatatypeProperty ;
+    rdfs:label "Upstream license path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates the license file within the pinned repository that a showcase publishes beside its import."@en ;
+    dct:description "Locates the license file within the pinned repository that a showcase publishes beside its import."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string .
+
+ga:copiedSource a owl:ObjectProperty ;
+    rdfs:label "Copied fixture source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Links a showcase to a file copied into its directory from an upstream source."@en ;
+    dct:description "Links a showcase to a file copied into its directory from an upstream source."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range ga:CopiedSource .
+
+ga:copiedRepository a owl:ObjectProperty ;
+    rdfs:label "Copied fixture repository"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the repository from whose revision a showcase's fixture files were copied."@en ;
+    dct:description "Identifies the repository from whose revision a showcase's fixture files were copied."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range rdfs:Resource .
+
+ga:copiedRevision a owl:DatatypeProperty ;
+    rdfs:label "Copied fixture revision"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the repository revision from which a showcase's fixture files were copied."@en ;
+    dct:description "Records the repository revision from which a showcase's fixture files were copied."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "With ga:copiedFromWorkingTree true the copies were taken from a working tree based on this revision and are not described as identical to it."@en .
+
+ga:copiedFromWorkingTree a owl:DatatypeProperty ;
+    rdfs:label "Copied from a working tree"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States that a showcase's fixture files were copied from a working tree based on the recorded revision, not from the committed revision itself."@en ;
+    dct:description "States that a showcase's fixture files were copied from a working tree based on the recorded revision, not from the committed revision itself."@en ;
+    rdfs:domain ga:Showcase ;
+    rdfs:range xsd:boolean .
+
+ga:localPath a owl:DatatypeProperty ;
+    rdfs:label "Copied file path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Locates a copied fixture file relative to its showcase directory."@en ;
+    dct:description "Locates a copied fixture file relative to its showcase directory."@en ;
+    rdfs:domain ga:CopiedSource ;
+    rdfs:range xsd:string .
+
+ga:copiedFrom a owl:ObjectProperty ;
+    rdfs:label "Published document copied"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the published document a fixture file was retrieved from."@en ;
+    dct:description "Identifies the published document a fixture file was retrieved from."@en ;
+    rdfs:domain ga:CopiedSource ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "A copied published document keeps resolving its relative links against this URL."@en .
+
 ga:showcaseArtifactsUrl a owl:ObjectProperty ;
     rdfs:label "Deployed showcase artifacts location"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
@@ -1242,7 +1402,7 @@ ga:contentDigest a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Records the lowercase hexadecimal SHA-256 digest of the complete decoded artifact bytes."@en ;
     dct:description "Records the lowercase hexadecimal SHA-256 digest of the complete decoded artifact bytes."@en ;
-    rdfs:domain ga:BinaryAsset ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:BinaryAsset ga:CopiedSource ) ] ;
     rdfs:range xsd:string .
 
 ga:contentSize a owl:DatatypeProperty ;

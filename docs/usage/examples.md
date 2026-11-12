@@ -77,12 +77,36 @@ authored showcase.
 
 The [ontology-family guide](ontology-families.md) shows how to run the EKGF family
 from a remote repository, a local checkout, or the separate offline acceptance corpus.
-The published gallery fetches the latest default branch declared in
-`examples/ekg-ontologies/showcase.yaml`; its downloadable KG records the concrete
-commit observed by each build. The repository registers a website, a paginated
-family reference (`spec/main/`) and a PDF edition (`documents/main/`). The
-showcase selects the reference and the PDF: the website reads Markdown pages
-that the repository's RDF does not locate.
+The gallery normally fetches the latest default branch (`ga:gitRef "HEAD"`)
+declared in `examples/ekg-ontologies/showcase.ttl`; its downloadable KG records
+the concrete commit observed by each build. It is temporarily pinned to
+`6bd93ab` (specification target only) until upstream stops emitting links the
+gallery guard rejects. The repository registers a website,
+a paginated family reference (`spec/main/`) and a PDF edition
+(`documents/main/`). The showcase's `ga:showcaseTargets` selects the reference
+and the PDF: the website reads Markdown pages that the repository's RDF does not
+locate.
+
+## Showcase configuration
+
+GraphArch-owned showcase configuration is RDF. `examples/showcases.ttl`
+registers every `ga:Showcase`; a runner that needs settings reads them from the
+`showcase.ttl` its `ga:source` names, which describes exactly that one
+showcase. Unknown `ga:` settings are errors.
+
+| Runner | Settings on the `ga:Showcase` |
+| --- | --- |
+| Exact revision | `ga:gitRepository`, `ga:gitCommit`, `ga:definitionsCommit`, `ga:definitionsPath`, `ga:showcaseProject`, and `ga:allTargets true` or `ga:showcaseTargets ( … )` |
+| Ontology family over Git | `ga:gitRepository`, `ga:gitRef` (exact commit or moving reference such as `HEAD`), optional `ga:hintsPath` and an ordered `ga:showcaseTargets` selection of hinted targets (every registered target when absent), or local definitions |
+| Ontology family over RDF URLs | `ga:rdfDocument` IRIs, each with `ga:format`, plus local definitions |
+| MkDocs | `ga:gitRepository`, `ga:gitCommit`, `ga:mkdocsConfiguration`, `ga:materializedPath`, `ga:licensePath` |
+
+Local definitions are `ga:definitionsPath` (beneath the configuration),
+`ga:showcaseProject` and `ga:showcaseTargets`, whose first target is the family
+publication. Copied fixture files are recorded with `ga:copiedSource` entries
+(`ga:localPath`, `ga:contentDigest`, and `ga:sourcePath` or `ga:copiedFrom`),
+plus `ga:copiedRepository`, `ga:copiedRevision` and `ga:copiedFromWorkingTree`
+on the showcase; `showcases::verify_copied_sources` checks every digest.
 
 ## Adding a showcase
 
@@ -116,9 +140,14 @@ See [Use-case trees](use-case-trees.md) for the vocabulary and diagram contract.
 ### Live DPROD gallery
 
 The gallery case is an exact-revision build of `EKGF/dprod`.
-`examples/dprod/live.yaml` names the repository, the exact content commit, the
-exact controlling commit and path of DPROD's GraphArch definitions, the project
-and the target selection. The `ga:RevisionBuildShowcaseRunner` fetches both
+`examples/dprod/showcase.ttl` names the repository (`ga:gitRepository`), the
+exact content commit (`ga:gitCommit`), the exact controlling commit and path of
+DPROD's GraphArch definitions (`ga:definitionsCommit`, `ga:definitionsPath`),
+the project (`ga:showcaseProject`) and the target selection (`ga:allTargets
+true` or an ordered `ga:showcaseTargets` list). The gallery, not DPROD's
+definitions, supplies where it is deployed: the registry's
+`ga:showcaseArtifactsUrl` followed by the showcase slug, from which each
+target's `ga:thisVersion` is derived. The `ga:RevisionBuildShowcaseRunner` fetches both
 commits through a reusable bare Git cache; branch names are rejected. Content
 comes only from the content commit; the definitions come only from the
 controlling commit. Missing source files, invalid definitions and unavailable

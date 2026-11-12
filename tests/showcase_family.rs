@@ -6,13 +6,41 @@ use anyhow::Result;
 #[test]
 fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
 -> Result<()> {
-    let config: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string("examples/ekg-ontologies/showcase.yaml")?,
+    let store = oxigraph::store::Store::new()?;
+    store.load_from_reader(
+        oxigraph::io::RdfFormat::Turtle,
+        include_bytes!("../examples/ekg-ontologies/showcase.ttl").as_slice(),
     )?;
-    assert_eq!(config["source"]["kind"].as_str(), Some("git"));
+    let oxigraph::sparql::QueryResults::Solutions(mut rows) =
+        oxigraph::sparql::SparqlEvaluator::new()
+            .parse_query(
+                "PREFIX ga: <https://ekgf.org/ontology/grapharch#> SELECT \
+                 ?repository ?reference WHERE { <urn:grapharch:showcase:ekgf> \
+                 a ga:Showcase ; ga:gitRepository ?repository ; ga:gitRef \
+                 ?reference }",
+            )?
+            .on_store(&store)
+            .execute()?
+    else {
+        panic!("expected solutions")
+    };
+    let row = rows.next().expect("configured Git transport")?;
+    assert!(rows.next().is_none());
+    let text = |name: &str| {
+        match row.get(name) {
+            Some(oxrdf::Term::Literal(value)) => value.value().to_owned(),
+            other => panic!("{name} must be a literal: {other:?}"),
+        }
+    };
     assert_eq!(
-        config["source"]["url"].as_str(),
-        Some("https://github.com/EKGF/ekg-ontologies.git")
+        text("repository"),
+        "https://github.com/EKGF/ekg-ontologies.git"
+    );
+    // Temporary exact pin until the EKG migration lands upstream; restore
+    // `HEAD` then (see examples/ekg-ontologies/showcase.ttl).
+    assert_eq!(
+        text("reference"),
+        "6bd93ab7c9430804e99b3913f0926d0070eb44a3"
     );
     // Temporary exact pin until the EKG migration lands upstream; restore
     // `HEAD` then (see examples/ekg-ontologies/showcase.yaml).
@@ -22,9 +50,17 @@ fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
     );
     assert!(
         include_str!("../examples/showcases.ttl")
-            .contains("ga:source \"ekg-ontologies/showcase.yaml\"")
+            .contains("ga:source \"ekg-ontologies/showcase.ttl\"")
     );
     Ok(())
+}
+
+/// A family showcase configuration in RDF.
+fn showcase(settings: &str) -> String {
+    format!(
+        "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+         .\n<urn:test:showcase> a ga:Showcase ; {settings} .\n"
+    )
 }
 
 #[path = "support/family_repository.rs"]
@@ -36,13 +72,15 @@ fn configuration(
     reference: &str,
 ) -> Result<std::path::PathBuf> {
     std::fs::create_dir_all(root)?;
-    let path = root.join("showcase.yaml");
+    let path = root.join("showcase.ttl");
     std::fs::write(
         &path,
-        serde_yaml::to_string(&serde_json::json!({
-            "definitions": "project.ttl", "project": "urn:example:project", "target": "urn:example:target",
-            "source": {"kind": "git", "url": url, "ref": reference}
-        }))?,
+        showcase(&format!(
+            "ga:definitionsPath \"project.ttl\" ; ga:showcaseProject \
+             <urn:example:project> ; ga:showcaseTargets ( \
+             <urn:example:target> ) ; ga:gitRepository \"{url}\" ; ga:gitRef \
+             \"{reference}\""
+        )),
     )?;
     std::fs::write(
         root.join("project.ttl"),
@@ -227,12 +265,12 @@ async fn repository_publication_hints_can_live_inside_an_ontology_without_local_
     )?;
     let (url, commit) =
         family_repository::bare_copy(&source, &root.path().join("remote"))?;
-    let config = root.path().join("showcase.yaml");
+    let config = root.path().join("showcase.ttl");
     std::fs::write(
         &config,
-        serde_yaml::to_string(
-            &serde_json::json!({"source":{"kind":"git","url":url,"ref":"HEAD"}}),
-        )?,
+        showcase(&format!(
+            "ga:gitRepository \"{url}\" ; ga:gitRef \"HEAD\""
+        )),
     )?;
     std::fs::remove_dir_all(bootstrap)?;
     let (dataset, plans) =
@@ -325,10 +363,10 @@ async fn repository_publication_hints_can_live_inside_an_ontology_without_local_
         .err()
         .expect("ambiguous projects require explicit selection");
     assert!(format!("{failure:#}").contains("exactly one ga:Project"));
-    let mut selection: serde_yaml::Value =
-        serde_yaml::from_str(&std::fs::read_to_string(&config)?)?;
-    selection["source"]["config"] = "vocabulary.ttl".into();
-    std::fs::write(&config, serde_yaml::to_string(&selection)?)?;
+    let mut selection = std::fs::read_to_string(&config)?;
+    selection
+        .push_str("<urn:test:showcase> ga:hintsPath \"vocabulary.ttl\" .\n");
+    std::fs::write(&config, selection)?;
     let (selected, _) =
         showcases::family(&config, &root.path().join("cache")).await?;
     assert!(

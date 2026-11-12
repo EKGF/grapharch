@@ -1,0 +1,10 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:grapharch:showcase:mkdocs-bootswatch> a ga:Showcase ;
+    ga:gitRepository "https://github.com/mkdocs/mkdocs-bootswatch.git" ;
+    ga:gitCommit "374197dbc3b89b830075b7d67c66c9407968855a" ;
+    ga:mkdocsConfiguration "mkdocs.yml" ;
+    ga:materializedPath "docs", "mkdocs.yml", "LICENSE" ;
+    ga:licensePath "LICENSE" .

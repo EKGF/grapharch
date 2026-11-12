@@ -1,0 +1,57 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Published gallery transport. Publication hints are owned by the upstream RDF.
+# ga:gitRef is an exact commit or a moving reference such as HEAD; the KG
+# records the commit each build resolves.
+# TEMPORARY PIN: ekg-ontologies main (from 9093764) emits relative links
+# (documentation.nq, ../../) that the gallery relative-link guard rejects. The
+# gallery stays on 6bd93ab, the last upstream commit that passes the current
+# engine (it publishes spec/develop), until the EKG migration (website content
+# source in RDF, links by IRI) lands upstream. Restore ga:gitRef "HEAD", the PDF
+# target and the spec/main gallery preview then. 6bd93ab declares only the
+# specification target.
+<urn:grapharch:showcase:ekgf> a ga:Showcase ;
+    ga:gitRepository "https://github.com/EKGF/ekg-ontologies.git" ;
+    ga:gitRef "6bd93ab7c9430804e99b3913f0926d0070eb44a3" ;
+    ga:showcaseTargets ( <urn:ekgf-ontologies:documentation:specification> ) .
+
+# Provenance of the offline acceptance corpus in sources/, copied from a working
+# tree based on this revision; it is not described as identical to it.
+<urn:grapharch:showcase:ekgf> ga:copiedRepository <https://github.com/EKGF/ekg-ontologies> ;
+    ga:copiedRevision "ce7b810990a806333d698e2934c38c8a1384b2ec" ;
+    ga:copiedFromWorkingTree true ;
+    dct:license <https://spdx.org/licenses/CC0-1.0> ;
+    ga:copiedSource
+        [ ga:localPath "sources/LICENSE.txt" ; ga:sourcePath "LICENSE.txt" ; ga:contentDigest "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499" ],
+        [ ga:localPath "sources/dataset/ekgf-family-references.ttl" ; ga:sourcePath "dataset/ekgf-family-references.ttl" ; ga:contentDigest "750940b25a088257bccb97dc33edb1dacbfc6fd3d19faa9eec1dbcab4fc691d3" ],
+        [ ga:localPath "sources/dataset/lifecycle-bindings.ttl" ; ga:sourcePath "dataset/lifecycle-bindings.ttl" ; ga:contentDigest "9e4ad93c90f5931cc03411507b59d746f0f10ac9afb9330f919da6c4e2414046" ],
+        [ ga:localPath "sources/dataset/well-known-authorities.ttl" ; ga:sourcePath "dataset/well-known-authorities.ttl" ; ga:contentDigest "ef1a7faec1a614132cf3b0fc0189e739d62ecb4974d89a54ced2bf29ac07ca6e" ],
+        [ ga:localPath "sources/dataset/well-known-families.ttl" ; ga:sourcePath "dataset/well-known-families.ttl" ; ga:contentDigest "d65c7fd765dca57ef0e191eb66147e334443811fe565229bd55c3219999a248d" ],
+        [ ga:localPath "sources/dataset/well-known-lifecycles.ttl" ; ga:sourcePath "dataset/well-known-lifecycles.ttl" ; ga:contentDigest "92204548ba26490e0a36532a0f595496dc6669fcf1cdf03307fbc449e8a5a461" ],
+        [ ga:localPath "sources/dataset/well-known-organizations.ttl" ; ga:sourcePath "dataset/well-known-organizations.ttl" ; ga:contentDigest "ff59323168b96573fe53ee150cfdef4f56493ad5e07b7cc15fef30af8352c0ac" ],
+        [ ga:localPath "sources/ekgf-annotation.ttl" ; ga:sourcePath "ekgf-annotation.ttl" ; ga:contentDigest "1b2b3fada8aee95b9b96cb80f45bd4298907c723b0fcc1802689cec3c38feecb" ],
+        [ ga:localPath "sources/ekgf-api.ttl" ; ga:sourcePath "ekgf-api.ttl" ; ga:contentDigest "893add20bac8c55bbe08ea61bc897f7dd04aab1c8fa79d9b11b9918a68a0b2d2" ],
+        [ ga:localPath "sources/ekgf-artifact-dependency.ttl" ; ga:sourcePath "ekgf-artifact-dependency.ttl" ; ga:contentDigest "c0e77a45ceafcfe9ee710faccb566711c5211543ead879435d3fa9c6503de8cf" ],
+        [ ga:localPath "sources/ekgf-artifact-governance.ttl" ; ga:sourcePath "ekgf-artifact-governance.ttl" ; ga:contentDigest "7e23bb3634afe0966f1ad789da4620db3979d349bcaa0a661f6812baaea52efb" ],
+        [ ga:localPath "sources/ekgf-artifact-publication.ttl" ; ga:sourcePath "ekgf-artifact-publication.ttl" ; ga:contentDigest "4a69984491b735b2da5b72c4d9f44f5711627dd4b6d7ad4e48f6546358ba4109" ],
+        [ ga:localPath "sources/ekgf-authorization.ttl" ; ga:sourcePath "ekgf-authorization.ttl" ; ga:contentDigest "035dae9c99dd562a68ce7cb7dc3320c33bd8655e8df804c40fad906b36b1fc95" ],
+        [ ga:localPath "sources/ekgf-capability.ttl" ; ga:sourcePath "ekgf-capability.ttl" ; ga:contentDigest "bdd83b177f2682c26b902ec0f5ed4b083925ec41234c1154a764fd4afa66ba61" ],
+        [ ga:localPath "sources/ekgf-communication.ttl" ; ga:sourcePath "ekgf-communication.ttl" ; ga:contentDigest "c68da8e97a46392acb4a711bb00a4ac2afc9f77119534a43986d25ce72890eae" ],
+        [ ga:localPath "sources/ekgf-concept.ttl" ; ga:sourcePath "ekgf-concept.ttl" ; ga:contentDigest "e6591ae819ea0312a36e10e8670ac333e282198c14954d56319502fe7d90519a" ],
+        [ ga:localPath "sources/ekgf-dataops.ttl" ; ga:sourcePath "ekgf-dataops.ttl" ; ga:contentDigest "b71b9c7bf369156657b5d1f1ff315a9ef00323ebe37a8f1e4c25c8327daf9f18" ],
+        [ ga:localPath "sources/ekgf-dataset.ttl" ; ga:sourcePath "ekgf-dataset.ttl" ; ga:contentDigest "b311d8ec3383694103bed644741bdc90f0f857dc448026ae589a4d3d89e951f4" ],
+        [ ga:localPath "sources/ekgf-file-system.ttl" ; ga:sourcePath "ekgf-file-system.ttl" ; ga:contentDigest "a84d3f68b0ba4520105cdb607a511f6d32f97649540f40ca8a85e6b90ffeaa4b" ],
+        [ ga:localPath "sources/ekgf-lifecycle.ttl" ; ga:sourcePath "ekgf-lifecycle.ttl" ; ga:contentDigest "ab506966c5648dde6c70591325bd8833dd67ce0fe45129177275f80e9a0026c5" ],
+        [ ga:localPath "sources/ekgf-maturity-model.ttl" ; ga:sourcePath "ekgf-maturity-model.ttl" ; ga:contentDigest "6dfdbdff924cf5f974f12fc6c17ded9e52277e3fb3154bc68cf7c9285fe21e8d" ],
+        [ ga:localPath "sources/ekgf-outcome.ttl" ; ga:sourcePath "ekgf-outcome.ttl" ; ga:contentDigest "d3683c25237eb767004896107608a61a42dd0a7e2fcfc953e597adf43b085837" ],
+        [ ga:localPath "sources/ekgf-persona.ttl" ; ga:sourcePath "ekgf-persona.ttl" ; ga:contentDigest "53b92c8ff81d0134a1b67ce391a1a8518f7ff1964813c727a8f49f644f303c02" ],
+        [ ga:localPath "sources/ekgf-raw.ttl" ; ga:sourcePath "ekgf-raw.ttl" ; ga:contentDigest "d5dd3634fd971363c0d7f8d3e21d48863e5611058b24bdd68ae3d204483be74d" ],
+        [ ga:localPath "sources/ekgf-shape.ttl" ; ga:sourcePath "ekgf-shape.ttl" ; ga:contentDigest "c9bd3aa6f273171350acb3d98ba225e5480e294cefa2e9c0d6d60ff350e1705e" ],
+        [ ga:localPath "sources/ekgf-specification-by-example.ttl" ; ga:sourcePath "ekgf-specification-by-example.ttl" ; ga:contentDigest "20f9625ab87759bd874eaf004891efdb9eea1cfac65dc730b7e64f8ed55dd59d" ],
+        [ ga:localPath "sources/ekgf-story-impl-sparql.ttl" ; ga:sourcePath "ekgf-story-impl-sparql.ttl" ; ga:contentDigest "cac5288421b34bdc03accb22ba4c50b305fe2b6307d097e0efddb39101ef57da" ],
+        [ ga:localPath "sources/ekgf-story-service.ttl" ; ga:sourcePath "ekgf-story-service.ttl" ; ga:contentDigest "3ffded5e9828bd93e868f921130b96766a8c1f3066ca7f59cbd3fc821995d9fb" ],
+        [ ga:localPath "sources/ekgf-story.ttl" ; ga:sourcePath "ekgf-story.ttl" ; ga:contentDigest "d972596cf127962e061360e64c8db8d8e8e915dea1b7d32322f054b9530ba7b7" ],
+        [ ga:localPath "sources/ekgf-use-case.ttl" ; ga:sourcePath "ekgf-use-case.ttl" ; ga:contentDigest "872fd3677b1cdc4b9e6f45d01d55ef33f641958500d2b3f06c89e376a8eff9d2" ],
+        [ ga:localPath "sources/ekgf-user-experience.ttl" ; ga:sourcePath "ekgf-user-experience.ttl" ; ga:contentDigest "11ec944d8e7d48133ea0e71d8ca8a1fbb6590142e90315360d7f18b45ae9411b" ] .

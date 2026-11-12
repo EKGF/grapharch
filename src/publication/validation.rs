@@ -67,6 +67,26 @@ impl Field {
         }
     }
 
+    const fn optional_text(name: &'static str) -> Self {
+        Self {
+            name,
+            required: false,
+            multiple: false,
+            reference: None,
+            literal: true,
+        }
+    }
+
+    const fn texts(name: &'static str) -> Self {
+        Self {
+            name,
+            required: false,
+            multiple: true,
+            reference: None,
+            literal: true,
+        }
+    }
+
     const fn optional_order() -> Self {
         Self {
             name:      "order",
@@ -88,11 +108,21 @@ impl Field {
         if self.name == "order" {
             unsigned(value, "order")?;
         }
-        if self.name == "definedTermsOnly" {
+        if matches!(self.name, "gitCommit" | "definitionsCommit") {
+            crate::publication::revision_build::exact_commit(
+                literal.value(),
+                &format!("{subject} {}", self.name),
+            )?;
+        }
+        if matches!(
+            self.name,
+            "definedTermsOnly" | "allTargets" | "copiedFromWorkingTree"
+        ) {
             ensure!(
                 literal.datatype().as_str() ==
                     "http://www.w3.org/2001/XMLSchema#boolean",
-                "{subject} definedTermsOnly requires an xsd:boolean literal"
+                "{subject} {} requires an xsd:boolean literal",
+                self.name
             );
         }
         if self.name == "destination" {
@@ -257,6 +287,25 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::one("collectorType", None),
             Field::text("source"),
             Field::many("includedIn", Some("Scope")),
+        ]),
+        // Showcase run settings; RDF-list and copied-source values are
+        // validated by their runner and the shipped SHACL.
+        ("Showcase", vec![
+            Field::optional_text("gitRepository"),
+            Field::optional_text("gitRef"),
+            Field::optional_text("gitCommit"),
+            Field::optional_text("definitionsCommit"),
+            Field::optional_text("definitionsPath"),
+            Field::optional_text("hintsPath"),
+            Field::optional("showcaseProject", None),
+            Field::optional_text("allTargets"),
+            Field::many("rdfDocument", None),
+            Field::optional_text("mkdocsConfiguration"),
+            Field::texts("materializedPath"),
+            Field::optional_text("licensePath"),
+            Field::optional("copiedRepository", None),
+            Field::optional_text("copiedRevision"),
+            Field::optional_text("copiedFromWorkingTree"),
         ]),
         ("Scope", vec![
             Field::many("include", None),

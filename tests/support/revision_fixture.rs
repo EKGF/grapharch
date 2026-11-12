@@ -140,8 +140,12 @@ impl RevisionFixture {
         std::fs::write(
             path,
             format!(
-                "repository: {}\ncommit: {}\ndefinitions:\n  commit: {}\n  \
-                 path: {DEFINITIONS}\nproject: {PROJECT}\ntargets: all\n",
+                "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+                 .\n<urn:grapharch:showcase:dprod> a ga:Showcase ; \
+                 ga:gitRepository \"{}\" ; ga:gitCommit \"{}\" ; \
+                 ga:definitionsCommit \"{}\" ; ga:definitionsPath \
+                 \"{DEFINITIONS}\" ; ga:showcaseProject <{PROJECT}> ; \
+                 ga:allTargets true .\n",
                 self.repository, self.commit, self.definitions_commit
             ),
         )?;

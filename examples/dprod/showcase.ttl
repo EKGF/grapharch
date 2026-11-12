@@ -1,0 +1,25 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Exact-revision gallery build of EKGF/dprod: content from one designated
+# commit, GraphArch definitions from one controlling commit. The gallery
+# supplies the deployment URL; the definitions never declare it.
+<urn:grapharch:showcase:dprod> a ga:Showcase ;
+    ga:gitRepository "https://github.com/EKGF/dprod.git" ;
+    ga:gitCommit "39155734ed3f79578e460e63eab6d31e9913206c" ;
+    ga:definitionsCommit "39155734ed3f79578e460e63eab6d31e9913206c" ;
+    ga:definitionsPath "publication/definitions/develop.ttl" ;
+    ga:showcaseProject <urn:dprod-showcase:project> ;
+    ga:allTargets true .
+
+# Provenance of the offline fixture in content/, copied from one DPROD revision.
+<urn:grapharch:showcase:dprod> ga:copiedRepository <https://github.com/EKGF/dprod> ;
+    ga:copiedRevision "89de8ff5c95149d79120f4062fcf5d1e0a82e641" ;
+    rdfs:comment "Copied fixture scope: DPROD ontology, SHACL shape reference, and dataset-schema worked example; not the full ReSpec specification."@en ;
+    ga:copiedSource
+        [ ga:localPath "content/ontology.ttl" ; ga:sourcePath "ontology/dprod/dprod-ontology.ttl" ; ga:contentDigest "f6345ccebf354e0a720dc038afd78b8ec58f2b3768233633db733ff1461c5a0b" ],
+        [ ga:localPath "content/shapes.ttl" ; ga:sourcePath "ontology/dprod/dprod-shapes.ttl" ; ga:contentDigest "63b11b814148597629b8a1d929e5cafcc5f50a1033cfba65d278c9719774fda6" ],
+        [ ga:localPath "content/dataset-schema.md" ; ga:sourcePath "examples/data-schema/README.md" ; ga:contentDigest "940b22bb6207bed92b5cab6eca0c0d5da10fefd41ae391869c8e3c9b05f8c03f" ],
+        [ ga:localPath "content/LICENSE.txt" ; ga:sourcePath "LICENSE" ; ga:contentDigest "c8c6d8a5df92ace2879d6dbcb84db0f6882e29840d33a88489f643704af2b88b" ] .

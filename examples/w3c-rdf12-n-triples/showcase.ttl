@@ -1,0 +1,23 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+# Provenance of the copied W3C inputs. The published-document collector
+# resolves the copy's relative links against the document it was copied from.
+<urn:grapharch:showcase:rdf12> a ga:Showcase ;
+    rdfs:comment "Known source defect: the native reference #must-signal-errors does not resolve (unresolved-native-reference). The semantic round trip is tested; exact visual parity with the W3C rendering is not yet verified."@en ;
+    ga:copiedSource <urn:grapharch:showcase:rdf12:source>, <urn:grapharch:showcase:rdf12:logo-source>, <urn:grapharch:showcase:rdf12:logo> .
+<urn:grapharch:showcase:rdf12:source> ga:localPath "source.html" ;
+    ga:copiedFrom <https://www.w3.org/TR/2026/WD-rdf12-n-triples-20261023/> ;
+    ga:contentDigest "c452af6d6373576a6b867fe0dd3eb69f33b41374988bc8d23c30621638d5aec5" ;
+    dct:created "2026-10-24"^^xsd:date .
+<https://www.w3.org/TR/2026/WD-rdf12-n-triples-20261023/> dct:title "RDF 1.2 N-Triples" ;
+    dct:issued "2026-10-23"^^xsd:date .
+<urn:grapharch:showcase:rdf12:logo-source> ga:localPath "w3c-logo.svg" ;
+    ga:copiedFrom <https://www.w3.org/StyleSheets/TR/2021/logos/W3C> ;
+    ga:contentDigest "a96241190c29d5014a2ffcb26c0a75060e20dc85b921776f813d3d5a3adcf64e" .
+<urn:grapharch:showcase:rdf12:logo> ga:localPath "w3c-logo.png" ;
+    prov:wasDerivedFrom <urn:grapharch:showcase:rdf12:logo-source> ;
+    ga:contentDigest "fc28a39cc868c12a85717b4b276df4015dae1ad5dad697ef9e64ca2d093de412" .

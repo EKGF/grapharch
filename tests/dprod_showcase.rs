@@ -98,19 +98,12 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     Ok(())
 }
 
-#[test]
-fn dprod_fixture_matches_its_pinned_native_sources() -> Result<()> {
-    use sha2::{Digest, Sha256};
-    let metadata: serde_yaml::Value =
-        serde_yaml::from_str(include_str!("../examples/dprod/reference.yaml"))?;
-    for (file, entry) in metadata["sources"].as_mapping().unwrap() {
-        let bytes = std::fs::read(
-            Path::new("examples/dprod").join(file.as_str().unwrap()),
-        )?;
-        assert_eq!(
-            hex::encode(Sha256::digest(&bytes)),
-            entry["sha256"].as_str().unwrap()
-        );
-    }
+#[tokio::test]
+async fn dprod_fixture_matches_its_pinned_native_sources() -> Result<()> {
+    let verified = grapharch::publication::showcases::verify_copied_sources(
+        Path::new("examples/dprod/showcase.ttl"),
+    )
+    .await?;
+    assert_eq!(verified.len(), 4);
     Ok(())
 }

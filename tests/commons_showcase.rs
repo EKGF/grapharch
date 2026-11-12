@@ -1,5 +1,7 @@
 #[path = "support/http.rs"]
 mod http;
+#[path = "support/showcase_rdf.rs"]
+mod showcase_rdf;
 
 use {
     anyhow::Result,
@@ -50,18 +52,19 @@ async fn http_family_showcase_renders_after_sources_disappear() -> Result<()> {
 <https://www.omg.org/spec/Commons/Classifiers/> gov:inFamily <urn:http:family>; sh:declare [sh:prefix "cmns-cls"; sh:namespace "https://www.omg.org/spec/Commons/Classifiers/"] .
 "##).await?;
     tokio::fs::write(
-        source.path().join("showcase.yaml"),
+        source.path().join("showcase.ttl"),
         format!(
-            "definitions: project.ttl\nproject: urn:http:project\ntarget: \
-             urn:http:target\nadditional_targets:\n  - \
-             urn:http:review\nsource:\n  kind: rdf-urls\n  documents:\n    - \
-             url: {url}\n      media_type: text/turtle\n"
+            "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+             .\n<urn:test:showcase> a ga:Showcase ; ga:definitionsPath \
+             \"project.ttl\" ; ga:showcaseProject <urn:http:project> ; \
+             ga:showcaseTargets ( <urn:http:target> <urn:http:review> ) ; \
+             ga:rdfDocument <{url}> .\n<{url}> ga:format \"text/turtle\" .\n"
         ),
     )
     .await?;
     let cache = tempfile::tempdir()?;
     let (dataset, plans) =
-        showcases::family(&source.path().join("showcase.yaml"), cache.path())
+        showcases::family(&source.path().join("showcase.ttl"), cache.path())
             .await?;
     assert_eq!(plans.len(), 2);
     server.await??;
@@ -93,26 +96,15 @@ async fn http_family_showcase_renders_after_sources_disappear() -> Result<()> {
 #[tokio::test]
 async fn published_commons_inventory_uses_authoritative_urls_without_a_copied_corpus()
 -> Result<()> {
-    let config: serde_yaml::Value = serde_yaml::from_str(
-        &tokio::fs::read_to_string("examples/omg-commons/showcase.yaml")
-            .await?,
-    )?;
-    assert_eq!(
-        config["source"]["kind"].as_str(),
-        Some("rdf-urls")
-    );
-    let documents = config["source"]["documents"].as_sequence().unwrap();
+    let documents =
+        showcase_rdf::documents("examples/omg-commons/showcase.ttl")?;
     assert_eq!(documents.len(), 24);
-    for document in documents {
-        let url = document["url"].as_str().unwrap();
+    for (url, format) in &documents {
         assert!(
             url.starts_with("https://www.omg.org/spec/Commons/") &&
                 url.ends_with(".rdf")
         );
-        assert_eq!(
-            document["media_type"].as_str(),
-            Some("application/rdf+xml")
-        );
+        assert_eq!(format, "application/rdf+xml");
     }
     assert!(!tokio::fs::try_exists("examples/omg-commons/sources").await?);
     Ok(())
@@ -125,7 +117,7 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     let root = std::path::Path::new("output/commons-review");
     tokio::fs::create_dir_all(root).await?;
     let (dataset, plans) = showcases::family(
-        std::path::Path::new("examples/omg-commons/showcase.yaml"),
+        std::path::Path::new("examples/omg-commons/showcase.ttl"),
         std::path::Path::new("output/cache/git"),
     )
     .await?;

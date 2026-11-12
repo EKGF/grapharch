@@ -25,7 +25,7 @@ async fn remote_revision_restores_and_publishes_declared_targets()
 -> anyhow::Result<()> {
     let cache = Path::new("output/cache/git");
     let config = std::env::var("GRAPHARCH_DPROD_CONFIG")
-        .unwrap_or_else(|_| "examples/dprod/live.yaml".into());
+        .unwrap_or_else(|_| "examples/dprod/showcase.ttl".into());
     let (dataset, plans) =
         showcases::revision_build(Path::new(&config), cache, deployment())
             .await?;
@@ -135,15 +135,25 @@ fn configuration(
 ) -> anyhow::Result<()> {
     std::fs::write(
         path,
-        format!(
-            "repository: {}\ncommit: {commit}\ndefinitions:\n  commit: \
-             {definitions}\n  path: \
-             publication/definitions/develop.ttl\nproject: \
-             urn:dprod-showcase:project\ntargets: all\n",
-            remote.display()
-        ),
+        revision_showcase(&remote.display().to_string(), commit, definitions),
     )?;
     Ok(())
+}
+
+/// An exact-revision showcase configuration in RDF.
+fn revision_showcase(
+    repository: &str,
+    commit: &str,
+    definitions: &str,
+) -> String {
+    format!(
+        "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+         .\n<urn:test:showcase> a ga:Showcase ; ga:gitRepository \
+         \"{repository}\" ; ga:gitCommit \"{commit}\" ; ga:definitionsCommit \
+         \"{definitions}\" ; ga:definitionsPath \
+         \"publication/definitions/develop.ttl\" ; ga:showcaseProject \
+         <urn:dprod-showcase:project> ; ga:allTargets true .\n"
+    )
 }
 
 async fn bodies(
@@ -284,7 +294,7 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
         ".",
         bare.to_str().unwrap(),
     ])?;
-    let config = output.path().join("first.yaml");
+    let config = output.path().join("first.ttl");
     configuration(&config, &bare, &first, &definitions)?;
     let (dataset, plans) =
         showcases::revision_build(&config, cache.path(), deployment()).await?;
@@ -318,7 +328,7 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
         bare.to_str().unwrap(),
         "develop",
     ])?;
-    let second_config = output.path().join("second.yaml");
+    let second_config = output.path().join("second.ttl");
     configuration(&second_config, &bare, &second, &definitions)?;
     let (updated, _) =
         showcases::revision_build(&second_config, cache.path(), deployment())
@@ -346,7 +356,7 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
         bare.to_str().unwrap(),
         "develop",
     ])?;
-    let third_config = output.path().join("third.yaml");
+    let third_config = output.path().join("third.ttl");
     configuration(&third_config, &bare, &third, &definitions)?;
     let failure =
         showcases::revision_build(&third_config, cache.path(), deployment())
@@ -412,7 +422,7 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
 async fn remote_transport_rejects_oversized_settings_and_mutable_refs_before_network()
 -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
-    let config = root.path().join("remote.yaml");
+    let config = root.path().join("remote.ttl");
     let cache = root.path().join("cache");
     std::fs::write(&config, vec![b' '; 64 * 1024 + 1])?;
     assert!(
@@ -438,11 +448,10 @@ async fn remote_transport_rejects_oversized_settings_and_mutable_refs_before_net
     ] {
         std::fs::write(
             &config,
-            format!(
-                "repository: https://example.invalid/never-fetch.git\ncommit: \
-                 {commit}\ndefinitions:\n  commit: {definitions}\n  path: \
-                 publication/definitions/develop.ttl\nproject: \
-                 urn:dprod-showcase:project\ntargets: all\n"
+            revision_showcase(
+                "https://example.invalid/never-fetch.git",
+                commit,
+                definitions,
             ),
         )?;
         let error = format!(

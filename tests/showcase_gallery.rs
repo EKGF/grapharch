@@ -65,26 +65,19 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         &family.join("sources"),
         repository.path(),
     )?;
-    let mut config: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string(family.join("showcase.yaml"))?,
-    )?;
     // This old acceptance corpus predates upstream-owned publication hints.
     // Its explicit test override is distinct from the transport-only live
     // configuration.
-    config["definitions"] = "project.ttl".into();
-    config["project"] = "urn:ekgf-family:project".into();
-    config["target"] = "urn:ekgf-family:specification".into();
-    config["source"]["url"] = url.into();
-    config["source"]["ref"] = commit.into();
-    // Its single explicit target replaces the live hinted target selection.
-    config
-        .as_mapping_mut()
-        .unwrap()
-        .remove("targets")
-        .expect("the live showcase selects hinted targets");
     std::fs::write(
-        family.join("showcase.yaml"),
-        serde_yaml::to_string(&config)?,
+        family.join("showcase.ttl"),
+        format!(
+            "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+             .\n<urn:grapharch:showcase:ekgf> a ga:Showcase ; \
+             ga:definitionsPath \"project.ttl\" ; ga:showcaseProject \
+             <urn:ekgf-family:project> ; ga:showcaseTargets ( \
+             <urn:ekgf-family:specification> ) ; ga:gitRepository \"{url}\" ; \
+             ga:gitRef \"{commit}\" .\n"
+        ),
     )?;
     let text = std::fs::read_to_string(&registry)?;
     // Temporary ekg-ontologies 6bd93ab pin until the EKG migration lands
@@ -124,7 +117,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
             definitions::literal("pdf/ekgf"),
         )
     })?;
-    dprod.showcase(&source.path().join("examples/dprod/live.yaml"))?;
+    dprod.showcase(&source.path().join("examples/dprod/showcase.ttl"))?;
     let mkdocs_repository = tempfile::tempdir()?;
     let mkdocs_root = mkdocs_repository.path();
     tokio::fs::create_dir(mkdocs_root.join("docs")).await?;
@@ -155,11 +148,14 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     tokio::fs::write(
         source
             .path()
-            .join("examples/mkdocs-bootswatch/showcase.yaml"),
+            .join("examples/mkdocs-bootswatch/showcase.ttl"),
         format!(
-            "repository: {url}\ncommit: {commit}\nconfiguration: \
-             mkdocs.yml\npaths: [docs, mkdocs.yml, LICENSE]\nlicense: \
-             LICENSE\n"
+            "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+             .\n<urn:grapharch:showcase:mkdocs-bootswatch> a ga:Showcase ; \
+             ga:gitRepository \"{url}\" ; ga:gitCommit \"{commit}\" ; \
+             ga:mkdocsConfiguration \"mkdocs.yml\" ; ga:materializedPath \
+             \"docs\", \"mkdocs.yml\", \"LICENSE\" ; ga:licensePath \
+             \"LICENSE\" .\n"
         ),
     )
     .await?;

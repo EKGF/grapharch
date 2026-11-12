@@ -2,7 +2,7 @@
 
 The pinned DPROD sources come from the user-owned sibling `../dprod` repository
 at `89de8ff5c95149d79120f4062fcf5d1e0a82e641`. The unchanged source files and
-their SHA-256 digests are listed in `reference.yaml`, with the upstream license
+their SHA-256 digests are recorded as `ga:copiedSource` entries in `showcase.ttl`, with the upstream license
 retained.
 
 The example is split the way an exact-revision build reads it:
@@ -34,7 +34,7 @@ The pipeline does not run ReSpec or wrap its generated HTML, and never modifies
 the upstream working copy. The integration tests delete the repositories and
 cache, export and restore the dataset, and render from the restored KG.
 
-`live.yaml` configures the gallery case against the upstream repository by
+`showcase.ttl` configures the gallery case against the upstream repository by
 exact commits: the content commit, and the controlling commit holding DPROD's
 own GraphArch definitions.
 

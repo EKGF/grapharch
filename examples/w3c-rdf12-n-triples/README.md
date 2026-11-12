@@ -1,7 +1,7 @@
 # RDF 1.2 N-Triples reference showcase
 
 This is the primary W3C specification reference, using the unchanged published
-23 October 2026 Working Draft. `reference.yaml` pins source URLs and digests.
+23 October 2026 Working Draft. `showcase.ttl` records, as RDF on the showcase, the source URLs and SHA-256 digests of the copied inputs.
 
 
 Run `cargo run --example publish_showcase -- --w3c --keep-going`.

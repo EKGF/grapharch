@@ -338,6 +338,41 @@ ga:AbbreviationSelectionShape a sh:NodeShape ;
         sh:class <http://www.w3.org/2004/02/skos/core#ConceptScheme> ;
         sh:minCount 1 ; sh:maxCount 8 ] .
 
+ga:ShowcaseConfigurationShape a sh:NodeShape ;
+    rdfs:comment "Showcase run settings are singletons of the expected kind; exact commits are full lowercase Git object IDs."@en ;
+    sh:targetClass ga:Showcase ;
+    sh:property [ sh:path ga:gitRepository ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:gitRef ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 1024 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:gitCommit ; sh:datatype xsd:string ; sh:pattern "^[0-9a-f]{40}$" ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:definitionsCommit ; sh:datatype xsd:string ; sh:pattern "^[0-9a-f]{40}$" ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:definitionsPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:hintsPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:showcaseProject ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:showcaseTargets ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:allTargets ; sh:datatype xsd:boolean ; sh:in ( true ) ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:rdfDocument ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:mkdocsConfiguration ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:materializedPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:licensePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedSource ; sh:maxCount 64 ] ;
+    sh:property [ sh:path ga:copiedRepository ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedRevision ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedFromWorkingTree ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
+    sh:or ( [ sh:property [ sh:path ga:allTargets ; sh:maxCount 0 ] ] [ sh:property [ sh:path ga:showcaseTargets ; sh:maxCount 0 ] ] ) .
+
+ga:ShowcaseRdfDocumentShape a sh:NodeShape ;
+    rdfs:comment "A showcase RDF document declares its media type."@en ;
+    sh:targetObjectsOf ga:rdfDocument ;
+    sh:property [ sh:path ga:format ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+ga:CopiedSourceShape a sh:NodeShape ;
+    rdfs:comment "A copied fixture file names its local path and its SHA-256 digest."@en ;
+    sh:targetObjectsOf ga:copiedSource ;
+    sh:property [ sh:path ga:localPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:contentDigest ; sh:datatype xsd:string ; sh:pattern "^[a-f0-9]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copiedFrom ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:sourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] .
+
 ga:ShowcaseArtifactsUrlShape a sh:NodeShape ;
     rdfs:comment "A gallery publishes its showcases beneath one deployed absolute HTTP(S) directory."@en ;
     sh:targetSubjectsOf ga:showcaseArtifactsUrl ;

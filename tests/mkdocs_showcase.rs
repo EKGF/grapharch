@@ -79,13 +79,16 @@ async fn remote_mkdocs_showcase_retains_source_license_images_and_git_revision()
     let repository = url::Url::from_directory_path(source.path())
         .unwrap()
         .to_string();
-    let configuration = output.path().join("showcase.yaml");
+    let configuration = output.path().join("showcase.ttl");
     tokio::fs::write(
         &configuration,
         format!(
-            "repository: {repository}\ncommit: {commit}\nconfiguration: \
-             mkdocs.yml\npaths: [docs, mkdocs.yml, LICENSE]\nlicense: \
-             LICENSE\n"
+            "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+             .\n<urn:test:showcase> a ga:Showcase ; ga:gitRepository \
+             \"{repository}\" ; ga:gitCommit \"{commit}\" ; \
+             ga:mkdocsConfiguration \"mkdocs.yml\" ; ga:materializedPath \
+             \"docs\", \"mkdocs.yml\", \"LICENSE\" ; ga:licensePath \
+             \"LICENSE\" .\n"
         ),
     )
     .await?;
@@ -143,7 +146,7 @@ async fn public_bootswatch_documentation_is_retained_without_mkdocs_runtime()
     let output = root.join("output/mkdocs-pinned-review");
     tokio::fs::create_dir_all(&output).await?;
     let (dataset, plans) = showcases::mkdocs(
-        &root.join("examples/mkdocs-bootswatch/showcase.yaml"),
+        &root.join("examples/mkdocs-bootswatch/showcase.ttl"),
         &root.join("output/cache/git"),
     )
     .await?;

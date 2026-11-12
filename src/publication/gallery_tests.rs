@@ -41,7 +41,7 @@ fn revision_showcases_are_deployed_beneath_the_gallery_artifacts_location()
     let case = "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
                 .\n<urn:docs> ga:showcase <urn:case> .\n<urn:case> a \
                 ga:Showcase ; ga:slug \"dprod\" ; ga:source \
-                \"dprod/live.yaml\" ; ga:showcaseRunner \
+                \"dprod/showcase.ttl\" ; ga:showcaseRunner \
                 ga:RevisionBuildShowcaseRunner .\n";
     let cases = super::read(
         format!(

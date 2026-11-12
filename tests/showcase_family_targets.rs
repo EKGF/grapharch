@@ -94,14 +94,20 @@ fn showcase(
     url: &str,
     targets: Option<&[&str]>,
 ) -> Result<std::path::PathBuf> {
-    let path = root.join("showcase.yaml");
-    let mut text = format!("source:\n  kind: git\n  url: {url}\n  ref: HEAD\n");
+    let path = root.join("showcase.ttl");
+    let mut text = format!(
+        "@prefix ga: <https://ekgf.org/ontology/grapharch#> \
+         .\n<urn:test:showcase> a ga:Showcase ; ga:gitRepository \"{url}\" ; \
+         ga:gitRef \"HEAD\""
+    );
     if let Some(targets) = targets {
-        text.push_str("targets:\n");
+        text.push_str(" ; ga:showcaseTargets (");
         for target in targets {
-            text.push_str(&format!("  - {target}\n"));
+            text.push_str(&format!(" <{target}>"));
         }
+        text.push_str(" )");
     }
+    text.push_str(" .\n");
     std::fs::write(&path, text)?;
     Ok(path)
 }

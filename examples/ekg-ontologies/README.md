@@ -2,14 +2,15 @@
 
 ## Published repository showcase
 
-The published gallery uses [`showcase.yaml`](showcase.yaml), which selects
-`https://github.com/EKGF/ekg-ontologies.git`. It is temporarily pinned to commit
+The published gallery uses [`showcase.ttl`](showcase.ttl), which selects
+`https://github.com/EKGF/ekg-ontologies.git` with `ga:gitRepository`. Its
+`ga:gitRef` is temporarily pinned to commit
 `6bd93ab7c9430804e99b3913f0926d0070eb44a3` (specification target only, published
-at `spec/develop`) because
-newer upstream commits emit relative links the gallery guard rejects; it returns
-to `ref: HEAD` once the EKG migration lands upstream. With `ref: HEAD`, every build fetches
-the repository's latest default branch into a reusable bare Git cache, then
-collects the resolved commit. It does not read the copied `sources/` corpus.
+at `spec/develop`) because newer upstream commits emit relative links the
+gallery guard rejects; it returns to `ga:gitRef "HEAD"` once the EKG migration
+lands upstream. With `HEAD`, every build fetches the repository's latest default
+branch into a reusable bare Git cache, then collects the resolved commit. It
+does not read the copied `sources/` corpus.
 
 The observed commit, repository URL, authors and committers are recorded in the
 downloadable documentation KG. A moving branch therefore produces a publication
@@ -37,7 +38,7 @@ it is not the live gallery's publication configuration.
 
 The checked-in CC0 `sources/` directory captures the `EKGF/ekg-ontologies`
 working tree after its October 2026 documentation pass, based on commit
-`ce7b810990a806333d698e2934c38c8a1384b2ec`. `reference.yaml` records the original
+`ce7b810990a806333d698e2934c38c8a1384b2ec`. `showcase.ttl` records, as `ga:copiedSource` entries, the original
 uncommitted state and SHA-256 digests. It contains 24 ontologies and 704 named
 resources with English labels and definitions; DPROD and GraphArch are separate
 projects.

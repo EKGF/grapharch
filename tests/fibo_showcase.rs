@@ -1,3 +1,6 @@
+#[path = "support/showcase_rdf.rs"]
+mod showcase_rdf;
+
 use {
     anyhow::Result,
     grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
@@ -9,24 +12,13 @@ const COMMIT: &str = "33a92cd34285d532c158da97bb42add089f135d3";
 #[tokio::test]
 async fn fibo_be_inventory_is_complete_pinned_and_does_not_collect_other_domains()
 -> Result<()> {
-    let config: serde_yaml::Value = serde_yaml::from_str(
-        &tokio::fs::read_to_string("examples/fibo-be/showcase.yaml").await?,
-    )?;
-    assert_eq!(
-        config["source"]["kind"].as_str(),
-        Some("rdf-urls")
-    );
-    let documents = config["source"]["documents"].as_sequence().unwrap();
+    let documents = showcase_rdf::documents("examples/fibo-be/showcase.ttl")?;
     assert_eq!(documents.len(), 48);
     let mut urls = std::collections::BTreeSet::new(); // bounded: the 48 explicitly registered source documents.
-    for document in documents {
-        let url = document["url"].as_str().unwrap();
+    for (url, format) in &documents {
         assert!(url.starts_with(&format!("https://raw.githubusercontent.com/edmcouncil/fibo/{COMMIT}/BE/")) && url.ends_with(".rdf"));
         assert!(urls.insert(url));
-        assert_eq!(
-            document["media_type"].as_str(),
-            Some("application/rdf+xml")
-        );
+        assert_eq!(format, "application/rdf+xml");
     }
     for path in [
         "AllBE.rdf",
@@ -53,7 +45,7 @@ async fn fibo_be_inventory_is_complete_pinned_and_does_not_collect_other_domains
     );
     assert!(definitions.contains(COMMIT));
     let registry = tokio::fs::read_to_string("examples/showcases.ttl").await?;
-    assert!(registry.contains("ga:source \"fibo-be/showcase.yaml\""));
+    assert!(registry.contains("ga:source \"fibo-be/showcase.ttl\""));
     Ok(())
 }
 
@@ -64,7 +56,7 @@ async fn live_fibo_be_renders_html_and_pdf_from_restored_graph() -> Result<()> {
     let output = Path::new("output/fibo-be-review");
     tokio::fs::create_dir_all(output).await?;
     let config = tempfile::tempdir()?;
-    for file in ["project.ttl", "showcase.yaml"] {
+    for file in ["project.ttl", "showcase.ttl"] {
         tokio::fs::copy(
             Path::new("examples/fibo-be").join(file),
             config.path().join(file),
@@ -72,7 +64,7 @@ async fn live_fibo_be_renders_html_and_pdf_from_restored_graph() -> Result<()> {
         .await?;
     }
     let (dataset, plans) = showcases::family(
-        &config.path().join("showcase.yaml"),
+        &config.path().join("showcase.ttl"),
         Path::new("output/cache/git"),
     )
     .await?;

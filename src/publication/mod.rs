@@ -29,6 +29,7 @@ pub mod quick_build;
 pub mod render;
 pub mod revision_build;
 pub mod scope;
+mod showcase_configuration;
 pub mod showcases;
 mod showcases_mkdocs;
 mod showcases_revision;

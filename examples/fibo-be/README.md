@@ -27,7 +27,7 @@ definitions are not invented or silently copied from another release.
 
 ## Source provenance and license
 
-Every URL in `showcase.yaml` names the immutable Git commit. The RDF URL collector
+Every `ga:rdfDocument` IRI in `showcase.ttl` names the immutable Git commit. The RDF URL collector
 retains each original source URL and content digest alongside its assertions.
 The local files here contain only transport and publication configuration; no
 upstream RDF is vendored. The original MIT notices, copyright holders and years
