@@ -87,8 +87,9 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         serde_yaml::to_string(&config)?,
     )?;
     let text = std::fs::read_to_string(&registry)?;
-    let live = "ga:previewPath \"spec/main/index.html\" ; ga:pdfPath \
-                \"documents/main/document.pdf\"";
+    // Temporary ekg-ontologies 6bd93ab pin until the EKG migration lands
+    // upstream: the live entry previews spec/develop and has no PDF.
+    let live = "ga:previewPath \"spec/develop/index.html\"";
     assert_eq!(text.matches(live).count(), 1);
     std::fs::write(
         &registry,
