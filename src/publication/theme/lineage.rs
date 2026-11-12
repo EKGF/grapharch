@@ -71,11 +71,6 @@ impl Lineage {
     /// The nearest catalogue theme, which selects bundled HTML skins.
     pub(crate) fn builtin(&self) -> Builtin { self.builtin }
 
-    /// Whether the selection is, or refines, a catalogue theme.
-    pub(crate) fn refines(&self, theme: Builtin) -> bool {
-        self.themes.contains(&theme.iri())
-    }
-
     pub(crate) fn selected(&self) -> &NamedNode { &self.themes[0] }
 
     pub(crate) fn themes(&self) -> &[NamedNode] { &self.themes }
