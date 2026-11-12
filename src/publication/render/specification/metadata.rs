@@ -142,6 +142,7 @@ pub(in crate::publication::render) async fn header(
             ("editor", "Editor", "Editors"),
             ("author", "Author", "Authors"),
             ("formerEditor", "Former editor", "Former editors"),
+            ("contributor", "Contributor", "Contributors"),
         ] {
             html.push_str(&people(plan, role, singular, plural, None).await?);
         }
@@ -203,6 +204,13 @@ pub(super) async fn people(
             let Term::NamedNode(orcid) = orcid else {
                 anyhow::bail!("orcid must be an HTTP(S) IRI")
             };
+            // The name already links to the ORCID record.
+            if optional(plan, editor, "url").await?.as_deref() ==
+                Some(orcid.as_str())
+            {
+                editors.push(display);
+                continue;
+            }
             display.push_str(&format!(
                 " <span class=\"orcid\">{}</span>",
                 link(orcid.as_str(), "ORCID")?

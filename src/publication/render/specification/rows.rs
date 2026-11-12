@@ -74,7 +74,7 @@ pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
         );
         if matches!(
             field.as_str(),
-            "editor" | "formerEditor" | "author"
+            "editor" | "formerEditor" | "author" | "contributor"
         ) {
             html.push_str(&people(plan, &field, "", "", Some(&label)).await?);
         } else {

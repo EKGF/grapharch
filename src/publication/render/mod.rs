@@ -10,6 +10,7 @@ mod collected_images;
 mod content;
 mod content_blocks;
 mod credit;
+mod credits;
 mod diagnostic_graph;
 mod diagram_notes;
 mod document_metadata;

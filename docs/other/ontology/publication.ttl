@@ -1713,3 +1713,113 @@ ga:abbreviationScheme a owl:ObjectProperty ;
 ga:showcaseInput a owl:DatatypeProperty ; rdfs:label "showcase input format"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "An authored source format demonstrated by a showcase, such as Markdown, OWL or SHACL."@en ; dct:description "An authored source format demonstrated by a showcase, such as Markdown, OWL or SHACL."@en ; rdfs:domain ga:Showcase ; rdfs:range xsd:string .
 ga:showcaseCapability a owl:DatatypeProperty ; rdfs:label "showcase capability"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "An authored capability actually demonstrated by a showcase publication."@en ; dct:description "An authored capability actually demonstrated by a showcase publication."@en ; rdfs:domain ga:Showcase ; rdfs:range xsd:string .
 ga:showcaseUseCase a owl:DatatypeProperty ; rdfs:label "showcase use case"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "An audience task demonstrated by a showcase publication."@en ; dct:description "An audience task demonstrated by a showcase publication."@en ; rdfs:domain ga:Showcase ; rdfs:range xsd:string .
+
+# Person collectors and header credits.
+
+ga:contributor a owl:ObjectProperty ;
+    rdfs:label "Document contributor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a contributor credited as a contributor of a specification, such as a commit author of its source repository."@en ;
+    dct:description "Identifies a contributor credited as a contributor of a specification, such as a commit author of its source repository."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range rdfs:Resource .
+
+ga:Credit a owl:Class ;
+    rdfs:label "Credit rule"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A target-owned rule that credits every IRI value of a source predicate in one specification header role."@en ;
+    dct:description "A target-owned rule that credits every IRI value of a source predicate in one specification header role."@en .
+
+ga:credit a owl:ObjectProperty ;
+    rdfs:label "Credit rule"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a publication target with a rule that derives credited people from collected source assertions."@en ;
+    dct:description "Associates a publication target with a rule that derives credited people from collected source assertions."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:Credit .
+
+ga:creditRole a owl:ObjectProperty ;
+    rdfs:label "Credited role"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the header role, one of ga:editor, ga:author, ga:formerEditor or ga:contributor, in which a credit rule lists people."@en ;
+    dct:description "Names the header role, one of ga:editor, ga:author, ga:formerEditor or ga:contributor, in which a credit rule lists people."@en ;
+    rdfs:domain ga:Credit ;
+    rdfs:range rdf:Property .
+
+ga:creditPredicate a owl:ObjectProperty ;
+    rdfs:label "Credited source predicate"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the source predicate, such as dc:creator, whose IRI values a credit rule lists as people."@en ;
+    dct:description "Names the source predicate, such as dc:creator, whose IRI values a credit rule lists as people."@en ;
+    rdfs:domain ga:Credit ;
+    rdfs:range rdf:Property .
+
+ga:personPredicate a owl:ObjectProperty ;
+    rdfs:label "Person predicate"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names a source predicate whose ORCID iD values an ORCID person collector use resolves to public person records."@en ;
+    dct:description "Names a source predicate whose ORCID iD values an ORCID person collector use resolves to public person records."@en ;
+    rdfs:domain ga:CollectorUse ;
+    rdfs:range rdf:Property .
+
+ga:RepositoryContribution a owl:Class ;
+    rdfs:label "Repository contribution"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The number of examined commits that one public account authored in one source repository."@en ;
+    dct:description "The number of examined commits that one public account authored in one source repository."@en .
+
+ga:contributionTo a owl:ObjectProperty ;
+    rdfs:label "Contributed repository"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the source repository of a repository contribution."@en ;
+    dct:description "Identifies the source repository of a repository contribution."@en ;
+    rdfs:domain ga:RepositoryContribution ;
+    rdfs:range rdfs:Resource .
+
+ga:commitCount a owl:DatatypeProperty ;
+    rdfs:label "Commit count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records how many examined commits the agent of a repository contribution authored."@en ;
+    dct:description "Records how many examined commits the agent of a repository contribution authored."@en ;
+    rdfs:domain ga:RepositoryContribution ;
+    rdfs:range xsd:integer .
+
+ga:examinedCommit a owl:DatatypeProperty ;
+    rdfs:label "Examined commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records the commit from which a repository contributor collection walked the history."@en ;
+    dct:description "Records the commit from which a repository contributor collection walked the history."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:examinedCommitCount a owl:DatatypeProperty ;
+    rdfs:label "Examined commit count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records how many commits a repository contributor collection examined."@en ;
+    dct:description "Records how many commits a repository contributor collection examined."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:integer .
+
+ga:unattributedCommitCount a owl:DatatypeProperty ;
+    rdfs:label "Unattributed commit count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records examined commits without a linked user account, including bot-authored commits."@en ;
+    dct:description "Records examined commits without a linked user account, including bot-authored commits."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:integer .
+
+ga:contributorCount a owl:DatatypeProperty ;
+    rdfs:label "Contributor count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records how many distinct user accounts authored the examined commits, including accounts beyond the retained profile budget."@en ;
+    dct:description "Records how many distinct user accounts authored the examined commits, including accounts beyond the retained profile budget."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:integer .
+
+ga:commitHistoryComplete a owl:DatatypeProperty ;
+    rdfs:label "Complete commit history"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Records whether a repository contributor collection examined the complete history rather than stopping at its page budget."@en ;
+    dct:description "Records whether a repository contributor collection examined the complete history rather than stopping at its page budget."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:boolean .

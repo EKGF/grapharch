@@ -176,6 +176,7 @@ async fn assemble(
     shapes: &str,
     derive: bool,
 ) -> Result<Vec<ResolvedPlan>> {
+    super::collect::people::collect(dataset, writer, PROJECT, 4).await?;
     let collected = dataset.snapshot_for(PROJECT).await?;
     let view = RevisionView::new(dataset.clone(), collected.clone());
     let targets = source_owned::targets(&view).await?;

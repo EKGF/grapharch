@@ -57,6 +57,10 @@ pub(crate) async fn collect(
             &view.node(processor, "collectorType").await?,
         )?;
         let source = view.text(processor, "source").await?;
+        if kind.reads_collected_people() {
+            // Scheduled by `people::collect` after source collection.
+            continue;
+        }
         if kind == CollectorKind::AuthoredUseCases {
             work.extend(
                 super::authored_use_cases::configured(

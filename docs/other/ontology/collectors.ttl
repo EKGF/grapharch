@@ -59,3 +59,11 @@ ga:CodeFileCollector a ga:Collector ;
 ga:MarkdownPageCollector a ga:Collector ;
     rdfs:label "Markdown page collector"@en ;
     dct:description "Collects Markdown content with an explicitly configured page title and route in source-owned repository publications."@en .
+
+ga:OrcidPersonCollector a ga:Collector ;
+    rdfs:label "ORCID person collector"@en ;
+    dct:description "Fetches the public name of each ORCID iD used as a value of a configured person predicate from the ORCID public API, once per person, and retains it with response provenance."@en .
+
+ga:GitHubContributorCollector a ga:Collector ;
+    rdfs:label "GitHub contributor collector"@en ;
+    dct:description "Counts commit authors at the collected commit of each GitHub source repository through the GitHub REST API and retains the public login, display name and profile URL of the most active accounts, never their email addresses."@en .
