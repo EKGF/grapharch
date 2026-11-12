@@ -251,10 +251,6 @@ pub(super) async fn write(
     let mut diagram_notes = vec![false; books.len()];
     let mut depths = vec![0; books.len()];
     let mut entries = Entries::new(plan).await?;
-    let base = match plan.source.optional(&plan.target, "thisVersion").await? {
-        Some(oxrdf::Term::NamedNode(url)) => url::Url::parse(url.as_str())?,
-        _ => anyhow::bail!("bookshelf requires thisVersion URL"),
-    };
     while let Some(mut entry) = entries.next(plan).await? {
         let page = catalog.placements[entry.placement.as_str()];
         let Some(&i) = ownership.get(&page) else {
@@ -332,9 +328,11 @@ pub(super) async fn write(
                 if b.members.contains(&page) {
                     return Ok(destination.into());
                 }
-                Ok(base
-                    .join(&format!("{}#{id}", catalog.pages[page].route))?
-                    .to_string())
+                // Book PDFs are published beside the HTML chapters. A PDF
+                // reader resolves this relative link against the book's own
+                // location, wherever the bookshelf is deployed. The explicit
+                // ./ form is also a valid class diagram link.
+                Ok(format!("./{}#{id}", catalog.pages[page].route))
             };
             for event in &mut markdown.events {
                 if let pulldown_cmark::Event::Start(

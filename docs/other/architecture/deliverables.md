@@ -300,7 +300,12 @@ A future UI authors these same RDF definitions.
 Targets have separate artifact ownership and job status. Publishing the reader
 website must not erase a nested specification target. Overlapping output paths
 require explicit composition or fail validation. Destination URLs inform links
-and packaging; generating a target does not itself deploy it.
+and packaging; generating a target does not itself deploy it. A destination URL
+such as `ga:thisVersion` is canonical metadata: it appears as the version link,
+canonical link and sitemap entry. It is never the base of a link between
+artifacts of the same output, such as a specification's link to a sibling PDF
+edition. Such links stay relative to their page, so one output works in
+production, previews, the showcase gallery and local builds.
 
 ## Deliverables and acceptance criteria
 

@@ -198,6 +198,12 @@ pub(super) fn typst(svg: &str) -> Result<String> {
         let destination = if let Some(label) = destination.strip_prefix('#') {
             ensure!(!label.is_empty(), "empty PDF diagram anchor");
             format!("label({})", super::super::markup::quote(label))
+        } else if destination.starts_with("./") ||
+            destination.starts_with("../")
+        {
+            // An artifact beside this PDF, such as another book's chapter. The
+            // reader resolves it against the PDF's own location.
+            super::super::markup::quote(destination)
         } else {
             super::validate_external(destination)?;
             super::super::markup::quote(destination)
@@ -275,7 +281,13 @@ mod tests {
                 .is_err()
             );
         }
-        assert!(typst(r#"<svg><a href="../other.html"><rect width="30" height="20"/></a></svg>"#).is_err());
+        assert!(typst(r#"<svg><a href="other.html"><rect width="30" height="20"/></a></svg>"#).is_err());
+    }
+
+    #[test]
+    fn relative_artifact_links_stay_relative_to_the_pdf() {
+        let output = typst(r#"<svg><a href="./section-book.html#class"><rect width="30" height="20"/></a></svg>"#).unwrap();
+        assert!(output.contains("#link(\"./section-book.html#class\")"));
     }
 }
 

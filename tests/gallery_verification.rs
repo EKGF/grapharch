@@ -283,3 +283,64 @@ async fn collected_case_kg_survives_a_later_verification_failure() -> Result<()>
     assert!(report.cases[1].succeeded);
     Ok(())
 }
+
+#[tokio::test]
+async fn verification_fails_a_showcase_whose_relative_links_name_unpublished_files()
+-> Result<()> {
+    use grapharch::publication::{dataset::Dataset, showcases};
+    let root = tempfile::tempdir()?;
+    registry(
+        root.path(),
+        r#"
+<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:SpecificationShowcaseRunner;ga:source "broken.ttl" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:SpecificationShowcaseRunner;ga:source "portable.ttl" .
+"#,
+    )?;
+    for (name, links) in [
+        (
+            "broken.ttl",
+            r#"<a href="../pdf/omg/document.pdf">OMG edition</a>"#,
+        ),
+        (
+            "portable.ttl",
+            r#"<a href="document.pdf">Specification</a><br><a href="./">Online</a>"#,
+        ),
+    ] {
+        std::fs::write(
+            root.path().join("examples").join(name),
+            format!(
+                r##"{}
+ex:target ga:metadataRow ex:version-link, ex:latest-link, ex:edition-links .
+ex:version-link a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
+ex:latest-link a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
+ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
+    dct:title "Editions:" ; ga:body """{links}""" .
+"##,
+                include_str!("../examples/specification/project.ttl")
+            ),
+        )?;
+    }
+    let output = tempfile::tempdir()?;
+    let report = showcases::verify_gallery(
+        Dataset::memory()?,
+        &root.path().join("examples"),
+        "urn:grapharch:docs",
+        output.path(),
+    )
+    .await?;
+    assert!(!report.succeeded);
+    let error = report.cases[0].error.as_deref().unwrap_or_default();
+    assert!(
+        error.contains(
+            "specification/index.html: ../pdf/omg/document.pdf \
+             (pdf/omg/document.pdf is not published by this showcase)"
+        ),
+        "a link to a PDF the showcase does not publish fails it: {error}"
+    );
+    assert!(
+        report.cases[1].succeeded,
+        "relative links to the showcase's own files pass: {:?}",
+        report.cases[1].error
+    );
+    Ok(())
+}

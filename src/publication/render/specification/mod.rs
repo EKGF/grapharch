@@ -17,7 +17,7 @@ use {
     },
     crate::publication::{
         diagnostics::{Diagnostic, FailureMode, Severity},
-        native_html,
+        native_html::{self, Links},
     },
     anyhow::{Result, ensure},
     outline::{Outline, Toc, headings, markdown_html},
@@ -100,7 +100,7 @@ pub(super) async fn write(
             .await?;
         }
         let body = if entry.format == "text/html" {
-            native_html::read(&entry.body, None, &mut |depth| {
+            native_html::read(&entry.body, Links::Publication, &mut |depth| {
                 outline.heading_number(depth)
             })?
             .html
@@ -229,8 +229,11 @@ async fn toc(
             );
         }
         if entry.format == "text/html" {
-            let fragment =
-                native_html::read(&entry.body, None, &mut |_| Ok(None))?;
+            let fragment = native_html::read(
+                &entry.body,
+                Links::Publication,
+                &mut |_| Ok(None),
+            )?;
             for id in fragment.ids {
                 ensure!(
                     ids.insert(id.clone()),

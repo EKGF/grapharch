@@ -3,11 +3,13 @@ use {
         super::{markup::html_escape, model::Plan},
         metadata::{URL_FIELDS, explicit_title, link, optional, people},
     },
-    crate::publication::{native_html, validation::unsigned},
+    crate::publication::{
+        native_html::{self, Links},
+        validation::unsigned,
+    },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
     std::collections::HashSet,
-    url::Url,
 };
 
 pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
@@ -38,12 +40,6 @@ pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
         return Ok(None);
     }
     fields.sort();
-    let publication_url = Url::parse(
-        plan.source
-            .node(&plan.target, "thisVersion")
-            .await?
-            .as_str(),
-    )?;
     let mut html = String::new();
     let mut seen = HashSet::new();
     for (_, row) in fields {
@@ -55,8 +51,10 @@ pub(super) async fn render(plan: &Plan) -> Result<Option<String>> {
                 body.len() <= 64 * 1024,
                 "custom metadata row exceeds 64 KiB"
             );
+            // Relative links name artifacts beside this publication. They stay
+            // relative to the page; ga:thisVersion is not their base.
             let fragment =
-                native_html::read(&body, Some(&publication_url), &mut |_| {
+                native_html::read(&body, Links::Publication, &mut |_| {
                     Ok(None)
                 })?;
             ensure!(

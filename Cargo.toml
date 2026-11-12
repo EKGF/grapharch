@@ -53,6 +53,7 @@ fs2 = "0.4"
 base64 = "0.23"
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 scraper = "0.29"
+html5ever = "0.40.1"
 spargebra = "0.4.4"
 mermaid-rs-renderer = { version = "0.3.1", default-features = false }
 

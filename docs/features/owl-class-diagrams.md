@@ -114,8 +114,9 @@ assertions to fit a phone. On narrow screens, the diagram stays readable inside 
 keyboard-focusable horizontal scroll region, with an accessible description. PDF figures retain a physical height limit. PDF class boxes,
 member names, and relationship labels are individually clickable. Subjects included
 in the PDF link to their internal document anchors; other HTTP(S) resources link
-to their original IRIs. Member hit regions take precedence over the surrounding
-class box. The retained drawing and its scale are unchanged; PDF links use native
+to their original IRIs. In a bookshelf, a subject documented in another book links
+to its HTML chapter beside the book PDF, using a relative link. Member hit regions
+take precedence over the surrounding class box. The retained drawing and its scale are unchanged; PDF links use native
 Typst annotations over the corresponding regions, not rasterized images or a
 single link over the whole diagram.
 

@@ -18,7 +18,7 @@ use {
         view::RevisionView,
         writer::GraphWriter,
     },
-    anyhow::{Result, ensure},
+    anyhow::{Context, Result, ensure},
     oxigraph::{io::RdfFormat, store::Store},
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
     runner::ShowcaseRunner,
@@ -432,6 +432,17 @@ async fn build_case(
             work.push(Arc::new(asset));
         }
     }
+    links::PublishedOutput::new(
+        output.clone(),
+        artifacts
+            .keys()
+            .cloned()
+            .chain(["documentation.nq".to_owned()])
+            .collect(),
+    )
+    .verify_links()
+    .await
+    .with_context(|| format!("showcase {} publishes broken links", case.id))?;
     let preview = artifact_selection(
         &artifacts,
         case.preview.as_deref(),
@@ -629,6 +640,8 @@ fn runner(store: &Store, id: &NamedNode) -> Result<ShowcaseRunner> {
     ShowcaseRunner::from_node(&runner)
 }
 
+#[path = "gallery_links.rs"]
+mod links;
 #[path = "gallery_runner.rs"]
 mod runner;
 

@@ -999,8 +999,18 @@ async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_
             assert!(typst.contains("core term"));
             assert!(!typst.contains("#text(\"extra term\")"));
             assert!(
-                typst.contains("https://example.org/spec/section-"),
-                "cross-book PDF links go to the corresponding HTML chapter"
+                !typst.contains("https://example.org/spec/section-"),
+                "cross-book PDF links must not depend on the canonical \
+                 thisVersion deployment"
+            );
+            let (_, rest) = typst.split_once("#link(\"./section-").expect(
+                "cross-book PDF links go to the corresponding HTML chapter",
+            );
+            let (route, _) = rest.split_once('#').unwrap();
+            assert!(
+                p.directory.join(format!("section-{route}")).is_file(),
+                "a cross-book link resolves beside the book PDF to a \
+                 published chapter: section-{route}"
             );
         }
     }

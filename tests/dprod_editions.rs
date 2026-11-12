@@ -3,8 +3,17 @@ mod definitions;
 
 use {
     anyhow::Result,
-    grapharch::publication::{dataset::Dataset, render::Publisher, showcases},
-    std::path::Path,
+    grapharch::publication::{
+        assembly::Assembler,
+        collect::{Collector, RdfFile, collect_all},
+        dataset::Dataset,
+        plan::TargetPlanner,
+        render::Publisher,
+        showcases,
+        writer::GraphWriter,
+    },
+    oxrdf::NamedNode,
+    std::{path::Path, sync::Arc},
 };
 
 fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
@@ -156,13 +165,25 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     Ok(())
 }
 
+/// Authored links between sibling targets stay relative to the published page.
+/// The same output then works in production, the showcase gallery, previews
+/// and local builds; `ga:thisVersion` is canonical identity, never a link base.
 #[tokio::test]
-async fn edition_download_links_resolve_against_the_publication_url()
+async fn edition_links_resolve_to_sibling_pdfs_in_the_build_output()
 -> Result<()> {
     let source = tempfile::tempdir()?;
     let path = source.path().join("project.ttl");
     let fixture = format!(
         r##"{}
+ex:project ga:target ex:ekgf-edition, ex:omg-edition .
+ex:ekgf-edition a ga:Target ; dct:title "Community edition" ;
+    ga:scope ex:scope ; ga:profile ex:profile ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ;
+    ga:destination "pdf/ekgf" .
+ex:omg-edition a ga:Target ; dct:title "Submission-preview edition" ;
+    ga:scope ex:scope ; ga:profile ex:profile ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ;
+    ga:destination "pdf/omg" .
 ex:target ga:metadataRow ex:version-link, ex:latest-link, ex:edition-links .
 ex:version-link a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
 ex:latest-link a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
@@ -172,15 +193,41 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
         include_str!("../examples/specification/project.ttl")
     );
     tokio::fs::write(&path, fixture).await?;
-    let (dataset, plans) = showcases::specification(&path).await?;
+    let project = "urn:specification:project";
+    let dataset = Dataset::memory()?;
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 8, 4 * 1024 * 1024)?;
+    collect_all(
+        vec![Arc::new(RdfFile::new(
+            project,
+            "urn:specification:collector",
+            path,
+        )?) as Arc<dyn Collector>],
+        &writer,
+        1,
+    )
+    .await?;
+    let revision = Assembler::new(dataset.clone()).assemble(project).await?;
+    let planner = TargetPlanner::new(dataset.clone(), revision);
+    let mut plans = Vec::new();
+    for target in ["target", "ekgf-edition", "omg-edition"] {
+        plans.push(
+            planner
+                .resolve(
+                    project,
+                    &NamedNode::new(format!("urn:specification:{target}"))?,
+                    &writer,
+                )
+                .await?,
+        );
+    }
+    drop(writer);
+    worker.await??;
     source.close()?;
     let output = tempfile::tempdir()?;
-    let publications =
-        showcases::publish(&Publisher::new(dataset), &plans, output.path())
-            .await?;
-    let html =
-        tokio::fs::read_to_string(publications[0].directory.join("index.html"))
-            .await?;
+    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    let page = output.path().join("specification/index.html");
+    let html = tokio::fs::read_to_string(&page).await?;
     let document = scraper::Html::parse_document(&html);
     let download = document
         .select(&scraper::Selector::parse("a.pdf-download").unwrap())
@@ -200,18 +247,49 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
             .to_lowercase()
             .contains("specification")
     );
+    let selector = scraper::Selector::parse(
+        "a.pdf-download, dl.publication-metadata a[href$=\".pdf\"]",
+    )
+    .unwrap();
+    let hrefs: Vec<_> = document
+        .select(&selector)
+        .map(|link| link.attr("href").unwrap().to_owned())
+        .collect();
     assert_eq!(
-        document
-            .select(&scraper::Selector::parse("a.pdf-download").unwrap())
-            .count(),
-        3,
+        hrefs.len(),
+        5,
         "both named editions must have visible PDF download controls \
-         alongside the attached reference"
+         alongside the attached reference, besides their metadata links: \
+         {hrefs:?}"
     );
+    let base = url::Url::from_file_path(&page).unwrap();
+    for href in &hrefs {
+        let resolved = base.join(href)?;
+        assert_eq!(
+            resolved.scheme(),
+            "file",
+            "{href} must resolve relative to the published page, not to the \
+             canonical publication URL"
+        );
+        let file = resolved.to_file_path().unwrap();
+        assert!(
+            file.starts_with(output.path()) &&
+                tokio::fs::read(&file).await?.starts_with(b"%PDF-"),
+            "{href} must name a PDF in the build output: {}",
+            file.display()
+        );
+    }
+    let typst =
+        tokio::fs::read_to_string(output.path().join("specification/main.typ"))
+            .await?;
     for edition in ["ekgf", "omg"] {
-        assert!(html.contains(&format!(
-            "href=\"https://example.org/spec/pdf/{edition}/document.pdf\""
-        )));
+        assert!(
+            typst.contains(&format!(
+                "#link(\"../pdf/{edition}/document.pdf\")"
+            )),
+            "the specification PDF beside index.html carries the same \
+             relative edition link"
+        );
     }
     Ok(())
 }

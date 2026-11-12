@@ -17,6 +17,7 @@ pub mod dprod;
 mod gallery;
 pub mod governance;
 pub mod hosting;
+mod href;
 mod limits;
 mod markdown;
 mod mermaid;

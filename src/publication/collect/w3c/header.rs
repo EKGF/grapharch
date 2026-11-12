@@ -134,7 +134,7 @@ pub(super) fn parse(head: ElementRef<'_>, base: &Url) -> Result<Header> {
                 "custom" => {
                     let body = native_html::read(
                         &dd.inner_html(),
-                        Some(base),
+                        native_html::Links::Source(base),
                         &mut |_| Ok(None),
                     )?
                     .html;

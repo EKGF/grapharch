@@ -90,8 +90,12 @@ pub(super) fn parse(source: &str, base: &Url) -> Result<Parsed> {
                 body.push_str(text);
             }
         }
-        let body =
-            native_html::read(&body, Some(base), &mut |_| Ok(None))?.html;
+        let body = native_html::read(
+            &body,
+            native_html::Links::Source(base),
+            &mut |_| Ok(None),
+        )?
+        .html;
         let kind = match id {
             "abstract" => "abstract",
             "sotd" => "status",
