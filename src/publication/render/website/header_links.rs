@@ -1,11 +1,14 @@
 //! Ordered project navigation from the publication's pinned profile.
 use {
-    super::super::{markup::html_escape, model::Plan},
+    super::{
+        super::{markup::html_escape, model::Plan},
+        site_link::{HEADER_SCHEMES, SiteLink},
+    },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
 };
 
-pub(super) struct Links(Vec<(u32, String, String)>);
+pub(super) struct Links(Vec<(u32, String, SiteLink)>);
 
 impl Links {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -32,24 +35,11 @@ impl Links {
                 !label.trim().is_empty(),
                 "header link title must not be empty"
             );
-            let url = plan.source.text(link, "url").await?;
-            ensure!(
-                !url.is_empty() && !url.chars().any(char::is_control),
-                "header link URL is empty or contains control characters"
-            );
-            if let Ok(url) = url::Url::parse(&url) {
-                ensure!(
-                    matches!(url.scheme(), "http" | "https"),
-                    "header links must use HTTP(S) or relative URLs"
-                );
-            } else {
-                ensure!(
-                    !url.starts_with("//") &&
-                        !url.contains('\\') &&
-                        !url.split('/').any(|part| part == ".."),
-                    "header link relative URL is invalid"
-                );
-            }
+            let url = SiteLink::authored(
+                &plan.source.text(link, "url").await?,
+                HEADER_SCHEMES,
+                "header link",
+            )?;
             let order = crate::publication::validation::unsigned(
                 &plan.source.optional(link, "order").await?.ok_or_else(
                     || anyhow::anyhow!("header link requires order"),
@@ -69,16 +59,9 @@ impl Links {
     pub fn html(&self, prefix: &str) -> String {
         let mut html = String::new();
         for (_, label, url) in &self.0 {
-            let relative =
-                url::Url::parse(url).is_err() && !url.starts_with(['/', '#']);
-            let href = if relative {
-                format!("{prefix}{url}")
-            } else {
-                url.clone()
-            };
             html.push_str(&format!(
                 "<a href=\"{}\">{}</a>",
-                html_escape(&href),
+                html_escape(&url.href(prefix)),
                 html_escape(label)
             ));
         }

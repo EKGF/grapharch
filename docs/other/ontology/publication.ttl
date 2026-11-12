@@ -926,7 +926,7 @@ ga:url a owl:DatatypeProperty ;
     dct:description "Records a literal web address used for external-reference or contributor presentation; this legacy representation is distinct from IRI-valued publication links."@en ;
     rdfs:domain rdfs:Resource ;
     rdfs:range xsd:string ;
-    skos:scopeNote "The object is a string literal in the existing contract. Properties such as ga:thisVersion, ga:repository, and ga:orcid instead have IRI objects."@en .
+    skos:scopeNote "The object is a string literal in the existing contract. Properties such as ga:thisVersion, ga:repository, and ga:orcid instead have IRI objects. On a website header link or navigation entry the literal may instead be relative to the website root; see ga:headerLink and ga:NavigationEntry."@en .
 
 ga:status a owl:DatatypeProperty ;
     rdfs:label "Execution outcome"@en ;
@@ -1450,7 +1450,7 @@ ga:headerLink a owl:ObjectProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Links a website profile to an ordered navigation entry with a title, URL and order."@en ;
     dct:description "Links a website profile to an ordered navigation entry with a title, URL and order."@en ;
-    skos:scopeNote "Entries use dct:title, ga:url and distinct ga:order values. Relative URLs resolve from the website root. Up to sixteen project entries are supported."@en ;
+    skos:scopeNote "Entries use dct:title, ga:url and distinct ga:order values. A ga:url is an absolute http or https URL, or a URL relative to the website root, such as spec/main/, which each page links relative to itself so that it follows the hosting mount. Host-relative paths with a leading slash, backslashes and parent segments are rejected, as is any target resolving outside the website root. Up to sixteen project entries are supported."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range rdfs:Resource .
 
@@ -1522,7 +1522,9 @@ ga:NavigationEntry a owl:Class ;
     rdfs:label "Navigation entry"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "One occurrence in a navigation tree, with its own label, order and parent independent of the destination page."@en ;
-    dct:description "One occurrence in a navigation tree, with its own label, order and parent independent of the destination page."@en .
+    dct:description "One occurrence in a navigation tree, with its own label, order and parent independent of the destination page."@en ;
+    skos:scopeNote "An entry reaches a ga:page, a ga:url, or neither when it only groups children. A ga:url is an absolute http, https or mailto URL, or a URL relative to the website root, such as spec/main/ for a publication deployed beside the website. Each page links a relative URL relative to itself, so the definitions never name the deployment location chosen by the hosting profile. Host-relative paths with a leading slash, backslashes and parent segments are rejected, as is any target resolving outside the website root."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> . @prefix dct: <http://purl.org/dc/terms/> . <urn:example:specification-entry> a ga:NavigationEntry ; dct:title \"Specification\" ; ga:url \"spec/main/\" ; ga:order 1 ." .
 
 ga:navigation a owl:ObjectProperty ;
     rdfs:label "Website navigation"@en ;

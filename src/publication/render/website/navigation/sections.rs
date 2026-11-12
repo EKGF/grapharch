@@ -1,7 +1,7 @@
 //! Section ownership follows explicit primary navigation and existing page
 //! ancestry.
 use {
-    super::{Catalog, Entry, Tree},
+    super::{Catalog, Entry, SiteLink, Tree},
     anyhow::{Result, ensure},
     std::collections::BTreeMap,
 };
@@ -74,12 +74,11 @@ impl Sections {
                 }
             });
             tree.entries.insert(page.id.as_str().to_owned(), Entry {
-                label:    page.title.clone(),
-                parent:   page.parent.as_ref().map(|p| p.as_str().to_owned()),
-                order:    page.order,
-                href:     Some(page.route.clone()),
-                page:     Some(page.id.as_str().to_owned()),
-                external: false,
+                label:  page.title.clone(),
+                parent: page.parent.as_ref().map(|p| p.as_str().to_owned()),
+                order:  page.order,
+                href:   Some(SiteLink::page(page.route.clone())),
+                page:   Some(page.id.as_str().to_owned()),
             });
         }
         for (owner, tree) in &mut sidebars {

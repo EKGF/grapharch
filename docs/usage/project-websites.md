@@ -19,8 +19,12 @@ there is no application framework or Node.js runtime in the published artifact.
     ga:style "ekgf-project" ;
     ga:headerLink <urn:example:specification> .
 <urn:example:specification> dct:title "Specification" ;
-    ga:url "https://example.org/spec/" ; ga:order 1 .
+    ga:url "spec/" ; ga:order 1 .
 ```
+
+A relative `ga:url`, such as `spec/`, resolves from the website root on every
+page and follows the hosting mount. Absolute `http` and `https` URLs link
+elsewhere. Host-relative paths, backslashes and parent segments are rejected.
 
 Use ordinary Markdown and the same page frontmatter as a documentation site.
 The content before the first level-two heading forms the hero. Level-two headings

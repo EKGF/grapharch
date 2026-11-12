@@ -113,6 +113,9 @@ async fn project_header_rejects_missing_titles_and_unsafe_urls() -> Result<()> {
         "ga:url \"https://example.org/\"; ga:order 1",
         "dct:title \"Unsafe\"; ga:url \"javascript:alert(1)\"; ga:order 1",
         "dct:title \"Traversal\"; ga:url \"../elsewhere/\"; ga:order 1",
+        "dct:title \"Host\"; ga:url \"/elsewhere/\"; ga:order 1",
+        "dct:title \"Network\"; ga:url \"//cdn.example.org/\"; ga:order 1",
+        "dct:title \"Encoded\"; ga:url \"%2e%2e/elsewhere/\"; ga:order 1",
     ] {
         let source = tempfile::tempdir()?;
         let definitions = source.path().join("project.ttl");

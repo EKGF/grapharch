@@ -176,7 +176,9 @@ ga:CollectionTermShape a sh:NodeShape ;
 ga:HeaderNavigationShape a sh:NodeShape ;
     sh:targetObjectsOf ga:headerLink ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path dct:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:Literal ] ;
-    sh:property [ sh:path ga:url ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+    sh:property [ sh:path ga:url ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ;
+        sh:not [ sh:pattern "^/" ] ; sh:not [ sh:pattern "\\\\" ] ;
+        sh:description "An absolute http or https URL, or a URL relative to the website root without a leading slash, backslash or parent segment."@en ] ;
     sh:property [ sh:path ga:order ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] .
 
 ga:PublicationInventoryVisibilityShape a sh:NodeShape ;
@@ -227,7 +229,9 @@ ga:NavigationShape a sh:NodeShape ; sh:targetClass ga:Navigation ; sh:nodeKind s
 ga:NavigationEntryShape a sh:NodeShape ; sh:targetClass ga:NavigationEntry ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:parentEntry ; sh:nodeKind sh:IRI ; sh:class ga:NavigationEntry ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:page ; sh:nodeKind sh:IRI ; sh:class ga:Page ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:url ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:url ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ;
+        sh:not [ sh:pattern "^/" ] ; sh:not [ sh:pattern "\\\\" ] ;
+        sh:description "An absolute http, https or mailto URL, or a URL relative to the website root without a leading slash, backslash or parent segment."@en ] ;
     sh:property [ sh:path ga:headingAnchor ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
