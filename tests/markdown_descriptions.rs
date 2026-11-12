@@ -94,8 +94,9 @@ async fn markdown_annotations_render_from_restored_kg_without_duplicate_definiti
     assert!(!body.contains("Short class definition."));
     assert!(!body.contains("Texte français"));
     assert!(
-        body.contains("### Rich explanation"),
-        "rich headings must nest inside the resource heading"
+        body.contains("**Rich explanation**") &&
+            !body.contains("# Rich explanation"),
+        "description headings are run-in headings of the term, not sections"
     );
     assert!(
         body.contains("# Not a heading"),
@@ -137,14 +138,19 @@ async fn markdown_annotations_render_from_restored_kg_without_duplicate_definiti
     assert!(html.contains("An untagged <strong>rich</strong> description."));
     assert!(!html.contains("Ne pas publier ce texte."));
     let doc = scraper::Html::parse_document(&html);
-    assert!(
-        doc.select(&scraper::Selector::parse("h4").unwrap())
-            .any(|h| h.text().collect::<String>().contains("Rich explanation"))
-    );
-    assert!(
-        doc.select(&scraper::Selector::parse("h5").unwrap())
-            .any(|h| h.text().collect::<String>().contains("Details"))
-    );
+    let headings = scraper::Selector::parse("h1,h2,h3,h4,h5,h6").unwrap();
+    for text in ["Rich explanation", "Details"] {
+        // The ontology's own introduction nests its headings under the
+        // chapter; the term descriptions sharing this text must not.
+        assert_eq!(
+            doc.select(&headings)
+                .filter(|h| h.text().collect::<String>().contains(text))
+                .count(),
+            1,
+            "term description heading {text} must not become a section"
+        );
+        assert!(html.contains(&format!("<strong>{text}</strong>")));
+    }
     let typst =
         std::fs::read_to_string(publication.directory.join("main.typ"))?;
     assert!(typst.contains("#heading(level: 3)"));
@@ -510,3 +516,6 @@ mod qualified_counts;
 
 #[path = "ontology_family/identity_table.rs"]
 mod identity_table;
+
+#[path = "ontology_family/dublin_core_dates.rs"]
+mod dublin_core_dates;
