@@ -87,9 +87,13 @@ async fn contributors_default_to_surnames_in_html_and_pdf_from_restored_kg()
     let (html, typst) = render("").await?;
     assert_eq!(role_names(&html, "Editors:"), NAMES);
     assert_eq!(role_names(&html, "Authors:"), NAMES);
+    let authors = NAMES
+        .iter()
+        .map(|name| format!("\"{name}\", "))
+        .collect::<String>();
     assert!(
-        typst.contains(&NAMES.join(", ")),
-        "PDF author metadata uses the same order"
+        typst.contains(&format!("author: ({authors})")),
+        "PDF author metadata lists each author in the same order"
     );
     Ok(())
 }

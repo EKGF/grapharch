@@ -93,7 +93,8 @@ A specification target requires these graph assertions:
 | `ga:latestVersion` | Absolute HTTP(S) IRI identifying the latest publication |
 
 Optional target predicates are `ga:previousVersion`, `ga:editorDraft`, `ga:editor`,
-`ga:author`, `ga:formerEditor`, `ga:license`, and `ga:copyright`. Editors are IRIs with `dcterms:title`, optional
+`ga:author`, `ga:formerEditor`, `ga:license`, `ga:copyright`, and repeated
+`ga:keyword` strings for the PDF keyword metadata. Editors are IRIs with `dcterms:title`, optional
 `ga:affiliation`, and optional `ga:url` literals. A publisher may also have a
 `ga:url` literal. Metadata links require absolute HTTP(S) URLs without credentials.
 People are sorted by family name, then full name and IRI, unless explicit

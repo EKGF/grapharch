@@ -1364,6 +1364,39 @@ ga:pdfTocDepth a owl:DatatypeProperty ; rdfs:label "Book PDF contents depth"@en 
     skos:definition "Sets the maximum heading depth in book PDF contents, independently of HTML navigation depth; bookshelf books default to chapters and sections at depth two."@en ;
     dct:description "Sets the maximum heading depth in book PDF contents, independently of HTML navigation depth; bookshelf books default to chapters and sections at depth two."@en .
 
+ga:PdfStandard a owl:Class ;
+    rdfs:label "PDF conformance standard"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A PDF conformance standard that a publication profile can require of every PDF it produces, enforced while each PDF is exported."@en ;
+    dct:description "A PDF conformance standard that a publication profile can require of every PDF it produces, enforced while each PDF is exported."@en .
+
+ga:PdfUa1 a ga:PdfStandard ;
+    rdfs:label "PDF/UA-1"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "ISO 14289-1 universal accessibility conformance for tagged PDF, identified in the XMP metadata of each conforming PDF as PDF/UA part 1."@en ;
+    dct:description "ISO 14289-1 universal accessibility conformance for tagged PDF, identified in the XMP metadata of each conforming PDF as PDF/UA part 1."@en ;
+    rdfs:seeAlso <https://www.iso.org/standard/64599.html> .
+
+ga:pdfStandard a owl:ObjectProperty ;
+    rdfs:label "Required PDF standard"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Requires every PDF produced through a publication profile, including each bookshelf book, to conform to a PDF standard; publication fails when a document violates it."@en ;
+    dct:description "Requires every PDF produced through a publication profile, including each bookshelf book, to conform to a PDF standard; publication fails when a document violates it."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:PdfStandard ;
+    skos:scopeNote "Every GraphArch PDF is tagged with a logical structure tree, a document language, and bookmarks whether or not a standard is required. ga:PdfUa1 is currently the only supported standard. Typst checks it during export, for example requiring a document title, alternative text for images, and consecutive heading levels, and sets viewers to display the document title. A runtime rejects standard identities it does not implement."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:pdf-profile> a ga:Profile ;\n    ga:pdfStandard ga:PdfUa1 ."@en .
+
+ga:keyword a owl:DatatypeProperty ;
+    rdfs:label "Publication keyword"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Declares one keyword describing a publication target, embedded in the keyword metadata of each PDF the target produces."@en ;
+    dct:description "Declares one keyword describing a publication target, embedded in the keyword metadata of each PDF the target produces."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Repeat the property for several keywords, at most 64. Each value is one non-empty xsd:string without surrounding space, commas, or semicolons. PDFs list the keywords in lexical order."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:pdf> ga:keyword \"ontology\", \"identifiers\" ."@en .
+
 ga:BookPublication a owl:Class ; rdfs:label "Book publication operation"@en ; rdfs:subClassOf ga:Operation ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "An observed per-book publication operation recording its resolved plan, pinned revision, execution outcome, and generated artifact provenance."@en ;
     dct:description "An observed per-book publication operation recording its resolved plan, pinned revision, execution outcome, and generated artifact provenance."@en .

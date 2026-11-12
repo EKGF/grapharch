@@ -160,7 +160,7 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                 "ga:{name} a ?kind . VALUES ?kind {{ owl:Class \
                  owl:ObjectProperty owl:DatatypeProperty \
                  owl:AnnotationProperty ga:Renderer ga:Collector \
-                 ga:Documentor ga:ShowcaseRunner }}"
+                 ga:Documentor ga:ShowcaseRunner ga:PdfStandard }}"
             ),
         )? {
             missing.push(name);

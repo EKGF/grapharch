@@ -126,6 +126,7 @@ async fn books(plan: &Plan, catalog: &Catalog) -> Result<Vec<Book>> {
 pub(super) fn compiler_digest() -> String {
     let mut hash = Sha256::new();
     hash.update(include_str!("engine.rs"));
+    hash.update(include_str!("pdf_standard.rs"));
     hash.update(include_str!("../../../Cargo.lock"));
     for bytes in [
         include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),

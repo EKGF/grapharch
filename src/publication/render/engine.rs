@@ -2,6 +2,7 @@
 //! blocking workers; no source graph or corpus is hydrated into this world.
 
 use {
+    super::pdf_standard::PdfConformance,
     anyhow::{Result, ensure},
     std::{path::PathBuf, sync::Arc},
     typst::{
@@ -16,7 +17,6 @@ use {
     },
     typst_kit::fonts::{FontStore, embedded},
     typst_layout::PagedDocument,
-    typst_pdf::PdfOptions,
 };
 
 pub(super) struct Assets {
@@ -158,11 +158,11 @@ pub(super) async fn compile_file(
             "Typst document laid out"
         );
         let pdf_started = std::time::Instant::now();
-        let pdf = typst_pdf::pdf(&document, &PdfOptions::default()).map_err(
-            |diagnostics| {
+        let options = PdfConformance::of(&document)?.options()?;
+        let pdf =
+            typst_pdf::pdf(&document, &options).map_err(|diagnostics| {
                 anyhow::anyhow!("PDF generation failed: {diagnostics:?}")
-            },
-        )?;
+            })?;
         tracing::info!(
             elapsed_ms = pdf_started.elapsed().as_millis(),
             bytes = pdf.len(),

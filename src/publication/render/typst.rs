@@ -70,7 +70,14 @@ pub(super) async fn begin_book(
     if authors.is_empty() {
         authors.push(publisher.clone());
     }
-    let author = quote(&authors.join(", "));
+    let metadata = super::document_metadata::DocumentMetadata::read(
+        plan, book_title, authors,
+    )
+    .await?
+    .typst();
+    let conformance = super::pdf_standard::PdfConformance::read(plan)
+        .await?
+        .typst();
     let mut front = String::new();
     let mut release = String::new();
     for (field, label) in [
@@ -106,16 +113,14 @@ pub(super) async fn begin_book(
     file.write_all(
         format!(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \
-             Scope: {}\n// Profile: {}\n#set document(title: {}, author: \
-             {author}, date: none)\n#let ga-style = {}\n#let ga-accent = \
-             rgb({})\n#let ga-title = {}\n#let ga-publisher = {}\n#let \
-             ga-ribbon = {ribbon}\n",
+             Scope: {}\n// Profile: {}\n{metadata}#let ga-style = {}\n#let \
+             ga-accent = rgb({})\n#let ga-title = {}\n#let ga-publisher = \
+             {}\n#let ga-ribbon = {ribbon}\n",
             plan.project,
             plan.target,
             plan.revision,
             plan.scope,
             plan.profile,
-            quote(book_title),
             quote(style.name),
             quote(&style.accent),
             quote(book_title),
@@ -217,7 +222,7 @@ pub(super) async fn begin_book(
     };
     file.write_all(
         format!(
-            "\n#ga-cover(ga-publisher, ga-title, [{subtitle}], \
+            "\n{conformance}#ga-cover(ga-publisher, ga-title, [{subtitle}], \
              [{front}])\n#pagebreak()\n{front_numbering}{legal}#outline(title: \
              [Contents], depth: \
              {toc_depth})\n#pagebreak()\n{body_numbering}#counter(heading).\

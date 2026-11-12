@@ -38,9 +38,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         if let Some(icon) =
                             crate::publication::icon::Icon::parse_uri(dest_url)?
                         {
+                            // Decorative, like the hidden HTML icon: an
+                            // artifact is not read by assistive technology.
                             output.push_str(&format!(
-                                "#box[#image(bytes({}), format: \"svg\", \
-                                 width: {}em)]",
+                                "#box[#pdf.artifact[#image(bytes({}), format: \
+                                 \"svg\", width: {}em)]]",
                                 quote(icon.svg()),
                                 if icon.large { 2 } else { 1 }
                             ));
