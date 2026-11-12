@@ -470,11 +470,9 @@ async fn build(
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
     let target = NamedNode::new(target)?;
     ensure!(
-        matches!(
-            view.renderer(&target).await?.as_str(),
-            "specification" | "specification-pages" | "bookshelf"
-        ),
-        "family target requires a specification renderer"
+        view.renderer(&target).await?.publishes_family(),
+        "family target {target} requires a specification, \
+         specification-pages, bookshelf or typst renderer"
     );
     let profile = view.node(&target, "profile").await?;
     let scope = view.node(&target, "scope").await?;

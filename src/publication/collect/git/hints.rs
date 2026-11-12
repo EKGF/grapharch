@@ -225,8 +225,9 @@ impl PublicationHints {
         let Some((primary, profile)) = primary else {
             bail!(
                 "no selected target of {} publishes a family: a family target \
-                 needs a specification, specification-pages or bookshelf \
-                 renderer and a profile declaring artpub:publishesFamily ({})",
+                 needs a specification, specification-pages, bookshelf or \
+                 typst renderer and a profile declaring \
+                 artpub:publishesFamily ({})",
                 self.project,
                 selected
                     .iter()
@@ -268,10 +269,8 @@ impl PublicationHints {
         else {
             bail!("target {target} ga:renderer must be an IRI")
         };
-        Ok(matches!(
-            crate::publication::Renderer::from_node(renderer)?.as_str(),
-            "specification" | "specification-pages" | "bookshelf"
-        ))
+        Ok(crate::publication::Renderer::from_node(renderer)?
+            .publishes_family())
     }
 }
 
