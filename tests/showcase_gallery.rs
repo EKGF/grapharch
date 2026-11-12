@@ -76,9 +76,27 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     config["target"] = "urn:ekgf-family:specification".into();
     config["source"]["url"] = url.into();
     config["source"]["ref"] = commit.into();
+    // Its single explicit target replaces the live hinted target selection.
+    config
+        .as_mapping_mut()
+        .unwrap()
+        .remove("targets")
+        .expect("the live showcase selects hinted targets");
     std::fs::write(
         family.join("showcase.yaml"),
         serde_yaml::to_string(&config)?,
+    )?;
+    let text = std::fs::read_to_string(&registry)?;
+    let live = "ga:previewPath \"spec/main/index.html\" ; ga:pdfPath \
+                \"documents/main/document.pdf\"";
+    assert_eq!(text.matches(live).count(), 1);
+    std::fs::write(
+        &registry,
+        text.replace(
+            live,
+            "ga:previewPath \"specification/index.html\" ; ga:pdfPath \
+             \"specification/document.pdf\"",
+        ),
     )?;
     // Live HTTP corpora use explicit synthetic local transports in this offline
     // gallery test; their dedicated acceptance tests exercise original sources.

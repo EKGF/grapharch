@@ -77,7 +77,10 @@ The [ontology-family guide](ontology-families.md) shows how to run the EKGF fami
 from a remote repository, a local checkout, or the separate offline acceptance corpus.
 The published gallery fetches the latest default branch declared in
 `examples/ekg-ontologies/showcase.yaml`; its downloadable KG records the concrete
-commit observed by each build.
+commit observed by each build. The repository registers a website, a paginated
+family reference (`spec/main/`) and a PDF edition (`documents/main/`). The
+showcase selects the reference and the PDF: the website reads Markdown pages
+that the repository's RDF does not locate.
 
 ## Adding a showcase
 

@@ -258,6 +258,7 @@ async fn repository_publication_hints_can_live_inside_an_ontology_without_local_
         "HEAD",
         &root.path().join("cache"),
         None,
+        &grapharch::publication::collect::git::TargetSelection::All,
     )
     .await?;
     let checkout = root.path().join("remote/checkout");
@@ -363,6 +364,7 @@ async fn filesystem_discovery_preserves_the_selected_dataset_for_directory_and_c
         dataset,
         FamilySource::Directory(&source),
         None,
+        &grapharch::publication::collect::git::TargetSelection::All,
         2,
     )
     .await?;
@@ -375,6 +377,7 @@ async fn filesystem_discovery_preserves_the_selected_dataset_for_directory_and_c
         dataset,
         FamilySource::LocalRepository(&remote.join("checkout")),
         Some(std::path::Path::new("publication/grapharch.ttl")),
+        &grapharch::publication::collect::git::TargetSelection::All,
         2,
     )
     .await?;
@@ -398,9 +401,14 @@ async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_wit
     // returned.
     let remote = root.path().join("remote");
     let (url, commit) = family_repository::bare_copy(&source, &remote)?;
-    let prepared =
-        remote_publication(&url, "HEAD", &root.path().join("cache"), None)
-            .await?;
+    let prepared = remote_publication(
+        &url,
+        "HEAD",
+        &root.path().join("cache"),
+        None,
+        &grapharch::publication::collect::git::TargetSelection::All,
+    )
+    .await?;
     let expected_origin =
         url::Url::from_file_path(remote.join("remote.git").canonicalize()?)
             .unwrap()
@@ -418,6 +426,7 @@ async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_wit
             "HEAD",
             &root.path().join("offline-probe"),
             None,
+            &grapharch::publication::collect::git::TargetSelection::All,
         )
         .await
         .is_err(),

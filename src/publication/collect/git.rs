@@ -24,15 +24,18 @@ mod documentation;
 pub use documentation::{documentation_source, remote_documentation};
 pub(crate) mod hints;
 mod provenance;
+mod selection;
 pub use {
     blob::{GitMarkdownFile, PinnedGitBlob},
     code::GitCodeFile,
+    selection::{FamilyTargets, TargetSelection},
 };
 
+/// A pinned repository scan and the publication targets its hints select.
 pub struct DiscoveredRepository {
     pub scan:    RepositoryScan,
     pub project: String,
-    pub target:  String,
+    pub targets: FamilyTargets,
 }
 
 pub struct RepositoryScan {
@@ -185,12 +188,13 @@ pub async fn remote_repository(
     .await?
 }
 /// Fetch once and discover upstream-owned publication hints from that pinned
-/// tree.
+/// tree, resolving the selected targets against the targets they register.
 pub async fn remote_publication(
     url: &str,
     reference: &str,
     cache: &Path,
     hints_path: Option<&Path>,
+    selection: &TargetSelection,
 ) -> Result<DiscoveredRepository> {
     ensure!(
         !reference.is_empty(),
@@ -202,6 +206,7 @@ pub async fn remote_publication(
         cache.to_owned(),
         hints_path.map(Path::to_owned),
     );
+    let selection = selection.clone();
     tokio::task::spawn_blocking(move || {
         let (scan, hints) = scan_remote_selected(
             &url,
@@ -216,11 +221,15 @@ pub async fn remote_publication(
                 "publication hint discovery did not return identities"
             )
         })?;
-        Ok(DiscoveredRepository {
-            scan,
-            project: hints.project,
-            target: hints.target,
-        })
+        let origin = scan.provenance.identity()?.source.to_owned();
+        let targets = hints.select(&selection).with_context(|| {
+            format!(
+                "select publication targets of {origin} at resolved Git \
+                 commit {}",
+                scan.commit
+            )
+        })?;
+        Ok(DiscoveredRepository { scan, project: hints.project, targets })
     })
     .await?
 }
