@@ -29,6 +29,7 @@ mod rdf_tables;
 mod record;
 mod specification;
 mod typst;
+mod typst_breaks;
 mod typst_markdown;
 mod typst_style;
 mod website;

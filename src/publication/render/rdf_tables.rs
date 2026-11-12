@@ -1,5 +1,8 @@
 //! Shared semantics for the generated RDF predicate/value table projection.
-use pulldown_cmark::{Event, Tag, TagEnd};
+use {
+    super::typst_breaks::Breakable,
+    pulldown_cmark::{Event, Tag, TagEnd},
+};
 
 pub(super) fn matches(events: &[Event<'_>], index: usize) -> bool {
     let Some(header) = events.get(index + 1..index + 9) else {
@@ -59,16 +62,10 @@ pub(super) fn subject_typst(
     subject: &crate::publication::table_subject::Subject,
 ) -> String {
     format!(
-        "table.cell(colspan: 2, align: center)[#raw({})],table.cell(colspan: \
-         2, align: center)[#raw({})],",
-        super::markup::quote(&super::typst_markdown::table_text(
-            &subject.identifier,
-            true
-        )),
-        super::markup::quote(&super::typst_markdown::table_text(
-            &subject.iri,
-            true
-        ))
+        "table.cell(colspan: 2, align: center)[{}],table.cell(colspan: 2, \
+         align: center)[{}],",
+        Breakable::table(&subject.identifier, true).raw(),
+        Breakable::table(&subject.iri, true).raw()
     )
 }
 
@@ -99,7 +96,7 @@ mod tests {
 
         assert!(typst.contains("table.cell(colspan: 2,"));
         assert!(
-            typst.contains('\u{200b}'),
+            typst.contains("#ga-wrap-raw("),
             "identity must retain table wrapping opportunities"
         );
         Ok(())

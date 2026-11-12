@@ -8,6 +8,11 @@
 #let ga-soft = if ga-omg { rgb("#f4f4f4") } else { ga-accent.lighten(94%) }
 #let ga-heading = if ga-specification or ga-overview { ga-accent } else { ga-ink }
 #let ga-running(text, limit: 55) = if text.clusters().len() > limit { text.clusters().slice(0, limit - 3).join() + "..." } else { text }
+// Line-break opportunities inside long identifiers. An empty inline box is a
+// Unicode contingent break; unlike U+200B it adds no character to the text
+// that readers copy, search and hear.
+#let ga-wrap(..pieces) = pieces.pos().join(box())
+#let ga-wrap-raw(..pieces) = pieces.pos().map(raw).join(box())
 #set text(font: if ga-omg { "Liberation Serif" } else { "Liberation Sans" }, size: if ga-omg { 10pt } else if ga-overview { 11pt } else if ga-specification { 10pt } else { 10.5pt }, fill: ga-ink, lang: "en", hyphenate: not ga-overview)
 #set par(justify: not ga-overview, leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em)
 #set list(indent: 1.2em, body-indent: 0.5em, spacing: 1em)

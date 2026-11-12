@@ -276,10 +276,11 @@ pub(super) async fn typst(
         for issue in &group.issues {
             file.write_all(
                 format!(
-                    "#list([#text({})",
-                    super::markup::quote(&presentation::wrappable(
+                    "#list([{}",
+                    super::typst_breaks::Breakable::identifier(
                         &issue.reference
-                    ))
+                    )
+                    .text()
                 )
                 .as_bytes(),
             )

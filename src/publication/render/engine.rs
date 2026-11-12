@@ -6,35 +6,35 @@ use {
     std::{path::PathBuf, sync::Arc},
     typst::{
         Library,
+        LibraryExt,
         World,
         diag::FileError,
-        foundations::{Bytes, Datetime},
-        layout::PagedDocument,
-        syntax::{FileId, Source, VirtualPath},
+        foundations::{Bytes, Datetime, Duration},
+        syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot},
         text::{Font, FontBook},
         utils::LazyHash,
     },
-    typst_kit::fonts::{FontSlot, Fonts},
+    typst_kit::fonts::{FontStore, embedded},
+    typst_layout::PagedDocument,
     typst_pdf::PdfOptions,
 };
 
 pub(super) struct Assets {
     library: LazyHash<Library>,
-    book:    LazyHash<FontBook>,
     // bounded: fixed embedded font assets, independent of graph/document size.
-    fonts:   Vec<FontSlot>,
-    sans:    Vec<Font>,
+    fonts:   FontStore,
 }
 
 impl Assets {
     pub async fn load() -> Result<Arc<Self>> {
         tokio::task::spawn_blocking(|| {
-            let fonts = Fonts::searcher().include_system_fonts(false).search();
+            let mut fonts = FontStore::new();
+            fonts.extend(embedded());
             ensure!(
-                !fonts.fonts.is_empty(),
+                fonts.font(0).is_some(),
                 "Typst requires the embedded font assets"
             );
-            let sans = [
+            let liberation = [
                 include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
                 include_bytes!("fonts/LiberationSerif-Regular.ttf").as_slice(),
                 include_bytes!("fonts/LiberationSerif-Bold.ttf").as_slice(),
@@ -49,18 +49,17 @@ impl Assets {
             .into_iter()
             .map(|bytes| {
                 Font::new(Bytes::new(bytes), 0)
+                    .map(|font| {
+                        let info = font.info().clone();
+                        (font, info)
+                    })
                     .ok_or_else(|| anyhow::anyhow!("invalid embedded PDF font"))
             })
             .collect::<Result<Vec<_>>>()?;
-            let mut book = fonts.book;
-            for font in &sans {
-                book.push(font.info().clone());
-            }
+            fonts.extend(liberation);
             Ok(Arc::new(Self {
                 library: LazyHash::new(Library::default()),
-                book: LazyHash::new(book),
-                fonts: fonts.fonts,
-                sans,
+                fonts,
             }))
         })
         .await?
@@ -73,45 +72,47 @@ struct DocumentWorld {
     main:   FileId,
 }
 
+impl DocumentWorld {
+    /// Resolves a project file below the publication root. Packages are never
+    /// fetched: the rendered source is self-contained.
+    fn path(&self, id: FileId) -> std::result::Result<PathBuf, FileError> {
+        match id.root() {
+            VirtualRoot::Project => Ok(id.vpath().realize(&self.root)?),
+            VirtualRoot::Package(_) => {
+                Err(FileError::NotFound(PathBuf::from(
+                    id.vpath().get_without_slash(),
+                )))
+            },
+        }
+    }
+}
+
 impl World for DocumentWorld {
     fn library(&self) -> &LazyHash<Library> { &self.assets.library }
 
-    fn book(&self) -> &LazyHash<FontBook> { &self.assets.book }
+    fn book(&self) -> &LazyHash<FontBook> { self.assets.fonts.book() }
 
     fn main(&self) -> FileId { self.main }
 
     fn source(&self, id: FileId) -> std::result::Result<Source, FileError> {
-        let path = self.root.join(id.vpath().as_rootless_path());
-        if id.package().is_some() {
-            return Err(FileError::NotFound(path));
-        }
+        let path = self.path(id)?;
         std::fs::read_to_string(&path)
             .map(|source| Source::new(id, source))
             .map_err(|error| FileError::from_io(error, &path))
     }
 
     fn file(&self, id: FileId) -> std::result::Result<Bytes, FileError> {
-        let path = self.root.join(id.vpath().as_rootless_path());
-        if id.package().is_some() {
-            return Err(FileError::NotFound(path));
-        }
+        let path = self.path(id)?;
         std::fs::read(&path)
             .map(Bytes::new)
             .map_err(|error| FileError::from_io(error, &path))
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        if index < self.assets.fonts.len() {
-            self.assets.fonts.get(index)?.get()
-        } else {
-            self.assets
-                .sans
-                .get(index - self.assets.fonts.len())
-                .cloned()
-        }
+        self.assets.fonts.font(index)
     }
 
-    fn today(&self, _offset: Option<i64>) -> Option<Datetime> { None }
+    fn today(&self, _offset: Option<Duration>) -> Option<Datetime> { None }
 }
 
 pub(super) async fn compile(
@@ -134,7 +135,12 @@ pub(super) async fn compile_file(
         let world = DocumentWorld {
             root,
             assets,
-            main: FileId::new(None, VirtualPath::new(main)),
+            main: FileId::new(RootedPath::new(
+                VirtualRoot::Project,
+                VirtualPath::new(&main).map_err(|error| {
+                    anyhow::anyhow!("invalid Typst main file {main}: {error}")
+                })?,
+            )),
         };
         let started = std::time::Instant::now();
         let result = typst::compile::<PagedDocument>(&world);
@@ -148,7 +154,7 @@ pub(super) async fn compile_file(
         );
         tracing::info!(
             elapsed_ms = started.elapsed().as_millis(),
-            pages = document.pages.len(),
+            pages = document.pages().len(),
             "Typst document laid out"
         );
         let pdf_started = std::time::Instant::now();

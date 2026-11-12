@@ -1,5 +1,8 @@
 use {
-    super::markup::{Markdown, quote},
+    super::{
+        markup::{Markdown, quote},
+        typst_breaks::Breakable,
+    },
     anyhow::{Result, bail},
     pulldown_cmark::{Alignment, CodeBlockKind, Event, Tag, TagEnd},
 };
@@ -257,13 +260,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                 if let Some(code) = &mut code {
                     code.push_str(text);
                 } else {
-                    let text = table_text(text, in_table);
-                    output.push_str(&format!("#text({})", quote(&text)));
+                    output.push_str(&Breakable::table(text, in_table).text());
                 }
             },
             Event::Code(text) => {
-                let text = table_text(text, in_table);
-                output.push_str(&format!("#raw({})", quote(&text)))
+                output.push_str(&Breakable::table(text, in_table).raw())
             },
             Event::SoftBreak => output.push(' '),
             Event::HardBreak => output.push_str("#linebreak()\n"),
@@ -284,39 +285,6 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     }
     containers.finish()?;
     Ok(output)
-}
-
-// Presentation-only break opportunities preserve the full label and
-// destination. Long ASCII identifier tokens have no language hyphenation
-// points. Leave ordinary prose and non-ASCII grapheme clusters untouched.
-pub(super) fn table_text(
-    value: &str,
-    in_table: bool,
-) -> std::borrow::Cow<'_, str> {
-    if !in_table ||
-        !value
-            .split_whitespace()
-            .any(|token| token.len() > 24 && token.is_ascii())
-    {
-        return std::borrow::Cow::Borrowed(value);
-    }
-    let mut output = String::with_capacity(value.len());
-    for token in value.split_inclusive(char::is_whitespace) {
-        if token.trim_end().len() > 24 && token.is_ascii() {
-            let mut chars = token.chars().peekable();
-            while let Some(ch) = chars.next() {
-                output.push(ch);
-                if ch.is_ascii_alphanumeric() &&
-                    chars.peek().is_some_and(char::is_ascii_alphanumeric)
-                {
-                    output.push('\u{200b}');
-                }
-            }
-        } else {
-            output.push_str(token);
-        }
-    }
-    std::borrow::Cow::Owned(output)
 }
 
 // An image cannot split across pages. Its paragraph must not emit an empty
@@ -341,25 +309,7 @@ fn standalone_image(events: &[Event<'_>]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use {
-        super::{standalone_image, table_text},
-        pulldown_cmark::Parser,
-    };
-
-    #[test]
-    fn table_identifier_breaks_preserve_text_and_do_not_change_prose() {
-        let label = "dprod-shapes:RejectMixedLifecycleStatusOnDataOfferShape";
-        let wrapped = table_text(label, true);
-        assert!(wrapped.contains('\u{200b}'));
-        assert_eq!(wrapped.replace('\u{200b}', ""), label);
-        assert_eq!(table_text(label, false), label);
-        assert_eq!(
-            table_text("ordinary prose and short names", true),
-            "ordinary prose and short names"
-        );
-        let combining = "e\u{301}".repeat(30);
-        assert_eq!(table_text(&combining, true), combining);
-    }
+    use {super::standalone_image, pulldown_cmark::Parser};
 
     #[test]
     fn only_image_only_paragraphs_are_atomic() {
