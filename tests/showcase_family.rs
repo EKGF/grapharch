@@ -4,7 +4,7 @@ mod definitions;
 use anyhow::Result;
 
 #[test]
-fn published_family_showcase_follows_the_remote_default_branch_instead_of_corpus()
+fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
 -> Result<()> {
     let config: serde_yaml::Value = serde_yaml::from_str(
         &std::fs::read_to_string("examples/ekg-ontologies/showcase.yaml")?,
@@ -14,7 +14,12 @@ fn published_family_showcase_follows_the_remote_default_branch_instead_of_corpus
         config["source"]["url"].as_str(),
         Some("https://github.com/EKGF/ekg-ontologies.git")
     );
-    assert_eq!(config["source"]["ref"].as_str(), Some("HEAD"));
+    // Temporary exact pin until the EKG migration lands upstream; restore
+    // `HEAD` then (see examples/ekg-ontologies/showcase.yaml).
+    assert_eq!(
+        config["source"]["ref"].as_str(),
+        Some("6bd93ab7c9430804e99b3913f0926d0070eb44a3")
+    );
     assert!(
         include_str!("../examples/showcases.ttl")
             .contains("ga:source \"ekg-ontologies/showcase.yaml\"")

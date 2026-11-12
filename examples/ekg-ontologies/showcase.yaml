@@ -1,10 +1,16 @@
 # Published gallery transport. Publication hints are owned by the upstream RDF.
+#
+# TEMPORARY PIN: ekg-ontologies main (from 9093764) emits relative links
+# (documentation.nq, ../../) that the gallery relative-link guard rejects. The
+# gallery stays on 6bd93ab, the last upstream commit that passes the current
+# engine (it publishes spec/develop), until the EKG migration (website content
+# source in RDF, links by IRI) lands upstream. Restore `ref: HEAD`, the PDF
+# target and the spec/main gallery preview then.
 source:
   kind: git
   url: https://github.com/EKGF/ekg-ontologies.git
-  ref: HEAD
-# The family build publishes the family targets. The upstream website target
-# reads site pages that the repository's RDF does not locate.
+  ref: 6bd93ab7c9430804e99b3913f0926d0070eb44a3
+# The family build publishes the family targets. 6bd93ab declares only the
+# specification target.
 targets:
   - urn:ekgf-ontologies:documentation:specification
-  - urn:ekgf-ontologies:documentation:pdf
