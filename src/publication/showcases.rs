@@ -49,6 +49,31 @@ struct FamilyShowcase {
     source:             FamilyShowcaseSource,
     #[serde(default)]
     additional_targets: Vec<String>,
+    /// Hinted targets to publish; every registered target when absent.
+    targets:            Option<Vec<String>>,
+}
+
+impl FamilyShowcase {
+    /// The repository-hinted targets this showcase publishes.
+    fn selection(&self) -> Result<super::collect::git::TargetSelection> {
+        use super::collect::git::TargetSelection;
+        let Some(targets) = &self.targets else {
+            return Ok(TargetSelection::All);
+        };
+        TargetSelection::targets(
+            targets
+                .iter()
+                .map(|target| {
+                    NamedNode::new(target).map_err(|error| {
+                        anyhow::anyhow!(
+                            "family showcase target {target} is not an IRI: \
+                             {error}"
+                        )
+                    })
+                })
+                .collect::<Result<_>>()?,
+        )
+    }
 }
 
 #[derive(serde::Deserialize)]
@@ -90,6 +115,21 @@ pub async fn family(
         "family showcase configuration exceeds 64 KiB"
     );
     let config: FamilyShowcase = serde_yaml::from_slice(&bytes)?;
+    let hinted = matches!(config.source, FamilyShowcaseSource::Git { .. }) &&
+        config.definitions.is_none() &&
+        config.project.is_none() &&
+        config.target.is_none();
+    ensure!(
+        hinted || config.targets.is_none(),
+        "family showcase targets select repository-hinted targets; explicit \
+         definitions name their target and additional_targets"
+    );
+    ensure!(
+        !hinted || config.additional_targets.is_empty(),
+        "repository hints register the published targets; select them with \
+         targets, not additional_targets"
+    );
+    let selection = config.selection()?;
     if let FamilyShowcaseSource::RdfUrls { documents } = config.source {
         let (Some(path), Some(project), Some(target)) =
             (config.definitions, config.project, config.target)
@@ -137,6 +177,7 @@ pub async fn family(
                 &reference,
                 cache,
                 hints_path.as_deref(),
+                &selection,
             )
             .await?;
             super::ontology_family::collect_prepared(
@@ -200,8 +241,8 @@ async fn family_targets(
     let revision = view.node(&built.plan.id, "inputRevision").await?;
     let (writer, worker) =
         GraphWriter::spawn(built.dataset.clone(), 8, 4 * 1024 * 1024)?;
-    // bounded: primary publication plus at most eight explicit targets.
-    let mut plans = vec![built.plan];
+    // bounded: at most sixteen selected targets plus eight explicit targets.
+    let mut plans = built.plans;
     let result = async {
         let planner = TargetPlanner::new(built.dataset.clone(), revision);
         for target in additional {

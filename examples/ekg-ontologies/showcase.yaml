@@ -2,4 +2,9 @@
 source:
   kind: git
   url: https://github.com/EKGF/ekg-ontologies.git
-  ref: 6bd93ab7c9430804e99b3913f0926d0070eb44a3
+  ref: HEAD
+# The family build publishes the family targets. The upstream website target
+# reads site pages that the repository's RDF does not locate.
+targets:
+  - urn:ekgf-ontologies:documentation:specification
+  - urn:ekgf-ontologies:documentation:pdf

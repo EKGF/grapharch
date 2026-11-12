@@ -25,8 +25,9 @@ ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and
     ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/ekgf/document.pdf" .
 
 ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;
-    dct:description "A pinned commit of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
-    ga:order 6 ; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner ; ga:source "ekg-ontologies/showcase.yaml" .
+    dct:description "The latest default branch of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
+    ga:order 6 ; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner ; ga:source "ekg-ontologies/showcase.yaml" ;
+    ga:previewPath "spec/main/index.html" ; ga:pdfPath "documents/main/document.pdf" .
 
 ex:skos a ga:Showcase;ga:slug "skos";dct:title "SKOS business data taxonomy";
  dct:description "A native concept scheme, multilingual labels, hierarchy and mapping links, and ordered collection membership become a specification and PDF.";

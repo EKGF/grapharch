@@ -30,7 +30,7 @@ Use `publication build-family` with one source option:
 | Remote Git repository | `--git-repository https://git.example.org/team/ontologies.git --git-ref main` | Files at one resolved commit |
 | GitHub repository | `--github OWNER/REPO --git-ref main` | The same remote Git mode, with a GitHub URL shortcut |
 
-When the source RDF contains one unambiguous `ga:Project` and `ga:Target`,
+When the source RDF contains one unambiguous `ga:Project` with one `ga:Target`,
 GraphArch discovers the publication hints directly:
 
 ```sh
@@ -42,7 +42,17 @@ grapharch publication build-family \
 Hints can live inside an ontology or in a separate RDF file in the same
 repository. The source owns its title, authority, family membership, and
 publication settings. Multiple projects or targets require an explicit selection;
-GraphArch does not choose one arbitrarily.
+GraphArch does not choose one arbitrarily. `build-family` publishes one target, so
+a project registering several needs the override options below.
+
+A gallery family showcase publishes every target the hinted project registers, in
+IRI order, each into its own `ga:destination`. A `targets` list in the showcase
+configuration selects registered targets instead, in its own order. The family
+bindings belong to the profile of the first selected target with a
+specification, specification-pages or bookshelf renderer and an
+`artpub:publishesFamily` profile; every other selected target must use that
+profile. A website or other target with its own profile is rejected rather than
+published without its content.
 
 For external publication definitions, supply all three override options:
 
@@ -232,8 +242,8 @@ specification, companion-site, and approval-PDF publications are described in
 
 These projects are examples and test cases for the general pipeline:
 
-- **EKGF ontology family:** the gallery fetches an exact commit of the remote
-  repository and records it in the downloadable KG. A separate
+- **EKGF ontology family:** the gallery follows the remote repository's latest
+  default branch and records its resolved commit in the downloadable KG. A separate
   offline fixture covers 24 ontologies and 704
   named resources. See
   [the examples guide](examples.md), or browse the

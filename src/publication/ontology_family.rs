@@ -3,7 +3,12 @@
 use {
     super::{
         assembly::Assembler,
-        collect::{Collector, RdfFile, collect_all},
+        collect::{
+            Collector,
+            RdfFile,
+            collect_all,
+            git::{FamilyTargets, TargetSelection},
+        },
         dataset::{Dataset, identity},
         document::{AnnotatedTermDocumentor, Documentor},
         plan::{ResolvedPlan, TargetPlanner},
@@ -27,7 +32,11 @@ const GOVERNANCE: &str = "https://ekgf.org/ontology/artifact-governance#";
 const PUBLICATION: &str = "https://ekgf.org/ontology/artifact-publication#";
 pub struct CollectedFamily {
     pub dataset:        Dataset,
+    /// Plan of the target whose profile receives the family bindings.
     pub plan:           ResolvedPlan,
+    /// Plans of every selected target, including `plan`, in publication
+    /// order. Each publishes into its own declared destination.
+    pub plans:          Vec<ResolvedPlan>,
     pub ontology_count: usize,
     pub term_count:     usize,
 }
@@ -138,7 +147,7 @@ pub async fn collect_from(
         source,
         Some(definitions),
         project,
-        target,
+        &FamilyTargets::single(NamedNode::new(target)?),
         concurrency,
     )
     .await
@@ -158,7 +167,7 @@ pub async fn collect_prepared(
         FamilySource::PreparedRepository(repository.scan),
         None,
         &repository.project,
-        &repository.target,
+        &repository.targets,
         concurrency,
     )
     .await
@@ -175,12 +184,13 @@ pub async fn collect_discovered_from(
     dataset: Dataset,
     source: FamilySource<'_>,
     hints_path: Option<&Path>,
+    selection: &TargetSelection,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
     match source {
         FamilySource::RemoteRepository { url, reference, cache } => {
             let repository = super::collect::git::remote_publication(
-                url, reference, cache, hints_path,
+                url, reference, cache, hints_path, selection,
             )
             .await?;
             collect_prepared(dataset, repository, concurrency).await
@@ -198,12 +208,13 @@ pub async fn collect_discovered_from(
                 )
             })
             .await??;
+            let targets = hints.select(selection)?;
             collect_from_optional(
                 dataset,
                 source,
                 None,
                 &hints.project,
-                &hints.target,
+                &targets,
                 concurrency,
             )
             .await
@@ -227,9 +238,10 @@ async fn collect_from_optional(
     source: FamilySource<'_>,
     definitions: Option<&Path>,
     project: &str,
-    target: &str,
+    targets: &FamilyTargets,
     concurrency: usize,
 ) -> Result<CollectedFamily> {
+    let target = targets.primary().as_str();
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
     let mut managed =
@@ -324,7 +336,7 @@ async fn collect_from_optional(
             &dataset,
             &writer,
             project,
-            target,
+            targets,
             concurrency,
             &mut managed,
         )
@@ -337,8 +349,14 @@ async fn collect_from_optional(
     drop(managed);
     drop(writer);
     worker.await??;
-    let (plan, ontology_count, term_count) = result?;
-    Ok(CollectedFamily { dataset, plan, ontology_count, term_count })
+    let (plans, ontology_count, term_count) = result?;
+    let plan = plans[targets
+        .selected()
+        .iter()
+        .position(|selected| selected == targets.primary())
+        .expect("the primary target is selected")]
+    .clone();
+    Ok(CollectedFamily { dataset, plan, plans, ontology_count, term_count })
 }
 
 async fn file_collectors(
@@ -418,10 +436,11 @@ async fn build(
     dataset: &Dataset,
     writer: &GraphWriter,
     project: &str,
-    target: &str,
+    targets: &FamilyTargets,
     concurrency: usize,
     managed: &mut ManagedFamily,
-) -> Result<(ResolvedPlan, usize, usize)> {
+) -> Result<(Vec<ResolvedPlan>, usize, usize)> {
+    let target = targets.primary().as_str();
     let started = std::time::Instant::now();
     let mut work: Vec<Arc<dyn Collector>> = Vec::new();
     if let Some(definitions) = definitions {
@@ -1263,14 +1282,43 @@ async fn build(
         elapsed_ms = started.elapsed().as_millis(),
         "family revision assembled"
     );
-    let plan = TargetPlanner::new(dataset.clone(), revision)
-        .resolve(project, &target, writer)
-        .await?;
+    let plans = plan_targets(
+        dataset, writer, project, &revision, &profile, targets,
+    )
+    .await?;
     tracing::info!(
         elapsed_ms = started.elapsed().as_millis(),
-        "family target planned"
+        targets = plans.len(),
+        "family targets planned"
     );
-    Ok((plan, ontology_count, term_count))
+    Ok((plans, ontology_count, term_count))
+}
+
+/// Plan every selected target from the one assembled revision. The family
+/// bindings belong to the primary target's profile, so each other target must
+/// select that profile.
+async fn plan_targets(
+    dataset: &Dataset,
+    writer: &GraphWriter,
+    project: &str,
+    revision: &NamedNode,
+    profile: &NamedNode,
+    targets: &FamilyTargets,
+) -> Result<Vec<ResolvedPlan>> {
+    let view = RevisionView::new(dataset.clone(), revision.clone());
+    let planner = TargetPlanner::new(dataset.clone(), revision.clone());
+    // bounded: a selection names at most 16 targets.
+    let mut plans = Vec::with_capacity(targets.selected().len());
+    for target in targets.selected() {
+        let used = view.node(target, "profile").await?;
+        ensure!(
+            &used == profile,
+            "target {target} uses profile {used}, not the family profile \
+             {profile}"
+        );
+        plans.push(planner.resolve(project, target, writer).await?);
+    }
+    Ok(plans)
 }
 async fn vocabulary_labels(
     view: &RevisionView,

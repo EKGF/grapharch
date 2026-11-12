@@ -870,6 +870,8 @@ async fn collect_configured_family(
                 dataset,
                 source,
                 None,
+                // build-family publishes one target.
+                &super::collect::git::TargetSelection::Single,
                 concurrency,
             )
             .await

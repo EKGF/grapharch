@@ -4,7 +4,7 @@ mod definitions;
 use anyhow::Result;
 
 #[test]
-fn published_family_showcase_pins_an_exact_remote_commit_instead_of_corpus()
+fn published_family_showcase_follows_the_remote_default_branch_instead_of_corpus()
 -> Result<()> {
     let config: serde_yaml::Value = serde_yaml::from_str(
         &std::fs::read_to_string("examples/ekg-ontologies/showcase.yaml")?,
@@ -14,13 +14,7 @@ fn published_family_showcase_pins_an_exact_remote_commit_instead_of_corpus()
         config["source"]["url"].as_str(),
         Some("https://github.com/EKGF/ekg-ontologies.git")
     );
-    let reference = config["source"]["ref"].as_str().unwrap_or_default();
-    assert_eq!(
-        reference.len(),
-        40,
-        "family showcase must pin a full commit"
-    );
-    assert!(reference.bytes().all(|byte| byte.is_ascii_hexdigit()));
+    assert_eq!(config["source"]["ref"].as_str(), Some("HEAD"));
     assert!(
         include_str!("../examples/showcases.ttl")
             .contains("ga:source \"ekg-ontologies/showcase.yaml\"")
@@ -264,6 +258,7 @@ async fn repository_publication_hints_can_live_inside_an_ontology_without_local_
         "HEAD",
         &root.path().join("cache"),
         None,
+        &grapharch::publication::collect::git::TargetSelection::All,
     )
     .await?;
     let checkout = root.path().join("remote/checkout");
@@ -369,6 +364,7 @@ async fn filesystem_discovery_preserves_the_selected_dataset_for_directory_and_c
         dataset,
         FamilySource::Directory(&source),
         None,
+        &grapharch::publication::collect::git::TargetSelection::All,
         2,
     )
     .await?;
@@ -381,6 +377,7 @@ async fn filesystem_discovery_preserves_the_selected_dataset_for_directory_and_c
         dataset,
         FamilySource::LocalRepository(&remote.join("checkout")),
         Some(std::path::Path::new("publication/grapharch.ttl")),
+        &grapharch::publication::collect::git::TargetSelection::All,
         2,
     )
     .await?;
@@ -404,9 +401,14 @@ async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_wit
     // returned.
     let remote = root.path().join("remote");
     let (url, commit) = family_repository::bare_copy(&source, &remote)?;
-    let prepared =
-        remote_publication(&url, "HEAD", &root.path().join("cache"), None)
-            .await?;
+    let prepared = remote_publication(
+        &url,
+        "HEAD",
+        &root.path().join("cache"),
+        None,
+        &grapharch::publication::collect::git::TargetSelection::All,
+    )
+    .await?;
     let expected_origin =
         url::Url::from_file_path(remote.join("remote.git").canonicalize()?)
             .unwrap()
@@ -424,6 +426,7 @@ async fn failed_prepared_collection_keeps_the_observed_repository_and_commit_wit
             "HEAD",
             &root.path().join("offline-probe"),
             None,
+            &grapharch::publication::collect::git::TargetSelection::All,
         )
         .await
         .is_err(),
