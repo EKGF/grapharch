@@ -9,6 +9,8 @@ mod pdf;
 mod tokens;
 mod values;
 
+#[cfg(test)]
+pub(crate) use pdf::catalogue_typst;
 pub(crate) use {
     builtin::Builtin,
     cover::{CoverBlock, CoverElement, DateFormat},

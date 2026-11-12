@@ -74,13 +74,13 @@ source, and `documentation.nq`.
 A `ga:TypstRenderer` target publishes a PDF-only edition of the family: its
 destination holds the PDF, its `main.typ` source and the manifest, with no
 single-page HTML copy. Give it its own profile that declares the family and
-`ga:style "specification"` for the specification presentation, including the
+`ga:theme ga:SpecificationTheme` for the specification presentation, including the
 target's status and version metadata:
 
 ```turtle
 <urn:example:pdf-profile> a ga:Profile, artpub:PublicationProfile ;
     artpub:publishesFamily <urn:example:family> ;
-    ga:style "specification" .
+    ga:theme ga:SpecificationTheme .
 
 <urn:example:pdf> a ga:Target ;
     ga:profile <urn:example:pdf-profile> ;

@@ -185,3 +185,36 @@ impl PdfTheme {
         ))
     }
 }
+
+/// The `ga-theme` dictionary of a catalogue theme, for Typst-only tests.
+#[cfg(test)]
+pub(crate) async fn catalogue_typst(theme: Builtin) -> Result<String> {
+    let dataset = crate::publication::dataset::Dataset::memory()?;
+    let project = "urn:grapharch:test:theme";
+    let snapshot = dataset.snapshot_collected_for(project).await?;
+    let view = RevisionView::new(dataset, snapshot);
+    // An undeclared profile selects nothing, so the default applies.
+    let profile = NamedNode::new("urn:grapharch:test:profile")?;
+    PdfTheme::read(&view, &profile, theme).await?.typst()
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn every_catalogue_theme_is_complete() -> anyhow::Result<()> {
+        for theme in [
+            super::Builtin::Reader,
+            super::Builtin::Specification,
+            super::Builtin::Overview,
+            super::Builtin::Ekgf,
+            super::Builtin::EkgfProject,
+        ] {
+            assert!(
+                super::catalogue_typst(theme)
+                    .await?
+                    .contains("#let ga-theme = (")
+            );
+        }
+        Ok(())
+    }
+}

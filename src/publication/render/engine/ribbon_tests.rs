@@ -119,14 +119,18 @@ impl Ribbon {
     }
 }
 
-async fn layout(style: &str, label: &str) -> Result<PagedDocument> {
+async fn layout(
+    style: crate::publication::theme::Builtin,
+    label: &str,
+) -> Result<PagedDocument> {
     let root = tempfile::tempdir()?;
+    let theme = crate::publication::theme::catalogue_typst(style).await?;
     let source = format!(
-        "#let ga-style = \"{style}\"\n#let ga-accent = rgb(\"#2b5f9f\")\n#let \
-         ga-title = \"Ribbon geometry\"\n#let ga-publisher = \"Example \
-         Authority\"\n#let ga-ribbon = \
-         \"{label}\"\n{}\n#ga-cover(ga-publisher, ga-title, [], \
-         [])\n#pagebreak()\n= Chapter\nBody.\n",
+        "#let ga-accent = rgb(\"#2b5f9f\")\n{theme}#let ga-title = \"Ribbon \
+         geometry\"\n#let ga-publisher = \"Example Authority\"\n#let \
+         ga-footer-text = \"Ribbon geometry\"\n#let ga-diagram-note = \
+         true\n#let ga-ribbon = \"{label}\"\n{}\n[Cover]\n#pagebreak()\n= \
+         Chapter\nBody.\n",
         include_str!("../typst/theme.typ")
     );
     std::fs::write(root.path().join("main.typ"), source)?;
@@ -159,7 +163,11 @@ async fn ribbon_label_is_anchored_to_the_top_end_like_the_website() -> Result<()
         "International Council for Open Standards and Interoperability Public \
          review documentation preview for implementing organizations",
     ];
-    for style in ["specification", "reader", "overview"] {
+    for style in [
+        crate::publication::theme::Builtin::Specification,
+        crate::publication::theme::Builtin::Reader,
+        crate::publication::theme::Builtin::Overview,
+    ] {
         for label in labels {
             let document = layout(style, label).await?;
             ensure!(
@@ -168,7 +176,7 @@ async fn ribbon_label_is_anchored_to_the_top_end_like_the_website() -> Result<()
             );
             for (index, page) in document.pages().iter().enumerate() {
                 let ribbon = Ribbon::on(&page.frame);
-                let context = format!("{style} page {} {label:?}", index + 1);
+                let context = format!("{style:?} page {} {label:?}", index + 1);
                 let bar = ribbon.bar.ok_or_else(|| {
                     anyhow::anyhow!("no ribbon bar: {context}")
                 })?;

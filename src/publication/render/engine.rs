@@ -176,14 +176,19 @@ mod tests {
     async fn large_book_running_headers_complete_without_per_page_chapter_scans()
     -> Result<()> {
         let root = tempfile::tempdir()?;
+        let theme = crate::publication::theme::catalogue_typst(
+            crate::publication::theme::Builtin::Specification,
+        )
+        .await?;
         let source = format!(
-            "#let ga-style = \"specification\"\n#let ga-accent = \
-             rgb(\"#2b5f9f\")\n#let ga-title = \"Running header scale \
-             test\"\n#let ga-publisher = \"Example Authority\"\n#let \
-             ga-ribbon = none\n{}\n#for chapter in range(128) {{ \
-             heading(level: 1)[#text(\"Chapter \" + str(chapter))]; for term \
-             in range(128) {{ heading(level: 6, numbering: none)[#text(\"Term \
-             \" + str(term))]; [A bounded header performance fixture.]; }}; \
+            "#let ga-accent = rgb(\"#2b5f9f\")\n{theme}#let ga-title = \
+             \"Running header scale test\"\n#let ga-publisher = \"Example \
+             Authority\"\n#let ga-footer-text = \"Running header scale \
+             test\"\n#let ga-diagram-note = true\n#let ga-ribbon = \
+             none\n{}\n#for chapter in range(128) {{ heading(level: \
+             1)[#text(\"Chapter \" + str(chapter))]; for term in range(128) \
+             {{ heading(level: 6, numbering: none)[#text(\"Term \" + \
+             str(term))]; [A bounded header performance fixture.]; }}; \
              pagebreak() }}",
             include_str!("typst/theme.typ")
         );

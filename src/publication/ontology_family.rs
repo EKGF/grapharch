@@ -29,8 +29,8 @@ use {
         sync::Arc,
     },
 };
-mod declarations;
 pub(crate) mod arrangement;
+mod declarations;
 mod modules;
 mod reference;
 
