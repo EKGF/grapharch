@@ -51,7 +51,7 @@ ex:site a ga:Target ;
     ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "companion" .
 ex:pdf a ga:Target ;
     ga:scope ex:reference-content ; ga:profile ex:approval-document ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "spec/pdf/develop" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "pdf" .
 ```
 
 This snippet shows the target relationships; a complete project also declares

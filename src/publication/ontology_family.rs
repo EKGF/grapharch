@@ -467,6 +467,7 @@ async fn build(
         managed.add(id.processor, id.source, false)?;
     }
     managed.persist_inventory(writer, true).await?;
+    managed.retire(writer, false).await?;
     collect_all(work, writer, concurrency).await?;
     let people = super::collect::people::collectors(dataset, project).await?;
     for input in &people {
@@ -492,7 +493,6 @@ async fn build(
         managed.add(id.processor, id.source, false)?;
     }
     managed.persist_inventory(writer, true).await?;
-    managed.retire(writer, false).await?;
     if !website.collectors.is_empty() {
         collect_all(website.collectors.clone(), writer, concurrency).await?;
     }

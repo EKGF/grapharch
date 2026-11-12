@@ -98,10 +98,7 @@ mod tests {
     fn relative_targets_render_behind_the_page_root_prefix() {
         for (value, href) in [
             ("spec/main/", "../../spec/main/"),
-            (
-                "spec/main/pdf/document.pdf",
-                "../../spec/main/pdf/document.pdf",
-            ),
+            ("pdf/document.pdf", "../../pdf/document.pdf"),
             (
                 "./spec/?view=all#top",
                 "../.././spec/?view=all#top",
