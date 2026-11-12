@@ -399,7 +399,7 @@ pub(crate) async fn bind(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use {super::*, crate::publication::collect::MarkdownFile};
 
     #[tokio::test]
     async fn website_targets_retain_independent_binding_contributions()

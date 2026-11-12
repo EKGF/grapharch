@@ -88,7 +88,7 @@ fn hints(site: Site) -> String {
  rdfs:label "Example authority"@en; ga:shortName "Example" .
 "#,
         target("spec", "SpecificationPagesRenderer", "spec/main"),
-        target("pdf", "SpecificationRenderer", "documents/main"),
+        target("pdf", "SpecificationRenderer", "spec/pdf/main"),
         target("review", "SpecificationRenderer", "review"),
     )
 }
@@ -189,10 +189,10 @@ async fn family_showcase_publishes_every_registered_target_in_iri_order()
     let output = output.canonicalize()?;
     assert_eq!(
         destinations(dataset, &plans, &output).await?,
-        ["documents/main", "review", "spec/main"],
+        ["spec/pdf/main", "review", "spec/main"],
         "targets publish in IRI order, each into its own destination"
     );
-    assert!(output.join("documents/main/document.pdf").is_file());
+    assert!(output.join("spec/pdf/main/document.pdf").is_file());
     assert!(output.join("review/document.pdf").is_file());
     Ok(())
 }
@@ -227,7 +227,7 @@ async fn family_showcase_selects_targets_explicitly_and_rejects_unbuildable_ones
     let output = output.canonicalize()?;
     assert_eq!(
         destinations(dataset, &plans, &output).await?,
-        ["spec/main", "documents/main"],
+        ["spec/main", "spec/pdf/main"],
         "an explicit selection publishes in its own order"
     );
     for (targets, expected) in [
@@ -300,7 +300,7 @@ async fn family_showcase_builds_a_website_from_the_declared_page_source()
     let (family, website) = plans.split_at(3);
     assert_eq!(
         destinations(dataset.clone(), family, &output).await?,
-        ["documents/main", "review", "spec/main"]
+        ["spec/pdf/main", "review", "spec/main"]
     );
     let PublishOutcome::Published(site) =
         Publisher::new(dataset).render(&website[0], &output).await?

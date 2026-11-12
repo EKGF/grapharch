@@ -99,8 +99,8 @@ mod tests {
         for (value, href) in [
             ("spec/main/", "../../spec/main/"),
             (
-                "documents/main/document.pdf",
-                "../../documents/main/document.pdf",
+                "spec/main/pdf/document.pdf",
+                "../../spec/main/pdf/document.pdf",
             ),
             (
                 "./spec/?view=all#top",
