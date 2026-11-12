@@ -33,8 +33,9 @@ class ReleaseReservation(unittest.TestCase):
         os.chdir(self.checkout)
         self.git('config', 'user.name', 'Release regression')
         self.git('config', 'user.email', 'test@example.invalid')
-        # bounded: only the seven explicit version/check inputs, no repository corpus.
-        for name in (*FILES, 'pyproject.toml', 'packaging/distribute.py', 'packaging/platforms.json'):
+        # bounded: only the eight explicit version/check/Action inputs, no repository corpus.
+        for name in (*FILES, 'pyproject.toml', 'packaging/distribute.py', 'packaging/platforms.json',
+                     'action.yml'):
             destination = Path(name)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, destination)
@@ -81,6 +82,9 @@ class ReleaseReservation(unittest.TestCase):
         self.assertEqual(self.git('rev-parse', release + '^'), self.source)
         self.assertEqual(set(self.git('diff', '--name-only', self.source, release).splitlines()), set(FILES))
         self.assertEqual(self.git('rev-parse', f'v{self.new}^{{commit}}'), release)
+        # The Action at the tagged commit installs exactly this release from its own source.
+        self.assertEqual(self.git('show', f'v{self.new}:action.yml'), (ROOT / 'action.yml').read_text().strip())
+        self.assertEqual(tomllib.loads(self.git('show', f'v{self.new}:Cargo.toml'))['package']['version'], self.new)
         self.assertIn(f'version={self.new}', self.output.read_text())
         self.reserve()
         self.assertEqual(self.remote_main(), release)

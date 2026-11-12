@@ -26,11 +26,13 @@ To build in GitHub Actions:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: EKGF/grapharch@v0.2.4
+- uses: EKGF/grapharch@<release-commit-sha> # vX.Y.Z
   with:
-    version: '0.2.4'
     source-kind: checkout
 ```
+
+The action installs the verified release of the commit it is referenced by, so
+Dependabot upgrades GraphArch by changing that one line.
 
 See [GitHub Actions](https://ekgf.github.io/grapharch/usage/github-actions/)
 for configuration and Pages publication.

@@ -11,25 +11,40 @@ grapharch:
 
 Keep your publication configuration with your ontologies, then use one GraphArch
 step to build their specification website, PDF and documentation KG. The action
-installs and verifies an exact release before running the build.
-
-Pin both the Action revision and the native binary version when upgrading.
-The example below selects an existing release; it is a reproducible version pin,
-not a promise to track the newest generator automatically.
+installs and verifies the GraphArch release it belongs to before running the
+build.
 
 ## Build in one step
 
-After checking out your repository, add this step:
+Reference the action by the full commit SHA of a GraphArch release, with the
+release tag as a comment. After checking out your repository, add this step:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: EKGF/grapharch@v0.2.4
+- uses: EKGF/grapharch@<release-commit-sha> # vX.Y.Z
   id: docs
   with:
-    version: '0.2.4'
     source-kind: checkout
     source: .
     output: build/docs
+```
+
+The reference alone selects the generator. The action reads the version from
+its own `Cargo.toml`, takes its own commit from the reference, and installs the
+native binary of that release. Before running it, the action checks the
+published archive against its `.sha256` file and the release manifest against
+the version, platform, archive checksum and source commit. The manifest's
+`source_commit` must be the action's commit. A branch, a tag name, a short SHA,
+or a commit that is not the release commit of its version fails the action. It
+never compiles a replacement or downloads another release. Self-selection is
+available from the first release after v0.2.8; earlier releases need `version`
+and `expected-revision`.
+
+Use the commit of the release tag, not the annotated tag object. The release
+page shows it, or run:
+
+```sh
+git ls-remote https://github.com/EKGF/grapharch 'refs/tags/vX.Y.Z^{}'
 ```
 
 GraphArch discovers a unique project and target from publication hints in your
@@ -48,30 +63,97 @@ The publication path is the website directory containing `index.html`. Use
 these outputs to upload artifacts or integrate your own deployment process.
 The KG archive is exposed separately. `pdf-path` is empty for paginated or bookshelf publications without a single collection PDF; book PDFs remain inside the publication directory. A failed build fails the step.
 
-For installation alone, set `mode: install` and supply only `version`; the
-`grapharch` command is then available to subsequent steps. Both modes expose
-`version` and `binary-path`. Deployment is a separate choice.
+For installation alone, set `mode: install`; the `grapharch` command is then
+available to subsequent steps:
 
-For a released generator whose exact source revision is part of your publication
-record, also supply `expected-revision` with the release commit SHA. The action
-checks the published platform manifest against that commit, the version, target,
-and verified archive checksum before running the binary. Its `revision` output
-then records the verified release source commit. Missing or mismatched provenance
-fails the action; it never switches to a source build.
+```yaml
+- uses: EKGF/grapharch@<release-commit-sha> # vX.Y.Z
+  id: grapharch
+  with:
+    mode: install
+```
+
+Both modes expose `version`, `revision` and `binary-path`. `revision` is the
+verified release source commit. Deployment is a separate choice.
+
+## Upgrade with Dependabot
+
+Because one line selects both the action and its binary, Dependabot upgrades
+GraphArch with a single change. Enable version updates for GitHub Actions in
+`.github/dependabot.yml`:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+```
+
+For a new release, Dependabot replaces the commit SHA and the `# vX.Y.Z`
+comment together. Review and merge the pull request; the action then installs
+the new release. Each automatic release tags its own release commit, so every
+`vX.Y.Z` tag commit carries the action and the `Cargo.toml` of that release.
+
+## Install from a checked-out release
+
+A workflow can also check out GraphArch at a release commit, for example when a
+configuration file records the generator revision, and run that checkout as a
+local action:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    repository: EKGF/grapharch
+    ref: ${{ steps.configuration.outputs.generator-revision }}
+    path: .grapharch-tool
+    persist-credentials: false
+- uses: ./.grapharch-tool
+  id: grapharch
+  with:
+    mode: install
+```
+
+A local action has no reference, so it identifies itself by the `HEAD` commit
+of its checkout. The action path must be the root of that Git checkout, and the
+checkout must be clean, with no modified, untracked or extra ignored executable
+inputs. The same release verification then applies: the `HEAD` commit must be
+the release commit of the checked-out version.
+
+## Install another release explicitly
+
+Supply `version` and `expected-revision` together to install a release other
+than the action's own:
+
+```yaml
+- uses: EKGF/grapharch@v0
+  with:
+    mode: install
+    version: 'X.Y.Z'
+    expected-revision: <release-commit-sha>
+```
+
+The action verifies that release against `expected-revision` exactly as it
+verifies its own. Use this when the action reference is not a release commit:
+the floating `v0` and `v0.2` references, a checkout of an unreleased commit, or
+a composite action of your own that wraps this one. Within a wrapping composite
+action, the runner reports the outer action's reference instead of this one
+([actions/runner#2473](https://github.com/actions/runner/issues/2473)), so
+self-selection fails there. `version` without `expected-revision`, or the
+reverse, fails before anything is downloaded.
 
 An automatic release advances the Action convenience tags `vMAJOR` and
-`vMAJOR.MINOR` only after all its publication channels succeed. Once available,
+`vMAJOR.MINOR` only after all its publication channels succeed.
 `EKGF/grapharch@v0` follows the maintained Action implementation within major
-version zero. The `version` input still selects an exact published binary;
-changing the Action reference does not silently upgrade that binary. Use an
-exact release tag or full commit SHA when the Action implementation must also
-remain immutable. Existing repository workflows are never rewritten by a release.
+version zero. Because these references move, they never select a binary
+themselves. Existing repository workflows are never rewritten by a release.
 
 ## Install an unreleased source revision
 
 On Linux runners, the same action can build an exact reviewed source revision.
 Check out GraphArch separately, then invoke that local action with
-`source-revision` instead of `version`:
+`source-revision`:
 
 ```yaml
 - uses: actions/checkout@v7
@@ -97,9 +179,10 @@ Windows yet; release installation remains available there.
 
 `binary-path` and `version` retain their existing meanings; `revision` records
 the exact source commit. Source builds use a separate runner-temporary build
-directory and do not use the release binary cache. Supply exactly one of
-`version` or `source-revision`; an invalid selector or failed build fails the
-action. Both selectors support `mode: install` and the normal family build mode.
+directory and do not use the release binary cache. `source-revision` excludes
+`version` and `expected-revision`; an invalid selector or failed build fails the
+action. Every selection supports `mode: install` and the normal family build
+mode.
 
 ## Build a Pages artifact
 

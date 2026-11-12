@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -57,9 +58,16 @@ class SetupActionTest(unittest.TestCase):
             (directory / name).write_bytes(b"corrupted cache")
             environment = {
                 "GRAPHARCH_VERSION": "0.0.1",
+                "GRAPHARCH_EXPECTED_REVISION": "a" * 40,
                 "RUNNER_TOOL_CACHE": temporary,
                 "GITHUB_OUTPUT": str(root / "outputs"),
                 "GITHUB_PATH": str(root / "paths"),
+            }
+            published = {
+                ".sha256": f"{'0' * 64}  {name}\n".encode(),
+                ".json": json.dumps({"version": "0.0.1", "target": target,
+                                     "archive_sha256": "0" * 64,
+                                     "source_commit": "a" * 40}).encode(),
             }
             with (
                 patch.dict(os.environ, environment),
@@ -68,7 +76,8 @@ class SetupActionTest(unittest.TestCase):
                 patch.object(
                     setup.urllib.request,
                     "urlopen",
-                    return_value=io.BytesIO(f"{'0' * 64}  {name}\n".encode()),
+                    side_effect=lambda url, timeout: io.BytesIO(
+                        published["." + url.rsplit(".", 1)[1]]),
                 ),
                 patch.object(setup.subprocess, "run") as execute,
                 self.assertRaisesRegex(ValueError, "checksum mismatch"),
@@ -79,6 +88,35 @@ class SetupActionTest(unittest.TestCase):
 
 
 class ReleaseProvenanceTest(unittest.TestCase):
+    def test_every_release_install_requires_its_source_commit_before_downloading(self):
+        import os
+        import tempfile
+
+        for expected in ("", "main"):
+            with (
+                self.subTest(expected=expected),
+                tempfile.TemporaryDirectory() as temporary,
+                patch.dict(os.environ, {
+                    "GRAPHARCH_VERSION": "0.2.8",
+                    "GRAPHARCH_EXPECTED_REVISION": expected,
+                    "RUNNER_TOOL_CACHE": temporary,
+                    "GITHUB_OUTPUT": str(Path(temporary) / "outputs"),
+                    "GITHUB_PATH": str(Path(temporary) / "paths"),
+                }),
+                patch.object(setup, "target", return_value="x86_64-unknown-linux-gnu"),
+                patch.object(setup.sys, "argv", ["setup_action.py", "install"]),
+                patch.object(setup.urllib.request, "urlopen") as download,
+                self.assertRaisesRegex(ValueError, "release commit"),
+            ):
+                setup.main()
+            download.assert_not_called()
+
+    def test_reference_to_a_non_release_commit_names_both_commits(self):
+        manifest = {"version": "0.2.8", "target": "x86_64-unknown-linux-gnu",
+                    "archive_sha256": "b" * 64, "source_commit": "a" * 40}
+        with self.assertRaisesRegex(ValueError, f"{'a' * 40}.*{'c' * 40}|{'c' * 40}.*{'a' * 40}"):
+            setup.validate_manifest(manifest, "0.2.8", manifest["target"], "b" * 64, "c" * 40)
+
     def test_exact_release_source_and_archive_are_required(self):
         manifest = {"version": "0.2.0", "target": "x86_64-unknown-linux-gnu",
                     "archive_sha256": "b" * 64, "source_commit": "a" * 40}
