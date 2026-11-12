@@ -136,7 +136,10 @@ async fn layout(style: &str, label: &str) -> Result<PagedDocument> {
         let world = DocumentWorld {
             root: path,
             assets,
-            main: FileId::new(None, VirtualPath::new("main.typ")),
+            main: FileId::new(RootedPath::new(
+                VirtualRoot::Project,
+                VirtualPath::new("main.typ")?,
+            )),
         };
         typst::compile::<PagedDocument>(&world)
             .output
@@ -160,10 +163,10 @@ async fn ribbon_label_is_anchored_to_the_top_end_like_the_website() -> Result<()
         for label in labels {
             let document = layout(style, label).await?;
             ensure!(
-                document.pages.len() >= 2,
+                document.pages().len() >= 2,
                 "cover and body pages expected"
             );
-            for (index, page) in document.pages.iter().enumerate() {
+            for (index, page) in document.pages().iter().enumerate() {
                 let ribbon = Ribbon::on(&page.frame);
                 let context = format!("{style} page {} {label:?}", index + 1);
                 let bar = ribbon.bar.ok_or_else(|| {
