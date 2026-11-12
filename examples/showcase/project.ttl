@@ -14,9 +14,9 @@ ex:reader a ga:Target ; dct:title "A guide to the documentation graph" ; ga:scop
     ga:profile ex:reader-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "reader" .
 ex:pdf a ga:Target ; dct:title "Documentation graph - review draft" ; ga:scope ex:scope ;
     ga:profile ex:spec-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
-ex:spec-profile a ga:Profile ; ga:style "specification" ;
+ex:spec-profile a ga:Profile ; ga:theme ga:SpecificationTheme ;
     ga:placement ex:spec-overview, ex:spec-contract, ex:spec-glossary, ex:spec-references .
-ex:reader-profile a ga:Profile ; ga:style "reader" ;
+ex:reader-profile a ga:Profile ; ga:theme ga:ReaderTheme ;
     ga:placement ex:reader-overview, ex:reader-glossary, ex:reader-references, ex:reader-contract .
 ex:spec-overview a ga:Placement ; ga:component ex:overview-component ; ga:order 1 ; ga:sectionKind "section" .
 ex:spec-contract a ga:Placement ; ga:component ex:contract-component ; ga:order 2 ; ga:sectionKind "appendix" .

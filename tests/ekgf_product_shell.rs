@@ -21,7 +21,11 @@ async fn ekgf_products_share_the_same_community_shell() -> Result<()> {
         let source = tempfile::tempdir()?;
         let output = tempfile::tempdir()?;
         let definitions = source.path().join("project.ttl");
-        let style = if marketing { "ekgf-project" } else { "ekgf" };
+        let style = if marketing {
+            "EkgfProjectTheme"
+        } else {
+            "EkgfTheme"
+        };
         let layout = if marketing {
             ""
         } else {
@@ -32,7 +36,7 @@ async fn ekgf_products_share_the_same_community_shell() -> Result<()> {
 @prefix dct: <http://purl.org/dc/terms/> .
 <urn:project> a ga:Project; dct:title "{name}"; ga:target <urn:target> .
 <urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
-<urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:style "{style}" {layout} .
+<urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:theme ga:{style} {layout} .
 "#)).await?;
         tokio::fs::write(
             source.path().join("index.md"),
@@ -90,7 +94,7 @@ async fn authored_landing_and_documentation_share_one_theme() -> Result<()> {
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 <urn:p> a ga:Project; ga:target <urn:t> .
 <urn:t> a ga:Target; ga:scope <urn:s>; ga:profile <urn:f>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
-<urn:s> a ga:Scope . <urn:f> a ga:Profile; ga:style "ekgf"; ga:layout "documentation" .
+<urn:s> a ga:Scope . <urn:f> a ga:Profile; ga:theme ga:EkgfTheme; ga:layout "documentation" .
 "#).await?;
     tokio::fs::write(
         source.path().join("index.md"),

@@ -34,28 +34,19 @@ impl Assets {
                 fonts.font(0).is_some(),
                 "Typst requires the embedded font assets"
             );
-            let liberation = [
-                include_bytes!("fonts/LiberationSans-Regular.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-Regular.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-Bold.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-Italic.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSerif-BoldItalic.ttf")
-                    .as_slice(),
-                include_bytes!("fonts/LiberationSans-Bold.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSans-Italic.ttf").as_slice(),
-                include_bytes!("fonts/LiberationSans-BoldItalic.ttf")
-                    .as_slice(),
-            ]
-            .into_iter()
-            .map(|bytes| {
-                Font::new(Bytes::new(bytes), 0)
-                    .map(|font| {
-                        let info = font.info().clone();
-                        (font, info)
-                    })
-                    .ok_or_else(|| anyhow::anyhow!("invalid embedded PDF font"))
-            })
-            .collect::<Result<Vec<_>>>()?;
+            let liberation = super::fonts::EMBEDDED
+                .into_iter()
+                .map(|bytes| {
+                    Font::new(Bytes::new(bytes), 0)
+                        .map(|font| {
+                            let info = font.info().clone();
+                            (font, info)
+                        })
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("invalid embedded PDF font")
+                        })
+                })
+                .collect::<Result<Vec<_>>>()?;
             fonts.extend(liberation);
             Ok(Arc::new(Self {
                 library: LazyHash::new(Library::default()),
@@ -185,14 +176,19 @@ mod tests {
     async fn large_book_running_headers_complete_without_per_page_chapter_scans()
     -> Result<()> {
         let root = tempfile::tempdir()?;
+        let theme = crate::publication::theme::catalogue_typst(
+            crate::publication::theme::Builtin::Specification,
+        )
+        .await?;
         let source = format!(
-            "#let ga-style = \"specification\"\n#let ga-accent = \
-             rgb(\"#2b5f9f\")\n#let ga-title = \"Running header scale \
-             test\"\n#let ga-publisher = \"Example Authority\"\n#let \
-             ga-ribbon = none\n{}\n#for chapter in range(128) {{ \
-             heading(level: 1)[#text(\"Chapter \" + str(chapter))]; for term \
-             in range(128) {{ heading(level: 6, numbering: none)[#text(\"Term \
-             \" + str(term))]; [A bounded header performance fixture.]; }}; \
+            "#let ga-accent = rgb(\"#2b5f9f\")\n{theme}#let ga-title = \
+             \"Running header scale test\"\n#let ga-publisher = \"Example \
+             Authority\"\n#let ga-footer-text = \"Running header scale \
+             test\"\n#let ga-diagram-note = true\n#let ga-ribbon = \
+             none\n{}\n#for chapter in range(128) {{ heading(level: \
+             1)[#text(\"Chapter \" + str(chapter))]; for term in range(128) \
+             {{ heading(level: 6, numbering: none)[#text(\"Term \" + \
+             str(term))]; [A bounded header performance fixture.]; }}; \
              pagebreak() }}",
             include_str!("typst/theme.typ")
         );

@@ -28,7 +28,7 @@ ex:specification a ga:Target ; dct:title "DPROD ontology and SHACL reference" ;
     ga:license <https://creativecommons.org/licenses/by/4.0/> ;
     ga:copyright "DPROD sources: Copyright 2024–2026 Enterprise Knowledge Graph Forum, EDM Council, Inc. Grapharch-generated reference preview, CC BY 4.0." ;
     ga:metadataSource ex:collector:ontology ; ga:derivedMetadata ga:publicationDate .
-ex:profile a ga:Profile ; ga:style "reader" .
+ex:profile a ga:Profile ; ga:theme ga:ReaderTheme .
 ex:website a ga:Target ; dct:title "DPROD: ideas and guides" ;
     ga:scope ex:website-scope ; ga:profile ex:website-profile ;
     ga:renderer ga:WebsiteRenderer ; ga:destination "website" .

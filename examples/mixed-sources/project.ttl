@@ -14,7 +14,7 @@ ex:website a ga:Target ; dct:title "Data products: a source-driven guide" ;
     ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "website" .
 ex:pdf a ga:Target ; dct:title "Data products: review document" ;
     ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
-ex:profile a ga:Profile ; ga:style "reader" ;
+ex:profile a ga:Profile ; ga:theme ga:ReaderTheme ;
     ga:placement ex:introduction-placement, ex:class-placement, ex:query-placement .
 ex:introduction-placement a ga:Placement ; ga:component ex:introduction-component ; ga:order 1 .
 ex:class-placement a ga:Placement ; ga:component ex:class-component ; ga:order 2 .

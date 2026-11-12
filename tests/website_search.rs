@@ -33,7 +33,7 @@ async fn retained_search(documentation: bool) -> Result<()> {
 <urn:project> a ga:Project; dct:title "Knowledge guide"; ga:target <urn:site> .
 <urn:site> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:scope> a ga:Scope .
-<urn:profile> a ga:Profile; ga:style "ekgf"; ga:layout "documentation" .
+<urn:profile> a ga:Profile; ga:theme ga:EkgfTheme; ga:layout "documentation" .
 "#).await?;
     if !documentation {
         let config = tokio::fs::read_to_string(&definitions).await?;

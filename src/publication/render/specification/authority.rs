@@ -45,29 +45,65 @@ impl Authority {
         } else {
             html_escape(&short)
         };
-        let logo = if let Some(logo) =
-            plan.source.optional(&node, "logo").await?
+        let logo = match Logo::read(plan, &node).await? {
+            Some(logo) => {
+                format!(
+                    "<img class=\"authority-logo\" src=\"{}\" alt=\"{}\">",
+                    html_escape(&logo.data_uri),
+                    html_escape(&name)
+                )
+            },
+            None => String::new(),
+        };
+        Ok(Self { color, name, short, link, logo })
+    }
+}
+
+/// A validated authority `ga:logo`: a PNG or SVG data URI of at most 256 KiB.
+pub(in crate::publication::render) struct Logo {
+    pub data_uri:  String,
+    pub bytes:     Vec<u8>,
+    pub extension: &'static str,
+}
+
+impl Logo {
+    pub(in crate::publication::render) async fn read(
+        plan: &Plan,
+        authority: &oxrdf::NamedNode,
+    ) -> Result<Option<Self>> {
+        let Some(logo) = plan.source.optional(authority, "logo").await? else {
+            return Ok(None);
+        };
+        let oxrdf::Term::Literal(logo) = logo else {
+            anyhow::bail!(
+                "authority logo must be a PNG or SVG data URI literal"
+            )
+        };
+        let data_uri = logo.value().to_owned();
+        ensure!(
+            data_uri.len() <= 350_000,
+            "authority logo exceeds 256 KiB encoded-image budget"
+        );
+        let (mime, extension, encoded) = if let Some(encoded) =
+            data_uri.strip_prefix("data:image/png;base64,")
         {
-            let oxrdf::Term::Literal(logo) = logo else {
-                anyhow::bail!("authority logo must be a PNG data URI literal")
-            };
-            let logo = logo.value().to_owned();
-            ensure!(
-                logo.len() <= 350_000,
-                "authority logo exceeds 256 KiB encoded-image budget"
-            );
-            let encoded =
-                logo.strip_prefix("data:image/png;base64,").ok_or_else(
-                    || anyhow::anyhow!("authority logo must be a PNG data URI"),
-                )?;
-            let bytes = STANDARD.decode(encoded)?;
-            ensure!(
-                bytes.len() <= 256 * 1024,
-                "authority logo exceeds 256 KiB"
-            );
-            tokio::task::spawn_blocking(move || -> Result<()> {
+            ("image/png", "png", encoded)
+        } else if let Some(encoded) =
+            data_uri.strip_prefix("data:image/svg+xml;base64,")
+        {
+            ("image/svg+xml", "svg", encoded)
+        } else {
+            anyhow::bail!("authority logo must be a PNG or SVG data URI")
+        };
+        let bytes = STANDARD.decode(encoded)?;
+        ensure!(
+            bytes.len() <= 256 * 1024,
+            "authority logo exceeds 256 KiB"
+        );
+        let bytes = tokio::task::spawn_blocking(move || -> Result<Vec<u8>> {
+            if mime == "image/png" {
                 let mut reader = ImageReader::with_format(
-                    Cursor::new(bytes),
+                    Cursor::new(&bytes),
                     ImageFormat::Png,
                 );
                 let mut limits = Limits::default();
@@ -76,17 +112,15 @@ impl Authority {
                 limits.max_alloc = Some(32 * 1024 * 1024);
                 reader.limits(limits);
                 reader.decode()?;
-                Ok(())
-            })
-            .await??;
-            format!(
-                "<img class=\"authority-logo\" src=\"{}\" alt=\"{}\">",
-                html_escape(&logo),
-                html_escape(&name)
-            )
-        } else {
-            String::new()
-        };
-        Ok(Self { color, name, short, link, logo })
+            } else {
+                crate::publication::image_assets::validate(&bytes, mime)?;
+            }
+            Ok(bytes)
+        })
+        .await?
+        .map_err(|error| {
+            error.context("authority logo is not a valid PNG or SVG image")
+        })?;
+        Ok(Some(Self { data_uri, bytes, extension }))
     }
 }

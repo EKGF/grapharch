@@ -5,6 +5,7 @@ use {
         model::{Plan, title},
         typst_markdown,
     },
+    crate::publication::theme::{Builtin, PdfTheme},
     anyhow::Result,
     tokio::{
         fs::File,
@@ -19,6 +20,52 @@ pub(super) async fn begin(
 ) -> Result<()> {
     begin_book(file, plan, &plan.title, diagnostics).await
 }
+
+/// The catalogue theme used when a PDF profile selects none.
+pub(super) fn default_theme(plan: &Plan) -> Builtin {
+    if matches!(
+        plan.renderer.as_str(),
+        "specification" | "bookshelf"
+    ) {
+        Builtin::Specification
+    } else {
+        Builtin::Reader
+    }
+}
+
+pub(super) async fn theme(plan: &Plan) -> Result<PdfTheme> {
+    PdfTheme::read(&plan.source, &plan.profile, default_theme(plan)).await
+}
+
+async fn accent(plan: &Plan, theme: &PdfTheme) -> Result<String> {
+    let fallback = theme.text("accent").unwrap_or_default();
+    if !theme.flag("authorityAccent") {
+        return Ok(fallback);
+    }
+    match plan.source.optional(&plan.target, "publisher").await? {
+        Some(oxrdf::Term::NamedNode(publisher)) => {
+            match plan.source.optional(&publisher, "accentColor").await? {
+                Some(oxrdf::Term::Literal(color)) => {
+                    let color = color.value();
+                    anyhow::ensure!(
+                        color.len() == 7 &&
+                            color.starts_with('#') &&
+                            color[1..]
+                                .bytes()
+                                .all(|c| c.is_ascii_hexdigit()),
+                        "PDF accentColor must be #RRGGBB"
+                    );
+                    Ok(color.to_owned())
+                },
+                None => Ok(fallback),
+                _ => anyhow::bail!("authority accentColor must be a literal"),
+            }
+        },
+        None => Ok(fallback),
+        _ => anyhow::bail!("PDF publisher must be an IRI"),
+    }
+}
+
 pub(super) async fn begin_book(
     file: &mut BufWriter<File>,
     plan: &Plan,
@@ -78,6 +125,7 @@ pub(super) async fn begin_book(
     let conformance = super::pdf_standard::PdfConformance::read(plan)
         .await?
         .typst();
+    let theme = theme(plan).await?;
     let mut front = String::new();
     let mut release = String::new();
     for (field, label) in [
@@ -95,59 +143,58 @@ pub(super) async fn begin_book(
             ));
         }
     }
-    let style = super::typst_style::Style::read(plan).await?;
-    let specification_metadata =
-        matches!(
-            plan.renderer.as_str(),
-            "specification" | "bookshelf"
-        ) || (matches!(style.name, "specification" | "omg") &&
-            plan.source
-                .optional(&plan.target, "publicationStatus")
-                .await?
-                .is_some());
+    let specification_cover = theme.flag("specificationCover");
+    let specification_metadata = matches!(
+        plan.renderer.as_str(),
+        "specification" | "bookshelf"
+    ) || (specification_cover &&
+        plan.source
+            .optional(&plan.target, "publicationStatus")
+            .await?
+            .is_some());
     if specification_metadata {
         front = super::specification::pdf_metadata(plan, diagnostics).await?;
     } else {
         front.insert_str(0, &release);
     }
+    let footer_text =
+        match plan.source.optional(&plan.target, "footerText").await? {
+            Some(oxrdf::Term::Literal(value)) => value.value().to_owned(),
+            None => book_title.to_owned(),
+            _ => anyhow::bail!("ga:footerText must be a literal"),
+        };
     file.write_all(
         format!(
             "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \
-             Scope: {}\n// Profile: {}\n{metadata}#let ga-style = {}\n#let \
-             ga-accent = rgb({})\n#let ga-title = {}\n#let ga-publisher = \
-             {}\n#let ga-ribbon = {ribbon}\n",
+             Scope: {}\n// Profile: {}\n{metadata}#let ga-accent = \
+             rgb({})\n{}#let ga-title = {}\n#let ga-publisher = {}\n#let \
+             ga-footer-text = {}\n#let ga-ribbon = {ribbon}\n#let \
+             ga-diagram-note = {}\n",
             plan.project,
             plan.target,
             plan.revision,
             plan.scope,
             plan.profile,
-            quote(style.name),
-            quote(&style.accent),
+            quote(&accent(plan, &theme).await?),
+            theme.typst()?,
             quote(book_title),
-            quote(&publisher)
+            quote(&publisher),
+            quote(&footer_text),
+            plan.profile_flag("diagramNote").await?
         )
         .as_bytes(),
     )
     .await?;
     file.write_all(include_str!("typst/theme.typ").as_bytes())
         .await?;
-    if style.name == "omg" {
-        file.write_all(include_str!("typst/omg.typ").as_bytes())
-            .await?;
-    }
     let subtitle = match plan.source.optional(&plan.target, "subtitle").await? {
         Some(oxrdf::Term::Literal(value)) => {
-            format!(
-                "#v(5mm)\n#text(size: 16pt, fill: ga-muted)[#text({})]\n",
-                quote(value.value())
-            )
+            Some(format!("#text({})", quote(value.value())))
         },
-        None => String::new(),
+        None => None,
         _ => anyhow::bail!("publication subtitle must be a literal"),
     };
-    if matches!(style.name, "reader" | "overview") ||
-        (style.name == "omg" && !specification_metadata)
-    {
+    if !specification_cover && !specification_metadata {
         if let Some(value) = plan
             .source
             .optional_by(
@@ -207,31 +254,85 @@ pub(super) async fn begin_book(
             _ => anyhow::bail!("pdfTocDepth must be an xsd:integer"),
         }
     } else {
-        plan.toc_depth().await?.unwrap_or(3)
+        match plan.toc_depth().await? {
+            Some(depth) => depth,
+            None => theme.depth("contentsDepth")?,
+        }
     };
-    let legal = super::preamble::typst(plan, diagnostics).await?;
-    let front_numbering = if style.name == "omg" {
-        "#counter(page).update(1)\n#set page(numbering: \"i\")\n"
-    } else {
-        ""
-    };
-    let body_numbering = if style.name == "omg" {
-        "#counter(page).update(1)\n#set page(numbering: \"1\")\n"
-    } else {
-        ""
-    };
-    file.write_all(
-        format!(
-            "\n{conformance}#ga-cover(ga-publisher, ga-title, [{subtitle}], \
-             [{front}])\n#pagebreak()\n{front_numbering}{legal}#outline(title: \
-             [Contents], depth: \
-             {toc_depth})\n#pagebreak()\n{body_numbering}#counter(heading).\
-             update(0)\n"
-        )
-        .as_bytes(),
+    let cover = super::cover::typst(
+        plan,
+        &theme,
+        &super::cover::CoverContent {
+            publisher: publisher.clone(),
+            title: book_title.to_owned(),
+            subtitle,
+            summary: front,
+        },
+        diagnostics,
     )
     .await?;
+    let notices = super::notices::typst(plan, diagnostics).await?;
+    let front_numbering = match theme.text("frontNumbering") {
+        Some(numbering) => {
+            format!("#set page(numbering: {})\n", quote(&numbering))
+        },
+        None => String::new(),
+    };
+    let toc_title = quote(&theme.text("tocTitle").unwrap_or_default());
+    let front = format!(
+        "\n{conformance}{front_numbering}{cover}#pagebreak()\n{notices}{}",
+        concat!(
+            "#[\n",
+            "#show heading: set text(font: ga-theme.toc_title_font, ",
+            "size: ga-theme.toc_title_size, weight: \"bold\")\n",
+            "#show heading: set align(ga-theme.toc_title_align)\n",
+        ),
+    ) + &format!(
+        "#heading(level: 1, numbering: none, outlined: \
+         false)[#text({toc_title})]\n]\n#outline(title: none, depth: \
+         {toc_depth})\n#pagebreak()\n#counter(heading).update(0)\n"
+    );
+    file.write_all(front.as_bytes()).await?;
     Ok(())
+}
+
+/// Arabic body numbering starts on the page of the first numbered chapter.
+pub(super) async fn body_numbering(plan: &Plan) -> Result<String> {
+    Ok(match theme(plan).await?.text("bodyNumbering") {
+        Some(numbering) => {
+            format!(
+                "#pagebreak(weak: true)\n#counter(page).update(1)\n#set \
+                 page(numbering: {})\n",
+                quote(&numbering)
+            )
+        },
+        None => String::new(),
+    })
+}
+
+/// Theme decisions the per-entry writer needs, read once per document.
+pub(super) struct EntryStyle {
+    chapter_break: bool,
+    annex_label:   Option<String>,
+    normativity:   bool,
+    centered:      bool,
+    recto:         Option<String>,
+}
+
+impl EntryStyle {
+    pub(super) async fn read(plan: &Plan) -> Result<Self> {
+        let theme = theme(plan).await?;
+        Ok(Self {
+            chapter_break: theme.flag("chapterPageBreak"),
+            annex_label:   theme.text("annexLabel"),
+            normativity:   theme.flag("annexNormativity"),
+            centered:      theme.flag("annexCentered"),
+            recto:         theme
+                .flag("annexRectoStart")
+                .then(|| theme.text("blankPageText"))
+                .flatten(),
+        })
+    }
 }
 
 pub(super) async fn entry(
@@ -240,13 +341,25 @@ pub(super) async fn entry(
     entry: &Entry,
     anchor: &str,
     markdown: Option<&Markdown<'_>>,
-    appendix: u32,
+    (appendix, style): (u32, &EntryStyle),
     diagnostics: &[crate::publication::diagnostics::Diagnostic],
 ) -> Result<()> {
     if entry.first {
+        let annex = entry.kind == "appendix" && entry.depth == 1;
         // Page breaks must precede the fragment's layout container. Typst
         // forbids page breaks inside a heading show rule in that container.
-        if entry.depth == 1 &&
+        if annex && let Some(notice) = &style.recto {
+            file.write_all(
+                format!(
+                    "#metadata(none)<ga-recto-{appendix}>\n#\
+                     ga-blank-page(<ga-recto-{appendix}>)[#text({})]\n",
+                    quote(notice)
+                )
+                .as_bytes(),
+            )
+            .await?;
+        } else if entry.depth == 1 &&
+            style.chapter_break &&
             !matches!(entry.kind.as_str(), "abstract" | "status")
         {
             file.write_all(b"#pagebreak(weak: true)\n").await?;
@@ -268,24 +381,70 @@ pub(super) async fn entry(
         }
         file.write_all(format!("#ga-section({})[", entry.depth).as_bytes())
             .await?;
-        let numbering = if matches!(
-            entry.kind.as_str(),
-            "glossary" | "references" | "abstract" | "status" | "preface"
-        ) {
+        let labelled = annex.then_some(style.annex_label.as_ref()).flatten();
+        let numbering = if labelled.is_some() ||
+            matches!(
+                entry.kind.as_str(),
+                "glossary" | "references" | "abstract" | "status" | "preface"
+            ) {
             ", numbering: none"
         } else {
             ""
         };
-        file.write_all(
-            format!(
-                "#heading(level: {}{numbering})[#text({})]#label({})\n",
-                entry.depth,
-                quote(&entry.title),
-                quote(&plan.anchor(&entry.placement, None))
+        let heading_title = match labelled {
+            Some(label) => {
+                label
+                    .replace("{letter}", &super::content::letter(appendix))
+                    .replace("{title}", &entry.title)
+            },
+            None => entry.title.clone(),
+        };
+        let heading = format!(
+            "#heading(level: {}{numbering})[#text({})]#label({})",
+            entry.depth,
+            quote(&heading_title),
+            quote(&plan.anchor(&entry.placement, None))
+        );
+        let normativity = if annex && style.normativity {
+            match plan
+                .source
+                .optional(&entry.placement, "normativity")
+                .await?
+            {
+                Some(oxrdf::Term::Literal(value)) => {
+                    format!(
+                        "#block(below: 18pt)[#text(font: \
+                         ga-theme.heading_font, size: \
+                         ga-theme.heading_2_size)[#text({})]]",
+                        quote(&format!("({})", value.value()))
+                    )
+                },
+                None => {
+                    anyhow::bail!(
+                        "annex placement {} requires ga:normativity",
+                        entry.placement
+                    )
+                },
+                _ => anyhow::bail!("ga:normativity must be a literal"),
+            }
+        } else {
+            String::new()
+        };
+        if annex && style.centered {
+            file.write_all(
+                format!("#align(center)[{heading}{normativity}]\n").as_bytes(),
             )
-            .as_bytes(),
-        )
-        .await?;
+            .await?;
+        } else {
+            file.write_all(format!("{heading}{normativity}\n").as_bytes())
+                .await?;
+        }
+        if labelled.is_some() {
+            file.write_all(
+                format!("#counter(heading).update({appendix})\n").as_bytes(),
+            )
+            .await?;
+        }
     }
     if !entry.first {
         if let Some(markdown) = markdown &&

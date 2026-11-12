@@ -107,3 +107,4 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 .library-publication-details{margin:1rem 0;color:#526174;font-size:.9rem}.library-publication-details summary{cursor:pointer;color:var(--link)}.library-publication-details summary:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
 
 a.authority-banner,a.authority-banner:visited{color:white;text-decoration:none;cursor:pointer}a.authority-banner:hover{filter:brightness(.9)}a.authority-banner:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
+.copyright-holders{list-style:none;padding:0;margin:1rem 0 0;font-size:.8rem;color:#333}

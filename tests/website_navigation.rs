@@ -13,7 +13,7 @@ const CONFIG: &str = r#"
 <urn:project> a ga:Project; dct:title "Method"; ga:target <urn:target> .
 <urn:scope> a ga:Scope .
 <urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
-<urn:profile> a ga:Profile; ga:style "ekgf"; ga:layout "documentation"; ga:navigation <urn:tabs>, <urn:sidebar> .
+<urn:profile> a ga:Profile; ga:theme ga:EkgfTheme; ga:layout "documentation"; ga:navigation <urn:tabs>, <urn:sidebar> .
 <urn:tabs> a ga:Navigation; dct:title "Sections"; ga:navigationRegion "primary"; ga:navigationEntry <urn:start>, <urn:learn> .
 <urn:start> a ga:NavigationEntry; ga:page <urn:home>; ga:order 1; dct:title "Introduction" .
 <urn:learn> a ga:NavigationEntry; ga:page <urn:guide>; ga:order 2; dct:title "Learn" .

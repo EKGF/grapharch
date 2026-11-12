@@ -202,6 +202,25 @@ impl Plan {
         }
     }
 
+    /// A boolean profile switch for generated material, on unless declared
+    /// false.
+    pub async fn profile_flag(&self, field: &str) -> Result<bool> {
+        match self.source.optional(&self.profile, field).await? {
+            None => Ok(true),
+            Some(Term::Literal(value))
+                if value == oxrdf::Literal::from(true) =>
+            {
+                Ok(true)
+            },
+            Some(Term::Literal(value))
+                if value == oxrdf::Literal::from(false) =>
+            {
+                Ok(false)
+            },
+            _ => anyhow::bail!("profile {field} must be true or false"),
+        }
+    }
+
     pub async fn toc_depth(&self) -> Result<Option<usize>> {
         let value = match self.source.optional(&self.target, "tocDepth").await?
         {

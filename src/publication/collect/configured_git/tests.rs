@@ -164,7 +164,7 @@ async fn configured_uses_build_existing_collectors_over_the_pinned_tree()
             "1",
         ),
         (
-            "?target <https://ekgf.org/ontology/grapharch#preamble> ?fragment",
+            "?target <https://ekgf.org/ontology/grapharch#notice> ?notice",
             "0",
         ),
     ] {

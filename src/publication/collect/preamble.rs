@@ -17,8 +17,8 @@ use {
 };
 
 /// Collect a single legal preamble as an explicitly identified fragment.
-/// Publication definitions, not this collector, bind it to targets through
-/// `ga:preamble`.
+/// Publication definitions, not this collector, bind it to targets as an
+/// ordered `ga:notice`.
 pub struct HtmlPreambleFile {
     input: FileInput,
     base:  Url,

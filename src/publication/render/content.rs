@@ -36,6 +36,9 @@ pub(super) struct Entries {
     bytes:        u64,
     depths:       std::collections::HashMap<NamedNode, usize>,
     pub appendix: u32,
+    quality:      bool,
+    // bounded: at most two omitted generated section roles.
+    omitted:      Vec<&'static str>,
 }
 
 impl Entries {
@@ -47,12 +50,44 @@ impl Entries {
             bytes:    0,
             depths:   Default::default(),
             appendix: 0,
+            quality:  true,
+            omitted:  Vec::new(),
         })
     }
 
+    /// Entries for a PDF edition, which omits inline quality warnings when the
+    /// profile turns its quality appendix off.
+    pub async fn for_pdf(plan: &Plan) -> Result<Self> {
+        let mut entries = Self::new(plan).await?;
+        entries.quality = plan.profile_flag("qualityAppendix").await?;
+        use crate::publication::ontology_family::arrangement::{
+            COVERAGE,
+            OVERVIEW,
+        };
+        for (field, role) in
+            [("familyOverview", OVERVIEW), ("coverageAppendix", COVERAGE)]
+        {
+            if !plan.profile_flag(field).await? {
+                entries.omitted.push(role);
+            }
+        }
+        Ok(entries)
+    }
+
     pub async fn next(&mut self, plan: &Plan) -> Result<Option<Entry>> {
-        let Some(row) = self.rows.next().await? else {
-            return Ok(None)
+        let row = loop {
+            let Some(row) = self.rows.next().await? else {
+                return Ok(None)
+            };
+            if self.omitted.is_empty() {
+                break row;
+            }
+            let placement = node(&row["placement"])?;
+            match plan.source.optional(placement, "sectionRole").await? {
+                Some(oxrdf::Term::Literal(role))
+                    if self.omitted.contains(&role.value()) => {},
+                _ => break row,
+            }
         };
         self.count += 1;
         ensure!(
@@ -64,7 +99,8 @@ impl Entries {
         let placement = node(&row["placement"])?.clone();
         let component = node(&row["component"])?;
         let body = plan.source.text(&fragment, "body").await?;
-        let body = if !plan.quality.is_empty() &&
+        let body = if self.quality &&
+            !plan.quality.is_empty() &&
             plan.source.text(&fragment, "format").await? == "text/markdown"
         {
             super::quality::inline(
@@ -172,6 +208,11 @@ pub(super) async fn write(
     } else {
         typst::begin(&mut file, plan, &[]).await?;
     }
+    let style = if plan.is_html() {
+        None
+    } else {
+        Some(typst::EntryStyle::read(plan).await?)
+    };
     let mut diagrams = false;
     let mut entries = Entries::new(plan).await?;
     let mut previous = None;
@@ -216,7 +257,10 @@ pub(super) async fn write(
                 &entry,
                 &anchor,
                 markdown.as_ref(),
-                entries.appendix,
+                (
+                    entries.appendix,
+                    style.as_ref().expect("Typst entry style"),
+                ),
                 &[],
             )
             .await?;
@@ -259,8 +303,12 @@ pub(super) async fn write_typst(
 ) -> Result<()> {
     let mut file = BufWriter::new(File::create(stage.join("main.typ")).await?);
     typst::begin(&mut file, plan, diagnostics).await?;
+    let style = typst::EntryStyle::read(plan).await?;
+    let body_numbering = typst::body_numbering(plan).await?;
     let mut diagrams = false;
-    let mut entries = Entries::new(plan).await?;
+    let mut entries = Entries::for_pdf(plan).await?;
+    let quality = plan.profile_flag("qualityAppendix").await?;
+    let diagram_note = plan.profile_flag("diagramNote").await?;
     let mut open = false;
     let mut main_started = false;
     while let Some(entry) = entries.next(plan).await? {
@@ -270,6 +318,7 @@ pub(super) async fn write_typst(
                 typst::close(&mut file).await?;
             }
             if entry.kind == "section" && !main_started {
+                file.write_all(body_numbering.as_bytes()).await?;
                 file.write_all(b"#counter(heading).update(0)\n").await?;
                 main_started = true;
             }
@@ -296,7 +345,7 @@ pub(super) async fn write_typst(
             &entry,
             &anchor,
             markdown.as_ref(),
-            entries.appendix,
+            (entries.appendix, &style),
             diagnostics,
         )
         .await?;
@@ -304,7 +353,7 @@ pub(super) async fn write_typst(
     typst::end(&mut file, open).await?;
     super::quality::typst(
         &mut file,
-        &plan.quality,
+        if quality { &plan.quality } else { &[] },
         entries.appendix,
         &plan.quality_evidence,
     )
@@ -340,11 +389,15 @@ pub(super) async fn write_typst(
         plan.provenance
             .typst(
                 &mut file,
-                Some(entries.appendix + u32::from(!plan.quality.is_empty())),
+                Some(
+                    entries.appendix +
+                        u32::from(quality && !plan.quality.is_empty()),
+                ),
             )
             .await?;
     }
-    super::diagram_notes::append_typst(&mut file, diagrams).await?;
+    super::diagram_notes::append_typst(&mut file, diagrams && diagram_note)
+        .await?;
     file.flush().await?;
     Ok(())
 }

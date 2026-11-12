@@ -147,9 +147,9 @@ impl Slugs {
         }
     }
 }
-fn local_outline(home: bool) -> Outline {
+fn local_outline(home: bool, w3c: bool) -> Outline {
     if home {
-        Outline::default()
+        Outline::document(w3c)
     } else {
         Outline::page()
     }
@@ -197,7 +197,8 @@ pub(in crate::publication::render) async fn catalog(
     let mut entries = Entries::new(plan).await?;
     let mut page = 0;
     let mut first_section = false;
-    let mut outline = Outline::default();
+    let w3c = plan.profile_flag("w3cFrontMatter").await?;
+    let mut outline = Outline::document(w3c);
     let mut slugs = Slugs::default();
     while let Some(entry) = entries.next(plan).await? {
         diagrams |=
@@ -241,7 +242,7 @@ pub(in crate::publication::render) async fn catalog(
                         toc: Toc::new(),
                         contents: String::new(),
                     });
-                    outline = local_outline(false);
+                    outline = local_outline(false, w3c);
                 } else {
                     first_section = true;
                 }
@@ -458,7 +459,8 @@ pub(in crate::publication::render) async fn write_catalog(
     let mut current = None;
     let mut section_open = false;
     let mut file: Option<BufWriter<File>> = None;
-    let mut outline = Outline::default();
+    let w3c = plan.profile_flag("w3cFrontMatter").await?;
+    let mut outline = Outline::document(w3c);
     let mut diagnostics = plan.quality.clone();
     let mut root = "";
     while let Some(entry) = entries.next(plan).await? {
@@ -613,7 +615,7 @@ pub(in crate::publication::render) async fn write_catalog(
             file = Some(next);
             section_open = false;
             current = Some(page);
-            outline = local_outline(page == 0);
+            outline = local_outline(page == 0, w3c);
         }
         if library.is_some() &&
             page == 0 &&

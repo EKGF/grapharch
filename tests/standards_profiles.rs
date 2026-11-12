@@ -169,8 +169,10 @@ async fn omg_specification_cover_does_not_duplicate_its_status_metadata()
     tokio::fs::write(
         &path,
         format!(
-            "{}\nex:profile ga:style \"omg\" .",
-            include_str!("../examples/specification/project.ttl")
+            "{}\n{}\nex:profile ga:theme <urn:example:submission-theme:theme> \
+             .",
+            include_str!("../examples/specification/project.ttl"),
+            include_str!("fixtures/submission-theme.ttl")
         ),
     )
     .await?;
@@ -205,11 +207,12 @@ async fn omg_typst_target_retains_supplied_editor_and_version_metadata()
     tokio::fs::write(
         &path,
         format!(
-            "{}\nex:profile ga:style \"omg\" .",
+            "{}\n{}\nex:profile ga:theme <urn:example:submission-theme:theme> .",
             include_str!("../examples/specification/project.ttl").replace(
                 "ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>",
                 "ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>"
-            )
+            ),
+            include_str!("fixtures/submission-theme.ttl")
         ),
     )
     .await?;

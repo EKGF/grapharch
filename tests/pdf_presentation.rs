@@ -18,8 +18,8 @@ async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
     let fixture = definitions::set_property(
         include_str!("../examples/showcase/project.ttl"),
         "urn:showcase:spec-profile",
-        "https://ekgf.org/ontology/grapharch#style",
-        definitions::literal("overview"),
+        "https://ekgf.org/ontology/grapharch#theme",
+        definitions::iri("https://ekgf.org/ontology/grapharch#OverviewTheme")?,
     )?;
     let fixture = definitions::set_property(
         &fixture,
@@ -46,8 +46,11 @@ async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
             .await?;
     assert!(!typst.contains("Document provenance"));
     assert!(!typst.contains("Recent committers"));
-    assert!(typst.contains("#let ga-style = \"overview\""));
-    assert!(typst.contains("#let ga-overview = ga-style == \"overview\""));
+    assert!(typst.contains(
+        "// Theme: https://ekgf.org/ontology/grapharch#OverviewTheme"
+    ));
+    assert!(typst.contains("  number_headings: false,"));
+    assert!(typst.contains("A practical introduction"));
     assert!(
         tokio::fs::read(publication.directory.join("document.pdf"))
             .await?
@@ -105,7 +108,9 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     );
     assert!(typst.contains("#link(\"https://example.org/shapes/reject\")"));
     assert!(
-        typst.contains("#let ga-style = \"reader\""),
+        typst.contains(
+            "// Theme: https://ekgf.org/ontology/grapharch#ReaderTheme"
+        ),
         "reader typography must be selected from its pinned publication \
          profile"
     );
@@ -117,9 +122,8 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
         "Markdown prose must be real paragraphs so paragraph spacing applies"
     );
     assert!(
-        typst.contains(
-            "leading: if ga-overview { 0.8em } else { 0.7em }, spacing: 1.3em"
-        ),
+        typst.contains("  leading: 0.7em,") &&
+            typst.contains("  paragraph_spacing: 1.3em,"),
         "paragraph gaps must exceed line leading"
     );
     assert!(
@@ -132,7 +136,8 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     );
 
     assert!(
-        typst.contains("#set par(justify: not ga-overview, leading:"),
+        typst.contains("  justify: true,") &&
+            typst.contains("#set par(justify: T.justify, leading:"),
         "body paragraphs must align to both margins"
     );
     assert!(
@@ -174,12 +179,7 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
     let path = source.path().join("project.ttl");
     std::fs::write(
         &path,
-        definitions::set_property(
-            include_str!("../examples/specification/project.ttl"),
-            "urn:specification:profile",
-            "https://ekgf.org/ontology/grapharch#style",
-            definitions::literal("reader"),
-        )?,
+        include_str!("../examples/specification/project.ttl"),
     )?;
     let (dataset, plans) = showcases::specification(&path).await?;
     std::fs::remove_file(path)?;
@@ -192,7 +192,9 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
     };
     let typst =
         std::fs::read_to_string(publication.directory.join("main.typ"))?;
-    assert!(typst.contains("#let ga-style = \"specification\""));
+    assert!(typst.contains(
+        "// Theme: https://ekgf.org/ontology/grapharch#SpecificationTheme"
+    ));
     assert!(typst.contains("#let ga-accent = rgb(\"#2b5f9f\")"));
     assert!(
         typst.contains("#let ga-ribbon = \"EKGF Editor's Draft\""),
@@ -200,7 +202,9 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
          publication status"
     );
     assert!(typst.contains("rotate(-90deg, reflow: true)"));
-    assert!(typst.contains("#ga-cover("));
+    assert!(
+        typst.contains("#rect(width: 16mm, height: 1.5mm, fill: ga-accent")
+    );
     assert!(
         typst.contains("#ga-section(1)["),
         "component boundaries must carry heading space outside their fragment \
@@ -233,8 +237,8 @@ async fn unsupported_pdf_style_is_rejected() -> Result<()> {
         definitions::set_property(
             include_str!("../examples/showcase/project.ttl"),
             "urn:showcase:spec-profile",
-            "https://ekgf.org/ontology/grapharch#style",
-            definitions::literal("unsupported"),
+            "https://ekgf.org/ontology/grapharch#theme",
+            definitions::iri("urn:example:undeclared-theme")?,
         )?,
     )?;
     let (dataset, plans) = showcases::authored(&path).await?;
@@ -245,9 +249,7 @@ async fn unsupported_pdf_style_is_rejected() -> Result<()> {
         .await
         .err()
         .expect("unknown PDF styles must fail");
-    assert!(
-        format!("{error:#}").contains("unsupported PDF presentation style")
-    );
+    assert!(format!("{error:#}").contains("is not a declared ga:Theme"));
     assert!(!out.path().join("review/document.pdf").exists());
     Ok(())
 }
@@ -331,7 +333,7 @@ async fn independent_standards_pdf_preserves_publication_metadata() -> Result<()
         definitions::iri("https://ekgf.org/ontology/grapharch#TypstRenderer")?,
     )?;
     let fixture =
-        format!("{fixture}\nex:profile ga:style \"specification\" .\n");
+        format!("{fixture}\nex:profile ga:theme ga:SpecificationTheme .\n");
     std::fs::write(&path, fixture)?;
     let (dataset, plans) = showcases::specification(&path).await?;
     std::fs::remove_file(path)?;

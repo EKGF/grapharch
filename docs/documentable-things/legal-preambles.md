@@ -54,13 +54,13 @@ The website and PDF present the same retained fragment in different layouts.
 
 ## From legal fragment to publication
 
-A target's `ga:preamble` link selects its legal fragment. A specification can
+A target's ordered `ga:notice` entries select its legal fragments and copyright holders. A specification can
 present it as an expandable disclosure, keeping lengthy notices accessible near
 the publication metadata. The PDF includes the full text on dedicated front-matter
-pages, with justified paragraphs and legal-section styling, before the technical
-content. The preamble is separate from ordinary numbered chapters.
+pages, styled by the publication theme, before the technical
+content. Notices are separate from ordinary numbered chapters.
 
-See [legal preamble publication](../usage/specification-renderer.md#legal-preamble)
+See [front-matter notices](../usage/specification-renderer.md#front-matter-notices)
 for the target relationship. As with other fragments, renderers read the retained
 KG content; they do not reopen the original template when generating a
 publication from an exported and restored graph.

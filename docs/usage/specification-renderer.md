@@ -12,7 +12,7 @@ permalink: /usage/specification-renderer/
 
 Use `ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>` to publish a standards-style HTML document.
 This is a dedicated renderer within the Grapharch CLI, distinct from the generic
-HTML renderer's `ga:style "specification"` styling hint. It reads the same pinned
+HTML renderer's `ga:theme ga:SpecificationTheme` styling hint. It reads the same pinned
 plans and validated graph revisions; there is no ReSpec or browser-side assembly.
 
 The structure is informed by [OWL 2](https://www.w3.org/TR/owl2-overview/),
@@ -173,7 +173,8 @@ remaining authoring-source migration and exact-output acceptance requirements.
 
 ## Sections and navigation
 
-The profile must begin with exactly one placement having
+A W3C-style profile (the default; see [W3C front matter](#w3c-front-matter))
+must begin with exactly one placement having
 `ga:sectionKind "abstract"`, followed by exactly one with `"status"`. Their titles
 and bodies are authored content. These placements remain unnumbered. Subsequent
 `"section"` placements receive numeric section numbers; `"appendix"` placements
@@ -249,7 +250,7 @@ elsewhere in the KG, in a different profile, or excluded by scope does not count
 ex:release-profile a ga:Profile ;
     ga:requiredSectionRole "abstract", "scope", "conformance", "references",
         "terms", "symbols", "namespaces", "acknowledgements", "model", "examples" ;
-    ga:requiredMetadata dct:title, ga:publisher, ga:preamble,
+    ga:requiredMetadata dct:title, ga:publisher, ga:notice,
         ga:publicationDate, ga:releaseVersion, ga:documentNumber ;
     ga:allowedPublicationStatus "Formal Specification" .
 
@@ -269,14 +270,18 @@ unknown. Require those values in the release profile instead of inventing them.
 When supplied, `ga:releaseVersion` and `ga:documentNumber` appear in the
 specification header and PDF cover metadata.
 
-## Legal preamble
+## Front-matter notices
 
-Link a specification or PDF target to a retained fragment with `ga:preamble`.
-The fragment's title supplies the disclosure label; its complete legal wording
-remains in the KG alongside its source provenance.
+A target lists its notices with `ga:notice`. Each notice has a `ga:order` and
+holds either one retained fragment (`ga:fragment`) or ordered copyright holders
+(`ga:copyrightHolder`). A holder is written as "Copyright © years, name".
 
 ```turtle
-ex:specification ga:preamble ex:legal-notices .
+ex:specification ga:notice ex:holders, ex:terms-notice .
+ex:holders ga:order 1 ; ga:copyrightHolder ex:holder-1, ex:holder-2 .
+ex:holder-1 ga:order 1 ; ga:holderName "Example Authority" ; ga:copyrightYears "2024-2026" .
+ex:holder-2 ga:order 2 ; ga:holderName "Example Member, Inc." ; ga:copyrightYears "2025" .
+ex:terms-notice ga:order 2 ; ga:fragment ex:legal-notices .
 ex:legal-notices a ga:Fragment ;
     dct:title "Legal notices" ;
     ga:subject ex:publication ;
@@ -285,12 +290,35 @@ ex:legal-notices a ga:Fragment ;
     ga:body "## Copyright\n\nCopyright © 2026 Example Authority.\n\n## Terms\n\nThe full source-owned legal terms go here." .
 ```
 
-Specification HTML presents a keyboard-accessible disclosure, closed initially.
-The PDF includes the entire preamble on dedicated front-matter pages after the
-cover and before the contents. Its typography and accent follow the publication
-theme. It does not become a numbered technical chapter. HTML and Markdown
-fragments are supported; unsupported formats and missing legal fragments fail
+Specification HTML presents each fragment notice as a keyboard-accessible
+disclosure, closed initially, and lists the copyright holders. The PDF sets all
+notices in order on front-matter pages after the cover and before the contents.
+The theme styles them; GraphArch adds no banner or wording of its own. Notices
+are not numbered and do not appear in the contents. HTML and Markdown fragments
+are supported; unsupported formats, ambiguous orders and missing fragments fail
 the publication rather than silently omitting the notices.
+
+## W3C front matter
+
+By default a specification follows the W3C convention: exactly one
+`ga:sectionKind "abstract"` placement, then one `"status"` placement, before the
+numbered sections. Family publications generate both from the target's
+`dct:description` and `rdfs:comment`. A profile for another convention, such as
+an OMG formal specification, sets `ga:w3cFrontMatter false`.
+
+## Cover and metadata rows
+
+Ordered `ga:metadataRow` rows give each value its label from the definitions.
+Fields are `thisVersion`, `latestVersion` and the other publication links,
+`releaseVersion`, `documentNumber`, `publicationStatus`, the contributor roles,
+or `custom` HTML. When a target declares rows, the specification header shows
+only those rows. A profile requires fields with `ga:requiredMetadataField`:
+
+```turtle
+ex:profile ga:requiredMetadataField "thisVersion", "latestVersion" .
+```
+
+The PDF cover is declared by the theme; see [PDF documents](../features/targets/typst.md).
 
 For a ReSpec migration, the
 [legal preamble collector](../collectors/legal-preambles.md) collects the

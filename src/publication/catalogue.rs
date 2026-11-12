@@ -7,7 +7,7 @@ use {
     sha2::{Digest, Sha256},
 };
 
-fn sources() -> [(&'static str, &'static str); 3] {
+fn sources() -> [(&'static str, &'static str); 4] {
     [
         (
             "renderers",
@@ -20,6 +20,10 @@ fn sources() -> [(&'static str, &'static str); 3] {
         (
             "documentors",
             include_str!("../../docs/other/ontology/documentors.ttl"),
+        ),
+        (
+            "themes",
+            include_str!("../../docs/other/ontology/themes.ttl"),
         ),
     ]
 }

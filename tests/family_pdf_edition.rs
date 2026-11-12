@@ -57,7 +57,7 @@ fn project_definitions(pdf_destination: &str, pdf_extra: &str) -> String {
 <urn:example:scope> a ga:Scope .
 <urn:example:profile> a ga:Profile, pub:PublicationProfile; pub:publishesFamily <urn:example:family> .
 <urn:example:pdf-profile> a ga:Profile, pub:PublicationProfile; pub:publishesFamily <urn:example:family>;
- ga:style "specification" .
+ ga:theme ga:SpecificationTheme .
 {}{}
 <urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;
  rdfs:label "Example authority"@en; ga:shortName "Example" .
@@ -141,8 +141,10 @@ async fn family_typst_target_publishes_only_a_specification_styled_pdf()
     let typst =
         std::fs::read_to_string(publication.directory.join("main.typ"))?;
     assert!(
-        typst.contains("#let ga-style = \"specification\""),
-        "the profile's ga:style selects the specification look"
+        typst.contains(
+            "// Theme: https://ekgf.org/ontology/grapharch#SpecificationTheme"
+        ),
+        "the profile's ga:theme selects the specification look"
     );
     for text in [
         "Edition ontology",

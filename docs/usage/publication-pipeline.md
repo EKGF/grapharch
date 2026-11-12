@@ -109,7 +109,7 @@ description, and publishes HTML and PDF. Both showcases share their execution
 code with `tests/showcases.rs`. See the [showcase catalog](examples.md)
 for assertions, explicit fixture wiring, and current limits.
 
-Profiles support `ga:style "specification"` or `"reader"` for HTML. Components use
+Profiles support `ga:theme ga:SpecificationTheme` or `"reader"` for HTML. Components use
 `ga:sectionKind "section"`, `"appendix"`, `"glossary"`, or `"references"`.
 Titles use `dcterms:title`. Markdown heading levels are relative to each fragment's
 shallowest heading level; skipped heading levels fail. Internal subject links resolve

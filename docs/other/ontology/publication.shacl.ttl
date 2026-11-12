@@ -45,14 +45,27 @@ ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
 
 ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:productLogo ; sh:nodeKind sh:IRI ; sh:class ga:BinaryAsset ; sh:maxCount 1 ; sh:node ga:ProductLogoShape ] ;
-    sh:property [ sh:path ga:preamble ; sh:nodeKind sh:IRI ; sh:class ga:Fragment ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:notice ; sh:nodeKind sh:IRI ; sh:node ga:NoticeShape ; sh:maxCount 32 ] ;
+    sh:property [ sh:path ga:footerText ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:renderer ; sh:nodeKind sh:IRI ; sh:class ga:PublicationRenderer ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:keyword ; sh:datatype xsd:string ; sh:minLength 1 ; sh:pattern "^[^\\s,;](?:[^,;]*[^\\s,;])?$" ; sh:maxCount 64 ] .
 
+ga:NoticeShape a sh:NodeShape ;
+    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:xone ( [ sh:property [ sh:path ga:fragment ; sh:class ga:Fragment ; sh:minCount 1 ; sh:maxCount 1 ] ]
+              [ sh:property [ sh:path ga:copyrightHolder ; sh:node ga:CopyrightHolderShape ; sh:minCount 1 ; sh:maxCount 64 ] ] ) .
+
+ga:CopyrightHolderShape a sh:NodeShape ;
+    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:holderName ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:copyrightYears ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] .
+
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:theme ; sh:nodeKind sh:IRI ; sh:class ga:Theme ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:familyPlacement ; sh:nodeKind sh:IRI ; sh:class ga:Placement ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:requiredSectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:requiredMetadata ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:allowedPublicationStatus ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 16 ] ;

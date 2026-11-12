@@ -5,7 +5,6 @@ use {
         model::{Plan, node, title},
     },
     anyhow::{Result, ensure},
-    oxrdf::Term,
     tokio::{
         fs::File,
         io::{AsyncWriteExt, BufWriter},
@@ -49,15 +48,18 @@ pub(super) async fn begin(
     file: &mut BufWriter<File>,
     plan: &Plan,
 ) -> Result<()> {
-    let style = match plan.source.optional(&plan.profile, "style").await? {
-        None => "specification".to_owned(),
-        Some(Term::Literal(style)) => style.value().to_owned(),
-        _ => anyhow::bail!("profile style must be a literal"),
+    let style = match crate::publication::theme::Lineage::read(
+        &plan.source,
+        &plan.profile,
+        crate::publication::theme::Builtin::Specification,
+    )
+    .await?
+    .builtin()
+    {
+        crate::publication::theme::Builtin::Specification => "specification",
+        crate::publication::theme::Builtin::Reader => "reader",
+        theme => anyhow::bail!("unsupported HTML profile theme {theme:?}"),
     };
-    ensure!(
-        matches!(style.as_str(), "specification" | "reader"),
-        "unsupported HTML profile style {style}"
-    );
     file.write_all(
         format!(
             "<!doctype html>\n<html lang=\"en\"><head><meta \

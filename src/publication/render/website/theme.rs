@@ -1,6 +1,11 @@
 //! Source-selected companion website identity; specification authority styling
 //! is separate.
-use {super::super::model::Plan, anyhow::Result, oxrdf::Term, std::path::Path};
+use {
+    super::super::model::Plan,
+    crate::publication::theme::{Builtin, Lineage},
+    anyhow::Result,
+    std::path::Path,
+};
 
 #[derive(Clone, Copy, PartialEq)]
 pub(super) enum Theme {
@@ -11,21 +16,18 @@ pub(super) enum Theme {
 
 impl Theme {
     pub async fn read(plan: &Plan) -> Result<Self> {
-        match plan.source.optional(&plan.profile, "style").await? {
-            None => Ok(Self::Default),
-            Some(Term::Literal(style)) => {
-                match style.value() {
-                    "reader" => Ok(Self::Default),
-                    "ekgf" => Ok(Self::Ekgf),
-                    "ekgf-project" => Ok(Self::EkgfProject),
-                    value => {
-                        anyhow::bail!(
-                            "unsupported website presentation style {value}"
-                        )
-                    },
-                }
+        match Lineage::read(&plan.source, &plan.profile, Builtin::Reader)
+            .await?
+            .builtin()
+        {
+            Builtin::Reader => Ok(Self::Default),
+            Builtin::Ekgf => Ok(Self::Ekgf),
+            Builtin::EkgfProject => Ok(Self::EkgfProject),
+            theme => {
+                anyhow::bail!(
+                    "unsupported website presentation theme {theme:?}"
+                )
             },
-            _ => anyhow::bail!("website presentation style must be a literal"),
         }
     }
 

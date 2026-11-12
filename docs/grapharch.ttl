@@ -19,7 +19,7 @@ doc:scope a ga:Scope .
 doc:website a ga:Target ; dct:title "Grapharch documentation" ;
     ga:scope doc:scope ; ga:profile doc:profile ;
     ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
-doc:profile a ga:Profile ; ga:style "ekgf" ; ga:headerLink doc:header-specification .
+doc:profile a ga:Profile ; ga:theme ga:EkgfTheme ; ga:headerLink doc:header-specification .
 doc:header-specification dct:title "Specification" ; ga:url "spec/develop/" ; ga:order 1 .
 
 # This specification is generated from the actual vocabulary, not its overview page.

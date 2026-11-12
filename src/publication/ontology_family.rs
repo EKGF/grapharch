@@ -29,6 +29,7 @@ use {
         sync::Arc,
     },
 };
+pub(crate) mod arrangement;
 mod declarations;
 mod modules;
 mod reference;
@@ -818,6 +819,8 @@ async fn build(
             Literal::new_simple_literal(snapshot.as_str()),
         ),
     ];
+    let arrangement =
+        arrangement::FamilyArrangement::read(&view, &profile).await?;
     for (order, kind, title, property) in [
         (
             0,
@@ -831,7 +834,10 @@ async fn build(
             "Status of This Document",
             "http://www.w3.org/2000/01/rdf-schema#comment",
         ),
-    ] {
+    ]
+    .into_iter()
+    .filter(|_| arrangement.front_matter)
+    {
         let text = english(&view, &target, property).await?;
         ensure!(
             text.len() == 1,
@@ -936,24 +942,28 @@ async fn build(
             member.missing
         ));
     }
-    component(
-        &mut data,
-        &target,
-        &profile,
-        &family,
-        &terminology.overview(),
-        "section",
-        2,
-    );
-    fragment(
-        &mut data,
-        &scope,
-        &target,
-        &family,
-        &contribution,
-        &overview,
-        0,
-    );
+    {
+        component(
+            &mut data,
+            &target,
+            &profile,
+            &family,
+            &terminology.overview(),
+            "section",
+            arrangement.overview_order(),
+        );
+        arrangement.nest_overview(&mut data, &target, &family);
+        arrangement::role(&mut data, &target, &family, arrangement::OVERVIEW);
+        fragment(
+            &mut data,
+            &scope,
+            &target,
+            &family,
+            &contribution,
+            &overview,
+            0,
+        );
+    }
     // bounded: each selected resource has one canonical full entry, even when
     // several registered SKOS schemes share its namespace and membership.
     let mut placed_terms = HashSet::new();
@@ -966,10 +976,12 @@ async fn build(
                 &chapter.subject,
                 &chapter.title,
                 "section",
-                order as u32 + 3,
+                arrangement.chapter(order),
             );
             if let Some(parent) = &chapter.parent {
                 parent_placement(&mut data, &target, &chapter.subject, parent);
+            } else {
+                arrangement.nest(&mut data, &target, &chapter.subject);
             }
             if let Some(slug) =
                 authored_page_slug(&view, &chapter.subject).await?
@@ -990,6 +1002,8 @@ async fn build(
         let member = &members[chapter.member.expect("ontology chapter index")];
         if let Some(parent) = &chapter.parent {
             parent_placement(&mut data, &target, &chapter.subject, parent);
+        } else {
+            arrangement.nest(&mut data, &target, &member.ontology);
         }
         component(
             &mut data,
@@ -998,7 +1012,7 @@ async fn build(
             &member.ontology,
             &member.title,
             "section",
-            order as u32 + 3,
+            arrangement.chapter(order),
         );
         // An ontology page is named by the namespace prefix its family binds,
         // unless the ontology declares its own page slug.
@@ -1184,25 +1198,33 @@ async fn build(
             }
         }
     }
-    let coverage_subject = identity("family-coverage", &[target.as_str()]);
-    component(
-        &mut data,
-        &target,
-        &profile,
-        &coverage_subject,
-        "Documentation coverage",
-        "appendix",
-        chapters.len() as u32 + 3,
-    );
-    fragment(
-        &mut data,
-        &scope,
-        &target,
-        &coverage_subject,
-        &contribution,
-        &coverage,
-        0,
-    );
+    {
+        let coverage_subject = identity("family-coverage", &[target.as_str()]);
+        arrangement::role(
+            &mut data,
+            &target,
+            &coverage_subject,
+            arrangement::COVERAGE,
+        );
+        component(
+            &mut data,
+            &target,
+            &profile,
+            &coverage_subject,
+            "Documentation coverage",
+            "appendix",
+            arrangement.coverage_order(chapters.len()),
+        );
+        fragment(
+            &mut data,
+            &scope,
+            &target,
+            &coverage_subject,
+            &contribution,
+            &coverage,
+            0,
+        );
+    }
     for quad in data {
         stream.write(quad).await?;
     }

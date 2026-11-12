@@ -116,7 +116,7 @@ pub(in crate::publication::render) async fn header(
         ("documentNumber", "Document identifier"),
     ] {
         if let Some(value) = optional(plan, &plan.target, field).await? {
-            html.push_str(&format!(
+            defaults.push_str(&format!(
                 "<dt>{label}:</dt><dd>{}</dd>",
                 html_escape(&value)
             ));
@@ -170,7 +170,7 @@ pub(in crate::publication::render) async fn header(
         ));
     }
     html.push_str("</header>\n");
-    html.push_str(&super::super::preamble::html(plan).await?);
+    html.push_str(&super::super::notices::html(plan).await?);
     Ok(Header { html, color: authority.color })
 }
 

@@ -18,7 +18,7 @@ doc:scope a ga:Scope .
 
 doc:specification a ga:Target ; ga:subtitle "Generated from native RDF sources" ;
     ga:scope doc:scope ; ga:profile doc:profile ; ga:renderer ga:SpecificationRenderer ;
-    ga:destination "specification" ; ga:preamble doc:legal-preamble ;
+    ga:destination "specification" ; ga:notice doc:legal-notice ;
     ga:publicationStatus "Reference Preview" ; ga:publisher doc:publisher ;
     ga:latestVersion <https://example.org/dprod/spec/> ;
     ga:editorDraft <https://example.org/dprod/repository> ;
@@ -35,7 +35,7 @@ doc:website-scope a ga:Scope .
 doc:website-profile a ga:Profile .
 doc:pdf a ga:Target ; dct:title "DPROD review edition" ;
     ga:scope doc:scope ; ga:profile doc:pdf-profile ; ga:renderer ga:TypstRenderer ;
-    ga:destination "pdf" ; ga:preamble doc:legal-preamble ; ga:publisher doc:publisher ;
+    ga:destination "pdf" ; ga:notice doc:legal-notice ; ga:publisher doc:publisher ;
     ga:metadataSource doc:source:ontology ; ga:derivedMetadata ga:license, ga:publicationDate .
 
 doc:source:ontology a ga:CollectorUse ; ga:collectorType ga:RdfFileCollector ;
@@ -99,8 +99,8 @@ doc:component:concepts a ga:Component ; dct:title "Concepts without a documented
 doc:component:node-shapes a ga:Component ; dct:title "SHACL node shapes" .
 doc:component:property-shapes a ga:Component ; dct:title "SHACL property shapes" .
 
-doc:profile a ga:Profile ; ga:requiredSectionRole "scope" ; ga:requiredMetadata ga:preamble .
-doc:pdf-profile a ga:Profile ; ga:requiredSectionRole "scope" ; ga:requiredMetadata ga:preamble .
+doc:profile a ga:Profile ; ga:requiredSectionRole "scope" ; ga:requiredMetadata ga:notice .
+doc:pdf-profile a ga:Profile ; ga:requiredSectionRole "scope" ; ga:requiredMetadata ga:notice .
 
 # Authored placements; the generated reference fills the nested components.
 doc:profile:abstract a ga:Placement ; ga:component doc:component:abstract ; ga:sectionKind "abstract" ; ga:sectionRole "abstract" ; ga:order 0 .
@@ -133,3 +133,4 @@ doc:pdf-profile:generated:concepts a ga:Placement ; ga:component doc:component:c
 doc:pdf-profile:generated:node-shapes a ga:Placement ; ga:component doc:component:node-shapes ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 28 .
 doc:pdf-profile:generated:property-shapes a ga:Placement ; ga:component doc:component:property-shapes ; ga:parentPlacement doc:pdf-profile:overview ; ga:sectionKind "section" ; ga:order 29 .
 doc:pdf-profile ga:placement doc:pdf-profile:abstract, doc:pdf-profile:status, doc:pdf-profile:formal, doc:pdf-profile:overview, doc:pdf-profile:example, doc:pdf-profile:generated:classes, doc:pdf-profile:generated:object-properties, doc:pdf-profile:generated:datatype-properties, doc:pdf-profile:generated:annotation-properties, doc:pdf-profile:generated:named-individuals, doc:pdf-profile:generated:concept-schemes, doc:pdf-profile:generated:concepts, doc:pdf-profile:generated:node-shapes, doc:pdf-profile:generated:property-shapes .
+doc:legal-notice ga:order 1 ; ga:fragment doc:legal-preamble .

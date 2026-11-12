@@ -10,11 +10,11 @@ use {
 #[tokio::test]
 async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()>
 {
-    for theme in [None, Some("ekgf")] {
+    for theme in [None, Some("EkgfTheme")] {
         let input = tempfile::tempdir()?;
         let settings = input.path().join("project.ttl");
         let style = theme
-            .map(|value| format!("; ga:style \"{value}\""))
+            .map(|value| format!("; ga:theme ga:{value}"))
             .unwrap_or_default();
         tokio::fs::write(&settings, format!(r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> . @prefix dct: <http://purl.org/dc/terms/> .

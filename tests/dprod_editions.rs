@@ -53,6 +53,7 @@ async fn render_dual_editions(
         "https://ekgf.org/ontology/grapharch#destination",
         definitions::literal("pdf/ekgf"),
     )?;
+    ttl.push_str(include_str!("fixtures/submission-theme.ttl"));
     ttl.push_str(
         r##"
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -65,7 +66,7 @@ ex:submission a ga:Target ; dct:title "DPROD OMG submission preview" ;
     ga:publicationStatus "Submission Preview" ;
     ga:publicationDate "2026-10-24"^^<http://www.w3.org/2001/XMLSchema#date> ;
     ga:latestVersion <https://example.org/dprod/> .
-ex:submission-profile a ga:Profile ; ga:style "omg" ;
+ex:submission-profile a ga:Profile ; ga:theme <urn:example:submission-theme:theme> ;
     ga:placement <urn:dprod-showcase:pdf-placement:abstract>,
         <urn:dprod-showcase:pdf-placement:overview>,
         <urn:dprod-showcase:pdf-placement:classes>,
@@ -119,17 +120,9 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     assert!(submission.contains("DPROD OMG submission preview"));
     assert!(submission.contains("Submission Preview"));
     assert!(
-        submission.contains("#set text(font: \"Liberation Serif\", size: 10pt"),
-        "OMG body follows the Times-compatible 10pt reference typography"
-    );
-    assert!(
-        submission
-            .contains("#show heading.where(level: 4): set block(below: 10pt)"),
-        "deep headings need separation from following content"
-    );
-    assert!(
-        submission.contains("#show heading: set block(inset: (bottom: 10pt))"),
-        "heading separation must survive the fragment container boundary"
+        submission.contains("  body_font: \"Liberation Serif\",") &&
+            submission.contains("  body_size: 10pt,"),
+        "the submission theme selects Times-compatible 10pt typography"
     );
     let pdf = tokio::fs::read(output.join("pdf/omg/document.pdf")).await?;
     assert!(
@@ -137,8 +130,14 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
         "the portable Times-compatible font must be embedded"
     );
 
-    assert!(submission.contains("#let ga-style = \"omg\""));
-    assert!(community.contains("#let ga-style = \"reader\""));
+    assert!(
+        submission.contains("// Theme: urn:example:submission-theme:theme")
+    );
+    assert!(
+        community.contains(
+            "// Theme: https://ekgf.org/ontology/grapharch#ReaderTheme"
+        )
+    );
     assert!(submission.contains("#set page(numbering: \"i\")"));
     assert!(submission.contains("#set page(numbering: \"1\")"));
     assert!(submission.contains("not an approved OMG specification"));
