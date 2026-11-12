@@ -11,12 +11,12 @@ async (page) => {
   }
   await legal.focus();
   await page.keyboard.press('Enter');
-  await page.waitForURL(/section-/);
+  await page.waitForURL(/\/fibo-be-le-lp\/index\.html$/);
   if (!(await page.title()).includes('Legal Persons')) throw new Error('Ontology card route incorrect');
   if (await page.locator('figure.owl-class-diagram').count() !== 12) throw new Error('Legal Persons class figures missing');
   const home = page.locator('.library-home-link a');
   if (await home.count() !== 1) throw new Error('Ontology page lacks domain home link');
   await home.click();
-  await page.waitForURL(/index.html$/);
+  await page.waitForURL(url => !url.pathname.includes('/fibo-be-le-lp/') && url.pathname.endsWith('/index.html'));
   return {ontologies:48, ...counts, ontologyNavigation:true, viewports:[2048,1280,390]};
 }

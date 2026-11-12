@@ -7,6 +7,7 @@ pub(in crate::publication::render) mod metadata;
 mod native;
 mod outline;
 pub(super) mod pages;
+pub(super) mod route;
 mod rows;
 
 use {

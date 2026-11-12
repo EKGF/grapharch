@@ -798,7 +798,7 @@ async fn build(
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v11:{snapshot}"),
+            &format!("family-v12:{snapshot}"),
             super::dataset::Stage::Document,
         )
         .await?;
@@ -971,6 +971,11 @@ async fn build(
             if let Some(parent) = &chapter.parent {
                 parent_placement(&mut data, &target, &chapter.subject, parent);
             }
+            if let Some(slug) =
+                authored_page_slug(&view, &chapter.subject).await?
+            {
+                page_slug(&mut data, &target, &chapter.subject, &slug);
+            }
             fragment(
                 &mut data,
                 &scope,
@@ -995,6 +1000,12 @@ async fn build(
             "section",
             order as u32 + 3,
         );
+        // An ontology page is named by the namespace prefix its family binds,
+        // unless the ontology declares its own page slug.
+        let slug = authored_page_slug(&view, &member.ontology)
+            .await?
+            .unwrap_or_else(|| member.prefix.clone());
+        page_slug(&mut data, &target, &member.ontology, &slug);
         let labels = vocabulary_labels(&member.view, &member.ontology).await?;
         let description =
             reference::introduction(&member.view, &member.ontology).await?;
@@ -1391,6 +1402,33 @@ fn parent_placement(
             target.as_str(),
             parent.as_str(),
         ]),
+    ));
+}
+/// The page slug declared on a documented ontology or module, if any.
+async fn authored_page_slug(
+    view: &RevisionView,
+    subject: &NamedNode,
+) -> Result<Option<String>> {
+    match view.optional(subject, "pageSlug").await? {
+        None => Ok(None),
+        Some(Term::Literal(slug)) => Ok(Some(slug.value().to_owned())),
+        Some(_) => anyhow::bail!("ga:pageSlug of {subject} must be a literal"),
+    }
+}
+/// Record the page slug of a subject's placement for paginated renderers.
+fn page_slug(
+    data: &mut Vec<Quad>,
+    target: &NamedNode,
+    subject: &NamedNode,
+    slug: &str,
+) {
+    data.push(q(
+        &identity("family-placement", &[
+            target.as_str(),
+            subject.as_str(),
+        ]),
+        "pageSlug",
+        Literal::new_simple_literal(slug),
     ));
 }
 fn component(

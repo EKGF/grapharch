@@ -85,12 +85,25 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
     ] {
         let (output, _) = render(None, renderer).await?;
         let root = output.path().join("reference");
+        // Paginated pages are published as <slug>/index.html.
+        let mut pages = Vec::new();
         let mut files = tokio::fs::read_dir(&root).await?;
+        while let Some(file) = files.next_entry().await? {
+            let path = file.path();
+            if file.file_type().await?.is_dir() {
+                let page = path.join("index.html");
+                if tokio::fs::try_exists(&page).await? {
+                    pages.push(page);
+                }
+            } else if path.extension().is_some_and(|e| e == "html") {
+                pages.push(path);
+            }
+        }
         let mut notes = 0;
         let mut refs = 0;
-        while let Some(file) = files.next_entry().await? {
-            if file.path().extension().is_some_and(|e| e == "html") {
-                let body = tokio::fs::read_to_string(file.path()).await?;
+        for page in pages {
+            {
+                let body = tokio::fs::read_to_string(&page).await?;
                 notes += body.matches("id=\"grapharch-diagram-note\"").count();
                 refs += body.matches("role=\"doc-noteref\"").count();
                 let document = scraper::Html::parse_document(&body);
@@ -104,9 +117,9 @@ async fn restored_diagrams_share_one_final_note_per_document() -> Result<()> {
                         .split_once('#')
                         .unwrap();
                     let target = if route.is_empty() {
-                        file.path()
+                        page.clone()
                     } else {
-                        root.join(route)
+                        page.parent().unwrap().join(route)
                     };
                     let target = tokio::fs::read_to_string(target).await?;
                     assert_eq!(
