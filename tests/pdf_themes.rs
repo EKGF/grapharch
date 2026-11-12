@@ -151,7 +151,8 @@ async fn declarative_cover_places_logo_date_version_and_labelled_rows()
 async fn annexes_use_label_pattern_normativity_and_recto_start() -> Result<()> {
     let (typst, _out) = render(house("")).await?;
     assert!(typst.contains(
-        "#ga-blank-page[#text(\"This page intentionally left blank.\")]"
+        "#ga-blank-page(<ga-recto-1>)[#text(\"This page intentionally left \
+         blank.\")]"
     ));
     assert!(typst.contains("[#text(\"Annex A: Change history\")]"));
     assert!(typst.contains("#text(\"(informative)\")"));

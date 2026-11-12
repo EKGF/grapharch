@@ -136,8 +136,10 @@
     ga-notice-heading(T.notice_title_size, title)
   }
 }
-#let ga-blank-page(notice) = context {
-  if calc.odd(counter(page).get().first()) {
+// The marker records the page on which the preceding content ends; a context
+// evaluated after page breaks would otherwise see the following page.
+#let ga-blank-page(marker, notice) = context {
+  if calc.odd(counter(page).at(marker).first()) {
     pagebreak()
     align(center + horizon)[#notice]
     pagebreak()

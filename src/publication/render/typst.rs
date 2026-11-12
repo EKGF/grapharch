@@ -350,8 +350,12 @@ pub(super) async fn entry(
         // forbids page breaks inside a heading show rule in that container.
         if annex && let Some(notice) = &style.recto {
             file.write_all(
-                format!("#ga-blank-page[#text({})]\n", quote(notice))
-                    .as_bytes(),
+                format!(
+                    "#metadata(none)<ga-recto-{appendix}>\n#\
+                     ga-blank-page(<ga-recto-{appendix}>)[#text({})]\n",
+                    quote(notice)
+                )
+                .as_bytes(),
             )
             .await?;
         } else if entry.depth == 1 &&
