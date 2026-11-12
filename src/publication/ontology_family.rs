@@ -33,6 +33,7 @@ pub(crate) mod arrangement;
 mod declarations;
 mod modules;
 mod reference;
+mod site;
 
 const GOVERNANCE: &str = "https://ekgf.org/ontology/artifact-governance#";
 const PUBLICATION: &str = "https://ekgf.org/ontology/artifact-publication#";
@@ -257,14 +258,15 @@ async fn collect_from_optional(
             Some(path) => Some(tokio::fs::canonicalize(path).await?),
             None => None,
         };
+        let mut site = None;
         let inputs = match source {
             FamilySource::Directory(path) => {
-                file_collectors(
-                    &tokio::fs::canonicalize(path).await?,
-                    definitions.as_deref(),
-                    project,
-                )
-                .await?
+                let root = tokio::fs::canonicalize(path).await?;
+                let inputs =
+                    file_collectors(&root, definitions.as_deref(), project)
+                        .await?;
+                site = Some(site::SiteSource::Directory(root));
+                inputs
             },
             FamilySource::LocalRepository(path) => {
                 let scan = super::collect::git::local_repository(path, project)
@@ -276,6 +278,7 @@ async fn collect_from_optional(
                 )
                 .await?;
                 inputs.push(scan.provenance);
+                site = Some(site::SiteSource::Directory(scan.root));
                 inputs
             },
             FamilySource::RemoteRepository { url, reference, cache } => {
@@ -283,14 +286,10 @@ async fn collect_from_optional(
                     url, reference, cache, project,
                 )
                 .await?;
-                let mut inputs = scan.files;
-                inputs.push(scan.provenance);
-                inputs
+                site::SiteSource::pinned(scan, &mut site)
             },
             FamilySource::PreparedRepository(scan) => {
-                let mut inputs = scan.files;
-                inputs.push(scan.provenance);
-                inputs
+                site::SiteSource::pinned(scan, &mut site)
             },
             FamilySource::RdfUrls(configs) => {
                 ensure!(
@@ -339,6 +338,7 @@ async fn collect_from_optional(
         build(
             inputs,
             definitions.as_deref(),
+            site.as_ref(),
             &dataset,
             &writer,
             project,
@@ -439,6 +439,7 @@ async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
 async fn build(
     inputs: Vec<Arc<dyn Collector>>,
     definitions: Option<&Path>,
+    site: Option<&site::SiteSource>,
     dataset: &Dataset,
     writer: &GraphWriter,
     project: &str,
@@ -481,6 +482,20 @@ async fn build(
     );
     let snapshot = dataset.snapshot_collected_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
+    // Website pages are collected after the family snapshot, so the family
+    // reference reads exactly the collected RDF sources.
+    let website =
+        site::FamilySite::prepare(site, &view, project, targets.selected())
+            .await?;
+    for page in &website.collectors {
+        let id = page.identity()?;
+        managed.add(id.processor, id.source, false)?;
+    }
+    managed.persist_inventory(writer, true).await?;
+    managed.retire(writer, false).await?;
+    if !website.collectors.is_empty() {
+        collect_all(website.collectors.clone(), writer, concurrency).await?;
+    }
     let target = NamedNode::new(target)?;
     ensure!(
         view.renderer(&target).await?.publishes_family(),
@@ -1298,6 +1313,9 @@ async fn build(
         "family resources documented"
     );
     managed.finish(writer).await?;
+    for target in &website.websites {
+        super::website::bind(dataset, writer, project, target.as_str()).await?;
+    }
     let revision = Assembler::new(dataset.clone()).assemble(project).await?;
     tracing::info!(
         elapsed_ms = started.elapsed().as_millis(),
@@ -1331,6 +1349,10 @@ async fn plan_targets(
     // bounded: a selection names at most 16 targets.
     let mut plans = Vec::with_capacity(targets.selected().len());
     for target in targets.selected() {
+        if view.renderer(target).await? == super::Renderer::Website {
+            plans.push(planner.resolve(project, target, writer).await?);
+            continue;
+        }
         let used = view.node(target, "profile").await?;
         ensure!(
             &used == profile,

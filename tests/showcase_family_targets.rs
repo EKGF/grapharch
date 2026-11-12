@@ -26,10 +26,19 @@ const ONTOLOGY: &str = r#"
  rdfs:comment "Published by every family target."@en .
 "#;
 
+/// Whether the repository also registers a website target, and whether its
+/// project declares the directory holding the website's pages.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Site {
+    Absent,
+    Undeclared,
+    Declared,
+}
+
 /// Three targets share the family profile, each with its own renderer and
 /// destination, as in a repository that publishes paginated pages, a PDF
 /// edition and a single-page review.
-fn hints(website: bool) -> String {
+fn hints(site: Site) -> String {
     let target = |key: &str, renderer: &str, destination: &str| {
         format!(
             r#"
@@ -44,7 +53,12 @@ fn hints(website: bool) -> String {
 "#
         )
     };
-    let (registered, site) = if website {
+    let content = if site == Site::Declared {
+        r#"<urn:example:project> ga:contentSource "publication/site" ."#
+    } else {
+        ""
+    };
+    let (registered, site) = if site != Site::Absent {
         (
             ", <urn:example:website>",
             r#"
@@ -69,6 +83,7 @@ fn hints(website: bool) -> String {
 <urn:example:scope> a ga:Scope .
 <urn:example:profile> a ga:Profile; pub:publishesFamily <urn:example:family> .
 {}{}{}{site}
+{content}
 <urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;
  rdfs:label "Example authority"@en; ga:shortName "Example" .
 "#,
@@ -78,13 +93,23 @@ fn hints(website: bool) -> String {
     )
 }
 
-fn repository(root: &Path, website: bool) -> Result<String> {
+fn repository(root: &Path, site: Site) -> Result<String> {
     let source = root.join("source");
-    std::fs::create_dir_all(source.join("publication"))?;
+    std::fs::create_dir_all(source.join("publication/site"))?;
     std::fs::write(source.join("ontology.ttl"), ONTOLOGY)?;
     std::fs::write(
         source.join("publication/grapharch.ttl"),
-        hints(website),
+        hints(site),
+    )?;
+    std::fs::write(
+        source.join("publication/site/index.md"),
+        "---\ntitle: Family home\npermalink: /\n---\n# Family home\n\nRead \
+         the [guide](guide.md).\n",
+    )?;
+    std::fs::write(
+        source.join("publication/site/guide.md"),
+        "---\ntitle: Guide\n---\n# Guide\n\nWebsite page from the \
+         repository.\n",
     )?;
     Ok(family_repository::bare_copy(&source, &root.join("remote"))?.0)
 }
@@ -150,7 +175,7 @@ async fn destinations(
 async fn family_showcase_publishes_every_registered_target_in_iri_order()
 -> Result<()> {
     let root = tempfile::tempdir()?;
-    let url = repository(root.path(), false)?;
+    let url = repository(root.path(), Site::Absent)?;
     let config = showcase(root.path(), &url, None)?;
     let (dataset, plans) =
         showcases::family(&config, &root.path().join("cache")).await?;
@@ -176,9 +201,9 @@ async fn family_showcase_publishes_every_registered_target_in_iri_order()
 async fn family_showcase_selects_targets_explicitly_and_rejects_unbuildable_ones()
 -> Result<()> {
     let root = tempfile::tempdir()?;
-    let url = repository(root.path(), true)?;
-    // The family build cannot supply website pages, so it must not publish
-    // the website target silently empty or skip it.
+    let url = repository(root.path(), Site::Undeclared)?;
+    // Without a declared page source the website target has no content, so
+    // it must not be published empty or skipped silently.
     let config = showcase(root.path(), &url, None)?;
     let failure = showcases::family(&config, &root.path().join("cache"))
         .await
@@ -187,8 +212,8 @@ async fn family_showcase_selects_targets_explicitly_and_rejects_unbuildable_ones
     let message = format!("{failure:#}");
     assert!(
         message.contains("urn:example:website") &&
-            message.contains("urn:example:profile"),
-        "the failure names the target and the family profile: {message}"
+            message.contains("ga:contentSource"),
+        "the failure names the target and the missing page source: {message}"
     );
     let config = showcase(
         root.path(),
@@ -236,7 +261,7 @@ async fn single_target_discovery_names_every_registered_target() -> Result<()> {
         ontology_family::{self, FamilySource},
     };
     let root = tempfile::tempdir()?;
-    repository(root.path(), false)?;
+    repository(root.path(), Site::Absent)?;
     // build-family publishes one target; it must not choose among several.
     let failure = ontology_family::collect_discovered_from(
         Dataset::memory()?,
@@ -253,5 +278,45 @@ async fn single_target_discovery_names_every_registered_target() -> Result<()> {
     {
         assert!(message.contains(target), "{message}");
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn family_showcase_builds_a_website_from_the_declared_page_source()
+-> Result<()> {
+    let root = tempfile::tempdir()?;
+    let url = repository(root.path(), Site::Declared)?;
+    let config = showcase(root.path(), &url, None)?;
+    let (dataset, plans) =
+        showcases::family(&config, &root.path().join("cache")).await?;
+    assert_eq!(
+        plans.len(),
+        4,
+        "the website target is planned too"
+    );
+    let output = root.path().join("output");
+    std::fs::create_dir(&output)?;
+    let output = output.canonicalize()?;
+    let (family, website) = plans.split_at(3);
+    assert_eq!(
+        destinations(dataset.clone(), family, &output).await?,
+        ["documents/main", "review", "spec/main"]
+    );
+    let PublishOutcome::Published(site) =
+        Publisher::new(dataset).render(&website[0], &output).await?
+    else {
+        panic!("expected the website publication")
+    };
+    assert_eq!(site.directory, output.join("site"));
+    let home = std::fs::read_to_string(site.directory.join("index.html"))?;
+    assert!(home.contains("Family home"), "{home}");
+    let pages = site
+        .manifest
+        .files
+        .iter()
+        .filter(|file| file.ends_with(".html"))
+        .map(|file| std::fs::read_to_string(site.directory.join(file)))
+        .collect::<std::io::Result<String>>()?;
+    assert!(pages.contains("Website page from the repository."));
     Ok(())
 }

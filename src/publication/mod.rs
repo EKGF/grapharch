@@ -15,6 +15,7 @@ pub mod diagnostics;
 pub mod document;
 mod gallery;
 pub mod governance;
+mod graph_placement;
 pub mod hosting;
 mod href;
 mod limits;

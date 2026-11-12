@@ -391,7 +391,13 @@ async fn build_case(
             NamedNode::new(&publication.manifest.input_revision)?,
         );
         let title = super::render::page_title(&view, &target).await?;
-        for name in publication.manifest.files {
+        let mut files = publication.manifest.files.clone();
+        if let Some(placement) =
+            super::graph_placement::GraphPlacement::of(&view, &target).await?
+        {
+            files.push(placement.retain(&publication, &archive).await?);
+        }
+        for name in files {
             let file = publication.directory.join(&name);
             let relative = file
                 .strip_prefix(&output)?

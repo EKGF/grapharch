@@ -515,6 +515,12 @@ pub async fn run(
                 .dataset
                 .export(output_root.join("documentation.nq"))
                 .await?;
+            super::graph_placement::GraphPlacement::retain_declared(
+                &built.dataset,
+                &publication,
+                &output_root.join("documentation.nq"),
+            )
+            .await?;
             publication.manifest.ensure_publishable()?;
             if *json {
                 print_build_json(
@@ -564,6 +570,12 @@ pub async fn run(
                 .dataset
                 .export(output_root.join("documentation.nq"))
                 .await?;
+            super::graph_placement::GraphPlacement::retain_declared(
+                &built.dataset,
+                &publication,
+                &output_root.join("documentation.nq"),
+            )
+            .await?;
             publication.manifest.ensure_publishable()?;
             if *json {
                 print_build_json(&publication, output_root, &built.plan, None)

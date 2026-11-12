@@ -2,19 +2,14 @@
 //! parallel, and assemble a website plan. Rendering only reads that pinned KG.
 pub(crate) mod discovery;
 mod native_models;
+mod pages;
+pub(crate) use pages::SitePages;
 mod navigation;
 
 use {
     super::{
         assembly::Assembler,
-        collect::{
-            Collector,
-            LocalImageFile,
-            MarkdownFile,
-            RdfFile,
-            TextAssetFile,
-            collect_all,
-        },
+        collect::{Collector, RdfFile, collect_all},
         dataset::{Dataset, identity},
         document::{Documentor, MermaidDocumentor},
         plan::{ResolvedPlan, TargetPlanner},
@@ -116,19 +111,14 @@ pub(crate) async fn collect_with_configuration(
             dataset.clone(),
             dataset.snapshot_collected_for(project).await?,
         );
-        let content =
-            discovery::content_root(&source, &view, &NamedNode::new(project)?)
-                .await?;
-        let include_roots =
-            discovery::include_roots(&source, &view, &NamedNode::new(project)?)
-                .await?;
-        let image_bindings = super::collect::plantuml::bindings(
-            &view, project, &source, &content,
-        )
+        let pages = pages::SitePages {
+            source:          &source,
+            repository:      configuration.repository.as_deref(),
+            mkdocs_metadata: configuration.mkdocs_metadata,
+            skip:            Some(&definitions),
+        }
+        .collectors(&view, project)
         .await?;
-        let paths =
-            discovery::discover(&content, &view, &NamedNode::new(project)?)
-                .await?;
         let mut work: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: 256 discovered sources and two repository records.
         ensure!(
             configuration.extra_collectors.len() <= 64,
@@ -154,60 +144,7 @@ pub(crate) async fn collect_with_configuration(
                 work.push(scan.provenance);
             }
         }
-        for path in paths {
-            if path == definitions {
-                continue;
-            }
-            let relative = super::collect::page::source_path(&content, &path)?;
-            let collector =
-                identity("website-collector", &[project, &relative]);
-            let blob = if let Some(repository) = &configuration.repository {
-                Some(repository.blob(path.strip_prefix(&source)?).await?)
-            } else {
-                None
-            };
-            if let Some(blob) = &blob {
-                work.push(blob.provenance_collector());
-            }
-            if path.extension().is_some_and(|extension| extension == "md") {
-                let mut markdown = MarkdownFile::in_site(
-                    project,
-                    collector.as_str(),
-                    content.clone(),
-                    path,
-                )?
-                .with_default_title()
-                .with_mkdocs_metadata(configuration.mkdocs_metadata)
-                .with_image_bindings(image_bindings.clone())
-                .with_include_roots(include_roots.clone())?;
-                if let Some(blob) = blob {
-                    markdown = markdown.with_source_identity(blob.source())?;
-                }
-                work.push(Arc::new(markdown));
-            } else if LocalImageFile::supported(&path) {
-                if let Some(blob) = blob {
-                    work.push(blob.image_collector(
-                        collector.as_str(),
-                        identity("local-image-asset", &[project, &relative]),
-                    )?);
-                } else {
-                    work.push(Arc::new(
-                        LocalImageFile::new(project, &content, &path).await?,
-                    ));
-                }
-            } else {
-                let mut asset = TextAssetFile::new(
-                    project,
-                    collector.as_str(),
-                    content.clone(),
-                    path,
-                )?;
-                if let Some(blob) = blob {
-                    asset = asset.with_source_identity(blob.source())?;
-                }
-                work.push(Arc::new(asset));
-            }
-        }
+        work.extend(pages);
         collect_all(work, &writer, concurrency).await?;
 
         super::collect::configured::collect(

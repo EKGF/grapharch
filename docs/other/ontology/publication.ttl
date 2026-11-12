@@ -1813,6 +1813,14 @@ ga:contentSource a owl:DatatypeProperty ;
     dct:description "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
     rdfs:domain ga:Project ; rdfs:range xsd:string .
 
+ga:documentationGraphPath a owl:DatatypeProperty ;
+    rdfs:label "Documentation graph path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the relative N-Quads file path, beneath a target's destination, at which the publication retains its documentation graph."@en ;
+    dct:description "Names the relative N-Quads file path, beneath a target's destination, at which the publication retains its documentation graph."@en ;
+    rdfs:comment "Lets authored pages link to the graph with a portable relative reference. The path must be relative, free of traversal, use / separators, end in .nq and not collide with a rendered file."@en ;
+    rdfs:domain ga:Target ; rdfs:range xsd:string .
+
 # Explicit source dependency roots, independent from authored-page discovery.
 ga:includeRoot a owl:DatatypeProperty ;
     rdfs:label "include root"@en ;
