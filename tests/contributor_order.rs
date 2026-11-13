@@ -45,6 +45,7 @@ async fn render(extra: &str) -> Result<(String, String)> {
     dataset.import(export.path().join("graph.nq")).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -53,8 +54,7 @@ async fn render(extra: &str) -> Result<(String, String)> {
     Ok((
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?,
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?,
+        tokio::fs::read_to_string(publication.typst_source()).await?,
     ))
 }
 

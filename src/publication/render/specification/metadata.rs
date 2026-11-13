@@ -86,11 +86,18 @@ pub(in crate::publication::render) async fn header(
     let downloads = super::super::pdf_download::metadata_links(
         ordered_rows.as_deref().unwrap_or_default(),
     );
-    let attached_pdf = super::super::pdf_download::link(
-        "document.pdf",
-        "Specification PDF",
-        "pdf-download",
-    );
+    // Only renderers with a paired PDF edition attach a download.
+    let attached_pdf = plan
+        .pdf_file
+        .as_deref()
+        .map(|name| {
+            super::super::pdf_download::link(
+                name,
+                "Specification PDF",
+                "pdf-download",
+            )
+        })
+        .unwrap_or_default();
     let logos = format!("{}{product_logo}", authority.logo);
     let banner = format!("{} {}", authority.short, status);
     let mut html = format!(

@@ -126,6 +126,7 @@ async fn shared_rdf_subjects_render_once_and_survive_source_removal()
     };
     let (dataset, plan) = request.collect().await?;
     let PublishOutcome::Published(original) = Publisher::new(dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, &request.output)
         .await?
     else {
@@ -138,6 +139,7 @@ async fn shared_rdf_subjects_render_once_and_survive_source_removal()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, &output.path().join("restored"))
         .await?
     else {

@@ -42,6 +42,7 @@ ex:logo-chunk ga:order 0 ; ga:base64 "{}" .
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -188,6 +189,7 @@ ex:logo-chunk ga:order 0 ; ga:base64 "{}" .
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;
     let error = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await
         .err()

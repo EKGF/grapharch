@@ -192,6 +192,7 @@ ex:incoming a owl:ObjectProperty ; rdfs:label "delegates control to" ; rdfs:comm
     let restored = Dataset::memory()?;
     restored.import(archive.clone()).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, &output.path().join("after"))
         .await?
     else {

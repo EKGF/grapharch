@@ -76,6 +76,7 @@ async fn check_navigation(with_index: bool) -> Result<()> {
     let dataset = grapharch::publication::dataset::Dataset::memory()?;
     dataset.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -163,6 +164,7 @@ async fn excluded_generated_sources_do_not_enter_navigation_discovery()
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(site) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

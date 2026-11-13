@@ -130,6 +130,17 @@ class BuildActionTest(unittest.TestCase):
                     build_action.main()
                 self.assertFalse((root / "outputs").exists())
 
+    def test_edition_input_is_passed_to_the_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            environment = self.environment(Path(temporary))
+            environment["GRAPHARCH_EDITION"] = "pr-23"
+            with patch.dict(os.environ, environment):
+                arguments = build_action.configuration()
+            self.assertEqual(arguments[-2:], ["--edition", "pr-23"])
+            del environment["GRAPHARCH_EDITION"]
+            with patch.dict(os.environ, environment, clear=True):
+                self.assertNotIn("--edition", build_action.configuration())
+
     def test_install_mode_does_not_run_another_command(self):
         with (
             patch.dict(os.environ, {"GRAPHARCH_MODE": "install"}),

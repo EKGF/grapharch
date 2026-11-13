@@ -48,6 +48,7 @@ async fn interactive_svg_keeps_original_bytes_and_projects_validated_links_after
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, output.path())
         .await?
     else {
@@ -134,6 +135,7 @@ async fn unresolved_svg_navigation_prevents_partial_publication() -> Result<()>
     .await?;
     let output = tempfile::tempdir()?;
     let error = match Publisher::new(collected.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, output.path())
         .await
     {

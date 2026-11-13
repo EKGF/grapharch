@@ -42,8 +42,8 @@ async fn source(selected: &str) -> Result<tempfile::TempDir> {
 <urn:site-scope> a ga:Scope . <urn:site-profile> a ga:Profile .
 <urn:site> a ga:Target ; dct:title "Site" ; ga:scope <urn:site-scope> ; ga:profile <urn:site-profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
 <urn:spec-scope> a ga:Scope ; ga:include {selected} . <urn:spec-profile> a ga:Profile .
-<urn:spec> a ga:Target ; dct:title "Owned specification" ; ga:ontologySource "owned.ttl" ; ga:scope <urn:spec-scope> ; ga:profile <urn:spec-profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "spec" ; ga:publisher <urn:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec> ; ga:latestVersion <https://example.org/spec> .
-<urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example Authority" ; ga:shortName "Example" ; ga:accentColor "#123456" .
+<urn:spec> a ga:Target ; dct:title "Owned specification" ; ga:ontologySource "owned.ttl" ; ga:scope <urn:spec-scope> ; ga:profile <urn:spec-profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "spec" ; ga:destination "spec" ; ga:publisher <urn:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec> ; ga:latestVersion <https://example.org/spec> .
+<urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "example" ; <http://www.w3.org/2000/01/rdf-schema#label> "Example Authority" ; ga:shortName "Example" ; ga:accentColor "#123456" .
 "##)).await?;
     Ok(root)
 }
@@ -66,6 +66,7 @@ async fn explicitly_selected_reused_terms_survive_restoration() -> Result<()> {
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -111,7 +112,7 @@ async fn explicitly_selected_reused_terms_survive_restoration() -> Result<()> {
     assert!(typst.contains("external.ttl"));
     assert!(!typst.contains("DO NOT PUBLISH THIS DEFINITION"));
     assert!(
-        tokio::fs::read(publication.directory.join("spec/document.pdf"))
+        tokio::fs::read(only_pdf(&publication.directory.join("spec")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -145,4 +146,21 @@ async fn selected_terms_reject_unsupported_or_incompatible_types() -> Result<()>
         assert!(format!("{failure:#}").contains("selected term"));
     }
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

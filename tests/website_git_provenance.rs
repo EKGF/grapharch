@@ -94,6 +94,7 @@ async fn website_collection_pins_enclosing_git_repository_and_recent_committers(
     restored.import(archive).await?;
     source.close()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

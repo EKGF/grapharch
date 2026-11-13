@@ -39,7 +39,7 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
     )
     .await?;
     let definitions = source.path().join("grapharch.ttl");
-    tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:contentSource "docs";ga:collector <urn:cases>;ga:target <urn:t>, <urn:pdf>. <urn:pdf> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf";ga:scope <urn:s>;ga:profile <urn:f>. <urn:cases> a ga:CollectorUse;ga:collectorType ga:AuthoredUseCasesCollector;ga:source "docs/use-case". <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&definitions, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:contentSource "docs";ga:collector <urn:cases>;ga:target <urn:t>, <urn:pdf>. <urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf";ga:scope <urn:s>;ga:profile <urn:f>. <urn:cases> a ga:CollectorUse;ga:collectorType ga:AuthoredUseCasesCollector;ga:source "docs/use-case". <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &definitions, "urn:p", "urn:t", 2)
             .await?;
@@ -59,6 +59,7 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(site) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -120,17 +121,17 @@ async fn authored_topology_survives_source_removal_without_duplicate_pages()
             .any(|file| file.ends_with(".svg"))
     );
     let PublishOutcome::Published(pdf) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&pdf_plan, output.path())
         .await?
     else {
         panic!("PDF failed")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(typst.contains("Unique canonical customer prose."));
     assert!(typst.contains("Use-case relationships"));
     assert!(
-        tokio::fs::metadata(pdf.directory.join("document.pdf"))
+        tokio::fs::metadata(pdf.pdf().expect("published PDF edition"))
             .await?
             .len() >
             1000
@@ -207,7 +208,8 @@ async fn native_assets_have_a_separate_budget_from_authored_pages() -> Result<()
     tokio::fs::write(&config, r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:collector <urn:c>;ga:target <urn:t>. <urn:c> a ga:CollectorUse;ga:collectorType ga:AuthoredUseCasesCollector;ga:source "cases". <urn:t> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site";ga:scope <urn:s>;ga:profile <urn:f>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 4).await?;
-    let publisher = Publisher::new(built.dataset);
+    let publisher = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     // Bounded corpus: reference indexing must not form a cross-graph Cartesian
     // join.
     let PublishOutcome::Published(site) = tokio::time::timeout(

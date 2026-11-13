@@ -99,6 +99,7 @@ async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
     dataset.import(archive).await?;
     let grapharch::publication::render::PublishOutcome::Published(result) =
         grapharch::publication::render::Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&built.plan, output.path())
             .await?
     else {

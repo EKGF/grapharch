@@ -53,6 +53,12 @@ async fn ekgf_products_share_the_same_community_shell() -> Result<()> {
         .await?;
         let PublishOutcome::Published(publication) =
             Publisher::new(built.dataset)
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default,
+                )
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default,
+                )
                 .render(&built.plan, output.path())
                 .await?
         else {
@@ -117,6 +123,7 @@ async fn authored_landing_and_documentation_share_one_theme() -> Result<()> {
     let dataset = grapharch::publication::dataset::Dataset::memory()?;
     dataset.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

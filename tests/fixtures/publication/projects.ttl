@@ -13,8 +13,8 @@ ex:spec a ga:Target ; ga:scope ex:family ; ga:profile ex:spec-profile ;
     ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "build/spec" .
 ex:reader a ga:Target ; ga:scope ex:shared ; ga:profile ex:reader-profile ;
     ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "build/reader" .
-ex:pdf a ga:Target ; ga:scope ex:family ; ga:profile ex:pdf-profile ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "build/pdf" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . ex:pdf a ga:Target ; ga:scope ex:family ; ga:profile ex:pdf-profile ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority> ; ga:destination "build/pdf" .
 ex:spec-profile a ga:Profile ; ga:placement ex:spec-intro .
 ex:reader-profile a ga:Profile ; ga:placement ex:reader-intro .
 ex:pdf-profile a ga:Profile ; ga:placement ex:pdf-intro .
@@ -42,5 +42,5 @@ ex:empty-profile a ga:Profile .
 
 ex:portfolio-project a ga:Project ; ga:scope ex:portfolio ; ga:target ex:portfolio-pdf .
 ex:portfolio a ga:Scope ; ga:include ex:fund-a, ex:fund-b ; ga:exclude ex:fund-b .
-ex:portfolio-pdf a ga:Target ; ga:scope ex:portfolio ; ga:profile ex:empty-profile ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "build/portfolio" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . ex:portfolio-pdf a ga:Target ; ga:scope ex:portfolio ; ga:profile ex:empty-profile ;
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "portfolio-pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority> ; ga:destination "build/portfolio" .

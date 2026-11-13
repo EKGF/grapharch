@@ -54,6 +54,9 @@ pub struct RevisionInputs {
     /// Deployed URL of the build output; each selected target's version
     /// derives from it.
     pub publication_url: PublicationUrl,
+    /// Edition of this build, naming its PDF editions; required when a
+    /// selected target renders a PDF.
+    pub edition:         Option<crate::publication::pdf_name::Edition>,
 }
 
 /// Collect content through the configured collectors, generate configured
@@ -147,6 +150,7 @@ impl Build<'_> {
             project,
             &targets,
             &self.inputs.publication_url,
+            self.inputs.edition.as_ref(),
             self.writer,
         )
         .await?;

@@ -68,6 +68,7 @@ async fn retained_search(documentation: bool) -> Result<()> {
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(result) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

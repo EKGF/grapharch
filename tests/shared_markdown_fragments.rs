@@ -22,7 +22,7 @@ const DEFINITIONS: &str = r#"
 <urn:site> a ga:Target; dct:title "Shared website"; ga:scope <urn:site-scope>; ga:profile <urn:site-profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
 <urn:pdf-scope> a ga:Scope; ga:include <urn:shared:page>; ga:traverse ga:topic; ga:maxDepth 1 .
 <urn:pdf-profile> a ga:Profile; ga:theme ga:OverviewTheme; ga:placement <urn:pdf-placement> .
-<urn:pdf> a ga:Target; dct:title "Shared overview"; ga:scope <urn:pdf-scope>; ga:profile <urn:pdf-profile>; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>; ga:destination "pdf" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target; dct:title "Shared overview"; ga:scope <urn:pdf-scope>; ga:profile <urn:pdf-profile>; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>; ga:destination "pdf" .
 <urn:pdf-placement> a ga:Placement; ga:component <urn:shared:component>; ga:order 1 .
 <urn:shared:component> a ga:Component; dct:title "Shared explanation"; ga:fragment <urn:shared:section> .
 "#;
@@ -104,22 +104,30 @@ async fn one_canonical_edit_updates_html_and_pdf_from_shared_restored_fragments(
         {
             let PublishOutcome::Published(publication) =
                 Publisher::new(restored.clone())
+                    .with_edition(
+                        grapharch::publication::pdf_name::Edition::Default,
+                    )
                     .render(plan, output.path())
                     .await?
             else {
                 panic!("publication required")
             };
-            let body =
-                tokio::fs::read_to_string(publication.directory.join(file))
-                    .await?;
+            let path = if file == "main.typ" {
+                publication.typst_source()
+            } else {
+                publication.directory.join(file)
+            };
+            let body = tokio::fs::read_to_string(path).await?;
             assert!(
                 body.contains(sentence),
                 "{file} did not use the canonical fragment"
             );
+            // A PDF-only target embeds its images in the PDF it owns.
             assert!(
-                publication.manifest.files.iter().any(|path| {
-                    path.starts_with("assets/") && path.ends_with(".svg")
-                }),
+                file == "main.typ" ||
+                    publication.manifest.files.iter().any(|path| {
+                        path.starts_with("assets/") && path.ends_with(".svg")
+                    }),
                 "{file} must retain its local image"
             );
             if file == "main.typ" {

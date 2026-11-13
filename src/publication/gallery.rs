@@ -332,7 +332,9 @@ async fn build_case(
     tokio::fs::create_dir_all(&output).await?;
     let output = tokio::fs::canonicalize(output).await?;
     let publications = showcases::publish(
-        &Publisher::new(child.clone()).with_failure_mode(mode),
+        &Publisher::new(child.clone())
+            .with_edition(crate::publication::pdf_name::Edition::Default)
+            .with_failure_mode(mode),
         &plans,
         &output,
     )
@@ -384,6 +386,8 @@ async fn build_case(
     let prefix = format!("showcases/artifacts/{}/", case.key);
     let mut artifacts = HashMap::new();
     let mut output_order = 0u32;
+    // bounded: one named PDF edition per publication of this case.
+    let mut pdfs = std::collections::HashSet::new();
     for publication in publications {
         let target = NamedNode::new(&publication.manifest.target)?;
         let view = RevisionView::new(
@@ -397,6 +401,7 @@ async fn build_case(
         {
             files.push(placement.retain(&publication, &archive).await?);
         }
+        let pdf_name = publication.manifest.pdf.clone();
         for name in files {
             let file = publication.directory.join(&name);
             let relative = file
@@ -414,8 +419,12 @@ async fn build_case(
                 total_bytes <= super::limits::RETAINED_ASSET_BYTES,
                 "showcase artifacts exceed 512 MiB budget"
             );
+            let is_pdf = pdf_name.as_deref() == Some(name.as_str());
+            if is_pdf {
+                pdfs.insert(relative.clone());
+            }
             artifacts.insert(relative, asset.id());
-            if name == "index.html" || name == "document.pdf" {
+            if name == "index.html" || is_pdf {
                 metadata.push(quad(&case.id, "outputArtifact", asset.id()));
                 metadata.push(quad(
                     &asset.id(),
@@ -450,6 +459,11 @@ async fn build_case(
     let preview = artifact_selection(
         &artifacts,
         case.preview.as_deref(),
+        |path| {
+            Path::new(path)
+                .file_name()
+                .is_some_and(|name| name == "index.html")
+        },
         "index.html",
         &case.id,
     )?
@@ -459,7 +473,8 @@ async fn build_case(
     let pdf = artifact_selection(
         &artifacts,
         case.pdf.as_deref(),
-        "document.pdf",
+        |path| pdfs.contains(path),
+        "PDF edition",
         &case.id,
     )?;
     if let Some(pdf) = pdf {
@@ -494,6 +509,7 @@ async fn build_case(
 fn artifact_selection<'a>(
     artifacts: &'a HashMap<String, NamedNode>,
     selected: Option<&str>,
+    candidate: impl Fn(&str) -> bool,
     filename: &str,
     case: &NamedNode,
 ) -> Result<Option<&'a NamedNode>> {
@@ -502,11 +518,7 @@ fn artifact_selection<'a>(
             anyhow::anyhow!("showcase {case} has no selected artifact {path}")
         });
     }
-    let mut choices = artifacts.iter().filter(|(path, _)| {
-        Path::new(path)
-            .file_name()
-            .is_some_and(|name| name == filename)
-    });
+    let mut choices = artifacts.iter().filter(|(path, _)| candidate(path));
     let Some((_, asset)) = choices.next() else {
         return Ok(None);
     };

@@ -174,6 +174,7 @@ async fn configured_local_git_and_http_rdf_are_native_sources_before_publication
     restored.import(archive).await?;
     assert!(matches!(
         Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&built.plan, output.path())
             .await?,
         PublishOutcome::Published(_)

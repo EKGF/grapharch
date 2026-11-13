@@ -46,6 +46,11 @@ def configuration():
         ]:
             arguments.extend([option, required(f"GRAPHARCH_{name}")])
     arguments.extend(["--output-root", required("GRAPHARCH_OUTPUT")])
+    # PDF targets require an explicit edition; GraphArch rejects a PDF build
+    # without one, so an omitted input is passed through as absent.
+    edition = os.environ.get("GRAPHARCH_EDITION", "")
+    if edition:
+        arguments.extend(["--edition", required("GRAPHARCH_EDITION")])
     return arguments
 
 

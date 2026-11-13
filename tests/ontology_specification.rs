@@ -51,6 +51,7 @@ async fn ontology_spec_is_published_with_the_companion_site_from_a_restored_grap
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -79,7 +80,7 @@ async fn ontology_spec_is_published_with_the_companion_site_from_a_restored_grap
         "opaque blank-node identifiers are not documentation"
     );
     assert!(html.contains("class=\"pdf-download\""));
-    assert!(std::fs::read(spec.join("document.pdf"))?.starts_with(b"%PDF-"));
+    assert!(std::fs::read(only_pdf(&spec))?.starts_with(b"%PDF-"));
     assert!(std::fs::read(spec.join("documentation.nq"))?.len() > 1024);
     let page = scraper::Html::parse_document(&html);
     let links = scraper::Selector::parse("a[href^='#']").unwrap();
@@ -92,4 +93,21 @@ async fn ontology_spec_is_published_with_the_companion_site_from_a_restored_grap
         );
     }
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

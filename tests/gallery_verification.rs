@@ -140,7 +140,7 @@ async fn verification_keeps_healthy_case_and_error_kg_when_another_case_fails()
         root.path(),
         r#"
 <urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "missing.ttl" .
-<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/example-spec-showcase.pdf" .
 "#,
     )?;
     std::fs::copy(
@@ -240,8 +240,8 @@ async fn collected_case_kg_survives_a_later_verification_failure() -> Result<()>
     registry(
         root.path(),
         r#"
-<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf";ga:expectedDiagnostic "expected-but-absent" .
-<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/document.pdf" .
+<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/example-spec-showcase.pdf";ga:expectedDiagnostic "expected-but-absent" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:AuthoredShowcaseRunner;ga:source "authored.ttl";ga:previewPath "specification/index.html";ga:pdfPath "review/example-spec-showcase.pdf" .
 "#,
     )?;
     std::fs::copy(
@@ -303,7 +303,7 @@ async fn verification_fails_a_showcase_whose_relative_links_name_unpublished_fil
         ),
         (
             "portable.ttl",
-            r#"<a href="document.pdf">Specification</a><br><a href="./">Online</a>"#,
+            r#"<a href="ekgf-spec-specification.pdf">Specification</a><br><a href="./">Online</a>"#,
         ),
     ] {
         std::fs::write(

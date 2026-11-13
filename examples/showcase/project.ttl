@@ -12,8 +12,8 @@ ex:spec a ga:Target ; dct:title "Documentation graph specification" ; ga:scope e
     ga:profile ex:spec-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "specification" .
 ex:reader a ga:Target ; dct:title "A guide to the documentation graph" ; ga:scope ex:scope ;
     ga:profile ex:reader-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "reader" .
-ex:pdf a ga:Target ; dct:title "Documentation graph - review draft" ; ga:scope ex:scope ;
-    ga:profile ex:spec-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . ex:pdf a ga:Target ; dct:title "Documentation graph - review draft" ; ga:scope ex:scope ;
+    ga:profile ex:spec-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "showcase" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority> ; ga:destination "review" .
 ex:spec-profile a ga:Profile ; ga:theme ga:SpecificationTheme ;
     ga:placement ex:spec-overview, ex:spec-contract, ex:spec-glossary, ex:spec-references .
 ex:reader-profile a ga:Profile ; ga:theme ga:ReaderTheme ;

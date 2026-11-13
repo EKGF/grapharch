@@ -75,8 +75,13 @@ async fn live_fibo_be_renders_html_and_pdf_from_restored_graph() -> Result<()> {
     drop(dataset);
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output).await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output,
+    )
+    .await?;
     assert_eq!(publications.len(), 2);
     let html =
         tokio::fs::read_to_string(output.join("specification/index.html"))
@@ -84,7 +89,7 @@ async fn live_fibo_be_renders_html_and_pdf_from_restored_graph() -> Result<()> {
     assert!(html.contains("48 ontologies"));
     assert!(html.contains("Business Entities"));
     assert!(
-        tokio::fs::read(output.join("pdf/document.pdf"))
+        tokio::fs::read(only_pdf(&output.join("pdf")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -99,4 +104,21 @@ async fn live_fibo_be_renders_html_and_pdf_from_restored_graph() -> Result<()> {
         started.elapsed().as_secs_f64()
     );
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

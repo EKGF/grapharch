@@ -25,6 +25,7 @@ mod native_html;
 pub mod ontology_family;
 mod ontology_specification;
 pub mod orcid;
+pub mod pdf_name;
 pub mod plan;
 pub mod quick_build;
 pub mod render;

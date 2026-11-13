@@ -58,7 +58,9 @@ async fn main() -> anyhow::Result<()> {
         grapharch::publication::diagnostics::FailureMode::FailFast
     };
     let root = arguments.output_root();
-    let publisher = Publisher::new(dataset.clone()).with_failure_mode(mode);
+    let publisher = Publisher::new(dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .with_failure_mode(mode);
     let mut errors = 0;
     for publication in support::publish(&publisher, &plans, &root).await? {
         println!("{}", publication.directory.display());

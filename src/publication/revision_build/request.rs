@@ -53,6 +53,11 @@ pub struct BuildRequest {
     /// `ga:thisVersion` derives from it and the target's destination.
     #[arg(long, value_name = "URL")]
     pub publication_url:    PublicationUrl,
+    /// Edition of this build: `default` for the declared default branch,
+    /// otherwise the branch slug, `pr-<number>` or release version.
+    /// Required whenever a selected target renders a PDF.
+    #[arg(long, value_parser = crate::publication::pdf_name::Edition::parse)]
+    pub edition:            Option<crate::publication::pdf_name::Edition>,
     /// Bare Git transport cache.
     #[arg(long)]
     pub git_cache:          PathBuf,
@@ -216,6 +221,7 @@ impl BuildRequest {
             project: project.clone(),
             targets: selection.clone(),
             publication_url: self.publication_url.clone(),
+            edition: self.edition.clone(),
         })
         .await?;
         let graph = staging.join("documentation.nq");
@@ -223,7 +229,8 @@ impl BuildRequest {
         drop(dataset);
         let restored = Dataset::memory()?;
         restored.import(graph).await?;
-        let publisher = Publisher::new(restored);
+        let publisher =
+            Publisher::new(restored).with_edition_input(self.edition.clone());
         let publications =
             showcases::publish(&publisher, &plans, staging).await?;
         // bounded: a revision build selects at most 16 targets.

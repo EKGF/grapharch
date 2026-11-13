@@ -1,3 +1,4 @@
+use grapharch::publication::render::typst_source;
 #[path = "support/family_repository.rs"]
 mod family_repository;
 #[path = "support/revision_fixture.rs"]
@@ -56,8 +57,13 @@ dprod:Unassigned a skos:Concept; rdfs:label "Unassigned"@en; dct:description "Wi
     fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    showcases::publish(&Publisher::new(restored), &plans, output.path())
-        .await?;
+    showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     let html = tokio::fs::read_to_string(
         output.path().join("specification/index.html"),
     )
@@ -95,15 +101,18 @@ dprod:Unassigned a skos:Concept; rdfs:label "Unassigned"@en; dct:description "Wi
         html.contains("Also listed in"),
         "multiple scheme membership must be explicit"
     );
-    let typst =
-        tokio::fs::read_to_string(output.path().join("pdf/main.typ")).await?;
+    let typst = tokio::fs::read_to_string(typst_source(
+        output.path(),
+        &only_pdf(&output.path().join("pdf")),
+    )?)
+    .await?;
     assert!(typst.contains("Contract lifecycle statuses"));
     assert!(typst.contains("Concepts without a documented scheme"));
     for label in ["Pending", "Active", "Fulfilled", "Violated"] {
         assert!(typst.contains(label));
     }
     assert!(
-        tokio::fs::read(output.path().join("pdf/document.pdf"))
+        tokio::fs::read(only_pdf(&output.path().join("pdf")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -125,9 +134,13 @@ dprod:CycleB a skos:Concept; rdfs:label "Cycle B"@en; dct:description "Second co
     })?;
     let (dataset, plans) = fixture.collect(TargetSelection::All).await?;
     let output = tempfile::tempdir()?;
-    let publications =
-        showcases::publish(&Publisher::new(dataset), &plans, output.path())
-            .await?;
+    let publications = showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     assert!(publications.iter().any(|publication| {
         publication
             .manifest
@@ -185,8 +198,14 @@ ex:Unassigned a skos:Concept;skos:prefLabel "Unassigned concept"@en;
         source.close()?;
         let restored = Dataset::memory()?;
         restored.import(archive).await?;
-        showcases::publish(&Publisher::new(restored), &plans, output.path())
-            .await?;
+        showcases::publish(
+            &Publisher::new(restored).with_edition(
+                grapharch::publication::pdf_name::Edition::Default,
+            ),
+            &plans,
+            output.path(),
+        )
+        .await?;
         let html = tokio::fs::read_to_string(
             output.path().join("specification/index.html"),
         )
@@ -213,4 +232,21 @@ ex:Unassigned a skos:Concept;skos:prefLabel "Unassigned concept"@en;
         assert!(html.contains("Concepts without a documented scheme"));
     }
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

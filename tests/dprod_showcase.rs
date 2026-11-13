@@ -34,9 +34,13 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output.path())
-            .await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     assert_eq!(publications.len(), 3);
     let revisions: std::collections::HashSet<_> = publications
         .iter()
@@ -67,7 +71,7 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     assert!(guide.contains("Start with a product people can identify"));
     assert!(!site.contains("SHACL property shapes"));
     assert!(!site.contains("DataProduct-dataProductLifecycleStatus"));
-    let pdf = std::fs::read(output.path().join("pdf/document.pdf"))?;
+    let pdf = std::fs::read(only_pdf(&output.path().join("pdf")))?;
     assert!(pdf.starts_with(b"%PDF-"));
     for publication in &publications {
         assert!(publication.manifest.diagnostics.is_empty());
@@ -92,7 +96,7 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     assert!(!html.contains("Make data products understandable"));
     assert!(!html.contains("Start with a product people can identify"));
     assert!(
-        std::fs::read(output.path().join("specification/document.pdf"))?
+        std::fs::read(only_pdf(&output.path().join("specification")))?
             .starts_with(b"%PDF-")
     );
     Ok(())
@@ -106,4 +110,21 @@ async fn dprod_fixture_matches_its_pinned_native_sources() -> Result<()> {
     .await?;
     assert_eq!(verified.len(), 4);
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

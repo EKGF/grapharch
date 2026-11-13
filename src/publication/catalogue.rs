@@ -7,8 +7,12 @@ use {
     sha2::{Digest, Sha256},
 };
 
-fn sources() -> [(&'static str, &'static str); 4] {
+fn sources() -> [(&'static str, &'static str); 5] {
     [
+        (
+            "document-types",
+            include_str!("../../docs/other/ontology/document-types.ttl"),
+        ),
         (
             "renderers",
             include_str!("../../docs/other/ontology/renderers.ttl"),

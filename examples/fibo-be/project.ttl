@@ -27,13 +27,13 @@ ex:pdf a ga:Target; dct:title "FIBO Business Entities";
  dct:description "The complete Business Entities (BE) directory: legal and functional entities, corporations, ownership and control, partnerships, private limited companies, sole proprietorships, trusts, government entities and regional reference individuals.";
  rdfs:comment "Unofficial GraphArch documentation preview of all 48 BE RDF/XML ontologies from EDM Council FIBO commit 33a92cd34285d532c158da97bb42add089f135d3. This includes domain and module metadata, aggregation ontologies and regional individuals. The 43 imports outside BE (FIBO Foundations, OMG Commons and LCC) remain external references; no implicit import closure or reasoning is performed. This is not the whole FIBO ontology or an adopted replacement specification. Original license notices and immutable source URLs with content digests are retained.";
  dct:source <https://github.com/edmcouncil/fibo/tree/33a92cd34285d532c158da97bb42add089f135d3/BE>;
- ga:scope ex:scope; ga:profile ex:profile; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:destination "pdf";
+ ga:scope ex:scope; ga:profile ex:profile; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "fibo-be"; ga:destination "pdf";
  ga:publisher ex:publisher; ga:publicationStatus "Documentation Preview";
  ga:publicationDate "2026-11-08"^^<http://www.w3.org/2001/XMLSchema#date>;
  ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/fibo-be/specification/>;
  ga:latestVersion <https://spec.edmcouncil.org/fibo/>; ga:license <https://opensource.org/licenses/MIT> .
 
-ex:publisher a gov:Authority; rdfs:label "GraphArch showcases"; ga:shortName "GraphArch";
+ex:publisher a gov:Authority ; <https://ekgf.org/ontology/grapharch#slug> "grapharch"; rdfs:label "GraphArch showcases"; ga:shortName "GraphArch";
  ga:accentColor "#2b5f9f"; ga:url "https://ekgf.github.io/grapharch/" .
 
 # Exact upstream ontology identities and namespace prefixes.

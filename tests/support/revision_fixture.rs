@@ -199,6 +199,7 @@ impl RevisionFixture {
             project: oxrdf::NamedNode::new(PROJECT)?,
             targets,
             publication_url: PublicationUrl::try_new(publication_url)?,
+            edition: Some(grapharch::publication::pdf_name::Edition::Default),
         })
         .await
     }
@@ -233,6 +234,7 @@ impl RevisionFixture {
             ("--project", PROJECT),
             ("--generator-revision", GENERATOR),
             ("--publication-url", PUBLICATION_URL),
+            ("--edition", "default"),
             ("--git-cache", cache.to_str().unwrap()),
             ("--output-root", output.to_str().unwrap()),
         ];

@@ -26,7 +26,7 @@ async fn authored_figures_preserve_captions_and_images_after_source_removal()
     )
     .await?;
     let config = source.path().join("project.ttl");
-    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:pdf> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf". <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf". <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
     let (writer, worker) =
@@ -45,6 +45,7 @@ async fn authored_figures_preserve_captions_and_images_after_source_removal()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(site) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -59,15 +60,17 @@ async fn authored_figures_preserve_captions_and_images_after_source_removal()
     assert!(html.contains("© Original <strong>contributors</strong>"));
     assert!(html.contains("--figure-width:700px"));
     assert!(!html.contains("{ width="));
-    let PublishOutcome::Published(pdf) =
-        Publisher::new(restored).render(&pdf, output.path()).await?
+    let PublishOutcome::Published(pdf) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&pdf, output.path())
+        .await?
     else {
         panic!("PDF failed")
     };
     if std::env::var_os("GRAPHARCH_FIGURE_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/semantic-figures").await?;
         tokio::fs::copy(
-            pdf.directory.join("document.pdf"),
+            pdf.pdf().expect("published PDF edition"),
             "output/semantic-figures/document.pdf",
         )
         .await?;

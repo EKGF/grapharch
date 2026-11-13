@@ -36,14 +36,13 @@ async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
     source.close()?;
     let out = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[2], out.path())
         .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(!typst.contains("Document provenance"));
     assert!(!typst.contains("Recent committers"));
     assert!(typst.contains(
@@ -52,7 +51,7 @@ async fn overview_pdf_uses_editorial_presentation_from_its_pinned_profile()
     assert!(typst.contains("  number_headings: false,"));
     assert!(typst.contains("A practical introduction"));
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -89,13 +88,14 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
     std::fs::remove_file(path)?;
     let plan = &plans[2];
     let out = tempfile::tempdir()?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(restored).render(plan, out.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(plan, out.path())
+        .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(
         typst.contains("#ga-wrap("),
         "Long table identifiers require legal line-break opportunities"
@@ -167,7 +167,7 @@ async fn reader_pdf_style_is_selected_from_the_pinned_profile() -> Result<()> {
         "callout titles must use the themed, keep-with-body component"
     );
     assert!(
-        std::fs::read(publication.directory.join("document.pdf"))?
+        std::fs::read(publication.pdf().expect("published PDF edition"))?
             .starts_with(b"%PDF-")
     );
     Ok(())
@@ -185,13 +185,13 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
     std::fs::remove_file(path)?;
     let out = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], out.path())
         .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(typst.contains(
         "// Theme: https://ekgf.org/ontology/grapharch#SpecificationTheme"
     ));
@@ -223,7 +223,8 @@ async fn paired_specification_pdf_uses_the_authority_theme() -> Result<()> {
     );
     assert!(typst.contains("Editor's Draft"));
     assert!(typst.contains("Publication requirements"));
-    let metadata = std::fs::read(publication.directory.join("document.pdf"))?;
+    let metadata =
+        std::fs::read(publication.pdf().expect("published PDF edition"))?;
     assert!(metadata.starts_with(b"%PDF-"));
     Ok(())
 }
@@ -245,12 +246,16 @@ async fn unsupported_pdf_style_is_rejected() -> Result<()> {
     let plan = &plans[2];
     let out = tempfile::tempdir()?;
     let error = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(plan, out.path())
         .await
         .err()
         .expect("unknown PDF styles must fail");
     assert!(format!("{error:#}").contains("is not a declared ga:Theme"));
-    assert!(!out.path().join("review/document.pdf").exists());
+    assert!(
+        !out.path().join("review").exists(),
+        "a rejected theme publishes no PDF"
+    );
     Ok(())
 }
 
@@ -268,7 +273,10 @@ async fn malformed_pdf_publisher_is_rejected() -> Result<()> {
     std::fs::write(&path, fixture)?;
     let (dataset, plans) = showcases::authored(&path).await?;
     let out = tempfile::tempdir()?;
-    let result = Publisher::new(dataset).render(&plans[2], out.path()).await;
+    let result = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plans[2], out.path())
+        .await;
     let error = result.err().expect("publisher literals must fail");
     assert!(format!("{error:#}").contains("publisher must be an IRI"));
     Ok(())
@@ -299,13 +307,13 @@ async fn long_authority_and_status_fit_the_pdf_ribbon() -> Result<()> {
     std::fs::remove_file(path)?;
     let out = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], out.path())
         .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(typst.contains(&format!(
         "#let ga-ribbon = \"{authority} {status}\""
     )));
@@ -315,7 +323,7 @@ async fn long_authority_and_status_fit_the_pdf_ribbon() -> Result<()> {
          metadata"
     );
     assert!(
-        std::fs::read(publication.directory.join("document.pdf"))?
+        std::fs::read(publication.pdf().expect("published PDF edition"))?
             .starts_with(b"%PDF-")
     );
     Ok(())
@@ -339,13 +347,13 @@ async fn independent_standards_pdf_preserves_publication_metadata() -> Result<()
     std::fs::remove_file(path)?;
     let out = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], out.path())
         .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(
         typst.contains("Alex Example"),
         "standalone standards PDF must retain its editor"
@@ -373,13 +381,13 @@ async fn publisher_preface_is_unnumbered_in_specification_and_pdf() -> Result<()
     std::fs::remove_file(path)?;
     let out = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], out.path())
         .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(typst.contains(
         "#heading(level: 1, numbering: none)[#text(\"Introduction\")]"
     ));
@@ -401,4 +409,21 @@ async fn publisher_preface_is_unnumbered_in_specification_and_pdf() -> Result<()
         .expect("preface heading");
     assert!(!heading.text().collect::<String>().contains("1."));
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

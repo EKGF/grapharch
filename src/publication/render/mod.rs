@@ -27,7 +27,9 @@ mod native_typst;
 mod nested;
 mod notices;
 mod pdf_download;
+mod pdf_file;
 mod pdf_standard;
+pub use pdf_file::typst_source;
 mod people;
 mod provenance;
 mod publication_date;
@@ -77,6 +79,22 @@ pub struct Publication {
     pub directory: PathBuf,
     /// Provenance identifying the input, plan, and output owner.
     pub manifest:  PublicationManifest,
+    /// Directory retaining the generation's Typst source, which is the
+    /// artifact directory unless the target owns only its PDF file.
+    pub source:    PathBuf,
+}
+
+impl Publication {
+    /// The published PDF edition, if this generation has one.
+    pub fn pdf(&self) -> Option<PathBuf> {
+        self.manifest
+            .pdf
+            .as_ref()
+            .map(|name| self.directory.join(name))
+    }
+
+    /// The Typst source the PDF was compiled from.
+    pub fn typst_source(&self) -> PathBuf { self.source.join("main.typ") }
 }
 
 /// Superseded work never replaces a newer accepted request's artifacts.
@@ -101,6 +119,7 @@ pub struct Publisher {
     workers:         Arc<Semaphore>,
     compile_slots:   Arc<Semaphore>,
     assets:          Arc<OnceCell<Arc<engine::Assets>>>,
+    edition:         Option<crate::publication::pdf_name::Edition>,
 }
 
 impl Publisher {
@@ -117,12 +136,32 @@ impl Publisher {
             workers: Arc::new(Semaphore::new(2)),
             compile_slots: Arc::new(Semaphore::new(1)),
             assets: Arc::new(OnceCell::new()),
+            edition: None,
         }
     }
 
     /// Choose explicit diagnostic-preview behavior. Default is fail-fast.
     pub fn with_failure_mode(mut self, mode: FailureMode) -> Self {
         self.failure_mode = mode;
+        self
+    }
+
+    /// Name PDF editions for an explicit edition build input. Rendering a
+    /// PDF without one fails.
+    pub fn with_edition(
+        mut self,
+        edition: crate::publication::pdf_name::Edition,
+    ) -> Self {
+        self.edition = Some(edition);
+        self
+    }
+
+    /// Apply an optional command-line edition input; PDFs still require one.
+    pub fn with_edition_input(
+        mut self,
+        edition: Option<crate::publication::pdf_name::Edition>,
+    ) -> Self {
+        self.edition = edition;
         self
     }
 
@@ -191,6 +230,26 @@ impl Publisher {
     ) -> Result<PublishOutcome> {
         let _worker = self.workers.clone().acquire_owned().await?;
         let mut plan = Plan::read(self.dataset.clone(), handle).await?;
+        if matches!(plan.renderer.as_str(), "typst" | "specification") {
+            plan.pdf_file = Some(
+                crate::publication::pdf_name::PdfName::read(
+                    &plan.source,
+                    &plan.target,
+                    self.edition.as_ref(),
+                )
+                .await?
+                .file_name(),
+            );
+        }
+        // Links by target IRI reach each PDF target's named edition.
+        plan.targets = crate::publication::target_links::TargetLinks::read(
+            &plan.dataset,
+            &plan.source,
+            &plan.project,
+            &plan.target,
+            self.edition.as_ref(),
+        )
+        .await?;
         let destination = files::prepare(&root, &plan).await?;
         let ticket = Ticket {
             session: self.session.clone(),
@@ -204,7 +263,11 @@ impl Publisher {
             if plan.renderer != crate::publication::Renderer::Website {
                 plan.images = collected_images::Images::read(&plan).await?;
             }
-            self.publish(&plan, destination, ticket, &job).await
+            if plan.renderer == crate::publication::Renderer::Typst {
+                self.publish_pdf_file(&plan, &root, destination, &job).await
+            } else {
+                self.publish(&plan, destination, ticket, &job).await
+            }
         }
         .await;
         if let Err(error) = record::finish(&plan, &job, &result).await {
@@ -337,31 +400,9 @@ impl Publisher {
                 )
                 .await?;
             }
-            if matches!(plan.renderer.as_str(), "typst" | "specification") {
-                ensure!(
-                    tokio::fs::metadata(stage.path.join("main.typ"))
-                        .await?
-                        .len() <=
-                        crate::publication::limits::TYPST_SOURCE_BYTES,
-                    "Typst source exceeds compilation budget"
-                );
-                let assets = self
-                    .assets
-                    .get_or_try_init(engine::Assets::load)
-                    .await?
-                    .clone();
-                let pdf = engine::compile(
-                    stage.path.clone(),
-                    assets,
-                    self.compile_slots.clone(),
-                )
-                .await?;
-                ensure!(
-                    pdf.len() as u64 <=
-                        crate::publication::limits::ARTIFACT_BYTES,
-                    "PDF exceeds artifact byte budget"
-                );
-                tokio::fs::write(stage.path.join("document.pdf"), pdf).await?;
+            if let Some(name) = &plan.pdf_file {
+                let pdf = self.compile(&stage.path).await?;
+                tokio::fs::write(stage.path.join(name), pdf).await?;
             }
             let mut manifest = plan.manifest(job);
             if let Some(files) = website_files {
@@ -401,6 +442,7 @@ impl Publisher {
                 return Ok(PublishOutcome::Superseded);
             }
             Ok(PublishOutcome::Published(Box::new(Publication {
+                source: destination.clone(),
                 directory: destination,
                 manifest,
             })))

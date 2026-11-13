@@ -83,6 +83,7 @@ async fn render(
     restored.import(export.path().join("source.nq")).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, output.path())
         .await?
     else {

@@ -39,7 +39,7 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     )
     .await?;
     let config = source.path().join("project.ttl");
-    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:pdf> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf". <urn:ps> a ga:Scope;ga:include <urn:evidence>. <urn:pf> a ga:Profile;ga:placement <urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:evidence>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
+    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf". <urn:ps> a ga:Scope;ga:include <urn:evidence>. <urn:pf> a ga:Profile;ga:placement <urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:evidence>. <urn:s> a ga:Scope. <urn:f> a ga:Profile."#).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
     let (writer, worker) =
@@ -58,6 +58,7 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(site) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -91,15 +92,15 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     assert!(excerpt.contains("Evidence retained outside the selected excerpt"));
     assert!(!excerpt.contains("Excluded narrative"));
     assert!(excerpt.contains("footnote-reference"));
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     publisher.render(&pdf, output.path()).await?;
     let PublishOutcome::Published(pdf) =
         publisher.render(&pdf, output.path()).await?
     else {
         panic!("PDF failed")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert_eq!(typst.matches("#footnote[").count(), 2);
     assert!(
         !typst.contains("#footnote[#par["),
@@ -112,7 +113,7 @@ async fn footnotes_survive_source_removal_with_linked_html_and_native_pdf_notes(
     if std::env::var_os("GRAPHARCH_FOOTNOTE_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/footnotes").await?;
         tokio::fs::copy(
-            pdf.directory.join("document.pdf"),
+            pdf.pdf().expect("published PDF edition"),
             "output/footnotes/document.pdf",
         )
         .await?;

@@ -59,6 +59,7 @@ async fn collected_markdown_svg_survives_export_and_source_deletion_for_spec_and
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -69,8 +70,7 @@ async fn collected_markdown_svg_survives_export_and_source_deletion_for_spec_and
     assert!(html.contains("src=\"assets/badge.svg\""));
     assert!(html.contains("alt=\"Verified KG badge\""));
     assert!(html.contains("href=\"https://github.com/example/repository/blob/0123456789abcdef/README.md\""));
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(typst.contains("#image(\"assets/badge.svg\""));
     assert!(
         !typst.contains("#text(\"Verified KG badge\")"),
@@ -87,7 +87,7 @@ async fn collected_markdown_svg_survives_export_and_source_deletion_for_spec_and
             .contains(&"assets/badge.svg".into())
     );
     assert!(
-        std::fs::read(publication.directory.join("document.pdf"))?
+        std::fs::read(publication.pdf().expect("published PDF edition"))?
             .starts_with(b"%PDF-")
     );
     Ok(())
@@ -102,7 +102,7 @@ async fn restored_image_assets_reject_unsafe_svg_and_unsafe_routes()
         std::fs::write(&path, fixture(bytes, "image/svg+xml", route, "Badge"))?;
         let (dataset, plans) = showcases::specification(&path).await?;
         let output = tempfile::tempdir()?;
-        let error = Publisher::new(dataset).render(&plans[0], output.path()).await.err().expect("unsafe retained image must fail rendering");
+        let error = Publisher::new(dataset).with_edition(grapharch::publication::pdf_name::Edition::Default).render(&plans[0], output.path()).await.err().expect("unsafe retained image must fail rendering");
         let message = format!("{error:#}");
         assert!(message.contains("SVG") || message.contains("image asset route"), "unexpected image rejection: {message}");
         assert!(!output.path().join("specification/index.html").exists());
@@ -146,6 +146,7 @@ async fn png_and_jpeg_assets_render_without_original_files() -> Result<()> {
         let restored = Dataset::memory()?;
         restored.import(archive).await?;
         let PublishOutcome::Published(publication) = Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&plans[0], output.path())
             .await?
         else {
@@ -156,7 +157,7 @@ async fn png_and_jpeg_assets_render_without_original_files() -> Result<()> {
             bytes
         );
         assert!(
-            std::fs::read_to_string(publication.directory.join("main.typ"))?
+            std::fs::read_to_string(publication.typst_source())?
                 .contains(&format!("#image(\"{route}\""))
         );
     }
@@ -197,6 +198,7 @@ async fn image_digest_alt_text_and_url_are_checked() -> Result<()> {
         let (dataset, plans) = showcases::specification(&path).await?;
         let output = tempfile::tempdir()?;
         let error = Publisher::new(dataset.clone())
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&plans[0], output.path())
             .await
             .err()
@@ -261,6 +263,7 @@ async fn image_metadata_is_inherited_from_the_retained_source_fragment()
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -297,13 +300,24 @@ async fn retained_image_publications_can_be_replaced_but_unowned_nested_files_ar
         std::fs::remove_dir_all(source.path())?;
         let restored = Dataset::memory()?;
         restored.import(archive).await?;
-        let publisher = Publisher::new(restored);
+        let publisher = Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default);
         publisher.render(&plans[0], output.path()).await?;
         let PublishOutcome::Published(second) =
             publisher.render(&plans[0], output.path()).await?
         else {
             panic!("replacement required")
         };
+        if renderer == "typst" {
+            // A PDF-only target owns only its PDF; the compiler input with
+            // its images stays in the publication record.
+            assert_eq!(
+                std::fs::read(second.source.join("assets/badge.svg"))?,
+                SVG.as_bytes()
+            );
+            assert_eq!(second.manifest.files.len(), 1);
+            continue;
+        }
         assert_eq!(
             std::fs::read(second.directory.join("assets/badge.svg"))?,
             SVG.as_bytes()
@@ -347,6 +361,7 @@ ex:outside-reference a ga:ExternalReference ; dct:identifier "https://outside.ex
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -377,6 +392,7 @@ async fn selected_image_reference_without_retained_bytes_is_still_an_error()
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;
     let error = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await
         .err()

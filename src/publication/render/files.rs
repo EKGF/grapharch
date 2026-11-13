@@ -309,9 +309,10 @@ fn owned_except(
                 "index.html" |
                     "style.css" |
                     "main.typ" |
-                    "document.pdf" |
                     "grapharch-icon-licenses.txt"
-            );
+            ) || (manifest.renderer == "specification" &&
+                manifest.pdf.as_deref() == Some(name.as_str()) &&
+                crate::publication::pdf_name::PdfName::is_file_name(name));
             let book = manifest.renderer == "bookshelf" &&
                 (name == "books.json" ||
                     name.strip_prefix("book-").is_some_and(|s| {
@@ -584,6 +585,7 @@ mod recovery_tests {
             diagnostics:    Vec::new(),
             failure_mode:   Default::default(),
             books:          Vec::new(),
+            pdf:            None,
             files:          vec!["index.html".into()], /* bounded: the
                                                         * fixture's single
                                                         * artifact. */
@@ -678,6 +680,7 @@ mod recovery_tests {
                 job: "fixture".into(),
                 files,
                 books: Vec::new(),
+                pdf: None,
                 failure_mode: Default::default(),
                 diagnostics: Vec::new(),
             };

@@ -136,6 +136,7 @@ async fn render_notices(
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], temp.path())
         .await?
     else {
@@ -145,7 +146,8 @@ async fn render_notices(
     Ok((
         tokio::fs::read_to_string(read("index.html")).await?,
         tokio::fs::read_to_string(read("main.typ")).await?,
-        tokio::fs::read(read("document.pdf")).await?,
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
+            .await?,
         tokio::fs::read_to_string(read("style.css")).await?,
     ))
 }

@@ -787,14 +787,24 @@ pub(in crate::publication::render) fn page_header(
     let pdf_id = document
         .select(&scraper::Selector::parse("a.pdf-download").unwrap())
         .next()
-        .map(|a| a.id())
-        .ok_or_else(|| anyhow::anyhow!("missing publication PDF control"))?;
+        .map(|a| a.id());
     let mut node = document.tree.get_mut(title_id).unwrap();
     let scraper::Node::Text(text) = node.value() else {
         anyhow::bail!("publication title must be text")
     };
     text.text = title.into();
+    if let Some(pdf) = pdf &&
+        pdf_id.is_none()
+    {
+        // A book has its own PDF even where the publication has none.
+        return Ok(format!(
+            "{}{}",
+            document.root_element().inner_html(),
+            super::super::pdf_download::link(pdf, "Book PDF", "pdf-download")
+        ));
+    }
     if let Some(pdf) = pdf {
+        let pdf_id = pdf_id.expect("checked above");
         let mut node = document.tree.get_mut(pdf_id).unwrap();
         let scraper::Node::Element(element) = node.value() else {
             unreachable!()
@@ -804,7 +814,7 @@ pub(in crate::publication::render) fn page_header(
                 *value = pdf.into();
             }
         }
-    } else {
+    } else if let Some(pdf_id) = pdf_id {
         document.tree.get_mut(pdf_id).unwrap().detach();
     }
     Ok(document.root_element().inner_html())

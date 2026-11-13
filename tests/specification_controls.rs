@@ -12,9 +12,13 @@ async fn compact_contents_controls_keep_accessible_names_and_grouping()
     ))
     .await?;
     let output = tempfile::tempdir()?;
-    let publications =
-        showcases::publish(&Publisher::new(dataset), &plans, output.path())
-            .await?;
+    let publications = showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     let directory = &publications[0].directory;
     let html = tokio::fs::read_to_string(directory.join("index.html")).await?;
     let document = Html::parse_document(&html);

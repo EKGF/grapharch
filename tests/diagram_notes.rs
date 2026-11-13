@@ -42,8 +42,8 @@ async fn render(
 <urn:terms:profile> a ga:Profile; pub:publishesFamily <urn:terms:collection> .
 <urn:terms:collection> a gov:Family; rdfs:label "Example vocabularies" .
 {hint}
-<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer ga:{renderer}; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
-<urn:terms:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
+<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer ga:{renderer}; ga:documentType ga:SpecificationDocument; ga:slug "reference"; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
+<urn:terms:publisher> a gov:Authority ; <https://ekgf.org/ontology/grapharch#slug> "example"; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
 <https://example.org/zempty/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "empty"; sh:namespace "https://example.org/zempty/"] .
 <https://example.org/vocab/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "example"; sh:namespace "https://example.org/vocab/"] .
 "##)).await?;
@@ -61,10 +61,12 @@ async fn render(
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored).with_book_workers(
-        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
-        1,
-    )?;
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .with_book_workers(
+            std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+            1,
+        )?;
     let PublishOutcome::Published(publication) =
         publisher.render(&built.plan, output.path()).await?
     else {
@@ -216,7 +218,8 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let PublishOutcome::Published(publication) = publisher
         .render(&plan, &output.path().join("after"))
         .await?
@@ -305,6 +308,7 @@ async fn publication_without_diagrams_has_no_note_artifact() -> Result<()> {
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, &output.path().join("after"))
         .await?
     else {

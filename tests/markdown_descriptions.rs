@@ -22,9 +22,9 @@ const DEFINITIONS: &str = r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> .
 <urn:test:family> a gov:Family ; rdfs:label "Example family"@en .
 <urn:test:reference> a gov:Reference ; gov:inFamily <urn:test:family> ; gov:refersTo <https://example.org/vocab/> .
 <https://example.org/vocab/> sh:declare [sh:prefix "ex" ; sh:namespace "https://example.org/vocab/"] .
-<urn:test:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; rdfs:label "Example Standards Council" ; ga:shortName "EX" .
+<urn:test:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "ex" ; rdfs:label "Example Standards Council" ; ga:shortName "EX" .
 <urn:test:target> a ga:Target ; dct:title "Rich ontology reference" ; dct:description "A Markdown annotation test." ; rdfs:comment "Test preview." ;
- ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "specification" ;
+ ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "target" ; ga:destination "specification" ;
  ga:publisher <urn:test:authority> ; ga:publicationStatus "Draft" ; ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ; ga:thisVersion <https://example.org/spec/> ; ga:latestVersion <https://example.org/spec/> ."#;
 
 fn sources(root: &Path, rich: &str, extra: &str) -> Result<()> {
@@ -123,6 +123,7 @@ async fn markdown_annotations_render_from_restored_kg_without_duplicate_definiti
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, out.path())
         .await?
     else {
@@ -151,14 +152,13 @@ async fn markdown_annotations_render_from_restored_kg_without_duplicate_definiti
         );
         assert!(html.contains(&format!("<strong>{text}</strong>")));
     }
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     assert!(typst.contains("#heading(level: 3)"));
     assert!(typst.contains("#strong["));
     assert!(typst.contains("#list("));
     assert!(typst.contains("#ga-code(("));
     assert!(
-        std::fs::read(publication.directory.join("document.pdf"))?
+        std::fs::read(publication.pdf().expect("published PDF edition"))?
             .starts_with(b"%PDF-")
     );
     Ok(())
@@ -177,6 +177,7 @@ async fn distinct_selected_markdown_annotations_are_preserved_for_review()
     let built = collect(source.path()).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -209,6 +210,7 @@ async fn malicious_rich_html_is_retained_as_source_and_rejected_at_rendering()
     let built = collect(source.path()).await?;
     let out = tempfile::tempdir()?;
     let error = Publisher::new(built.dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, out.path())
         .await
         .err()
@@ -331,6 +333,7 @@ async fn single_ontology_front_matter_prefers_the_rich_annotation() -> Result<()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -429,6 +432,7 @@ async fn unsafe_links_and_empty_rich_annotations_are_rejected() -> Result<()> {
     let built = collect(unsafe_link.path()).await?;
     let output = tempfile::tempdir()?;
     let error = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await
         .err()

@@ -8,7 +8,13 @@ async fn specification_has_an_accessible_sidebar_resize_control()
     ))
     .await?;
     let output = tempfile::tempdir()?;
-    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     let html = std::fs::read_to_string(
         output.path().join("specification/index.html"),
     )?;
@@ -27,10 +33,9 @@ async fn specification_has_an_accessible_sidebar_resize_control()
         html.contains("ArrowRight"),
         "keyboard resizing must ship with the generated page"
     );
-    let pdf_icon = scraper::Selector::parse(
-        "a.pdf-download[href='document.pdf'] svg text",
-    )
-    .unwrap();
+    let pdf_icon =
+        scraper::Selector::parse("a.pdf-download[href$='.pdf'] svg text")
+            .unwrap();
     assert!(
         document
             .select(&pdf_icon)
@@ -48,7 +53,13 @@ async fn specification_navigation_has_search_and_collapsible_sections()
     ))
     .await?;
     let output = tempfile::tempdir()?;
-    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     let html = std::fs::read_to_string(
         output.path().join("specification/index.html"),
     )?;
@@ -89,6 +100,12 @@ async fn sidebar_classification_accepts_fragments_with_multiple_subjects()
     )?;
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;
-    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     Ok(())
 }

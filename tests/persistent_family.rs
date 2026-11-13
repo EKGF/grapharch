@@ -45,8 +45,8 @@ impl Fixture {
                 r#"@prefix ga:<https://ekgf.org/ontology/grapharch#> . @prefix gov:<https://ekgf.org/ontology/artifact-governance#> . @prefix pub:<https://ekgf.org/ontology/artifact-publication#> . @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#> . @prefix dct:<http://purl.org/dc/terms/> .
 <urn:project> a ga:Project;ga:target <urn:target> . <urn:scope> a ga:Scope . <urn:profile> a ga:Profile;pub:publishesFamily <urn:family> .
 <urn:family> a gov:Family;rdfs:label "Example family"@en . <https://example.org/core#> gov:inFamily <urn:family> . {members}
-<urn:target> a ga:Target;dct:title "Example reference";dct:description "A family reference.";rdfs:comment "A test draft.";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>;ga:destination "specification";ga:publicationStatus "Draft";ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/spec/>;ga:latestVersion <https://example.org/spec/>;ga:license <https://creativecommons.org/publicdomain/zero/1.0/>;ga:publisher <urn:authority> .
-<urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;rdfs:label "Example Authority";ga:shortName "Example" ."#
+<urn:target> a ga:Target;dct:title "Example reference";dct:description "A family reference.";rdfs:comment "A test draft.";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "target";ga:destination "specification";ga:publicationStatus "Draft";ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/spec/>;ga:latestVersion <https://example.org/spec/>;ga:license <https://creativecommons.org/publicdomain/zero/1.0/>;ga:publisher <urn:authority> .
+<urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "example";rdfs:label "Example Authority";ga:shortName "Example" ."#
             ),
         )?;
         Ok(())
@@ -187,6 +187,7 @@ async fn publish_restore(dataset: Dataset) -> Result<()> {
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let outcome = grapharch::publication::render::Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?;
     let grapharch::publication::render::PublishOutcome::Published(published) =
@@ -231,7 +232,14 @@ async fn family_cli_json_is_machine_readable_when_logging_is_enabled()
     let f = Fixture::new()?;
     let output = tempfile::tempdir()?;
     let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
-        .args(["-vv", "publication", "build-family", "--source"])
+        .args([
+            "-vv",
+            "publication",
+            "build-family",
+            "--edition",
+            "default",
+            "--source",
+        ])
         .arg(f.root.path())
         .arg("--definitions")
         .arg(f.definitions.path().join("project.ttl"))
@@ -450,7 +458,13 @@ async fn cli_discovers_publication_hints_embedded_in_an_ontology() -> Result<()>
     std::fs::write(ontology, content)?;
     let output = tempfile::tempdir()?;
     let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
-        .args(["publication", "build-family", "--source"])
+        .args([
+            "publication",
+            "build-family",
+            "--edition",
+            "default",
+            "--source",
+        ])
         .arg(fixture.root.path())
         .arg("--output-root")
         .arg(output.path())
@@ -506,6 +520,7 @@ async fn family_reference_groups_terms_and_honors_source_heading_hints()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(p) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -619,6 +634,7 @@ async fn family_reference_keeps_distinct_ontology_and_namespace_iris_adjacent()
     let built = f.build(Dataset::memory()?).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(p) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -697,6 +713,7 @@ async fn native_fibo_modules_survive_kg_restore_and_nest_the_reference()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(p) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -718,7 +735,7 @@ async fn native_fibo_modules_survive_kg_restore_and_nest_the_reference()
         );
     }
     assert!(html.contains("A supplied module abstract."));
-    let typst = std::fs::read_to_string(p.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(p.typst_source())?;
     assert!(
         typst.contains("depth: 4"),
         "module book outline depth is configurable"
@@ -770,14 +787,15 @@ async fn paginated_specs_restore_from_kg_and_resolve_cross_ontology_links()
     std::fs::remove_dir_all(f.root.path())?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let PublishOutcome::Published(p) =
         publisher.render(&built.plan, output.path()).await?
     else {
         panic!("not published")
     };
     assert!(
-        !p.directory.join("document.pdf").exists(),
+        p.pdf().is_none(),
         "HTML target must not compile the family book"
     );
     let index: serde_json::Value = serde_json::from_slice(&std::fs::read(
@@ -901,6 +919,7 @@ async fn paginated_family(
     let built = f.build(Dataset::memory()?).await?;
     let output = tempfile::tempdir()?;
     let outcome = Publisher::new(built.dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?;
     Ok((output, outcome))
@@ -985,7 +1004,13 @@ async fn paginated_family_cli_reports_no_pdf_in_json() -> Result<()> {
     )?;
     let output = tempfile::tempdir()?;
     let result = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
-        .args(["publication", "build-family", "--source"])
+        .args([
+            "publication",
+            "build-family",
+            "--edition",
+            "default",
+            "--source",
+        ])
         .arg(f.root.path())
         .arg("--definitions")
         .arg(settings)
@@ -1039,6 +1064,7 @@ async fn paginated_routing_never_treats_literal_prose_as_an_html_link()
     let built = f.build(Dataset::memory()?).await?;
     let output = tempfile::tempdir()?;
     Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?;
     Ok(())
@@ -1072,10 +1098,12 @@ async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_
     std::fs::remove_dir_all(f.root.path())?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored.clone()).with_book_workers(
-        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
-        2,
-    )?;
+    let publisher = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .with_book_workers(
+            std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+            2,
+        )?;
     let PublishOutcome::Published(p) =
         publisher.render(&built.plan, output.path()).await?
     else {
@@ -1175,6 +1203,7 @@ async fn bookshelf_books_are_pinned_and_publish_with_child_workers_after_source_
     assert_eq!(recorded, 2);
     // An unchanged render must reuse verified PDFs rather than start workers.
     let cached = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .with_book_workers(std::env::current_exe()?, 2)?;
     let PublishOutcome::Published(p) =
         cached.render(&built.plan, output.path()).await?
@@ -1205,6 +1234,7 @@ async fn bookshelf_worker_errors_obey_failure_policy_and_do_not_advertise_missin
     let built = f.build(Dataset::memory()?).await?;
     let output = tempfile::tempdir()?;
     let publisher = Publisher::new(built.dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .with_book_workers(std::env::current_exe()?, 2)?;
     assert!(publisher.render(&built.plan, output.path()).await.is_err());
     assert!(!output.path().join("specification").exists());
@@ -1237,10 +1267,12 @@ async fn bookshelf_parent_boundary_and_incremental_book_reuse() -> Result<()> {
     let dataset = Dataset::memory()?;
     let first = f.build(dataset.clone()).await?;
     let output = tempfile::tempdir()?;
-    let publisher = Publisher::new(dataset.clone()).with_book_workers(
-        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
-        2,
-    )?;
+    let publisher = Publisher::new(dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .with_book_workers(
+            std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+            2,
+        )?;
     publisher.render(&first.plan, output.path()).await?;
     let path = f.root.path().join("core.ttl");
     std::fs::write(
@@ -1380,6 +1412,7 @@ async fn skos_taxonomy_is_documented_from_collected_kg_without_an_owl_ontology()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(p) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -1409,7 +1442,7 @@ async fn skos_taxonomy_is_documented_from_collected_kg_without_an_owl_ontology()
         );
     }
     assert!(!text.contains("Missing source label"));
-    assert!(p.directory.join("document.pdf").is_file());
+    assert!(p.pdf().expect("published PDF edition").is_file());
     Ok(())
 }
 
@@ -1431,6 +1464,7 @@ async fn skos_concepts_inside_an_owl_vocabulary_use_preferred_labels_and_section
     let built = f.build(Dataset::memory()?).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(p) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -1460,6 +1494,7 @@ async fn skos_concepts_inside_an_owl_vocabulary_use_preferred_labels_and_section
     let review_output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) =
         Publisher::new(reviewed.dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&reviewed.plan, review_output.path())
             .await?
     else {
@@ -1505,10 +1540,12 @@ async fn standalone_skos_scheme_can_be_a_bookshelf_book() -> Result<()> {
     tokio::fs::write(config, definitions).await?;
     let built = f.build(Dataset::memory()?).await?;
     let output = tempfile::tempdir()?;
-    let publisher = Publisher::new(built.dataset).with_book_workers(
-        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
-        1,
-    )?;
+    let publisher = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .with_book_workers(
+            std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+            1,
+        )?;
     let PublishOutcome::Published(p) =
         publisher.render(&built.plan, output.path()).await?
     else {

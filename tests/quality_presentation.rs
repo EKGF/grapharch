@@ -88,6 +88,7 @@ async fn competing_values_are_readable_after_kg_restore() -> anyhow::Result<()>
     sources.close()?;
     let PublishOutcome::Published(publication) =
         Publisher::new(restored.clone())
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&plan, output.path())
             .await?
     else {
@@ -156,13 +157,11 @@ async fn competing_values_are_readable_after_kg_restore() -> anyhow::Result<()>
         evidence_count, 2,
         "every value/source pair must survive as a structured statement"
     );
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(typst.contains("English (en)"));
     assert!(typst.contains("Description"));
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF")
     );

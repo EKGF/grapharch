@@ -1,3 +1,4 @@
+use grapharch::publication::render::typst_source;
 #[path = "support/dprod_header.rs"]
 mod dprod_header;
 
@@ -35,19 +36,27 @@ async fn remote_revision_restores_and_publishes_declared_targets()
     dataset.export(archive.clone()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output).await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output,
+    )
+    .await?;
     assert_eq!(publications.len(), 5);
     for edition in ["ekgf", "omg"] {
         let directory = output.join("pdf").join(edition);
         assert!(
-            tokio::fs::read(directory.join("document.pdf"))
+            tokio::fs::read(only_pdf(&directory))
                 .await?
                 .starts_with(b"%PDF-")
         );
     }
-    let overview =
-        tokio::fs::read_to_string(output.join("pdf/overview/main.typ")).await?;
+    let overview = tokio::fs::read_to_string(typst_source(
+        output,
+        &only_pdf(&output.join("pdf/overview")),
+    )?)
+    .await?;
     assert!(overview.contains("DPROD: the bigger picture"));
     assert!(overview.contains("A product in practice"));
     assert!(
@@ -378,13 +387,27 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
     std::fs::remove_dir_all(remote.path())?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output.path())
-            .await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     assert_eq!(publications.len(), 3);
-    for target in ["website", "specification", "pdf"] {
+    // The PDF-only target keeps its compiler inputs in its publication record.
+    let pdf_record = typst_source(
+        output.path(),
+        &only_pdf(&output.path().join("pdf")),
+    )?
+    .with_file_name("");
+    for directory in [
+        output.path().join("website"),
+        output.path().join("specification"),
+        pdf_record,
+    ] {
         assert_eq!(
-            std::fs::read(output.path().join(target).join(&svg_route))?,
+            std::fs::read(directory.join(&svg_route))?,
             expected_svg,
             "SVG XML bytes must survive KG export/restore without rewriting"
         );
@@ -403,8 +426,11 @@ async fn exact_revision_showcase_pins_content_and_definitions_without_fallback()
         spec.contains("PINNED EXAMPLE SOURCE"),
         "machine-readable example source must survive source deletion"
     );
-    let typst =
-        tokio::fs::read_to_string(output.path().join("pdf/main.typ")).await?;
+    let typst = tokio::fs::read_to_string(typst_source(
+        output.path(),
+        &only_pdf(&output.path().join("pdf")),
+    )?)
+    .await?;
     assert!(typst.contains("PINNED EXAMPLE SOURCE"));
     assert!(spec.contains("retained-enumeration-member"));
     assert!(spec.contains("SOURCE OWNED FORMAL SCOPE"));
@@ -473,4 +499,21 @@ async fn remote_transport_rejects_oversized_settings_and_mutable_refs_before_net
     }
     assert!(!cache.exists());
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

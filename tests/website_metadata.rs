@@ -60,6 +60,7 @@ async fn website_metadata_survives_kg_restore_and_indexes_visible_pages()
     restored.import(export.path().join("kg.nq")).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, output.path())
         .await?
     else {
@@ -144,6 +145,12 @@ async fn malformed_canonical_bases_fail_publication() -> Result<()> {
         let output = tempfile::tempdir()?;
         assert!(
             Publisher::new(collected.dataset)
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default
+                )
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default
+                )
                 .render(&collected.plan, output.path())
                 .await
                 .is_err(),

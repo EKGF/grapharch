@@ -78,21 +78,6 @@ async fn dedicated_skos_and_use_case_gallery_examples_are_executable()
         assert!(cases.contains(text), "missing {text}");
     }
     assert!(cases.contains("<img"));
-    let typst = tokio::fs::read_to_string(
-        output.path().join("artifacts/use-cases/review/main.typ"),
-    )
-    .await?;
-    assert!(
-        typst.contains(
-            "#ga-section(1)[#heading(level: 1)[#text(\"Check identity\")"
-        ),
-        "headings must share their fragment container with their body"
-    );
-    assert!(
-        typst.contains("#block(breakable: false)[#image("),
-        "standalone diagrams must remain atomic so preceding headings stay \
-         with them"
-    );
     Ok(())
 }
 
@@ -132,21 +117,41 @@ async fn semantic_showcases_render_from_restored_kg_after_deleting_sources()
         let restored = Dataset::memory()?;
         restored.import(archive).await?;
         let output = temp.path().join("published");
-        let publications =
-            showcases::publish(&Publisher::new(restored), &plans, &output)
-                .await?;
+        let publications = showcases::publish(
+            &Publisher::new(restored).with_edition(
+                grapharch::publication::pdf_name::Edition::Default,
+            ),
+            &plans,
+            &output,
+        )
+        .await?;
         assert_eq!(
             publications.len(),
             if kind == "skos" { 1 } else { 2 }
         );
-        let pdf = output.join(
-            if kind == "skos" {
-                "specification/document.pdf"
-            } else {
-                "review/document.pdf"
-            },
-        );
-        assert!(tokio::fs::read(pdf).await?.starts_with(b"%PDF-"));
+        let pdf = publications
+            .iter()
+            .find_map(|publication| publication.pdf())
+            .expect("a PDF edition");
+        assert!(tokio::fs::read(&pdf).await?.starts_with(b"%PDF-"));
+        if kind == "use-cases" {
+            let typst = tokio::fs::read_to_string(
+                grapharch::publication::render::typst_source(&output, &pdf)?,
+            )
+            .await?;
+            assert!(
+                typst.contains(
+                    "#ga-section(1)[#heading(level: 1)[#text(\"Check \
+                     identity\")"
+                ),
+                "headings must share their fragment container with their body"
+            );
+            assert!(
+                typst.contains("#block(breakable: false)[#image("),
+                "standalone diagrams must remain atomic so preceding headings \
+                 stay with them"
+            );
+        }
         if kind == "use-cases" {
             let mut assets =
                 tokio::fs::read_dir(output.join("website/assets")).await?;

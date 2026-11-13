@@ -72,7 +72,8 @@ async fn authored_and_retained_publication_assets_share_a_restored_website()
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     // The same full inventory must also remain replaceable, not fail at the
     // later ownership-manifest boundary.
     for _ in 0..2 {

@@ -120,3 +120,35 @@ DPROD showcase builds this way, with `specification/`, `website/`, and `pdf/`
 output directories. The `publication build-site` convenience command builds a
 Markdown website target; it is not yet a general project configuration runner
 for arbitrary mixed collector and documentor pipelines.
+
+## PDF edition names
+
+Every PDF edition is named from definitions, so its URL tells readers what they
+download: `<authority>-<document-type>-<document-name>[-<edition>].pdf`, such as
+`ekgf-spec-use-case-ontology-pr-23.pdf`.
+
+| Segment | Declared by |
+| --- | --- |
+| authority | `ga:slug` of the target's `ga:publisher` |
+| document type | `ga:slug` of the target's `ga:documentType`: `ga:SpecificationDocument` (`spec`), `ga:OverviewDocument` (`overview`), `ga:SubmissionDocument` (`submission`) or `ga:ReviewDocument` (`review`) |
+| document name | the target's `ga:slug`, else the `ga:slug` of the family its profile publishes |
+| edition | the build input `--edition` |
+
+Slugs are lowercase ASCII letters and digits in hyphen-separated words. A missing
+declaration is an error; nothing is derived from titles.
+
+`--edition` is required for every build that renders a PDF, on `build-family`,
+`build-site`, `build-revision` and `render`. Pass `default` only for the build of
+the declared default branch, which publishes the unsuffixed name. Every other
+build passes its branch slug, `pr-<number>` for a pull-request preview, or the
+release version, so builds of different branches never overwrite each other's
+PDFs. A PDF build without `--edition` fails.
+
+A `ga:TypstRenderer` target owns exactly its one PDF file, not its destination
+directory, so several PDF targets can share one directory such as `pdf/`. A
+second target resolving to the same file name fails with a collision. The
+target's manifest, Typst source and compiler inputs are retained beside the
+output root in `.grapharch/files/`, outside the published tree. A
+`ga:SpecificationRenderer` target names its paired PDF the same way inside its
+own directory. Under a composing website, a PDF target's destination resolves
+beneath the website's output like any other target.

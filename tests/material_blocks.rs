@@ -27,7 +27,7 @@ async fn material_blocks_survive_restore_and_publish_semantic_html()
 <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1.
 <urn:component> a ga:Component;dct:title "Technical detail";ga:fragment <urn:technical>.
 <urn:partial> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "partial".
-<urn:pdf> a ga:Target;dct:title "Semantic content";ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf".
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;dct:title "Semantic content";ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf".
 "#).await?;
     tokio::fs::write(
         input.path().join("index.md"),
@@ -105,6 +105,7 @@ grapharch:
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(result) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -131,20 +132,20 @@ grapharch:
     assert!(html.contains("Review &lt;carefully&gt;"));
     let PublishOutcome::Published(pdf_result) =
         Publisher::new(restored.clone())
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&pdf, output.path())
             .await?
     else {
         panic!("PDF publish failed")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf_result.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(pdf_result.typst_source()).await?;
     assert!(typst.contains("Visible technical detail"));
     assert!(typst.contains("Second card explanation."));
     assert!(!typst.contains("Nested information"));
     assert!(!typst.contains("grapharch-content"));
     let PublishOutcome::Published(partial_result) =
         Publisher::new(restored.clone())
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&partial, output.path())
             .await?
     else {
@@ -158,6 +159,12 @@ grapharch:
     if std::env::var_os("GRAPHARCH_MATERIAL_PREVIEW").is_some() {
         for plan in [&built.plan, &pdf] {
             Publisher::new(restored.clone())
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default,
+                )
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default,
+                )
                 .render(
                     plan,
                     std::path::Path::new("output/material-blocks"),

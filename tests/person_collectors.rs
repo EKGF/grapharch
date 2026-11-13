@@ -242,6 +242,7 @@ async fn orcid_editors_and_github_contributors_render_from_a_restored_kg()
     restored.import(archive).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -264,8 +265,7 @@ async fn orcid_editors_and_github_contributors_render_from_a_restored_kg()
             Some("https://github.com/zoe-x".to_owned())
         ),
     ]);
-    let typst =
-        std::fs::read_to_string(publication.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(publication.typst_source())?;
     for text in ["Jacobus Geluk", "Alice Example", "https://orcid.org/"] {
         assert!(typst.contains(text), "PDF source misses {text}");
     }

@@ -97,7 +97,31 @@ impl Collector for W3cSpecificationFile {
         let authority = NamedNode::new_unchecked(
             crate::publication::governance::W3C_AUTHORITY,
         );
+        // The W3C short name, the last segment of the latest-version URL,
+        // names the specification's PDF edition.
+        let short_name = header
+            .versions
+            .iter()
+            .find(|(field, _)| field == "latestVersion")
+            .and_then(|(_, url)| {
+                url.trim_end_matches('/')
+                    .rsplit('/')
+                    .next()
+                    .map(str::to_owned)
+            })
+            .ok_or_else(|| {
+                anyhow::anyhow!("W3C specification has no latest-version URL")
+            })?;
+        let short_name =
+            crate::publication::pdf_name::Slug::try_new(&short_name)?;
         for (subject, property, object) in [
+            (target.clone(), "slug", lit(short_name.as_str())),
+            (
+                target.clone(),
+                "documentType",
+                term("SpecificationDocument").into(),
+            ),
+            (authority.clone(), "slug", lit("w3c")),
             (project.clone(), "type", term("Project").into()),
             (
                 project.clone(),

@@ -52,6 +52,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
     restored.import(export.path().join("kg.nq")).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, output.path())
         .await?
     else {

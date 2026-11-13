@@ -37,12 +37,15 @@ fn definitions(contains: &str, extra: &str) -> String {
         r#"{base}
 ex:site a ga:Target ; dct:title "Containing site" ; ga:scope ex:scope ;
     ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ;
+    ga:documentType ga:SpecificationDocument ; ga:slug "site" ;
     ga:destination "site" ; ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ;
     ga:publicationStatus "Editor's Draft" ; ga:publicationDate "2026-10-24"^^xsd:date ;
     ga:thisVersion <https://example.org/> ; ga:latestVersion <https://example.org/> ;
     ga:license <https://creativecommons.org/licenses/by/4.0/> {contains} .
 ex:pdf a ga:Target ; dct:title "PDF edition" ; ga:scope ex:scope ; ga:profile ex:profile ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "site/pdf" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "site/pdf" ;
+    ga:documentType ga:SpecificationDocument ; ga:slug "family" ;
+    ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> .
 ex:target ga:metadataRow ex:version-row, ex:latest-row, ex:editions-row .
 ex:version-row a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
 ex:latest-row a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
@@ -145,18 +148,19 @@ async fn republishing_a_containing_target_preserves_its_nested_targets()
     .await?;
     let output = root.path().join("output");
     std::fs::create_dir(&output)?;
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let (spec, site, pdf) = (&plans[0], &plans[1], &plans[2]);
     // Nested targets first, then the container, then everything again. Every
     // target published so far keeps its files.
     let mut published = std::collections::BTreeSet::new();
     for (plan, file) in [
         (spec, "site/spec/main/index.html"),
-        (pdf, "site/pdf/document.pdf"),
+        (pdf, "site/pdf/ekgf-spec-family.pdf"),
         (site, "site/index.html"),
         (spec, "site/spec/main/index.html"),
         (site, "site/index.html"),
-        (pdf, "site/pdf/document.pdf"),
+        (pdf, "site/pdf/ekgf-spec-family.pdf"),
         (site, "site/index.html"),
     ] {
         publish(&publisher, plan, &output).await?;
@@ -172,12 +176,39 @@ async fn republishing_a_containing_target_preserves_its_nested_targets()
         "{spec}"
     );
     assert!(
-        spec.contains(r#"href="../../pdf/document.pdf""#),
+        spec.contains(r#"href="../../pdf/ekgf-spec-family.pdf""#),
         "{spec}"
     );
     let site = std::fs::read_to_string(output.join("site/index.html"))?;
     assert!(
-        site.contains(r#"href="pdf/document.pdf""#),
+        site.contains(r#"href="pdf/ekgf-spec-family.pdf""#),
+        "{site}"
+    );
+    Ok(())
+}
+
+/// A link by target IRI to a PDF target names the PDF of this build's
+/// edition, so a preview links its own PDF rather than the default branch's.
+#[tokio::test]
+async fn links_to_a_pdf_target_follow_the_build_edition() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let (dataset, plans) = plans(
+        root.path(),
+        &definitions("; ga:containsTarget ex:target, ex:pdf", ""),
+    )
+    .await?;
+    let output = root.path().join("output");
+    std::fs::create_dir(&output)?;
+    let publisher = Publisher::new(dataset).with_edition(
+        grapharch::publication::pdf_name::Edition::parse("pr-7")?,
+    );
+    for plan in &plans {
+        publish(&publisher, plan, &output).await?;
+    }
+    assert!(output.join("site/pdf/ekgf-spec-family-pr-7.pdf").is_file());
+    let site = std::fs::read_to_string(output.join("site/index.html"))?;
+    assert!(
+        site.contains(r#"href="pdf/ekgf-spec-family-pr-7.pdf""#),
         "{site}"
     );
     Ok(())
@@ -196,6 +227,7 @@ async fn links_to_unregistered_targets_fail() -> Result<()> {
     );
     let (dataset, plans) = plans(root.path(), &text).await?;
     let failure = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], &root.path().join("output"))
         .await
         .err()

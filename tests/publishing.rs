@@ -1,3 +1,4 @@
+use grapharch::publication::render::typst_source;
 #[path = "support/definitions.rs"]
 mod definitions;
 
@@ -84,7 +85,8 @@ async fn html_and_typst_pdf_publish_the_same_pinned_content_without_original_sou
     let source = temp.path().join("project.ttl");
     let (dataset, html, pdf) = plans("Shared prose with **emphasis**, `code`, and a [reference](https://example.org/spec).\n\n| Term | Meaning |\n| --- | --- |\n| Data product | A governed collection |\n", &source).await?;
     tokio::fs::remove_file(&source).await?;
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let html_dir = directory(publisher.render(&html, temp.path()).await?)?;
     let page = tokio::fs::read_to_string(html_dir.join("index.html")).await?;
     assert!(
@@ -95,17 +97,23 @@ async fn html_and_typst_pdf_publish_the_same_pinned_content_without_original_sou
     assert!(!page.contains("respec-w3c.js"));
     let pdf_dir = directory(publisher.render(&pdf, temp.path()).await?)?;
     assert!(
-        tokio::fs::read(pdf_dir.join("document.pdf"))
+        tokio::fs::read(only_pdf(&pdf_dir))
             .await?
             .starts_with(b"%PDF-")
     );
     assert!(
-        tokio::fs::read_to_string(pdf_dir.join("main.typ"))
-            .await?
-            .contains("Shared prose")
+        tokio::fs::read_to_string(typst_source(
+            temp.path(),
+            &only_pdf(&pdf_dir)
+        )?)
+        .await?
+        .contains("Shared prose")
     );
-    let manifest =
-        tokio::fs::read_to_string(pdf_dir.join("manifest.yaml")).await?;
+    let manifest = tokio::fs::read_to_string(
+        typst_source(temp.path(), &only_pdf(&pdf_dir))?
+            .with_file_name("manifest.yaml"),
+    )
+    .await?;
     assert!(
         manifest.contains("input_revision:") &&
             manifest.contains("profile:") &&
@@ -129,6 +137,7 @@ async fn unowned_output_directories_are_not_replaced() -> anyhow::Result<()> {
     tokio::fs::write(destination.join("user.txt"), "Keep this file.").await?;
     assert!(
         Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&html, temp.path())
             .await
             .is_err()
@@ -146,8 +155,12 @@ async fn unsupported_markdown_does_not_replace_the_last_successful_output()
     let temp = tempfile::tempdir()?;
     let (dataset, good, _) =
         plans("Valid prose.", &temp.path().join("good.ttl")).await?;
-    let target =
-        directory(Publisher::new(dataset).render(&good, temp.path()).await?)?;
+    let target = directory(
+        Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
+            .render(&good, temp.path())
+            .await?,
+    )?;
     let old_page = tokio::fs::read(target.join("index.html")).await?;
     let (dataset, bad, _) = plans(
         "<script>throw new Error('unsupported')</script>",
@@ -156,6 +169,7 @@ async fn unsupported_markdown_does_not_replace_the_last_successful_output()
     .await?;
     assert!(
         Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&bad, temp.path())
             .await
             .is_err()
@@ -174,7 +188,8 @@ async fn later_requests_win_even_when_render_futures_are_polled_in_reverse_order
     let source = temp.path().join("project.ttl");
     let (dataset, old, _) = plans("Old prose.", &source).await?;
     let (dataset, new, _) = plans_in(dataset, "New prose.", &source).await?;
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let target = directory(publisher.render(&old, temp.path()).await?)?;
     let old_page = tokio::fs::read_to_string(target.join("index.html")).await?;
     let old_future = publisher.render(&old, temp.path());
@@ -208,7 +223,8 @@ async fn extra_unowned_files_inside_a_publication_are_preserved()
         &temp.path().join("project.ttl"),
     )
     .await?;
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let target = directory(publisher.render(&plan, temp.path()).await?)?;
     tokio::fs::write(target.join("user.txt"), "Unowned content").await?;
     assert!(publisher.render(&plan, temp.path()).await.is_err());
@@ -230,6 +246,7 @@ async fn missing_local_heading_links_fail_before_publication()
     .await?;
     assert!(
         Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&plan, temp.path())
             .await
             .is_err()
@@ -250,6 +267,7 @@ async fn publication_jobs_are_recorded_in_the_shared_graph_without_changing_sour
     .await?;
     let before = Assembler::new(dataset.clone()).assemble(project).await?;
     let outcome = Publisher::new(dataset.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, temp.path())
         .await?;
     let PublishOutcome::Published(publication) = outcome else {
@@ -280,9 +298,17 @@ async fn markdown_heading_depth_is_relative_to_its_component_without_numbering_g
         &temp.path().join("project.ttl"),
     )
     .await?;
-    let target =
-        directory(Publisher::new(dataset).render(&plan, temp.path()).await?)?;
-    let source = tokio::fs::read_to_string(target.join("main.typ")).await?;
+    let target = directory(
+        Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
+            .render(&plan, temp.path())
+            .await?,
+    )?;
+    let source = tokio::fs::read_to_string(typst_source(
+        temp.path(),
+        &only_pdf(&target),
+    )?)
+    .await?;
     assert!(source.contains("#heading(level: 2)[#text(\"First heading\")"));
     assert!(source.contains("#heading(level: 3)[#text(\"Nested heading\")"));
     Ok(())
@@ -299,6 +325,7 @@ async fn skipped_heading_levels_are_rejected_instead_of_publishing_zero_numbered
     .await?;
     assert!(
         Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&plan, temp.path())
             .await
             .is_err()
@@ -316,7 +343,8 @@ async fn shared_html_and_pdf_render_gfm_callouts_without_literal_markers()
         &temp.path().join("source.ttl"),
     )
     .await?;
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let PublishOutcome::Published(html) =
         publisher.render(&html, temp.path()).await?
     else {
@@ -333,14 +361,30 @@ async fn shared_html_and_pdf_render_gfm_callouts_without_literal_markers()
     else {
         panic!("expected PDF")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(typst.contains("Note"));
     assert!(!typst.contains("[!NOTE]"));
     assert!(
-        tokio::fs::read(pdf.directory.join("document.pdf"))
+        tokio::fs::read(pdf.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

@@ -75,6 +75,8 @@ pub(super) async fn build(
         project,
         targets,
         publication_url,
+        // The gallery publishes each showcase as its own deployment.
+        edition: Some(crate::publication::pdf_name::Edition::Default),
     })
     .await
 }

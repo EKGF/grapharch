@@ -47,16 +47,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         ),
     )?;
     let registry = source.path().join("examples/showcases.ttl");
-    let text = std::fs::read_to_string(&registry)?;
-    assert_eq!(
-        text.matches(" ; ga:pdfPath \"review/document.pdf\" .")
-            .count(),
-        2
-    );
-    std::fs::write(
-        &registry,
-        text.replacen(" ; ga:pdfPath \"review/document.pdf\" .", " .", 1),
-    )?;
+
     // The acceptance test explicitly selects a local bare repository, never the
     // network.
     let family = source.path().join("examples/ekg-ontologies");
@@ -80,15 +71,13 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         ),
     )?;
     let text = std::fs::read_to_string(&registry)?;
-    let live = "ga:previewPath \"site/spec/main/index.html\" ; ga:pdfPath \
-                \"site/pdf/document.pdf\"";
+    let live = "ga:previewPath \"site/spec/main/index.html\" .";
     assert_eq!(text.matches(live).count(), 1);
     std::fs::write(
         &registry,
         text.replace(
             live,
-            "ga:previewPath \"specification/index.html\" ; ga:pdfPath \
-             \"specification/document.pdf\"",
+            "ga:previewPath \"specification/index.html\" .",
         ),
     )?;
     // Live HTTP corpora use explicit synthetic local transports in this offline
@@ -104,18 +93,9 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         "urn:fibo-be:family",
         "https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LegalPersons/",
     ).await?;
-    let mut dprod = revision_fixture::RevisionFixture::new(
+    let dprod = revision_fixture::RevisionFixture::new(
         &source.path().join("examples/dprod"),
     )?;
-    // The registered gallery case links the EKGF edition of the live PDF.
-    dprod.edit_definitions(|text| {
-        definitions::set_property(
-            &text,
-            "urn:dprod-showcase:pdf",
-            "https://ekgf.org/ontology/grapharch#destination",
-            definitions::literal("pdf/ekgf"),
-        )
-    })?;
     dprod.showcase(&source.path().join("examples/dprod/showcase.ttl"))?;
     let mkdocs_repository = tempfile::tempdir()?;
     let mkdocs_root = mkdocs_repository.path();
@@ -240,6 +220,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

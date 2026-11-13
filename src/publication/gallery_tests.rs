@@ -15,15 +15,16 @@ fn html_only_showcase_does_not_require_a_pdf() -> anyhow::Result<()> {
         oxrdf::NamedNode::new("urn:html")?,
     )]);
     assert!(
-        super::artifact_selection(&artifacts, None, "document.pdf", &case)
+        super::artifact_selection(&artifacts, None, |_| false, "PDF", &case)
             .is_ok(),
         "absence of an unrequested PDF is valid"
     );
     assert!(
         super::artifact_selection(
             &artifacts,
-            Some("review/document.pdf"),
-            "document.pdf",
+            Some("pdf/ex-review-case.pdf"),
+            |_| false,
+            "PDF",
             &case
         )
         .is_err(),

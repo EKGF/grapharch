@@ -50,6 +50,7 @@ async fn dublin_core_terms_compact_and_dates_render_readably_after_restore()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -106,9 +107,7 @@ async fn dublin_core_terms_compact_and_dates_render_readably_after_restore()
             }),
         "term description headings must not enter the outline"
     );
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     for text in [
         "8 April 2020, 00:00:01 UTC",
         "8 April 2020",
@@ -127,7 +126,7 @@ async fn dublin_core_terms_compact_and_dates_render_readably_after_restore()
         "term description headings must not become PDF headings or bookmarks"
     );
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );

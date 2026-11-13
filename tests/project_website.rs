@@ -56,6 +56,7 @@ async fn project_pages_render_source_owned_sections_without_documentation_chrome
     restored.import(export.path().join("kg.nq")).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, output.path())
         .await?
     else {
@@ -180,6 +181,7 @@ async fn unknown_panel_heading_fails_instead_of_silently_styling_another_section
         website::collect(input.path(), &settings, "urn:p", "urn:t", 2).await?;
     let output = tempfile::tempdir()?;
     let error = match Publisher::new(collected.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, output.path())
         .await
     {
@@ -246,6 +248,7 @@ async fn invalid_feature_card_hints_fail_publication() -> Result<()> {
                 .await?;
         let output = tempfile::tempdir()?;
         let error = match Publisher::new(collected.dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&collected.plan, output.path())
             .await
         {

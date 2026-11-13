@@ -36,8 +36,10 @@ async fn authored_example_and_notes_survive_kg_restore_in_html_and_pdf()
         .map(std::path::PathBuf::from);
     let temporary = tempfile::tempdir()?;
     let root = output.as_deref().unwrap_or(temporary.path());
-    let PublishOutcome::Published(publication) =
-        Publisher::new(restored).render(&plans[0], root).await?
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plans[0], root)
+        .await?
     else {
         panic!("publication required")
     };
@@ -56,13 +58,11 @@ async fn authored_example_and_notes_survive_kg_restore_in_html_and_pdf()
         2
     );
     assert!(doc.select(&select("code span[style]")).next().is_some());
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(typst.contains("#ga-example[#ga-code(("));
     assert_eq!(typst.matches("#ga-callout(\"Note\"").count(), 2);
     assert!(
-        tokio::fs::metadata(publication.directory.join("document.pdf"))
+        tokio::fs::metadata(publication.pdf().expect("published PDF edition"))
             .await?
             .len() >
             1000
@@ -90,8 +90,10 @@ async fn multilingual_showcase_renders_from_restored_graph_without_sources()
         .map(std::path::PathBuf::from);
     let temporary = tempfile::tempdir()?;
     let root = preview.as_deref().unwrap_or(temporary.path());
-    let PublishOutcome::Published(publication) =
-        Publisher::new(restored).render(&plans[0], root).await?
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plans[0], root)
+        .await?
     else {
         panic!("publication required")
     };
@@ -157,13 +159,11 @@ async fn multilingual_showcase_renders_from_restored_graph_without_sources()
         .collect::<String>();
     assert!(turtle.contains("ex:label \"UK Bonds\"@en ;"));
     assert!(turtle.contains("ex:count 42 ;"));
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert_eq!(typst.matches("#ga-example[#ga-code((").count(), 8);
     assert!(typst.contains("$title"));
     assert!(
-        tokio::fs::metadata(publication.directory.join("document.pdf"))
+        tokio::fs::metadata(publication.pdf().expect("published PDF edition"))
             .await?
             .len() >
             1000

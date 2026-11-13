@@ -352,6 +352,7 @@ async fn build(
     let stage = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) =
         Publisher::new(dataset.clone())
+            .with_edition(crate::publication::pdf_name::Edition::Default)
             .render(&plan, stage.path())
             .await?
     else {

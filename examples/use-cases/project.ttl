@@ -6,4 +6,5 @@
 <urn:use-cases:website> a ga:Target;dct:title "Customer insight: use cases and reusable capabilities";
  ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer>;ga:destination "website" .
 <urn:use-cases:pdf> a ga:Target;dct:title "EKGF use-case tree: review document";
- ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "review" .
+ ga:scope <urn:use-cases:scope>;ga:profile <urn:use-cases:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "use-cases" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "review" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" .

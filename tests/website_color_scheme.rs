@@ -83,6 +83,7 @@ Project cards share the selected color scheme.
             .unwrap_or_else(|| temporary.path().join("output"))
             .join(style);
         let PublishOutcome::Published(publication) = Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&collected.plan, &output)
             .await?
         else {

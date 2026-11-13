@@ -40,8 +40,8 @@ async fn render(
 <urn:terms:profile> a ga:Profile; pub:publishesFamily <urn:terms:collection> .
 <urn:terms:collection> a gov:Family; rdfs:label "Example vocabularies" .
 {hint}
-<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer ga:{renderer}; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
-<urn:terms:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
+<urn:terms:target> a ga:Target; dct:title "Example vocabularies"; dct:description "Collection reference."; rdfs:comment "Unofficial preview."; ga:scope <urn:terms:scope>; ga:profile <urn:terms:profile>; ga:renderer ga:{renderer}; ga:documentType ga:SpecificationDocument; ga:slug "reference"; ga:destination "reference"; ga:publisher <urn:terms:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
+<urn:terms:publisher> a gov:Authority ; <https://ekgf.org/ontology/grapharch#slug> "example"; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
 <https://example.org/vocab/> gov:inFamily <urn:terms:collection>; sh:declare [sh:prefix "example"; sh:namespace "https://example.org/vocab/"] .
 "##)).await?;
     let built = ontology_family::collect(
@@ -58,10 +58,12 @@ async fn render(
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored).with_book_workers(
-        std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
-        1,
-    )?;
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .with_book_workers(
+            std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch")),
+            1,
+        )?;
     let PublishOutcome::Published(publication) =
         publisher.render(&built.plan, output.path()).await?
     else {
@@ -88,7 +90,7 @@ async fn collection_hint_changes_overview_and_pdf_without_changing_semantics()
         typst.contains("Library overview") && typst.contains("in this library")
     );
     assert!(
-        tokio::fs::read(output.path().join("reference/document.pdf"))
+        tokio::fs::read(only_pdf(&output.path().join("reference")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -230,4 +232,21 @@ async fn ontology_reference_explains_missing_definition_origin_after_restore()
         }
     }
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

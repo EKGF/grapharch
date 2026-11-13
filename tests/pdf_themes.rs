@@ -67,16 +67,15 @@ async fn render(definitions: String) -> Result<(String, tempfile::TempDir)> {
     source.close()?;
     let out = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], out.path())
         .await?
     else {
         panic!("publication required")
     };
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -136,7 +135,8 @@ async fn declarative_cover_places_logo_date_version_and_labelled_rows()
     assert!(cover.contains("#text(\"formal/26-06-05\")"));
     assert!(cover.contains("[#text(\"Normative reference:\")], [#link(\"https://example.org/spec/\")"));
     assert!(!cover.contains("Document identifier:"));
-    let logo = std::fs::read_dir(out.path())?
+    // A PDF-only target keeps its compiler inputs in the publication record.
+    let logo = std::fs::read_dir(out.path().join(".grapharch/files"))?
         .flatten()
         .find_map(|entry| {
             let path = entry.path().join("cover-logo.svg");

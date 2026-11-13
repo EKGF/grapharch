@@ -25,6 +25,9 @@ inputs:
     description: Optional project IRI for external definitions
   target:
     description: Optional target IRI for external definitions
+  edition:
+    description: Edition of this build, required when a target renders a PDF; default for the declared default branch, otherwise the branch slug, pr-<number> or release version
+    required: false
   output:
     description: Output root directory
     default: build/docs
@@ -82,6 +85,7 @@ runs:
         GRAPHARCH_PROJECT: ${{ inputs.project }}
         GRAPHARCH_TARGET: ${{ inputs.target }}
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
+        GRAPHARCH_EDITION: ${{ inputs.edition }}
       run: python -B "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
     - uses: actions/setup-java@v6
       with:
@@ -125,4 +129,5 @@ runs:
         GRAPHARCH_PROJECT: ${{ inputs.project }}
         GRAPHARCH_TARGET: ${{ inputs.target }}
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
+        GRAPHARCH_EDITION: ${{ inputs.edition }}
       run: python -B "$GITHUB_ACTION_PATH/packaging/build_action.py"

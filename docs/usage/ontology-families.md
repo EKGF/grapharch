@@ -82,11 +82,11 @@ the source repository is not modified. With a target destination of
 `specification`, outputs include `specification/index.html`, its PDF and Typst
 source, and `documentation.nq`.
 
-A `ga:TypstRenderer` target publishes a PDF-only edition of the family: its
-destination holds the PDF, its `main.typ` source and the manifest, with no
+A `ga:TypstRenderer` target publishes a PDF-only edition of the family, with no
 single-page HTML copy. Give it its own profile that declares the family and
 `ga:theme ga:SpecificationTheme` for the specification presentation, including the
-target's status and version metadata:
+target's status and version metadata. See [PDF edition names](publication-families.md#pdf-edition-names) for
+how its file is named and where it is published:
 
 ```turtle
 <urn:example:pdf-profile> a ga:Profile, artpub:PublicationProfile ;
@@ -96,12 +96,18 @@ target's status and version metadata:
 <urn:example:pdf> a ga:Target ;
     ga:profile <urn:example:pdf-profile> ;
     ga:renderer ga:TypstRenderer ;
+    ga:documentType ga:SpecificationDocument ;
+    ga:publisher <urn:example:authority> ;
     ga:destination "pdf" .
+
+<urn:example:authority> ga:slug "example" .
+<urn:example:family> ga:slug "example-ontologies" .
 ```
 
 The target needs the same scope, title, description, status comment and
 publication metadata as the HTML specification target. Build it with its own
-`build-family --target` run.
+`build-family --target ... --edition default` run; it publishes
+`pdf/example-spec-example-ontologies.pdf`.
 
 For a remote source, replace the source option with `--git-repository URL
 --git-ref REF`, or the GitHub shortcut. Unqualified refs mean branches; use

@@ -32,6 +32,8 @@ pub(super) struct Plan {
     pub provenance:       super::provenance::Provenance,
     /// Entry files of the project's targets, for links by target IRI.
     pub targets:          crate::publication::target_links::TargetLinks,
+    /// Named PDF edition of a PDF-producing renderer.
+    pub pdf_file:         Option<String>,
 }
 
 /// Per-book result carried with its parent's atomic publication manifest.
@@ -92,6 +94,9 @@ pub struct PublicationManifest {
     /// Errors in an explicitly requested keep-going preview.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub diagnostics:    Vec<crate::publication::diagnostics::Diagnostic>,
+    /// The named PDF edition among `files`, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pdf:            Option<String>,
 }
 
 impl PublicationManifest {
@@ -173,6 +178,7 @@ impl Plan {
             quality_evidence,
             provenance: Default::default(),
             targets: Default::default(),
+            pdf_file: None,
         };
         plan.abbreviations = std::sync::Arc::new(
             super::abbreviations::Abbreviations::read(&plan).await?,
@@ -183,6 +189,7 @@ impl Plan {
             &plan.source,
             &plan.project,
             &plan.target,
+            None,
         )
         .await?;
         if plan.renderer != crate::publication::Renderer::Website {
@@ -311,12 +318,14 @@ impl Plan {
                     "index.html".into(),
                     "style.css".into(),
                     "main.typ".into(),
-                    "document.pdf".into(),
+                    self.pdf_file.clone().expect("specification PDF name"),
                 ]
             } else if self.is_html() {
                 vec!["index.html".into(), "style.css".into()]
             } else {
-                vec!["main.typ".into(), "document.pdf".into()]
+                // Website, paginated and bookshelf renderers report their own
+                // files; a Typst target owns only its named PDF.
+                self.pdf_file.iter().cloned().collect()
             };
         PublicationManifest {
             version: 1,
@@ -333,6 +342,7 @@ impl Plan {
             books: Vec::new(),
             diagnostics: Vec::new(),
             failure_mode: Default::default(),
+            pdf: self.pdf_file.clone(),
         }
     }
 }
