@@ -192,12 +192,8 @@ pub enum PublicationCommand {
         /// Bare-cache parent directory (defaults to the system temp cache).
         #[arg(long)]
         git_cache:        Option<PathBuf>,
-        #[arg(long, requires_all = ["project", "target"])]
-        definitions:      Option<PathBuf>,
-        #[arg(long, requires_all = ["definitions", "target"])]
-        project:          Option<String>,
-        #[arg(long, requires_all = ["definitions", "project"])]
-        target:           Option<String>,
+        #[command(flatten)]
+        explicit:         Box<ExplicitDefinitions>,
         #[arg(long)]
         output_root:      PathBuf,
         #[arg(long, default_value_t = 4)]
@@ -420,13 +416,13 @@ pub async fn run(
             git_repository,
             git_ref,
             git_cache,
-            definitions,
-            project,
-            target,
+            explicit,
             output_root,
             concurrency,
             edition,
         } => {
+            let ExplicitDefinitions { definitions, project, target } =
+                explicit.as_ref();
             ensure!(*concurrency > 0, "concurrency must be positive");
             let dataset = backend.open().await?;
             let built = if let Some(path) = sparql_sources {
@@ -915,3 +911,18 @@ async fn collect_configured_family(
 }
 
 fn edition(value: &str) -> Result<Edition> { Edition::parse(value) }
+
+/// External publication definitions, supplied together or not at all. Boxed
+/// so the family command stays small on every platform.
+#[derive(clap::Args)]
+pub struct ExplicitDefinitions {
+    /// Publication definitions file.
+    #[arg(long, requires_all = ["project", "target"])]
+    pub definitions: Option<PathBuf>,
+    /// Project IRI defined by the definitions.
+    #[arg(long, requires_all = ["definitions", "target"])]
+    pub project:     Option<String>,
+    /// Target IRI to publish.
+    #[arg(long, requires_all = ["definitions", "project"])]
+    pub target:      Option<String>,
+}
