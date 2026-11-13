@@ -52,7 +52,7 @@ const DECLARED: [&str; 13] = [
 
 /// Predicates that only publication definitions assert. Collector output such
 /// as fragments, topics, references and assets uses none of them.
-const PREDICATES: [&str; 52] = [
+const PREDICATES: [&str; 55] = [
     "target",
     "scope",
     "profile",
@@ -105,6 +105,9 @@ const PREDICATES: [&str; 52] = [
     "license",
     "copyright",
     "subtitle",
+    "containsTarget",
+    "documentationGraphPath",
+    "contentSource",
 ];
 
 /// Engine-owned catalogue retained alongside source contributions.
