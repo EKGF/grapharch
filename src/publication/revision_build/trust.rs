@@ -15,7 +15,7 @@ use {
 };
 
 /// Classes whose instances are publication definitions.
-const CLASSES: [&str; 11] = [
+const CLASSES: [&str; 15] = [
     "Project",
     "Target",
     "Profile",
@@ -27,10 +27,14 @@ const CLASSES: [&str; 11] = [
     "MetadataRow",
     "Navigation",
     "NavigationEntry",
+    "Theme",
+    "CoverBlock",
+    "Notice",
+    "CopyrightHolder",
 ];
 
 /// Defined resources that no content contribution may describe.
-const DECLARED: [&str; 9] = [
+const DECLARED: [&str; 13] = [
     "Project",
     "Target",
     "Profile",
@@ -40,11 +44,15 @@ const DECLARED: [&str; 9] = [
     "MetadataRow",
     "Navigation",
     "NavigationEntry",
+    "Theme",
+    "CoverBlock",
+    "Notice",
+    "CopyrightHolder",
 ];
 
 /// Predicates that only publication definitions assert. Collector output such
 /// as fragments, topics, references and assets uses none of them.
-const PREDICATES: [&str; 47] = [
+const PREDICATES: [&str; 52] = [
     "target",
     "scope",
     "profile",
@@ -62,7 +70,8 @@ const PREDICATES: [&str; 47] = [
     "compose",
     "traverse",
     "maxDepth",
-    "preamble",
+    "notice",
+    "copyrightHolder",
     "metadataSource",
     "derivedMetadata",
     "includedIn",
@@ -74,7 +83,11 @@ const PREDICATES: [&str; 47] = [
     "requiredSectionRole",
     "requiredMetadata",
     "allowedPublicationStatus",
-    "style",
+    "theme",
+    "baseTheme",
+    "coverBlock",
+    "requiredMetadataField",
+    "familyPlacement",
     "layout",
     "navigation",
     "navigationEntry",
