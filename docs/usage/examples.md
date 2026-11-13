@@ -152,7 +152,7 @@ commits through a reusable bare Git cache; branch names are rejected. Content
 comes only from the content commit; the definitions come only from the
 controlling commit. Missing source files, invalid definitions and unavailable
 sources stop the build; copied fixtures are never used as a replacement.
-Both pins currently name commit `0620845` of EKGF/dprod#293, whose
+Both pins currently name commit `258700e` of EKGF/dprod#293, whose
 `publication/definitions/develop.ttl` holds the controlling definitions.
 
 The definitions place the formal prose and worked examples independently from
