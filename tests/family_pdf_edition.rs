@@ -199,7 +199,11 @@ async fn competing_labels_are_one_warning_rule_for_build_and_render()
         .arg(fixture.output.join("documentation.nq"))
         .output()
         .await?;
-    assert!(imported.status.success());
+    assert!(
+        imported.status.success(),
+        "{}",
+        String::from_utf8_lossy(&imported.stderr)
+    );
     let rendered = Command::new(binary)
         .args(["publication", "render", "--store"])
         .arg(&store)
