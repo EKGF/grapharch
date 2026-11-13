@@ -135,7 +135,15 @@ fn configuration(
 ) -> anyhow::Result<()> {
     std::fs::write(
         path,
-        revision_showcase(&remote.display().to_string(), commit, definitions),
+        // A file URL, not a native path: Windows path backslashes are not
+        // valid in a Turtle string literal.
+        revision_showcase(
+            url::Url::from_directory_path(remote)
+                .map_err(|()| anyhow::anyhow!("remote must be absolute"))?
+                .as_str(),
+            commit,
+            definitions,
+        ),
     )?;
     Ok(())
 }
