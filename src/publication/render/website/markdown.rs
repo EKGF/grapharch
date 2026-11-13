@@ -199,6 +199,12 @@ pub(super) fn link(
     page: &Page,
     catalog: &Catalog,
 ) -> Result<String> {
+    if let Some(href) = catalog
+        .targets
+        .resolve(value, &format!("{}index.html", page.route))?
+    {
+        return Ok(href);
+    }
     if let Some((id, anchor)) = catalog.subjects.get(value) {
         let target = &catalog.pages[id];
         return Ok(if target.id == page.id {

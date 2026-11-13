@@ -42,7 +42,7 @@ pub(super) async fn prepare(root: &Path, plan: &Plan) -> Result<PathBuf> {
     let parent = destination
         .parent()
         .ok_or_else(|| anyhow::anyhow!("target has no parent"))?;
-    let mut current = root;
+    let mut current = root.clone();
     for component in parent.strip_prefix(&current)?.components() {
         current.push(component);
         match tokio::fs::symlink_metadata(&current).await {
@@ -58,8 +58,14 @@ pub(super) async fn prepare(root: &Path, plan: &Plan) -> Result<PathBuf> {
             },
             Err(error) => return Err(error.into()),
         }
+        let within = current
+            .strip_prefix(&root)?
+            .to_string_lossy()
+            .replace('\\', "/");
         ensure!(
-            !tokio::fs::try_exists(current.join("manifest.yaml")).await?,
+            plan.targets.contained_by(&within) ||
+                !tokio::fs::try_exists(current.join("manifest.yaml"))
+                    .await?,
             "nested target outputs require explicit composition"
         );
     }
@@ -84,6 +90,7 @@ pub(super) async fn register(
     destination: PathBuf,
     ticket: Ticket,
     coordination: Arc<Mutex<()>>,
+    nested: Vec<String>,
 ) -> Result<bool> {
     let guard = coordination.lock_owned().await;
     tokio::task::spawn_blocking(move || {
@@ -96,7 +103,7 @@ pub(super) async fn register(
                     previous.target == ticket.target,
                 "another target owns this output destination"
             );
-            recover(&destination, &previous)?;
+            recover(&destination, &previous, &nested)?;
             if previous.session == ticket.session &&
                 previous.sequence > ticket.sequence
             {
@@ -104,7 +111,14 @@ pub(super) async fn register(
                 return Ok(false);
             }
         }
-        owned(&destination, &ticket.project, &ticket.target)?;
+        if !super::nested::Nested::new(&nested).shell(&destination)? {
+            owned_except(
+                &destination,
+                &ticket.project,
+                &ticket.target,
+                &nested,
+            )?;
+        }
         let temporary =
             request.with_extension(format!("{}.tmp", Uuid::new_v4()));
         let mut output = fs::OpenOptions::new()
@@ -125,9 +139,11 @@ pub(super) async fn promote(
     destination: PathBuf,
     ticket: Ticket,
     coordination: Arc<Mutex<()>>,
+    nested: Vec<String>,
 ) -> Result<bool> {
     let guard = coordination.lock_owned().await;
     tokio::task::spawn_blocking(move || {
+        let nested = super::nested::Nested::new(&nested);
         let _guard = guard;
         let (lock, request) = paths(&destination)?;
         let lease = Lease::acquire(lock)?;
@@ -137,13 +153,22 @@ pub(super) async fn promote(
             lease.release()?;
             return Ok(false);
         }
-        let existing = owned(&destination, &ticket.project, &ticket.target)?;
+        let existing = nested.shell(&destination)? ||
+            owned_except(
+                &destination,
+                &ticket.project,
+                &ticket.target,
+                nested.paths(),
+            )?;
         let backup = backup_path(&destination, &ticket.job)?;
         if existing {
+            // Contained targets keep their outputs in the new generation.
+            nested.carry(&destination, &stage)?;
             fs::rename(&destination, &backup)?;
         }
         if let Err(error) = fs::rename(&stage, &destination) {
             if existing {
+                nested.carry(&stage, &backup)?;
                 fs::rename(&backup, &destination).context(
                     "publication promotion failed and rollback could not \
                      restore the previous output",
@@ -165,18 +190,32 @@ fn backup_path(destination: &Path, job: &str) -> Result<PathBuf> {
     Ok(destination.with_file_name(format!(".grapharch-backup-{job}")))
 }
 
-fn recover(destination: &Path, previous: &Ticket) -> Result<()> {
+fn recover(
+    destination: &Path,
+    previous: &Ticket,
+    nested: &[String],
+) -> Result<()> {
     let backup = backup_path(destination, &previous.job)?;
     if !backup.try_exists()? {
         return Ok(());
     }
     ensure!(
-        owned(&backup, &previous.project, &previous.target)?,
+        owned_except(
+            &backup,
+            &previous.project,
+            &previous.target,
+            nested
+        )?,
         "interrupted promotion has no owned backup"
     );
     if destination.try_exists()? {
         ensure!(
-            owned(destination, &previous.project, &previous.target)?,
+            owned_except(
+                destination,
+                &previous.project,
+                &previous.target,
+                nested
+            )?,
             "interrupted promotion has an unowned destination"
         );
         let manifest = read_optional::<PublicationManifest>(
@@ -194,7 +233,19 @@ fn recover(destination: &Path, previous: &Ticket) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
+    owned_except(destination, project, target, &[])
+}
+
+/// Whether this target owns `destination`, ignoring the outputs of the
+/// contained targets at the `nested` relative destinations.
+fn owned_except(
+    destination: &Path,
+    project: &str,
+    target: &str,
+    nested: &[String],
+) -> Result<bool> {
     match fs::symlink_metadata(destination) {
         Ok(metadata) => {
             ensure!(
@@ -235,7 +286,7 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 "invalid website artifact ownership"
             );
         }
-        Tree::new(&names).verify(destination, destination, &mut 0)?;
+        Tree::new(&names, nested).verify(destination, destination, &mut 0)?;
     } else {
         ensure!(
             manifest.files.len() <=
@@ -292,7 +343,7 @@ fn owned(destination: &Path, project: &str, target: &str) -> Result<bool> {
                 "invalid publication artifact ownership"
             );
         }
-        Tree::new(&names).verify(destination, destination, &mut 0)?;
+        Tree::new(&names, nested).verify(destination, destination, &mut 0)?;
     }
     Ok(true)
 }
@@ -320,20 +371,41 @@ pub(super) fn validate_artifact_path(value: &str) -> Result<()> {
 /// The files a publication owns, and every directory that contains one.
 struct Tree<'a> {
     files:       &'a std::collections::HashSet<&'a str>,
+    /// Destinations of contained targets, which own their outputs.
+    nested:      &'a [String],
     directories: std::collections::HashSet<&'a str>, /* bounded: at most 16
                                                       * ancestors of each
                                                       * owned file. */
 }
 
 impl<'a> Tree<'a> {
-    fn new(files: &'a std::collections::HashSet<&'a str>) -> Self {
+    fn new(
+        files: &'a std::collections::HashSet<&'a str>,
+        nested: &'a [String],
+    ) -> Self {
         let directories = files
             .iter()
             .flat_map(|file| {
                 file.match_indices('/').map(|(index, _)| &file[..index])
             })
             .collect();
-        Self { files, directories }
+        Self { files, nested, directories }
+    }
+
+    /// A contained target's output or one of its publication records.
+    fn contained(&self, name: &str) -> bool {
+        self.nested.iter().any(|contained| {
+            let (parent, last) =
+                contained.rsplit_once('/').unwrap_or(("", contained));
+            let prefix = if parent.is_empty() {
+                String::new()
+            } else {
+                format!("{parent}/")
+            };
+            name == contained ||
+                name == format!("{prefix}.grapharch-{last}.lock") ||
+                name == format!("{prefix}.grapharch-{last}.request.yaml")
+        })
     }
 
     fn verify(
@@ -356,10 +428,16 @@ impl<'a> Tree<'a> {
                 .ok_or_else(|| anyhow::anyhow!("non-UTF-8 website artifact"))?
                 .replace('\\', "/");
             let kind = entry.file_type()?;
+            if self.contained(&name) {
+                continue;
+            }
             if kind.is_dir() {
                 validate_artifact_path(&name)?;
                 ensure!(
-                    self.directories.contains(name.as_str()),
+                    self.directories.contains(name.as_str()) ||
+                        self.nested.iter().any(|contained| {
+                            contained.starts_with(&format!("{name}/"))
+                        }),
                     "output contains an unowned directory: {name}"
                 );
                 self.verify(root, &path, visited)?;
@@ -532,7 +610,8 @@ mod recovery_tests {
             register(
                 destination.clone(),
                 first.clone(),
-                coordination.clone()
+                coordination.clone(),
+                Vec::new()
             )
             .await?
         );
@@ -544,7 +623,15 @@ mod recovery_tests {
             job: Uuid::new_v4().to_string(),
             ..first
         };
-        assert!(register(destination.clone(), next, coordination).await?);
+        assert!(
+            register(
+                destination.clone(),
+                next,
+                coordination,
+                Vec::new()
+            )
+            .await?
+        );
         assert_eq!(
             tokio::fs::read_to_string(destination.join("index.html")).await?,
             "Previous valid page"

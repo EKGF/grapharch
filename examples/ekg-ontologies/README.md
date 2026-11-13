@@ -4,11 +4,12 @@
 
 The published gallery uses [`showcase.ttl`](showcase.ttl), which selects
 `https://github.com/EKGF/ekg-ontologies.git` with `ga:gitRepository`. Its
-`ga:gitRef` is temporarily pinned to commit
-`6bd93ab7c9430804e99b3913f0926d0070eb44a3` (specification target only, published
-at `spec/develop`) because newer upstream commits emit relative links the
-gallery guard rejects; it returns to `ga:gitRef "HEAD"` once the EKG migration
-lands upstream. With `HEAD`, every build fetches the repository's latest default
+`ga:gitRef` is pinned to commit `c7d9bc2371f38c0f39b15540cfd54afaa3581118` on
+`publication/ekgf-family-website`, the migration to composed targets (website at
+`site/`, reference at `site/spec/main/`, PDF edition at `site/pdf/`), website
+pages declared with `ga:contentSource` and links by target IRI. It returns to
+`ga:gitRef "HEAD"` once that migration reaches the ekg-ontologies default
+branch. With `HEAD`, every build fetches the repository's latest default
 branch into a reusable bare Git cache, then collects the resolved commit. It
 does not read the copied `sources/` corpus.
 

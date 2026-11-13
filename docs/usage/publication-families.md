@@ -51,16 +51,40 @@ ex:site a ga:Target ;
     ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "companion" .
 ex:pdf a ga:Target ;
     ga:scope ex:reference-content ; ga:profile ex:approval-document ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "documents/develop" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "pdf" .
 ```
 
 This snippet shows the target relationships; a complete project also declares
 scope members, profiles, placements, fragments, and specification metadata.
-Output directories must be separate and non-overlapping. Deployment can mount
-the companion output at `/dprod/`, the specification at `/dprod/spec/develop/`,
-and the document at an appropriate download URL. Those public URLs and the local
-artifact directories are different concerns. Combined deployment and cross-target
-navigation are not automatically configured by this snippet.
+Output directories must be separate and non-overlapping unless one target
+declares that it contains another. Deployment can mount the companion output at
+`/dprod/`, the specification at `/dprod/spec/develop/`, and the document at an
+appropriate download URL. Those public URLs and the local artifact directories
+are different concerns.
+
+## Compose targets and link between them
+
+A target can contain other targets of the same project. Their destinations nest
+beneath its own, so one output tree has the deployed layout:
+
+```turtle
+ex:site ga:destination "site" ; ga:containsTarget ex:spec, ex:pdf .
+ex:spec ga:destination "site/spec/develop" .
+ex:pdf ga:destination "site/pdf" .
+```
+
+Nesting without the declaration, or a contained target at the container's own
+destination, fails planning. Republishing the container keeps the contained
+outputs; a container file at a contained destination is a collision.
+
+A link whose destination is a bare target IRI, in Markdown or in authored HTML
+such as a custom metadata row, resolves to the relative path from the page to
+that target's entry file: `index.html` for an HTML target, the PDF for a Typst
+target. An IRI declared as a target but not registered by the project fails.
+
+```markdown
+Read the [specification](urn:example:spec) or download the [PDF](urn:example:pdf).
+```
 
 ## Pin the family to one revision
 

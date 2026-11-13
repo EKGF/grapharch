@@ -36,11 +36,11 @@ fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
         text("repository"),
         "https://github.com/EKGF/ekg-ontologies.git"
     );
-    // Temporary exact pin until the EKG migration lands upstream; restore
+    // Pinned to the ekg-ontologies migration until it reaches main; restore
     // `HEAD` then (see examples/ekg-ontologies/showcase.ttl).
     assert_eq!(
         text("reference"),
-        "6bd93ab7c9430804e99b3913f0926d0070eb44a3"
+        "c7d9bc2371f38c0f39b15540cfd54afaa3581118"
     );
     assert!(
         include_str!("../examples/showcases.ttl")

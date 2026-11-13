@@ -237,12 +237,22 @@ impl PublicationHints {
             )
         };
         for target in &selected {
+            // A website target publishes the project's declared pages with
+            // its own profile; the family build binds and plans it.
+            if self.renderer(target)? == crate::publication::Renderer::Website {
+                continue;
+            }
             let used = self.profile(target)?;
+            // A family renderer with its own family profile receives its own
+            // bindings; any other target must share the family profile.
             ensure!(
-                used == profile,
+                used == profile ||
+                    (self.binds_family(target)? &&
+                        self.families.contains(used.as_str())),
                 "target {target} uses profile {used}, not the family profile \
-                 {profile}; a family build publishes only targets of the \
-                 family profile, so select the family targets explicitly"
+                 {profile}; a family build publishes the family profiles' \
+                 targets and websites only, so select the family targets \
+                 explicitly"
             );
         }
         Ok(FamilyTargets::new(selected, primary))
@@ -263,14 +273,20 @@ impl PublicationHints {
         }
     }
 
-    fn binds_family(&self, target: &NamedNode) -> Result<bool> {
+    fn renderer(
+        &self,
+        target: &NamedNode,
+    ) -> Result<crate::publication::Renderer> {
         let Term::NamedNode(renderer) =
             one(&self.renderers, target, "ga:renderer")?
         else {
             bail!("target {target} ga:renderer must be an IRI")
         };
-        Ok(crate::publication::Renderer::from_node(renderer)?
-            .publishes_family())
+        crate::publication::Renderer::from_node(renderer)
+    }
+
+    fn binds_family(&self, target: &NamedNode) -> Result<bool> {
+        Ok(self.renderer(target)?.publishes_family())
     }
 }
 

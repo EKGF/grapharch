@@ -50,9 +50,20 @@ IRI order, each into its own `ga:destination`. A `targets` list in the showcase
 configuration selects registered targets instead, in its own order. The family
 bindings belong to the profile of the first selected target with a
 specification, specification-pages, bookshelf or Typst renderer and an
-`artpub:publishesFamily` profile; every other selected target must use that
-profile. A website or other target with its own profile is rejected rather than
-published without its content.
+`artpub:publishesFamily` profile. Another family target with its own profile
+that publishes the same family, such as a Typst PDF edition, receives its own
+bindings. A website target publishes the pages in the project's
+`ga:contentSource` directory, read from the same checkout or commit as the
+ontologies. Without a declared content source it is rejected rather than
+published empty. Any other target with its own profile is rejected.
+
+A target can retain the documentation graph inside its own output with
+`ga:documentationGraphPath`, a relative `.nq` path beneath its destination.
+Pages can then link to the graph with a portable relative reference:
+
+```turtle
+<urn:example:specification> ga:documentationGraphPath "documentation.nq" .
+```
 
 For external publication definitions, supply all three override options:
 

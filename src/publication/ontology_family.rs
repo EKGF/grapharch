@@ -33,6 +33,7 @@ pub(crate) mod arrangement;
 mod declarations;
 mod modules;
 mod reference;
+mod site;
 
 const GOVERNANCE: &str = "https://ekgf.org/ontology/artifact-governance#";
 const PUBLICATION: &str = "https://ekgf.org/ontology/artifact-publication#";
@@ -257,14 +258,15 @@ async fn collect_from_optional(
             Some(path) => Some(tokio::fs::canonicalize(path).await?),
             None => None,
         };
+        let mut site = None;
         let inputs = match source {
             FamilySource::Directory(path) => {
-                file_collectors(
-                    &tokio::fs::canonicalize(path).await?,
-                    definitions.as_deref(),
-                    project,
-                )
-                .await?
+                let root = tokio::fs::canonicalize(path).await?;
+                let inputs =
+                    file_collectors(&root, definitions.as_deref(), project)
+                        .await?;
+                site = Some(site::SiteSource::Directory(root));
+                inputs
             },
             FamilySource::LocalRepository(path) => {
                 let scan = super::collect::git::local_repository(path, project)
@@ -276,6 +278,7 @@ async fn collect_from_optional(
                 )
                 .await?;
                 inputs.push(scan.provenance);
+                site = Some(site::SiteSource::Directory(scan.root));
                 inputs
             },
             FamilySource::RemoteRepository { url, reference, cache } => {
@@ -283,14 +286,10 @@ async fn collect_from_optional(
                     url, reference, cache, project,
                 )
                 .await?;
-                let mut inputs = scan.files;
-                inputs.push(scan.provenance);
-                inputs
+                site::SiteSource::pinned(scan, &mut site)
             },
             FamilySource::PreparedRepository(scan) => {
-                let mut inputs = scan.files;
-                inputs.push(scan.provenance);
-                inputs
+                site::SiteSource::pinned(scan, &mut site)
             },
             FamilySource::RdfUrls(configs) => {
                 ensure!(
@@ -339,6 +338,7 @@ async fn collect_from_optional(
         build(
             inputs,
             definitions.as_deref(),
+            site.as_ref(),
             &dataset,
             &writer,
             project,
@@ -439,6 +439,7 @@ async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
 async fn build(
     inputs: Vec<Arc<dyn Collector>>,
     definitions: Option<&Path>,
+    site: Option<&site::SiteSource>,
     dataset: &Dataset,
     writer: &GraphWriter,
     project: &str,
@@ -466,6 +467,7 @@ async fn build(
         managed.add(id.processor, id.source, false)?;
     }
     managed.persist_inventory(writer, true).await?;
+    managed.retire(writer, false).await?;
     collect_all(work, writer, concurrency).await?;
     let people = super::collect::people::collectors(dataset, project).await?;
     for input in &people {
@@ -481,6 +483,19 @@ async fn build(
     );
     let snapshot = dataset.snapshot_collected_for(project).await?;
     let view = RevisionView::new(dataset.clone(), snapshot.clone());
+    // Website pages are collected after the family snapshot, so the family
+    // reference reads exactly the collected RDF sources.
+    let website =
+        site::FamilySite::prepare(site, &view, project, targets.selected())
+            .await?;
+    for page in &website.collectors {
+        let id = page.identity()?;
+        managed.add(id.processor, id.source, false)?;
+    }
+    managed.persist_inventory(writer, true).await?;
+    if !website.collectors.is_empty() {
+        collect_all(website.collectors.clone(), writer, concurrency).await?;
+    }
     let target = NamedNode::new(target)?;
     ensure!(
         view.renderer(&target).await?.publishes_family(),
@@ -779,456 +794,483 @@ async fn build(
     }
     let prefixes = Arc::new(prefixes.into_map());
     let known = Arc::new(known);
-    let owner = identity("family-bindings", &[project, target.as_str()]);
-    let contribution = identity("contribution", &[
-        project,
-        owner.as_str(),
-        target.as_str(),
-    ]);
-    managed.add(owner.as_str(), target.as_str(), true)?;
-    let term_processor =
-        AnnotatedTermDocumentor::processor_identity(project, "en");
-    for member in &members {
-        for subject in &member.terms {
-            managed.add(term_processor.as_str(), subject.as_str(), true)?;
-        }
-    }
-    managed.persist_inventory(writer, true).await?;
-    let mut stream = writer
-        .begin_stage(
+    // Each distinct family profile among the selected targets receives its
+    // own bindings, so a PDF edition can use its own profile.
+    let bindings =
+        bindings(&view, targets, &target, &profile, &scope, &family).await?;
+    let mut placed_all = HashSet::new();
+    for (target, profile, scope) in bindings {
+        let owner = identity("family-bindings", &[project, target.as_str()]);
+        let contribution = identity("contribution", &[
             project,
             owner.as_str(),
             target.as_str(),
-            &format!("family-v12:{snapshot}"),
-            super::dataset::Stage::Document,
-        )
-        .await?;
-    let mut data = vec![
-        q(&owner, "type", term("Processor")),
-        q(&contribution, "type", term("Contribution")),
-        q(&contribution, "project", NamedNode::new(project)?),
-        q(&contribution, "processor", owner),
-        q(
-            &contribution,
-            "source",
-            Literal::new_simple_literal(target.as_str()),
-        ),
-        q(
-            &contribution,
-            "revision",
-            Literal::new_simple_literal(snapshot.as_str()),
-        ),
-    ];
-    let arrangement =
-        arrangement::FamilyArrangement::read(&view, &profile).await?;
-    for (order, kind, title, property) in [
-        (
-            0,
-            "abstract",
-            "Abstract",
-            "http://purl.org/dc/terms/description",
-        ),
-        (
-            1,
-            "status",
-            "Status of This Document",
-            "http://www.w3.org/2000/01/rdf-schema#comment",
-        ),
-    ]
-    .into_iter()
-    .filter(|_| arrangement.front_matter)
-    {
-        let text = english(&view, &target, property).await?;
-        ensure!(
-            text.len() == 1,
-            "family target requires one {property} annotation"
-        );
-        let subject = identity("family-front-matter", &[target.as_str(), kind]);
-        component(
-            &mut data, &target, &profile, &subject, title, kind, order,
-        );
-        fragment(
-            &mut data,
-            &scope,
-            &target,
-            &subject,
-            &contribution,
-            &text[0],
-            0,
-        );
-    }
-    let includes_schemes = members.iter().any(|member| member.scheme);
-    let (singular, plural, selection, column) = if includes_schemes {
-        (
-            "vocabulary",
-            "vocabularies",
-            "a vocabulary",
-            "Vocabulary",
-        )
-    } else {
-        (
-            "ontology",
-            "ontologies",
-            "an ontology",
-            "Ontology",
-        )
-    };
-    let noun = if ontology_count == 1 {
-        singular
-    } else {
-        plural
-    };
-    let terminology =
-        super::collection::Terminology::read(&view, &profile).await?;
-    let collection_term = terminology.singular();
-    let mut overview = format!(
-        "# {}\n\nExplore the {ontology_count} {noun} in this \
-         {collection_term}. Select {selection} to read its vocabulary \
-         reference.\n\n",
-        family_name[0]
-    );
-    let mut coverage = format!(
-        "{ontology_count} {noun}; {term_count} documented named resources. \
-         {missing} resources have no English source definition.\n\nMissing \
-         annotations are shown explicitly and recorded as KG diagnostics. No \
-         inferred definitions or external imports are added.\n\n| {column} | \
-         Resources | Missing definitions |\n| --- | ---: | ---: |\n"
-    );
-    if module_count > 0 {
-        overview.push_str(&format!(
-            "## Modules\n\n{module_count} explicitly declared modules. \
-             Ontologies without explicit module membership remain separate \
-             reference chapters.\n\n"
-        ));
-        for chapter in &chapters {
-            if chapter.module_body.is_some() {
-                overview.push_str(&format!(
-                    "{}- [{}]({})\n",
-                    "  ".repeat(chapter.depth - 1),
-                    chapter.title,
-                    chapter.subject.as_str()
-                ));
+        ]);
+        managed.add(owner.as_str(), target.as_str(), true)?;
+        let term_processor =
+            AnnotatedTermDocumentor::processor_identity(project, "en");
+        for member in &members {
+            for subject in &member.terms {
+                managed.add(term_processor.as_str(), subject.as_str(), true)?;
             }
         }
-    }
-    for member in &members {
-        if module_count == 0 {
-            overview.push_str(&format!(
-                "- **[{}]({})**\n",
-                member.title,
-                member.ontology.as_str(),
-            ));
-            let descriptions = english(
-                &member.view,
-                &member.ontology,
-                "http://www.w3.org/2000/01/rdf-schema#comment",
+        managed.persist_inventory(writer, true).await?;
+        let mut stream = writer
+            .begin_stage(
+                project,
+                owner.as_str(),
+                target.as_str(),
+                &format!("family-v12:{snapshot}"),
+                super::dataset::Stage::Document,
             )
             .await?;
-            if let Some(description) = descriptions.first() {
-                // Keep supplied prose; indent continuation lines within the
-                // list item.
-                overview.push_str(&format!(
-                    "\n  {}\n",
-                    description.replace('\n', "\n  ")
-                ));
-            }
-            overview.push('\n');
-        }
-        coverage.push_str(&format!(
-            "| [{}]({}) | {} | {} |\n",
-            member.title,
-            member.ontology.as_str(),
-            member.terms.len(),
-            member.missing
-        ));
-    }
-    {
-        component(
-            &mut data,
-            &target,
-            &profile,
-            &family,
-            &terminology.overview(),
-            "section",
-            arrangement.overview_order(),
-        );
-        arrangement.nest_overview(&mut data, &target, &family);
-        arrangement::role(&mut data, &target, &family, arrangement::OVERVIEW);
-        fragment(
-            &mut data,
-            &scope,
-            &target,
-            &family,
-            &contribution,
-            &overview,
-            0,
-        );
-    }
-    // bounded: each selected resource has one canonical full entry, even when
-    // several registered SKOS schemes share its namespace and membership.
-    let mut placed_terms = HashSet::new();
-    for (order, chapter) in chapters.iter().enumerate() {
-        if let Some(body) = &chapter.module_body {
-            component(
-                &mut data,
-                &target,
-                &profile,
-                &chapter.subject,
-                &chapter.title,
-                "section",
-                arrangement.chapter(order),
+        let mut data = vec![
+            q(&owner, "type", term("Processor")),
+            q(&contribution, "type", term("Contribution")),
+            q(&contribution, "project", NamedNode::new(project)?),
+            q(&contribution, "processor", owner),
+            q(
+                &contribution,
+                "source",
+                Literal::new_simple_literal(target.as_str()),
+            ),
+            q(
+                &contribution,
+                "revision",
+                Literal::new_simple_literal(snapshot.as_str()),
+            ),
+        ];
+        let arrangement =
+            arrangement::FamilyArrangement::read(&view, &profile).await?;
+        for (order, kind, title, property) in [
+            (
+                0,
+                "abstract",
+                "Abstract",
+                "http://purl.org/dc/terms/description",
+            ),
+            (
+                1,
+                "status",
+                "Status of This Document",
+                "http://www.w3.org/2000/01/rdf-schema#comment",
+            ),
+        ]
+        .into_iter()
+        .filter(|_| arrangement.front_matter)
+        {
+            let text = english(&view, &target, property).await?;
+            ensure!(
+                text.len() == 1,
+                "family target requires one {property} annotation"
             );
-            if let Some(parent) = &chapter.parent {
-                parent_placement(&mut data, &target, &chapter.subject, parent);
-            } else {
-                arrangement.nest(&mut data, &target, &chapter.subject);
-            }
-            if let Some(slug) =
-                authored_page_slug(&view, &chapter.subject).await?
-            {
-                page_slug(&mut data, &target, &chapter.subject, &slug);
-            }
+            let subject =
+                identity("family-front-matter", &[target.as_str(), kind]);
+            component(
+                &mut data, &target, &profile, &subject, title, kind, order,
+            );
             fragment(
                 &mut data,
                 &scope,
                 &target,
-                &chapter.subject,
+                &subject,
                 &contribution,
-                body,
+                &text[0],
                 0,
             );
-            continue;
         }
-        let member = &members[chapter.member.expect("ontology chapter index")];
-        if let Some(parent) = &chapter.parent {
-            parent_placement(&mut data, &target, &chapter.subject, parent);
-        } else {
-            arrangement.nest(&mut data, &target, &member.ontology);
-        }
-        component(
-            &mut data,
-            &target,
-            &profile,
-            &member.ontology,
-            &member.title,
-            "section",
-            arrangement.chapter(order),
-        );
-        // An ontology page is named by the namespace prefix its family binds,
-        // unless the ontology declares its own page slug.
-        let slug = authored_page_slug(&view, &member.ontology)
-            .await?
-            .unwrap_or_else(|| member.prefix.clone());
-        page_slug(&mut data, &target, &member.ontology, &slug);
-        let labels = vocabulary_labels(&member.view, &member.ontology).await?;
-        let description =
-            reference::introduction(&member.view, &member.ontology).await?;
-        let layout =
-            reference::Layout::read(&member.view, &member.ontology).await?;
-        let root_label = if member.scheme {
-            "Concept scheme IRI"
-        } else {
-            "Ontology IRI"
-        };
-        let identifiers = if member.ontology.as_str() == member.namespace {
-            format!(
-                "| {root_label} / Namespace | `{}` |\n",
-                member.namespace
+        let includes_schemes = members.iter().any(|member| member.scheme);
+        let (singular, plural, selection, column) = if includes_schemes {
+            (
+                "vocabulary",
+                "vocabularies",
+                "a vocabulary",
+                "Vocabulary",
             )
         } else {
-            format!(
-                "| {root_label} | `{}` |\n| Namespace | `{}` |\n",
+            (
+                "ontology",
+                "ontologies",
+                "an ontology",
+                "Ontology",
+            )
+        };
+        let noun = if ontology_count == 1 {
+            singular
+        } else {
+            plural
+        };
+        let terminology =
+            super::collection::Terminology::read(&view, &profile).await?;
+        let collection_term = terminology.singular();
+        let mut overview = format!(
+            "# {}\n\nExplore the {ontology_count} {noun} in this \
+             {collection_term}. Select {selection} to read its vocabulary \
+             reference.\n\n",
+            family_name[0]
+        );
+        let mut coverage = format!(
+            "{ontology_count} {noun}; {term_count} documented named \
+             resources. {missing} resources have no English source \
+             definition.\n\nMissing annotations are shown explicitly and \
+             recorded as KG diagnostics. No inferred definitions or external \
+             imports are added.\n\n| {column} | Resources | Missing \
+             definitions |\n| --- | ---: | ---: |\n"
+        );
+        if module_count > 0 {
+            overview.push_str(&format!(
+                "## Modules\n\n{module_count} explicitly declared modules. \
+                 Ontologies without explicit module membership remain \
+                 separate reference chapters.\n\n"
+            ));
+            for chapter in &chapters {
+                if chapter.module_body.is_some() {
+                    overview.push_str(&format!(
+                        "{}- [{}]({})\n",
+                        "  ".repeat(chapter.depth - 1),
+                        chapter.title,
+                        chapter.subject.as_str()
+                    ));
+                }
+            }
+        }
+        for member in &members {
+            if module_count == 0 {
+                overview.push_str(&format!(
+                    "- **[{}]({})**\n",
+                    member.title,
+                    member.ontology.as_str(),
+                ));
+                let descriptions = english(
+                    &member.view,
+                    &member.ontology,
+                    "http://www.w3.org/2000/01/rdf-schema#comment",
+                )
+                .await?;
+                if let Some(description) = descriptions.first() {
+                    // Keep supplied prose; indent continuation lines within the
+                    // list item.
+                    overview.push_str(&format!(
+                        "\n  {}\n",
+                        description.replace('\n', "\n  ")
+                    ));
+                }
+                overview.push('\n');
+            }
+            coverage.push_str(&format!(
+                "| [{}]({}) | {} | {} |\n",
+                member.title,
                 member.ontology.as_str(),
-                member.namespace
-            )
-        };
-        if member.scheme {
-            let decoration = skos.decoration(&member.ontology, 1);
-            data.extend(decoration.diagnostics(
-                &super::diagnostic_graph::Context {
-                    graph:     NamedNode::new_unchecked(
-                        "urn:grapharch:quality",
-                    ),
-                    id:        contribution.clone(),
-                    project:   NamedNode::new(project)?,
-                    about:     member.ontology.clone(),
-                    revision:  snapshot.clone(),
-                    processor: identity("family-bindings", &[
-                        project,
-                        target.as_str(),
-                    ]),
-                    source:    member.ontology.as_str().into(),
-                },
-            )?);
+                member.terms.len(),
+                member.missing
+            ));
         }
-        let scheme_navigation = if member.scheme {
-            skos.decoration(&member.ontology, 1).body
-        } else {
-            String::new()
-        };
-        let introduction = format!(
-            "## {}\n\n{}\n\n| Identifier | Value |\n| --- | --- |\n{}| Prefix \
-             | `{}` |\n\n{}{}\n",
-            layout.overview,
-            labels.join("; "),
-            identifiers,
-            member.prefix,
-            description,
-            scheme_navigation
-        );
-        fragment(
-            &mut data,
-            &scope,
-            &target,
-            &member.ontology,
-            &contribution,
-            &introduction,
-            0,
-        );
-        let groups = layout.group(dataset, &member.view, &member.terms).await?;
-        let mut arranged_groups = Vec::new();
-        for (section, terms) in groups {
-            if section.kind == "concepts" {
-                let (unassigned, assigned): (Vec<_>, Vec<_>) =
-                    terms.into_iter().partition(|subject| {
-                        skos.canonical_scheme(subject).is_none()
-                    });
-                let assigned = assigned
-                    .into_iter()
-                    .filter(|subject| {
-                        skos.canonical_scheme(subject) == Some(&member.ontology)
-                    })
-                    .collect::<Vec<_>>();
-                if !assigned.is_empty() {
-                    arranged_groups.push((section.clone(), assigned));
+        {
+            component(
+                &mut data,
+                &target,
+                &profile,
+                &family,
+                &terminology.overview(),
+                "section",
+                arrangement.overview_order(),
+            );
+            arrangement.nest_overview(&mut data, &target, &family);
+            arrangement::role(
+                &mut data,
+                &target,
+                &family,
+                arrangement::OVERVIEW,
+            );
+            fragment(
+                &mut data,
+                &scope,
+                &target,
+                &family,
+                &contribution,
+                &overview,
+                0,
+            );
+        }
+        // bounded: each selected resource has one canonical full entry, even
+        // when several registered SKOS schemes share its namespace and
+        // membership.
+        let mut placed_terms = HashSet::new();
+        for (order, chapter) in chapters.iter().enumerate() {
+            if let Some(body) = &chapter.module_body {
+                component(
+                    &mut data,
+                    &target,
+                    &profile,
+                    &chapter.subject,
+                    &chapter.title,
+                    "section",
+                    arrangement.chapter(order),
+                );
+                if let Some(parent) = &chapter.parent {
+                    parent_placement(
+                        &mut data,
+                        &target,
+                        &chapter.subject,
+                        parent,
+                    );
+                } else {
+                    arrangement.nest(&mut data, &target, &chapter.subject);
                 }
-                if !unassigned.is_empty() {
-                    let mut unassigned_section = section;
-                    unassigned_section.kind = "unassigned-concepts".into();
-                    unassigned_section.title =
-                        "Concepts without a documented scheme".into();
-                    arranged_groups.push((unassigned_section, unassigned));
+                if let Some(slug) =
+                    authored_page_slug(&view, &chapter.subject).await?
+                {
+                    page_slug(&mut data, &target, &chapter.subject, &slug);
                 }
+                fragment(
+                    &mut data,
+                    &scope,
+                    &target,
+                    &chapter.subject,
+                    &contribution,
+                    body,
+                    0,
+                );
                 continue;
             }
-            let mut arranged = Vec::new();
-            for subject in terms {
-                if skos.is_concept(&subject) {
+            let member =
+                &members[chapter.member.expect("ontology chapter index")];
+            if let Some(parent) = &chapter.parent {
+                parent_placement(&mut data, &target, &chapter.subject, parent);
+            } else {
+                arrangement.nest(&mut data, &target, &member.ontology);
+            }
+            component(
+                &mut data,
+                &target,
+                &profile,
+                &member.ontology,
+                &member.title,
+                "section",
+                arrangement.chapter(order),
+            );
+            // An ontology page is named by the namespace prefix its family
+            // binds, unless the ontology declares its own page slug.
+            let slug = authored_page_slug(&view, &member.ontology)
+                .await?
+                .unwrap_or_else(|| member.prefix.clone());
+            page_slug(&mut data, &target, &member.ontology, &slug);
+            let labels =
+                vocabulary_labels(&member.view, &member.ontology).await?;
+            let description =
+                reference::introduction(&member.view, &member.ontology).await?;
+            let layout =
+                reference::Layout::read(&member.view, &member.ontology).await?;
+            let root_label = if member.scheme {
+                "Concept scheme IRI"
+            } else {
+                "Ontology IRI"
+            };
+            let identifiers = if member.ontology.as_str() == member.namespace {
+                format!(
+                    "| {root_label} / Namespace | `{}` |\n",
+                    member.namespace
+                )
+            } else {
+                format!(
+                    "| {root_label} | `{}` |\n| Namespace | `{}` |\n",
+                    member.ontology.as_str(),
+                    member.namespace
+                )
+            };
+            if member.scheme {
+                let decoration = skos.decoration(&member.ontology, 1);
+                data.extend(decoration.diagnostics(
+                    &super::diagnostic_graph::Context {
+                        graph:     NamedNode::new_unchecked(
+                            "urn:grapharch:quality",
+                        ),
+                        id:        contribution.clone(),
+                        project:   NamedNode::new(project)?,
+                        about:     member.ontology.clone(),
+                        revision:  snapshot.clone(),
+                        processor: identity("family-bindings", &[
+                            project,
+                            target.as_str(),
+                        ]),
+                        source:    member.ontology.as_str().into(),
+                    },
+                )?);
+            }
+            let scheme_navigation = if member.scheme {
+                skos.decoration(&member.ontology, 1).body
+            } else {
+                String::new()
+            };
+            let introduction = format!(
+                "## {}\n\n{}\n\n| Identifier | Value |\n| --- | --- |\n{}| \
+                 Prefix | `{}` |\n\n{}{}\n",
+                layout.overview,
+                labels.join("; "),
+                identifiers,
+                member.prefix,
+                description,
+                scheme_navigation
+            );
+            fragment(
+                &mut data,
+                &scope,
+                &target,
+                &member.ontology,
+                &contribution,
+                &introduction,
+                0,
+            );
+            let groups =
+                layout.group(dataset, &member.view, &member.terms).await?;
+            let mut arranged_groups = Vec::new();
+            for (section, terms) in groups {
+                if section.kind == "concepts" {
+                    let (unassigned, assigned): (Vec<_>, Vec<_>) =
+                        terms.into_iter().partition(|subject| {
+                            skos.canonical_scheme(subject).is_none()
+                        });
+                    let assigned = assigned
+                        .into_iter()
+                        .filter(|subject| {
+                            skos.canonical_scheme(subject) ==
+                                Some(&member.ontology)
+                        })
+                        .collect::<Vec<_>>();
+                    if !assigned.is_empty() {
+                        arranged_groups.push((section.clone(), assigned));
+                    }
+                    if !unassigned.is_empty() {
+                        let mut unassigned_section = section;
+                        unassigned_section.kind = "unassigned-concepts".into();
+                        unassigned_section.title =
+                            "Concepts without a documented scheme".into();
+                        arranged_groups.push((unassigned_section, unassigned));
+                    }
                     continue;
                 }
-                arranged.push(subject.clone());
-                if skos.is_scheme(&subject) {
-                    arranged.extend(skos.canonical_members(&subject));
+                let mut arranged = Vec::new();
+                for subject in terms {
+                    if skos.is_concept(&subject) {
+                        continue;
+                    }
+                    arranged.push(subject.clone());
+                    if skos.is_scheme(&subject) {
+                        arranged.extend(skos.canonical_members(&subject));
+                    }
+                }
+                if !arranged.is_empty() {
+                    arranged_groups.push((section, arranged));
                 }
             }
-            if !arranged.is_empty() {
-                arranged_groups.push((section, arranged));
-            }
-        }
-        let mut position = 1u32;
-        for (section, terms) in arranged_groups {
-            let terms = terms
-                .into_iter()
-                .filter(|subject| placed_terms.insert(subject.clone()))
-                .collect::<Vec<_>>();
-            if terms.is_empty() {
-                continue;
-            }
-            let id = identity("family-reference-section", &[
-                target.as_str(),
-                member.ontology.as_str(),
-                &section.kind,
-            ]);
-            data.extend([
-                q(
-                    &identity("family-component", &[
-                        target.as_str(),
-                        member.ontology.as_str(),
-                    ]),
-                    "fragment",
-                    id.clone(),
-                ),
-                q(&id, "type", term("Fragment")),
-                q(&id, "subject", member.ontology.clone()),
-                q(
-                    &id,
-                    "body",
-                    Literal::new_simple_literal(format!(
-                        "## {}\n",
-                        section.title
-                    )),
-                ),
-                q(
-                    &id,
-                    "format",
-                    Literal::new_simple_literal("text/markdown"),
-                ),
-                q(&id, "contribution", contribution.clone()),
-                q(&id, "order", Literal::from(position)),
-            ]);
-            position += 1;
-            for subject in terms {
-                let documentor = AnnotatedTermDocumentor::new(
-                    dataset.clone(),
-                    member.snapshot.clone(),
-                    project,
-                    subject.clone(),
-                    "en",
-                    prefixes.clone(),
-                    known.clone(),
-                )?
-                .with_family_reference();
+            let mut position = 1u32;
+            for (section, terms) in arranged_groups {
+                let terms = terms
+                    .into_iter()
+                    .filter(|subject| placed_terms.insert(subject.clone()))
+                    .collect::<Vec<_>>();
+                if terms.is_empty() {
+                    continue;
+                }
+                let id = identity("family-reference-section", &[
+                    target.as_str(),
+                    member.ontology.as_str(),
+                    &section.kind,
+                ]);
                 data.extend([
-                    q(&scope, "include", subject.clone()),
                     q(
                         &identity("family-component", &[
                             target.as_str(),
                             member.ontology.as_str(),
                         ]),
                         "fragment",
-                        documentor.fragment_id(),
+                        id.clone(),
+                    ),
+                    q(&id, "type", term("Fragment")),
+                    q(&id, "subject", member.ontology.clone()),
+                    q(
+                        &id,
+                        "body",
+                        Literal::new_simple_literal(format!(
+                            "## {}\n",
+                            section.title
+                        )),
                     ),
                     q(
-                        &documentor.fragment_id(),
-                        "order",
-                        Literal::from(position),
+                        &id,
+                        "format",
+                        Literal::new_simple_literal("text/markdown"),
                     ),
+                    q(&id, "contribution", contribution.clone()),
+                    q(&id, "order", Literal::from(position)),
                 ]);
                 position += 1;
+                for subject in terms {
+                    let documentor = AnnotatedTermDocumentor::new(
+                        dataset.clone(),
+                        member.snapshot.clone(),
+                        project,
+                        subject.clone(),
+                        "en",
+                        prefixes.clone(),
+                        known.clone(),
+                    )?
+                    .with_family_reference();
+                    data.extend([
+                        q(&scope, "include", subject.clone()),
+                        q(
+                            &identity("family-component", &[
+                                target.as_str(),
+                                member.ontology.as_str(),
+                            ]),
+                            "fragment",
+                            documentor.fragment_id(),
+                        ),
+                        q(
+                            &documentor.fragment_id(),
+                            "order",
+                            Literal::from(position),
+                        ),
+                    ]);
+                    position += 1;
+                }
             }
         }
+        {
+            let coverage_subject =
+                identity("family-coverage", &[target.as_str()]);
+            arrangement::role(
+                &mut data,
+                &target,
+                &coverage_subject,
+                arrangement::COVERAGE,
+            );
+            component(
+                &mut data,
+                &target,
+                &profile,
+                &coverage_subject,
+                "Documentation coverage",
+                "appendix",
+                arrangement.coverage_order(chapters.len()),
+            );
+            fragment(
+                &mut data,
+                &scope,
+                &target,
+                &coverage_subject,
+                &contribution,
+                &coverage,
+                0,
+            );
+        }
+        for quad in data {
+            stream.write(quad).await?;
+        }
+        stream.complete().await?;
+        placed_all.extend(placed_terms);
     }
-    {
-        let coverage_subject = identity("family-coverage", &[target.as_str()]);
-        arrangement::role(
-            &mut data,
-            &target,
-            &coverage_subject,
-            arrangement::COVERAGE,
-        );
-        component(
-            &mut data,
-            &target,
-            &profile,
-            &coverage_subject,
-            "Documentation coverage",
-            "appendix",
-            arrangement.coverage_order(chapters.len()),
-        );
-        fragment(
-            &mut data,
-            &scope,
-            &target,
-            &coverage_subject,
-            &contribution,
-            &coverage,
-            0,
-        );
-    }
-    for quad in data {
-        stream.write(quad).await?;
-    }
-    stream.complete().await?;
+    let placed_terms = placed_all;
     let root_schemes = members
         .iter()
         .filter(|member| member.scheme)
@@ -1298,6 +1340,9 @@ async fn build(
         "family resources documented"
     );
     managed.finish(writer).await?;
+    for target in &website.websites {
+        super::website::bind(dataset, writer, project, target.as_str()).await?;
+    }
     let revision = Assembler::new(dataset.clone()).assemble(project).await?;
     tracing::info!(
         elapsed_ms = started.elapsed().as_millis(),
@@ -1331,9 +1376,13 @@ async fn plan_targets(
     // bounded: a selection names at most 16 targets.
     let mut plans = Vec::with_capacity(targets.selected().len());
     for target in targets.selected() {
+        if view.renderer(target).await? == super::Renderer::Website {
+            plans.push(planner.resolve(project, target, writer).await?);
+            continue;
+        }
         let used = view.node(target, "profile").await?;
         ensure!(
-            &used == profile,
+            &used == profile || view.renderer(target).await?.publishes_family(),
             "target {target} uses profile {used}, not the family profile \
              {profile}"
         );
@@ -1498,10 +1547,12 @@ fn fragment(
     body: &str,
     order: u32,
 ) {
-    let fragment = identity(
-        "family-introduction-fragment",
-        &[subject.as_str()],
-    );
+    // Each bound target writes its own fragments: a profile's terminology
+    // and a target's front matter shape their text.
+    let fragment = identity("family-introduction-fragment", &[
+        target.as_str(),
+        subject.as_str(),
+    ]);
     data.extend([
         q(scope, "include", subject.clone()),
         q(
@@ -1762,4 +1813,45 @@ async fn write_owned_entries(
         }
     }
     Ok(())
+}
+
+/// The (target, profile, scope) bindings of a family build: the primary family
+/// target first, then the first selected target of every other family profile.
+/// Every bound profile must publish the same family.
+async fn bindings(
+    view: &RevisionView,
+    targets: &FamilyTargets,
+    primary: &NamedNode,
+    profile: &NamedNode,
+    scope: &NamedNode,
+    family: &NamedNode,
+) -> Result<Vec<(NamedNode, NamedNode, NamedNode)>> {
+    // bounded: a selection names at most 16 targets.
+    let mut bindings = vec![(primary.clone(), profile.clone(), scope.clone())];
+    for target in targets.selected() {
+        if !view.renderer(target).await?.publishes_family() {
+            continue;
+        }
+        let profile = view.node(target, "profile").await?;
+        if bindings.iter().any(|(_, bound, _)| bound == &profile) {
+            continue;
+        }
+        let published = view
+            .optional_by(
+                &profile,
+                &NamedNode::new(format!("{PUBLICATION}publishesFamily"))?,
+            )
+            .await?;
+        ensure!(
+            published == Some(Term::NamedNode(family.clone())),
+            "family target {target} profile {profile} must declare \
+             artpub:publishesFamily {family}"
+        );
+        bindings.push((
+            target.clone(),
+            profile,
+            view.node(target, "scope").await?,
+        ));
+    }
+    Ok(bindings)
 }

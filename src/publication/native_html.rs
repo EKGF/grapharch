@@ -33,15 +33,23 @@ pub(crate) enum Links<'a> {
     /// against its source URL.
     Source(&'a Url),
     /// Content published by this target: authored, or already resolved by its
-    /// collector. Relative references stay relative to the containing page.
-    Publication,
+    /// collector. Relative references stay relative to the containing page;
+    /// a bare target IRI resolves to that target's entry file, from a page at
+    /// the destination root.
+    Publication(&'a super::target_links::TargetLinks),
 }
 
 impl Links<'_> {
     fn href(self, value: &str) -> Result<String> {
-        let Self::Source(base) = self else {
-            Href::authored(value)?;
-            return Ok(value.to_owned());
+        let base = match self {
+            Self::Source(base) => base,
+            Self::Publication(targets) => {
+                if let Some(href) = targets.resolve(value, "index.html")? {
+                    return Ok(href);
+                }
+                Href::authored(value)?;
+                return Ok(value.to_owned());
+            },
         };
         let url = base.join(value)?;
         if url.origin() == base.origin() &&
@@ -394,12 +402,20 @@ mod tests {
              id=\"grammar-heading\"><bdi class=\"secno\">5.3 \
              </bdi>Grammar</h3></div><div class=\"header-wrapper\"><h3 \
              id=\"terminals\">Productions for terminals</h3></div></section>";
-        let normalized = read(source, Links::Publication, &mut |_| Ok(None))?;
+        let normalized = read(
+            source,
+            Links::Publication(&Default::default()),
+            &mut |_| Ok(None),
+        )?;
         let mut numbered = 0;
-        let rendered = read(&normalized.html, Links::Publication, &mut |_| {
-            numbered += 1;
-            Ok(Some("5.3".into()))
-        })?;
+        let rendered = read(
+            &normalized.html,
+            Links::Publication(&Default::default()),
+            &mut |_| {
+                numbered += 1;
+                Ok(Some("5.3".into()))
+            },
+        )?;
         assert_eq!(numbered, 1);
         assert!(rendered.html.contains(">Productions for terminals</h3>"));
         Ok(())
@@ -410,7 +426,11 @@ mod tests {
         let body = "<a href=\"../pdf/ekgf/document.pdf\">EKGF</a> <a \
                     href=\"#intro\">Intro</a> <a \
                     href=\"https://ekgf.org/\">EKGF</a>";
-        let fragment = read(body, Links::Publication, &mut |_| Ok(None))?;
+        let fragment = read(
+            body,
+            Links::Publication(&Default::default()),
+            &mut |_| Ok(None),
+        )?;
         assert_eq!(fragment.links, [
             "../pdf/ekgf/document.pdf",
             "#intro",
@@ -421,7 +441,7 @@ mod tests {
             assert!(
                 read(
                     &format!("<a href=\"{href}\">x</a>"),
-                    Links::Publication,
+                    Links::Publication(&Default::default()),
                     &mut |_| Ok(None)
                 )
                 .is_err(),

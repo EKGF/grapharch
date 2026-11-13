@@ -27,14 +27,10 @@ ex:dprod a ga:Showcase ; ga:slug "dprod" ; dct:title "DPROD: native ontology and
     ga:order 4 ; ga:showcaseRunner ga:RevisionBuildShowcaseRunner ; ga:source "dprod/showcase.ttl" ;
     ga:previewPath "specification/index.html" ; ga:pdfPath "pdf/ekgf/document.pdf" .
 
-# TEMPORARY PIN until the EKG migration lands upstream: ekg-ontologies main emits
-# relative links the gallery guard rejects, so the showcase reads commit 6bd93ab,
-# which publishes only spec/develop. Restore the default branch, spec/main and
-# documents/main/document.pdf then (see ekg-ontologies/showcase.yaml).
 ex:ekgf a ga:Showcase ; ga:slug "ekgf" ; dct:title "EKGF ontology family" ;
-    dct:description "A pinned commit of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
+    dct:description "The latest default branch of a remote ontology repository becomes a registered family reference, with cross-ontology links, governance authority roles, and concrete Git commit provenance." ;
     ga:order 6 ; ga:showcaseRunner ga:OntologyFamilyShowcaseRunner ; ga:source "ekg-ontologies/showcase.ttl" ;
-    ga:previewPath "spec/develop/index.html" .
+    ga:previewPath "site/spec/main/index.html" ; ga:pdfPath "site/pdf/document.pdf" .
 
 ex:skos a ga:Showcase;ga:slug "skos";dct:title "SKOS business data taxonomy";
  dct:description "A native concept scheme, multilingual labels, hierarchy and mapping links, and ordered collection membership become a specification and PDF.";

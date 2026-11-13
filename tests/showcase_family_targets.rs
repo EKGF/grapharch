@@ -26,10 +26,19 @@ const ONTOLOGY: &str = r#"
  rdfs:comment "Published by every family target."@en .
 "#;
 
+/// Whether the repository also registers a website target, and whether its
+/// project declares the directory holding the website's pages.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Site {
+    Absent,
+    Undeclared,
+    Declared,
+}
+
 /// Three targets share the family profile, each with its own renderer and
 /// destination, as in a repository that publishes paginated pages, a PDF
 /// edition and a single-page review.
-fn hints(website: bool) -> String {
+fn hints(site: Site) -> String {
     let target = |key: &str, renderer: &str, destination: &str| {
         format!(
             r#"
@@ -44,7 +53,12 @@ fn hints(website: bool) -> String {
 "#
         )
     };
-    let (registered, site) = if website {
+    let content = if site == Site::Declared {
+        r#"<urn:example:project> ga:contentSource "publication/site" ."#
+    } else {
+        ""
+    };
+    let (registered, site) = if site != Site::Absent {
         (
             ", <urn:example:website>",
             r#"
@@ -69,22 +83,33 @@ fn hints(website: bool) -> String {
 <urn:example:scope> a ga:Scope .
 <urn:example:profile> a ga:Profile; pub:publishesFamily <urn:example:family> .
 {}{}{}{site}
+{content}
 <urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;
  rdfs:label "Example authority"@en; ga:shortName "Example" .
 "#,
         target("spec", "SpecificationPagesRenderer", "spec/main"),
-        target("pdf", "SpecificationRenderer", "documents/main"),
+        target("pdf", "SpecificationRenderer", "pdf"),
         target("review", "SpecificationRenderer", "review"),
     )
 }
 
-fn repository(root: &Path, website: bool) -> Result<String> {
+fn repository(root: &Path, site: Site) -> Result<String> {
     let source = root.join("source");
-    std::fs::create_dir_all(source.join("publication"))?;
+    std::fs::create_dir_all(source.join("publication/site"))?;
     std::fs::write(source.join("ontology.ttl"), ONTOLOGY)?;
     std::fs::write(
         source.join("publication/grapharch.ttl"),
-        hints(website),
+        hints(site),
+    )?;
+    std::fs::write(
+        source.join("publication/site/index.md"),
+        "---\ntitle: Family home\npermalink: /\n---\n# Family home\n\nRead \
+         the [guide](guide.md).\n",
+    )?;
+    std::fs::write(
+        source.join("publication/site/guide.md"),
+        "---\ntitle: Guide\n---\n# Guide\n\nWebsite page from the repository. \
+         Open the [reference](urn:example:spec).\n",
     )?;
     Ok(family_repository::bare_copy(&source, &root.join("remote"))?.0)
 }
@@ -150,7 +175,7 @@ async fn destinations(
 async fn family_showcase_publishes_every_registered_target_in_iri_order()
 -> Result<()> {
     let root = tempfile::tempdir()?;
-    let url = repository(root.path(), false)?;
+    let url = repository(root.path(), Site::Absent)?;
     let config = showcase(root.path(), &url, None)?;
     let (dataset, plans) =
         showcases::family(&config, &root.path().join("cache")).await?;
@@ -164,10 +189,10 @@ async fn family_showcase_publishes_every_registered_target_in_iri_order()
     let output = output.canonicalize()?;
     assert_eq!(
         destinations(dataset, &plans, &output).await?,
-        ["documents/main", "review", "spec/main"],
+        ["pdf", "review", "spec/main"],
         "targets publish in IRI order, each into its own destination"
     );
-    assert!(output.join("documents/main/document.pdf").is_file());
+    assert!(output.join("pdf/document.pdf").is_file());
     assert!(output.join("review/document.pdf").is_file());
     Ok(())
 }
@@ -176,9 +201,9 @@ async fn family_showcase_publishes_every_registered_target_in_iri_order()
 async fn family_showcase_selects_targets_explicitly_and_rejects_unbuildable_ones()
 -> Result<()> {
     let root = tempfile::tempdir()?;
-    let url = repository(root.path(), true)?;
-    // The family build cannot supply website pages, so it must not publish
-    // the website target silently empty or skip it.
+    let url = repository(root.path(), Site::Undeclared)?;
+    // Without a declared page source the website target has no content, so
+    // it must not be published empty or skipped silently.
     let config = showcase(root.path(), &url, None)?;
     let failure = showcases::family(&config, &root.path().join("cache"))
         .await
@@ -187,8 +212,8 @@ async fn family_showcase_selects_targets_explicitly_and_rejects_unbuildable_ones
     let message = format!("{failure:#}");
     assert!(
         message.contains("urn:example:website") &&
-            message.contains("urn:example:profile"),
-        "the failure names the target and the family profile: {message}"
+            message.contains("ga:contentSource"),
+        "the failure names the target and the missing page source: {message}"
     );
     let config = showcase(
         root.path(),
@@ -202,7 +227,7 @@ async fn family_showcase_selects_targets_explicitly_and_rejects_unbuildable_ones
     let output = output.canonicalize()?;
     assert_eq!(
         destinations(dataset, &plans, &output).await?,
-        ["spec/main", "documents/main"],
+        ["spec/main", "pdf"],
         "an explicit selection publishes in its own order"
     );
     for (targets, expected) in [
@@ -236,7 +261,7 @@ async fn single_target_discovery_names_every_registered_target() -> Result<()> {
         ontology_family::{self, FamilySource},
     };
     let root = tempfile::tempdir()?;
-    repository(root.path(), false)?;
+    repository(root.path(), Site::Absent)?;
     // build-family publishes one target; it must not choose among several.
     let failure = ontology_family::collect_discovered_from(
         Dataset::memory()?,
@@ -253,5 +278,113 @@ async fn single_target_discovery_names_every_registered_target() -> Result<()> {
     {
         assert!(message.contains(target), "{message}");
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn family_showcase_builds_a_website_from_the_declared_page_source()
+-> Result<()> {
+    let root = tempfile::tempdir()?;
+    let url = repository(root.path(), Site::Declared)?;
+    let config = showcase(root.path(), &url, None)?;
+    let (dataset, plans) =
+        showcases::family(&config, &root.path().join("cache")).await?;
+    assert_eq!(
+        plans.len(),
+        4,
+        "the website target is planned too"
+    );
+    let output = root.path().join("output");
+    std::fs::create_dir(&output)?;
+    let output = output.canonicalize()?;
+    let (family, website) = plans.split_at(3);
+    assert_eq!(
+        destinations(dataset.clone(), family, &output).await?,
+        ["pdf", "review", "spec/main"]
+    );
+    let PublishOutcome::Published(site) =
+        Publisher::new(dataset).render(&website[0], &output).await?
+    else {
+        panic!("expected the website publication")
+    };
+    assert_eq!(site.directory, output.join("site"));
+    let home = std::fs::read_to_string(site.directory.join("index.html"))?;
+    assert!(home.contains("Family home"), "{home}");
+    let pages = site
+        .manifest
+        .files
+        .iter()
+        .filter(|file| file.ends_with(".html"))
+        .map(|file| std::fs::read_to_string(site.directory.join(file)))
+        .collect::<std::io::Result<String>>()?;
+    assert!(pages.contains("Website page from the repository."));
+    // A target IRI resolves from the page to the target's entry file.
+    let guide = site
+        .manifest
+        .files
+        .iter()
+        .find(|file| file.ends_with("index.html") && file.contains('/'))
+        .expect("the guide page");
+    let depth = guide.matches('/').count();
+    let guide = std::fs::read_to_string(site.directory.join(guide))?;
+    assert!(
+        guide.contains(&format!(
+            "href=\"{}spec/main/index.html\"",
+            "../".repeat(depth + 1)
+        )),
+        "{guide}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_pdf_edition_with_its_own_family_profile_is_bound_too() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("source");
+    std::fs::create_dir_all(source.join("publication"))?;
+    std::fs::write(source.join("ontology.ttl"), ONTOLOGY)?;
+    let review = "ga:profile <urn:example:profile>;\n ga:renderer \
+                  ga:SpecificationRenderer; ga:destination \"review\";";
+    let hints = hints(Site::Absent);
+    assert_eq!(hints.matches(review).count(), 1, "{hints}");
+    let hints = hints.replace(
+        review,
+        "ga:profile <urn:example:pdf-profile>;\n ga:renderer \
+         ga:TypstRenderer; ga:destination \"review\";",
+    );
+    assert!(hints.contains("ga:TypstRenderer"), "{hints}");
+    std::fs::write(
+        source.join("publication/grapharch.ttl"),
+        format!(
+            "{hints}\n<urn:example:pdf-profile> a \
+             <https://ekgf.org/ontology/grapharch#Profile>; \
+             <https://ekgf.org/ontology/artifact-publication#publishesFamily> \
+             <urn:example:family>; \
+             <https://ekgf.org/ontology/grapharch#theme> \
+             <https://ekgf.org/ontology/grapharch#SpecificationTheme> .\n"
+        ),
+    )?;
+    let url =
+        family_repository::bare_copy(&source, &root.path().join("remote"))?.0;
+    let config = showcase(root.path(), &url, None)?;
+    let (dataset, plans) =
+        showcases::family(&config, &root.path().join("cache")).await?;
+    let output = root.path().join("output");
+    std::fs::create_dir(&output)?;
+    let output = output.canonicalize()?;
+    let publisher = Publisher::new(dataset);
+    for plan in &plans {
+        let PublishOutcome::Published(_) =
+            publisher.render(plan, &output).await?
+        else {
+            panic!("expected a publication")
+        };
+    }
+    assert!(output.join("review/document.pdf").is_file());
+    assert!(
+        !output.join("review/index.html").exists(),
+        "a PDF-only edition"
+    );
     Ok(())
 }

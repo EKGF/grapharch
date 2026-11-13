@@ -161,12 +161,12 @@ pub(super) async fn body(
 ) -> Result<String> {
     let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
     if entry.format == "text/html" {
-        Ok(
-            native_html::read(&entry.body, Links::Publication, &mut |depth| {
-                outline.heading_number(depth)
-            })?
-            .html,
-        )
+        Ok(native_html::read(
+            &entry.body,
+            Links::Publication(&plan.targets),
+            &mut |depth| outline.heading_number(depth),
+        )?
+        .html)
     } else if entry.format == "text/markdown" {
         let markdown =
             Markdown::parse(&entry.body, plan, &anchor, &entry.fragment, 1)

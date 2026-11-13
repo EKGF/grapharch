@@ -5,17 +5,13 @@
 # Published gallery transport. Publication hints are owned by the upstream RDF.
 # ga:gitRef is an exact commit or a moving reference such as HEAD; the KG
 # records the commit each build resolves.
-# TEMPORARY PIN: ekg-ontologies main (from 9093764) emits relative links
-# (documentation.nq, ../../) that the gallery relative-link guard rejects. The
-# gallery stays on 6bd93ab, the last upstream commit that passes the current
-# engine (it publishes spec/develop), until the EKG migration (website content
-# source in RDF, links by IRI) lands upstream. Restore ga:gitRef "HEAD", the PDF
-# target and the spec/main gallery preview then. 6bd93ab declares only the
-# specification target.
+# Pinned to the ekg-ontologies migration for composed targets, website pages
+# from ga:contentSource and links by target IRI (branch
+# publication/ekgf-family-website), per the breaking-change protocol. Return to
+# ga:gitRef "HEAD" once that migration is on ekg-ontologies main.
 <urn:grapharch:showcase:ekgf> a ga:Showcase ;
     ga:gitRepository "https://github.com/EKGF/ekg-ontologies.git" ;
-    ga:gitRef "6bd93ab7c9430804e99b3913f0926d0070eb44a3" ;
-    ga:showcaseTargets ( <urn:ekgf-ontologies:documentation:specification> ) .
+    ga:gitRef "c7d9bc2371f38c0f39b15540cfd54afaa3581118" .
 
 # Provenance of the offline acceptance corpus in sources/, copied from a working
 # tree based on this revision; it is not described as identical to it.

@@ -1813,6 +1813,22 @@ ga:contentSource a owl:DatatypeProperty ;
     dct:description "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
     rdfs:domain ga:Project ; rdfs:range xsd:string .
 
+ga:containsTarget a owl:ObjectProperty ;
+    rdfs:label "Contains target"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Declares that another target of the same project publishes beneath this target's destination."@en ;
+    dct:description "Declares that another target of the same project publishes beneath this target's destination."@en ;
+    rdfs:comment "Explicit composition: the contained target's destination must lie strictly beneath the container's, a container output may not collide with it, and republishing the container preserves the contained output. Links to a target IRI resolve relative to the declared destinations."@en ;
+    rdfs:domain ga:Target ; rdfs:range ga:Target .
+
+ga:documentationGraphPath a owl:DatatypeProperty ;
+    rdfs:label "Documentation graph path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the relative N-Quads file path, beneath a target's destination, at which the publication retains its documentation graph."@en ;
+    dct:description "Names the relative N-Quads file path, beneath a target's destination, at which the publication retains its documentation graph."@en ;
+    rdfs:comment "Lets authored pages link to the graph with a portable relative reference. The path must be relative, free of traversal, use / separators, end in .nq and not collide with a rendered file."@en ;
+    rdfs:domain ga:Target ; rdfs:range xsd:string .
+
 # Explicit source dependency roots, independent from authored-page discovery.
 ga:includeRoot a owl:DatatypeProperty ;
     rdfs:label "include root"@en ;

@@ -344,3 +344,66 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn definitions_place_the_documentation_graph_inside_a_publication()
+-> Result<()> {
+    use grapharch::publication::{dataset::Dataset, showcases};
+    let root = tempfile::tempdir()?;
+    registry(
+        root.path(),
+        r#"
+<urn:case:first> a ga:Showcase;ga:slug "first";ga:showcaseRunner ga:SpecificationShowcaseRunner;ga:source "unplaced.ttl" .
+<urn:case:second> a ga:Showcase;ga:slug "second";ga:showcaseRunner ga:SpecificationShowcaseRunner;ga:source "placed.ttl" .
+"#,
+    )?;
+    for (name, placement) in [
+        ("unplaced.ttl", ""),
+        (
+            "placed.ttl",
+            r#"ex:target ga:documentationGraphPath "graph/documentation.nq" ."#,
+        ),
+    ] {
+        std::fs::write(
+            root.path().join("examples").join(name),
+            format!(
+                r##"{}
+ex:target ga:metadataRow ex:version-link, ex:latest-link, ex:downloads .
+ex:version-link a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
+ex:latest-link a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
+ex:downloads a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
+    dct:title "Downloads:" ; ga:body """<a href="graph/documentation.nq">Documentation graph</a>""" .
+{placement}
+"##,
+                include_str!("../examples/specification/project.ttl")
+            ),
+        )?;
+    }
+    let output = tempfile::tempdir()?;
+    let report = showcases::verify_gallery(
+        Dataset::memory()?,
+        &root.path().join("examples"),
+        "urn:grapharch:docs",
+        output.path(),
+    )
+    .await?;
+    let error = report.cases[0].error.as_deref().unwrap_or_default();
+    assert!(
+        error.contains("specification/graph/documentation.nq is not published"),
+        "an unplaced graph link fails: {error}"
+    );
+    assert!(
+        report.cases[1].succeeded,
+        "the declared graph placement publishes the linked file: {:?}",
+        report.cases[1].error
+    );
+    let placed = output
+        .path()
+        .join("artifacts/second/specification/graph/documentation.nq");
+    assert_eq!(
+        std::fs::read(&placed)?,
+        std::fs::read(output.path().join("artifacts/second/documentation.nq"))?,
+        "the placed graph is the showcase's documentation graph"
+    );
+    Ok(())
+}

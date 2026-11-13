@@ -122,7 +122,7 @@ impl Notice {
             "text/html" => {
                 native_html::read(
                     &body,
-                    native_html::Links::Publication,
+                    native_html::Links::Publication(&plan.targets),
                     &mut |_| Ok(None),
                 )?
                 .html

@@ -29,3 +29,19 @@ pub(super) fn destination(value: &str) -> Result<PathBuf> {
     );
     Ok(path.to_owned())
 }
+
+/// Whether `container` declares `ga:containsTarget nested`, which lets the
+/// nested target publish beneath the container's destination.
+pub(super) async fn contains(
+    view: &RevisionView,
+    container: &NamedNode,
+    nested: &NamedNode,
+) -> Result<bool> {
+    let mut rows = view.objects(container, "containsTarget").await?;
+    while let Some(row) = rows.next().await? {
+        if row["value"] == oxrdf::Term::NamedNode(nested.clone()) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
