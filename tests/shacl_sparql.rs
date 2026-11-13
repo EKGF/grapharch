@@ -88,7 +88,7 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
     ask_doc.document(&writer).await?;
 
     let path = source.path().join("project.ttl");
-    tokio::fs::write(&path,format!(r##"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> <http://purl.org/dc/terms/title> "SHACL SPARQL constraints";a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>;ga:destination "specification";ga:publisher <urn:authority>;ga:publicationStatus "Test Draft";ga:publicationDate "2026-11-07"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/shacl/test/>;ga:latestVersion <https://example.org/shacl/>;ga:license <https://creativecommons.org/licenses/by/4.0/>;ga:scope <urn:s>;ga:profile <urn:f>. <urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>; <http://www.w3.org/2000/01/rdf-schema#label> "Example standards group";ga:shortName "EX";ga:url "https://example.org/";ga:accentColor "#2b5f9f". <urn:s> a ga:Scope;ga:include <{SHAPE}>,<urn:ask-validator>,<urn:abstract-subject>,<urn:status-subject>. <urn:f> a ga:Profile;ga:placement <urn:abstract-placement>,<urn:status-placement>,<urn:placement>,<urn:ask-placement>. <urn:placement> a ga:Placement;ga:component <urn:c>;ga:order 2. <urn:c> a ga:Component;ga:fragment {}.
+    tokio::fs::write(&path,format!(r##"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> <http://purl.org/dc/terms/title> "SHACL SPARQL constraints";a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>;ga:documentType ga:SpecificationDocument;ga:slug "shacl-sparql";ga:destination "specification";ga:publisher <urn:authority>;ga:publicationStatus "Test Draft";ga:publicationDate "2026-11-07"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/shacl/test/>;ga:latestVersion <https://example.org/shacl/>;ga:license <https://creativecommons.org/licenses/by/4.0/>;ga:scope <urn:s>;ga:profile <urn:f>. <urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "ex"; <http://www.w3.org/2000/01/rdf-schema#label> "Example standards group";ga:shortName "EX";ga:url "https://example.org/";ga:accentColor "#2b5f9f". <urn:s> a ga:Scope;ga:include <{SHAPE}>,<urn:ask-validator>,<urn:abstract-subject>,<urn:status-subject>. <urn:f> a ga:Profile;ga:placement <urn:abstract-placement>,<urn:status-placement>,<urn:placement>,<urn:ask-placement>. <urn:placement> a ga:Placement;ga:component <urn:c>;ga:order 2. <urn:c> a ga:Component;ga:fragment {}.
 <urn:ask-placement> a ga:Placement;ga:component <urn:ask-component>;ga:order 3. <urn:ask-component> a ga:Component;ga:fragment {}.
 <urn:definitions> a ga:CollectorUse;ga:collectorType ga:RdfFileCollector;ga:source "project.ttl".
 <urn:authored> a ga:Contribution;ga:project <urn:p>;ga:processor <urn:definitions>;ga:source "fixture";ga:revision "1".
@@ -162,6 +162,7 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
         );
     }
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, output.path())
         .await?
     else {
@@ -240,16 +241,14 @@ async fn schedule_queries_retain_code_lines_in_restored_html_and_pdf()
             .next()
             .is_some()
     );
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert_eq!(typst.matches("#ga-code((").count(), 5);
     assert!(
         typst.contains("columns: (30%, 1fr)"),
         "predicate tables need flexible value space in PDF"
     );
     assert!(
-        tokio::fs::metadata(publication.directory.join("document.pdf"))
+        tokio::fs::metadata(publication.pdf().expect("published PDF edition"))
             .await?
             .len() >
             1000

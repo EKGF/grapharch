@@ -8,10 +8,10 @@ ex:profile a ga:Profile, artpub:PublicationProfile ; artpub:publishesFamily <urn
 ex:specification a ga:Target ; dct:title "EKGF Ontologies" ;
     dct:description "A generated reference for the registered EKGF ontology family, collected from its native Turtle sources. The family brings together artifact governance, publication, dependencies, lifecycles, concepts, communications, data operations, stories, use cases, and related vocabularies." ;
     <http://www.w3.org/2000/01/rdf-schema#comment> "This is a generated documentation preview of the collected EKGF repository revision, not an approved standards release. Supplied annotations are reproduced; missing English labels and definitions are reported as documentation gaps. The reference does not invent definitions, fetch imports, execute SHACL validation, or claim complete OWL reasoning." ;
-    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; ga:destination "specification" ;
+    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "ekg-ontologies" ; ga:destination "specification" ;
     ga:publisher <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ; ga:publicationStatus "Documentation Preview" ;
     ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date> ;
     ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/ekgf/specification/> ;
     ga:latestVersion <https://github.com/EKGF/ekg-ontologies> ; ga:editorDraft <https://github.com/EKGF/ekg-ontologies> ;
     ga:license <https://creativecommons.org/publicdomain/zero/1.0/> .
-<urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ga:accentColor "#2b5f9f" ; ga:url "https://ekgf.org/" .
+<urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ga:slug "ekgf" ; ga:accentColor "#2b5f9f" ; ga:url "https://ekgf.org/" .

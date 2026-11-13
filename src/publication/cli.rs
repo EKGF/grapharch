@@ -13,6 +13,7 @@ use {
         },
         dataset::Dataset,
         diagnostics::FailureMode,
+        pdf_name::Edition,
         plan::{ResolvedPlan, TargetPlanner},
         render::{PublishOutcome, Publisher},
         scope::ScopeResolver,
@@ -142,6 +143,11 @@ pub enum PublicationCommand {
         output_root: PathBuf,
         #[arg(long, default_value_t = 4)]
         concurrency: usize,
+        /// Edition of this build: `default` for the declared default branch,
+        /// otherwise the branch slug, `pr-<number>` or release version.
+        /// Required whenever the target renders a PDF.
+        #[arg(long, value_parser = edition)]
+        edition:     Option<Edition>,
     },
     /// Run every declared showcase, retain reports and KGs, and fail if any
     /// case fails.
@@ -186,16 +192,17 @@ pub enum PublicationCommand {
         /// Bare-cache parent directory (defaults to the system temp cache).
         #[arg(long)]
         git_cache:        Option<PathBuf>,
-        #[arg(long, requires_all = ["project", "target"])]
-        definitions:      Option<PathBuf>,
-        #[arg(long, requires_all = ["definitions", "target"])]
-        project:          Option<String>,
-        #[arg(long, requires_all = ["definitions", "project"])]
-        target:           Option<String>,
+        #[command(flatten)]
+        explicit:         Box<ExplicitDefinitions>,
         #[arg(long)]
         output_root:      PathBuf,
         #[arg(long, default_value_t = 4)]
         concurrency:      usize,
+        /// Edition of this build: `default` for the declared default branch,
+        /// otherwise the branch slug, `pr-<number>` or release version.
+        /// Required whenever the target renders a PDF.
+        #[arg(long, value_parser = edition)]
+        edition:          Option<Edition>,
     },
     /// Render a pinned target plan without rereading its original sources.
     Render {
@@ -207,6 +214,11 @@ pub enum PublicationCommand {
         snapshot:    String,
         #[arg(long)]
         output_root: PathBuf,
+        /// Edition of this build: `default` for the declared default branch,
+        /// otherwise the branch slug, `pr-<number>` or release version.
+        /// Required whenever the target renders a PDF.
+        #[arg(long, value_parser = edition)]
+        edition:     Option<Edition>,
     },
     /// Assemble and atomically promote a validated project revision.
     Assemble {
@@ -404,12 +416,13 @@ pub async fn run(
             git_repository,
             git_ref,
             git_cache,
-            definitions,
-            project,
-            target,
+            explicit,
             output_root,
             concurrency,
+            edition,
         } => {
+            let ExplicitDefinitions { definitions, project, target } =
+                explicit.as_ref();
             ensure!(*concurrency > 0, "concurrency must be positive");
             let dataset = backend.open().await?;
             let built = if let Some(path) = sparql_sources {
@@ -506,6 +519,7 @@ pub async fn run(
             let outcome = Publisher::new(built.dataset.clone())
                 .with_book_workers(std::env::current_exe()?, 2)?
                 .with_failure_mode(mode)
+                .with_edition_input(edition.clone())
                 .render(&built.plan, output_root)
                 .await?;
             let PublishOutcome::Published(publication) = outcome else {
@@ -549,6 +563,7 @@ pub async fn run(
             target,
             output_root,
             concurrency,
+            edition,
         } => {
             let built = super::website::collect(
                 source,
@@ -561,6 +576,7 @@ pub async fn run(
             let outcome = Publisher::new(built.dataset.clone())
                 .with_book_workers(std::env::current_exe()?, 2)?
                 .with_failure_mode(mode)
+                .with_edition_input(edition.clone())
                 .render(&built.plan, output_root)
                 .await?;
             let PublishOutcome::Published(publication) = outcome else {
@@ -588,7 +604,13 @@ pub async fn run(
                 );
             }
         },
-        PublicationCommand::Render { store, plan, snapshot, output_root } => {
+        PublicationCommand::Render {
+            store,
+            plan,
+            snapshot,
+            output_root,
+            edition,
+        } => {
             let dataset = store.open().await?;
             let plan = ResolvedPlan {
                 id:       NamedNode::new(plan)?,
@@ -597,6 +619,7 @@ pub async fn run(
             match Publisher::new(dataset)
                 .with_book_workers(std::env::current_exe()?, 2)?
                 .with_failure_mode(mode)
+                .with_edition_input(edition.clone())
                 .render(&plan, output_root)
                 .await?
             {
@@ -813,15 +836,11 @@ async fn print_build_json(
 ) -> Result<()> {
     let directory = &publication.directory;
     let publication_path = tokio::fs::canonicalize(directory).await?;
-    let pdf_path = if publication
-        .manifest
-        .files
-        .iter()
-        .any(|file| file == "document.pdf")
-    {
-        Some(tokio::fs::canonicalize(directory.join("document.pdf")).await?)
-    } else {
-        None
+    let pdf_path = match &publication.manifest.pdf {
+        Some(name) => {
+            Some(tokio::fs::canonicalize(directory.join(name)).await?)
+        },
+        None => None,
     };
     let kg_path =
         tokio::fs::canonicalize(output_root.join("documentation.nq")).await?;
@@ -889,4 +908,21 @@ async fn collect_configured_family(
             )
         },
     }
+}
+
+fn edition(value: &str) -> Result<Edition> { Edition::parse(value) }
+
+/// External publication definitions, supplied together or not at all. Boxed
+/// so the family command stays small on every platform.
+#[derive(clap::Args)]
+pub struct ExplicitDefinitions {
+    /// Publication definitions file.
+    #[arg(long, requires_all = ["project", "target"])]
+    pub definitions: Option<PathBuf>,
+    /// Project IRI defined by the definitions.
+    #[arg(long, requires_all = ["definitions", "target"])]
+    pub project:     Option<String>,
+    /// Target IRI to publish.
+    #[arg(long, requires_all = ["definitions", "project"])]
+    pub target:      Option<String>,
 }

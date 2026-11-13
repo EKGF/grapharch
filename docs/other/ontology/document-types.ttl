@@ -1,0 +1,10 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# Kinds of documents a publication target can be. Each contributes its
+# ga:slug to the download file name of the target's PDF edition.
+ga:SpecificationDocument a ga:DocumentType ; rdfs:label "Specification"@en ; ga:slug "spec" ; dct:description "A normative specification or reference."@en .
+ga:OverviewDocument a ga:DocumentType ; rdfs:label "Overview"@en ; ga:slug "overview" ; dct:description "An overview or introduction."@en .
+ga:SubmissionDocument a ga:DocumentType ; rdfs:label "Submission"@en ; ga:slug "submission" ; dct:description "A formal submission to a standards body."@en .
+ga:ReviewDocument a ga:DocumentType ; rdfs:label "Review edition"@en ; ga:slug "review" ; dct:description "An edition prepared for review."@en .

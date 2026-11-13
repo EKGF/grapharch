@@ -114,6 +114,7 @@ async fn remote_mkdocs_showcase_retains_source_license_images_and_git_revision()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(site) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -154,8 +155,10 @@ async fn public_bootswatch_documentation_is_retained_without_mkdocs_runtime()
     dataset.export(archive.clone()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let PublishOutcome::Published(site) =
-        Publisher::new(restored).render(&plans[0], &output).await?
+    let PublishOutcome::Published(site) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plans[0], &output)
+        .await?
     else {
         panic!("expected public documentation publication");
     };

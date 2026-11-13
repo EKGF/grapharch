@@ -21,6 +21,7 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -75,9 +76,7 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
                 })
             })
     );
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(typst.contains("table.cell(colspan: 2, align: center)"));
     assert!(typst.contains("header-row: 2"));
     assert!(!typst.contains("Identifier:") && !typst.contains("IRI:"));
@@ -92,7 +91,7 @@ ex:Party a owl:Class; rdfs:label "authorized party"@en; skos:prefLabel "authoris
         }
     }
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );

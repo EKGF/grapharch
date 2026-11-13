@@ -7,6 +7,7 @@ use {
     crate::publication::{
         Renderer,
         dataset::Stage,
+        pdf_name::{Edition, PdfName},
         term,
         view::RevisionView,
         writer::{ContributionStream, GraphWriter},
@@ -48,12 +49,13 @@ impl PublicationUrl {
     /// The URL text.
     pub fn as_str(&self) -> &str { self.0.as_str() }
 
-    /// Where `renderer` publishes `destination` beneath this URL: the
-    /// directory of an HTML entry point, or the document of a PDF target.
+    /// Where a target publishes `destination` beneath this URL: the
+    /// directory of an HTML entry point, or `document`, the named file a
+    /// PDF-only target owns there.
     pub fn this_version(
         &self,
         destination: &str,
-        renderer: Renderer,
+        document: Option<&str>,
     ) -> Result<NamedNode> {
         ensure!(
             destination
@@ -67,14 +69,7 @@ impl PublicationUrl {
             .map_err(|()| anyhow!("publication URL cannot have a path"))?
             .pop_if_empty()
             .extend(destination.split('/'))
-            .push(match renderer {
-                Renderer::Typst => "document.pdf",
-                Renderer::Html |
-                Renderer::Website |
-                Renderer::Specification |
-                Renderer::SpecificationPages |
-                Renderer::Bookshelf => "",
-            });
+            .push(document.unwrap_or_default());
         Ok(NamedNode::new(url.as_str())?)
     }
 }
@@ -98,6 +93,7 @@ pub(super) async fn derive(
     project: &NamedNode,
     targets: &[NamedNode],
     publication_url: &PublicationUrl,
+    edition: Option<&Edition>,
     writer: &GraphWriter,
 ) -> Result<()> {
     let mut stream = writer
@@ -109,7 +105,15 @@ pub(super) async fn derive(
             Stage::Document,
         )
         .await?;
-    match write(definitions, targets, publication_url, &mut stream).await {
+    match write(
+        definitions,
+        targets,
+        publication_url,
+        edition,
+        &mut stream,
+    )
+    .await
+    {
         Ok(()) => stream.complete().await,
         Err(error) => {
             stream.abort().await?;
@@ -122,6 +126,7 @@ async fn write(
     definitions: &RevisionView,
     targets: &[NamedNode],
     publication_url: &PublicationUrl,
+    edition: Option<&Edition>,
     stream: &mut ContributionStream,
 ) -> Result<()> {
     for target in targets {
@@ -135,8 +140,18 @@ async fn write(
             )
         }
         let destination = definitions.text(target, "destination").await?;
-        let version = publication_url
-            .this_version(&destination, definitions.renderer(target).await?)?;
+        let document = if definitions.renderer(target).await? == Renderer::Typst
+        {
+            Some(
+                PdfName::read(definitions, target, edition)
+                    .await?
+                    .file_name(),
+            )
+        } else {
+            None
+        };
+        let version =
+            publication_url.this_version(&destination, document.as_deref())?;
         stream
             .write(Quad::new(
                 target.clone(),

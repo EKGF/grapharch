@@ -36,6 +36,7 @@ async fn site_root_image_paths_are_retained_independently_of_page_depth()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(result) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

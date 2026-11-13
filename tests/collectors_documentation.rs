@@ -156,6 +156,7 @@ async fn collectors_are_a_top_level_generated_navigation_group() -> Result<()> {
     .await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

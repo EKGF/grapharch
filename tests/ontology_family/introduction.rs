@@ -54,6 +54,7 @@ async fn ontology_abstract_and_other_authored_introduction_survive_source_remova
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -72,7 +73,7 @@ async fn ontology_abstract_and_other_authored_introduction_survive_source_remova
         }
     }
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -119,6 +120,7 @@ async fn diagram_endpoint_types_use_other_pinned_family_members() -> Result<()>
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -180,6 +182,7 @@ async fn range_only_placeholder_does_not_hide_a_pinned_cross_source_domain()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -221,6 +224,7 @@ ex:managedBy a owl:ObjectProperty; rdfs:label "is managed by" .
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -255,15 +259,13 @@ ex:managedBy a owl:ObjectProperty; rdfs:label "is managed by" .
         html.contains("minQualifiedCardinality"),
         "original details retained"
     );
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(
         typst.contains("qualified") &&
             typst.contains("minQualifiedCardinality")
     );
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -311,6 +313,7 @@ ex:playedBy a owl:ObjectProperty; rdfs:label "is played by" .
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -353,7 +356,7 @@ ex:playedBy a owl:ObjectProperty; rdfs:label "is played by" .
         assert!(html.contains(fact));
     }
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );

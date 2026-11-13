@@ -1,3 +1,4 @@
+use grapharch::publication::render::typst_source;
 #[path = "support/definitions.rs"]
 mod definitions;
 #[path = "support/family_repository.rs"]
@@ -51,7 +52,7 @@ async fn render_dual_editions(
         &std::fs::read_to_string(fixture.definitions())?,
         "urn:dprod-showcase:pdf",
         "https://ekgf.org/ontology/grapharch#destination",
-        definitions::literal("pdf/ekgf"),
+        definitions::literal("pdf"),
     )?;
     ttl.push_str(include_str!("fixtures/submission-theme.ttl"));
     ttl.push_str(
@@ -61,8 +62,8 @@ ex:project ga:target ex:submission .
 ex:pdf ga:publicationStatus "Community Draft" .
 ex:submission a ga:Target ; dct:title "DPROD OMG submission preview" ;
     ga:subtitle "Prepared for review; not an approved OMG specification" ;
-    ga:scope ex:scope ; ga:profile ex:submission-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ;
-    ga:destination "pdf/omg" ; ga:publisher ex:omg-authority ;
+    ga:scope ex:scope ; ga:profile ex:submission-profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SubmissionDocument> ; <https://ekgf.org/ontology/grapharch#slug> "dprod" ;
+    ga:destination "pdf" ; ga:publisher ex:omg-authority ;
     ga:publicationStatus "Submission Preview" ;
     ga:publicationDate "2026-10-24"^^<http://www.w3.org/2001/XMLSchema#date> ;
     ga:latestVersion <https://example.org/dprod/> .
@@ -71,7 +72,7 @@ ex:submission-profile a ga:Profile ; ga:theme <urn:example:submission-theme:them
         <urn:dprod-showcase:pdf-placement:overview>,
         <urn:dprod-showcase:pdf-placement:classes>,
         <urn:dprod-showcase:pdf-placement:example> .
-ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
+ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "omg" ;
     rdfs:label "Object Management Group submission preview" ;
     <https://ekgf.org/ontology/artifact-governance#authorityAcronym> "OMG" ;
     ga:accentColor "#004c6d" ; ga:url "https://www.omg.org/" .
@@ -99,18 +100,29 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     fixture.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output).await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output,
+    )
+    .await?;
     assert_eq!(publications.len(), 4);
     let revisions: std::collections::HashSet<_> = publications
         .iter()
         .map(|p| p.manifest.input_revision.as_str())
         .collect();
     assert_eq!(revisions.len(), 1);
-    let community =
-        tokio::fs::read_to_string(output.join("pdf/ekgf/main.typ")).await?;
-    let submission =
-        tokio::fs::read_to_string(output.join("pdf/omg/main.typ")).await?;
+    let community = tokio::fs::read_to_string(typst_source(
+        output,
+        &output.join("pdf/ekgf-spec-dprod.pdf"),
+    )?)
+    .await?;
+    let submission = tokio::fs::read_to_string(typst_source(
+        output,
+        &output.join("pdf/omg-submission-dprod.pdf"),
+    )?)
+    .await?;
     for body in [&community, &submission] {
         assert!(body.contains("managed, and governed collection of data"));
         assert!(body.contains("Document provenance"));
@@ -124,7 +136,8 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
             submission.contains("  body_size: 10pt,"),
         "the submission theme selects Times-compatible 10pt typography"
     );
-    let pdf = tokio::fs::read(output.join("pdf/omg/document.pdf")).await?;
+    let pdf =
+        tokio::fs::read(output.join("pdf/omg-submission-dprod.pdf")).await?;
     assert!(
         String::from_utf8_lossy(&pdf).contains("LiberationSerif"),
         "the portable Times-compatible font must be embedded"
@@ -141,7 +154,8 @@ ex:omg-authority a <https://ekgf.org/ontology/artifact-governance#Authority> ;
     assert!(submission.contains("#set page(numbering: \"i\")"));
     assert!(submission.contains("#set page(numbering: \"1\")"));
     assert!(submission.contains("not an approved OMG specification"));
-    for relative in ["pdf/ekgf/document.pdf", "pdf/omg/document.pdf"] {
+    for relative in ["pdf/ekgf-spec-dprod.pdf", "pdf/omg-submission-dprod.pdf"]
+    {
         assert!(
             tokio::fs::read(output.join(relative))
                 .await?
@@ -164,17 +178,17 @@ async fn edition_links_resolve_to_sibling_pdfs_in_the_build_output()
 ex:project ga:target ex:ekgf-edition, ex:omg-edition .
 ex:ekgf-edition a ga:Target ; dct:title "Community edition" ;
     ga:scope ex:scope ; ga:profile ex:profile ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ;
-    ga:destination "pdf/ekgf" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "specification" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ;
+    ga:destination "pdf" .
 ex:omg-edition a ga:Target ; dct:title "Submission-preview edition" ;
     ga:scope ex:scope ; ga:profile ex:profile ;
-    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ;
-    ga:destination "pdf/omg" .
+    ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SubmissionDocument> ; <https://ekgf.org/ontology/grapharch#slug> "specification" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:uuid:6c1408aa-039c-42f9-8dee-9c3f0009d61a> ;
+    ga:destination "pdf" .
 ex:target ga:metadataRow ex:version-link, ex:latest-link, ex:edition-links .
 ex:version-link a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
 ex:latest-link a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
 ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
-    dct:title "PDF editions:" ; ga:body """<a href="../pdf/ekgf/document.pdf">EKGF community PDF</a><br><a href="../pdf/omg/document.pdf">OMG submission-preview PDF</a>""" .
+    dct:title "PDF editions:" ; ga:body """<a href="../pdf/ekgf-spec-specification.pdf">EKGF community PDF</a><br><a href="../pdf/ekgf-submission-specification.pdf">OMG submission-preview PDF</a>""" .
 "##,
         include_str!("../examples/specification/project.ttl")
     );
@@ -211,7 +225,13 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
     worker.await??;
     source.close()?;
     let output = tempfile::tempdir()?;
-    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     let page = output.path().join("specification/index.html");
     let html = tokio::fs::read_to_string(&page).await?;
     let document = scraper::Html::parse_document(&html);
@@ -268,14 +288,31 @@ ex:edition-links a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ;
     let typst =
         tokio::fs::read_to_string(output.path().join("specification/main.typ"))
             .await?;
-    for edition in ["ekgf", "omg"] {
+    for edition in ["spec", "submission"] {
         assert!(
             typst.contains(&format!(
-                "#link(\"../pdf/{edition}/document.pdf\")"
+                "#link(\"../pdf/ekgf-{edition}-specification.pdf\")"
             )),
             "the specification PDF beside index.html carries the same \
              relative edition link"
         );
     }
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

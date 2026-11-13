@@ -91,6 +91,7 @@ async fn dprod_reference_honours_source_declared_nested_shape_namespaces()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {

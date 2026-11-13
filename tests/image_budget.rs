@@ -47,7 +47,7 @@ async fn photographic_size_png_survives_chunked_collection_and_restored_render()
 <urn:photo:project> a ga:Project; ga:target <urn:photo:site>, <urn:photo:pdf> .
 <urn:photo:scope> a ga:Scope . <urn:photo:profile> a ga:Profile; ga:theme ga:ReaderTheme .
 <urn:photo:site> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
-<urn:photo:pdf> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>; ga:destination "review" ."#).await?;
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:photo:pdf> a ga:Target; ga:scope <urn:photo:scope>; ga:profile <urn:photo:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; ga:publisher <urn:grapharch:example-authority>; ga:destination "review" ."#).await?;
     let collected = website::collect(
         source.path(),
         &definitions,
@@ -76,7 +76,8 @@ async fn photographic_size_png_survives_chunked_collection_and_restored_render()
     tokio::fs::remove_dir_all(source.path()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let PublishOutcome::Published(publication) =
         publisher.render(&collected.plan, output.path()).await?
     else {

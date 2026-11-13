@@ -17,7 +17,7 @@ doc:project a ga:Project ; ga:scope doc:scope ;
 doc:scope a ga:Scope .
 
 doc:specification a ga:Target ; ga:subtitle "Generated from native RDF sources" ;
-    ga:scope doc:scope ; ga:profile doc:profile ; ga:renderer ga:SpecificationRenderer ;
+    ga:scope doc:scope ; ga:profile doc:profile ; ga:renderer ga:SpecificationRenderer ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "specification" ;
     ga:destination "specification" ; ga:notice doc:legal-notice ;
     ga:publicationStatus "Reference Preview" ; ga:publisher doc:publisher ;
     ga:latestVersion <https://example.org/dprod/spec/> ;
@@ -25,7 +25,7 @@ doc:specification a ga:Target ; ga:subtitle "Generated from native RDF sources" 
     ga:copyright "Synthetic exact-revision fixture." ;
     ga:metadataSource doc:source:ontology ;
     ga:derivedMetadata dct:title, dct:description, ga:license, ga:publicationDate .
-doc:publisher a <https://ekgf.org/ontology/artifact-governance#Authority> ;
+doc:publisher a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "ekgf" ;
     <http://www.w3.org/2000/01/rdf-schema#label> "Enterprise Knowledge Graph Forum" ;
     ga:shortName "EKGF" ; ga:accentColor "#2b5f9f" ; ga:url "https://ekgf.org/" .
 doc:website a ga:Target ; dct:title "DPROD: ideas and guides" ;
@@ -34,7 +34,7 @@ doc:website a ga:Target ; dct:title "DPROD: ideas and guides" ;
 doc:website-scope a ga:Scope .
 doc:website-profile a ga:Profile .
 doc:pdf a ga:Target ; dct:title "DPROD review edition" ;
-    ga:scope doc:scope ; ga:profile doc:pdf-profile ; ga:renderer ga:TypstRenderer ;
+    ga:scope doc:scope ; ga:profile doc:pdf-profile ; ga:renderer ga:TypstRenderer ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "dprod" ;
     ga:destination "pdf" ; ga:notice doc:legal-notice ; ga:publisher doc:publisher ;
     ga:metadataSource doc:source:ontology ; ga:derivedMetadata ga:license, ga:publicationDate .
 

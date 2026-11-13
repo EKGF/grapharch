@@ -81,6 +81,7 @@ async fn native_maturity_pages_combine_retained_rdf_and_authored_sections()
     let dataset = Dataset::memory()?;
     dataset.import(archive).await?;
     let PublishOutcome::Published(result) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, out.path())
         .await?
     else {

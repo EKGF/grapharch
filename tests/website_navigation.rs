@@ -84,6 +84,7 @@ async fn render(
         out.path().to_owned()
     };
     let PublishOutcome::Published(result) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, &destination)
         .await?
     else {

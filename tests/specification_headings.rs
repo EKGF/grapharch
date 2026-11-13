@@ -25,6 +25,7 @@ async fn specification(renderer: &str) -> Result<String> {
     source.close()?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {

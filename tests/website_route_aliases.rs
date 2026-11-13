@@ -28,6 +28,7 @@ async fn aliases_redirect_to_retained_page_sections_without_sources()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(site) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, out.path())
         .await?
     else {
@@ -74,6 +75,12 @@ async fn unsafe_and_colliding_aliases_fail_before_publication() -> Result<()> {
                 Err(error) => error,
                 Ok(built) => {
                     Publisher::new(built.dataset)
+                        .with_edition(
+                            grapharch::publication::pdf_name::Edition::Default,
+                        )
+                        .with_edition(
+                            grapharch::publication::pdf_name::Edition::Default,
+                        )
                         .render(&built.plan, output.path())
                         .await
                         .err()

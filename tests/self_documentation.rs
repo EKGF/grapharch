@@ -74,6 +74,7 @@ async fn grapharch_documents_itself_from_an_exported_kg_without_source_files()
     let restored = Dataset::memory()?;
     restored.import(export).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, &temp.path().join("output"))
         .await?
     else {
@@ -484,6 +485,7 @@ async fn invalid_site_generations_preserve_the_previous_complete_site()
     setup(source.path(), "Valid initial content.")?;
     let first = collect_case(source.path()).await?;
     Publisher::new(first.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&first.plan, output.path())
         .await?;
     let original = std::fs::read(output.path().join("site/index.html"))?;
@@ -496,6 +498,12 @@ async fn invalid_site_generations_preserve_the_previous_complete_site()
         let broken = collect_case(source.path()).await?;
         assert!(
             Publisher::new(broken.dataset)
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default
+                )
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default
+                )
                 .render(&broken.plan, output.path())
                 .await
                 .is_err()
@@ -512,6 +520,7 @@ async fn invalid_site_generations_preserve_the_previous_complete_site()
     )?;
     let duplicate = collect_case(source.path()).await?;
     let error = Publisher::new(duplicate.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&duplicate.plan, output.path())
         .await
         .err()
@@ -537,7 +546,8 @@ async fn website_ownership_rejects_unowned_nested_files() -> Result<()> {
         "---\ntitle: Child\n---\n# Child",
     )?;
     let built = collect_case(source.path()).await?;
-    let publisher = Publisher::new(built.dataset);
+    let publisher = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     publisher.render(&built.plan, output.path()).await?;
     let foreign = output.path().join("site/child/foreign.txt");
     std::fs::write(&foreign, "owned by someone else")?;
@@ -573,6 +583,7 @@ async fn callouts_render_labels_without_leaking_markers_or_changing_regular_quot
     setup(source.path(), &body)?;
     let built = collect_case(source.path()).await?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -630,6 +641,7 @@ async fn gfm_task_lists_preserve_completion_states_and_mixed_nested_list_semanti
     )?;
     let built = collect_case(source.path()).await?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -681,6 +693,7 @@ async fn repository_link_and_icon_follow_pinned_project_metadata() -> Result<()>
     std::fs::write(source.path().join("grapharch.ttl"), &definitions)?;
     let built = collect_case(source.path()).await?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -716,6 +729,7 @@ async fn generation_credit_is_in_the_footer_not_the_navigation() -> Result<()> {
     let built = collect_case(source.path()).await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

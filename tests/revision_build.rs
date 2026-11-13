@@ -472,7 +472,7 @@ async fn publication_url_derives_the_version_of_every_selected_target()
             "urn:dprod-showcase:website",
             format!("{BASE}website/"),
         ),
-        (PDF, format!("{BASE}pdf/document.pdf")),
+        (PDF, format!("{BASE}pdf/ekgf-spec-dprod.pdf")),
     ] {
         assert!(
             graph.contains(&format!(
@@ -572,7 +572,7 @@ ex:specification ga:metadataRow ex:row:version, ex:row:latest, ex:row:editions .
 ex:row:version a ga:MetadataRow ; ga:order 1 ; ga:field "thisVersion" ; dct:title "This version:" .
 ex:row:latest a ga:MetadataRow ; ga:order 2 ; ga:field "latestVersion" ; dct:title "Latest version:" .
 ex:row:editions a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ; dct:title "PDF edition:" ;
-    ga:body """<a href="../pdf/document.pdf">Review PDF</a>""" .
+    ga:body """<a href="../pdf/ekgf-spec-dprod.pdf">Review PDF</a>""" .
 "##
         ))
     })?;
@@ -593,12 +593,14 @@ ex:row:editions a ga:MetadataRow ; ga:order 3 ; ga:field "custom" ; dct:title "P
         "{hrefs:?}"
     );
     assert!(
-        hrefs.iter().any(|href| href == "../pdf/document.pdf"),
+        hrefs
+            .iter()
+            .any(|href| href == "../pdf/ekgf-spec-dprod.pdf"),
         "the authored edition link must stay relative: {hrefs:?}"
     );
     let resolved = url::Url::from_file_path(&page)
         .unwrap()
-        .join("../pdf/document.pdf")?
+        .join("../pdf/ekgf-spec-dprod.pdf")?
         .to_file_path()
         .unwrap();
     assert!(

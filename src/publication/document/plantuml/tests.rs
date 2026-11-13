@@ -118,18 +118,19 @@ ex:uml-reference a ga:ExternalReference; dct:identifier "diagrams/out/diagram.sv
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(published) = Publisher::new(restored)
+        .with_edition(crate::publication::pdf_name::Edition::Default)
         .render(&plan, output.path())
         .await?
     else {
         panic!("publication required")
     };
     assert!(
-        tokio::fs::read_to_string(published.directory.join("main.typ"))
+        tokio::fs::read_to_string(published.typst_source())
             .await?
             .contains("#image(")
     );
     assert!(
-        tokio::fs::read(published.directory.join("document.pdf"))
+        tokio::fs::read(published.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );

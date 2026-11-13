@@ -46,7 +46,7 @@ fn hints(site: Site) -> String {
  dct:description "One family, several publications.";
  rdfs:comment "Documentation preview.";
  ga:scope <urn:example:scope>; ga:profile <urn:example:profile>;
- ga:renderer ga:{renderer}; ga:destination "{destination}";
+ ga:renderer ga:{renderer}; ga:documentType ga:SpecificationDocument; ga:slug "{key}"; ga:destination "{destination}";
  ga:thisVersion <https://example.org/{destination}/>; ga:latestVersion <https://example.org/{destination}/>;
  ga:license <https://creativecommons.org/publicdomain/zero/1.0/>; ga:publicationStatus "Draft";
  ga:publicationDate "2026-11-12"^^<http://www.w3.org/2001/XMLSchema#date>; ga:publisher <urn:example:authority> .
@@ -85,7 +85,7 @@ fn hints(site: Site) -> String {
 {}{}{}{site}
 {content}
 <urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;
- rdfs:label "Example authority"@en; ga:shortName "Example" .
+ rdfs:label "Example authority"@en; ga:shortName "Example"; ga:slug "example" .
 "#,
         target("spec", "SpecificationPagesRenderer", "spec/main"),
         target("pdf", "SpecificationRenderer", "pdf"),
@@ -142,7 +142,8 @@ async fn destinations(
     plans: &[grapharch::publication::plan::ResolvedPlan],
     output: &Path,
 ) -> Result<Vec<String>> {
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let mut published = Vec::new();
     for plan in plans {
         let PublishOutcome::Published(publication) =
@@ -192,8 +193,8 @@ async fn family_showcase_publishes_every_registered_target_in_iri_order()
         ["pdf", "review", "spec/main"],
         "targets publish in IRI order, each into its own destination"
     );
-    assert!(output.join("pdf/document.pdf").is_file());
-    assert!(output.join("review/document.pdf").is_file());
+    assert!(only_pdf(&output.join("pdf")).is_file());
+    assert!(only_pdf(&output.join("review")).is_file());
     Ok(())
 }
 
@@ -302,8 +303,10 @@ async fn family_showcase_builds_a_website_from_the_declared_page_source()
         destinations(dataset.clone(), family, &output).await?,
         ["pdf", "review", "spec/main"]
     );
-    let PublishOutcome::Published(site) =
-        Publisher::new(dataset).render(&website[0], &output).await?
+    let PublishOutcome::Published(site) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&website[0], &output)
+        .await?
     else {
         panic!("expected the website publication")
     };
@@ -345,13 +348,16 @@ async fn a_pdf_edition_with_its_own_family_profile_is_bound_too() -> Result<()>
     std::fs::create_dir_all(source.join("publication"))?;
     std::fs::write(source.join("ontology.ttl"), ONTOLOGY)?;
     let review = "ga:profile <urn:example:profile>;\n ga:renderer \
-                  ga:SpecificationRenderer; ga:destination \"review\";";
+                  ga:SpecificationRenderer; ga:documentType \
+                  ga:SpecificationDocument; ga:slug \"review\"; \
+                  ga:destination \"review\";";
     let hints = hints(Site::Absent);
     assert_eq!(hints.matches(review).count(), 1, "{hints}");
     let hints = hints.replace(
         review,
         "ga:profile <urn:example:pdf-profile>;\n ga:renderer \
-         ga:TypstRenderer; ga:destination \"review\";",
+         ga:TypstRenderer; ga:documentType ga:SpecificationDocument; ga:slug \
+         \"review\"; ga:destination \"review\";",
     );
     assert!(hints.contains("ga:TypstRenderer"), "{hints}");
     std::fs::write(
@@ -373,7 +379,8 @@ async fn a_pdf_edition_with_its_own_family_profile_is_bound_too() -> Result<()>
     let output = root.path().join("output");
     std::fs::create_dir(&output)?;
     let output = output.canonicalize()?;
-    let publisher = Publisher::new(dataset);
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     for plan in &plans {
         let PublishOutcome::Published(_) =
             publisher.render(plan, &output).await?
@@ -381,10 +388,26 @@ async fn a_pdf_edition_with_its_own_family_profile_is_bound_too() -> Result<()>
             panic!("expected a publication")
         };
     }
-    assert!(output.join("review/document.pdf").is_file());
+    assert!(only_pdf(&output.join("review")).is_file());
     assert!(
         !output.join("review/index.html").exists(),
         "a PDF-only edition"
     );
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

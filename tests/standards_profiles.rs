@@ -130,6 +130,7 @@ async fn release_identity_survives_source_removal_and_appears_in_html_and_pdf()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -150,7 +151,7 @@ async fn release_identity_survives_source_removal_and_appears_in_html_and_pdf()
         );
     }
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -180,14 +181,13 @@ async fn omg_specification_cover_does_not_duplicate_its_status_metadata()
     source.close()?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
         panic!("expected publication")
     };
-    let text =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let text = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(
         !text.contains("#strong[#text(\"Status:\")]"),
         "specification metadata already supplies the status"
@@ -220,14 +220,13 @@ async fn omg_typst_target_retains_supplied_editor_and_version_metadata()
     source.close()?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
         panic!("expected publication")
     };
-    let text =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let text = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(
         text.contains("Alex Example"),
         "OMG style must preserve supplied editor metadata"

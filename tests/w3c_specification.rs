@@ -117,6 +117,7 @@ async fn rdf12_publication_preserves_modern_metadata_and_document_structure()
     restored.import(archive).await?;
     let source_revision = restored.snapshot_for(project).await?;
     let strict = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, temp.path())
         .await;
     assert!(
@@ -127,6 +128,7 @@ async fn rdf12_publication_preserves_modern_metadata_and_document_structure()
         .contains("must-signal-errors")
     );
     let outcome = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .with_failure_mode(
             grapharch::publication::diagnostics::FailureMode::KeepGoing,
         )

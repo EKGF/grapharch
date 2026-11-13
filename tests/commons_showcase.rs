@@ -84,9 +84,9 @@ async fn family_publication(extra: &str) -> Result<(String, String)> {
 <urn:http:scope> a ga:Scope .
 <urn:http:profile> a ga:Profile; pub:publishesFamily <urn:http:family> .
 <urn:http:family> a gov:Family; rdfs:label "HTTP family" .
-<urn:http:target> a ga:Target; dct:title "HTTP family"; dct:description "A remotely collected ontology reference."; rdfs:comment "Unofficial test preview."; ga:scope <urn:http:scope>; ga:profile <urn:http:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:destination "specification"; ga:publisher <urn:http:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
-<urn:http:review> a ga:Target; dct:title "HTTP family"; dct:description "A remotely collected ontology reference."; rdfs:comment "Unofficial test preview."; ga:scope <urn:http:scope>; ga:profile <urn:http:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:destination "review"; ga:publisher <urn:http:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
-<urn:http:publisher> a gov:Authority; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
+<urn:http:target> a ga:Target; dct:title "HTTP family"; dct:description "A remotely collected ontology reference."; rdfs:comment "Unofficial test preview."; ga:scope <urn:http:scope>; ga:profile <urn:http:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "target"; ga:destination "specification"; ga:publisher <urn:http:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
+<urn:http:review> a ga:Target; dct:title "HTTP family"; dct:description "A remotely collected ontology reference."; rdfs:comment "Unofficial test preview."; ga:scope <urn:http:scope>; ga:profile <urn:http:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "review"; ga:destination "review"; ga:publisher <urn:http:publisher>; ga:publicationStatus "Documentation Preview"; ga:publicationDate "2026-10-31"^^<http://www.w3.org/2001/XMLSchema#date>; ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>; ga:license <https://opensource.org/licenses/MIT> .
+<urn:http:publisher> a gov:Authority ; <https://ekgf.org/ontology/grapharch#slug> "example"; rdfs:label "Example publisher"; ga:shortName "Example"; ga:url "https://example.org/"; ga:accentColor "#2b5f9f" .
 <https://www.omg.org/spec/Commons/Classifiers/> gov:inFamily <urn:http:family>; sh:declare [sh:prefix "cmns-cls"; sh:namespace "https://www.omg.org/spec/Commons/Classifiers/"] .
 {extra}
 "##)).await?;
@@ -113,9 +113,13 @@ async fn family_publication(extra: &str) -> Result<(String, String)> {
     source.close()?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, output.path())
-            .await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     assert_eq!(publications.len(), 2);
     let publication = &publications[0];
     let html =
@@ -125,7 +129,7 @@ async fn family_publication(extra: &str) -> Result<(String, String)> {
         tokio::fs::read_to_string(publications[1].directory.join("main.typ"))
             .await?;
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -165,8 +169,13 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     assert_eq!(plans.len(), 2);
-    let publications =
-        showcases::publish(&Publisher::new(restored), &plans, root).await?;
+    let publications = showcases::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        root,
+    )
+    .await?;
     let publication = &publications[0];
     let html =
         tokio::fs::read_to_string(publication.directory.join("index.html"))
@@ -183,7 +192,7 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     assert!(typst.contains("#set page(numbering: \"1\")"));
     assert!(html.contains("Roles and Compositions"));
     assert!(
-        tokio::fs::read(root.join("pdf/document.pdf"))
+        tokio::fs::read(only_pdf(&root.join("pdf")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -192,4 +201,21 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
         started.elapsed().as_secs_f64()
     );
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

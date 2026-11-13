@@ -49,6 +49,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
             .unwrap_or_else(|| temporary.path().join("output"));
         let output = output.join(theme.unwrap_or("default"));
         let PublishOutcome::Published(publication) = Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&collected.plan, &output)
             .await?
         else {

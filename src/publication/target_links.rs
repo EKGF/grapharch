@@ -4,7 +4,13 @@
 //! works wherever it is deployed, as long as the destinations keep their
 //! relative layout, which explicit composition (`ga:containsTarget`) allows.
 use {
-    super::{Renderer, dataset::Dataset, term, view::RevisionView},
+    super::{
+        Renderer,
+        dataset::Dataset,
+        pdf_name::{Edition, PdfName},
+        term,
+        view::RevisionView,
+    },
     anyhow::{Result, bail, ensure},
     oxrdf::{NamedNode, Term},
     std::collections::{BTreeMap, BTreeSet},
@@ -17,7 +23,9 @@ const TARGETS: usize = 64;
 #[derive(Clone, Debug, Default)]
 pub(crate) struct TargetLinks {
     own:        String,
-    files:      BTreeMap<String, String>,
+    /// Entry file per target; `None` for a PDF target whose file name
+    /// awaits an edition build input.
+    files:      BTreeMap<String, Option<String>>,
     unrelated:  BTreeSet<String>,
     nested:     Vec<String>,
     containers: Vec<String>,
@@ -30,6 +38,7 @@ impl TargetLinks {
         view: &RevisionView,
         project: &NamedNode,
         target: &NamedNode,
+        edition: Option<&Edition>,
     ) -> Result<Self> {
         let own = view.text(target, "destination").await?;
         let mut files = BTreeMap::new();
@@ -43,14 +52,24 @@ impl TargetLinks {
                 bail!("{project} ga:target must be an IRI")
             };
             let destination = view.text(registered, "destination").await?;
+            // A PDF target's entry is the named edition it owns.
             let entry = if view.renderer(registered).await? == Renderer::Typst {
-                "document.pdf"
+                match edition {
+                    Some(_) => {
+                        Some(
+                            PdfName::read(view, registered, edition)
+                                .await?
+                                .file_name(),
+                        )
+                    },
+                    None => None,
+                }
             } else {
-                "index.html"
+                Some("index.html".to_owned())
             };
             files.insert(
                 registered.as_str().to_owned(),
-                format!("{destination}/{entry}"),
+                entry.map(|entry| format!("{destination}/{entry}")),
             );
         }
         let pattern = view.pattern(&format!("?target a {}", term("Target")), 0);
@@ -142,6 +161,12 @@ impl TargetLinks {
             );
             return Ok(None);
         };
+        let file = file.as_deref().ok_or_else(|| {
+            anyhow::anyhow!(
+                "link to PDF target {iri} requires an explicit edition build \
+                 input to name its file"
+            )
+        })?;
         let from = format!("{}/{page}", self.own);
         Ok(Some(relative(&from, file)))
     }
@@ -173,8 +198,8 @@ mod tests {
             "../../index.html"
         );
         assert_eq!(
-            relative("site/index.html", "site/pdf/document.pdf"),
-            "pdf/document.pdf"
+            relative("site/index.html", "site/pdf/ekgf-spec-family.pdf"),
+            "pdf/ekgf-spec-family.pdf"
         );
         assert_eq!(
             relative("site/guide/index.html", "spec/index.html"),

@@ -176,7 +176,8 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "Navigation publication pr
 @prefix ga: <https://ekgf.org/ontology/grapharch#>.
 <urn:union:p> a ga:Project; ga:target <urn:union:html>, <urn:union:pdf>.
 <urn:union:html> a ga:Target; ga:renderer ga:HtmlRenderer; ga:destination "html"; ga:scope <urn:union:s>; ga:profile <urn:union:f>.
-<urn:union:pdf> a ga:Target; ga:renderer ga:TypstRenderer; ga:destination "pdf"; ga:scope <urn:union:s>; ga:profile <urn:union:f>.
+<urn:union:pdf> a ga:Target; ga:renderer ga:TypstRenderer ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; ga:publisher <urn:grapharch:example-authority>; ga:destination "pdf"; ga:scope <urn:union:s>; ga:profile <urn:union:f>.
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "example" ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; ga:slug "example" .
 <urn:union:s> a ga:Scope; ga:include <https://example.org/Core>.
 <urn:union:f> a ga:Profile; ga:placement <urn:union:a>.
 <urn:union:a> a ga:Placement; ga:component <urn:union:c>; ga:order 0.
@@ -211,6 +212,7 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "Navigation publication pr
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(html) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&html, output.path())
         .await?
     else {
@@ -242,19 +244,20 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "Navigation publication pr
         !labels.contains("Anonymous OWL") && !labels.contains("rdfs:Resource"),
         "{labels}"
     );
-    let PublishOutcome::Published(pdf) =
-        Publisher::new(restored).render(&pdf, output.path()).await?
+    let PublishOutcome::Published(pdf) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&pdf, output.path())
+        .await?
     else {
         panic!("PDF not published");
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(
         typst.contains("Collector or Documentor"),
         "retained SVG must reach PDF"
     );
     assert!(
-        tokio::fs::metadata(pdf.directory.join("document.pdf"))
+        tokio::fs::metadata(pdf.pdf().expect("published PDF edition"))
             .await?
             .len() >
             1000
@@ -262,7 +265,7 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "Navigation publication pr
     if std::env::var_os("GRAPHARCH_UNION_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/union-domain-review").await?;
         tokio::fs::copy(
-            pdf.directory.join("document.pdf"),
+            pdf.pdf().expect("published PDF edition"),
             "output/union-domain-review/document.pdf",
         )
         .await?;

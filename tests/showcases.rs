@@ -1,3 +1,4 @@
+use grapharch::publication::render::typst_source;
 #[path = "support/definitions.rs"]
 mod definitions;
 
@@ -24,9 +25,13 @@ async fn authored_showcase_publishes_three_targets_from_an_exported_graph()
     dataset.export(archive.clone()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publications =
-        support::publish(&Publisher::new(restored), &plans, temp.path())
-            .await?;
+    let publications = support::publish(
+        &Publisher::new(restored)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        temp.path(),
+    )
+    .await?;
     assert_eq!(publications.len(), 3);
     let manifests: Vec<_> = publications.iter().map(|p| &p.manifest).collect();
     assert!(
@@ -40,8 +45,11 @@ async fn authored_showcase_publishes_three_targets_from_an_exported_graph()
     let reader =
         tokio::fs::read_to_string(temp.path().join("reader/index.html"))
             .await?;
-    let typst =
-        tokio::fs::read_to_string(temp.path().join("review/main.typ")).await?;
+    let typst = tokio::fs::read_to_string(typst_source(
+        temp.path(),
+        &only_pdf(&temp.path().join("review")),
+    )?)
+    .await?;
     for content in [&specification, &reader, &typst] {
         assert!(content.contains("One graph, several publications"));
         assert!(content.contains("Publication contract"));
@@ -58,7 +66,7 @@ async fn authored_showcase_publishes_three_targets_from_an_exported_graph()
             reader.rfind("Appendix A. Publication contract").unwrap()
     );
     assert!(
-        tokio::fs::read(temp.path().join("review/document.pdf"))
+        tokio::fs::read(only_pdf(&temp.path().join("review")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -80,14 +88,22 @@ async fn mixed_showcase_collects_native_sources_and_documents_owl_before_renderi
     }
     let (dataset, plans) = support::mixed(&sources).await?;
     tokio::fs::remove_dir_all(sources).await?;
-    let publications =
-        support::publish(&Publisher::new(dataset), &plans, temp.path()).await?;
+    let publications = support::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        temp.path(),
+    )
+    .await?;
     assert_eq!(publications.len(), 2);
     let html =
         tokio::fs::read_to_string(temp.path().join("website/index.html"))
             .await?;
-    let typst =
-        tokio::fs::read_to_string(temp.path().join("review/main.typ")).await?;
+    let typst = tokio::fs::read_to_string(typst_source(
+        temp.path(),
+        &only_pdf(&temp.path().join("review")),
+    )?)
+    .await?;
     for content in [&html, &typst] {
         assert!(content.contains("Authored guidance from a Markdown file"));
         assert!(content.contains("A governed collection of data"));
@@ -110,7 +126,10 @@ async fn mixed_showcase_collects_native_sources_and_documents_owl_before_renderi
         for (source, target) in [
             ("website/index.html", "index.html"),
             ("website/style.css", "style.css"),
-            ("review/document.pdf", "document.pdf"),
+            (
+                "review/example-spec-mixed-sources.pdf",
+                "document.pdf",
+            ),
         ] {
             tokio::fs::copy(temp.path().join(source), preview.join(target))
                 .await?;
@@ -128,7 +147,7 @@ async fn mixed_showcase_collects_native_sources_and_documents_owl_before_renderi
             ))
     }));
     assert!(
-        tokio::fs::read(temp.path().join("review/document.pdf"))
+        tokio::fs::read(only_pdf(&temp.path().join("review")))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -143,8 +162,13 @@ async fn specification_renders_publication_metadata_and_numbered_navigation_from
     tokio::fs::copy("examples/specification/project.ttl", &source).await?;
     let (dataset, plans) = support::specification(&source).await?;
     tokio::fs::remove_file(source).await?;
-    let publications =
-        support::publish(&Publisher::new(dataset), &plans, temp.path()).await?;
+    let publications = support::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        temp.path(),
+    )
+    .await?;
     assert_eq!(publications[0].manifest.renderer, "specification");
     let html =
         tokio::fs::read_to_string(temp.path().join("specification/index.html"))
@@ -182,17 +206,17 @@ async fn specification_renders_publication_metadata_and_numbered_navigation_from
     assert!(!html.contains("https://www.w3.org/StyleSheets"));
     assert!(html.contains("&lt;example&gt;"));
     assert!(html.contains("rel=\"license\""));
-    assert!(html.contains("href=\"document.pdf\""));
+    assert!(html.contains("href=\"ekgf-spec-specification.pdf\""));
     assert!(html.contains("aria-label=\"Download Specification PDF\""));
     assert!(
         publications[0]
             .manifest
             .files
             .iter()
-            .any(|file| file == "document.pdf")
+            .any(|file| file == "ekgf-spec-specification.pdf")
     );
     let pdf =
-        tokio::fs::read(temp.path().join("specification/document.pdf")).await?;
+        tokio::fs::read(only_pdf(&temp.path().join("specification"))).await?;
     assert!(pdf.starts_with(b"%PDF-"));
     let typst =
         tokio::fs::read_to_string(temp.path().join("specification/main.typ"))
@@ -211,7 +235,13 @@ async fn incomplete_or_unsafe_specification_metadata_preserves_previous_output()
         tokio::fs::read_to_string("examples/specification/project.ttl").await?;
     tokio::fs::write(&source, &fixture).await?;
     let (dataset, plans) = support::specification(&source).await?;
-    support::publish(&Publisher::new(dataset), &plans, temp.path()).await?;
+    support::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        temp.path(),
+    )
+    .await?;
     let output = temp.path().join("specification/index.html");
     let original = tokio::fs::read(&output).await?;
     for (before, after, message) in [
@@ -244,8 +274,10 @@ async fn incomplete_or_unsafe_specification_metadata_preserves_previous_output()
         };
         tokio::fs::write(&source, changed).await?;
         let (dataset, plans) = support::specification(&source).await?;
-        let outcome =
-            Publisher::new(dataset).render(&plans[0], temp.path()).await;
+        let outcome = Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
+            .render(&plans[0], temp.path())
+            .await;
         match outcome {
             Err(error) => {
                 assert!(
@@ -292,7 +324,14 @@ async fn specification_authority_controls_branding_without_changing_renderer()
         let text = definitions::replace_values(&text, "#2b5f9f", color)?;
         tokio::fs::write(&source, text).await?;
         let (dataset, plans) = support::specification(&source).await?;
-        support::publish(&Publisher::new(dataset), &plans, temp.path()).await?;
+        support::publish(
+            &Publisher::new(dataset).with_edition(
+                grapharch::publication::pdf_name::Edition::Default,
+            ),
+            &plans,
+            temp.path(),
+        )
+        .await?;
         let html = tokio::fs::read_to_string(
             temp.path().join("specification/index.html"),
         )
@@ -318,9 +357,11 @@ async fn w3c_showcase_includes_its_collected_authority_assets()
     ))
     .await?;
     support::publish(
-        &Publisher::new(dataset).with_failure_mode(
-            grapharch::publication::diagnostics::FailureMode::KeepGoing,
-        ),
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
+            .with_failure_mode(
+                grapharch::publication::diagnostics::FailureMode::KeepGoing,
+            ),
         &plans,
         temp.path(),
     )
@@ -332,4 +373,21 @@ async fn w3c_showcase_includes_its_collected_authority_assets()
     assert!(html.contains("alt=\"World Wide Web Consortium\""));
     assert!(html.contains("data:image/png;base64,"));
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

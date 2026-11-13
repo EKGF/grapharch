@@ -51,6 +51,7 @@ async fn ekgf_header_uses_community_row_and_source_owned_project_links()
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| output.path().join("output"));
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&collected.plan, &directory)
         .await?
     else {
@@ -142,6 +143,12 @@ async fn project_header_rejects_missing_titles_and_unsafe_urls() -> Result<()> {
         let output = tempfile::tempdir()?;
         assert!(
             Publisher::new(collected.dataset)
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default
+                )
+                .with_edition(
+                    grapharch::publication::pdf_name::Edition::Default
+                )
                 .render(&collected.plan, output.path())
                 .await
                 .is_err(),

@@ -6,12 +6,13 @@
 # ga:gitRef is an exact commit or a moving reference such as HEAD; the KG
 # records the commit each build resolves.
 # Pinned to the ekg-ontologies migration for composed targets, website pages
-# from ga:contentSource and links by target IRI (branch
-# publication/ekgf-family-website), per the breaking-change protocol. Return to
-# ga:gitRef "HEAD" once that migration is on ekg-ontologies main.
+# from ga:contentSource, links by target IRI and named PDF editions (branch
+# publication/pdf-edition-names, stacked on publication/ekgf-family-website),
+# per the breaking-change protocol. Return to ga:gitRef "HEAD" once that
+# migration is on ekg-ontologies main.
 <urn:grapharch:showcase:ekgf> a ga:Showcase ;
     ga:gitRepository "https://github.com/EKGF/ekg-ontologies.git" ;
-    ga:gitRef "c7d9bc2371f38c0f39b15540cfd54afaa3581118" .
+    ga:gitRef "0c10ce31fc46a3b2f10c61389c7b02ec153d3557" .
 
 # Provenance of the offline acceptance corpus in sources/, copied from a working
 # tree based on this revision; it is not described as identical to it.

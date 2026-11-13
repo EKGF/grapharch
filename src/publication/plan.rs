@@ -666,6 +666,14 @@ impl TargetPlanner {
                     continue;
                 }
                 let other = destination_path(view, peer).await?;
+                // PDF targets own one named file each, so they may share a
+                // directory; file-name collisions fail when publishing.
+                if destination == other &&
+                    view.renderer(target).await? == super::Renderer::Typst &&
+                    view.renderer(peer).await? == super::Renderer::Typst
+                {
+                    continue;
+                }
                 ensure!(
                     other != destination,
                     "targets {target} and {peer} share the output destination \

@@ -19,6 +19,7 @@ fn ontology() -> Result<Store> {
     )?;
     for catalogue in [
         include_bytes!("../docs/other/ontology/renderers.ttl").as_slice(),
+        include_bytes!("../docs/other/ontology/document-types.ttl").as_slice(),
         include_bytes!("../docs/other/ontology/collectors.ttl").as_slice(),
         include_bytes!("../docs/other/ontology/documentors.ttl").as_slice(),
         include_bytes!("../docs/other/ontology/showcase-runners.ttl")
@@ -194,7 +195,7 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                  owl:ObjectProperty owl:DatatypeProperty \
                  owl:AnnotationProperty ga:Renderer ga:Collector \
                  ga:Documentor ga:ShowcaseRunner ga:PdfStandard ga:Theme \
-                 ga:CoverElement ga:DateFormat }}"
+                 ga:CoverElement ga:DateFormat ga:DocumentType }}"
             ),
         )? {
             missing.push(name);

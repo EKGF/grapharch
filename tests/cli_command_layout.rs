@@ -25,6 +25,7 @@ fn revision_build_future_is_bounded() {
                 "https://example.org/",
             )
             .unwrap(),
+        edition:            None,
         git_cache:          std::path::PathBuf::new(),
         output_root:        std::path::PathBuf::new(),
     };

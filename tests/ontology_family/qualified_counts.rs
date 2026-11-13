@@ -33,6 +33,7 @@ ex:duration a owl:ObjectProperty; rdfs:label "has duration" .
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -109,7 +110,7 @@ ex:duration a owl:ObjectProperty; rdfs:label "has duration" .
     assert!(html.contains("onDataRange"));
     assert!(html.contains("maxQualifiedCardinality"));
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );

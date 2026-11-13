@@ -115,7 +115,7 @@ async fn two_regular_markdown_pages_publish_shared_recorded_image_from_restored_
 <urn:test:project> a ga:Project ; dct:title "Recorded Markdown sources" ; ga:target <urn:test:site>, <urn:test:pdf> .
 <urn:test:scope> a ga:Scope . <urn:test:profile> a ga:Profile ; ga:theme ga:ReaderTheme .
 <urn:test:site> a ga:Target ; dct:title "Recorded Markdown website" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer> ; ga:destination "site" .
-<urn:test:pdf> a ga:Target ; dct:title "Recorded Markdown review" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:test:pdf> a ga:Target ; dct:title "Recorded Markdown review" ; ga:scope <urn:test:scope> ; ga:profile <urn:test:profile> ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; ga:publisher <urn:grapharch:example-authority> ; ga:destination "review" .
 "#,
     )?;
     for (name, route) in [("Home", "/"), ("Second", "/second/")] {
@@ -149,7 +149,8 @@ async fn two_regular_markdown_pages_publish_shared_recorded_image_from_restored_
     std::fs::remove_dir_all(source.path())?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let PublishOutcome::Published(site) =
         publisher.render(&built.plan, output.path()).await?
     else {
@@ -180,14 +181,14 @@ async fn two_regular_markdown_pages_publish_shared_recorded_image_from_restored_
     else {
         panic!("PDF required")
     };
-    let typst = std::fs::read_to_string(review.directory.join("main.typ"))?;
+    let typst = std::fs::read_to_string(review.typst_source())?;
     assert_eq!(typst.matches("#image(").count(), 2);
     assert_eq!(
         std::fs::read(site.directory.join(images[0]))?,
-        std::fs::read(review.directory.join(images[0]))?
+        std::fs::read(review.source.join(images[0]))?
     );
     assert!(
-        std::fs::read(review.directory.join("document.pdf"))?
+        std::fs::read(review.pdf().expect("published PDF edition"))?
             .starts_with(b"%PDF-")
     );
     Ok(())

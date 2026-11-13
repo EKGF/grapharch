@@ -36,8 +36,10 @@ async fn appended_dictionary_resolves_under_snippet_roots_without_becoming_a_pag
     .collect()
     .await?;
     source.close()?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(dataset).render(&plan, output.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, output.path())
+        .await?
     else {
         panic!("superseded")
     };

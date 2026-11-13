@@ -58,7 +58,13 @@ async fn canonical_governance_authority_renders_as_a_role_with_a_distinct_player
     let (dataset, plans) = showcases::specification(Path::new(&path)).await?;
     std::fs::remove_file(&path)?;
     let output = tempfile::tempdir()?;
-    showcases::publish(&Publisher::new(dataset), &plans, output.path()).await?;
+    showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await?;
     let html = std::fs::read_to_string(
         output.path().join("specification/index.html"),
     )?;
@@ -91,11 +97,15 @@ async fn grapharch_authority_alias_is_rejected() -> Result<()> {
     std::fs::write(&path, fixture)?;
     let (dataset, plans) = showcases::specification(&path).await?;
     let output = tempfile::tempdir()?;
-    let failure =
-        showcases::publish(&Publisher::new(dataset), &plans, output.path())
-            .await
-            .err()
-            .expect("obsolete ga:Authority must be rejected");
+    let failure = showcases::publish(
+        &Publisher::new(dataset)
+            .with_edition(grapharch::publication::pdf_name::Edition::Default),
+        &plans,
+        output.path(),
+    )
+    .await
+    .err()
+    .expect("obsolete ga:Authority must be rejected");
     assert!(format!("{failure:#}").contains("Authority"));
     Ok(())
 }

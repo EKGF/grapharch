@@ -64,6 +64,7 @@ async fn authored(renderer: &str) -> Result<String> {
     restored.import(archive).await?;
     source.close()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, output.path())
         .await?
     else {
@@ -144,7 +145,7 @@ async fn bookshelf(failed_worker: bool) -> Result<String> {
 <urn:project> a ga:Project;ga:target <urn:target> . <urn:scope> a ga:Scope . <urn:profile> a ga:Profile;pub:publishesFamily <urn:family> .
 <urn:family> a gov:Family;rdfs:label "Example family"@en . <https://example.org/core#> gov:inFamily <urn:family> .
 <urn:target> a ga:Target;dct:title "Example reference";dct:description "A family reference.";rdfs:comment "A test draft.";ga:scope <urn:scope>;ga:profile <urn:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#BookshelfRenderer>;ga:destination "specification";ga:publicationStatus "Draft";ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>;ga:thisVersion <https://example.org/spec/>;ga:latestVersion <https://example.org/spec/>;ga:publisher <urn:authority> .
-<urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;rdfs:label "Example Authority";ga:shortName "Example" .
+<urn:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "example";rdfs:label "Example Authority";ga:shortName "Example" .
 "#).await?;
     let built = ontology_family::collect(
         &sources,
@@ -166,6 +167,7 @@ async fn bookshelf(failed_worker: bool) -> Result<String> {
         std::path::PathBuf::from(env!("CARGO_BIN_EXE_grapharch"))
     };
     let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .with_failure_mode(FailureMode::KeepGoing)
         .with_book_workers(executable, 1)?;
     let PublishOutcome::Published(publication) =

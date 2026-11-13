@@ -27,28 +27,23 @@ fn publication_urls_are_absolute_http_directories() -> Result<()> {
 }
 
 #[test]
-fn versions_name_each_renderer_entry_point_beneath_the_destination()
--> Result<()> {
+fn versions_name_each_entry_point_beneath_the_destination() -> Result<()> {
     let base = PublicationUrl::try_new(BASE)?;
     for (destination, renderer, expected) in [
+        ("specification", None, "specification/"),
+        ("website", None, "website/"),
+        ("reader", None, "reader/"),
+        ("pages", None, "pages/"),
+        ("books", None, "books/"),
         (
-            "specification",
-            Renderer::Specification,
-            "specification/",
-        ),
-        ("website", Renderer::Website, "website/"),
-        ("reader", Renderer::Html, "reader/"),
-        ("pages", Renderer::SpecificationPages, "pages/"),
-        ("books", Renderer::Bookshelf, "books/"),
-        (
-            "pdf/ekgf",
-            Renderer::Typst,
-            "pdf/ekgf/document.pdf",
+            "pdf",
+            Some("ekgf-spec-dprod.pdf"),
+            "pdf/ekgf-spec-dprod.pdf",
         ),
         (
             "review copy",
-            Renderer::Typst,
-            "review%20copy/document.pdf",
+            Some("ekgf-review-dprod-pr-7.pdf"),
+            "review%20copy/ekgf-review-dprod-pr-7.pdf",
         ),
     ] {
         assert_eq!(
@@ -61,7 +56,7 @@ fn versions_name_each_renderer_entry_point_beneath_the_destination()
         ["", "/pdf", "pdf/", "pdf//omg", "./pdf", "../pdf", "pdf/.."]
     {
         let error = base
-            .this_version(destination, Renderer::Typst)
+            .this_version(destination, Some("ekgf-spec-dprod.pdf"))
             .expect_err(destination)
             .to_string();
         assert!(

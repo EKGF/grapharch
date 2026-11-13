@@ -47,6 +47,7 @@ impl BuildRequest {
         let (dataset, plan) = self.collect().await?;
         let PublishOutcome::Published(publication) =
             Publisher::new(dataset.clone())
+                .with_edition(crate::publication::pdf_name::Edition::Default)
                 .render(&plan, &self.output)
                 .await?
         else {

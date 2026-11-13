@@ -40,7 +40,7 @@ fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
     // `HEAD` then (see examples/ekg-ontologies/showcase.ttl).
     assert_eq!(
         text("reference"),
-        "c7d9bc2371f38c0f39b15540cfd54afaa3581118"
+        "0c10ce31fc46a3b2f10c61389c7b02ec153d3557"
     );
     assert!(
         include_str!("../examples/showcases.ttl")
@@ -87,11 +87,11 @@ fn configuration(
 <urn:example:profile> a ga:Profile; pub:publishesFamily <urn:example:family> .
 <urn:example:target> a ga:Target; dct:title "Remote family"; dct:description "A repository-backed example.";
  <http://www.w3.org/2000/01/rdf-schema#comment> "Documentation preview.";
- ga:scope <urn:example:scope>; ga:profile <urn:example:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>; ga:destination "specification";
+ ga:scope <urn:example:scope>; ga:profile <urn:example:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "target"; ga:destination "specification";
  ga:thisVersion <https://example.org/reference/>; ga:latestVersion <https://example.org/reference/>;
  ga:license <https://creativecommons.org/publicdomain/zero/1.0/>; ga:publicationStatus "Draft";
  ga:publicationDate "2026-10-25"^^<http://www.w3.org/2001/XMLSchema#date>; ga:publisher <urn:example:authority> .
-<urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en; ga:shortName "Example" .
+<urn:example:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "example"; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en; ga:shortName "Example" .
 "#,
     )?;
     Ok(path)
@@ -214,6 +214,7 @@ async fn repository_showcase_refreshes_head_reuses_cache_and_keeps_pinned_revisi
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {
@@ -222,7 +223,7 @@ async fn repository_showcase_refreshes_head_reuses_cache_and_keeps_pinned_revisi
     let html =
         std::fs::read_to_string(publication.directory.join("index.html"))?;
     assert!(html.contains("Latest remote definition"));
-    assert!(publication.directory.join("document.pdf").is_file());
+    assert!(publication.pdf().expect("published PDF edition").is_file());
     Ok(())
 }
 
@@ -279,6 +280,7 @@ async fn repository_publication_hints_can_live_inside_an_ontology_without_local_
     );
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plans[0], output.path())
         .await?
     else {

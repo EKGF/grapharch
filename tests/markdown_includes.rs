@@ -47,7 +47,7 @@ permalink: /
     )
     .await?;
     let config = input.path().join("project.ttl");
-    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:s> a ga:Scope. <urn:f> a ga:Profile. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:pdf> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf". <urn:ps> a ga:Scope;ga:include <urn:detail>. <urn:pf> a ga:Profile;ga:placement <urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:detail>."#).await?;
+    tokio::fs::write(&config,r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:s> a ga:Scope. <urn:f> a ga:Profile. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;ga:scope <urn:ps>;ga:profile <urn:pf>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf". <urn:ps> a ga:Scope;ga:include <urn:detail>. <urn:pf> a ga:Profile;ga:placement <urn:placement>. <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:detail>."#).await?;
     let built =
         website::collect(input.path(), &config, "urn:p", "urn:t", 2).await?;
     let (writer, worker) =
@@ -73,6 +73,7 @@ permalink: /
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(result) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {
@@ -91,17 +92,18 @@ permalink: /
     assert!(detail.contains("class=\"identifier-badge\""));
     assert!(detail.contains("id=\"detail\""));
     let PublishOutcome::Published(pdf) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&pdf_plan, output.path())
         .await?
     else {
         panic!("PDF failed")
     };
-    assert!(pdf.directory.join("document.pdf").exists());
+    assert!(pdf.pdf().expect("published PDF edition").exists());
     if std::env::var_os("GRAPHARCH_INCLUDE_PREVIEW").is_some() {
         let destination = std::path::Path::new("output/markdown-includes");
         tokio::fs::create_dir_all(destination).await?;
         tokio::fs::copy(
-            pdf.directory.join("document.pdf"),
+            pdf.pdf().expect("published PDF edition"),
             destination.join("document.pdf"),
         )
         .await?;
@@ -187,4 +189,21 @@ async fn nested_includes_use_explicit_roots_and_track_unselected_source_changes(
     drop(writer);
     worker.await??;
     Ok(())
+}
+
+/// The one PDF edition published in `directory`.
+#[allow(dead_code)]
+fn only_pdf(directory: &std::path::Path) -> std::path::PathBuf {
+    let mut pdfs = std::fs::read_dir(directory)
+        .expect("PDF directory")
+        .map(|entry| entry.expect("directory entry").path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "pdf"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        pdfs.len(),
+        1,
+        "one PDF edition in {}",
+        directory.display()
+    );
+    pdfs.remove(0)
 }

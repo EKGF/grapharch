@@ -328,8 +328,17 @@ impl Entry {
                 let Term::Literal(value) = value else {
                     anyhow::bail!("navigation URL must be a literal")
                 };
+                // A registered target's IRI resolves to its entry file, so a
+                // PDF entry follows the build's edition name.
+                let value = match catalog
+                    .targets
+                    .resolve(value.value(), "index.html")?
+                {
+                    Some(resolved) => resolved,
+                    None => value.value().to_owned(),
+                };
                 Some(SiteLink::authored(
-                    value.value(),
+                    &value,
                     NAVIGATION_SCHEMES,
                     "navigation",
                 )?)

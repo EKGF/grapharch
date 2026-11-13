@@ -18,7 +18,7 @@ fn definitions(path: &str) -> String {
 <urn:dictionary> a ga:CollectorUse;ga:collectorType ga:AbbreviationFileCollector;ga:source {}.
 <urn:web> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site".
 <urn:s> a ga:Scope. <urn:f> a ga:Profile.
-<urn:pdf> a ga:Target;ga:scope <urn:pdfscope>;ga:profile <urn:pdfprofile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf".
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;ga:scope <urn:pdfscope>;ga:profile <urn:pdfprofile>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf".
 <urn:pdfscope> a ga:Scope;ga:include <urn:guide>. <urn:pdfprofile> a ga:Profile;ga:placement <urn:placement>.
 <urn:placement> a ga:Placement;ga:component <urn:component>;ga:order 1. <urn:component> a ga:Component;ga:fragment <urn:guide>."#,
         Literal::new_simple_literal(path)
@@ -115,7 +115,8 @@ async fn dictionary_source_and_skos_meanings_survive_source_deletion()
         row["path"],
         Literal::new_simple_literal("abbreviations.md").into()
     );
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let PublishOutcome::Published(site) =
         publisher.render(&built.plan, output.path()).await?
     else {
@@ -137,7 +138,7 @@ async fn dictionary_source_and_skos_meanings_survive_source_deletion()
         panic!("PDF required")
     };
     assert!(
-        tokio::fs::metadata(pdf.directory.join("document.pdf"))
+        tokio::fs::metadata(pdf.pdf().expect("published PDF edition"))
             .await?
             .len() >
             1000

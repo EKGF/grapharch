@@ -64,8 +64,10 @@ async fn a_documented_mermaid_fragment_is_shared_by_specification_html_and_pdf()
     tokio::fs::remove_file(path).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(restored).render(&plan, out.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, out.path())
+        .await?
     else {
         panic!("publication required")
     };
@@ -73,12 +75,10 @@ async fn a_documented_mermaid_fragment_is_shared_by_specification_html_and_pdf()
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
     assert!(html.contains("alt=\"Documentation diagram\""));
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(typst.contains("#image(\"assets/image-"));
     assert!(
-        tokio::fs::read(publication.directory.join("document.pdf"))
+        tokio::fs::read(publication.pdf().expect("published PDF edition"))
             .await?
             .starts_with(b"%PDF-")
     );
@@ -226,6 +226,7 @@ async fn mermaid_becomes_a_retained_svg_and_renders_without_original_sources()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, out.path())
         .await?
     else {

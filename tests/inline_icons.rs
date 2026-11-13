@@ -30,7 +30,7 @@ async fn icon_publication(profile: &str) -> Result<IconPublication> {
     )
     .await?;
     let config = source.path().join("project.ttl");
-    tokio::fs::write(&config,format!(r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:pdf> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf". <urn:s> a ga:Scope. <urn:f> a ga:Profile{profile}."#)).await?;
+    tokio::fs::write(&config,format!(r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>,<urn:pdf>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>;ga:destination "site". <urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . <urn:pdf> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf". <urn:s> a ga:Scope. <urn:f> a ga:Profile{profile}."#)).await?;
     let built =
         website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
     let (writer, worker) =
@@ -57,6 +57,7 @@ async fn decorative_icons_survive_source_removal_in_html_and_pdf() -> Result<()>
     let IconPublication { output, restored, site, pdf } =
         icon_publication("").await?;
     let PublishOutcome::Published(site) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&site, output.path())
         .await?
     else {
@@ -72,15 +73,15 @@ async fn decorative_icons_survive_source_removal_in_html_and_pdf() -> Result<()>
     assert!(!html.contains(":material-"));
     assert!(html.contains("Learn more"));
     assert!(site.directory.join("grapharch-icon-licenses.txt").exists());
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     publisher.render(&pdf, output.path()).await?;
     let PublishOutcome::Published(pdf) =
         publisher.render(&pdf, output.path()).await?
     else {
         panic!("PDF failed")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(typst.contains("#image(bytes("));
     assert!(typst.contains("Deploy"));
     assert!(typst.contains("Run phase"));
@@ -88,7 +89,7 @@ async fn decorative_icons_survive_source_removal_in_html_and_pdf() -> Result<()>
     if std::env::var_os("GRAPHARCH_ICON_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/inline-icons").await?;
         tokio::fs::copy(
-            pdf.directory.join("document.pdf"),
+            pdf.pdf().expect("published PDF edition"),
             "output/inline-icons/document.pdf",
         )
         .await?;
@@ -107,18 +108,20 @@ async fn decorative_icons_are_pdf_artifacts_in_pdf_ua_documents() -> Result<()>
 {
     let IconPublication { output, restored, pdf, .. } =
         icon_publication(";ga:pdfStandard ga:PdfUa1").await?;
-    let PublishOutcome::Published(pdf) =
-        Publisher::new(restored).render(&pdf, output.path()).await?
+    let PublishOutcome::Published(pdf) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&pdf, output.path())
+        .await?
     else {
         panic!("PDF failed")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(
         typst.contains("#box[#pdf.artifact[#image(bytes("),
         "decorative icons carry no meaning for assistive technology"
     );
-    let bytes = tokio::fs::read(pdf.directory.join("document.pdf")).await?;
+    let bytes =
+        tokio::fs::read(pdf.pdf().expect("published PDF edition")).await?;
     let part = b"<pdfuaid:part>1</pdfuaid:part>";
     assert!(bytes.windows(part.len()).any(|window| window == part));
     Ok(())

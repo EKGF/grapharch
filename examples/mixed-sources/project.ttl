@@ -12,8 +12,8 @@ ex:sparql a ga:CollectorUse ; ga:collectorType ga:SparqlFileCollector ; ga:sourc
 ex:scope a ga:Scope ; ga:include ex:introduction, ex:DataProduct, ex:query .
 ex:website a ga:Target ; dct:title "Data products: a source-driven guide" ;
     ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer> ; ga:destination "website" .
-ex:pdf a ga:Target ; dct:title "Data products: review document" ;
-    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; ga:destination "review" .
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" . ex:pdf a ga:Target ; dct:title "Data products: review document" ;
+    ga:scope ex:scope ; ga:profile ex:profile ; ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "mixed-sources" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority> ; ga:destination "review" .
 ex:profile a ga:Profile ; ga:theme ga:ReaderTheme ;
     ga:placement ex:introduction-placement, ex:class-placement, ex:query-placement .
 ex:introduction-placement a ga:Placement ; ga:component ex:introduction-component ; ga:order 1 .

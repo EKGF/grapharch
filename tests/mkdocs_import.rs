@@ -38,6 +38,7 @@ async fn mkdocs_nested_navigation_survives_source_removal() -> Result<()> {
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, output.path())
         .await?
     else {
@@ -145,8 +146,10 @@ async fn mkdocs_native_metadata_and_default_directory_navigation() -> Result<()>
     }
     .collect()
     .await?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(dataset).render(&plan, output.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, output.path())
+        .await?
     else {
         panic!("superseded")
     };
@@ -205,8 +208,10 @@ async fn mkdocs_snippets_and_abbreviation_dictionary_use_explicit_roots()
     .collect()
     .await?;
     source.close()?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(dataset).render(&plan, output.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, output.path())
+        .await?
     else {
         panic!("superseded")
     };
@@ -281,8 +286,10 @@ async fn mkdocs_navigation_anchors_and_source_boundary_are_checked()
     }
     .collect()
     .await?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(dataset).render(&plan, output.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, output.path())
+        .await?
     else {
         panic!("superseded")
     };
@@ -332,8 +339,10 @@ async fn mkdocs_reads_native_dot_pages_hints_without_python() -> Result<()> {
     }
     .collect()
     .await?;
-    let PublishOutcome::Published(publication) =
-        Publisher::new(dataset).render(&plan, output.path()).await?
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, output.path())
+        .await?
     else {
         panic!("superseded")
     };

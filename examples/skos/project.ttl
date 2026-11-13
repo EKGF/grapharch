@@ -11,10 +11,10 @@
 <urn:skos:specification> a ga:Target;dct:title "Business data taxonomy";
  dct:description "A SKOS concept scheme, concepts, mappings, and an ordered collection, published from native RDF.";
  rdfs:comment "An illustrative documentation preview with fictional source data.";
- ga:scope <urn:skos:scope>;ga:profile <urn:skos:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer>;
+ ga:scope <urn:skos:scope>;ga:profile <urn:skos:profile>;ga:renderer <https://ekgf.org/ontology/grapharch#SpecificationRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "skos";
  ga:destination "specification";ga:publicationStatus "Documentation Preview";
  ga:publicationDate "2026-10-30"^^<http://www.w3.org/2001/XMLSchema#date>;
  ga:thisVersion <https://ekgf.github.io/grapharch/showcases/artifacts/skos/specification/>;
  ga:latestVersion <https://ekgf.github.io/grapharch/showcases/artifacts/skos/specification/>;
  ga:license <https://creativecommons.org/publicdomain/zero/1.0/>;ga:publisher <urn:skos:authority> .
-<urn:skos:authority> a <https://ekgf.org/ontology/artifact-governance#Authority>;rdfs:label "Enterprise Knowledge Graph Foundation";ga:shortName "EKGF" .
+<urn:skos:authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <https://ekgf.org/ontology/grapharch#slug> "ekgf";rdfs:label "Enterprise Knowledge Graph Foundation";ga:shortName "EKGF" .

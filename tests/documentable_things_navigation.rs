@@ -127,6 +127,7 @@ async fn collected_navigation_separates_documentable_types_from_usage_without_li
     .await?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(built.dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&built.plan, output.path())
         .await?
     else {

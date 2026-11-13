@@ -80,7 +80,8 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
 @prefix ga:<https://ekgf.org/ontology/grapharch#>.
 <urn:validation:p> a ga:Project;ga:target <urn:validation:html>,<urn:validation:pdf>.
 <urn:validation:html> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#HtmlRenderer>;ga:destination "html";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
-<urn:validation:pdf> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer>;ga:destination "pdf";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
+<urn:validation:pdf> a ga:Target;ga:renderer <https://ekgf.org/ontology/grapharch#TypstRenderer> ; <https://ekgf.org/ontology/grapharch#documentType> <https://ekgf.org/ontology/grapharch#SpecificationDocument> ; <https://ekgf.org/ontology/grapharch#slug> "pdf" ; <https://ekgf.org/ontology/grapharch#publisher> <urn:grapharch:example-authority>;ga:destination "pdf";ga:scope <urn:validation:s>;ga:profile <urn:validation:f>.
+<urn:grapharch:example-authority> a <https://ekgf.org/ontology/artifact-governance#Authority> ; <http://www.w3.org/2000/01/rdf-schema#label> "Example authority"@en ; <https://ekgf.org/ontology/grapharch#slug> "example" .
 <urn:validation:s> a ga:Scope;ga:include <{class}>,<{shape}>.
 <urn:validation:f> a ga:Profile;ga:placement <urn:validation:a>,<urn:validation:b>.
 <urn:validation:a> a ga:Placement;ga:component <urn:validation:ca>;ga:order 0.
@@ -121,6 +122,7 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(html) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&html, output.path())
         .await?
     else {
@@ -154,13 +156,14 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
             .next()
             .is_some()
     );
-    let PublishOutcome::Published(pdf) =
-        Publisher::new(restored).render(&pdf, output.path()).await?
+    let PublishOutcome::Published(pdf) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&pdf, output.path())
+        .await?
     else {
         panic!("PDF not published")
     };
-    let typst =
-        tokio::fs::read_to_string(pdf.directory.join("main.typ")).await?;
+    let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(
         !typst.contains("Relationships as text") &&
             !typst.contains("Constraint details") &&
@@ -170,7 +173,7 @@ async fn actual_schedule_shape_survives_export_and_renders_html_and_pdf()
     if std::env::var_os("GRAPHARCH_SHACL_VIEW_PREVIEW").is_some() {
         tokio::fs::create_dir_all("output/shacl-class-view").await?;
         tokio::fs::copy(
-            pdf.directory.join("document.pdf"),
+            pdf.pdf().expect("published PDF edition"),
             "output/shacl-class-view/document.pdf",
         )
         .await?;

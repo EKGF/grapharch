@@ -1339,12 +1339,28 @@ ga:showcaseGallery a owl:DatatypeProperty ;
     rdfs:range xsd:boolean .
 
 ga:slug a owl:DatatypeProperty ;
-    rdfs:label "Stable showcase artifact directory name"@en ;
+    rdfs:label "Stable slug"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Records the stable safe directory name used to group a showcase and its publication artifacts."@en ;
-    dct:description "Records the stable safe directory name used to group a showcase and its publication artifacts."@en ;
-    rdfs:domain ga:Showcase ;
+    skos:definition "Records a stable lowercase ASCII, hyphen-separated name: a showcase's artifact directory, or a segment of a PDF edition's download file name for a publishing authority, document type, target or family."@en ;
+    dct:description "Records a stable lowercase ASCII, hyphen-separated name: a showcase's artifact directory, or a segment of a PDF edition's download file name for a publishing authority, document type, target or family."@en ;
+    skos:scopeNote "A PDF edition is named <authority>-<document-type>-<document-name>[-<edition>].pdf. The authority segment is the ga:slug of the target's ga:publisher, the document type segment is the ga:slug of its ga:documentType, and the document name is the target's ga:slug, else the ga:slug of the family its profile publishes. The optional edition is an explicit build input such as a branch, pull request or version, omitted for the controlling default branch. Missing parts and file-name collisions are errors."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Showcase artgov:Authority ga:DocumentType ga:Target artgov:Family ) ] ;
     rdfs:range xsd:string .
+
+ga:DocumentType a owl:Class ;
+    rdfs:label "Document type"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A kind of document a publication is, such as a specification, overview, submission or review edition."@en ;
+    dct:description "A kind of document a publication is, such as a specification, overview, submission or review edition."@en ;
+    skos:scopeNote "The shipped catalogue defines ga:SpecificationDocument, ga:OverviewDocument, ga:SubmissionDocument and ga:ReviewDocument; a runtime rejects identities it does not implement."@en .
+
+ga:documentType a owl:ObjectProperty ;
+    rdfs:label "Document type"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the kind of document a publication target produces; required for targets that produce a PDF edition."@en ;
+    dct:description "Identifies the kind of document a publication target produces; required for targets that produce a PDF edition."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:DocumentType .
 
 ga:previewPath a owl:DatatypeProperty ;
     rdfs:label "Declared primary HTML output"@en ;

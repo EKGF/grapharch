@@ -149,7 +149,8 @@ async fn shared_definition_and_distinct_target_settings_survive_source_removal()
             term("HtmlRenderer")
         );
     }
-    let publisher = Publisher::new(restored);
+    let publisher = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
     let mut destinations = Vec::new(); // bounded: two fixture publications.
     for plan in plans {
         let PublishOutcome::Published(artifact) =

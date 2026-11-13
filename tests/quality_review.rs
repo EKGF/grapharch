@@ -87,6 +87,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     source.close()?;
     let current_output = tempfile::tempdir()?;
     let PublishOutcome::Published(corrected) = Publisher::new(restored.clone())
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&current, current_output.path())
         .await?
     else {
@@ -102,6 +103,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
     );
     let PublishOutcome::Published(publication) =
         Publisher::new(restored.clone())
+            .with_edition(grapharch::publication::pdf_name::Edition::Default)
             .render(&plan, output.path())
             .await?
     else {
@@ -208,9 +210,7 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
         "affected resources need an inline warning"
     );
     assert!(html.contains("Alternate definition"));
-    let typst =
-        tokio::fs::read_to_string(publication.directory.join("main.typ"))
-            .await?;
+    let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(
         typst.contains(
             "#counter(heading).update(1)\n#heading(level: 1)[Quality issues]"
@@ -264,6 +264,7 @@ async fn selected_quality_scope_excludes_unpublished_resources()
     source.close()?;
     let output = tempfile::tempdir()?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
         .render(&plan, output.path())
         .await?
     else {
