@@ -52,6 +52,14 @@ impl RevisionFixture {
             controlling.join(DEFINITIONS),
         )?;
         family_repository::git(&controlling, &["init", "-b", "main"])?;
+        // The engine compares the checkout with the committed blob. Commit
+        // the written bytes unchanged, even where Git converts line endings
+        // by default, such as on Windows.
+        family_repository::git(&controlling, &[
+            "config",
+            "core.autocrlf",
+            "false",
+        ])?;
         family_repository::git(&controlling, &["add", "--all"])?;
         family_repository::git(&controlling, &[
             "commit",
