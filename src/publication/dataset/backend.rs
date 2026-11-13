@@ -38,7 +38,9 @@ impl BackendStore {
     }
 
     pub fn open(path: std::path::PathBuf) -> io::Result<Self> {
-        Ok(Self::Embedded(Store::open(path).map_err(error)?))
+        Ok(Self::Embedded(
+            Store::open(storage_path(path)).map_err(error)?,
+        ))
     }
 
     pub fn query(&self, query: &str) -> io::Result<QueryResults<'static>> {
@@ -344,6 +346,44 @@ mod migration_tests {
         assert!(store.is_empty()?);
         store.transaction::<_, io::Error>(|mut tx| tx.insert(quad.as_ref()))?;
         assert!(store.contains(quad.as_ref())?);
+        Ok(())
+    }
+}
+
+/// RocksDB appends `/`-separated file names to the store directory, which a
+/// Windows verbatim path (`\\?\C:\...`, as returned by canonicalization)
+/// does not accept. Open local drive paths in their ordinary form.
+fn storage_path(path: std::path::PathBuf) -> std::path::PathBuf {
+    match path.to_str().and_then(|text| text.strip_prefix(r"\\?\")) {
+        Some(rest) if !rest.starts_with("UNC\\") => rest.into(),
+        _ => path,
+    }
+}
+
+#[cfg(test)]
+mod storage_path_tests {
+    #[test]
+    fn verbatim_drive_paths_open_in_ordinary_form() {
+        assert_eq!(
+            super::storage_path(r"\\?\C:\data\store".into()),
+            std::path::PathBuf::from(r"C:\data\store")
+        );
+        assert_eq!(
+            super::storage_path(r"\\?\UNC\host\share\store".into()),
+            std::path::PathBuf::from(r"\\?\UNC\host\share\store")
+        );
+        assert_eq!(
+            super::storage_path("/var/lib/store".into()),
+            std::path::PathBuf::from("/var/lib/store")
+        );
+    }
+
+    #[test]
+    fn a_canonical_directory_opens_as_a_persistent_store() -> std::io::Result<()>
+    {
+        let root = tempfile::tempdir()?;
+        let store = root.path().canonicalize()?.join("store");
+        super::BackendStore::open(store)?;
         Ok(())
     }
 }
