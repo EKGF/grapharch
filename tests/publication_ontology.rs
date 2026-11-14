@@ -195,7 +195,8 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                  owl:ObjectProperty owl:DatatypeProperty \
                  owl:AnnotationProperty ga:Renderer ga:Collector \
                  ga:Documentor ga:ShowcaseRunner ga:PdfStandard ga:Theme \
-                 ga:CoverElement ga:DateFormat ga:DocumentType }}"
+                 ga:DownloadFormat ga:CoverElement ga:DateFormat \
+                 ga:DocumentType }}"
             ),
         )? {
             missing.push(name);

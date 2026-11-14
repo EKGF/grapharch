@@ -180,7 +180,7 @@ impl Collector for GitRdfDependency {
         repository
             .blob(&self.path)
             .await?
-            .rdf_collector(self.processor.as_str())?
+            .rdf_collector(self.processor.as_str(), false)?
             .produce(output)
             .await
     }

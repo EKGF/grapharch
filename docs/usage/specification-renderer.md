@@ -298,6 +298,33 @@ are not numbered and do not appear in the contents. HTML and Markdown fragments
 are supported; unsupported formats, ambiguous orders and missing fragments fail
 the publication rather than silently omitting the notices.
 
+## RDF downloads
+
+A target can publish RDF files beside its entry document, so a metadata row can
+link them relatively (`href="vocabulary.ttl"`). Each `ga:Download` names its
+file, its format and the `ga:RdfFileCollector` uses it is built from:
+
+```turtle
+ex:specification ga:download ex:ttl, ex:jsonld, ex:all .
+ex:ttl a ga:Download ; ga:fileName "vocabulary.ttl" ;
+    ga:downloadFormat ga:SourceFileFormat ; ga:downloadSource ex:ontology-source .
+ex:jsonld a ga:Download ; ga:fileName "vocabulary.jsonld" ;
+    ga:downloadFormat ga:JsonLdFormat ; ga:downloadSource ex:ontology-source .
+ex:all a ga:Download ; ga:fileName "vocabulary-all.ttl" ;
+    ga:downloadFormat ga:TurtleFormat ;
+    ga:downloadSource ex:ontology-source, ex:shapes-source .
+```
+
+`ga:SourceFileFormat` publishes the single source's exact bytes. `ga:TurtleFormat`,
+`ga:JsonLdFormat` and `ga:RdfXmlFormat` publish the merged graphs of all sources,
+in a deterministic statement order, with the sources' prefixes. A collector use
+named by a download retains its source text in the documentation graph, so the
+files are rebuilt from a restored graph without the original repository. Unsafe or
+duplicate file names, a file that collides with a generated one, a source that is
+not a `ga:RdfFileCollector` use, and named graphs in RDF/XML fail the publication.
+Downloads are built from Git-collected sources, as in an
+[exact-revision build](publication-pipeline.md#exact-revision-builds).
+
 ## W3C front matter
 
 By default a specification follows the W3C convention: exactly one
