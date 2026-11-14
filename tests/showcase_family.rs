@@ -36,12 +36,8 @@ fn published_family_showcase_follows_the_remote_repository_instead_of_corpus()
         text("repository"),
         "https://github.com/EKGF/ekg-ontologies.git"
     );
-    // Pinned to the ekg-ontologies migration until it reaches main; restore
-    // `HEAD` then (see examples/ekg-ontologies/showcase.ttl).
-    assert_eq!(
-        text("reference"),
-        "0c10ce31fc46a3b2f10c61389c7b02ec153d3557"
-    );
+    // The gallery follows the remote default branch.
+    assert_eq!(text("reference"), "HEAD");
     assert!(
         include_str!("../examples/showcases.ttl")
             .contains("ga:source \"ekg-ontologies/showcase.ttl\"")
