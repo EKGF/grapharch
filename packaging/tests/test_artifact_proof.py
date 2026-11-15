@@ -43,7 +43,7 @@ class ArtifactProof(unittest.TestCase):
             for item in PLATFORMS:
                 (root / f'grapharch-{item["target"]}.json').write_text(json.dumps({
                     'source_commit': 'b' * 40, 'version': '0.2.5', 'target': item['target'],
-                    'npm_package': 'grapharch-' + item['key']}))
+                    'npm_package': '@ekgf/grapharch-' + item['key']}))
             validate_directory(root, 'b' * 40, '0.2.5')
             with self.assertRaises(ValueError):
                 validate_directory(root, 'c' * 40, '0.2.5')

@@ -14,11 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DistributionTests(unittest.TestCase):
-    def test_wrapper_names_every_native_package_without_an_organization_scope(self):
+    def test_wrapper_and_all_native_packages_use_the_ekgf_scope(self):
         manifest = json.loads((ROOT / 'npm/package.json').read_text())
         platforms = json.loads((ROOT / 'packaging/platforms.json').read_text())
+        self.assertEqual(manifest['name'], '@ekgf/grapharch')
         self.assertEqual(set(manifest['optionalDependencies']),
-                         {'grapharch-' + item['key'] for item in platforms})
+                         {'@ekgf/grapharch-' + item['key'] for item in platforms})
         self.assertTrue(all(value == manifest['version']
                             for value in manifest['optionalDependencies'].values()))
 
@@ -30,10 +31,24 @@ class DistributionTests(unittest.TestCase):
             if 'libc' in item:
                 metadata['libc'] = [item['libc']]
             verify_npm_metadata(metadata, item)
-            for key, value in [('name', 'grapharch-wrong-target'), ('version', '99.0.0'),
+            for key, value in [('name', 'grapharch-' + item['key']), ('version', '99.0.0'),
                                ('os', ['wrong-os']), ('cpu', ['wrong-cpu'])]:
                 with self.assertRaises(ValueError):
                     verify_npm_metadata(dict(metadata, **{key: value}), item)
+
+    def test_scoped_main_pack_uses_npm_filename_and_preserves_binary_command(self):
+        import tarfile
+        from distribute import build_main, pack_npm, version
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            build_main(output)
+            pack_npm(output, None)
+            manifest = json.loads((output / 'grapharch-npm.json').read_text())
+            self.assertEqual(manifest['archive'], f'ekgf-grapharch-{version()}.tgz')
+            with tarfile.open(output / manifest['archive']) as packed:
+                metadata = json.load(packed.extractfile('package/package.json'))
+            self.assertEqual(metadata['name'], '@ekgf/grapharch')
+            self.assertEqual(metadata['bin'], {'grapharch': 'bin/grapharch.cjs'})
 
     def test_failed_release_jobs_do_not_publish_immutable_partial_compiler_caches(self):
         workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
@@ -106,7 +121,7 @@ class DistributionTests(unittest.TestCase):
             package = json.loads(
                 (work / "dist/npm/cli-darwin-arm64/package.json").read_text()
             )
-            self.assertEqual(package["name"], "grapharch-darwin-arm64")
+            self.assertEqual(package["name"], "@ekgf/grapharch-darwin-arm64")
             self.assertEqual(package["cpu"], ["arm64"])
             self.assertEqual(
                 (work / "dist/npm/cli-darwin-arm64/bin/grapharch").read_bytes(),

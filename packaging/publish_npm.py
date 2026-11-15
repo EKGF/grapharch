@@ -32,7 +32,7 @@ for item in PLATFORMS:
         check=True,
     )
 main = json.loads((args.output / "grapharch-npm.json").read_text())
-if not npm_published('grapharch', main['version'], args.output / main['archive']):
+if not npm_published('@ekgf/grapharch', main['version'], args.output / main['archive']):
     subprocess.run(
         npm_command()
         + [

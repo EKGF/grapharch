@@ -48,7 +48,7 @@ or missing release files fail installation.
 ### Other installation channels
 
 These commands require a published package version; see [PyPI](https://pypi.org/project/grapharch/)
-and [npm](https://www.npmjs.com/package/grapharch) for available versions.
+and [npm](https://www.npmjs.com/package/@ekgf/grapharch) for available versions.
 Homebrew requires its separate tap publication. Each channel installs the same CLI:
 
 | Channel | Install or run |
@@ -56,7 +56,7 @@ Homebrew requires its separate tap publication. Each channel installs the same C
 | Homebrew | `brew install legra-ai/tap/grapharch` |
 | Python with uv | `uv tool install grapharch`, or `uvx grapharch --help` for an isolated run |
 | Python with pip | `python -m pip install grapharch` |
-| npm project dependency | `npm install --save-dev grapharch`, then `npx grapharch --help` |
+| npm project dependency | `npm install --save-dev @ekgf/grapharch`, then `npx grapharch --help` |
 
 For a repeatable CI build, pin an exact released version instead of tracking the
 latest package. A missing binary or unsupported platform is an installation
