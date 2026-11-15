@@ -1,6 +1,6 @@
 //! Shape-scoped constraints retained beside, never merged into, OWL assertions.
 use {
-    super::{Diagram, Node, read, shorthand::Shorthand},
+    super::{Diagram, Node, NodeKind, read, shorthand::Shorthand},
     crate::publication::{
         dataset::Dataset,
         document::shacl_class_view,
@@ -75,7 +75,8 @@ pub(super) async fn collect(
     let classes: BTreeMap<_, _> = diagram
         .nodes()
         .filter(|n| {
-            n.kind == "Class" && presentation.visible.contains(n.id.as_str())
+            n.kind == NodeKind::Class &&
+                presentation.visible.contains(n.id.as_str())
         })
         .map(|n| (n.id.clone(), n.clone()))
         .collect(); // bounded: thirty-seven retained nodes.

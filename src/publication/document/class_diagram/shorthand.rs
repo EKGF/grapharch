@@ -1,32 +1,24 @@
 //! Conservative presentation shorthand; original assertions remain unchanged.
 use {
-    super::{Diagram, Node},
+    super::{
+        Diagram,
+        property_declaration::{
+            Association,
+            Attribute,
+            Declaration,
+            Drawing,
+            RangeOnly,
+        },
+    },
     std::collections::BTreeSet,
 };
-const DOMAIN: &str = "http://www.w3.org/2000/01/rdf-schema#domain";
 pub(super) const GENERIC_RESOURCE: &str =
     "http://www.w3.org/2000/01/rdf-schema#Resource";
-const RANGE: &str = "http://www.w3.org/2000/01/rdf-schema#range";
 
-pub(super) struct Property<'a> {
-    pub node:   &'a Node,
-    pub domain: &'a Node,
-    pub range:  Option<&'a Node>,
-}
-impl Property<'_> {
-    pub fn attribute(&self) -> bool {
-        self.node.kind == "Datatype property" ||
-            self.range.is_none() ||
-            self.range.is_some_and(|range| range.id == GENERIC_RESOURCE)
-    }
-}
-pub(super) struct RangeOnly<'a> {
-    pub property: &'a Node,
-    pub range:    &'a Node,
-}
 pub(super) struct Shorthand<'a> {
     pub range_only:       Vec<RangeOnly<'a>>,
-    pub properties:       Vec<Property<'a>>,
+    pub attributes:       Vec<Attribute<'a>>,
+    pub associations:     Vec<Association<'a>>,
     pub existentials:     Vec<super::existential::Existential<'a>>,
     pub qualified_counts: Vec<super::qualified_count::QualifiedCount<'a>>,
     pub existences:       Vec<super::nested_existence::Existence<'a>>,
@@ -36,98 +28,52 @@ pub(super) struct Shorthand<'a> {
 impl<'a> Shorthand<'a> {
     pub fn new(diagram: &'a Diagram) -> Self {
         let mut range_only = Vec::new(); // bounded: eighteen retained facts.
-        let mut properties = Vec::new(); // bounded: eighteen retained edges.
+        let mut attributes = Vec::new(); // bounded: eighteen retained facts.
+        let mut associations = Vec::new(); // bounded: 81 pairs of eighteen facts.
         let mut consumed = BTreeSet::new(); // bounded: eighteen edge indices.
         let mut visited = BTreeSet::new(); // bounded: thirty-seven nodes.
         for node in diagram.nodes() {
-            if !visited.insert(node.id.as_str()) ||
-                !matches!(
-                    node.kind.as_str(),
-                    "Object property" |
-                        "Datatype property" |
-                        "Annotation property" |
-                        "RDF property" |
-                        "Resource"
-                )
-            {
+            if !visited.insert(node.id.as_str()) {
                 continue;
             }
-            let incident: Vec<_> = diagram
-                .edges
-                .iter()
-                .enumerate()
-                .filter(|(_, e)| e.from.id == node.id || e.to.id == node.id)
-                .collect(); // bounded: eighteen edges.
-            // A property referenced by an expression/other relationship stays
-            // explicit, so no disappearing node changes that relationship.
-            if incident.iter().any(|(_, e)| {
-                e.from.id != node.id ||
-                    !matches!(e.predicate.as_deref(), Some(DOMAIN | RANGE))
-            }) {
+            let Some(declaration) = Declaration::read(diagram, node) else {
                 continue;
-            }
-            let domains: Vec<_> = incident
-                .iter()
-                .filter(|(_, e)| e.predicate.as_deref() == Some(DOMAIN))
-                .map(|(_, e)| &e.to)
-                .collect(); // bounded: eighteen edges.
-            let ranges: Vec<_> = incident
-                .iter()
-                .filter(|(_, e)| e.predicate.as_deref() == Some(RANGE))
-                .map(|(_, e)| &e.to)
-                .collect(); // bounded: eighteen edges.
-            if domains.is_empty() &&
-                ranges.len() == 1 &&
-                matches!(
-                    node.kind.as_str(),
-                    "Object property" | "RDF property" | "Resource"
-                ) &&
-                matches!(ranges[0].kind.as_str(), "Class" | "Resource") &&
-                ranges[0].id != GENERIC_RESOURCE
-            {
-                consumed.extend(incident.iter().map(|(i, _)| *i));
-                range_only
-                    .push(RangeOnly { property: node, range: ranges[0] });
+            };
+            let Some(drawing) = declaration.drawing() else {
                 continue;
+            };
+            consumed.extend(declaration.incident.iter().copied());
+            consumed.extend(declaration.union_members(diagram));
+            match drawing {
+                Drawing::Placeholder => {
+                    range_only.extend(
+                        declaration
+                            .ranges
+                            .iter()
+                            .map(|range| RangeOnly { property: node, range }),
+                    )
+                },
+                Drawing::Attributes => {
+                    attributes.extend(declaration.domains.iter().map(
+                        |domain| {
+                            Attribute {
+                                node,
+                                domain,
+                                types: declaration.ranges.clone(),
+                            }
+                        },
+                    ));
+                },
+                Drawing::Associations => {
+                    for domain in &declaration.domains {
+                        associations.extend(
+                            declaration.ranges.iter().map(|range| {
+                                Association { node, domain, range }
+                            }),
+                        );
+                    }
+                },
             }
-            if domains.len() != 1 ||
-                !matches!(domains[0].kind.as_str(), "Class" | "OWL union") ||
-                domains[0].id == GENERIC_RESOURCE ||
-                ranges.len() > 1
-            {
-                continue;
-            }
-            let range = ranges.first().copied();
-            if range.is_some_and(|n| {
-                !matches!(n.kind.as_str(), "Class" | "Resource")
-            }) {
-                continue;
-            }
-            // Union boxes represent association sources, not UML classes
-            // with fields. Keep attribute declarations explicit.
-            if domains[0].kind == "OWL union" &&
-                (node.kind == "Datatype property" ||
-                    range.is_none() ||
-                    range.is_some_and(|r| r.id == GENERIC_RESOURCE))
-            {
-                continue;
-            }
-            consumed.extend(incident.iter().map(|(i, _)| *i));
-            if domains[0].kind == "OWL union" {
-                consumed.extend(
-                    diagram
-                        .edges
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, edge)| {
-                            edge.from.id == domains[0].id &&
-                                edge.predicate.as_deref() ==
-                                    Some(super::union_domain::UNION)
-                        })
-                        .map(|(index, _)| index),
-                );
-            }
-            properties.push(Property { node, domain: domains[0], range });
         }
         let existences = super::nested_existence::collect(diagram);
         for existence in &existences {
@@ -159,13 +105,12 @@ impl<'a> Shorthand<'a> {
                 visible.extend([edge.from.id.as_str(), edge.to.id.as_str()]);
             }
         }
-        for property in &properties {
-            visible.insert(property.domain.id.as_str());
-            if !property.attribute() &&
-                let Some(range) = property.range
-            {
-                visible.insert(range.id.as_str());
-            }
+        visible.extend(attributes.iter().map(|a| a.domain.id.as_str()));
+        for association in &associations {
+            visible.extend([
+                association.domain.id.as_str(),
+                association.range.id.as_str(),
+            ]);
         }
         for existential in &existentials {
             visible.extend([
@@ -186,7 +131,8 @@ impl<'a> Shorthand<'a> {
         visible.remove(GENERIC_RESOURCE);
         Self {
             range_only,
-            properties,
+            attributes,
+            associations,
             existentials,
             qualified_counts,
             existences,

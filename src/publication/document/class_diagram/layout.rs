@@ -1,5 +1,5 @@
 //! Semantic placement hints: inheritance is vertical, associations lateral.
-use super::{Diagram, Edge};
+use super::{Diagram, Edge, NodeKind};
 
 const SUBCLASS: &str = "http://www.w3.org/2000/01/rdf-schema#subClassOf";
 
@@ -76,6 +76,9 @@ impl<'a> Layout<'a> {
 
 pub(super) fn is_generalization(edge: &Edge) -> bool {
     edge.predicate.as_deref() == Some(SUBCLASS) &&
-        matches!(edge.from.kind.as_str(), "Class" | "Resource") &&
-        matches!(edge.to.kind.as_str(), "Class" | "Resource")
+        matches!(
+            edge.from.kind,
+            NodeKind::Class | NodeKind::Resource
+        ) &&
+        matches!(edge.to.kind, NodeKind::Class | NodeKind::Resource)
 }
