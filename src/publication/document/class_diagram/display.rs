@@ -1,9 +1,13 @@
 //! Apply source labels only after the bounded diagram neighborhood is selected.
+//! Every box, edge and field follows one rule: a resource sharing the focus
+//! term's ontology shows its label, one from another ontology shows
+//! "label (prefix:Local)", and an unlabelled one shows its prefixed name.
 use {
     super::{
         Diagram,
         NodeKind,
-        labels::{Label, disambiguate},
+        labels::{Label, LabelRole, disambiguate},
+        ontology::OntologyMembership,
     },
     crate::publication::view::RevisionView,
     anyhow::{Result, ensure},
@@ -26,19 +30,35 @@ pub(super) async fn apply(
         ) {
             continue;
         }
-        unique
-            .entry(node.id.clone())
-            .or_insert_with(|| node.label.clone());
+        unique.entry(node.id.clone()).or_insert_with(|| {
+            let role = if node.kind.is_property() {
+                LabelRole::Property
+            } else {
+                LabelRole::Box
+            };
+            (node.label.clone(), role)
+        });
     }
     ensure!(
         unique.len() <= 357,
         "diagram label resource budget exceeded"
     );
     let mut labels = Vec::new(); // bounded: 357 admitted distinct resources.
-    for (id, qname) in unique {
-        labels.push(
-            Label::read(view, &NamedNode::new(id)?, qname, language).await?,
-        );
+    let focus = OntologyMembership::read(
+        view,
+        &NamedNode::new(diagram.focus.id.clone())?,
+    )
+    .await?;
+    for (id, (qname, role)) in unique {
+        let id = NamedNode::new(id)?;
+        let mut label = Label::read(view, &id, qname, role, language).await?;
+        if !OntologyMembership::read(view, &id)
+            .await?
+            .shares_ontology_with(&focus)
+        {
+            label.qualify();
+        }
+        labels.push(label);
     }
     disambiguate(&mut labels)?;
     let labels: BTreeMap<_, _> = labels

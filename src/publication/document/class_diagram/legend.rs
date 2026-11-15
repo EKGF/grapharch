@@ -40,4 +40,7 @@ pub(crate) const LEGEND: &str =
      published source graph. Some diagrams show at most five complete OWL \
      relationship groups within an eighteen-fact budget, selected in \
      deterministic IRI order; omitted groups remain in the published source \
-     graph. These views are not exhaustive.";
+     graph. These views are not exhaustive. Names from the same ontology as \
+     the documented class are shown by label; names from another ontology add \
+     their prefixed name in parentheses, and unlabelled names show their \
+     prefixed name.";

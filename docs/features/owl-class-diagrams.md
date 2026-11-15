@@ -27,9 +27,22 @@ A shared endnote explains the notation and bounded scope.
 Class names, attributes and association labels use authored `rdfs:label` values.
 Selection prefers the requested language (English by default), then its regional
 variants, then language-neutral text; a stable lexical choice resolves multiple
-labels at the same priority. A QName is used when no label is selected. Only
-colliding names in the bounded diagram gain a QName qualifier; original IRIs
-remain in links, HTML tooltips and the retained graph.
+labels at the same priority. One rule applies to every class box, association
+label and attribute, including the documented class itself:
+
+- A resource from the same ontology as the documented class shows its label
+  only; the caption and term table already give the documented class's QName.
+- A resource from another ontology shows its label followed by its QName, as in
+  `Authority (ekg-artgov:Authority)`, so the reader can see where it comes from.
+- A resource without a selected label shows its QName alone.
+
+Two resources belong to the same ontology when both declare `rdfs:isDefinedBy`
+and share a defining ontology, or, when either declares none, when their IRIs
+share a namespace. A class and a property with the same label are not
+ambiguous, because one is a box and the other an edge or attribute. Only
+different boxes, or different properties, with colliding names gain a further
+QName qualifier; original IRIs remain in links, HTML tooltips and the retained
+graph.
 
 ## What the arrows mean
 
