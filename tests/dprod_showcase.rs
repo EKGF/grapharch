@@ -53,7 +53,7 @@ async fn dprod_native_rdf_and_markdown_publish_from_a_restored_graph()
     );
     let profiles: std::collections::HashSet<_> = publications
         .iter()
-        .map(|publication| publication.manifest.profile.as_str())
+        .map(|publication| publication.manifest.profile.as_deref())
         .collect();
     assert_eq!(
         profiles.len(),

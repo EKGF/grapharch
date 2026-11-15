@@ -106,11 +106,9 @@ impl Use<'_> {
                 )?]
             },
             CollectorKind::RdfFile => {
-                // A declared download needs the source's exact text.
-                let retain = self
-                    .view
-                    .is_object_of("downloadSource", self.processor)
-                    .await?;
+                // An RDF renderer target publishes the source's exact text.
+                let retain =
+                    self.view.is_object_of("rdfSource", self.processor).await?;
                 vec![blob.rdf_collector(processor, retain)?]
             },
             CollectorKind::CodeFile => {

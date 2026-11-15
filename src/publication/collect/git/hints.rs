@@ -238,8 +238,12 @@ impl PublicationHints {
         };
         for target in &selected {
             // A website target publishes the project's declared pages with
-            // its own profile; the family build binds and plans it.
-            if self.renderer(target)? == crate::publication::Renderer::Website {
+            // its own profile, and an RDF target its collected sources; the
+            // family build binds and plans them.
+            let renderer = self.renderer(target)?;
+            if renderer == crate::publication::Renderer::Website ||
+                !renderer.arranges_scope()
+            {
                 continue;
             }
             let used = self.profile(target)?;

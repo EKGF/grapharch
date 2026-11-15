@@ -25,6 +25,7 @@ fn ontology() -> Result<Store> {
         include_bytes!("../docs/other/ontology/showcase-runners.ttl")
             .as_slice(),
         include_bytes!("../docs/other/ontology/themes.ttl").as_slice(),
+        include_bytes!("../docs/other/ontology/rdf-formats.ttl").as_slice(),
     ] {
         store.load_from_reader(RdfFormat::Turtle, catalogue)?;
     }
@@ -195,8 +196,7 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                  owl:ObjectProperty owl:DatatypeProperty \
                  owl:AnnotationProperty ga:Renderer ga:Collector \
                  ga:Documentor ga:ShowcaseRunner ga:PdfStandard ga:Theme \
-                 ga:DownloadFormat ga:CoverElement ga:DateFormat \
-                 ga:DocumentType }}"
+                 ga:RdfFormat ga:CoverElement ga:DateFormat ga:DocumentType }}"
             ),
         )? {
             missing.push(name);
@@ -298,5 +298,64 @@ fn heading_anchor_presentation_reuses_one_canonical_term_definition()
             "headingAnchor must have one canonical English {predicate}"
         );
     }
+    Ok(())
+}
+
+#[test]
+fn rdf_formats_declare_media_types_and_extensions_in_the_catalogue()
+-> Result<()> {
+    let store = ontology()?;
+    for (format, media_type, extension) in [
+        ("TurtleFormat", "text/turtle", "ttl"),
+        ("NTriplesFormat", "application/n-triples", "nt"),
+        ("NQuadsFormat", "application/n-quads", "nq"),
+        ("TriGFormat", "application/trig", "trig"),
+        ("JsonLdFormat", "application/ld+json", "jsonld"),
+        ("RdfXmlFormat", "application/rdf+xml", "rdf"),
+    ] {
+        assert!(
+            ask(
+                &store,
+                &format!(
+                    "ga:{format} a ga:RdfFormat ; ga:mediaType \
+                     \"{media_type}\" ; ga:fileExtension \"{extension}\""
+                )
+            )?,
+            "{format}"
+        );
+    }
+    assert!(ask(
+        &store,
+        "ga:SourceTextFormat a ga:ExactSourceFormat"
+    )?);
+    assert!(!ask(
+        &store,
+        "ga:SourceTextFormat ga:mediaType ?type"
+    )?);
+    assert!(ask(
+        &store,
+        "ga:RdfRenderer a ga:PublicationRenderer"
+    )?);
+    store.load_from_reader(
+        RdfFormat::Turtle,
+        include_bytes!("../docs/other/ontology/publication.shacl.ttl")
+            .as_slice(),
+    )?;
+    assert!(ask(
+        &store,
+        "ga:TargetShape <http://www.w3.org/ns/shacl#xone> ?choices . ?choices \
+         <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \
+         ga:RdfTargetShape"
+    )?);
+    assert!(ask(
+        &store,
+        "ga:RdfTargetShape <http://www.w3.org/ns/shacl#property> ?scope . ?scope \
+         <http://www.w3.org/ns/shacl#path> ga:scope ; \
+         <http://www.w3.org/ns/shacl#maxCount> 0"
+    )?);
+    assert!(!ask(
+        &store,
+        "?shape <http://www.w3.org/ns/shacl#path> ga:download"
+    )?);
     Ok(())
 }

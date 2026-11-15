@@ -145,8 +145,8 @@ impl PinnedGitBlob {
         Ok(Arc::new(image))
     }
 
-    /// Collect the RDF blob; `retain` also keeps its exact text for
-    /// declared downloads.
+    /// Collect the RDF blob; `retain` also keeps its exact text for an RDF
+    /// renderer target.
     pub fn rdf_collector(
         &self,
         processor: &str,

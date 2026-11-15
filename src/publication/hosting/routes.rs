@@ -29,19 +29,50 @@ impl Output {
 }
 #[derive(Serialize)]
 #[serde(untagged)]
-enum Route {
+pub(super) enum Route {
     Source(Source),
     Handler { handle: &'static str },
 }
 #[derive(Default, Serialize)]
-struct Source {
-    src:     String,
+pub(super) struct Source {
+    pub src:       String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    dest:    Option<String>,
+    pub dest:      Option<String>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    headers: BTreeMap<String, String>,
+    pub headers:   BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    status:  Option<u16>,
+    pub status:    Option<u16>,
+    /// Request conditions; all must hold for the route to match.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub has:       Vec<Has>,
+    /// Apply the headers and keep matching later routes.
+    #[serde(rename = "continue", skip_serializing_if = "std::ops::Not::not")]
+    pub continue_: bool,
+}
+
+/// A request condition of the Vercel Build Output API.
+#[derive(Serialize)]
+pub(super) struct Has {
+    #[serde(rename = "type")]
+    kind:  &'static str,
+    key:   &'static str,
+    value: String,
+}
+
+impl Has {
+    /// The Accept header lists this media type, with or without parameters.
+    pub(super) fn accept(
+        media_type: &crate::publication::rdf_target::MediaType,
+    ) -> Self {
+        Self {
+            kind:  "header",
+            key:   "accept",
+            value: format!(
+                "(?:^|.*[,\\s]){}(?:[;,\\s].*)?$",
+                regex::escape(media_type.as_str())
+            ),
+        }
+    }
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -62,7 +93,9 @@ fn url(mount: &str, path: &str) -> String {
         path
     )
 }
-fn exact(path: &str) -> String { format!("^{}$", regex::escape(path)) }
+pub(super) fn exact(path: &str) -> String {
+    format!("^{}$", regex::escape(path))
+}
 fn rewrite(path: String, destination: String) -> Route {
     Route::Source(Source {
         src: exact(&path),
@@ -84,10 +117,12 @@ pub(super) async fn configuration(
     parent: &Path,
     mount: &str,
     files: &BTreeSet<String>,
+    rdf: &super::rdf::RdfRoutes,
 ) -> Result<Output> {
     // bounded: 4096 copied files and at most 1000 explicitly observed versions.
-    let mut routes = Vec::new();
-    let mut routed = Vec::new(); // bounded: 64 file aliases and 1000 versions.
+    let mut routes = rdf.routes(|path| url(mount, path));
+    // bounded: 64 file aliases, 1000 versions and the negotiated paths.
+    let mut routed = rdf.routed();
     for alias in &settings.file_aliases {
         let trailing = alias.path.ends_with('/');
         let path = super::relative(alias.path.trim_end_matches('/'))?;

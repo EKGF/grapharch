@@ -21,6 +21,8 @@ pub enum Renderer {
     Bookshelf,
     /// Typst source and PDF.
     Typst,
+    /// One file per declared RDF format, from collected RDF sources.
+    Rdf,
 }
 
 impl Renderer {
@@ -33,6 +35,7 @@ impl Renderer {
             "https://ekgf.org/ontology/grapharch#SpecificationPagesRenderer" => Ok(Self::SpecificationPages),
             "https://ekgf.org/ontology/grapharch#BookshelfRenderer" => Ok(Self::Bookshelf),
             "https://ekgf.org/ontology/grapharch#TypstRenderer" => Ok(Self::Typst),
+            "https://ekgf.org/ontology/grapharch#RdfRenderer" => Ok(Self::Rdf),
             "https://ekgf.org/ontology/grapharch#OwlClassDiagramRenderer" => bail!(
                 "fragment renderer {value} cannot be selected for a publication target"
             ),
@@ -49,6 +52,7 @@ impl Renderer {
             Self::SpecificationPages => "SpecificationPagesRenderer",
             Self::Bookshelf => "BookshelfRenderer",
             Self::Typst => "TypstRenderer",
+            Self::Rdf => "RdfRenderer",
         })
     }
 
@@ -75,20 +79,31 @@ impl Renderer {
             Self::SpecificationPages => "specification-pages",
             Self::Bookshelf => "bookshelf",
             Self::Typst => "typst",
+            Self::Rdf => "rdf",
         }
+    }
+
+    /// Whether this renderer arranges a scope through a profile. An RDF
+    /// target names its collected sources instead.
+    pub(crate) fn arranges_scope(self) -> bool { self != Self::Rdf }
+
+    /// Whether each target owns only its named files, so that several
+    /// such targets may share one destination directory.
+    pub(crate) fn owns_files(self) -> bool {
+        matches!(self, Self::Typst | Self::Rdf)
     }
 }
 
-/// A target binds shared content to a scope, arrangement, and artifact
-/// directory.
+/// A target binds shared content to an output engine and artifact directory;
+/// every renderer but the RDF renderer arranges a scope through a profile.
 #[derive(Debug, Clone)]
 pub struct Target {
     /// Stable target identity.
     pub id:          NamedNode,
-    /// Reusable subject selection.
-    pub scope:       NamedNode,
-    /// Arrangement and presentation definition.
-    pub profile:     NamedNode,
+    /// Reusable subject selection of an arranging renderer.
+    pub scope:       Option<NamedNode>,
+    /// Arrangement and presentation definition of an arranging renderer.
+    pub profile:     Option<NamedNode>,
     /// Output engine.
     pub renderer:    Renderer,
     /// Target-owned output directory.
@@ -98,9 +113,21 @@ pub struct Target {
 impl Target {
     /// Read a validated target definition without loading other targets.
     pub fn read(store: &Store, id: NamedNode) -> Result<Self> {
-        let scope = node(store, &id, "scope")?;
-        let profile = node(store, &id, "profile")?;
         let renderer = Renderer::from_node(&node(store, &id, "renderer")?)?;
+        let (scope, profile) = if renderer.arranges_scope() {
+            (
+                Some(node(store, &id, "scope")?),
+                Some(node(store, &id, "profile")?),
+            )
+        } else {
+            ensure!(
+                objects(store, &id, "scope")?.next().is_none() &&
+                    objects(store, &id, "profile")?.next().is_none(),
+                "RDF target {id} publishes its ga:rdfSource uses and declares \
+                 no ga:scope or ga:profile"
+            );
+            (None, None)
+        };
         let destination = PathBuf::from(text(store, &id, "destination")?);
         ensure!(
             !destination.as_os_str().is_empty(),

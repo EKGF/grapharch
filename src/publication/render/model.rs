@@ -74,10 +74,12 @@ pub struct PublicationManifest {
     pub plan:           String,
     /// Pinned view of the completed plan.
     pub plan_snapshot:  String,
-    /// Scope definition.
-    pub scope:          String,
-    /// Publication profile.
-    pub profile:        String,
+    /// Scope definition of an arranging renderer.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope:          Option<String>,
+    /// Publication profile of an arranging renderer.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile:        Option<String>,
     /// Output engine.
     pub renderer:       String,
     /// Successful job identity.
@@ -97,6 +99,9 @@ pub struct PublicationManifest {
     /// The named PDF edition among `files`, if any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pdf:            Option<String>,
+    /// Media types and negotiation of an RDF target's `files`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) rdf:     Option<super::rdf_file::RdfPublication>,
 }
 
 impl PublicationManifest {
@@ -334,8 +339,8 @@ impl Plan {
             input_revision: self.revision.as_str().to_owned(),
             plan: self.handle.id.as_str().to_owned(),
             plan_snapshot: self.handle.snapshot.as_str().to_owned(),
-            scope: self.scope.as_str().to_owned(),
-            profile: self.profile.as_str().to_owned(),
+            scope: Some(self.scope.as_str().to_owned()),
+            profile: Some(self.profile.as_str().to_owned()),
             renderer: self.renderer.as_str().to_owned(),
             job: job.into(),
             files,
@@ -343,6 +348,7 @@ impl Plan {
             diagnostics: Vec::new(),
             failure_mode: Default::default(),
             pdf: self.pdf_file.clone(),
+            rdf: None,
         }
     }
 }

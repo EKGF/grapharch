@@ -19,13 +19,23 @@ use {
 /// Registered targets are bounded by the publication definitions.
 const TARGETS: usize = 64;
 
+/// What a link to a target IRI reaches.
+#[derive(Clone, Debug)]
+enum Entry {
+    /// The entry file's output-root path.
+    File(String),
+    /// A PDF target whose file name awaits an edition build input.
+    AwaitingEdition,
+    /// An RDF target, which publishes several files and no entry.
+    None,
+}
+
 /// Entry files of the project's targets and this target's composition.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct TargetLinks {
     own:        String,
-    /// Entry file per target; `None` for a PDF target whose file name
-    /// awaits an edition build input.
-    files:      BTreeMap<String, Option<String>>,
+    /// Entry file per target.
+    files:      BTreeMap<String, Entry>,
     unrelated:  BTreeSet<String>,
     nested:     Vec<String>,
     containers: Vec<String>,
@@ -52,25 +62,26 @@ impl TargetLinks {
                 bail!("{project} ga:target must be an IRI")
             };
             let destination = view.text(registered, "destination").await?;
-            // A PDF target's entry is the named edition it owns.
-            let entry = if view.renderer(registered).await? == Renderer::Typst {
-                match edition {
-                    Some(_) => {
-                        Some(
-                            PdfName::read(view, registered, edition)
-                                .await?
-                                .file_name(),
-                        )
-                    },
-                    None => None,
-                }
-            } else {
-                Some("index.html".to_owned())
+            // A PDF target's entry is the named edition it owns; an RDF
+            // target has one file per format and no entry document.
+            let entry = match view.renderer(registered).await? {
+                Renderer::Typst => {
+                    match edition {
+                        Some(_) => {
+                            Entry::File(format!(
+                                "{destination}/{}",
+                                PdfName::read(view, registered, edition)
+                                    .await?
+                                    .file_name()
+                            ))
+                        },
+                        None => Entry::AwaitingEdition,
+                    }
+                },
+                Renderer::Rdf => Entry::None,
+                _ => Entry::File(format!("{destination}/index.html")),
             };
-            files.insert(
-                registered.as_str().to_owned(),
-                entry.map(|entry| format!("{destination}/{entry}")),
-            );
+            files.insert(registered.as_str().to_owned(), entry);
         }
         let pattern = view.pattern(&format!("?target a {}", term("Target")), 0);
         let mut rows = dataset
@@ -161,12 +172,21 @@ impl TargetLinks {
             );
             return Ok(None);
         };
-        let file = file.as_deref().ok_or_else(|| {
-            anyhow::anyhow!(
-                "link to PDF target {iri} requires an explicit edition build \
-                 input to name its file"
-            )
-        })?;
+        let file = match file {
+            Entry::File(file) => file,
+            Entry::AwaitingEdition => {
+                bail!(
+                    "link to PDF target {iri} requires an explicit edition \
+                     build input to name its file"
+                )
+            },
+            Entry::None => {
+                bail!(
+                    "link to RDF target {iri}, which has no entry document; \
+                     link one of its files by its relative path"
+                )
+            },
+        };
         let from = format!("{}/{page}", self.own);
         Ok(Some(relative(&from, file)))
     }

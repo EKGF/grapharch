@@ -1,5 +1,5 @@
 use {
-    super::{PublishOutcome, model::Plan},
+    super::{PublishOutcome, job_subject::JobSubject},
     crate::publication::{
         RDF_TYPE,
         diagnostics::{Diagnostic, FailureMode, Severity},
@@ -13,7 +13,7 @@ use {
 const GRAPH: &str = "urn:grapharch:publications";
 
 pub(super) async fn begin(
-    plan: &Plan,
+    plan: &JobSubject,
     directory: &Path,
     job: &str,
     mode: FailureMode,
@@ -78,8 +78,36 @@ pub(super) async fn begin(
         .await
 }
 
-pub(super) async fn finish(
-    plan: &Plan,
+/// Record a job's outcome and return it, keeping the render error when
+/// recording fails too.
+pub(super) async fn conclude(
+    plan: &JobSubject,
+    job: &str,
+    result: Result<PublishOutcome>,
+) -> Result<PublishOutcome> {
+    if let Err(error) = finish(plan, job, &result).await {
+        let context = match &result {
+            Ok(PublishOutcome::Published(_)) => {
+                "artifacts were promoted, but publication recording failed"
+                    .to_owned()
+            },
+            Ok(PublishOutcome::Superseded) => {
+                "superseded publication recording failed".to_owned()
+            },
+            Err(render_error) => {
+                format!(
+                    "render failed ({render_error}); publication recording \
+                     also failed"
+                )
+            },
+        };
+        return Err(error.context(context));
+    }
+    result
+}
+
+async fn finish(
+    plan: &JobSubject,
     job: &str,
     result: &Result<PublishOutcome>,
 ) -> Result<()> {

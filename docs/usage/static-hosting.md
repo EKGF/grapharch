@@ -67,6 +67,23 @@ adds the routes: directory indexes, `file_aliases` with their content types,
 redirects for remote inventory versions, and the `404.html` fallback. GraphArch
 only writes these files; deploying them is a separate step.
 
+## RDF files and content negotiation
+
+An input tree that is a build output root carries the manifests of its
+[RDF renderer](../renderers/rdf.md) targets. Each records the media type of
+every file, as the knowledge graph declares it, and any declared negotiated
+path. Packaging reads them from every input tree; nothing is configured here.
+
+For `platform: vercel`, `config.json` serves every RDF file with its
+`Content-Type` and routes each negotiated path by the request's `Accept` header:
+to the RDF file of a listed media type, else to the declared HTML entry
+document. Negotiated responses carry `Vary: Accept`.
+
+For `platform: github-pages`, nothing extra is written: Pages serves `.ttl`,
+`.nt`, `.nq`, `.trig`, `.jsonld` and `.rdf` files by their extensions. Pages
+cannot route by request header, so a declared negotiated path fails packaging
+with an error naming it.
+
 Version 1 configurations, which had no `platform`, are rejected. Add
 `platform` and set `version: 2`.
 

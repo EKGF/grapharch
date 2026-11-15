@@ -46,20 +46,48 @@ ga:ScopeShape a sh:NodeShape ; sh:targetClass ga:Scope ; sh:nodeKind sh:IRI ;
 ga:TargetShape a sh:NodeShape ; sh:targetClass ga:Target ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:productLogo ; sh:nodeKind sh:IRI ; sh:class ga:BinaryAsset ; sh:maxCount 1 ; sh:node ga:ProductLogoShape ] ;
     sh:property [ sh:path ga:notice ; sh:nodeKind sh:IRI ; sh:node ga:NoticeShape ; sh:maxCount 32 ] ;
-    sh:property [ sh:path ga:download ; sh:nodeKind sh:IRI ; sh:class ga:Download ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:footerText ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:scope ; sh:nodeKind sh:IRI ; sh:class ga:Scope ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:profile ; sh:nodeKind sh:IRI ; sh:class ga:Profile ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:renderer ; sh:nodeKind sh:IRI ; sh:class ga:PublicationRenderer ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:destination ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:keyword ; sh:datatype xsd:string ; sh:minLength 1 ; sh:pattern "^[^\\s,;](?:[^,;]*[^\\s,;])?$" ; sh:maxCount 64 ] .
+    sh:property [ sh:path ga:keyword ; sh:datatype xsd:string ; sh:minLength 1 ; sh:pattern "^[^\\s,;](?:[^,;]*[^\\s,;])?$" ; sh:maxCount 64 ] ;
+    # An RDF renderer target publishes collected RDF sources; every other
+    # renderer arranges a scope through a profile.
+    sh:xone ( ga:RdfTargetShape ga:ArrangedTargetShape ) .
 
-ga:DownloadShape a sh:NodeShape ; sh:targetClass ga:Download ; sh:nodeKind sh:IRI ;
-    sh:property [ sh:path ga:fileName ; sh:datatype xsd:string ; sh:pattern "^[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:downloadFormat ; sh:nodeKind sh:IRI ; sh:class ga:DownloadFormat ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ga:downloadSource ; sh:nodeKind sh:IRI ; sh:class ga:CollectorUse ; sh:minCount 1 ; sh:maxCount 32 ] ;
-    sh:or ( [ sh:not [ sh:property [ sh:path ga:downloadFormat ; sh:hasValue ga:SourceFileFormat ] ] ]
-            [ sh:property [ sh:path ga:downloadSource ; sh:maxCount 1 ] ] ) .
+ga:ArrangedTargetShape a sh:NodeShape ;
+    sh:not [ sh:property [ sh:path ga:renderer ; sh:hasValue ga:RdfRenderer ] ] ;
+    sh:property [ sh:path ga:scope ; sh:minCount 1 ] ;
+    sh:property [ sh:path ga:profile ; sh:minCount 1 ] ;
+    sh:property [ sh:path ga:rdfSource ; sh:maxCount 0 ] ;
+    sh:property [ sh:path ga:rdfFormat ; sh:maxCount 0 ] ;
+    sh:property [ sh:path ga:negotiatedPath ; sh:maxCount 0 ] ;
+    sh:property [ sh:path ga:negotiatedHtml ; sh:maxCount 0 ] .
+
+ga:RdfTargetShape a sh:NodeShape ;
+    sh:property [ sh:path ga:renderer ; sh:hasValue ga:RdfRenderer ] ;
+    sh:property [ sh:path ga:scope ; sh:maxCount 0 ] ;
+    sh:property [ sh:path ga:profile ; sh:maxCount 0 ] ;
+    sh:property [ sh:path ga:slug ; sh:datatype xsd:string ; sh:pattern "^[a-z0-9]+(?:-[a-z0-9]+)*$" ; sh:maxLength 64 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:rdfSource ; sh:nodeKind sh:IRI ; sh:class ga:CollectorUse ; sh:minCount 1 ; sh:maxCount 32 ] ;
+    sh:property [ sh:path ga:rdfFormat ; sh:nodeKind sh:IRI ; sh:class ga:RdfFormat ; sh:minCount 1 ; sh:maxCount 8 ] ;
+    sh:property [ sh:path ga:negotiatedPath ; sh:datatype xsd:string ; sh:pattern "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*/?$" ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:negotiatedHtml ; sh:nodeKind sh:IRI ; sh:class ga:Target ; sh:maxCount 1 ] ;
+    # Exact source text publishes one source's bytes.
+    sh:or ( [ sh:not [ sh:property [ sh:path ga:rdfFormat ; sh:hasValue ga:SourceTextFormat ] ] ]
+            [ sh:property [ sh:path ga:rdfSource ; sh:maxCount 1 ] ] ) ;
+    # A negotiated path names the HTML it serves by default.
+    sh:or ( [ sh:property [ sh:path ga:negotiatedPath ; sh:maxCount 0 ] ; sh:property [ sh:path ga:negotiatedHtml ; sh:maxCount 0 ] ]
+            [ sh:property [ sh:path ga:negotiatedPath ; sh:minCount 1 ] ; sh:property [ sh:path ga:negotiatedHtml ; sh:minCount 1 ] ] ) .
+
+ga:RdfFormatShape a sh:NodeShape ; sh:targetClass ga:RdfFormat ; sh:nodeKind sh:IRI ;
+    sh:xone ( [ sh:class ga:ExactSourceFormat ;
+                sh:property [ sh:path ga:mediaType ; sh:maxCount 0 ] ;
+                sh:property [ sh:path ga:fileExtension ; sh:maxCount 0 ] ]
+              [ sh:not [ sh:class ga:ExactSourceFormat ] ;
+                sh:property [ sh:path ga:mediaType ; sh:datatype xsd:string ; sh:pattern "^[a-z]+/[a-z0-9.+-]+$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+                sh:property [ sh:path ga:fileExtension ; sh:datatype xsd:string ; sh:pattern "^[a-z0-9]{1,16}$" ; sh:minCount 1 ; sh:maxCount 1 ] ] ) .
 
 ga:NoticeShape a sh:NodeShape ;
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ] ;

@@ -3,7 +3,8 @@
 //! rollback run together on a blocking worker, including cancellation cleanup.
 
 use {
-    super::model::{Plan, PublicationManifest},
+    super::model::PublicationManifest,
+    crate::publication::target_links::TargetLinks,
     anyhow::{Context, Result, ensure},
     serde::{Deserialize, Serialize},
     std::{
@@ -27,10 +28,16 @@ pub(super) struct Ticket {
     pub target:   String,
 }
 
-pub(super) async fn prepare(root: &Path, plan: &Plan) -> Result<PathBuf> {
+/// Create the parents of a target's declared destination beneath `root`,
+/// refusing to nest inside another publication without explicit composition.
+pub(super) async fn prepare(
+    root: &Path,
+    destination: &str,
+    targets: &TargetLinks,
+) -> Result<PathBuf> {
     tokio::fs::create_dir_all(root).await?;
     let root = tokio::fs::canonicalize(root).await?;
-    let relative = Path::new(&plan.destination);
+    let relative = Path::new(destination);
     ensure!(
         !relative.as_os_str().is_empty() &&
             relative
@@ -63,7 +70,7 @@ pub(super) async fn prepare(root: &Path, plan: &Plan) -> Result<PathBuf> {
             .to_string_lossy()
             .replace('\\', "/");
         ensure!(
-            plan.targets.contained_by(&within) ||
+            targets.contained_by(&within) ||
                 !tokio::fs::try_exists(current.join("manifest.yaml"))
                     .await?,
             "nested target outputs require explicit composition"
@@ -578,14 +585,15 @@ mod recovery_tests {
             input_revision: "urn:revision".into(),
             plan:           "urn:plan".into(),
             plan_snapshot:  "urn:snapshot".into(),
-            scope:          "urn:scope".into(),
-            profile:        "urn:profile".into(),
+            scope:          Some("urn:scope".into()),
+            profile:        Some("urn:profile".into()),
             renderer:       "html".into(),
             job:            Uuid::new_v4().to_string(),
             diagnostics:    Vec::new(),
             failure_mode:   Default::default(),
             books:          Vec::new(),
             pdf:            None,
+            rdf:            None,
             files:          vec!["index.html".into()], /* bounded: the
                                                         * fixture's single
                                                         * artifact. */
@@ -674,13 +682,14 @@ mod recovery_tests {
                 input_revision: "urn:revision".into(),
                 plan: "urn:plan".into(),
                 plan_snapshot: "urn:snapshot".into(),
-                scope: "urn:scope".into(),
-                profile: "urn:profile".into(),
+                scope: Some("urn:scope".into()),
+                profile: Some("urn:profile".into()),
                 renderer: renderer.into(),
                 job: "fixture".into(),
                 files,
                 books: Vec::new(),
                 pdf: None,
+                rdf: None,
                 failure_mode: Default::default(),
                 diagnostics: Vec::new(),
             };

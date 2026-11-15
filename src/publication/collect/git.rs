@@ -531,7 +531,7 @@ struct GitRdfFile {
     pub(super) repository: PathBuf,
     pub(super) blob:       gix::hash::ObjectId,
     pub(super) revision:   Revision,
-    /// Retain the exact source text for declared downloads.
+    /// Retain the exact source text for an RDF renderer target.
     pub(super) retain:     bool,
 }
 #[async_trait]
@@ -585,13 +585,13 @@ impl Collector for GitRdfFile {
         );
         if self.retain {
             let text = std::str::from_utf8(&bytes)
-                .context("a downloadable RDF source must be UTF-8 text")?;
-            for quad in crate::publication::download::source_text(
-                &NamedNode::new(&self.processor)?,
-                text,
+                .context("a published RDF source must be UTF-8 text")?;
+            let retained = crate::publication::rdf_target::SourceText::new(
+                text.to_owned(),
                 format.media_type(),
                 &self.base,
-            ) {
+            )?;
+            for quad in retained.quads(&NamedNode::new(&self.processor)?) {
                 stream.write(quad).await?;
             }
         }

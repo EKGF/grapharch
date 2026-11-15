@@ -31,7 +31,7 @@ const CLASSES: [&str; 16] = [
     "CoverBlock",
     "Notice",
     "CopyrightHolder",
-    "Download",
+    "RdfFormat",
 ];
 
 /// Defined resources that no content contribution may describe.
@@ -49,12 +49,12 @@ const DECLARED: [&str; 14] = [
     "CoverBlock",
     "Notice",
     "CopyrightHolder",
-    "Download",
+    "RdfFormat",
 ];
 
 /// Predicates that only publication definitions assert. Collector output such
 /// as fragments, topics, references and assets uses none of them.
-const PREDICATES: [&str; 59] = [
+const PREDICATES: [&str; 61] = [
     "target",
     "scope",
     "profile",
@@ -73,10 +73,12 @@ const PREDICATES: [&str; 59] = [
     "traverse",
     "maxDepth",
     "notice",
-    "download",
-    "fileName",
-    "downloadFormat",
-    "downloadSource",
+    "rdfSource",
+    "rdfFormat",
+    "mediaType",
+    "fileExtension",
+    "negotiatedPath",
+    "negotiatedHtml",
     "copyrightHolder",
     "metadataSource",
     "derivedMetadata",

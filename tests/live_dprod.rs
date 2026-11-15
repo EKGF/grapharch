@@ -43,7 +43,8 @@ async fn remote_revision_restores_and_publishes_declared_targets()
         output,
     )
     .await?;
-    assert_eq!(publications.len(), 5);
+    // Five documents and eight RDF renderer targets.
+    assert_eq!(publications.len(), 13);
     for edition in ["ekgf", "omg"] {
         let directory = output.join("pdf").join(edition);
         assert!(

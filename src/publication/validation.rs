@@ -157,7 +157,8 @@ impl Field {
         Ok(())
     }
 
-    fn validate(&self, store: &Store, subject: &NamedNode) -> Result<()> {
+    /// Validate one field and return how many values it has.
+    fn validate(&self, store: &Store, subject: &NamedNode) -> Result<usize> {
         let mut count = 0;
         for object in objects(store, subject, self.name)? {
             let object = object?;
@@ -188,6 +189,74 @@ impl Field {
             "{subject} has conflicting {} values",
             self.name
         );
+        Ok(count)
+    }
+}
+
+/// The fields a target declares, checked against what its renderer needs:
+/// an arranging renderer selects a scope and profile, while an RDF renderer
+/// names collected RDF sources and formats.
+pub(crate) struct TargetLayout<'a> {
+    subject:  &'a NamedNode,
+    declared: Vec<&'static str>, // bounded: the fixed Target field list.
+}
+
+impl<'a> TargetLayout<'a> {
+    const ARRANGED: [&'static str; 2] = ["scope", "profile"];
+    const RDF: [&'static str; 2] = ["rdfSource", "rdfFormat"];
+    const RDF_ONLY: [&'static str; 4] =
+        ["rdfSource", "rdfFormat", "negotiatedPath", "negotiatedHtml"];
+
+    pub(crate) fn new(subject: &'a NamedNode) -> Self {
+        Self { subject, declared: Vec::new() }
+    }
+
+    /// Record a field's value count.
+    pub(crate) fn observe(&mut self, field: &Field, count: usize) {
+        if count > 0 {
+            self.declared.push(field.name);
+        }
+    }
+
+    fn declares(&self, name: &str) -> bool { self.declared.contains(&name) }
+
+    pub(crate) fn check(
+        &self,
+        renderer: crate::publication::Renderer,
+    ) -> Result<()> {
+        let subject = self.subject;
+        if renderer.arranges_scope() {
+            for name in Self::ARRANGED {
+                ensure!(self.declares(name), "{subject} missing {name}");
+            }
+            for name in Self::RDF_ONLY {
+                ensure!(
+                    !self.declares(name),
+                    "{subject} declares {name}, which only a ga:RdfRenderer \
+                     target uses"
+                );
+            }
+        } else {
+            for name in Self::ARRANGED {
+                ensure!(
+                    !self.declares(name),
+                    "RDF target {subject} declares {name}; it publishes its \
+                     ga:rdfSource uses instead"
+                );
+            }
+            for name in Self::RDF {
+                ensure!(
+                    self.declares(name),
+                    "RDF target {subject} missing {name}"
+                );
+            }
+            ensure!(
+                self.declares("negotiatedPath") ==
+                    self.declares("negotiatedHtml"),
+                "RDF target {subject} must declare ga:negotiatedPath and \
+                 ga:negotiatedHtml together"
+            );
+        }
         Ok(())
     }
 }
@@ -226,8 +295,16 @@ pub fn validate(store: &Store) -> Result<()> {
             let oxrdf::NamedOrBlankNode::NamedNode(subject) = subject else {
                 bail!("{class} requires a stable IRI, found {subject}")
             };
+            let mut layout = TargetLayout::new(&subject);
             for field in &fields {
-                field.validate(store, &subject)?;
+                layout.observe(field, field.validate(store, &subject)?);
+            }
+            if class == "Target" {
+                layout.check(crate::publication::Renderer::from_node(
+                    &crate::publication::definitions::node(
+                        store, &subject, "renderer",
+                    )?,
+                )?)?;
             }
             if class == "Scope" {
                 validate_depth(store, &subject)?;
@@ -314,9 +391,13 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::many("traverse", None),
         ]),
         ("Target", vec![
-            Field::one("scope", Some("Scope")),
-            Field::one("profile", Some("Profile")),
+            Field::optional("scope", Some("Scope")),
+            Field::optional("profile", Some("Profile")),
             Field::one("renderer", None),
+            Field::many("rdfSource", Some("CollectorUse")),
+            Field::many("rdfFormat", Some("RdfFormat")),
+            Field::optional_text("negotiatedPath"),
+            Field::optional("negotiatedHtml", Some("Target")),
             Field::text("destination"),
             Field::optional("metadataSource", Some("CollectorUse")),
             Field::many("derivedMetadata", None),

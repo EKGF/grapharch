@@ -46,13 +46,16 @@ pub async fn assert_restored_metadata(
         "https://github.com/EKGF/dprod/issues/new",
         "https://github.com/EKGF/dprod/issues"
     ]);
+    // The RDF renderer targets publish the files in the sibling rdf/.
     let downloads = &rows["Download as RDF:"][0];
     assert_eq!(downloads.len(), 12);
-    assert!(
-        downloads
-            .iter()
-            .all(|url| url.starts_with("https://ekgf.org/dprod/spec/develop/"))
-    );
+    for href in downloads {
+        assert!(href.starts_with("../rdf/"), "{href}");
+        assert!(
+            tokio::fs::try_exists(directory.join(href)).await?,
+            "{href} is published"
+        );
+    }
     let logo = document
         .select(&Selector::parse("header img.product-logo").unwrap())
         .next()

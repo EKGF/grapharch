@@ -24,6 +24,7 @@ source files.
 | [Bookshelf](bookshelf.md) | An ontology family arranged into declared module books. | A catalogue of books with individual HTML specifications and PDFs. Book boundaries come from the publication model, not guessed file groupings. |
 | [PDF](pdf.md) | A review or approval document with its own reading order. | A PDF compiled by the embedded Typst engine, with editable Typst source. An external Typst executable is not required. |
 | [Single-document HTML](html.md) | A compact standalone document with a contents list. | One HTML document, its stylesheet, retained illustrations, and provenance. Use the website renderer for a multi-page companion site. |
+| [RDF](rdf.md) | Downloadable vocabulary files beside a specification, and content negotiation of an ontology IRI. | One file per declared RDF format (Turtle, N-Triples, N-Quads, TriG, JSON-LD, RDF/XML, or the exact source text), built from collected RDF sources. |
 
 ## Renderer, style, and format
 

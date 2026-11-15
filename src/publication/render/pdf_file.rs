@@ -3,19 +3,21 @@
 //! Typst source and notices live in the output root's coordination area, so
 //! the shared directory holds only published PDFs.
 use {
-    super::{Publication, PublishOutcome, Publisher, engine, model::Plan},
-    crate::publication::render::model::PublicationManifest,
+    super::{
+        Publication,
+        PublishOutcome,
+        Publisher,
+        engine,
+        model::Plan,
+        owned_file::{COORDINATION, OwnedFile},
+    },
     anyhow::{Context, Result, ensure},
-    sha2::{Digest, Sha256},
     std::{
         fs,
         path::{Path, PathBuf},
     },
     uuid::Uuid,
 };
-
-/// Output-root directory for per-file publication records and staging.
-pub(super) const COORDINATION: &str = ".grapharch";
 
 impl Publisher {
     pub(super) async fn publish_pdf_file(
@@ -61,13 +63,16 @@ impl Publisher {
                 serde_yaml::to_string(&manifest)?,
             )
             .await?;
-            let record = Record::new(&coordination, &destination, &name, root)?;
+            let record =
+                OwnedFile::new(&coordination, &destination, &name, root)?;
             let source = record.directory.clone();
             let (from, to) = (stage.clone(), destination.clone());
             let (project, target) =
                 (manifest.project.clone(), manifest.target.clone());
-            tokio::task::spawn_blocking(move || {
-                record.promote(&from, &to, &project, &target, &files)
+            tokio::task::spawn_blocking(move || -> Result<()> {
+                let lease = record.lease()?;
+                record.check_owner(&lease, &to, &project, &target)?;
+                record.replace(&lease, &from.join(&name), &from, &to, &files)
             })
             .await??;
             Ok(PublishOutcome::Published(Box::new(Publication {
@@ -119,111 +124,10 @@ pub fn typst_source(root: &Path, pdf: &Path) -> Result<PathBuf> {
     let relative = pdf
         .strip_prefix(&root)
         .context("PDF lies outside the output root")?;
-    let key = hex::encode(Sha256::digest(
-        relative.to_string_lossy().replace('\\', "/").as_bytes(),
-    ));
+    let key = OwnedFile::key(relative);
     Ok(root
         .join(COORDINATION)
         .join("files")
         .join(key)
         .join("main.typ"))
-}
-
-/// Ownership record of one published file, keyed by its output-root path.
-struct Record {
-    directory: PathBuf,
-    lock:      PathBuf,
-    name:      String,
-}
-
-impl Record {
-    fn new(
-        coordination: &Path,
-        destination: &Path,
-        name: &str,
-        root: &Path,
-    ) -> Result<Self> {
-        let root = fs::canonicalize(root)?;
-        let relative = destination
-            .strip_prefix(&root)
-            .context("PDF destination lies outside the output root")?
-            .join(name);
-        let key = hex::encode(Sha256::digest(
-            relative.to_string_lossy().replace('\\', "/").as_bytes(),
-        ));
-        let files = coordination.join("files");
-        fs::create_dir_all(&files)?;
-        Ok(Self {
-            directory: files.join(&key),
-            lock:      files.join(format!("{key}.lock")),
-            name:      name.to_owned(),
-        })
-    }
-
-    /// Replace the owned file atomically, failing fast when another target
-    /// or no publication owns the path.
-    fn promote(
-        &self,
-        stage: &Path,
-        destination: &Path,
-        project: &str,
-        target: &str,
-        retained: &[String],
-    ) -> Result<()> {
-        let lock = fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
-            .open(&self.lock)?;
-        fs2::FileExt::try_lock_exclusive(&lock).with_context(|| {
-            format!(
-                "publication lease is unavailable: {}",
-                self.lock.display()
-            )
-        })?;
-        let published = destination.join(&self.name);
-        let previous = self.directory.join("manifest.yaml");
-        if fs::symlink_metadata(&published).is_ok() {
-            let bytes = fs::read(&previous).map_err(|_| {
-                anyhow::anyhow!(
-                    "refusing to replace an unowned file: {}",
-                    published.display()
-                )
-            })?;
-            let owner: PublicationManifest = serde_yaml::from_slice(&bytes)?;
-            ensure!(
-                owner.project == project && owner.target == target,
-                "PDF file name collision: {} is already published by target {}",
-                published.display(),
-                owner.target
-            );
-            ensure!(
-                fs::symlink_metadata(&published)?.is_file(),
-                "published PDF must be a regular file"
-            );
-        }
-        let next = self
-            .directory
-            .with_extension(format!("next-{}", Uuid::new_v4()));
-        fs::create_dir(&next)?;
-        // The record keeps the complete compiler input beside the manifest.
-        for name in retained {
-            let target = next.join(name);
-            fs::create_dir_all(target.parent().expect("record file parent"))?;
-            fs::rename(stage.join(name), target)?;
-        }
-        fs::rename(
-            stage.join("manifest.yaml"),
-            next.join("manifest.yaml"),
-        )?;
-        fs::create_dir_all(destination)?;
-        fs::rename(stage.join(&self.name), &published)?;
-        if self.directory.exists() {
-            fs::remove_dir_all(&self.directory)?;
-        }
-        fs::rename(next, &self.directory)?;
-        fs2::FileExt::unlock(&lock)?;
-        Ok(())
-    }
 }

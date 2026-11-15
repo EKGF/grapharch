@@ -7,7 +7,7 @@ use {
     sha2::{Digest, Sha256},
 };
 
-fn sources() -> [(&'static str, &'static str); 5] {
+fn sources() -> [(&'static str, &'static str); 6] {
     [
         (
             "document-types",
@@ -28,6 +28,10 @@ fn sources() -> [(&'static str, &'static str); 5] {
         (
             "themes",
             include_str!("../../docs/other/ontology/themes.ttl"),
+        ),
+        (
+            "rdf-formats",
+            include_str!("../../docs/other/ontology/rdf-formats.ttl"),
         ),
     ]
 }
