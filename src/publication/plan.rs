@@ -3,6 +3,7 @@
 
 mod books;
 mod constraints;
+mod files;
 mod quality;
 mod requirements;
 use {
@@ -84,9 +85,14 @@ impl TargetPlanner {
         );
         drop(rows);
         self.check_destinations(&view, &project).await?;
+        let renderer_kind = view.renderer(target).await?;
+        if !renderer_kind.arranges_scope() {
+            return self
+                .resolve_files(&view, &project, target, renderer_kind, writer)
+                .await;
+        }
         let scope = view.node(target, "scope").await?;
         let profile = view.node(target, "profile").await?;
-        let renderer_kind = view.renderer(target).await?;
         let mut requirements =
             match requirements::Requirements::read(&view, &profile, target)
                 .await
@@ -666,11 +672,11 @@ impl TargetPlanner {
                     continue;
                 }
                 let other = destination_path(view, peer).await?;
-                // PDF targets own one named file each, so they may share a
+                // PDF and RDF targets own named files, so they may share a
                 // directory; file-name collisions fail when publishing.
                 if destination == other &&
-                    view.renderer(target).await? == super::Renderer::Typst &&
-                    view.renderer(peer).await? == super::Renderer::Typst
+                    view.renderer(target).await?.owns_files() &&
+                    view.renderer(peer).await?.owns_files()
                 {
                     continue;
                 }

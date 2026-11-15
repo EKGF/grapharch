@@ -1,0 +1,28 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# Official RDF formats an RDF renderer target publishes. The renderer reads
+# each media type and file extension from this graph; it has no format table.
+
+ga:TurtleFormat a ga:RdfFormat ; rdfs:label "Turtle"@en ;
+    dct:description "RDF 1.1 Turtle of the merged default graphs."@en ;
+    ga:mediaType "text/turtle" ; ga:fileExtension "ttl" .
+ga:NTriplesFormat a ga:RdfFormat ; rdfs:label "N-Triples"@en ;
+    dct:description "RDF 1.1 N-Triples of the merged default graphs."@en ;
+    ga:mediaType "application/n-triples" ; ga:fileExtension "nt" .
+ga:NQuadsFormat a ga:RdfFormat ; rdfs:label "N-Quads"@en ;
+    dct:description "RDF 1.1 N-Quads of the merged datasets."@en ;
+    ga:mediaType "application/n-quads" ; ga:fileExtension "nq" .
+ga:TriGFormat a ga:RdfFormat ; rdfs:label "TriG"@en ;
+    dct:description "RDF 1.1 TriG of the merged datasets."@en ;
+    ga:mediaType "application/trig" ; ga:fileExtension "trig" .
+ga:JsonLdFormat a ga:RdfFormat ; rdfs:label "JSON-LD"@en ;
+    dct:description "JSON-LD 1.1 of the merged datasets, with the sources' prefixes in its context."@en ;
+    ga:mediaType "application/ld+json" ; ga:fileExtension "jsonld" .
+ga:RdfXmlFormat a ga:RdfFormat ; rdfs:label "RDF/XML"@en ;
+    dct:description "RDF 1.1 XML syntax of the merged default graphs."@en ;
+    ga:mediaType "application/rdf+xml" ; ga:fileExtension "rdf" .
+
+ga:SourceTextFormat a ga:RdfFormat, ga:ExactSourceFormat ; rdfs:label "Exact source text"@en ;
+    dct:description "The single source's collected bytes, unchanged, named and served as the RDF format it was collected as."@en .

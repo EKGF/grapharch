@@ -1,5 +1,6 @@
 //! Assemble immutable website and specification artifacts for static hosting.
 mod files;
+mod rdf;
 mod routes;
 use {
     anyhow::{Context, Result, ensure},
@@ -208,8 +209,10 @@ async fn assemble(
         files.paths.contains("index.html"),
         "project artifact requires index.html"
     );
+    let rdf = rdf::RdfRoutes::read(trees, &files.paths).await?;
     let config =
-        routes::configuration(settings, parent, mount, &files.paths).await?;
+        routes::configuration(settings, parent, mount, &files.paths, &rdf)
+            .await?;
     match settings.platform {
         Platform::Vercel => {
             tokio::fs::write(

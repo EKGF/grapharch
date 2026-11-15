@@ -1376,7 +1376,9 @@ async fn plan_targets(
     // bounded: a selection names at most 16 targets.
     let mut plans = Vec::with_capacity(targets.selected().len());
     for target in targets.selected() {
-        if view.renderer(target).await? == super::Renderer::Website {
+        // Website and RDF targets do not publish the family profile.
+        let renderer = view.renderer(target).await?;
+        if renderer == super::Renderer::Website || !renderer.arranges_scope() {
             plans.push(planner.resolve(project, target, writer).await?);
             continue;
         }

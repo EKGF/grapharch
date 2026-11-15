@@ -20,15 +20,19 @@ mod files;
 mod fonts;
 mod html;
 mod image_data;
+mod job_subject;
 mod markdown_html;
 mod markup;
 mod model;
 mod native_typst;
 mod nested;
 mod notices;
+mod owned_file;
 mod pdf_download;
 mod pdf_file;
 mod pdf_standard;
+mod rdf_file;
+mod rdf_plan;
 pub use pdf_file::typst_source;
 mod people;
 mod provenance;
@@ -56,6 +60,7 @@ use {
         dataset::Dataset,
         diagnostics::FailureMode,
         plan::ResolvedPlan,
+        view::RevisionView,
     },
     anyhow::{Result, ensure},
     files::{Staging, Ticket},
@@ -71,7 +76,11 @@ use {
     tokio::sync::{Mutex, OnceCell, Semaphore},
     uuid::Uuid,
 };
-pub(crate) use {model::title as page_title, pdf_standard::PdfStandard};
+pub(crate) use {
+    model::title as page_title,
+    pdf_standard::PdfStandard,
+    rdf_file::RdfPublication,
+};
 
 /// A successfully promoted artifact generation.
 pub struct Publication {
@@ -229,6 +238,13 @@ impl Publisher {
         job: String,
     ) -> Result<PublishOutcome> {
         let _worker = self.workers.clone().acquire_owned().await?;
+        let renderer =
+            RevisionView::new(self.dataset.clone(), handle.snapshot.clone())
+                .renderer(&handle.id)
+                .await?;
+        if !renderer.arranges_scope() {
+            return self.run_rdf(handle, root, job).await;
+        }
         let mut plan = Plan::read(self.dataset.clone(), handle).await?;
         if matches!(plan.renderer.as_str(), "typst" | "specification") {
             plan.pdf_file = Some(
@@ -250,7 +266,8 @@ impl Publisher {
             self.edition.as_ref(),
         )
         .await?;
-        let destination = files::prepare(&root, &plan).await?;
+        let destination =
+            files::prepare(&root, &plan.destination, &plan.targets).await?;
         let ticket = Ticket {
             session: self.session.clone(),
             sequence,
@@ -258,7 +275,13 @@ impl Publisher {
             project: plan.project.as_str().to_owned(),
             target: plan.target.as_str().to_owned(),
         };
-        record::begin(&plan, &destination, &job, self.failure_mode).await?;
+        record::begin(
+            &plan.job_subject(),
+            &destination,
+            &job,
+            self.failure_mode,
+        )
+        .await?;
         let result = async {
             if plan.renderer != crate::publication::Renderer::Website {
                 plan.images = collected_images::Images::read(&plan).await?;
@@ -270,25 +293,7 @@ impl Publisher {
             }
         }
         .await;
-        if let Err(error) = record::finish(&plan, &job, &result).await {
-            let context = match &result {
-                Ok(PublishOutcome::Published(_)) => {
-                    "artifacts were promoted, but publication recording failed"
-                        .to_owned()
-                },
-                Ok(PublishOutcome::Superseded) => {
-                    "superseded publication recording failed".to_owned()
-                },
-                Err(render_error) => {
-                    format!(
-                        "render failed ({render_error}); publication \
-                         recording also failed"
-                    )
-                },
-            };
-            return Err(error.context(context));
-        }
-        result
+        record::conclude(&plan.job_subject(), &job, result).await
     }
 
     async fn publish(
@@ -404,7 +409,6 @@ impl Publisher {
                 let pdf = self.compile(&stage.path).await?;
                 tokio::fs::write(stage.path.join(name), pdf).await?;
             }
-            let download_files = write_downloads(plan, &stage.path).await?;
             let mut manifest = plan.manifest(job);
             if let Some(files) = website_files {
                 manifest.files = files;
@@ -418,7 +422,6 @@ impl Publisher {
                     bookshelf::manifest_books(plan, &stage.path).await?;
             }
             manifest.files.extend(image_files);
-            manifest.files.extend(download_files);
             manifest.files.extend(cover_logo);
             manifest.files.push(
                 crate::publication::icon::write_licenses(&stage.path).await?,
@@ -453,27 +456,6 @@ impl Publisher {
         stage.cleanup().await?;
         result
     }
-}
-
-/// Write the target's declared RDF downloads beside its entry document.
-async fn write_downloads(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
-    let mut files = Vec::new();
-    for download in crate::publication::download::Download::read_all(
-        &plan.source,
-        &plan.target,
-    )
-    .await?
-    {
-        let path = stage.join(&download.file_name);
-        ensure!(
-            !tokio::fs::try_exists(&path).await?,
-            "download {} collides with a generated publication file",
-            download.file_name
-        );
-        tokio::fs::write(&path, download.bytes(&plan.source).await?).await?;
-        files.push(download.file_name);
-    }
-    Ok(files)
 }
 
 #[cfg(test)]

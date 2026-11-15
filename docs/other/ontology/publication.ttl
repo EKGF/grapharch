@@ -3201,82 +3201,77 @@ ga:familyBaseOrder a owl:DatatypeProperty ;
     rdfs:range xsd:integer .
 
 
-# RDF downloads: files a target publishes beside its entry document, built from
-# the exact text of collected RDF sources.
-ga:Download a owl:Class ;
-    rdfs:label "RDF download"@en ;
+# RDF publication: a target selecting ga:RdfRenderer publishes one file per
+# declared RDF format, built from the collected text of its RDF sources.
+ga:RdfFormat a owl:Class ;
+    rdfs:label "RDF format"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "A file that a publication target publishes beside its entry document, built from the retained text of one or more collected RDF sources."@en ;
-    dct:description "A file that a publication target publishes beside its entry document, built from the retained text of one or more collected RDF sources."@en ;
-    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:specification> ga:download <urn:example:ttl>, <urn:example:all> .\n<urn:example:ttl> a ga:Download ; ga:fileName \"vocabulary.ttl\" ;\n    ga:downloadFormat ga:SourceFileFormat ; ga:downloadSource <urn:example:ontology-source> .\n<urn:example:all> a ga:Download ; ga:fileName \"vocabulary-all.jsonld\" ;\n    ga:downloadFormat ga:JsonLdFormat ;\n    ga:downloadSource <urn:example:ontology-source>, <urn:example:shapes-source> ."@en .
+    skos:definition "An official RDF serialization that an RDF renderer target publishes, identified by IRI and declaring its media type and file extension."@en ;
+    dct:description "An official RDF serialization that an RDF renderer target publishes, identified by IRI and declaring its media type and file extension."@en ;
+    skos:scopeNote "The shipped catalogue defines Turtle, N-Triples, N-Quads, TriG, JSON-LD and RDF/XML. The renderer selects the serializer from the declared media type; formats without named graphs reject sources that use them."@en .
 
-ga:DownloadFormat a owl:Class ;
-    rdfs:label "Download format"@en ;
+ga:ExactSourceFormat a owl:Class ;
+    rdfs:subClassOf ga:RdfFormat ;
+    rdfs:label "Exact source format"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "How an RDF download represents its sources: the exact source file, or the merged source graphs in one RDF serialization."@en ;
-    dct:description "How an RDF download represents its sources: the exact source file, or the merged source graphs in one RDF serialization."@en .
+    skos:definition "An RDF format that publishes the single source's collected bytes unchanged, under the media type and file extension of the RDF format the source was collected as."@en ;
+    dct:description "An RDF format that publishes the single source's collected bytes unchanged, under the media type and file extension of the RDF format the source was collected as."@en .
 
-ga:SourceFileFormat a ga:DownloadFormat ;
-    rdfs:label "Source file"@en ;
+ga:mediaType a owl:DatatypeProperty ;
+    rdfs:label "Media type"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Publishes the exact bytes of the download's single source file, as collected at the pinned revision."@en ;
-    dct:description "Publishes the exact bytes of the download's single source file, as collected at the pinned revision."@en .
-
-ga:TurtleFormat a ga:DownloadFormat ;
-    rdfs:label "Turtle"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Publishes the merged graphs of the download's sources as RDF Turtle, with the sources' prefixes."@en ;
-    dct:description "Publishes the merged graphs of the download's sources as RDF Turtle, with the sources' prefixes."@en .
-
-ga:JsonLdFormat a ga:DownloadFormat ;
-    rdfs:label "JSON-LD"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Publishes the merged graphs of the download's sources as JSON-LD, with the sources' prefixes in its context."@en ;
-    dct:description "Publishes the merged graphs of the download's sources as JSON-LD, with the sources' prefixes in its context."@en .
-
-ga:RdfXmlFormat a ga:DownloadFormat ;
-    rdfs:label "RDF/XML"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Publishes the merged default graphs of the download's sources as RDF/XML; named graphs are an error."@en ;
-    dct:description "Publishes the merged default graphs of the download's sources as RDF/XML; named graphs are an error."@en .
-
-ga:download a owl:ObjectProperty ;
-    rdfs:label "Download"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Adds a file that the target publishes beside its entry document, so its pages can link the file relatively."@en ;
-    dct:description "Adds a file that the target publishes beside its entry document, so its pages can link the file relatively."@en ;
-    rdfs:domain ga:Target ;
-    rdfs:range ga:Download .
-
-ga:fileName a owl:DatatypeProperty ;
-    rdfs:label "File name"@en ;
-    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Names a download's file: one path segment of letters, digits, dots, underscores and hyphens, unique within its target."@en ;
-    dct:description "Names a download's file: one path segment of letters, digits, dots, underscores and hyphens, unique within its target."@en ;
-    rdfs:domain ga:Download ;
+    skos:definition "Declares the IANA media type of an RDF format, served as the Content-Type of its files and matched against Accept headers."@en ;
+    dct:description "Declares the IANA media type of an RDF format, served as the Content-Type of its files and matched against Accept headers."@en ;
+    rdfs:domain ga:RdfFormat ;
     rdfs:range xsd:string .
 
-ga:downloadFormat a owl:ObjectProperty ;
-    rdfs:label "Download format"@en ;
+ga:fileExtension a owl:DatatypeProperty ;
+    rdfs:label "File extension"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Selects how a download represents its sources: the exact source file or one RDF serialization of their merged graphs."@en ;
-    dct:description "Selects how a download represents its sources: the exact source file or one RDF serialization of their merged graphs."@en ;
-    rdfs:domain ga:Download ;
-    rdfs:range ga:DownloadFormat .
+    skos:definition "Declares the file extension, without its leading dot, of the files an RDF format publishes."@en ;
+    dct:description "Declares the file extension, without its leading dot, of the files an RDF format publishes."@en ;
+    rdfs:domain ga:RdfFormat ;
+    rdfs:range xsd:string .
 
-ga:downloadSource a owl:ObjectProperty ;
-    rdfs:label "Download source"@en ;
+ga:rdfSource a owl:ObjectProperty ;
+    rdfs:label "RDF source"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Names a ga:RdfFileCollector use whose collected source a download is built from; the collector then retains that source's exact text."@en ;
-    dct:description "Names a ga:RdfFileCollector use whose collected source a download is built from; the collector then retains that source's exact text."@en ;
-    rdfs:domain ga:Download ;
+    skos:definition "Names a ga:RdfFileCollector use whose collected source an RDF renderer target publishes; the collector use then retains that source's exact text."@en ;
+    dct:description "Names a ga:RdfFileCollector use whose collected source an RDF renderer target publishes; the collector use then retains that source's exact text."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:project> ga:target <urn:example:vocabulary-rdf> .\n<urn:example:vocabulary-rdf> a ga:Target ;\n    ga:renderer ga:RdfRenderer ; ga:destination \"rdf\" ; ga:slug \"vocabulary\" ;\n    ga:rdfSource <urn:example:ontology-source>, <urn:example:shapes-source> ;\n    ga:rdfFormat ga:TurtleFormat, ga:JsonLdFormat, ga:RdfXmlFormat ."@en ;
+    rdfs:domain ga:Target ;
     rdfs:range ga:CollectorUse .
+
+ga:rdfFormat a owl:ObjectProperty ;
+    rdfs:label "RDF format"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects an RDF format in which an RDF renderer target publishes its merged sources, as one file named by the target's ga:slug and the format's ga:fileExtension."@en ;
+    dct:description "Selects an RDF format in which an RDF renderer target publishes its merged sources, as one file named by the target's ga:slug and the format's ga:fileExtension."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:RdfFormat .
+
+ga:negotiatedPath a owl:DatatypeProperty ;
+    rdfs:label "Negotiated path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Declares a URL path, relative to the output root, at which a hosting platform serves this RDF renderer target's files or its ga:negotiatedHtml target by the request's Accept header."@en ;
+    dct:description "Declares a URL path, relative to the output root, at which a hosting platform serves this RDF renderer target's files or its ga:negotiatedHtml target by the request's Accept header."@en ;
+    skos:scopeNote "Typically the path of a published ontology IRI. Only a platform with request routing, such as Vercel, can serve it; packaging for a files-only platform fails."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:string .
+
+ga:negotiatedHtml a owl:ObjectProperty ;
+    rdfs:label "Negotiated HTML"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the target whose entry document a negotiated path serves when the request accepts none of the RDF target's media types."@en ;
+    dct:description "Names the target whose entry document a negotiated path serves when the request accepts none of the RDF target's media types."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:Target .
 
 ga:RdfSourceText a owl:Class ;
     rdfs:label "Retained RDF source text"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "The exact UTF-8 text, media type and base IRI of a collected RDF source that a declared download uses, retained by its collector use."@en ;
-    dct:description "The exact UTF-8 text, media type and base IRI of a collected RDF source that a declared download uses, retained by its collector use."@en .
+    skos:definition "The exact UTF-8 text, media type and base IRI of a collected RDF source that an RDF renderer target publishes, retained by its collector use."@en ;
+    dct:description "The exact UTF-8 text, media type and base IRI of a collected RDF source that an RDF renderer target publishes, retained by its collector use."@en .
 
 ga:baseIri a owl:DatatypeProperty ;
     rdfs:label "Base IRI"@en ;

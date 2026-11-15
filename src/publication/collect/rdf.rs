@@ -5,7 +5,7 @@ use {
         hashing_reader::HashingReader,
         source::{FileInput, MAX_RDF_BYTES},
     },
-    crate::publication::writer::ContributionStream,
+    crate::publication::{rdf_target::SourceText, writer::ContributionStream},
     anyhow::{Result, ensure},
     async_trait::async_trait,
     oxrdfio::{RdfFormat, RdfParser},
@@ -18,13 +18,49 @@ use {
 };
 
 /// Imports one RDF document, preserving its named graphs and assertions.
-pub struct RdfFile(FileInput);
+pub struct RdfFile(FileInput, bool);
 
 impl RdfFile {
     /// Configure one RDF source. Unsupported formats are rejected during
     /// collection.
     pub fn new(project: &str, collector: &str, path: PathBuf) -> Result<Self> {
-        Ok(Self(FileInput::new(project, collector, path)?))
+        Ok(Self(
+            FileInput::new(project, collector, path)?,
+            false,
+        ))
+    }
+
+    /// Also retain the source's exact text, which an RDF renderer target
+    /// that names this collector use publishes.
+    pub(crate) fn retaining_text(mut self, retain: bool) -> Self {
+        self.1 = retain;
+        self
+    }
+
+    async fn retain(
+        &self,
+        stream: &mut ContributionStream,
+        format: RdfFormat,
+        base: &str,
+        revision: &str,
+    ) -> Result<()> {
+        let bytes = tokio::fs::read(&self.0.path).await?;
+        ensure!(
+            bytes.len() as u64 <= MAX_RDF_BYTES &&
+                format!("rdf-v2:{}", hex::encode(Sha256::digest(&bytes))) ==
+                    revision,
+            "RDF source changed during collection"
+        );
+        let text = String::from_utf8(bytes).map_err(|_| {
+            anyhow::anyhow!("a published RDF source must be UTF-8 text")
+        })?;
+        let processor = oxrdf::NamedNode::new(self.0.collector.as_str())?;
+        for quad in
+            SourceText::new(text, format.media_type(), base)?.quads(&processor)
+        {
+            stream.write(quad).await?;
+        }
+        Ok(())
     }
 
     async fn digest(&self) -> Result<String> {
@@ -100,6 +136,10 @@ impl Collector for RdfFile {
         }
         if raw_revision != observed.revision() {
             anyhow::bail!("RDF source changed during collection");
+        }
+        if self.1 {
+            self.retain(stream, format, base.as_str(), &raw_revision)
+                .await?;
         }
         Ok(revision)
     }

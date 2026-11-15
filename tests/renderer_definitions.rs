@@ -42,6 +42,25 @@ fn renderer_definitions_have_exact_shared_iri_identities() -> Result<()> {
 }
 
 #[test]
+fn rdf_renderer_targets_name_sources_instead_of_a_scope() -> Result<()> {
+    let store = Store::new()?;
+    store.load_from_reader(
+        RdfParser::from_format(RdfFormat::Turtle),
+        "@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:rdf> \
+         ga:destination \"rdf\"; ga:renderer ga:RdfRenderer."
+            .as_bytes(),
+    )?;
+    let target = Target::read(&store, NamedNode::new("urn:rdf")?)?;
+    assert_eq!(target.renderer, Renderer::Rdf);
+    assert_eq!((target.scope, target.profile), (None, None));
+    let error = target_rdf_with_scope().unwrap_err().to_string();
+    assert!(error.contains("declares no ga:scope"), "{error}");
+    Ok(())
+}
+
+fn target_rdf_with_scope() -> Result<Target> { target("ga:RdfRenderer") }
+
+#[test]
 fn literals_and_unknown_renderer_iris_are_rejected() {
     for renderer in [
         "\"website\"",

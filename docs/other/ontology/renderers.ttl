@@ -13,3 +13,5 @@ ga:TypstRenderer a ga:Renderer, ga:PublicationRenderer ; rdfs:label "PDF"@en ; d
 ga:OwlClassDiagramRenderer a ga:Renderer, ga:FragmentRenderer ;
     rdfs:label "UML class diagram"@en ;
     dct:description "Renders retained OWL class-neighborhood projections as linked SVG in HTML and Typst/PDF publications."@en .
+
+ga:RdfRenderer a ga:Renderer, ga:PublicationRenderer ; rdfs:label "RDF"@en ; dct:description "One file per declared RDF format, built from the collected text of the target's RDF sources."@en .

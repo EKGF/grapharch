@@ -1,5 +1,5 @@
 use {
-    super::model::Plan,
+    super::job_subject::JobSubject,
     crate::publication::{
         diagnostic_graph::{self, Context},
         diagnostics::Diagnostic,
@@ -8,7 +8,7 @@ use {
     oxrdf::{NamedNode, Quad},
 };
 pub(super) fn quads(
-    plan: &Plan,
+    plan: &JobSubject,
     job: &str,
     errors: &[Diagnostic],
 ) -> Result<Vec<Quad>> {

@@ -77,6 +77,26 @@ impl RevisionView {
         Ok(rows.next().await?.is_some())
     }
 
+    /// Stream at most `limit` distinct subjects stating `property` with
+    /// `object`, in lexical order.
+    pub async fn subjects(
+        &self,
+        property: &str,
+        object: &Term,
+        limit: usize,
+    ) -> Result<Rows> {
+        let pattern = self.pattern(
+            &format!("?subject {} {object}", term(property)),
+            0,
+        );
+        self.dataset
+            .select(format!(
+                "SELECT DISTINCT ?subject WHERE {{ {pattern} }} ORDER BY \
+                 ?subject LIMIT {limit}"
+            ))
+            .await
+    }
+
     /// Stream every logical statement about one subject, ordered by predicate
     /// and value. Callers bound how many statements they accept.
     pub async fn statements(&self, subject: &NamedNode) -> Result<Rows> {
@@ -187,9 +207,10 @@ impl RevisionView {
                 let Term::NamedNode(subject) = &row["subject"] else {
                     bail!("{class} requires a stable IRI")
                 };
+                let mut layout = super::validation::TargetLayout::new(subject);
                 for field in &fields {
                     let mut rows = self.objects(subject, field.name).await?;
-                    let mut count = 0u64;
+                    let mut count = 0usize;
                     while let Some(row) = rows.next().await? {
                         count += 1;
                         let value = &row["value"];
@@ -220,12 +241,13 @@ impl RevisionView {
                         "{subject} conflicting {}",
                         field.name
                     );
+                    layout.observe(field, count);
                 }
                 if class == "Target" {
-                    ensure!(
-                        self.renderer(subject).await.is_ok(),
-                        "{subject} unsupported renderer"
-                    );
+                    let Ok(renderer) = self.renderer(subject).await else {
+                        bail!("{subject} unsupported renderer")
+                    };
+                    layout.check(renderer)?;
                     ensure!(
                         !self.text(subject, "destination").await?.is_empty(),
                         "{subject} empty destination"

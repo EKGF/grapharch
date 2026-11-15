@@ -106,7 +106,12 @@ pub(crate) async fn collect(
                     path.starts_with(root),
                     "configured RDF source escapes documentation root"
                 );
-                Arc::new(RdfFile::new(project, processor.as_str(), path)?)
+                // An RDF renderer target publishes the source's exact text.
+                let retain = view.is_object_of("rdfSource", processor).await?;
+                Arc::new(
+                    RdfFile::new(project, processor.as_str(), path)?
+                        .retaining_text(retain),
+                )
             },
             CollectorKind::RdfUrl => {
                 Arc::new(RdfUrl::new(
