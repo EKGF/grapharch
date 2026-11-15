@@ -97,7 +97,7 @@ def smoke(output: Path, target: str) -> None:
                 "--no-fund",
                 "--package-lock=false",
                 str(output / manifest["npm_archive"]),
-                str(output / f"grapharch-{version()}.tgz"),
+                str(output / f"ekgf-grapharch-{version()}.tgz"),
             ],
             project,
         )

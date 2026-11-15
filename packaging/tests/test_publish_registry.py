@@ -30,13 +30,14 @@ class RegistryState(unittest.TestCase):
             archive = Path(temporary) / 'package.tgz'
             archive.write_bytes(b'validated artifact')
             integrity = 'sha512-' + base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()
-            with patch('registry_state.read_json', return_value={'name':'grapharch','version':'0.2.3','dist': {'integrity': integrity}}):
-                self.assertTrue(npm_published('grapharch', '0.2.3', archive))
-            with patch('registry_state.read_json', return_value={'name':'grapharch','version':'0.2.3','dist': {'integrity': 'sha512-wrong'}}):
+            with patch('registry_state.read_json', return_value={'name':'@ekgf/grapharch','version':'0.2.3','dist': {'integrity': integrity}}) as read:
+                self.assertTrue(npm_published('@ekgf/grapharch', '0.2.3', archive))
+                read.assert_called_once_with('https://registry.npmjs.org/%40ekgf%2Fgrapharch/0.2.3')
+            with patch('registry_state.read_json', return_value={'name':'@ekgf/grapharch','version':'0.2.3','dist': {'integrity': 'sha512-wrong'}}):
                 with self.assertRaisesRegex(ValueError, 'different bytes'):
-                    npm_published('grapharch', '0.2.3', archive)
+                    npm_published('@ekgf/grapharch', '0.2.3', archive)
             with patch('registry_state.read_json', return_value=None):
-                self.assertFalse(npm_published('grapharch', '0.2.3', archive))
+                self.assertFalse(npm_published('@ekgf/grapharch', '0.2.3', archive))
 
     def test_pypi_retry_does_not_hide_a_conflicting_wheel(self):
         with tempfile.TemporaryDirectory() as temporary:

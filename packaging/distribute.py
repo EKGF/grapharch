@@ -64,7 +64,7 @@ def ontology_metadata() -> tuple[Path, str, str, str]:
 
 
 def npm_package(item: dict) -> str:
-    return f"grapharch-{item['key']}"
+    return f"@ekgf/grapharch-{item['key']}"
 
 
 def verify_npm_metadata(metadata: dict, item: dict) -> None:
@@ -92,6 +92,8 @@ def check() -> None:
             "npm version differs from Cargo.toml; run packaging/distribute.py sync-version"
         )
     packages = {npm_package(p): expected for p in PLATFORMS}
+    if manifest["name"] != "@ekgf/grapharch":
+        raise ValueError("npm CLI package must use the @ekgf organization scope")
     if manifest["optionalDependencies"] != packages:
         raise ValueError(
             "npm platform dependencies differ from the declared platform matrix/version"
@@ -459,7 +461,7 @@ def verify_release(output: Path) -> None:
     main = json.loads((output / "grapharch-npm.json").read_text())
     if (
         main["version"] != version()
-        or main["archive"] != f"grapharch-{version()}.tgz"
+        or main["archive"] != f"ekgf-grapharch-{version()}.tgz"
         or sha256(output / main["archive"]) != main["sha256"]
     ):
         raise ValueError("main npm package metadata/checksum mismatch")

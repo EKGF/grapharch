@@ -20,7 +20,7 @@ if args.initialize:
     args.output.mkdir(parents=True, exist_ok=False)
 elif args.clean_main:
     shutil.rmtree(args.output / "npm/grapharch")
-    (args.output / f"grapharch-{version()}.tgz").unlink()
+    (args.output / f"ekgf-grapharch-{version()}.tgz").unlink()
     (args.output / "grapharch-npm.json").unlink()
 else:
     wheels = list((args.output / "wheels").glob("*.whl"))

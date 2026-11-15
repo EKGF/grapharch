@@ -6,7 +6,7 @@ knowledge graph.
 After the first package release is published:
 
 ```sh
-npm install --save-dev grapharch
+npm install --save-dev @ekgf/grapharch
 npx grapharch --help
 ```
 
