@@ -6,3 +6,10 @@ They cover SPARQL 1.1, SPARQL-star, Turtle and Turtle-star. Their ISC license is
 `build.rs` compiles it with Syntect into an embedded syntax set. Publishing never
 downloads or parses a grammar. Other languages use the existing Typst/Syntect
 syntax bundle (bat/two-face); HTML and PDF share Grapharch's light palette.
+
+The upstream files quote their capture-group keys (`'1': scope`). Sublime Text
+accepts that form, but Syntect reads only integer keys and would silently drop
+every captured scope (prefixed-name namespaces, numbers, declaration IRIs).
+`build.rs` therefore unquotes those keys while compiling; the vendored files
+stay byte-identical to upstream. Token colours come from the shared
+`TokenClass` palette in `../code/palette.rs`.
