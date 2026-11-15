@@ -11,25 +11,67 @@ fn main() {
     identity();
     let mut builder = SyntaxSet::new().into_builder();
     for grammar in [
-        "src/publication/render/syntaxes/sparql.sublime-syntax",
-        "src/publication/render/syntaxes/turtle.sublime-syntax",
+        VendoredGrammar(
+            "src/publication/render/syntaxes/sparql.sublime-syntax",
+        ),
+        VendoredGrammar(
+            "src/publication/render/syntaxes/turtle.sublime-syntax",
+        ),
     ] {
-        println!("cargo:rerun-if-changed={grammar}");
-        builder.add(
-            SyntaxDefinition::load_from_str(
-                &std::fs::read_to_string(grammar)
-                    .expect("read bundled linked-data grammar"),
-                false,
-                None,
-            )
-            .expect("compile bundled linked-data grammar"),
-        );
+        println!("cargo:rerun-if-changed={}", grammar.0);
+        builder.add(grammar.definition());
     }
     let destination =
         PathBuf::from(env::var_os("OUT_DIR").expect("Cargo OUT_DIR"))
             .join("linked-data.packdump");
     syntect::dumps::dump_to_file(&builder.build(), destination)
         .expect("write compiled SPARQL grammar");
+}
+
+/// A Sublime grammar vendored unchanged from an upstream package.
+struct VendoredGrammar(&'static str);
+
+impl VendoredGrammar {
+    fn definition(&self) -> SyntaxDefinition {
+        let source = std::fs::read_to_string(self.0)
+            .expect("read bundled linked-data grammar");
+        SyntaxDefinition::load_from_str(
+            &Self::syntect_source(&source),
+            false,
+            None,
+        )
+        .expect("compile bundled linked-data grammar")
+    }
+
+    /// Sublime Text accepts quoted capture-group keys (`'1': scope`), but
+    /// Syntect only reads integer keys and silently drops the others. The
+    /// LinkedData grammars quote every key, which removed every captured
+    /// scope: prefixed-name namespaces, numbers, base and prefix IRIs.
+    /// Unquote them so the compiled grammar keeps the upstream scopes.
+    fn syntect_source(source: &str) -> String {
+        let mut output = String::with_capacity(source.len());
+        for line in source.split_inclusive('\n') {
+            let body = line.trim_start();
+            let indent = &line[..line.len() - body.len()];
+            let key = body
+                .strip_prefix('\'')
+                .and_then(|rest| rest.split_once("':"))
+                .filter(|(digits, _)| {
+                    !digits.is_empty() &&
+                        digits.bytes().all(|byte| byte.is_ascii_digit())
+                });
+            match key {
+                Some((digits, rest)) => {
+                    output.push_str(indent);
+                    output.push_str(digits);
+                    output.push(':');
+                    output.push_str(rest);
+                },
+                None => output.push_str(line),
+            }
+        }
+        output
+    }
 }
 
 fn identity() {

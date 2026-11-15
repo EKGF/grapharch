@@ -1,11 +1,16 @@
 //! One offline syntax engine and palette for HTML and PDF code blocks.
+#[cfg(test)]
+mod linked_data_tests;
+mod palette;
+
 use {
+    self::palette::TokenClass,
     super::markup::{html_escape, quote},
     anyhow::{Context, Result},
     std::{borrow::Cow, sync::LazyLock},
     syntect::{
         easy::HighlightLines,
-        highlighting::{Color, StyleModifier, Theme, ThemeItem},
+        highlighting::{Color, Theme},
         parsing::SyntaxSet,
     },
 };
@@ -27,50 +32,9 @@ static THEME: LazyLock<Theme> = LazyLock::new(|| {
             color.b = (u16::from(color.b) * 3 / 4) as u8;
         }
     }
-    for (selector, color) in [
-        (
-            "string, source.json string, source.json meta.mapping.value.json \
-             string.quoted.double.json, source.rq string, source.ttl string, \
-             string.unquoted.iri",
-            Color { r: 20, g: 107, b: 54, a: 255 },
-        ),
-        (
-            "constant.numeric, meta.numeric, source.json constant.numeric",
-            Color { r: 154, g: 77, b: 0, a: 255 },
-        ),
-        (
-            "constant.language, source.json constant.language",
-            Color { r: 0, g: 90, b: 156, a: 255 },
-        ),
-        ("variable.other.readwrite.prefixed-name", Color {
-            r: 0,
-            g: 90,
-            b: 156,
-            a: 255,
-        }),
-        ("comment", Color { r: 91, g: 101, b: 117, a: 255 }),
-        // More specific than Typst's own JSON key and value selectors, which
-        // win ties and would otherwise outrank this palette.
-        (
-            "meta.mapping.key.json string, source.json meta.mapping.key.json \
-             string.quoted.double.json",
-            Color { r: 104, g: 54, b: 181, a: 255 },
-        ),
-        ("source.rq variable", Color {
-            r: 104,
-            g: 54,
-            b: 181,
-            a: 255,
-        }),
-    ] {
-        theme.scopes.push(ThemeItem {
-            scope: selector.parse().expect("bundled theme selector"),
-            style: StyleModifier {
-                foreground: Some(color),
-                ..StyleModifier::default()
-            },
-        });
-    }
+    theme
+        .scopes
+        .extend(TokenClass::ALL.map(TokenClass::theme_item));
     theme.settings.foreground = Some(Color { r: 24, g: 43, b: 53, a: 255 });
     theme
 });
@@ -123,11 +87,29 @@ fn runs(
     // lines; presentation wrapping happens only after the complete source
     // is tokenised.
     for line in source.split_inclusive('\n') {
+        let line_text = line.trim_end_matches('\n');
+        // Coalesce adjacent tokens of one colour, so a lexeme such as
+        // `$title` stays one displayed run in HTML and PDF.
+        let mut run: Option<(usize, usize, Color)> = None;
         for (style, text) in highlighter
-            .highlight_line(line.trim_end_matches('\n'), syntaxes)
+            .highlight_line(line_text, syntaxes)
             .with_context(|| format!("highlighting {language} code"))?
         {
-            emit(text, style.foreground);
+            let start = run.map_or(0, |(_, end, _)| end);
+            let end = start + text.len();
+            run = match run {
+                Some((from, _, color)) if color == style.foreground => {
+                    Some((from, end, color))
+                },
+                Some((from, to, color)) => {
+                    emit(&line_text[from..to], color);
+                    Some((start, end, style.foreground))
+                },
+                None => Some((start, end, style.foreground)),
+            };
+        }
+        if let Some((from, to, color)) = run {
+            emit(&line_text[from..to], color);
         }
         if line.ends_with('\n') {
             emit("\n", THEME.settings.foreground.unwrap());
