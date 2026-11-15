@@ -1,5 +1,5 @@
 //! Class-scoped existential shorthand, never a global property range or count.
-use super::{Diagram, Node};
+use super::{Diagram, Node, NodeKind};
 
 const SUBCLASS: &str = "http://www.w3.org/2000/01/rdf-schema#subClassOf";
 const ON_PROPERTY: &str = "http://www.w3.org/2002/07/owl#onProperty";
@@ -15,8 +15,8 @@ pub(super) struct Existential<'a> {
 pub(super) fn collect(diagram: &Diagram) -> Vec<Existential<'_>> {
     diagram.edges.iter().filter_map(|edge| {
         if edge.predicate.as_deref() != Some(SUBCLASS) ||
-            edge.from.kind != "Class" ||
-            edge.to.kind != "OWL expression"
+            edge.from.kind != NodeKind::Class ||
+            edge.to.kind != NodeKind::OwlExpression
         {
             return None;
         }
@@ -28,10 +28,10 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<Existential<'_>> {
         if incident.len() != 3 { return None; }
         let property = incident.iter().find(|(_, e)| e.from.id == edge.to.id && e.predicate.as_deref() == Some(ON_PROPERTY))?.1;
         let filler = incident.iter().find(|(_, e)| e.from.id == edge.to.id && e.predicate.as_deref() == Some(SOME_VALUES))?.1;
-        let object_view = property.to.kind == "Object property" ||
-            (matches!(property.to.kind.as_str(), "Resource" | "RDF property") && filler.to.kind == "Class");
+        let object_view = property.to.kind == NodeKind::ObjectProperty ||
+            (matches!(property.to.kind, NodeKind::Resource | NodeKind::RdfProperty) && filler.to.kind == NodeKind::Class);
         if !object_view ||
-            !matches!(filler.to.kind.as_str(), "Class" | "Resource") ||
+            !matches!(filler.to.kind, NodeKind::Class | NodeKind::Resource) ||
             filler.to.id == super::shorthand::GENERIC_RESOURCE
         { return None; }
         Some(Existential {

@@ -562,3 +562,6 @@ mod qualified_data;
 
 #[path = "owl_class_diagrams/union_domains.rs"]
 mod union_domains;
+
+#[path = "owl_class_diagrams/property_edges.rs"]
+mod property_edges;

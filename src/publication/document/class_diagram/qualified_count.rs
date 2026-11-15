@@ -1,11 +1,6 @@
 //! Class-scoped qualified counts; never a global property range or count.
 use {
-    super::{
-        Diagram,
-        Node,
-        layout::Layout,
-        projection::{label, text},
-    },
+    super::{Diagram, Node, NodeKind, escape::Escaped, layout::Layout},
     std::collections::BTreeMap,
 };
 
@@ -68,8 +63,8 @@ impl QualifiedCount<'_> {
             output.push_str(&format!(
                 "  {{field}} {} : {} [{}] {{qualified}} \
                  [[[./grapharch-node/n{}]]]\n",
-                text(&count.property.label),
-                text(
+                Escaped::inline(&count.property.label),
+                Escaped::inline(
                     &count
                         .filler
                         .id
@@ -99,7 +94,7 @@ impl QualifiedCount<'_> {
             self.multiplicity(),
             identifiers[self.filler.id.as_str()],
             identifiers[self.property.id.as_str()],
-            label(&self.property.label),
+            Escaped::wrapped(&self.property.label),
         ));
     }
 }
@@ -110,8 +105,8 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<QualifiedCount<'_>> {
         .iter()
         .filter_map(|edge| {
             if edge.predicate.as_deref() != Some(SUBCLASS) ||
-                edge.from.kind != "Class" ||
-                edge.to.kind != "OWL expression"
+                edge.from.kind != NodeKind::Class ||
+                edge.to.kind != NodeKind::OwlExpression
             {
                 return None;
             }
@@ -157,18 +152,22 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<QualifiedCount<'_>> {
             })?;
             let valid_property = if datatype {
                 matches!(
-                    property.kind.as_str(),
-                    "Datatype property" | "RDF property" | "Resource"
+                    property.kind,
+                    NodeKind::DatatypeProperty |
+                        NodeKind::RdfProperty |
+                        NodeKind::Resource
                 )
             } else {
                 matches!(
-                    property.kind.as_str(),
-                    "Object property" | "RDF property" | "Resource"
+                    property.kind,
+                    NodeKind::ObjectProperty |
+                        NodeKind::RdfProperty |
+                        NodeKind::Resource
                 )
             };
             if !valid_property ||
-                !matches!(filler.kind.as_str(), "Class" | "Resource") ||
-                count.kind != "Literal value" ||
+                !matches!(filler.kind, NodeKind::Class | NodeKind::Resource) ||
+                count.kind != NodeKind::LiteralValue ||
                 filler.id == super::shorthand::GENERIC_RESOURCE
             {
                 return None;
@@ -192,7 +191,7 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<QualifiedCount<'_>> {
 
 /// Parse original typed RDF values, never their presentation labels.
 pub(super) fn count_value(node: &Node) -> Option<u64> {
-    if node.kind != "Literal value" {
+    if node.kind != NodeKind::LiteralValue {
         return None;
     }
     let literal = node.id.parse::<oxrdf::Literal>().ok()?;

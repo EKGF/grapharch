@@ -1,6 +1,6 @@
 //! Route and namespace a retained engine SVG without performing layout.
 use {
-    super::{Projection, projection},
+    super::{Projection, plantuml_source},
     anyhow::Result,
     sha2::{Digest, Sha256},
 };
@@ -31,7 +31,9 @@ pub(crate) fn safe_link(value: &str) -> Result<()> {
 pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
     let mut result = projection.svg.clone();
     for (index, node) in
-        projection::nodes(&projection.diagram).values().enumerate()
+        plantuml_source::PlantUmlSource::index(&projection.diagram)
+            .values()
+            .enumerate()
     {
         let placeholder = format!("./grapharch-node/n{index}");
         for name in ["xlink:title", "title"] {

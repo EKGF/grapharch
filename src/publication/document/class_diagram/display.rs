@@ -2,6 +2,7 @@
 use {
     super::{
         Diagram,
+        NodeKind,
         labels::{Label, disambiguate},
     },
     crate::publication::view::RevisionView,
@@ -18,8 +19,10 @@ pub(super) async fn apply(
     let mut unique = BTreeMap::new(); // bounded: admitted diagram endpoints and shape fields (357).
     for node in diagram.nodes() {
         if matches!(
-            node.kind.as_str(),
-            "OWL expression" | "OWL union" | "Literal value"
+            node.kind,
+            NodeKind::OwlExpression |
+                NodeKind::OwlUnion |
+                NodeKind::LiteralValue
         ) {
             continue;
         }

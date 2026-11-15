@@ -40,23 +40,39 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   arrow: its hollow triangle points to the superclass. Anonymous subclass endpoints,
   `owl:equivalentClass`, and `owl:disjointWith` remain explicitly labeled arrows.
   No inference is performed.
-- A property with one named OWL class as its declared domain can use UML
-  shorthand. A datatype property becomes an attribute row, with its declared
-  range when present. A property with one declared resource range becomes a
-  labelled association; a property without a range remains an untyped member. Both link to the property documentation. This is
-  presentation shorthand: RDF properties remain independent resources, and no
-  requiredness, ownership, or multiplicity is inferred.
-- A simple object or generic RDF property with one named range and no domain
-  declared in the selected inputs uses a dotted `rdfs:Resource` source box and
-  labelled association. This box is a presentation placeholder, not a new RDF
-  assertion or a claim that a specific domain cannot be entailed. Declarations
-  in other pinned family sources are checked before using the placeholder;
-  subproperty inheritance is not executed as an ad hoc inference rule.
-- Multiple domains or ranges, anonymous expressions, and
-  properties referenced by other displayed relationships stay explicit. Their
-  domain/range assertions apply together, not as alternative choices. The
-  retained documentation graph preserves every original assertion regardless
-  of shorthand.
+- A property is drawn as an edge or a member, never as a box with
+  `rdfs:domain` and `rdfs:range` arrows. An object, annotation or generic RDF
+  property with a declared domain and range is one labelled association from
+  the domain to the range. With several domains or ranges, it is one
+  association for each declared domain–range pair: the declarations apply
+  together, so each pair holds for every use of the property, not as
+  alternative choices. A domain that is not declared as an OWL class in the
+  selected inputs, such as an imported `dcat:Dataset`, is still a valid source.
+- A datatype property, or a property without a specific range, is an attribute
+  row on each declared domain, typed with its declared ranges joined by `and`;
+  an untyped row has no range. A domain not declared as an OWL class becomes a
+  class box marked with its resource kind when it owns such a row. When a
+  domain is an anonymous OWL expression or a range is one, the property is an
+  association to that expression box instead. Associations and attributes
+  link to the property documentation. This is presentation shorthand: RDF
+  properties remain independent resources, and no requiredness, ownership, or
+  multiplicity is inferred.
+- A non-datatype property with declared ranges but no domain in the selected
+  inputs uses a dotted `rdfs:Resource` source box and one labelled association
+  per range. This box is a presentation placeholder, not a new RDF assertion
+  or a claim that a specific domain cannot be entailed. Declarations in other
+  pinned family sources are checked before using the placeholder; subproperty
+  inheritance is not executed as an ad hoc inference rule. `rdfs:Resource`
+  itself never counts as a specific domain or range.
+- A property stays an explicit box only when it takes part in another
+  displayed relationship, such as an OWL restriction, or when nothing can own
+  it: a datatype property without a domain, or a property with neither a
+  specific domain nor a specific range. The retained documentation graph
+  preserves every original assertion regardless of shorthand.
+- Label text is always drawn literally. Parentheses, angle brackets, quotes,
+  guillemets and other PlantUML syntax characters in labels are passed to the
+  layout engine as numeric character references, so a label can never become
+  a stereotype, template parameter, link or markup.
 - A simple anonymous subclass restriction with one named `owl:onProperty` and
   one named `owl:someValuesFrom` becomes a class-scoped association when the
   property is declared as an object property, or an undeclared/RDF predicate

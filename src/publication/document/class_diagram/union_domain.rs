@@ -1,6 +1,6 @@
 //! Bounded, complete explicit union domains; never a guessed generic domain.
 use {
-    super::{Edge, Node},
+    super::{Edge, Node, NodeKind},
     crate::publication::{dataset::Dataset, view::RevisionView},
     anyhow::Result,
     oxrdf::{NamedNode, Term},
@@ -23,7 +23,7 @@ pub(super) async fn expand(
         .iter()
         .filter(|e| e.predicate.as_deref() == Some(DOMAIN))
         .collect(); // bounded: 96 queried facts.
-    if domains.len() != 1 || domains[0].to.kind != "OWL expression" {
+    if domains.len() != 1 || domains[0].to.kind != NodeKind::OwlExpression {
         return Ok(None);
     }
     let expression = domains[0].to.clone();
@@ -83,7 +83,7 @@ FILTER(?p NOT IN (
         }
         let node =
             super::read::node(view, &member, prefixes, documented).await?;
-        if !matches!(node.kind.as_str(), "Class" | "Resource") {
+        if !matches!(node.kind, NodeKind::Class | NodeKind::Resource) {
             return Ok(None);
         }
         members.push(node);

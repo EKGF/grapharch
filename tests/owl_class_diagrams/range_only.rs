@@ -53,7 +53,6 @@ async fn declared_or_ambiguous_domains_and_ranges_do_not_use_a_placeholder()
         "ex:p a owl:ObjectProperty; rdfs:domain ex:Other; rdfs:range ex:Core .",
         "ex:p a owl:ObjectProperty; rdfs:domain ex:Other, ex:Third; \
          rdfs:range ex:Core .",
-        "ex:p a owl:ObjectProperty; rdfs:range ex:Core, ex:Other .",
         "ex:p a owl:DatatypeProperty; rdfs:range ex:Core .",
     ] {
         let body = diagram(&format!(

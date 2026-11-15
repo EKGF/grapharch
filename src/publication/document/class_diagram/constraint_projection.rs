@@ -1,12 +1,7 @@
 //! Ordinary UML qualifiers from unambiguous constraints; provenance stays
 //! retained.
 use {
-    super::{
-        Diagram,
-        Node,
-        constraints::Field,
-        projection::{label, text},
-    },
+    super::{Diagram, Node, constraints::Field, escape::Escaped},
     std::collections::BTreeMap,
 };
 
@@ -44,7 +39,7 @@ impl<'a> Property<'a> {
         if self.count.is_empty() {
             String::new()
         } else {
-            format!("\"{}\" ", text(&self.count))
+            format!("\"{}\" ", Escaped::inline(&self.count))
         }
     }
 }
@@ -86,26 +81,25 @@ pub(super) fn members(
         .filter(|(class, f)| class.id == node.id && !f.object)
     {
         if field.range.is_none() &&
-            shorthand.properties.iter().any(|property| {
-                !property.attribute() &&
-                    property.domain.id == node.id &&
-                    property.node.id == field.property.id
+            shorthand.associations.iter().any(|association| {
+                association.domain.id == node.id &&
+                    association.node.id == field.property.id
             })
         {
             continue;
         }
         let range = field
             .range
-            .map(|r| format!(" : {}", text(&r.label)))
+            .map(|r| format!(" : {}", Escaped::inline(&r.label)))
             .unwrap_or_default();
         let count = if field.count.is_empty() {
             String::new()
         } else {
-            format!(" [{}]", text(&field.count))
+            format!(" [{}]", Escaped::inline(&field.count))
         };
         output.push_str(&format!(
             "  {{field}} {}{range}{count} [[[./grapharch-node/n{}]]]\n",
-            text(&field.property.label),
+            Escaped::inline(&field.property.label),
             ids[field.property.id.as_str()]
         ));
     }
@@ -147,7 +141,7 @@ pub(super) fn associations(
             field.endpoint(),
             ids[range.id.as_str()],
             ids[field.property.id.as_str()],
-            label(&field.property.label)
+            Escaped::wrapped(&field.property.label)
         ));
     }
 }

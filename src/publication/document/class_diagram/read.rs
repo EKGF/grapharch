@@ -1,5 +1,5 @@
 use {
-    super::{Diagram, Edge, LANGUAGE, Node, Projection},
+    super::{Diagram, Edge, LANGUAGE, Node, NodeKind, Projection},
     crate::publication::{dataset::Dataset, view::RevisionView},
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
@@ -104,10 +104,10 @@ BIND(?s AS ?group)
             if !nodes.contains_key(id) {
                 let mut value =
                     node(metadata, id, prefixes, documented).await?;
-                if value.kind == "OWL expression" {
+                if value.kind == NodeKind::OwlExpression {
                     let ordinal = nodes
                         .values()
-                        .filter(|node| node.kind == "OWL expression")
+                        .filter(|node| node.kind == NodeKind::OwlExpression)
                         .count() +
                         1;
                     value.label = format!("Anonymous OWL expression {ordinal}");
@@ -121,7 +121,7 @@ BIND(?s AS ?group)
                 Node {
                     id:    value.to_string(),
                     label: value.value().into(),
-                    kind:  "Literal value".into(),
+                    kind:  NodeKind::LiteralValue,
                     link:  None,
                 }
             },
@@ -168,7 +168,7 @@ BIND(?s AS ?group)
     };
     for node in diagram.nodes_mut() {
         if unions.contains(&node.id) {
-            node.kind = "OWL union".into();
+            node.kind = NodeKind::OwlUnion;
         }
     }
     diagram.shapes = super::constraints::collect(
@@ -197,7 +197,7 @@ pub(super) async fn node(
 ) -> Result<Node> {
     let anonymous = id.as_str().starts_with("urn:grapharch:skolem:");
     let kind = if anonymous {
-        "OWL expression"
+        NodeKind::OwlExpression
     } else {
         let mut types = view
             .objects_by(
@@ -205,7 +205,7 @@ pub(super) async fn node(
                 &NamedNode::new_unchecked(crate::publication::RDF_TYPE),
             )
             .await?;
-        let mut kind = "Resource";
+        let mut kind = NodeKind::Resource;
         let mut property_types = 0_u8;
         let mut count = 0;
         while let Some(row) = types.next().await? {
@@ -214,12 +214,12 @@ pub(super) async fn node(
             if let Term::NamedNode(value) = &row["value"] {
                 if value.as_str() ==
                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property" &&
-                    kind == "Resource"
+                    kind == NodeKind::Resource
                 {
-                    kind = "RDF property";
+                    kind = NodeKind::RdfProperty;
                 }
                 match value.as_str().strip_prefix(OWL) {
-                    Some("Class") => kind = "Class",
+                    Some("Class") => kind = NodeKind::Class,
                     Some("ObjectProperty") => {
                         property_types |= 1;
                     },
@@ -230,7 +230,7 @@ pub(super) async fn node(
                         property_types |= 2;
                     },
                     Some("Restriction") => {
-                        kind = "OWL restriction";
+                        kind = NodeKind::OwlRestriction;
                         break;
                     },
                     _ => {},
@@ -239,12 +239,12 @@ pub(super) async fn node(
         }
         match property_types {
             0 => kind,
-            1 => "Object property",
-            2 => "Datatype property",
-            4 => "Annotation property",
+            1 => NodeKind::ObjectProperty,
+            2 => NodeKind::DatatypeProperty,
+            4 => NodeKind::AnnotationProperty,
             // Conflicting specialized declarations never imply datatype-only
             // presentation merely because one type was read first.
-            _ => "RDF property",
+            _ => NodeKind::RdfProperty,
         }
     };
     let label = if anonymous {
@@ -267,7 +267,7 @@ pub(super) async fn node(
             id.as_str().into()
         },
         label,
-        kind: kind.into(),
+        kind,
         link,
     })
 }

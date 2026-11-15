@@ -90,20 +90,13 @@ ex:connects a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Target .
     Ok(())
 }
 #[tokio::test]
-async fn ambiguous_or_referenced_properties_keep_explicit_assertions()
+async fn referenced_or_ownerless_properties_keep_explicit_assertions()
 -> Result<()> {
     for source in [
-        "ex:p a owl:AnnotationProperty ; rdfs:domain ex:Core, ex:Other ; \
-         rdfs:range ex:Target .",
-        "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core, ex:Other ; \
-         rdfs:range ex:Target .",
-        "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \
-         ex:Target, ex:Other .",
-        "ex:p a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range [ \
-         owl:unionOf (ex:A ex:B) ] .",
         "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \
          ex:Target . ex:Core rdfs:subClassOf [ a owl:Restriction ; \
          owl:onProperty ex:p ; owl:someValuesFrom ex:Target ] .",
+        "ex:p a owl:DatatypeProperty ; rdfs:range ex:Core .",
     ] {
         let body = diagram(&format!(
             "ex:Core a owl:Class . ex:Other a owl:Class . ex:Target a \
@@ -117,6 +110,58 @@ async fn ambiguous_or_referenced_properties_keep_explicit_assertions()
             drawing.source
         );
         assert!(!drawing.source.contains("{field}"));
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn several_or_anonymous_endpoints_still_draw_property_edges() -> Result<()>
+{
+    for (source, edges) in [
+        (
+            "ex:p a owl:AnnotationProperty ; rdfs:domain ex:Core, ex:Other ; \
+             rdfs:range ex:Target .",
+            2,
+        ),
+        (
+            "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core, ex:Other ; \
+             rdfs:range ex:Target .",
+            2,
+        ),
+        (
+            "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \
+             ex:Target, ex:Other .",
+            2,
+        ),
+        (
+            "ex:p a owl:DatatypeProperty ; rdfs:domain ex:Core ; rdfs:range [ \
+             owl:unionOf (ex:A ex:B) ] .",
+            1,
+        ),
+    ] {
+        let body = diagram(&format!(
+            "ex:Core a owl:Class . ex:Other a owl:Class . ex:Target a \
+             owl:Class . {source}"
+        ))
+        .await?;
+        let drawing = retained(&body)?;
+        assert!(
+            !drawing.source.contains("property>>") &&
+                !drawing.source.contains("rdfs:\\ndomain") &&
+                !drawing.source.contains("rdfs:\\nrange"),
+            "property must be an edge: {}",
+            drawing.source
+        );
+        assert_eq!(
+            drawing
+                .source
+                .lines()
+                .filter(|l| l.ends_with(" : ex:\\np"))
+                .count(),
+            edges,
+            "{}",
+            drawing.source
+        );
     }
     Ok(())
 }
@@ -161,8 +206,16 @@ ex:ambiguous a owl:ObjectProperty ; rdfs:domain ex:Core, ex:Resource ; rdfs:rang
             .source
             .contains("{field} ex:generic [[[./grapharch-node/")
     );
-    assert!(drawing.source.contains("ex:\\nambiguous"));
-    assert!(drawing.source.contains("rdfs:\\ndomain"));
+    assert_eq!(
+        drawing
+            .source
+            .matches("{field} ex:ambiguous [[[./grapharch-node/")
+            .count(),
+        2,
+        "{}",
+        drawing.source
+    );
+    assert!(!drawing.source.contains("rdfs:\\ndomain"));
     Ok(())
 }
 

@@ -3,7 +3,8 @@ use {
     super::{
         Diagram,
         Node,
-        projection::text,
+        NodeKind,
+        escape::Escaped,
         qualified_count::{
             MINIMUM,
             ON_CLASS,
@@ -39,7 +40,7 @@ impl Existence<'_> {
         if !self.covered(counts) {
             output.push_str(&format!(
                 "  {{field}} {} [1..*] [[[./grapharch-node/n{}]]]\n",
-                text(&self.property.label),
+                Escaped::inline(&self.property.label),
                 identifiers[self.property.id.as_str()]
             ));
         }
@@ -51,8 +52,8 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<Existence<'_>> {
         .iter()
         .filter_map(|edge| {
             if edge.predicate.as_deref() != Some(SUBCLASS) ||
-                edge.from.kind != "Class" ||
-                edge.to.kind != "OWL expression"
+                edge.from.kind != NodeKind::Class ||
+                edge.to.kind != NodeKind::OwlExpression
             {
                 return None;
             }
@@ -82,9 +83,11 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<Existence<'_>> {
                 })?
                 .1;
             if !matches!(
-                property.to.kind.as_str(),
-                "Object property" | "Resource" | "RDF property"
-            ) || filler.to.kind != "OWL expression"
+                property.to.kind,
+                NodeKind::ObjectProperty |
+                    NodeKind::Resource |
+                    NodeKind::RdfProperty
+            ) || filler.to.kind != NodeKind::OwlExpression
             {
                 return None;
             }
@@ -109,11 +112,13 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<Existence<'_>> {
                     .map(|(_, e)| &e.to)
             };
             if !matches!(
-                target(ON_PROPERTY)?.kind.as_str(),
-                "Object property" | "Resource" | "RDF property"
+                target(ON_PROPERTY)?.kind,
+                NodeKind::ObjectProperty |
+                    NodeKind::Resource |
+                    NodeKind::RdfProperty
             ) || !matches!(
-                target(ON_CLASS)?.kind.as_str(),
-                "Class" | "Resource"
+                target(ON_CLASS)?.kind,
+                NodeKind::Class | NodeKind::Resource
             ) || count_value(target(MINIMUM)?)? != 0
             {
                 return None;
