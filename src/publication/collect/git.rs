@@ -439,6 +439,7 @@ fn scan_remote_selected(
             repository: path.clone(),
             blob,
             revision: revision.clone(),
+            retain: false,
         }));
     }
     tracing::info!(commit=%revision.commit, files=files.len(), cache_reused=reused, "Git repository pinned");
@@ -522,14 +523,16 @@ fn blob_url(repository: &str, commit: &str, path: &str) -> Result<String> {
     Ok(base.into())
 }
 struct GitRdfFile {
-    project:    String,
-    processor:  String,
-    source:     String,
-    base:       String,
-    relative:   String,
-    repository: PathBuf,
-    blob:       gix::hash::ObjectId,
-    revision:   Revision,
+    pub(super) project:    String,
+    pub(super) processor:  String,
+    pub(super) source:     String,
+    pub(super) base:       String,
+    pub(super) relative:   String,
+    pub(super) repository: PathBuf,
+    pub(super) blob:       gix::hash::ObjectId,
+    pub(super) revision:   Revision,
+    /// Retain the exact source text for declared downloads.
+    pub(super) retain:     bool,
 }
 #[async_trait]
 impl Collector for GitRdfFile {
@@ -580,6 +583,18 @@ impl Collector for GitRdfFile {
             &self.source,
             &revision,
         );
+        if self.retain {
+            let text = std::str::from_utf8(&bytes)
+                .context("a downloadable RDF source must be UTF-8 text")?;
+            for quad in crate::publication::download::source_text(
+                &NamedNode::new(&self.processor)?,
+                text,
+                format.media_type(),
+                &self.base,
+            ) {
+                stream.write(quad).await?;
+            }
+        }
         let mut parser = RdfParser::from_format(format)
             .with_base_iri(&self.base)?
             .for_tokio_async_reader(bytes.as_slice());

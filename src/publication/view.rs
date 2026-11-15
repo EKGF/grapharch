@@ -58,6 +58,25 @@ impl RevisionView {
             .await
     }
 
+    /// Whether any subject states `property` with this object.
+    pub async fn is_object_of(
+        &self,
+        property: &str,
+        object: &NamedNode,
+    ) -> Result<bool> {
+        let pattern = self.pattern(
+            &format!("?subject {} {object}", term(property)),
+            0,
+        );
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT ?subject WHERE {{ {pattern} }} LIMIT 1"
+            ))
+            .await?;
+        Ok(rows.next().await?.is_some())
+    }
+
     /// Stream every logical statement about one subject, ordered by predicate
     /// and value. Callers bound how many statements they accept.
     pub async fn statements(&self, subject: &NamedNode) -> Result<Rows> {

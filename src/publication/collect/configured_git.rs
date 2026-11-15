@@ -105,7 +105,14 @@ impl Use<'_> {
                     self.view.node(self.processor, "asset").await?,
                 )?]
             },
-            CollectorKind::RdfFile => vec![blob.rdf_collector(processor)?],
+            CollectorKind::RdfFile => {
+                // A declared download needs the source's exact text.
+                let retain = self
+                    .view
+                    .is_object_of("downloadSource", self.processor)
+                    .await?;
+                vec![blob.rdf_collector(processor, retain)?]
+            },
             CollectorKind::CodeFile => {
                 vec![Arc::new(GitCodeFile::new(
                     project.as_str(),

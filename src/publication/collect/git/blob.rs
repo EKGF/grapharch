@@ -145,17 +145,24 @@ impl PinnedGitBlob {
         Ok(Arc::new(image))
     }
 
-    pub fn rdf_collector(&self, processor: &str) -> Result<Arc<dyn Collector>> {
+    /// Collect the RDF blob; `retain` also keeps its exact text for
+    /// declared downloads.
+    pub fn rdf_collector(
+        &self,
+        processor: &str,
+        retain: bool,
+    ) -> Result<Arc<dyn Collector>> {
         NamedNode::new(processor)?;
         Ok(Arc::new(GitRdfFile {
-            project:    self.revision.project.clone(),
-            processor:  processor.into(),
-            source:     self.source.clone(),
-            base:       self.location.clone(),
-            relative:   self.relative.clone(),
+            retain,
+            project: self.revision.project.clone(),
+            processor: processor.into(),
+            source: self.source.clone(),
+            base: self.location.clone(),
+            relative: self.relative.clone(),
             repository: self.repository.clone(),
-            blob:       self.blob,
-            revision:   self.revision.as_ref().clone(),
+            blob: self.blob,
+            revision: self.revision.as_ref().clone(),
         }))
     }
 

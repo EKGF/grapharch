@@ -15,7 +15,7 @@ use {
 };
 
 /// Classes whose instances are publication definitions.
-const CLASSES: [&str; 15] = [
+const CLASSES: [&str; 16] = [
     "Project",
     "Target",
     "Profile",
@@ -31,10 +31,11 @@ const CLASSES: [&str; 15] = [
     "CoverBlock",
     "Notice",
     "CopyrightHolder",
+    "Download",
 ];
 
 /// Defined resources that no content contribution may describe.
-const DECLARED: [&str; 13] = [
+const DECLARED: [&str; 14] = [
     "Project",
     "Target",
     "Profile",
@@ -48,11 +49,12 @@ const DECLARED: [&str; 13] = [
     "CoverBlock",
     "Notice",
     "CopyrightHolder",
+    "Download",
 ];
 
 /// Predicates that only publication definitions assert. Collector output such
 /// as fragments, topics, references and assets uses none of them.
-const PREDICATES: [&str; 55] = [
+const PREDICATES: [&str; 59] = [
     "target",
     "scope",
     "profile",
@@ -71,6 +73,10 @@ const PREDICATES: [&str; 55] = [
     "traverse",
     "maxDepth",
     "notice",
+    "download",
+    "fileName",
+    "downloadFormat",
+    "downloadSource",
     "copyrightHolder",
     "metadataSource",
     "derivedMetadata",

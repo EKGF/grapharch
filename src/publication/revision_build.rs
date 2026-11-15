@@ -103,7 +103,7 @@ impl Build<'_> {
         self.inputs
             .definitions
             .blob()
-            .rdf_collector(DEFINITIONS_PROCESSOR)?
+            .rdf_collector(DEFINITIONS_PROCESSOR, false)?
             .collect(self.writer)
             .await?;
         let definitions = RevisionView::new(

@@ -404,6 +404,7 @@ impl Publisher {
                 let pdf = self.compile(&stage.path).await?;
                 tokio::fs::write(stage.path.join(name), pdf).await?;
             }
+            let download_files = write_downloads(plan, &stage.path).await?;
             let mut manifest = plan.manifest(job);
             if let Some(files) = website_files {
                 manifest.files = files;
@@ -417,6 +418,7 @@ impl Publisher {
                     bookshelf::manifest_books(plan, &stage.path).await?;
             }
             manifest.files.extend(image_files);
+            manifest.files.extend(download_files);
             manifest.files.extend(cover_logo);
             manifest.files.push(
                 crate::publication::icon::write_licenses(&stage.path).await?,
@@ -451,6 +453,27 @@ impl Publisher {
         stage.cleanup().await?;
         result
     }
+}
+
+/// Write the target's declared RDF downloads beside its entry document.
+async fn write_downloads(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
+    let mut files = Vec::new();
+    for download in crate::publication::download::Download::read_all(
+        &plan.source,
+        &plan.target,
+    )
+    .await?
+    {
+        let path = stage.join(&download.file_name);
+        ensure!(
+            !tokio::fs::try_exists(&path).await?,
+            "download {} collides with a generated publication file",
+            download.file_name
+        );
+        tokio::fs::write(&path, download.bytes(&plan.source).await?).await?;
+        files.push(download.file_name);
+    }
+    Ok(files)
 }
 
 #[cfg(test)]

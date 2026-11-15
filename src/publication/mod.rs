@@ -13,6 +13,7 @@ mod definitions;
 mod diagnostic_graph;
 pub mod diagnostics;
 pub mod document;
+pub(crate) mod download;
 mod gallery;
 pub mod governance;
 mod graph_placement;
