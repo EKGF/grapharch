@@ -8,8 +8,8 @@
 # supplies the deployment URL; the definitions never declare it.
 <urn:grapharch:showcase:dprod> a ga:Showcase ;
     ga:gitRepository "https://github.com/EKGF/dprod.git" ;
-    ga:gitCommit "01ace328ca32f4c85146ec0022433c5565bb2315" ;
-    ga:definitionsCommit "01ace328ca32f4c85146ec0022433c5565bb2315" ;
+    ga:gitCommit "72e9d272466a8fbfff13e59d064947e7c5cf3b13" ;
+    ga:definitionsCommit "72e9d272466a8fbfff13e59d064947e7c5cf3b13" ;
     ga:definitionsPath "publication/definitions/develop.ttl" ;
     ga:showcaseProject <urn:dprod-showcase:project> ;
     ga:allTargets true .
