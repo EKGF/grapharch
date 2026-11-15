@@ -10,6 +10,7 @@ pub(crate) mod namespace_bindings;
 pub mod native_metadata;
 pub mod plantuml;
 pub(crate) mod publication_inventory;
+mod query_caption;
 mod query_display;
 mod resource;
 mod run_in_headings;
