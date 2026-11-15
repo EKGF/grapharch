@@ -1,7 +1,11 @@
 //! One explicitly annotated RDF term becomes one reference fragment. Selection
 //! and publication arrangement remain outside this documentor.
 use {
-    super::{Documentor, shacl_queries::Queries},
+    super::{
+        Documentor,
+        query_caption::QueryCaption,
+        shacl_queries::{Queries, QueryOwner},
+    },
     crate::publication::{
         RDF_TYPE,
         dataset::{Dataset, Stage, identity},
@@ -199,6 +203,7 @@ impl AnnotatedTermDocumentor {
             };
             let next = next.clone();
             let mut annotations = Vec::new();
+            let caption = QueryCaption::from_facts(&facts, &self.language)?;
             for (predicate, object) in &facts {
                 if predicate.as_str() == FIRST ||
                     predicate.as_str() == REST ||
@@ -207,20 +212,23 @@ impl AnnotatedTermDocumentor {
                 {
                     continue;
                 }
-                let value =
-                    if let Some(code) = queries.capture(predicate, object)? {
-                        code
-                    } else {
-                        self.source_value(
-                            view,
-                            object,
-                            references,
-                            path,
-                            depth + 1,
-                            queries,
-                        )
-                        .await?
-                    };
+                let value = if let Some(code) = queries.capture(
+                    predicate,
+                    object,
+                    QueryOwner::Anonymous(&caption),
+                )? {
+                    code
+                } else {
+                    self.source_value(
+                        view,
+                        object,
+                        references,
+                        path,
+                        depth + 1,
+                        queries,
+                    )
+                    .await?
+                };
                 annotations.push(format!(
                     "{}: {value}",
                     code(&self.compact(predicate))
@@ -286,10 +294,14 @@ impl AnnotatedTermDocumentor {
                         .await?
                     } else {
                         let mut pairs = Vec::new();
+                        let caption =
+                            QueryCaption::from_facts(&facts, &self.language)?;
                         for (predicate, object) in facts {
-                            let object = if let Some(code) =
-                                queries.capture(&predicate, &object)?
-                            {
+                            let object = if let Some(code) = queries.capture(
+                                &predicate,
+                                &object,
+                                QueryOwner::Anonymous(&caption),
+                            )? {
                                 code
                             } else {
                                 self.source_value(
@@ -438,6 +450,7 @@ impl Documentor for AnnotatedTermDocumentor {
         let mut hash = Sha256::new();
         let mut examples = Vec::new();
         let mut queries = Queries::default();
+        let mut caption = QueryCaption::default();
         let mut count = 0;
         while let Some(row) = rows.next().await? {
             ensure!(
@@ -450,6 +463,7 @@ impl Documentor for AnnotatedTermDocumentor {
             };
             let value = &row["object"];
             hash.update(format!("{predicate} {value}\n"));
+            caption.observe(predicate, value, &self.language)?;
             if predicate.as_str() ==
                 "http://www.w3.org/2000/01/rdf-schema#isDefinedBy"
             {
@@ -528,7 +542,9 @@ impl Documentor for AnnotatedTermDocumentor {
                     continue;
                 }
             }
-            let value = if let Some(code) = queries.capture(predicate, value)? {
+            let value = if let Some(code) =
+                queries.capture(predicate, value, QueryOwner::Subject)?
+            {
                 code
             } else if self.source_annotations {
                 self.source_value(
@@ -799,6 +815,7 @@ impl Documentor for AnnotatedTermDocumentor {
                 .unwrap_or(if self.family_reference { 2 } else { 1 })
                 as usize +
                 2,
+            &caption,
         );
         if types.iter().any(|(kind, _)| {
             kind.as_str() == "http://www.w3.org/2002/07/owl#Class"
