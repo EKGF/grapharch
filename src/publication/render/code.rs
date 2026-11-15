@@ -87,11 +87,29 @@ fn runs(
     // lines; presentation wrapping happens only after the complete source
     // is tokenised.
     for line in source.split_inclusive('\n') {
+        let line_text = line.trim_end_matches('\n');
+        // Coalesce adjacent tokens of one colour, so a lexeme such as
+        // `$title` stays one displayed run in HTML and PDF.
+        let mut run: Option<(usize, usize, Color)> = None;
         for (style, text) in highlighter
-            .highlight_line(line.trim_end_matches('\n'), syntaxes)
+            .highlight_line(line_text, syntaxes)
             .with_context(|| format!("highlighting {language} code"))?
         {
-            emit(text, style.foreground);
+            let start = run.map_or(0, |(_, end, _)| end);
+            let end = start + text.len();
+            run = match run {
+                Some((from, _, color)) if color == style.foreground => {
+                    Some((from, end, color))
+                },
+                Some((from, to, color)) => {
+                    emit(&line_text[from..to], color);
+                    Some((start, end, style.foreground))
+                },
+                None => Some((start, end, style.foreground)),
+            };
+        }
+        if let Some((from, to, color)) = run {
+            emit(&line_text[from..to], color);
         }
         if line.ends_with('\n') {
             emit("\n", THEME.settings.foreground.unwrap());
