@@ -57,8 +57,7 @@ ex:classification a owl:ObjectProperty ;
     assert_eq!(
         associations(
             &drawing.source,
-            "information \
-             sensitivity\\nclassification\\n&#40;ex:classification&#41;"
+            ": information sensitivity\\nclassification"
         ),
         1,
         "{}",

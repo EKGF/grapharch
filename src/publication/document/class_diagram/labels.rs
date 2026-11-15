@@ -1,5 +1,5 @@
-//! Source-owned display labels with bounded language selection and local
-//! identity disambiguation.
+//! Source-owned display labels with bounded language selection, foreign
+//! ontology qualification and local identity disambiguation.
 use {
     crate::publication::view::RevisionView,
     anyhow::{Result, ensure},
@@ -7,10 +7,19 @@ use {
     std::collections::{BTreeMap, BTreeSet},
 };
 
+/// Whether a label names a property (edge or field) or a box. Equal text
+/// across the two roles is not ambiguous in the drawing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(super) enum LabelRole {
+    Property,
+    Box,
+}
+
 pub(super) struct Label {
     pub iri:   String,
     pub qname: String,
     pub text:  String,
+    pub role:  LabelRole,
 }
 
 impl Label {
@@ -18,6 +27,7 @@ impl Label {
         view: &RevisionView,
         id: &NamedNode,
         qname: String,
+        role: LabelRole,
         language: &str,
     ) -> Result<Self> {
         let mut selection = Selection::default();
@@ -36,7 +46,18 @@ impl Label {
             .best
             .map(|(_, text)| text)
             .unwrap_or_else(|| qname.clone());
-        Ok(Self { iri: id.as_str().into(), qname, text })
+        Ok(Self { iri: id.as_str().into(), qname, text, role })
+    }
+}
+
+impl Label {
+    /// Shows the prefixed name beside an authored label, as for a resource
+    /// from another ontology than the focus term. A label that already is the
+    /// prefixed name stays unchanged.
+    pub fn qualify(&mut self) {
+        if self.text != self.qname {
+            self.text = format!("{} ({})", self.text, self.qname);
+        }
     }
 }
 
@@ -104,7 +125,8 @@ pub(super) fn disambiguate(labels: &mut [Label]) -> Result<()> {
     // bounded: one entry per admitted display label, at most 357 (focus + 36
     // endpoints + 64 shape identities + 256 field endpoints).
     let mut identities = BTreeMap::new();
-    let mut groups: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut groups: BTreeMap<(LabelRole, String), BTreeSet<String>> =
+        BTreeMap::new();
     for label in labels.iter() {
         ensure!(
             !label.text.is_empty() &&
@@ -123,24 +145,24 @@ pub(super) fn disambiguate(labels: &mut [Label]) -> Result<()> {
             );
         }
         groups
-            .entry(label.text.clone())
+            .entry((label.role, label.text.clone()))
             .or_default()
             .insert(label.iri.clone());
     }
     for label in labels.iter_mut() {
-        if groups[&label.text].len() > 1 {
+        if groups[&(label.role, label.text.clone())].len() > 1 {
             label.text = format!("{} ({})", label.text, label.qname);
         }
     }
     groups.clear();
     for label in labels.iter() {
         groups
-            .entry(label.text.clone())
+            .entry((label.role, label.text.clone()))
             .or_default()
             .insert(label.iri.clone());
     }
     for label in labels.iter_mut() {
-        if groups[&label.text].len() > 1 {
+        if groups[&(label.role, label.text.clone())].len() > 1 {
             label.text = format!("{} [{}]", label.text, label.iri);
         }
         ensure!(
@@ -150,7 +172,7 @@ pub(super) fn disambiguate(labels: &mut [Label]) -> Result<()> {
     }
     groups.clear();
     for label in labels.iter() {
-        let ids = groups.entry(label.text.clone()).or_default();
+        let ids = groups.entry((label.role, label.text.clone())).or_default();
         ids.insert(label.iri.clone());
         ensure!(
             ids.len() == 1,
@@ -231,6 +253,7 @@ mod tests {
             iri:   iri.into(),
             qname: qname.into(),
             text:  text.into(),
+            role:  LabelRole::Box,
         }
     }
     #[test]

@@ -11,6 +11,7 @@ mod layout;
 mod legend;
 mod model;
 mod nested_existence;
+mod ontology;
 mod plantuml_source;
 mod projection;
 mod property_declaration;

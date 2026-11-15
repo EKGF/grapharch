@@ -565,3 +565,6 @@ mod union_domains;
 
 #[path = "owl_class_diagrams/property_edges.rs"]
 mod property_edges;
+
+#[path = "owl_class_diagrams/ontology_labels.rs"]
+mod ontology_labels;
