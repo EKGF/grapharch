@@ -1,9 +1,12 @@
 use {
     super::{Diagram, Edge, LANGUAGE, Node, NodeKind, Projection},
-    crate::publication::{dataset::Dataset, view::RevisionView},
+    crate::publication::{
+        dataset::Dataset,
+        document::anonymous_order::AnonymousOrder,
+        view::RevisionView,
+    },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
-    sha2::{Digest, Sha256},
     std::collections::{BTreeMap, HashSet},
 };
 const OWL: &str = "http://www.w3.org/2002/07/owl#";
@@ -68,42 +71,66 @@ BIND(?s AS ?group)
 ?s ?p ?list . FILTER(?p IN (<{OWL}unionOf>, <{OWL}intersectionOf>))
 ?list <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?o
 "#), 44);
-    let mut rows = dataset
-        .select(format!(
-            "SELECT DISTINCT ?group ?s ?p ?o WHERE {{ {{ {direct} }} UNION {{ \
-             {property} }} UNION {{ {restrictions} }} UNION {{ {nested} }} \
-             UNION {{ {expressions} }} FILTER(isIRI(?s) && (isIRI(?o) || \
-             isLiteral(?o))) }} ORDER BY ?group ?s ?p ?o LIMIT 97"
-        ))
-        .await?;
-    let mut groups = BTreeMap::<String, Vec<Edge>>::new(); // bounded: ninety-six facts plus one sentinel.
+    let selection = format!(
+        "{{ {direct} }} UNION {{ {property} }} UNION {{ {restrictions} }} \
+         UNION {{ {nested} }} UNION {{ {expressions} }} FILTER(isIRI(?s) && \
+         (isIRI(?o) || isLiteral(?o)))"
+    );
+    let order = AnonymousOrder::new(dataset, view);
+    let mut groups = Vec::<Vec<Edge>>::new(); // bounded: ninety-six facts.
     let mut count = 0;
     let mut nodes = BTreeMap::new(); // bounded: at most 193 endpoint resources.
-    let focus = node(metadata, subject, prefixes, documented).await?;
+    let mut ids = HashSet::new(); // bounded: the endpoint nodes above.
+    let focus = node(metadata, &order, subject, prefixes, documented).await?;
+    ids.insert(focus.id.clone());
     nodes.insert(subject.clone(), focus.clone());
     let mut overflow = false;
-    while let Some(row) = rows.next().await? {
-        let group = row["group"].to_string();
-        if count == 96 {
-            // Never show a group cut short by the query budget.
-            groups.remove(&group);
-            overflow = true;
-            break;
+    let mut rows = Vec::new(); // bounded: ninety-six facts plus one sentinel.
+    'groups: for group in order.groups(&selection).await? {
+        let mut facts = dataset
+            .select(format!(
+                "SELECT DISTINCT ?s ?p ?o WHERE {{ {selection} FILTER(?group \
+                 = {group}) }} LIMIT {}",
+                97 - count
+            ))
+            .await?;
+        let mut group_rows = Vec::new(); // bounded: the remaining fact budget.
+        while let Some(row) = facts.next().await? {
+            if count == 96 {
+                // Never show a group cut short by the fact budget.
+                overflow = true;
+                break 'groups;
+            }
+            count += 1;
+            group_rows.push([
+                row["s"].clone(),
+                row["p"].clone(),
+                row["o"].clone(),
+            ]);
         }
-        count += 1;
-        let (Term::NamedNode(from), Term::NamedNode(predicate)) =
-            (&row["s"], &row["p"])
+        let index = groups.len();
+        rows.extend(
+            order
+                .sort_statements(group_rows)
+                .await?
+                .into_iter()
+                .map(|[s, p, o]| (index, s, p, o)),
+        );
+        groups.push(Vec::new());
+    }
+    for (group, s, p, o) in rows {
+        let (Term::NamedNode(from), Term::NamedNode(predicate)) = (&s, &p)
         else {
             anyhow::bail!("class diagram relationship must identify resources");
         };
-        let mut ids = vec![from]; // bounded: two endpoint IDs.
-        if let Term::NamedNode(to) = &row["o"] {
-            ids.push(to);
+        let mut endpoints = vec![from]; // bounded: two endpoint IDs.
+        if let Term::NamedNode(to) = &o {
+            endpoints.push(to);
         }
-        for id in ids {
+        for id in endpoints {
             if !nodes.contains_key(id) {
                 let mut value =
-                    node(metadata, id, prefixes, documented).await?;
+                    node(metadata, &order, id, prefixes, documented).await?;
                 if value.kind == NodeKind::OwlExpression {
                     let ordinal = nodes
                         .values()
@@ -112,10 +139,16 @@ BIND(?s AS ?group)
                         1;
                     value.label = format!("Anonymous OWL expression {ordinal}");
                 }
+                let base = value.id.clone();
+                let mut copy = 1;
+                while !ids.insert(value.id.clone()) {
+                    copy += 1;
+                    value.id = format!("{base}-{copy}");
+                }
                 nodes.insert(id.clone(), value);
             }
         }
-        let target = match &row["o"] {
+        let target = match &o {
             Term::NamedNode(to) => nodes[to].clone(),
             Term::Literal(value) => {
                 Node {
@@ -127,7 +160,7 @@ BIND(?s AS ?group)
             },
             _ => anyhow::bail!("unsupported diagram endpoint"),
         };
-        groups.entry(group).or_default().push(Edge {
+        groups[group].push(Edge {
             predicate: Some(predicate.as_str().into()),
             from:      nodes[from].clone(),
             relation:  if matches!(
@@ -144,7 +177,7 @@ BIND(?s AS ?group)
     let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
     let mut group_ends = Vec::new(); // bounded: five complete groups.
     let mut unions = HashSet::new(); // bounded: at most five admitted union domains.
-    for mut group in groups.into_values() {
+    for mut group in groups {
         let union = super::union_domain::expand(
             dataset, metadata, &mut group, &nodes, prefixes, documented,
         )
@@ -191,6 +224,7 @@ fn write(body: &mut String, projection: Projection) -> Result<()> {
 }
 pub(super) async fn node(
     view: &RevisionView,
+    order: &AnonymousOrder<'_>,
     id: &NamedNode,
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
@@ -259,10 +293,7 @@ pub(super) async fn node(
     .then(|| id.as_str().to_owned());
     Ok(Node {
         id: if anonymous {
-            format!(
-                "expression-{}",
-                hex::encode(Sha256::digest(id.as_str().as_bytes()))
-            )
+            format!("expression-{}", order.digest(id).await?)
         } else {
             id.as_str().into()
         },

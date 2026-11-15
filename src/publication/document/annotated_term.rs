@@ -3,6 +3,7 @@
 use {
     super::{
         Documentor,
+        anonymous_order::AnonymousOrder,
         query_caption::QueryCaption,
         shacl_queries::{Queries, QueryOwner},
     },
@@ -126,32 +127,14 @@ impl AnnotatedTermDocumentor {
         view: &RevisionView,
         iri: &NamedNode,
     ) -> Result<Vec<(NamedNode, Term)>> {
-        let pattern = view.pattern(&format!("{iri} ?predicate ?object"), 3);
-        let mut rows = self
-            .dataset
-            .select(format!(
-                "SELECT DISTINCT ?predicate ?object WHERE {{ {pattern} }} \
-                 ORDER BY ?predicate ?object LIMIT 65"
-            ))
-            .await?;
-        let mut facts = Vec::new();
-        while let Some(row) = rows.next().await? {
-            ensure!(
-                facts.len() < 64,
-                "anonymous RDF expression exceeds fact budget for {}",
-                self.subject
-            );
-            let Term::NamedNode(predicate) = &row["predicate"] else {
-                anyhow::bail!("RDF predicate must be named")
-            };
-            facts.push((predicate.clone(), row["object"].clone()));
-        }
+        let order = AnonymousOrder::new(&self.dataset, view);
+        let facts = order.facts(iri).await?;
         ensure!(
             !facts.is_empty(),
             "anonymous RDF expression has no retained facts for {}",
             self.subject
         );
-        Ok(facts)
+        order.arrange(facts).await
     }
 
     async fn source_collection(
@@ -451,17 +434,22 @@ impl Documentor for AnnotatedTermDocumentor {
         let mut examples = Vec::new();
         let mut queries = Queries::default();
         let mut caption = QueryCaption::default();
-        let mut count = 0;
+        let mut subject_facts = Vec::new(); // bounded: 512 facts.
         while let Some(row) = rows.next().await? {
             ensure!(
-                count < 512,
+                subject_facts.len() < 512,
                 "annotated term exceeds 512-fact budget"
             );
-            count += 1;
             let Term::NamedNode(predicate) = &row["predicate"] else {
                 anyhow::bail!("term predicate must be an IRI")
             };
-            let value = &row["object"];
+            subject_facts.push((predicate.clone(), row["object"].clone()));
+        }
+        let subject_facts = AnonymousOrder::new(&self.dataset, &view)
+            .arrange(subject_facts)
+            .await?;
+        for (predicate, object) in &subject_facts {
+            let value = object;
             hash.update(format!("{predicate} {value}\n"));
             caption.observe(predicate, value, &self.language)?;
             if predicate.as_str() ==
@@ -600,7 +588,7 @@ impl Documentor for AnnotatedTermDocumentor {
                 }
             };
             if predicate.as_str() == RDF_TYPE &&
-                let Term::NamedNode(iri) = &row["object"]
+                let Term::NamedNode(iri) = object
             {
                 types.push((iri.clone(), value.clone()));
             }

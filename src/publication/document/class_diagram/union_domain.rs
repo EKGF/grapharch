@@ -1,7 +1,11 @@
 //! Bounded, complete explicit union domains; never a guessed generic domain.
 use {
     super::{Edge, Node, NodeKind},
-    crate::publication::{dataset::Dataset, view::RevisionView},
+    crate::publication::{
+        dataset::Dataset,
+        document::anonymous_order::AnonymousOrder,
+        view::RevisionView,
+    },
     anyhow::Result,
     oxrdf::{NamedNode, Term},
     std::collections::{BTreeMap, BTreeSet, HashSet},
@@ -81,8 +85,14 @@ FILTER(?p NOT IN (
         {
             return Ok(None);
         }
-        let node =
-            super::read::node(view, &member, prefixes, documented).await?;
+        let node = super::read::node(
+            view,
+            &AnonymousOrder::new(dataset, view),
+            &member,
+            prefixes,
+            documented,
+        )
+        .await?;
         if !matches!(node.kind, NodeKind::Class | NodeKind::Resource) {
             return Ok(None);
         }

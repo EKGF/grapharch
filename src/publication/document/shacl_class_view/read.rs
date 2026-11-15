@@ -1,6 +1,11 @@
 use {
     super::{Property, SH, Shape},
-    crate::publication::{RDF_TYPE, dataset::Dataset, view::RevisionView},
+    crate::publication::{
+        RDF_TYPE,
+        dataset::Dataset,
+        document::anonymous_order::AnonymousOrder,
+        view::RevisionView,
+    },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
 };
@@ -98,5 +103,5 @@ async fn facts(
         );
         facts.push((predicate.clone(), row["o"].clone()));
     }
-    Ok(facts)
+    AnonymousOrder::new(dataset, view).arrange(facts).await
 }
