@@ -82,6 +82,13 @@
     stroke: if T.table_grid { 0.4pt + T.table_rule_color } else { (x: none, y: 0.4pt + T.table_rule_color) },
     fill: (x, y) => if has-header and y == header-row { T.table_header_fill }, ..cells)
 ]
+// Declared BCP 14 keywords. Small capitals are set as reduced capitals, which
+// needs no font small-caps feature and keeps the keyword's uppercase text.
+#let ga-normative(body) = if T.normative_keyword_style == "small-caps" {
+  text(size: 0.82em, tracking: 0.04em, weight: "semibold", body)
+} else {
+  text(style: "italic", weight: "bold", body)
+}
 #let ga-callout(label, body, kind: "note") = if T.tinted_callouts {
   let colors = (
     note: (rgb("#175a98"), rgb("#f1f6fc")),

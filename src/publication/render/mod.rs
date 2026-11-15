@@ -26,6 +26,7 @@ mod markup;
 mod model;
 mod native_typst;
 mod nested;
+mod normative;
 mod notices;
 mod owned_file;
 mod pdf_download;
@@ -384,10 +385,17 @@ impl Publisher {
                 } else {
                     html::STYLE
                 };
+                let keywords = plan
+                    .conformance
+                    .css(
+                        plan,
+                        crate::publication::theme::Builtin::Specification,
+                    )
+                    .await?;
                 tokio::fs::write(
                     stage.path.join("style.css"),
                     format!(
-                        "{style}\n{}\n{}\n{}",
+                        "{style}\n{}\n{}\n{}\n{keywords}",
                         concat!(
                             include_str!("callouts.css"),
                             include_str!("diagrams.css"),

@@ -243,6 +243,13 @@ ga:OntologyModuleShape a sh:NodeShape ; sh:targetClass ga:OntologyModule ; sh:no
 ga:ContentsDepthShape a sh:NodeShape ; sh:targetSubjectsOf ga:tocDepth ;
     sh:property [sh:path ga:tocDepth; sh:datatype xsd:integer; sh:minInclusive 1; sh:maxInclusive 8; sh:maxCount 1] .
 
+ga:ConformanceLanguageShape a sh:NodeShape ; sh:targetSubjectsOf ga:conformanceLanguage ;
+    sh:class ga:Target ;
+    sh:property [ sh:path ga:conformanceLanguage ; sh:nodeKind sh:IRI ; sh:in ( ga:Bcp14 ) ; sh:maxCount 1 ] .
+
+ga:NormativeKeywordStyleShape a sh:NodeShape ; sh:targetSubjectsOf ga:normativeKeywordStyle ;
+    sh:property [ sh:path ga:normativeKeywordStyle ; sh:datatype xsd:string ; sh:in ( "small-caps" "bold-italic" ) ; sh:maxCount 1 ] .
+
 ga:BookPlanShape a sh:NodeShape ; sh:targetClass ga:BookPlan ;
     sh:property [ sh:path ga:bookRoot ; sh:class ga:Placement ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:bookSubject ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;

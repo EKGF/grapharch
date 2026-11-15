@@ -178,9 +178,14 @@ pub(super) fn render(
         &mut html,
         catalog
             .abbreviations
-            .html(super::super::markdown_html::events(
-                events.into_iter(),
-            )?)?
+            .html(
+                catalog
+                    .conformance
+                    .html(super::super::markdown_html::events(
+                        events.into_iter(),
+                    )?)
+                    .into_iter(),
+            )?
             .into_iter(),
     );
     html = html.replace(

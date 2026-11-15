@@ -10,6 +10,10 @@ use {
 fn sources() -> [(&'static str, &'static str); 6] {
     [
         (
+            "conformance-languages",
+            include_str!("../../docs/other/ontology/conformance-languages.ttl"),
+        ),
+        (
             "document-types",
             include_str!("../../docs/other/ontology/document-types.ttl"),
         ),

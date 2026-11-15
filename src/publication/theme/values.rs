@@ -30,6 +30,8 @@ pub(crate) enum Kind {
     Paper,
     Numbering,
     Depth,
+    /// A [`super::KeywordStyle`] spelling.
+    KeywordStyle,
     /// Text that must contain the named placeholder.
     Pattern(&'static str),
 }
@@ -106,6 +108,10 @@ impl Kind {
                     "us-legal",
                 ])
                 .map(quote)
+            },
+            Self::KeywordStyle => {
+                super::KeywordStyle::parse(token, value)
+                    .map(|style| quote(style.as_str()))
             },
             Self::Numbering => {
                 closed(token, value, &["1", "i", "I", "a", "A"]).map(quote)
@@ -265,6 +271,15 @@ mod tests {
             "\"Table \\\"of\\\" Contents\""
         );
         assert!(Kind::Paper.typst("paper", &text("letter")).is_err());
+        assert_eq!(
+            Kind::KeywordStyle.typst("keywords", &text("small-caps"))?,
+            "\"small-caps\""
+        );
+        assert!(
+            Kind::KeywordStyle
+                .typst("keywords", &text("SmallCaps"))
+                .is_err()
+        );
         assert!(Kind::Bool.typst("flag", &text("true")).is_err());
         assert_eq!(
             Kind::Bool.typst("flag", &Literal::from(true).into())?,

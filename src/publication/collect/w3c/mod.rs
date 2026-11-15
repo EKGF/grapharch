@@ -74,7 +74,7 @@ impl Collector for W3cSpecificationFile {
             "published W3C source exceeds 2 MiB"
         );
         let revision = format!(
-            "w3c-published-v3:{}:{}",
+            "w3c-published-v4:{}:{}",
             hex::encode(Sha256::digest(&bytes)),
             self.url
         );
@@ -246,6 +246,15 @@ impl Collector for W3cSpecificationFile {
                 oxrdf::GraphName::DefaultGraph,
             ))
             .await?;
+        if parsed.bcp14 {
+            write(
+                output,
+                &target,
+                "conformanceLanguage",
+                term("Bcp14").into(),
+            )
+            .await?;
+        }
         if let Some(copyright) = header.copyright {
             write(output, &target, "copyright", lit(&copyright)).await?;
         }

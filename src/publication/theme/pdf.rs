@@ -160,6 +160,17 @@ impl PdfTheme {
         }
     }
 
+    /// The validated style of declared normative keywords.
+    pub(crate) fn keyword_style(&self) -> Result<super::KeywordStyle> {
+        let name = "normativeKeywordStyle";
+        super::KeywordStyle::parse(
+            name,
+            &self
+                .text(name)
+                .ok_or_else(|| anyhow::anyhow!("theme lacks ga:{name}"))?,
+        )
+    }
+
     pub(crate) fn depth(&self, name: &str) -> Result<usize> {
         let value = self
             .values

@@ -1,0 +1,7 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# Conformance languages a publication target can declare with
+# ga:conformanceLanguage.
+ga:Bcp14 a ga:ConformanceLanguage ; rdfs:label "BCP 14"@en ; dct:description "The requirement-level keywords of RFC 2119, as clarified by RFC 8174: they carry their normative meaning only in all capitals."@en ; rdfs:seeAlso <https://www.rfc-editor.org/info/bcp14> .

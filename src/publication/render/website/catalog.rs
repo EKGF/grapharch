@@ -33,6 +33,7 @@ pub(super) struct Page {
 pub(super) struct Catalog {
     pub abbreviations:
         std::sync::Arc<super::super::abbreviations::Abbreviations>,
+    pub conformance:      super::super::normative::Conformance,
     pub pages:            BTreeMap<String, Page>,
     // bounded: one owner per selected fragment, at most PUBLICATION_ENTRIES.
     owners:               HashMap<NamedNode, NamedNode>,
@@ -51,6 +52,7 @@ impl Catalog {
         let started = Instant::now();
         let mut catalog = Self {
             abbreviations:    plan.abbreviations.clone(),
+            conformance:      plan.conformance,
             pages:            BTreeMap::new(),
             owners:           HashMap::new(),
             fragment_anchors: HashMap::new(),

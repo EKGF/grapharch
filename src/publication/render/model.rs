@@ -26,6 +26,7 @@ pub(super) struct Plan {
     pub title:            String,
     link_index:           HashMap<NamedNode, String>,
     pub abbreviations:    std::sync::Arc<super::abbreviations::Abbreviations>,
+    pub conformance:      super::normative::Conformance,
     pub images:           super::collected_images::Images,
     pub quality_evidence: super::quality::EvidenceIndex,
     pub quality:          Vec<crate::publication::diagnostics::Diagnostic>,
@@ -162,6 +163,8 @@ impl Plan {
             "plan does not match its pinned target definition"
         );
         let title = title(&source, &target).await?;
+        let conformance =
+            super::normative::Conformance::read(&source, &target).await?;
         let (quality, quality_evidence) =
             super::quality::read(&view, &handle.id, &dataset).await?;
         let mut plan = Self {
@@ -179,6 +182,7 @@ impl Plan {
             link_index: HashMap::new(),
             images: Default::default(),
             abbreviations: Default::default(),
+            conformance,
             quality,
             quality_evidence,
             provenance: Default::default(),

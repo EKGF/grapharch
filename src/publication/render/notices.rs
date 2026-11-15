@@ -135,9 +135,13 @@ impl Notice {
                 pulldown_cmark::html::push_html(
                     &mut html,
                     plan.abbreviations
-                        .html(super::markdown_html::events(
-                            markdown.events.into_iter(),
-                        )?)?
+                        .html(
+                            plan.conformance
+                                .html(super::markdown_html::events(
+                                    markdown.events.into_iter(),
+                                )?)
+                                .into_iter(),
+                        )?
                         .into_iter(),
                 );
                 html
@@ -214,7 +218,13 @@ pub(super) async fn typst(
                     "#ga-notice-title[#text({})]\n",
                     quote(&title)
                 ));
-                body.push_str(&notice_body(&html, diagnostics)?);
+                body.push_str(&notice_body(
+                    &html,
+                    &super::native_typst::NativeTypst::new(
+                        diagnostics,
+                        plan.conformance,
+                    ),
+                )?);
             },
             Content::Copyright(holders) => {
                 body.push_str(
@@ -237,7 +247,7 @@ pub(super) async fn typst(
 /// them is converted as ordinary native content.
 fn notice_body(
     html: &str,
-    diagnostics: &[crate::publication::diagnostics::Diagnostic],
+    native: &super::native_typst::NativeTypst<'_>,
 ) -> Result<String> {
     let heading = regex::Regex::new(r"(?s)<h[1-6][^>]*>(.*?)</h[1-6]>")?;
     let mut output = String::new();
@@ -246,7 +256,7 @@ fn notice_body(
         let whole = found.get(0).expect("match");
         let chunk = &html[rest..whole.start()];
         if !chunk.trim().is_empty() {
-            output.push_str(&super::native_typst::convert(chunk, diagnostics)?);
+            output.push_str(&native.convert(chunk)?);
             output.push('\n');
         }
         let text = scraper::Html::parse_fragment(&found[1])
@@ -261,7 +271,7 @@ fn notice_body(
     }
     let chunk = &html[rest..];
     if !chunk.trim().is_empty() {
-        output.push_str(&super::native_typst::convert(chunk, diagnostics)?);
+        output.push_str(&native.convert(chunk)?);
         output.push('\n');
     }
     Ok(output)

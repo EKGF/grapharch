@@ -79,6 +79,8 @@ pub(crate) const TOKENS: &[Token] = &[
     required("quoteInsetX", Length),
     required("quoteInsetY", Length),
     required("tintedCallouts", Bool),
+    // Declared BCP 14 normative keywords.
+    required("normativeKeywordStyle", KeywordStyle),
     // Footer and page numbers.
     required("footerFont", Font),
     required("footerSize", Length),

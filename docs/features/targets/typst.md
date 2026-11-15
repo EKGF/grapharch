@@ -97,7 +97,8 @@ fill, text and grid; link colour and underlining; the footer text
 (`ga:footerText` on the target, else the title) and a page number on the outer
 edge; front and body page numbering; the contents title, alignment and depth;
 and annex labels, a normativity line from the placement's `ga:normativity`, and
-recto starts. [The vocabulary](../../other/ontology/publication.ttl) defines each
+recto starts; and `ga:normativeKeywordStyle`, the small-caps or bold-italic
+style of BCP 14 keywords in a target that declares `ga:conformanceLanguage`. [The vocabulary](../../other/ontology/publication.ttl) defines each
 token and its value syntax. GraphArch validates every value and maps it to a
 Typst value; no supplied text is evaluated. An invalid value, an unknown token,
 a missing token or a theme that does not refine a catalogue theme fails the
