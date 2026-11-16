@@ -63,6 +63,7 @@ jobs:
     uses: ./.github/workflows/distribute.yml
     with:
       publish: true
+      pypi-in-caller: true
       publish-packages: ${{ github.event_name == 'workflow_dispatch' }}
       artifact-run: ${{ inputs.publish-run }}
       revision: ${{ needs.reserve.outputs.revision }}
@@ -82,9 +83,37 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_RUN: ${{ needs.reserve.outputs.run }}
         run: gh workflow run automatic-release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "verified-run=$VERIFIED_RUN" -f "publish-run=$GITHUB_RUN_ID"
-  action-refs:
+  publish-pypi:
     if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.reserve.result == 'success' && needs.distribute.result == 'success' }}
     needs: [reserve, distribute]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.reserve.outputs.revision }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-distribution
+          path: dist
+          run-id: ${{ inputs.publish-run || github.run_id }}
+          github-token: ${{ github.token }}
+      - name: Reject conflicting already-published wheels before resuming
+        run: python3 -B packaging/registry_state.py --output dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/wheels
+          skip-existing: true
+  action-refs:
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.reserve.result == 'success' && needs.distribute.result == 'success' && needs.publish-pypi.result == 'success' }}
+    needs: [reserve, distribute, publish-pypi]
     runs-on: ubuntu-latest
     permissions:
       contents: write
