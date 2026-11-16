@@ -5,6 +5,7 @@ mod dprod_header;
 use {
     grapharch::publication::{
         dataset::Dataset,
+        pdf_name::PdfName,
         render::Publisher,
         revision_build::PublicationUrl,
         showcases,
@@ -45,19 +46,65 @@ async fn remote_revision_restores_and_publishes_declared_targets()
     .await?;
     // Five documents and eight RDF renderer targets.
     assert_eq!(publications.len(), 13);
-    for edition in ["ekgf", "omg"] {
-        let directory = output.join("pdf").join(edition);
-        assert!(
-            tokio::fs::read(only_pdf(&directory))
-                .await?
-                .starts_with(b"%PDF-")
+    let (rdf, documents): (Vec<_>, Vec<_>) = publications
+        .iter()
+        .partition(|publication| publication.manifest.renderer == "rdf");
+    assert_eq!(rdf.len(), 8);
+    assert_eq!(documents.len(), 5);
+    // RDF files come from the declared renderer targets, in `rdf/`.
+    for publication in &rdf {
+        assert_eq!(
+            publication.directory,
+            tokio::fs::canonicalize(output.join("rdf")).await?
         );
+        assert!(!publication.manifest.files.is_empty());
+        for file in &publication.manifest.files {
+            assert!(
+                !tokio::fs::read(publication.directory.join(file))
+                    .await?
+                    .is_empty(),
+                "empty RDF file {file}"
+            );
+        }
     }
-    let overview = tokio::fs::read_to_string(typst_source(
-        output,
-        &only_pdf(&output.join("pdf/overview")),
-    )?)
-    .await?;
+    // PDFs are `<authority>-<type>-<name>[-<edition>].pdf`; the PDF-only
+    // targets publish into `pdf/`.
+    let pdfs = documents
+        .iter()
+        .filter_map(|publication| {
+            publication.pdf().map(|pdf| (publication, pdf))
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        !pdfs.is_empty(),
+        "the manifest declares PDF editions"
+    );
+    for (publication, pdf) in &pdfs {
+        let name = pdf.file_name().unwrap().to_string_lossy().into_owned();
+        assert!(
+            PdfName::is_file_name(&name),
+            "unexpected PDF file name {name}"
+        );
+        assert!(
+            tokio::fs::read(pdf).await?.starts_with(b"%PDF-"),
+            "{name} is not a PDF"
+        );
+        if publication.directory ==
+            tokio::fs::canonicalize(output.join("pdf")).await?
+        {
+            assert_eq!(publication.directory, pdf.parent().unwrap());
+        }
+    }
+    let overview = pdfs
+        .iter()
+        .find(|(_, pdf)| {
+            pdf.file_name().is_some_and(|name| {
+                name.to_string_lossy().contains("-overview-")
+            })
+        })
+        .map(|(publication, _)| publication.typst_source())
+        .expect("the audience overview PDF edition");
+    let overview = tokio::fs::read_to_string(overview).await?;
     assert!(overview.contains("DPROD: the bigger picture"));
     assert!(overview.contains("A product in practice"));
     assert!(
