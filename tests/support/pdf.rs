@@ -68,7 +68,8 @@ impl PdfFacts {
         }
         let zero_width_text = zero_width_text(&pdf)?;
         let info = pdf.metadata();
-        let decode = |value: &Option<Vec<u8>>| value.as_deref().map(bytes_text);
+        let decode =
+            |value: &Option<Box<[u8]>>| value.as_deref().map(bytes_text);
         Ok(Self {
             marked,
             structure_tree,
