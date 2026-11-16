@@ -508,47 +508,6 @@ impl Lease {
     }
 }
 
-pub(super) struct Staging {
-    pub path: PathBuf,
-}
-
-impl Staging {
-    pub async fn new(destination: &Path) -> Result<Self> {
-        let path = destination
-            .with_file_name(format!(".grapharch-stage-{}", Uuid::new_v4()));
-        tokio::fs::create_dir(&path).await?;
-        Ok(Self { path })
-    }
-
-    pub async fn cleanup(&self) -> Result<()> {
-        match tokio::fs::remove_dir_all(&self.path).await {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                Ok(())
-            },
-            Err(error) => Err(error.into()),
-        }
-    }
-}
-
-impl Drop for Staging {
-    fn drop(&mut self) {
-        let path = self.path.clone();
-        if let Ok(handle) = tokio::runtime::Handle::try_current() {
-            handle.spawn(async move {
-                if let Err(error) = tokio::fs::remove_dir_all(&path).await &&
-                    error.kind() != std::io::ErrorKind::NotFound
-                {
-                    tracing::error!(
-                        "cannot remove abandoned staging directory {}: {error}",
-                        path.display()
-                    );
-                }
-            });
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
