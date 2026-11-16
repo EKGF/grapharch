@@ -3,7 +3,7 @@ use {
     super::{Diagram, Node, NodeKind, read, shorthand::Shorthand},
     crate::publication::{
         dataset::Dataset,
-        document::shacl_class_view,
+        document::{anonymous_order::AnonymousOrder, shacl_class_view},
         view::RevisionView,
     },
     anyhow::{Result, ensure},
@@ -71,6 +71,7 @@ pub(super) async fn collect(
     prefixes: &BTreeMap<String, String>,
     documented: &HashSet<NamedNode>,
 ) -> Result<Vec<Shape>> {
+    let order = AnonymousOrder::new(dataset, view);
     let presentation = Shorthand::new(diagram);
     let classes: BTreeMap<_, _> = diagram
         .nodes()
@@ -95,7 +96,8 @@ pub(super) async fn collect(
                 "combined class diagram exceeds thirty-two shape scopes"
             );
             let source =
-                read::node(metadata, &shape.id, prefixes, documented).await?;
+                read::node(metadata, &order, &shape.id, prefixes, documented)
+                    .await?;
             let mut fields = Vec::new(); // bounded: total 128 simple fields in one diagram.
             for property in &shape.properties {
                 let Some((path, range, object, minimum, maximum)) =
@@ -110,14 +112,26 @@ pub(super) async fn collect(
                 );
                 field_count += 1;
                 fields.push(Field {
-                    property: read::node(metadata, path, prefixes, documented)
-                        .await?,
-                    property_shape: property.id.as_str().into(),
+                    property: read::node(
+                        metadata, &order, path, prefixes, documented,
+                    )
+                    .await?,
+                    property_shape: if AnonymousOrder::is_anonymous(
+                        &Term::NamedNode(property.id.clone()),
+                    ) {
+                        format!(
+                            "property-shape-{}",
+                            order.digest(&property.id).await?
+                        )
+                    } else {
+                        property.id.as_str().into()
+                    },
                     range: match range {
                         Some(range) => {
                             Some(
                                 read::node(
-                                    metadata, range, prefixes, documented,
+                                    metadata, &order, range, prefixes,
+                                    documented,
                                 )
                                 .await?,
                             )

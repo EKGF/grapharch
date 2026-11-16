@@ -1,6 +1,7 @@
 //! Specialized RDF-to-fragment documentors sharing a bounded streaming engine.
 
 mod annotated_term;
+mod anonymous_order;
 pub(crate) mod class_diagram;
 pub(crate) mod description;
 pub(crate) mod kind;
