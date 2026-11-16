@@ -14,7 +14,7 @@ use {
 
 /// Prefixes of widely reused vocabularies, applied to every publication.
 /// Source declarations outrank them.
-const WELL_KNOWN: [(&str, &str); 21] = [
+const WELL_KNOWN: [(&str, &str); 23] = [
     (
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
         "rdf",
@@ -34,6 +34,8 @@ const WELL_KNOWN: [(&str, &str); 21] = [
     ("http://www.w3.org/2006/time#", "time"),
     ("http://www.w3.org/ns/odrl/2/", "odrl"),
     ("http://www.w3.org/ns/org#", "org"),
+    ("http://www.w3.org/ns/dx/prof/", "prof"),
+    ("http://www.w3.org/ns/dx/prof/role/", "role"),
     (
         "https://www.omg.org/spec/Commons/PartiesAndSituations/",
         "cmns-pts",
@@ -226,6 +228,28 @@ mod tests {
             prefixes.len(),
             map.len(),
             "prefixes must be unique"
+        );
+    }
+
+    #[test]
+    fn prof_iris_render_as_prefixed_names() {
+        let map = NamespaceBindings::well_known().into_map();
+        let render = |iri: &str| {
+            map.iter()
+                .filter(|(namespace, _)| iri.starts_with(namespace.as_str()))
+                .max_by_key(|(namespace, _)| namespace.len())
+                .map(|(namespace, prefix)| {
+                    format!("{prefix}:{}", &iri[namespace.len()..])
+                })
+        };
+        assert_eq!(
+            render("http://www.w3.org/ns/dx/prof/Profile").as_deref(),
+            Some("prof:Profile")
+        );
+        assert_eq!(
+            render("http://www.w3.org/ns/dx/prof/role/specification")
+                .as_deref(),
+            Some("role:specification")
         );
     }
 
