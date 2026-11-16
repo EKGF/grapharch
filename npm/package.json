@@ -1,6 +1,6 @@
 {
   "name": "@ekgf/grapharch",
-  "version": "0.2.20",
+  "version": "0.2.21",
   "description": "Generate documentation websites, specifications, and PDFs from a documentation knowledge graph",
   "license": "MIT",
   "homepage": "https://ekgf.github.io/grapharch/",
@@ -25,12 +25,12 @@
     "test": "node --test tests/*.test.cjs"
   },
   "optionalDependencies": {
-    "@ekgf/grapharch-linux-x64": "0.2.20",
-    "@ekgf/grapharch-linux-arm64": "0.2.20",
-    "@ekgf/grapharch-darwin-x64": "0.2.20",
-    "@ekgf/grapharch-darwin-arm64": "0.2.20",
-    "@ekgf/grapharch-win32-x64": "0.2.20",
-    "@ekgf/grapharch-win32-arm64": "0.2.20"
+    "@ekgf/grapharch-linux-x64": "0.2.21",
+    "@ekgf/grapharch-linux-arm64": "0.2.21",
+    "@ekgf/grapharch-darwin-x64": "0.2.21",
+    "@ekgf/grapharch-darwin-arm64": "0.2.21",
+    "@ekgf/grapharch-win32-x64": "0.2.21",
+    "@ekgf/grapharch-win32-arm64": "0.2.21"
   },
   "publishConfig": {
     "access": "public"
