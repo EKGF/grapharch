@@ -198,8 +198,8 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                  owl:ObjectProperty owl:DatatypeProperty \
                  owl:AnnotationProperty ga:Renderer ga:Collector \
                  ga:Documentor ga:ShowcaseRunner ga:PdfStandard ga:Theme \
-                 ga:RdfFormat ga:CoverElement ga:DateFormat \
-                 ga:DocumentType ga:ConformanceLanguage }}"
+                 ga:RdfFormat ga:CoverElement ga:DateFormat ga:DocumentType \
+                 ga:ConformanceLanguage }}"
             ),
         )? {
             missing.push(name);

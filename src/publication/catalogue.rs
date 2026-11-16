@@ -7,7 +7,7 @@ use {
     sha2::{Digest, Sha256},
 };
 
-fn sources() -> [(&'static str, &'static str); 6] {
+fn sources() -> [(&'static str, &'static str); 7] {
     [
         (
             "conformance-languages",
