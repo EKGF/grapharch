@@ -39,7 +39,7 @@ class Completion(unittest.TestCase):
         for job, dependency in [('assemble', 'binaries'), ('github-release', 'assemble'),
                                 ('publish-pypi', 'github-release'), ('publish-npm', 'github-release'),
                                 ('publish-crate', 'github-release')]:
-            section = re.split(r'\n  [a-z]', workflow.split('  ' + job + ':\n', 1)[1], maxsplit=1)[0]
+            section = re.split(r'\n  [a-z]', workflow.split('\n  ' + job + ':\n', 1)[1], maxsplit=1)[0]
             self.assertIn('!cancelled()', section)
             self.assertIn('needs.' + dependency + ".result == 'success'", section)
         refs = (root / '.github/workflows/automatic-release.yml').read_text().split('  action-refs:', 1)[1]
@@ -53,5 +53,26 @@ class Completion(unittest.TestCase):
         records.append({'id': 100, 'name': 'distribute / verify-artifacts', 'conclusion': 'success'})
         require_complete_publication(records)
         records[0]['conclusion'] = 'skipped'
+        with self.assertRaises(ValueError):
+            require_complete_publication(records)
+
+    def test_pypi_attestation_is_created_in_the_top_level_workflow(self):
+        root = Path(__file__).parents[2]
+        workflow = (root / '.github/workflows/automatic-release.yml').read_text()
+        self.assertIn('  publish-pypi:\n', workflow)
+        section = workflow.split('  publish-pypi:\n', 1)[1].split('  action-refs:', 1)[0]
+        self.assertIn('pypa/gh-action-pypi-publish@release/v1', section)
+        self.assertIn('environment: pypi', section)
+        self.assertIn('id-token: write', section)
+        self.assertNotIn('attestations: false', section)
+        self.assertIn('pypi-in-caller: true', workflow)
+        self.assertIn('needs.publish-pypi.result == \'success\'', workflow)
+
+    def test_top_level_pypi_failure_blocks_completion(self):
+        records = self.records()
+        records = [job for job in records if job['name'] != 'distribute / publish-pypi']
+        records.append({'id': 99, 'name': 'publish-pypi', 'conclusion': 'success'})
+        require_complete_publication(records)
+        records[-1]['conclusion'] = 'failure'
         with self.assertRaises(ValueError):
             require_complete_publication(records)

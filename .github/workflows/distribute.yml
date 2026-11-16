@@ -35,6 +35,9 @@ on:
         required: false
         type: boolean
         default: false
+      pypi-in-caller:
+        type: boolean
+        default: false
       publish-homebrew:
         type: boolean
         default: false
@@ -327,7 +330,7 @@ jobs:
             dist/*.json
             dist/homebrew/grapharch.rb
   publish-pypi:
-    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
+    if: ${{ inputs.pypi-in-caller != true && !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: pypi

@@ -22,7 +22,8 @@ def may_advance(current, target):
 def require_complete_publication(jobs):
     latest = latest_jobs(jobs)
     required = {'distribute / ' + name for name in
-                ('assemble', 'github-release', 'publish-pypi', 'publish-npm', 'publish-crate')}
+                ('assemble', 'github-release', 'publish-npm', 'publish-crate')}
+    required.add('publish-pypi' if 'publish-pypi' in latest else 'distribute / publish-pypi')
     binaries = {name for name in latest if name.startswith('distribute / binaries (')}
     native_ready = (len(binaries) == len(PLATFORMS)
                     and all(latest[name].get('conclusion') == 'success' for name in binaries))
