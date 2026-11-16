@@ -110,10 +110,12 @@ mod tests {
         let retained = Projection {
             diagram: Diagram {
                 focus:   super::super::Node {
-                    id:    "urn:test:class".into(),
-                    label: "Class".into(),
-                    kind:  super::super::NodeKind::Class,
-                    link:  None,
+                    id:       "urn:test:class".into(),
+                    label:    "Class".into(),
+                    kind:     super::super::NodeKind::Class,
+                    link:     None,
+                    imported: false,
+                    datatype: false,
                 },
                 edges:   Vec::new(),
                 shapes:  Vec::new(),

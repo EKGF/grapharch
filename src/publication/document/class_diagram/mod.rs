@@ -1,6 +1,7 @@
 //! A bounded, asserted OWL neighborhood retained as typed publication content.
 mod constraint_projection;
 mod constraints;
+mod datatype;
 mod display;
 mod escape;
 mod existential;

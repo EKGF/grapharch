@@ -16,10 +16,11 @@ ex:scope a ga:Scope ; ga:include ex:edition .
 ex:family a gov:Family; rdfs:label "OMG Commons Ontology Library"; ga:collectionTerm "library" .
 
 # Formal OMG structure: no W3C abstract/status, family overview, coverage,
-# quality or diagram notes; the ontologies are chapters of an authored clause.
+# quality, diagram notes or per-term class diagrams (OMG shows its own overview
+# figures); the ontologies are chapters of an authored clause.
 ex:profile a ga:Profile; ga:theme omg:theme; pub:publishesFamily ex:family ;
     ga:w3cFrontMatter false ; ga:familyOverview false ; ga:coverageAppendix false ;
-    ga:qualityAppendix false ; ga:diagramNote false ; ga:showProvenance false ;
+    ga:qualityAppendix false ; ga:diagramNote false ; ga:classDiagrams false ; ga:showProvenance false ;
     ga:familyPlacement ex:ontologies ; ga:familyBaseOrder 11 ;
     # The HTML reference opens with the library overview; the PDF omits it.
     ga:familyOverviewOrder 0 ;
@@ -237,6 +238,12 @@ omg:theme a ga:Theme ; rdfs:label "OMG specification" ; ga:baseTheme ga:Specific
     ga:tableTextSize "9pt" ; ga:tableHeaderFill "#4e80bc" ; ga:tableHeaderText "#ffffff" ;
     ga:tableGrid true ; ga:tableRuleColor "#83a6d0" ;
     ga:captionFont "Liberation Sans" ; ga:captionSize "9pt" ; ga:captionBold true ; ga:tableCaptionAbove true ;
+    ga:figureCaptionAlign "left" ;
+    # ODM notation colours (OMG Commons 1.3, clause 6.5).
+    ga:diagramFont "Liberation Sans" ; ga:diagramFocusFill "#ffffff" ; ga:diagramClassFill "#ffffff" ;
+    ga:diagramImportedClassFill "#ffffcc" ; ga:diagramExpressionFill "#ccffcc" ;
+    ga:diagramObjectPropertyFill "#ddddff" ; ga:diagramDatatypePropertyFill "#dde6f0" ;
+    ga:diagramPropertyFill "#eeeeee" ; ga:diagramDatatypeFill "#ffccff" ; ga:diagramLiteralFill "#eeeeee" ;
     ga:codeFont "Liberation Mono" ; ga:codeSize "9pt" ; ga:codeFill "none" ; ga:codeRuleColor "none" ;
     ga:codeHighlight false ; ga:codeInset "0.25in" ;
     ga:quoteRuleColor "#000000" ; ga:tintedCallouts false ;
@@ -299,3 +306,127 @@ omg:end-rule a ga:CoverBlock ; ga:order 14 ; ga:coverElement ga:CoverRule ; ga:s
 <https://www.omg.org/spec/Commons/StructuredCollections/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-strcol"; sh:namespace "https://www.omg.org/spec/Commons/StructuredCollections/" ] .
 <https://www.omg.org/spec/Commons/TextDatatype/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-txt"; sh:namespace "https://www.omg.org/spec/Commons/TextDatatype/" ] .
 <https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-mdt"; sh:namespace "https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime/" ] .
+
+# OMG's overview figures of Commons 1.3, rendered from the formal/26-06-05 PDF
+# at 200 dpi and placed in their ontology chapters with OMG's captions.
+ex:project ga:collector ex:figure-01-image, ex:figure-02-image, ex:figure-03-image, ex:figure-04-image, ex:figure-05-image, ex:figure-06-image, ex:figure-07-image, ex:figure-08-image, ex:figure-09-image, ex:figure-10-image, ex:figure-11-image, ex:figure-12-image, ex:figure-13-image, ex:figure-14-image, ex:figure-15-image, ex:figure-16-image, ex:figure-17-image, ex:figure-18-image, ex:figure-19-image, ex:figure-20-image, ex:figure-21-image, ex:figure-22-image, ex:figure-23-image, ex:figure-24-image .
+ex:figure-01-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-01-business-authorizations.png" ; ga:sourcePath "figures/figure-01-business-authorizations.png" ; ga:asset ex:figure-01-asset .
+<https://www.omg.org/spec/Commons/BusinessAuthorizations/> ga:figure ex:figure-01 .
+ex:figure-01 a ga:Figure ; ga:asset ex:figure-01-asset ; ga:order 1 ;
+    dct:title "Business Authorizations Ontology Overview" .
+ex:figure-02-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-02-classifiers.png" ; ga:sourcePath "figures/figure-02-classifiers.png" ; ga:asset ex:figure-02-asset .
+<https://www.omg.org/spec/Commons/Classifiers/> ga:figure ex:figure-02 .
+ex:figure-02 a ga:Figure ; ga:asset ex:figure-02-asset ; ga:order 1 ;
+    dct:title "Overview of the Classifiers Ontology" .
+ex:figure-03-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-03-codes-and-code-sets.png" ; ga:sourcePath "figures/figure-03-codes-and-code-sets.png" ; ga:asset ex:figure-03-asset .
+<https://www.omg.org/spec/Commons/CodesAndCodeSets/> ga:figure ex:figure-03 .
+ex:figure-03 a ga:Figure ; ga:asset ex:figure-03-asset ; ga:order 1 ;
+    dct:title "Overview of the Codes and Code Sets Ontology" .
+ex:figure-04-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-04-collections.png" ; ga:sourcePath "figures/figure-04-collections.png" ; ga:asset ex:figure-04-asset .
+<https://www.omg.org/spec/Commons/Collections/> ga:figure ex:figure-04 .
+ex:figure-04 a ga:Figure ; ga:asset ex:figure-04-asset ; ga:order 1 ;
+    dct:title "High-level Overview of the Collections Ontology" .
+ex:figure-05-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-05-collections-arrangements.png" ; ga:sourcePath "figures/figure-05-collections-arrangements.png" ; ga:asset ex:figure-05-asset .
+<https://www.omg.org/spec/Commons/Collections/> ga:figure ex:figure-05 .
+ex:figure-05 a ga:Figure ; ga:asset ex:figure-05-asset ; ga:order 2 ;
+    dct:title "Expanded Arrangements Definitions" .
+ex:figure-06-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-06-collections-mereology.png" ; ga:sourcePath "figures/figure-06-collections-mereology.png" ; ga:asset ex:figure-06-asset .
+<https://www.omg.org/spec/Commons/Collections/> ga:figure ex:figure-06 .
+ex:figure-06 a ga:Figure ; ga:asset ex:figure-06-asset ; ga:order 3 ;
+    dct:title "Mereological Relationships Defined in the Collections Ontology" .
+ex:figure-07-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-07-contextual-designators.png" ; ga:sourcePath "figures/figure-07-contextual-designators.png" ; ga:asset ex:figure-07-asset .
+<https://www.omg.org/spec/Commons/ContextualDesignators/> ga:figure ex:figure-07 .
+ex:figure-07 a ga:Figure ; ga:asset ex:figure-07-asset ; ga:order 1 ;
+    dct:title "Overview of the Contextual Designations Ontology" .
+ex:figure-08-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-08-contextual-identifiers.png" ; ga:sourcePath "figures/figure-08-contextual-identifiers.png" ; ga:asset ex:figure-08-asset .
+<https://www.omg.org/spec/Commons/ContextualIdentifiers/> ga:figure ex:figure-08 .
+ex:figure-08 a ga:Figure ; ga:asset ex:figure-08-asset ; ga:order 1 ;
+    dct:title "Overview of the Contextual Identifiers Ontology" .
+ex:figure-09-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-09-dates-and-times.png" ; ga:sourcePath "figures/figure-09-dates-and-times.png" ; ga:asset ex:figure-09-asset .
+<https://www.omg.org/spec/Commons/DatesAndTimes/> ga:figure ex:figure-09 .
+ex:figure-09 a ga:Figure ; ga:asset ex:figure-09-asset ; ga:order 1 ;
+    dct:title "Class Hierarchy for the Dates and Times Ontology" .
+ex:figure-10-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-10-designators.png" ; ga:sourcePath "figures/figure-10-designators.png" ; ga:asset ex:figure-10-asset .
+<https://www.omg.org/spec/Commons/Designators/> ga:figure ex:figure-10 .
+ex:figure-10 a ga:Figure ; ga:asset ex:figure-10-asset ; ga:order 1 ;
+    dct:title "Overview of the Designators Ontology" .
+ex:figure-11-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-11-documents.png" ; ga:sourcePath "figures/figure-11-documents.png" ; ga:asset ex:figure-11-asset .
+<https://www.omg.org/spec/Commons/Documents/> ga:figure ex:figure-11 .
+ex:figure-11 a ga:Figure ; ga:asset ex:figure-11-asset ; ga:order 1 ;
+    dct:title "Documents Ontology Overview" .
+ex:figure-12-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-12-identifiers.png" ; ga:sourcePath "figures/figure-12-identifiers.png" ; ga:asset ex:figure-12-asset .
+<https://www.omg.org/spec/Commons/Identifiers/> ga:figure ex:figure-12 .
+ex:figure-12 a ga:Figure ; ga:asset ex:figure-12-asset ; ga:order 1 ;
+    dct:title "Overview of the Identifiers Ontology" .
+ex:figure-13-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-13-languages.png" ; ga:sourcePath "figures/figure-13-languages.png" ; ga:asset ex:figure-13-asset .
+<https://www.omg.org/spec/Commons/Languages/> ga:figure ex:figure-13 .
+ex:figure-13 a ga:Figure ; ga:asset ex:figure-13-asset ; ga:order 1 ;
+    dct:title "Languages Ontology Overview" .
+ex:figure-14-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-14-locations-regions.png" ; ga:sourcePath "figures/figure-14-locations-regions.png" ; ga:asset ex:figure-14-asset .
+<https://www.omg.org/spec/Commons/Locations/> ga:figure ex:figure-14 .
+ex:figure-14 a ga:Figure ; ga:asset ex:figure-14-asset ; ga:order 1 ;
+    dct:title "Geographic Regions Overview" .
+ex:figure-15-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-15-locations.png" ; ga:sourcePath "figures/figure-15-locations.png" ; ga:asset ex:figure-15-asset .
+<https://www.omg.org/spec/Commons/Locations/> ga:figure ex:figure-15 .
+ex:figure-15 a ga:Figure ; ga:asset ex:figure-15-asset ; ga:order 2 ;
+    dct:title "Locations Class Hierarchy" .
+ex:figure-16-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-16-organizations.png" ; ga:sourcePath "figures/figure-16-organizations.png" ; ga:asset ex:figure-16-asset .
+<https://www.omg.org/spec/Commons/Organizations/> ga:figure ex:figure-16 .
+ex:figure-16 a ga:Figure ; ga:asset ex:figure-16-asset ; ga:order 1 ;
+    dct:title "Organizations Class Hierarchy" .
+ex:figure-17-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-17-parties-and-situations.png" ; ga:sourcePath "figures/figure-17-parties-and-situations.png" ; ga:asset ex:figure-17-asset .
+<https://www.omg.org/spec/Commons/PartiesAndSituations/> ga:figure ex:figure-17 .
+ex:figure-17 a ga:Figure ; ga:asset ex:figure-17-asset ; ga:order 1 ;
+    dct:title "Parties and Situations Ontology Overview" .
+ex:figure-18-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-18-quantities-and-units.png" ; ga:sourcePath "figures/figure-18-quantities-and-units.png" ; ga:asset ex:figure-18-asset .
+<https://www.omg.org/spec/Commons/QuantitiesAndUnits/> ga:figure ex:figure-18 .
+ex:figure-18 a ga:Figure ; ga:asset ex:figure-18-asset ; ga:order 1 ;
+    dct:title "Quantities and Units Ontology Overview" .
+ex:figure-19-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-19-registration-authorities.png" ; ga:sourcePath "figures/figure-19-registration-authorities.png" ; ga:asset ex:figure-19-asset .
+<https://www.omg.org/spec/Commons/RegistrationAuthorities/> ga:figure ex:figure-19 .
+ex:figure-19 a ga:Figure ; ga:asset ex:figure-19-asset ; ga:order 1 ;
+    dct:title "Registration Authorities Ontology Overview" .
+ex:figure-20-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-20-regulatory-agencies.png" ; ga:sourcePath "figures/figure-20-regulatory-agencies.png" ; ga:asset ex:figure-20-asset .
+<https://www.omg.org/spec/Commons/RegulatoryAgencies/> ga:figure ex:figure-20 .
+ex:figure-20 a ga:Figure ; ga:asset ex:figure-20-asset ; ga:order 1 ;
+    dct:title "Regulatory Agencies Ontology Overview" .
+ex:figure-21-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-21-roles-and-compositions.png" ; ga:sourcePath "figures/figure-21-roles-and-compositions.png" ; ga:asset ex:figure-21-asset .
+<https://www.omg.org/spec/Commons/RolesAndCompositions/> ga:figure ex:figure-21 .
+ex:figure-21 a ga:Figure ; ga:asset ex:figure-21-asset ; ga:order 1 ;
+    dct:title "Roles and Compositions Ontology Overview" .
+ex:figure-22-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-22-sites-and-facilities.png" ; ga:sourcePath "figures/figure-22-sites-and-facilities.png" ; ga:asset ex:figure-22-asset .
+<https://www.omg.org/spec/Commons/SitesAndFacilities/> ga:figure ex:figure-22 .
+ex:figure-22 a ga:Figure ; ga:asset ex:figure-22-asset ; ga:order 1 ;
+    dct:title "Sites and Facilities Ontology Overview" .
+ex:figure-23-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-23-structured-collections.png" ; ga:sourcePath "figures/figure-23-structured-collections.png" ; ga:asset ex:figure-23-asset .
+<https://www.omg.org/spec/Commons/StructuredCollections/> ga:figure ex:figure-23 .
+ex:figure-23 a ga:Figure ; ga:asset ex:figure-23-asset ; ga:order 1 ;
+    dct:title "Structured Collections Ontology Class Hierarchy" .
+ex:figure-24-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-24-text-datatype.png" ; ga:sourcePath "figures/figure-24-text-datatype.png" ; ga:asset ex:figure-24-asset .
+<https://www.omg.org/spec/Commons/TextDatatype/> ga:figure ex:figure-24 .
+ex:figure-24 a ga:Figure ; ga:asset ex:figure-24-asset ; ga:order 1 ;
+    dct:title "Overview of the Text Datatype Ontology" .

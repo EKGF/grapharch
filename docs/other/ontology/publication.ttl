@@ -2472,6 +2472,94 @@ ga:tableCaptionAbove a owl:DatatypeProperty ;
     rdfs:domain ga:Theme ;
     rdfs:range xsd:boolean .
 
+ga:figureCaptionAlign a owl:DatatypeProperty ;
+    rdfs:label "Figure caption alignment"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Aligns numbered figure captions: left, center or right."@en ;
+    dct:description "Aligns numbered figure captions: left, center or right."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramFont a owl:DatatypeProperty ;
+    rdfs:label "Diagram font"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the font family that PDF class diagrams use for their text, replacing the layout engine's metric-compatible font."@en ;
+    dct:description "Names the font family that PDF class diagrams use for their text, replacing the layout engine's metric-compatible font."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramFocusFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram focus resource fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of the documented term at the centre of a class diagram, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of the documented term at the centre of a class diagram, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramClassFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram local class fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of named classes of the same ontology as the documented term, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of named classes of the same ontology as the documented term, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramImportedClassFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram imported class fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of named classes from another ontology than the documented term, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of named classes from another ontology than the documented term, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramExpressionFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram class expression fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of OWL restrictions, unions and other anonymous class expressions, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of OWL restrictions, unions and other anonymous class expressions, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramObjectPropertyFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram object property fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of OWL object properties, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of OWL object properties, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramDatatypePropertyFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram datatype property fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of OWL datatype properties, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of OWL datatype properties, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramPropertyFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram other property fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of annotation properties and untyped RDF properties, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of annotation properties and untyped RDF properties, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramDatatypeFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram datatype fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of RDF datatypes, including the XML Schema and RDF built-in datatypes, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of RDF datatypes, including the XML Schema and RDF built-in datatypes, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
+ga:diagramLiteralFill a owl:DatatypeProperty ;
+    rdfs:label "Diagram literal value fill"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the PDF class diagram fill colour of literal values, as #RRGGBB, accent or accent-tint."@en ;
+    dct:description "Specifies the PDF class diagram fill colour of literal values, as #RRGGBB, accent or accent-tint."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
+
 ga:codeFont a owl:DatatypeProperty ;
     rdfs:label "Code font"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
@@ -3199,6 +3287,29 @@ ga:diagramNote a owl:DatatypeProperty ;
     dct:description "Specifies whether a PDF includes diagram note references and the diagram interpretation note; defaults to true."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range xsd:boolean .
+
+ga:classDiagrams a owl:DatatypeProperty ;
+    rdfs:label "Class diagrams"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether a PDF includes the generated per-term class diagrams; defaults to true. Websites keep them."@en ;
+    dct:description "Specifies whether a PDF includes the generated per-term class diagrams; defaults to true. Websites keep them."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:Figure a owl:Class ;
+    rdfs:label "Authored figure"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An authored, captioned image shown as a numbered figure of the documented subject's chapter."@en ;
+    dct:description "An authored, captioned image shown as a numbered figure of the documented subject's chapter."@en ;
+    skos:scopeNote "A figure names its retained image with ga:asset, its caption with dct:title and its position among the subject's figures with ga:order. Renderers number figures through the publication; the theme places the caption."@en .
+
+ga:figure a owl:ObjectProperty ;
+    rdfs:label "Figure"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Attaches an authored figure to an ontology of a published family; its chapter shows the figures after the introduction, in ga:order."@en ;
+    dct:description "Attaches an authored figure to an ontology of a published family; its chapter shows the figures after the introduction, in ga:order."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:Figure .
 
 ga:familyPlacement a owl:ObjectProperty ;
     rdfs:label "Family placement"@en ;

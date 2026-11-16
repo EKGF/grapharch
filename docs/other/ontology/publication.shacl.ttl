@@ -102,6 +102,7 @@ ga:CopyrightHolderShape a sh:NodeShape ;
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:theme ; sh:nodeKind sh:IRI ; sh:class ga:Theme ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:familyPlacement ; sh:nodeKind sh:IRI ; sh:class ga:Placement ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:classDiagrams ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:requiredSectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:requiredMetadata ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:allowedPublicationStatus ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 16 ] ;
@@ -255,6 +256,13 @@ ga:BookPlanShape a sh:NodeShape ; sh:targetClass ga:BookPlan ;
     sh:property [ sh:path ga:bookSubject ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:bookPlacement ; sh:class ga:Placement ; sh:minCount 1 ] .
 
+
+ga:FigureShape a sh:NodeShape ; sh:targetClass ga:Figure ; sh:targetObjectsOf ga:figure ;
+    rdfs:label "Authored figure"@en ;
+    sh:nodeKind sh:IRI ; sh:class ga:Figure ;
+    sh:property [ sh:path ga:asset ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ; sh:minLength 1 ; sh:maxLength 1024 ] ;
+    sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:minCount 1 ; sh:maxCount 1 ] .
 
 ga:ProductLogoShape a sh:NodeShape ; sh:targetObjectsOf ga:productLogo ;
     rdfs:label "Publication product logo asset"@en ;

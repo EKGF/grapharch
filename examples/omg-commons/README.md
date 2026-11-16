@@ -40,7 +40,9 @@ the date, the title, "Version 1.3", the document number and the normative
 reference. Its Edition row states that this is a GraphArch rendering of the
 Commons 1.3 formal specification. The HTML reference and the PDF share the
 profile; the PDF omits the library overview, the documentation coverage and
-quality appendices, the provenance appendix, and the diagram notes.
+quality appendices, the provenance appendix, the diagram notes and the per-term
+class diagrams. The HTML reference keeps those diagrams; the theme draws them in
+the ODM notation colours of OMG ontology specifications.
 
 - The logo is OMG's own
   <https://www.omg.org/images/logos/OMG-logo-web-sm.svg>, embedded unmodified
@@ -52,6 +54,10 @@ quality appendices, the provenance appendix, and the diagram notes.
   PDF, <https://www.omg.org/spec/Commons/1.3/PDF>. The boilerplate is the same
   as the OMG specification template, mdsa-omg-core at 7e9dbce,
   `Specification_Template.tex`.
+- The 24 overview figures in [`figures/`](figures) are OMG's UML diagrams from
+  the formal/26-06-05 PDF, rendered at 200 dpi, cropped to the drawing and
+  reduced to 128 colours. Each is a `ga:Figure` of its ontology, with OMG's
+  caption and order; the PDF numbers them Figure 1 to 24 as OMG does.
 - The publication date, 2026-03-24, is the creation date of that PDF.
 
 Clauses 1 to 7 and Annex B of the formal specification are not yet authored

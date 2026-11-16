@@ -111,9 +111,40 @@ a rule, a bar, the target's ordered metadata rows with their definition labels,
 the specification summary, or fixed text. The values come from the target, so
 a theme supplies no document number, status or legal wording.
 
+Generated class diagrams take their PDF text font (`ga:diagramFont`) and the
+fill of each box from the theme, by the box's role: the documented term, local
+and imported classes, class expressions, object, datatype and other
+properties, datatypes and literal values (`ga:diagramFocusFill` …
+`ga:diagramLiteralFill`). A theme can so reproduce a notation's palette, such
+as the ODM colours of OMG specifications. The layout engine measures Arial;
+the metric-compatible Liberation Sans keeps the measured text widths. A profile
+with `ga:classDiagrams false` omits the per-term diagrams from its PDF.
+
 The bundled fonts are Liberation Sans, Serif and Mono, metric-compatible
 substitutes for Arial, Times New Roman and Courier New, plus Typst's embedded
 fonts. They are openly licensed; they are not the proprietary originals.
+
+## Add authored figures
+
+A family chapter shows authored figures after its introduction. Each is a
+`ga:Figure` with an image asset, a caption and an order, attached to its
+ontology. Definitions collect the images from files beside them:
+
+```turtle
+ex:project ga:collector ex:overview-image .
+ex:overview-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/overview.png" ; ga:sourcePath "figures/overview.png" ;
+    ga:asset ex:overview-asset .
+<https://example.org/ontology/> ga:figure ex:overview .
+ex:overview a ga:Figure ; ga:asset ex:overview-asset ; ga:order 1 ;
+    dct:title "Overview of the Example Ontology" .
+```
+
+PDF figures are numbered through the document ("Figure 1: …"); the caption
+uses the caption font, below the image, aligned by `ga:figureCaptionAlign`.
+HTML shows the same caption in a `figcaption`. Authored Markdown can request
+the same presentation with the image title `grapharch:figure`; the alternative
+text is the caption.
 
 ## The OMG Commons edition
 
@@ -121,7 +152,8 @@ The [Commons showcase](https://github.com/EKGF/grapharch/tree/main/examples/omg-
 declares OMG's house style as a consumer theme, OMG's notices, preface and
 copyright holders, the OMG logo, and the Commons 1.3 release metadata. Its
 profile sets `ga:w3cFrontMatter false`, omits the family overview, coverage,
-quality and diagram-note material from the PDF, and nests the ontology chapters
+quality, diagram-note and per-term class diagram material from the PDF, shows
+OMG's 24 overview figures with their captions, and nests the ontology chapters
 under an authored clause. Its cover states that it is a GraphArch rendering of
 Commons 1.3. The design references the
 [Commons 1.3 PDF](https://www.omg.org/spec/Commons/1.3/PDF),

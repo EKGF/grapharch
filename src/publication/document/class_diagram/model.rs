@@ -11,10 +11,16 @@ const RANGE: &str = "http://www.w3.org/2000/01/rdf-schema#range";
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Node {
-    pub id:    String,
-    pub label: String,
-    pub kind:  NodeKind,
-    pub link:  Option<String>,
+    pub id:       String,
+    pub label:    String,
+    pub kind:     NodeKind,
+    pub link:     Option<String>,
+    /// Declared by another ontology than the diagram's focus term.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub imported: bool,
+    /// An RDF datatype rather than a class of individuals.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub datatype: bool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

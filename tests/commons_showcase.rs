@@ -48,6 +48,52 @@ async fn formal_family_profile_nests_chapters_and_omits_review_material()
     Ok(())
 }
 
+#[tokio::test]
+async fn authored_figures_are_numbered_and_captioned_in_their_chapter()
+-> Result<()> {
+    let (html, typst) = family_publication(r#"
+<urn:http:project> ga:collector <urn:http:overview-image> .
+<urn:http:overview-image> a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/overview.png" ; ga:sourcePath "figures/overview.png" ; ga:asset <urn:http:overview-asset> .
+<https://www.omg.org/spec/Commons/Classifiers/> ga:figure <urn:http:second>, <urn:http:first> .
+<urn:http:first> a ga:Figure ; ga:asset <urn:http:overview-asset> ; ga:order 1 ;
+    dct:title "Overview of the [Example] Ontology" .
+<urn:http:second> a ga:Figure ; ga:asset <urn:http:overview-asset> ; ga:order 2 ;
+    dct:title "Detail of the Example Ontology" .
+<urn:http:profile> ga:classDiagrams false .
+"#).await?;
+    let first = typst
+        .find("#figure(image(\"assets/")
+        .expect("numbered PDF figure");
+    assert!(typst[first..].starts_with("#figure(image(\"assets/"));
+    let caption = typst
+        .find("caption: [#text(\"Overview of the [Example] Ontology\")]")
+        .expect("first caption");
+    let second = typst
+        .find("caption: [#text(\"Detail of the Example Ontology\")]")
+        .expect("second caption");
+    let chapter = typst
+        .find("#text(\"Example ontology\")]")
+        .expect("chapter heading");
+    let term = typst.find("Example thing").expect("term entry");
+    assert!(chapter < caption && caption < second && second < term);
+    assert!(!typst.contains("ga-theme.diagram_focus_fill"));
+    assert!(html.contains(
+        "<figcaption>Overview of the [Example] Ontology</figcaption></figure>"
+    ));
+    assert!(html.contains("<figure class=\"ga-figure\"><img src=\"assets/"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn pdf_class_diagrams_take_the_theme_palette_and_font() -> Result<()> {
+    let (_, typst) = family_publication("").await?;
+    assert!(typst.contains("ga-theme.diagram_focus_fill.to-hex()"));
+    assert!(typst.contains("ga-theme.diagram_font"));
+    assert!(!typst.contains("font-family=\\\"Arial\\\""));
+    Ok(())
+}
+
 async fn family_publication(extra: &str) -> Result<(String, String)> {
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let url = format!("http://{}/ontology.ttl", listener.local_addr()?);
@@ -90,6 +136,15 @@ async fn family_publication(extra: &str) -> Result<(String, String)> {
 <https://www.omg.org/spec/Commons/Classifiers/> gov:inFamily <urn:http:family>; sh:declare [sh:prefix "cmns-cls"; sh:namespace "https://www.omg.org/spec/Commons/Classifiers/"] .
 {extra}
 "##)).await?;
+    let mut png = std::io::Cursor::new(Vec::new());
+    image::RgbImage::from_pixel(8, 4, image::Rgb([200, 220, 240]))
+        .write_to(&mut png, image::ImageFormat::Png)?;
+    tokio::fs::create_dir_all(source.path().join("figures")).await?;
+    tokio::fs::write(
+        source.path().join("figures/overview.png"),
+        png.into_inner(),
+    )
+    .await?;
     tokio::fs::write(
         source.path().join("showcase.ttl"),
         format!(
@@ -187,6 +242,24 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
         typst.contains("Copyright © 2022-2026, Object Management Group, Inc.")
     );
     assert!(typst.contains("[#text(\"Annex A: Deliverables\")]"));
+    // OMG's 24 overview figures replace the per-term class diagrams.
+    assert_eq!(
+        typst.matches("#figure(image(\"assets/").count(),
+        24
+    );
+    assert!(typst.contains(
+        "caption: [#text(\"Business Authorizations Ontology Overview\")]"
+    ));
+    assert!(!typst.contains("ga-theme.diagram_focus_fill"));
+    assert!(
+        tokio::fs::read_to_string(
+            publication.directory.join("cmns-txt/index.html")
+        )
+        .await?
+        .contains(
+            "<figcaption>Overview of the Text Datatype Ontology</figcaption>"
+        )
+    );
     assert!(!typst.contains("Status of This Document"));
     assert!(typst.contains("#set page(numbering: \"i\")"));
     assert!(typst.contains("#set page(numbering: \"1\")"));

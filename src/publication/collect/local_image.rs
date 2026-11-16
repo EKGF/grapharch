@@ -93,6 +93,17 @@ impl LocalImageFile {
         Self::new(project, root, &path).await
     }
 
+    /// Retain the image as a configured collector use's declared asset.
+    pub fn with_asset(
+        mut self,
+        processor: &NamedNode,
+        asset: NamedNode,
+    ) -> Result<Self> {
+        self.processor = processor.as_str().to_owned();
+        self.id = asset;
+        Ok(self)
+    }
+
     /// Stable project-scoped retained-image identity.
     pub fn id(&self) -> NamedNode { self.id.clone() }
 

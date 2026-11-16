@@ -152,10 +152,12 @@ BIND(?s AS ?group)
             Term::NamedNode(to) => nodes[to].clone(),
             Term::Literal(value) => {
                 Node {
-                    id:    value.to_string(),
-                    label: value.value().into(),
-                    kind:  NodeKind::LiteralValue,
-                    link:  None,
+                    id:       value.to_string(),
+                    label:    value.value().into(),
+                    kind:     NodeKind::LiteralValue,
+                    link:     None,
+                    imported: false,
+                    datatype: false,
                 }
             },
             _ => anyhow::bail!("unsupported diagram endpoint"),
@@ -230,6 +232,7 @@ pub(super) async fn node(
     documented: &HashSet<NamedNode>,
 ) -> Result<Node> {
     let anonymous = id.as_str().starts_with("urn:grapharch:skolem:");
+    let mut datatype = !anonymous && super::datatype::is_builtin(id.as_str());
     let kind = if anonymous {
         NodeKind::OwlExpression
     } else {
@@ -251,6 +254,9 @@ pub(super) async fn node(
                     kind == NodeKind::Resource
                 {
                     kind = NodeKind::RdfProperty;
+                }
+                if value.as_str() == super::datatype::RDFS_DATATYPE {
+                    datatype = true;
                 }
                 match value.as_str().strip_prefix(OWL) {
                     Some("Class") => kind = NodeKind::Class,
@@ -300,6 +306,8 @@ pub(super) async fn node(
         label,
         kind,
         link,
+        imported: false,
+        datatype,
     })
 }
 fn compact(iri: &str, prefixes: &BTreeMap<String, String>) -> String {

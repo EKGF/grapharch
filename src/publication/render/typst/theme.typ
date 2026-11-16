@@ -38,6 +38,7 @@
 #show raw: set text(font: T.code_font, size: T.code_size, hyphenate: false)
 #show figure.caption: set text(font: T.caption_font, size: T.caption_size, weight: if T.caption_bold { "bold" } else { "regular" })
 #show figure.where(kind: table): set figure.caption(position: if T.table_caption_above { top } else { bottom })
+#show figure.where(kind: image): it => { show figure.caption: set align(T.figure_caption_align); it }
 #show outline.entry: set text(font: T.toc_font)
 #show outline.entry.where(level: 1): set text(size: T.toc_entry_size)
 // Already highlighted runs share HTML's palette. Wrap grapheme clusters without
