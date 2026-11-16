@@ -14,7 +14,7 @@ use {
         view::RevisionView,
         writer::GraphWriter,
     },
-    anyhow::{Result, ensure},
+    anyhow::{Context, Result, ensure},
     async_trait::async_trait,
     oxrdf::{GraphName, Literal, NamedNode, Quad, Term},
     sha2::{Digest, Sha256},
@@ -134,7 +134,10 @@ impl AnnotatedTermDocumentor {
             "anonymous RDF expression has no retained facts for {}",
             self.subject
         );
-        order.arrange(facts).await
+        order
+            .arrange(facts)
+            .await
+            .with_context(|| format!("ordering facts of {}", self.subject))
     }
 
     async fn source_collection(
@@ -447,7 +450,8 @@ impl Documentor for AnnotatedTermDocumentor {
         }
         let subject_facts = AnonymousOrder::new(&self.dataset, &view)
             .arrange(subject_facts)
-            .await?;
+            .await
+            .with_context(|| format!("ordering facts of {}", self.subject))?;
         for (predicate, object) in &subject_facts {
             let value = object;
             hash.update(format!("{predicate} {value}\n"));
