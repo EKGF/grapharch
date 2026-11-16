@@ -1,6 +1,8 @@
 //! Publication of recorded BookPlans, with immutable prepared compiler jobs.
+mod compilation;
 use {
     super::{
+        book_pool::BookPool,
         book_worker,
         content::Entries,
         markup::{Markdown, html_escape},
@@ -25,7 +27,6 @@ use {
     tokio::{
         fs::File,
         io::{AsyncWriteExt, BufWriter},
-        task::JoinSet,
     },
 };
 #[derive(Serialize, Deserialize)]
@@ -479,92 +480,34 @@ pub(super) async fn write(
     } else {
         (None, None)
     };
-    let executable = pinned_worker.as_ref().unwrap_or(&executable);
-    let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
-    let mut running = JoinSet::new();
-    let mut next = 0;
+    let mut pool = BookPool::new(
+        pinned_worker.clone().unwrap_or(executable),
+        stage.to_owned(),
+        compiler.clone(),
+        preparation_error,
+        jobs,
+    );
     let mut diagnostics = Vec::new();
-    while next < pending.len() || !running.is_empty() {
-        while next < pending.len() && running.len() < jobs {
-            let i = pending[next];
-            next += 1;
-            let executable = executable.to_owned();
-            let expected_engine = compiler.clone();
-            let root = stage.to_owned();
-            let source = books[i].source.clone();
-            let cancel = cancel_rx.clone();
-            let preparation_error = preparation_error.clone();
-            running.spawn(async move {
-                if let Some(error) = preparation_error {
-                    return (i, Err(anyhow::anyhow!(error)));
-                }
-                (
-                    i,
-                    book_worker::run(
-                        &executable,
-                        &root,
-                        &source,
-                        &expected_engine,
-                        cancel,
-                    )
-                    .await,
-                )
-            });
+    // The pool is drained on every path, so no worker still holds files in
+    // the stage when this returns or when the publisher removes the stage.
+    let compiled = async {
+        let mut next = 0;
+        while next < pending.len() || !pool.is_idle() {
+            while next < pending.len() && pool.has_capacity() {
+                let i = pending[next];
+                next += 1;
+                pool.start(i, books[i].source.clone());
+            }
+            let (i, result) = pool.next().await?;
+            books[i]
+                .record_compilation(stage, result, mode, &mut diagnostics)
+                .await?;
         }
-        let (i, result) = running.join_next().await.ok_or_else(|| {
-            anyhow::anyhow!("book worker queue unexpectedly empty")
-        })??;
-        match result {
-            Ok(()) => {
-                let pdf = books[i].source.replace(".typ", ".pdf");
-                books[i].pdf_digest = Some(
-                    file_hash(
-                        &stage.join(&pdf),
-                        crate::publication::limits::ARTIFACT_BYTES,
-                    )
-                    .await?,
-                );
-                books[i].pdf = Some(pdf);
-                books[i].status = "ready".into();
-                tracing::info!(book=%books[i].title,subject=%books[i].id,"book PDF completed");
-            },
-            Err(error) => {
-                if mode == FailureMode::FailFast {
-                    cancel_tx.send_replace(true);
-                    while running.join_next().await.is_some() {}
-                    return Err(error.context(format!(
-                        "PDF generation failed for book {} ({})",
-                        books[i].title, books[i].id
-                    )));
-                }
-                ensure!(
-                    diagnostics.len() < 1024,
-                    "book diagnostic budget exceeded"
-                );
-                let partial =
-                    stage.join(&books[i].source).with_extension("pdf");
-                match tokio::fs::symlink_metadata(&partial).await {
-                    Ok(meta) => {
-                        ensure!(
-                            meta.is_file() && !meta.file_type().is_symlink(),
-                            "worker left an invalid partial PDF"
-                        );
-                        tokio::fs::remove_file(partial).await?;
-                    },
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {},
-                    Err(e) => return Err(e.into()),
-                }
-                books[i].status = "failed".into();
-                diagnostics.push(Diagnostic {
-                    severity:        Severity::Error,
-                    code:            "book-render-failed".into(),
-                    message:         error.to_string(),
-                    reference:       books[i].id.clone(),
-                    source_fragment: None,
-                });
-            },
-        }
+        Ok::<_, anyhow::Error>(())
     }
+    .await;
+    pool.drain().await?;
+    compiled?;
     if let Some(worker) = pinned_worker {
         tokio::fs::remove_file(worker).await?;
     }

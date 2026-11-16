@@ -1,13 +1,13 @@
 //! Bounded native child processes compile prepared Typst book jobs. They never
 //! open the coordinator's store, collect sources, or mutate publication graphs.
 use {
-    super::engine,
+    super::{book_process::BookProcess, engine},
     anyhow::{Result, ensure},
     std::{
+        ffi::OsStr,
         path::{Path, PathBuf},
         sync::Arc,
     },
-    tokio::{io::AsyncReadExt, process::Command},
 };
 pub(super) fn executable(explicit: Option<&Path>) -> Result<PathBuf> {
     if let Some(path) = explicit {
@@ -36,39 +36,16 @@ pub(super) async fn pin(
     root: &Path,
     expected_engine: &str,
 ) -> Result<PathBuf> {
-    let mut child = Command::new(executable)
-        .args(["publication", "prepare-book-worker", "--root"])
-        .arg(root)
-        .arg("--expected-engine")
-        .arg(expected_engine)
-        .arg("--watch-parent")
-        .env("TOKIO_WORKER_THREADS", "1")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()?;
-    let stderr = child.stderr.take().ok_or_else(|| {
-        anyhow::anyhow!("missing worker preparation error pipe")
-    })?;
-    // bounded: worker diagnostics are capped independently of executable size.
-    let mut message = Vec::new();
-    let mut stderr = stderr.take(64 * 1024 + 1);
-    tokio::time::timeout(
-        std::time::Duration::from_secs(1800),
-        stderr.read_to_end(&mut message),
-    )
-    .await??;
-    ensure!(
-        message.len() <= 64 * 1024,
-        "worker preparation exceeded diagnostic byte budget"
-    );
-    let status = child.wait().await?;
-    ensure!(
-        status.success(),
-        "book worker preparation exited with {status}: {}",
-        String::from_utf8_lossy(&message)
-    );
+    BookProcess::spawn(executable, &[
+        OsStr::new("prepare-book-worker"),
+        OsStr::new("--root"),
+        root.as_os_str(),
+        OsStr::new("--expected-engine"),
+        OsStr::new(expected_engine),
+    ])?
+    .finish(None)
+    .await?
+    .succeeded("book worker preparation")?;
     Ok(image_path(root))
 }
 
@@ -99,49 +76,20 @@ pub(super) async fn run(
     root: &Path,
     main: &str,
     expected_engine: &str,
-    mut cancel: tokio::sync::watch::Receiver<bool>,
+    cancel: tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
-    let mut child = Command::new(executable)
-        .args(["publication", "compile-book", "--root"])
-        .arg(root)
-        .arg("--main")
-        .arg(main)
-        .arg("--expected-engine")
-        .arg(expected_engine)
-        .arg("--watch-parent")
-        .env("TOKIO_WORKER_THREADS", "1")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| anyhow::anyhow!("missing worker error pipe"))?;
-    let mut message = Vec::new();
-    let mut stderr = stderr.take(64 * 1024 + 1);
-    let interrupted = tokio::select! {
-        result=stderr.read_to_end(&mut message)=>{result?;None},
-        _=cancel.changed()=>Some("book compilation cancelled"),
-        _=tokio::time::sleep(std::time::Duration::from_secs(1800))=>Some("book worker exceeded the 30-minute deadline"),
-    };
-    if let Some(reason) = interrupted {
-        if child.try_wait()?.is_none() {
-            child.kill().await?;
-        }
-        anyhow::bail!("{reason}");
-    }
-    ensure!(
-        message.len() <= 64 * 1024,
-        "book worker exceeded diagnostic byte budget"
-    );
-    let status = child.wait().await?;
-    ensure!(
-        status.success(),
-        "book worker {main} exited with {status}: {}",
-        String::from_utf8_lossy(&message)
-    );
+    BookProcess::spawn(executable, &[
+        OsStr::new("compile-book"),
+        OsStr::new("--root"),
+        root.as_os_str(),
+        OsStr::new("--main"),
+        OsStr::new(main),
+        OsStr::new("--expected-engine"),
+        OsStr::new(expected_engine),
+    ])?
+    .finish(Some(cancel))
+    .await?
+    .succeeded(&format!("book worker {main}"))?;
     let path = root.join(main).with_extension("pdf");
     let mut file = tokio::fs::File::open(path).await?;
     let mut magic = [0; 5];

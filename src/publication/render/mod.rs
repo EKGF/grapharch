@@ -1,6 +1,8 @@
 //! Static HTML and embedded Typst/PDF publication from immutable target plans.
 
 mod abbreviations;
+mod book_pool;
+mod book_process;
 mod book_worker;
 mod bookshelf;
 mod callouts;
@@ -42,6 +44,7 @@ mod quality;
 mod rdf_tables;
 mod record;
 mod specification;
+mod staging;
 mod typst;
 mod typst_breaks;
 mod typst_markdown;
@@ -64,8 +67,9 @@ use {
         view::RevisionView,
     },
     anyhow::{Result, ensure},
-    files::{Staging, Ticket},
+    files::Ticket,
     model::Plan,
+    staging::Staging,
     std::{
         future::Future,
         path::{Path, PathBuf},
@@ -461,8 +465,7 @@ impl Publisher {
             })))
         }
         .await;
-        stage.cleanup().await?;
-        result
+        stage.finish(result).await
     }
 }
 
