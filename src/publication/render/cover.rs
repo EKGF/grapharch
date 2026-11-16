@@ -248,7 +248,10 @@ async fn rows(
                 format!("#link({})[{}]", quote(&url), plain(&label))
             },
             RowValue::People { names, .. } => plain(&names.join(", ")),
-            RowValue::Html(html) => native_typst::convert(&html, diagnostics)?,
+            RowValue::Html(html) => {
+                native_typst::NativeTypst::new(diagnostics, plan.conformance)
+                    .convert(&html)?
+            },
         };
         cells.push(format!("[{}], [{value}]", plain(&row.label)));
     }

@@ -216,9 +216,14 @@ pub(super) fn markdown_html(
         &mut output,
         markdown
             .abbreviations
-            .html(super::super::markdown_html::events(
-                events.into_iter(),
-            )?)?
+            .html(
+                markdown
+                    .conformance
+                    .html(super::super::markdown_html::events(
+                        events.into_iter(),
+                    )?)
+                    .into_iter(),
+            )?
             .into_iter(),
     );
     Ok(output)

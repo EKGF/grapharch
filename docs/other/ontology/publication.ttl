@@ -1362,6 +1362,22 @@ ga:documentType a owl:ObjectProperty ;
     rdfs:domain ga:Target ;
     rdfs:range ga:DocumentType .
 
+ga:ConformanceLanguage a owl:Class ;
+    rdfs:label "Conformance language"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A convention for stating requirement levels in a publication's prose."@en ;
+    dct:description "A convention for stating requirement levels in a publication's prose."@en ;
+    skos:scopeNote "The shipped catalogue defines ga:Bcp14; a runtime rejects identities it does not implement."@en .
+
+ga:conformanceLanguage a owl:ObjectProperty ;
+    rdfs:label "Conformance language"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Declares the conformance language a publication target's prose uses, so that renderers present its normative keywords."@en ;
+    dct:description "Declares the conformance language a publication target's prose uses, so that renderers present its normative keywords."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range ga:ConformanceLanguage ;
+    skos:scopeNote "With ga:Bcp14, authored Markdown presents standalone uppercase BCP 14 keywords outside code, headings and image text as <em class=\"rfc2119\">, and native markup with that class keeps it; both are styled by the theme's ga:normativeKeywordStyle. Without a declaration, rendering is unchanged."@en .
+
 ga:previewPath a owl:DatatypeProperty ;
     rdfs:label "Declared primary HTML output"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
@@ -2543,6 +2559,14 @@ ga:tintedCallouts a owl:DatatypeProperty ;
     dct:description "Specifies whether callouts and examples use tinted backgrounds rather than plain borders."@en ;
     rdfs:domain ga:Theme ;
     rdfs:range xsd:boolean .
+
+ga:normativeKeywordStyle a owl:DatatypeProperty ;
+    rdfs:label "Normative keyword style"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies how BCP 14 normative keywords appear in HTML and PDF output of a target that declares ga:conformanceLanguage ga:Bcp14; the value is small-caps or bold-italic."@en ;
+    dct:description "Specifies how BCP 14 normative keywords appear in HTML and PDF output of a target that declares ga:conformanceLanguage ga:Bcp14; the value is small-caps or bold-italic."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .
 
 ga:footerFont a owl:DatatypeProperty ;
     rdfs:label "Footer font"@en ;

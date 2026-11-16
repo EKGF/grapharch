@@ -475,7 +475,8 @@ pub(super) async fn entry(
         }
     }
     let body = if entry.format == "text/html" {
-        super::native_typst::convert(&entry.body, diagnostics)?
+        super::native_typst::NativeTypst::new(diagnostics, plan.conformance)
+            .convert(&entry.body)?
     } else if let Some(markdown) = markdown {
         typst_markdown::convert(markdown)?
     } else {

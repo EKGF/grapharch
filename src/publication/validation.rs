@@ -399,6 +399,7 @@ pub(crate) fn rules() -> impl Iterator<Item = (&'static str, Vec<Field>)> {
             Field::optional_text("negotiatedPath"),
             Field::optional("negotiatedHtml", Some("Target")),
             Field::text("destination"),
+            Field::optional("conformanceLanguage", Some("ConformanceLanguage")),
             Field::optional("metadataSource", Some("CollectorUse")),
             Field::many("derivedMetadata", None),
         ]),

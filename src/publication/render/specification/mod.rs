@@ -399,5 +399,6 @@ pub(super) async fn pdf_metadata(
     ) {
         html.push_str(&part.html());
     }
-    super::native_typst::convert(&html, diagnostics)
+    super::native_typst::NativeTypst::new(diagnostics, plan.conformance)
+        .convert(&html)
 }

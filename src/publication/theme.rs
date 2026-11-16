@@ -4,6 +4,7 @@
 //! the renderer maps to Typst; supplied text is never evaluated as source.
 mod builtin;
 mod cover;
+mod keyword_style;
 mod lineage;
 mod pdf;
 mod tokens;
@@ -14,6 +15,7 @@ pub(crate) use pdf::catalogue_typst;
 pub(crate) use {
     builtin::Builtin,
     cover::{CoverBlock, CoverElement, DateFormat},
+    keyword_style::KeywordStyle,
     lineage::Lineage,
     pdf::PdfTheme,
 };

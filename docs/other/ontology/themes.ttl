@@ -63,6 +63,7 @@ ga:ReaderTheme a ga:Theme ;
     ga:quoteInsetX "11pt" ;
     ga:quoteInsetY "8pt" ;
     ga:tintedCallouts "true"^^xsd:boolean ;
+    ga:normativeKeywordStyle "bold-italic" ;
     ga:footerFont "Liberation Sans" ;
     ga:footerSize "8pt" ;
     ga:footerColor "#526670" ;
@@ -121,6 +122,7 @@ ga:SpecificationTheme a ga:Theme ;
     ga:tableGrid "true"^^xsd:boolean ;
     ga:tocTitleSize "19pt" ;
     ga:tocEntrySize "10pt" ;
+    ga:normativeKeywordStyle "small-caps" ;
     ga:specificationCover "true"^^xsd:boolean .
 <https://ekgf.org/ontology/grapharch/theme/specification#top> a ga:CoverBlock ; ga:order 1; ga:coverElement ga:CoverSpace; ga:space "12mm" .
 <https://ekgf.org/ontology/grapharch/theme/specification#publisher> a ga:CoverBlock ; ga:order 2; ga:coverElement ga:CoverPublisher; ga:fontSize "9pt"; ga:fontWeight "bold"; ga:color "accent"; ga:tracking "0.9pt" .

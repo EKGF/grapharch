@@ -8,6 +8,9 @@ use {
 pub(super) struct Parsed {
     pub header:   super::header::Header,
     pub sections: Vec<Section>,
+    /// The conformance section states that BCP 14 keywords are interpreted
+    /// as described there, with ReSpec's link to the BCP 14 index.
+    pub bcp14:    bool,
 }
 
 pub(super) struct Section {
@@ -158,7 +161,13 @@ pub(super) fn parse(source: &str, base: &Url) -> Result<Parsed> {
         !sections.is_empty(),
         "published W3C document contains no supported sections"
     );
-    Ok(Parsed { header, sections })
+    let bcp14 = document
+        .select(&selector(
+            "section#conformance a[href=\"https://www.rfc-editor.org/info/bcp14\"]",
+        )?)
+        .next()
+        .is_some();
+    Ok(Parsed { header, sections, bcp14 })
 }
 
 fn selector(css: &str) -> Result<Selector> {

@@ -9,6 +9,7 @@ pub(super) struct Markdown<'a> {
     // bounded: one fragment, capped at 1 MiB before parsing; never the corpus.
     pub abbreviations:   std::sync::Arc<super::abbreviations::Abbreviations>,
     pub events:          Vec<Event<'a>>,
+    pub conformance:     super::normative::Conformance,
     base_level:          usize,
     heading_depth:       usize,
     pub component_depth: usize,
@@ -244,6 +245,7 @@ impl<'a> Markdown<'a> {
             heading_depth,
             component_depth,
             abbreviations: plan.abbreviations.clone(),
+            conformance: plan.conformance,
         })
     }
 
@@ -251,6 +253,7 @@ impl<'a> Markdown<'a> {
         Self {
             events,
             abbreviations: self.abbreviations.clone(),
+            conformance: self.conformance,
             base_level: self.base_level,
             heading_depth: self.heading_depth,
             component_depth: self.component_depth,
@@ -297,7 +300,11 @@ impl<'a> Markdown<'a> {
         pulldown_cmark::html::push_html(
             &mut output,
             self.abbreviations
-                .html(super::markdown_html::events(events)?)?
+                .html(
+                    self.conformance
+                        .html(super::markdown_html::events(events)?)
+                        .into_iter(),
+                )?
                 .into_iter(),
         );
         Ok(output)

@@ -7,8 +7,12 @@ use {
     sha2::{Digest, Sha256},
 };
 
-fn sources() -> [(&'static str, &'static str); 6] {
+fn sources() -> [(&'static str, &'static str); 7] {
     [
+        (
+            "conformance-languages",
+            include_str!("../../docs/other/ontology/conformance-languages.ttl"),
+        ),
         (
             "document-types",
             include_str!("../../docs/other/ontology/document-types.ttl"),

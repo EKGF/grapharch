@@ -14,12 +14,14 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut code_language = "";
     let mut example = false;
     let mut heading = None;
+    let mut in_heading = false;
     let mut table_head = false;
     let mut table_subject = None;
     let mut in_table = false;
     let mut in_image = false;
     let events = super::image_variants::print_events(&markdown.events)?;
-    let (mut notes, mut events) = super::footnotes::Notes::read(&events)?;
+    let (mut notes, events) = super::footnotes::Notes::read(&events)?;
+    let mut events = markdown.conformance.coalesce(events, " ");
     let subjects = super::rdf_tables::subjects(&mut events)?;
     for (index, event) in events.iter().enumerate() {
         if in_image {
@@ -81,6 +83,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                     },
                     Tag::Heading { level, id, .. } => {
                         heading = id.as_ref().map(ToString::to_string);
+                        in_heading = true;
                         output.push_str(&format!(
                             "#heading(level: {})[",
                             markdown.depth(*level) + markdown.component_depth
@@ -222,6 +225,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         output.push_str("]\n")
                     },
                     TagEnd::Heading(_) => {
+                        in_heading = false;
                         output.push(']');
                         if let Some(id) = heading.take() {
                             output.push_str(&format!("#label({})", quote(&id)));
@@ -269,8 +273,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
             Event::Text(text) => {
                 if let Some(code) = &mut code {
                     code.push_str(text);
-                } else {
+                } else if in_heading {
                     output.push_str(&Breakable::table(text, in_table).text());
+                } else {
+                    output
+                        .push_str(&markdown.conformance.typst(text, in_table));
                 }
             },
             Event::Code(text) => {

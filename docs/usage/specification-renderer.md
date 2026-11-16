@@ -171,6 +171,33 @@ The pinned N-Triples fixture is tested after export/restore and source deletion.
 [ReSpec compatibility](../other/architecture/respec-compatibility.md) records
 remaining authoring-source migration and exact-output acceptance requirements.
 
+## Normative keywords
+
+A target whose prose uses BCP 14 conformance language declares it:
+
+```turtle
+<urn:example:specification> ga:conformanceLanguage ga:Bcp14 .
+```
+
+The value is an IRI from the
+[conformance language catalogue](../other/ontology/conformance-languages.ttl);
+SHACL and the renderer reject any other value. With the declaration, authored
+Markdown presents the standalone uppercase keywords of
+[RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) as
+`<em class="rfc2119">`: MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD,
+SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY and OPTIONAL. Following
+[RFC 8174](https://www.rfc-editor.org/rfc/rfc8174), lowercase and mixed-case
+words remain ordinary prose. A multi-word form, also across a line break, is
+preferred to its first word. Code spans, code blocks, headings, image text, link
+destinations and raw markup are left unchanged.
+
+Native W3C fragments already carry `<em class="rfc2119">`, and the W3C collector
+declares `ga:Bcp14` when the conformance section refers to BCP 14. Their markup
+is kept as published and is not wrapped again. The theme token
+`ga:normativeKeywordStyle` styles both in HTML and in the PDF: the specification
+theme uses W3C-style small capitals, and the reader theme and its refinements use
+bold italic. Without a declaration, keywords and native emphasis render as before.
+
 ## Sections and navigation
 
 A W3C-style profile (the default; see [W3C front matter](#w3c-front-matter))

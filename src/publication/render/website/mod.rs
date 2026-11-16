@@ -72,10 +72,14 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         "404.html".into(),
     ];
     files.extend(interactive_files);
+    let keywords = plan
+        .conformance
+        .css(plan, crate::publication::theme::Builtin::Reader)
+        .await?;
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{keywords}",
             include_str!("style.css"),
             concat!(
                 include_str!("../callouts.css"),
