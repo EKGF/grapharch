@@ -35,7 +35,8 @@ on:
         required: false
         type: boolean
         default: false
-      pypi-in-caller:
+      registries-in-caller:
+        description: The caller publishes PyPI and npm itself, because their trusted publishing rejects reusable workflows
         type: boolean
         default: false
       publish-homebrew:
@@ -44,6 +45,10 @@ on:
       publish-packages:
         type: boolean
         default: false
+    outputs:
+      released:
+        description: 'true once the GitHub release is complete and the artifacts may be published to registries'
+        value: ${{ jobs.github-release.outputs.released }}
     secrets:
       HOMEBREW_TAP_TOKEN:
         required: false
@@ -286,6 +291,8 @@ jobs:
     if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.assemble.result == 'success' && needs.metadata.outputs.publish == 'true' }}
     runs-on: ubuntu-latest
     environment: release
+    outputs:
+      released: ${{ steps.released.outputs.value }}
     permissions:
       actions: read
       contents: write
@@ -329,8 +336,10 @@ jobs:
             dist/*.zip.sha256
             dist/*.json
             dist/homebrew/grapharch.rb
+      - id: released
+        run: printf 'value=true\n' >> "$GITHUB_OUTPUT" || exit $?
   publish-pypi:
-    if: ${{ inputs.pypi-in-caller != true && !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
+    if: ${{ inputs.registries-in-caller != true && !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: pypi
@@ -358,7 +367,7 @@ jobs:
           packages-dir: dist/wheels
           skip-existing: true
   publish-npm:
-    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
+    if: ${{ inputs.registries-in-caller != true && !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-packages == true }}
     needs: [metadata, github-release]
     runs-on: ubuntu-latest
     environment: npm

@@ -65,13 +65,39 @@ class Completion(unittest.TestCase):
         self.assertIn('environment: pypi', section)
         self.assertIn('id-token: write', section)
         self.assertNotIn('attestations: false', section)
-        self.assertIn('pypi-in-caller: true', workflow)
+        self.assertIn('registries-in-caller: true', workflow)
         self.assertIn('needs.publish-pypi.result == \'success\'', workflow)
 
     def test_top_level_pypi_failure_blocks_completion(self):
         records = self.records()
         records = [job for job in records if job['name'] != 'distribute / publish-pypi']
         records.append({'id': 99, 'name': 'publish-pypi', 'conclusion': 'success'})
+        require_complete_publication(records)
+        records[-1]['conclusion'] = 'failure'
+        with self.assertRaises(ValueError):
+            require_complete_publication(records)
+
+    def test_npm_provenance_is_created_in_the_top_level_workflow(self):
+        root = Path(__file__).parents[2]
+        workflow = (root / '.github/workflows/automatic-release.yml').read_text()
+        section = workflow.split('\n  publish-npm:\n', 1)[1].split('\n  action-refs:', 1)[0]
+        self.assertIn('packaging/publish_npm.py', section)
+        self.assertIn('environment: npm', section)
+        self.assertIn('id-token: write', section)
+        self.assertIn("needs.distribute.outputs.released == 'true'", section)
+        self.assertIn("needs.publish-npm.result == 'success'", workflow.split('  action-refs:', 1)[1])
+
+    def test_registries_publish_independently_but_action_refs_need_all(self):
+        root = Path(__file__).parents[2]
+        workflow = (root / '.github/workflows/automatic-release.yml').read_text()
+        for job in ('publish-pypi', 'publish-npm'):
+            section = workflow.split('\n  ' + job + ':\n', 1)[1].split('\n  ', 1)[0]
+            self.assertNotIn('needs.publish-', section)
+        self.assertIn('needs: [reserve, distribute, publish-pypi, publish-npm]', workflow)
+
+    def test_top_level_npm_failure_blocks_completion(self):
+        records = [job for job in self.records() if job['name'] != 'distribute / publish-npm']
+        records.append({'id': 98, 'name': 'publish-npm', 'conclusion': 'success'})
         require_complete_publication(records)
         records[-1]['conclusion'] = 'failure'
         with self.assertRaises(ValueError):
