@@ -72,13 +72,19 @@ impl TableJobs {
             member.ontology.as_str(),
         ]);
         let fragments = documentor.fragments();
-        for (order, fragment) in std::iter::once(fragments.metadata)
-            .chain(fragments.details)
-            .enumerate()
-        {
+        // Order 1, between the metadata and details tables, holds the
+        // chapter's authored figures.
+        let placed = std::iter::once((0u32, fragments.metadata)).chain(
+            fragments
+                .details
+                .into_iter()
+                .zip(2u32..)
+                .map(|(f, o)| (o, f)),
+        );
+        for (order, fragment) in placed {
             data.extend([
                 q(&component, "fragment", fragment.clone()),
-                q(&fragment, "order", Literal::from(order as u32)),
+                q(&fragment, "order", Literal::from(order)),
             ]);
         }
         data.push(q(scope, "include", member.ontology.clone()));

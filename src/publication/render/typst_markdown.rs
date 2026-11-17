@@ -230,7 +230,8 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             output.push_str(&format!(
                                 "#block(width: 100%)[#show figure: set \
                                  block(breakable: true)\n#figure(kind: table, \
-                                 supplement: [Table], caption: \
+                                 supplement: [Table], numbering: \
+                                 ga-table-numbering, caption: \
                                  [#text({})])[#set align(left)\n",
                                 quote(caption.text())
                             ));

@@ -1107,6 +1107,15 @@ async fn build(
             if let Some(table) = &term_table &&
                 !member.scheme
             {
+                figures::Figures::read(&view, &member.ontology)
+                    .await?
+                    .write(
+                        &mut data,
+                        &target,
+                        &member.ontology,
+                        &contribution,
+                        1,
+                    );
                 table_jobs
                     .bind(
                         &family_tables,
