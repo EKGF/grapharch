@@ -45,15 +45,22 @@ const OPEN: &[(Criterion, &str)] = &[
         Criterion::FigureCaptions,
         "follows the ontology chapter order",
     ),
-    (Criterion::TableCaptions, "WP-C #117"),
+    (
+        Criterion::TableCaptions,
+        "owner decision: \"Commons\" in ontology titles; OMG's 6-1/7-1 hyphen \
+         vs 8.1 dot; About chapter metadata table",
+    ),
     (
         Criterion::FrontMatterPages,
         "owner decision: front matter length",
     ),
-    (Criterion::PageCount, "WP-C #117, then re-measure"),
+    (
+        Criterion::PageCount,
+        "136 vs 166 pages: OMG table rows carry more vertical space",
+    ),
     (
         Criterion::Terms,
-        "WP-C #117 (OWL-Time foreign-subject rows)",
+        "harness: Name cells wrap long local names at different points",
     ),
 ];
 
