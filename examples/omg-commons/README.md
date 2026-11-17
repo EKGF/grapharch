@@ -60,8 +60,17 @@ the ODM notation colours of OMG ontology specifications.
   caption and order; the PDF numbers them Figure 1 to 24 as OMG does.
 - The publication date, 2026-03-24, is the creation date of that PDF.
 
-Clauses 1 to 7 and Annex B of the formal specification are not yet authored
-here, so the ontology chapters are numbered under clause 1 rather than 8.
+- Clauses 1 to 7 (Scope, Conformance, References, Terms and Definitions,
+  Symbols, Additional Information, Architecture) and Annex B (Examples,
+  informative) are Markdown fragments in `project.ttl`, transcribed from
+  the formal/26-06-05 PDF. Their tables, lists, footnotes and code listings are
+  OMG's; line breaks that PDF extraction inserted into URLs are removed.
+  Footnotes and figures are numbered by GraphArch, so Annex B's footnotes
+  follow on from clause 1 rather than restarting at OMG's 10. Figure 25,
+  [`figures/figure-25-product-composition.png`](figures/figure-25-product-composition.png),
+  is the image embedded in that PDF, flattened onto white, SHA-256
+  `e00898abed13db003f2f14b5929542173ad7e9a4006f6ed202f0f6a5ae2200fb`.
+  The ontologies are clause 8, as in the formal specification.
 
 The gallery runs it automatically. To verify this example independently against
 the current OMG sources:

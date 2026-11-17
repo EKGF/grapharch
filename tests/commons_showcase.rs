@@ -242,10 +242,44 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
         typst.contains("Copyright © 2022-2026, Object Management Group, Inc.")
     );
     assert!(typst.contains("[#text(\"Annex A: Deliverables\")]"));
-    // OMG's 24 overview figures replace the per-term class diagrams.
+    // OMG clauses 1 to 7 precede the ontologies, which form clause 8.
+    let clauses = [
+        "Scope",
+        "Conformance",
+        "References",
+        "Terms and Definitions",
+        "Symbols",
+        "Additional Information",
+        "Architecture",
+        "Commons Ontologies",
+    ]
+    .map(|title| {
+        typst
+            .find(&format!("#heading(level: 1)[#text(\"{title}\")]"))
+            .unwrap_or_else(|| panic!("clause {title}"))
+    });
+    assert!(clauses.windows(2).all(|pair| pair[0] < pair[1]));
+    assert!(typst.contains("[#text(\"Annex B: Examples\")]"));
+    assert!(typst.contains("#text(\"(informative)\")"));
+    // Table 6-1, 7-1 and 7-2 are captioned, numbered tables.
+    assert_eq!(
+        typst
+            .matches("#figure(kind: table, supplement: [Table]")
+            .count(),
+        3
+    );
+    assert!(typst.contains(
+        "caption: [#text(\"Description Logic Expressions Notation\")]"
+    ));
+    // Annex B's authored figure follows the 24 overview figures.
+    assert!(
+        typst.contains("caption: [#text(\"Example product composition\")]")
+    );
+    // OMG's 24 overview figures replace the per-term class diagrams; Annex B
+    // adds the 25th.
     assert_eq!(
         typst.matches("#figure(image(\"assets/").count(),
-        24
+        25
     );
     assert!(typst.contains(
         "caption: [#text(\"Business Authorizations Ontology Overview\")]"

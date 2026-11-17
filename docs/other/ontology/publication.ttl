@@ -2827,8 +2827,8 @@ ga:annexCentered a owl:DatatypeProperty ;
 ga:annexRectoStart a owl:DatatypeProperty ;
     rdfs:label "Annex recto start"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Specifies whether each appendix starts on an odd page, with ga:blankPageText on any inserted page."@en ;
-    dct:description "Specifies whether each appendix starts on an odd page, with ga:blankPageText on any inserted page."@en ;
+    skos:definition "Specifies whether each appendix, and then also the body, starts on an odd page, with ga:blankPageText on any page inserted before an appendix."@en ;
+    dct:description "Specifies whether each appendix, and then also the body, starts on an odd page, with ga:blankPageText on any page inserted before an appendix."@en ;
     rdfs:domain ga:Theme ;
     rdfs:range xsd:boolean .
 

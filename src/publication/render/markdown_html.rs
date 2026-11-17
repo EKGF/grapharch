@@ -14,6 +14,8 @@ pub(super) fn events<'a>(
     // Bounded by the caller's per-fragment/page Markdown budget. Classify task
     // items structurally so nested and mixed lists retain their semantics.
     let mut events: Vec<_> = events.collect();
+    super::table_captions::TableCaptions::take(&mut events)?
+        .html(&mut events)?;
     figure::events(&mut events)?;
     let subjects = super::rdf_tables::subjects(&mut events)?;
     for index in 0..events.len().saturating_sub(1) {

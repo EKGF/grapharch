@@ -25,7 +25,9 @@ ex:profile a ga:Profile; ga:theme omg:theme; pub:publishesFamily ex:family ;
     # The HTML reference opens with the library overview; the PDF omits it.
     ga:familyOverviewOrder 0 ;
     ga:requiredMetadataField "documentNumber", "latestVersion" ;
-    ga:placement ex:preface, ex:ontologies, ex:deliverables .
+    ga:placement ex:preface, ex:scope-clause, ex:conformance-clause, ex:references-clause,
+        ex:terms-clause, ex:symbols-clause, ex:information-clause, ex:architecture-clause,
+        ex:ontologies, ex:deliverables, ex:examples .
 
 ex:specification a ga:Target; dct:title "Commons Ontology Library" ;
     dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units." ;
@@ -219,6 +221,788 @@ Each of the ontologies included in the Commons Ontology Library makes normative 
 
 The individual RDF/XML files are UTF-8 conformant XML files that are also OWL 2 compliant, and may be examined using any text editor, XML editor, or RDF or OWL editor. They have been verified for syntactic correctness via the W3C RDF Validator and pass a series of unit-level tests provided by the EDM Council in its Data Innovation Laboratory (DIL) tools that cover a range of syntactic and modeling pattern issues. They have also been checked for logical consistency using the HermiT OWL 2 reasoner from Oxford University.""" .
 
+# Clauses 1 to 7 and Annex B, transcribed from the formal/26-06-05 PDF.
+ex:scope-clause a ga:Placement ; ga:component ex:scope-component ; ga:order 2 .
+ex:scope-component a ga:Component ; dct:title "Scope" ; ga:fragment ex:scope-body .
+ex:scope-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """## Introduction
+
+The Commons Ontology Library is designed to provide a useful set of modeling constructs that are reusable in different modeling and data deployment environments with minimal commitments. It is intended to be extensible such that new ontologies and potentially other models (for example, UML models corresponding to the ontologies) can be added as cross-domain requirements present themselves. These requirements may come from other OMG standards efforts or potentially from external users of the library, for example, the Industrial Ontology Foundry (IOF) manufacturing community, EDM Council projects with the Pistoia Alliance IDMP pharmaceutical community, and others.
+
+## Criteria for Inclusion
+
+Ontologies and other models will be identified primarily by drawing on other work, although care must be taken to ensure that intellectual property and other legal rights are addressed, and that standardization is desired by the user community. Oversight for curation of the library will be managed by the Commons revision task force (RTF) via the normal OMG process. The minimum criteria identified to date for inclusion include: (1) the need for the same set of concepts with the same semantics across multiple specifications and/or domain areas, such as manufacturing, finance and/or retail, (2) a clear set of use cases, competency questions, and test cases that can help limit the scope for a given ontology and provide the basis for regression testing, (3) reusability in their own right with minimal dependencies on other ontologies with the possible exception of other Commons ontologies, and (4) that the ontologies meet minimal requirements for metadata, logical consistency, and serialization (e.g., RDF/XML and Turtle serialized OWL, for OWL ontologies).
+
+## Overview
+
+The Commons Ontology Library of ontologies specified herein covers:
+
+(1) Annotations
+
+- A reusable set of declarations for commonly used annotation properties from the Dublin Core Metadata Initiative (DCMI) Terms[^dcmi] and the Simple Knowledge Organization System (SKOS)[^skos], so that these vocabularies can be reused without importing either.
+- Additional annotation properties that provide metadata for documentation that is not explicitly available in either Dublin Core or SKOS.
+
+(2) Collections:
+
+- Collections – commonly used concepts for arrangements and schemes for organizing information and collections of things, such as structured collections that may be organized according to some scheme and related very high-level mereology relations to enable association of things with such collections and schemes.
+- Structured Collections – an extension to collections that defines chronologically and indexed collections as well as sets and lists.
+
+(3) Roles and Compositions:
+
+- The notion of a composition that can be used, for example to relate something, such as a product or recipe, to its ingredients or constituents, and/or to the roles such constituents play in the composition, and optionally to some context, such as a jurisdiction, in which the composition is relevant.
+- The concept of a role, supporting the representation of participants in compositions, situations, and relationships, as well as properties that link the role to something that plays that role, that links something to a role it has (e.g., a role that is pertinent to a situation or composition), as well as inverses that enable role traversal in a graph.
+
+(4) Designations:
+
+- Designators - commonly used concepts for naming, derived in part from the patterns defined in ISO 1087 for terminology work and ISO 11179-3, Metadata Registries. The top-level designators ontology includes several very high-level semiotic relationships, including defines, describes, and denotes for associating designators with the concepts they reference.
+- Contextual Designators – an extension to the designators ontology to incorporate applicable dates and times and facilitate the inclusion of other context that is commonly needed, derived in part from the patterns defined in ISO 11179-3, Metadata Registries.
+- Codes and Code Sets - commonly used concepts for describing codes, including standardized codes such as ISO language, country, and other code sets, the North American Industry Classification System (NAICS) codes, and custom code sets that many organizations develop for various purposes, derived from the patterns specified in ISO 11179-3, Metadata Registries.
+- Identifiers - commonly used concepts for describing identifiers and the identification schemes that define them, such as various national and international identifiers for legal entities, financial instruments, and the like, derived from the patterns specified in ISO 11179-3, Metadata Registries.
+- Contextual Identifiers – an extension to the contextual designators and identifiers ontologies covering concepts for describing more complex identifiers, including those that apply for some period of time as well as those that are structured and include other codes or identifiers.
+- Languages – High-level concepts defining languages, including natural as well as formal languages, based on a number of standards including but not limited to ISO 639 as well as the language element of the Language Tag specified in BCP 47 (RFC 4646, RFC 4647). The concept of a language is included here to normalize definitions across the Application Programming Interfaces for Knowledge Platforms (API4KP), Distributed Ontology, Model, and Specification Language (DOL), Languages, Countries, and Codes (LCC), and Multiple Vocabulary Facility (MVF) standards to support interoperability, and for use in other OMG and external ontology projects.
+
+(5) Classifiers:
+
+- Abstract concepts for representation of classification schemes that enable the classification of arbitrary concepts into hierarchies (or partial orders) for use in other ontologies, derived in part from the patterns defined in ISO 1087-1 for terminology work and ISO 11179-3, Metadata Registries.
+
+(6) Locations:
+
+- Locations – Very high-level definitions of geographic region and geopolitical entity related concepts, including, but not limited to, countries, sub-country regions such as states and provinces, and municipalities, derived from a combination of ISO 3166, the UN M49 Region codes, Geonames, and other sources.
+- Sites and Facilities – High-level concepts related to facilities, both virtual and physical, including sites that provide the context for various facilities.
+
+(7) Parties :
+
+- Parties and Situations – The concepts of agent, agent role, party, party role, and situation, which is a state of affairs or reified relationship that holds for some period of time, including lattice relations between the concepts driven by property chains that can be used to access the lattice from any perspective in the resulting graph.
+- Organizations – an extension of the parties and situations and locations ontologies that defines organization, legal entity, organization membership, and related identifiers, as well as service and service provider, designed to enable mapping to other organization ontologies such as the W3C Organizations ontology.
+- Business Authorizations – the concept of authorization from a business perspective, rather than security or access control viewpoint, as a situation or state of affairs, including related parties. This extension is needed to cover a range of requirements from retail, for example for defining digital signatures, as well as for banking and pharmaceuticals, for defining marketing and manufacturing authorizations for medicines.
+- Registration Authorities – a small ontology that extends organizations defining registration authorities, registrars, registration-specific identifiers and related identification schemes, modeled after patterns included in ISO/IEC 11179-3.
+- Regulatory Agencies – an extension of locations and organizations that specifies concepts including regulatory agencies, also known as regulatory authorities or regulators, and their jurisdictions.
+
+(8) Quantities and Units:
+
+- Documents - a small documents ontology that can be mapped to others, such as FRBR, to support representation of references and reference documents required for documenting certain units.
+- Quantities and Units - an ontology defining scalar quantities and units, corresponding to the quantities and units library in SysML v2 covering the key concepts required for most domains, including but not limited to measurement scales, quantity kinds, dimensions, scalar quantities and scalar units.
+
+(9) Time:
+
+- Dates and Times - commonly used temporal concepts that cover those most frequently needed across domains, with a focus on terminology that is used in business applications. It is designed to be mappable to other date and time ontologies and specifications, such as the W3C Time Ontology in OWL[^owl-time], certain temporal elements in ISO Basic Formal Ontology[^bfo], time concepts defined in schema.org, and the OMG Date Time Vocabulary (DTV) specification, without the corresponding overhead, or in some cases, issues. The concepts were originally derived from a number of date and time standards including ISO 8601:2004 Representation of Dates and Times.
+- Mapping Dates and Times to OWL Time – an extension to the dates and times ontology to map it to the widely used W3C Time Ontology in OWL recommendation.
+
+(10) Text Datatype:
+
+- A custom datatype that combines language tagged and plain string values. This text datatype is useful in cases where it is not clear whether string values will be tagged or not, but where it is anticipated that multilingual strings might be appropriate.
+
+Each of these ontologies is defined below.
+
+## Metadata
+
+Annotations on concepts, properties, and individuals in this specification follow the general policies recommended by the OMG Architecture Board, including the use of (1) the Dublin Core Metadata Terms [Dublin Core], (2) the Simple Knowledge Organization System (SKOS) [SKOS], and (3) the annotation vocabulary included in the Commons Ontology Library. Every element in the ontologies defined in the Commons Ontology Library must have a label and definition, and in many cases, the source for the definitions, such as an ISO or other OMG standard, is referenced. Examples are also included as appropriate, along with other notes that may assist users in understanding and reusing the ontology.
+
+[^dcmi]: Dublin Core Metadata Initiative (DCMI), DCMI Metadata Terms -- <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/>
+[^skos]: Simple Knowledge Organization System (SKOS) -- <https://www.w3.org/TR/2009/REC-skos-reference-20090818/>
+[^owl-time]: Available at <https://www.omg.org/TR/owl-time>
+[^bfo]: See <https://basic-formal-ontology.org/bfo-2020.html>""" .
+
+ex:conformance-clause a ga:Placement ; ga:component ex:conformance-component ; ga:order 3 .
+ex:conformance-component a ga:Component ; dct:title "Conformance" ; ga:fragment ex:conformance-body .
+ex:conformance-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """The Commons Ontology Library specification provides two options for conformance points for implementers. These are as follows:
+
+(1) Specification-level conformance with the OWL ontologies, which means that the subject application formally imports the ontologies (i.e., through owl:imports statements in another ontology or via loading the full set of ontologies for reference in a knowledge graph that supports OWL) with no resulting logical inconsistencies.
+
+(2) Linked Data-level conformance – which means that the subject application references one or more of the ontologies but does not formally import them.
+
+For either conformance point, references to the elements defined in a given ontology must use, or provide a mapping to, the standard OMG URI for that element. Users may choose to use or extend any of the Commons Ontology Library ontologies as necessary, to add concepts and properties required between releases, or to add application-specific extensions needed to address their individual requirements. We encourage library implementers and users to submit any requirements for extension, including requests to add ontologies to the library, to the relevant task force as issues.""" .
+
+ex:references-clause a ga:Placement ; ga:component ex:references-component ; ga:order 4 .
+ex:references-component a ga:Component ; dct:title "References" ; ga:fragment ex:references-body .
+ex:references-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """## Normative References
+
+| Reference | Description |
+| --- | --- |
+| [BCP 47] | BCP 47: Tags for Identifying Languages, available at <https://datatracker.ietf.org/doc/bcp47/>. |
+| [DTV] | Date-Time Vocabulary (DTV™). Available at <https://www.omg.org/spec/DTV/>. |
+| [Dublin Core] | DCMI Metadata Terms, Issued 2020-01-20 by the Dublin Core™ Metadata Initiative. Available at <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/>. |
+| [ISO 704] | ISO 704:2009 Terminology work – Principles and methods, Fourth edition, 2022-07 |
+| [ISO 1087] | ISO 1087:2019 Terminology work – Vocabulary – Theory and Application, Second edition, 2019-09 |
+| [ISO 8601-1] | ISO 8601-1:2019 Date and Time – Representations for information interchange – Part 1: Basic Rules |
+| [ISO 11179-3] | ISO/IEC 11179-3:2013 Information technology – Metadata registries (MDR) – Registry metamodel and basic attributes, Third edition, 2013-02-15 |
+| [MOF] | Meta Object Facility (MOF™) Core. Available at <https://www.omg.org/spec/MOF/> |
+| [MOF XMI] | MOF 2/XMI (XML Metadata Interchange) Mapping Specification. Available at <https://www.omg.org/spec/XMI/> |
+| [ODM] | Ontology Definition Metamodel (ODM™). Available at <https://www.omg.org/spec/ODM/> |
+| [OWL 2] | OWL 2 Web Ontology Language Quick Reference Guide (Second Edition), W3C Recommendation 11 December 2012. Available at <http://www.w3.org/TR/2012/REC-owl2-quick-reference-20121211/>. |
+| [RDF Concepts] | RDF 1.1 Concepts and Abstract Syntax. Richard Cyganiak, David Wood and Markus Lanthaler, Editors. W3C Recommendation, 25 February 2014. Available at <http://www.w3.org/TR/rdf11-concepts/> |
+| [RDF Schema] | RDF Schema 1.1. Dan Brickley and R.V. Guha, Editors. W3C Recommendation, 25 February 2014. Available at <http://www.w3.org/TR/rdf-schema/>. |
+| [SKOS] | SKOS Simple Knowledge Organization System Reference, W3C Recommendation 18 August 2009. Available at <http://www.w3.org/TR/2009/REC-skos-reference-20090818/>. |
+| [SMOF] | MOF Support for Semantic Structures (SMOF™). Available at <https://www.omg.org/spec/SMOF/>. |
+| [SysML] | OMG System Modeling Language (SysML®). Available at <https://www.omg.org/spec/SysML/>. |
+| [UML] | Unified Modeling Language™ (UML®). Available at <https://www.omg.org/spec/UML/> |
+| [Unicode] | The Unicode Standard, Version 3, The Unicode Consortium, Addison-Wesley, 2000. ISBN 0-201-61633-5, as updated from time to time by the publication of new versions.<br>(See <https://www.unicode.org/unicode/standard/versions/enumeratedversions.html> for the latest version and additional information on versions of the standard and of the Unicode Character Database). |
+| [UTF-8] | RFC 3629: UTF-8, a transformation format of ISO 10646. F. Yergeau. IETF, November 2003, <http://www.ietf.org/rfc/rfc3629.txt> |
+| [W3C Datatypes in RDF and OWL] | XML Schema Datatypes in RDF and OWL, W3C Working Group Note 14 March 2006, Available at <http://www.w3.org/TR/2006/NOTE-swbp-xsch-datatypes-20060314/>. |
+| [W3C OWL Time] | W3C Time Ontology in OWL, available at <https://www.w3.org/TR/owl-time/> |
+| [XML Schema Datatypes] | XML Schema Part 2: Datatypes Second Edition. W3C Recommendation 28 October 2004. Available at <http://www.w3.org/TR/xmlschema-2/>. |
+
+## Non-Normative References
+
+The following informative documents are referenced in this specification:
+
+| Reference | Description |
+| --- | --- |
+| [DL Handbook] | THE DESCRIPTION LOGIC HANDBOOK: Theory, implementation, and applications. Baader, McGuinness, Nardi, and Patel-Schneider, editors. Cambridge University Press, Cambridge, United Kingdom, 2003. |
+| [OE] | Kendall, Elisa F. and Deborah L. McGuinness. Ontology Engineering: Synthesis Lectures on the Semantic Web: Theory and Technology. Morgan & Claypool Publishers. 2019. doi: 10.2200/S00834ED1V01Y201802WBE018 |""" .
+
+ex:terms-clause a ga:Placement ; ga:component ex:terms-component ; ga:order 5 .
+ex:terms-component a ga:Component ; dct:title "Terms and Definitions" ; ga:fragment ex:terms-body .
+ex:terms-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """For the purposes of this specification, the following terms and definitions apply.
+
+| Term | Definition |
+| --- | --- |
+| annotation | note or comment added to provide explanatory information or other metadata about some element in an ontology |
+| arrangement | systematic plan, manner, or method for making, doing, achieving, or organizing something |
+| aspect | characteristic or feature that can be used to dimensionalize, filter, or subset something |
+| collection | grouping of things (may be zero) that have some shared significance |
+| composition | distinct element resulting from bringing together other elements, possibly in specific roles, for a particular purpose |
+| context | situation or frame of reference in which something applies, exists, happens, or is used and that helps to illustrate or explain it |
+| designation | representation for someone or something by a sign that denotes it |
+| mereology | theory of parthood relations: the relations of part to whole and the relations of part to part within a whole |
+| ontology | An ontology specifies a rich description of the:<br>• Terminology, concepts, nomenclature<br>• Relationships among and between concepts and individuals<br>• Sentences distinguishing concepts, refining definitions and relationships (constraints, restrictions, regular expressions)<br>relevant to a particular domain or area of interest. [OE] |
+| role | named specific behavior of something participating in a particular context |""" .
+
+ex:symbols-clause a ga:Placement ; ga:component ex:symbols-component ; ga:order 6 .
+ex:symbols-component a ga:Component ; dct:title "Symbols" ; ga:fragment ex:symbols-body .
+ex:symbols-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """## Symbols
+
+See clause 6.5, Notation, for a description of the logic symbols used to describe the ontologies covered in this specification.
+
+## Abbreviations
+
+The following abbreviations are used throughout this specification:
+
+DL – Description Logics<br>
+FIBO – Financial Industry Business Ontology<br>
+IOF – Industrial Ontology Foundry<br>
+IRI – Internationalized (Uniform) Resource Identifier<br>
+ISO – International Organization for Standardization<br>
+LCC – Languages, Countries and Codes<br>
+MVF – Multiple Vocabulary Facility<br>
+OWL – Web Ontology Language<br>
+ODM – Ontology Definition Metamodel<br>
+RDF – Resource Description Framework<br>
+UML – Unified Modeling Language<br>
+URI – Uniform Resource Identifier<br>
+URL – Uniform Resource Locator<br>
+W3C – World Wide Web Consortium<br>
+XMI – XML Metadata Interchange<br>
+XML – eXtensible Markup Language""" .
+
+ex:information-clause a ga:Placement ; ga:component ex:information-component ; ga:order 7 .
+ex:information-component a ga:Component ; dct:title "Additional Information" ; ga:fragment ex:information-body .
+ex:information-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """## Changes to Other OMG Specifications
+
+None.
+
+## Acknowledgments
+
+The following organization submitted this specification:
+
+- Thematix Partners LLC
+
+The following companies and organizations are supporters of this specification:
+
+- 88solutions
+- Accurids GmbH
+- Adaptive, Inc.
+- agnos.ai U.K. Ltd
+- Airbus Group
+- Boeing
+- Dassault Systèmes
+- DEKonsult
+- EDM Council, Inc.
+- Federated Knowledge, LLC
+- Jackrabbit Consulting
+- Mayo Clinic
+- Micro Focus International Plc
+- Model Driven Solutions
+- OntoAge
+- Ontogenesis Solutions, LLC
+- OpenText Inc.
+- Pharmalex GmbH
+- Pistoia Alliance, Inc.
+- QuoteWell, Inc.
+- Raytheon Technologies (RTX)
+- Rensselaer Polytechnic Institute
+- Sparx Systems Pty Ltd
+- U. S. National Institute of Standards and Technology (NIST)
+- Wells Fargo Bank, N.A.
+- Working Ontologist
+
+## Intellectual Property Rights
+
+The Commons Ontology Library is available under the OMG’s Copyright and Non-Assertion Covenant (see <https://www.omg.org/cgi-bin/doc.cgi?ipr> for details). The individual ontologies are also licensed for use under the MIT open-source license agreement, available at <https://opensource.org/licenses/MIT>.
+
+## Application of the Commons Ontologies
+
+With respect to OMG standards, the ontologies included in the library are reused by the Multiple Vocabulary Facility (MVF) specification and an anticipated update of the Languages, Countries and Codes (LCC) specification. For LCC, they replace existing concepts that were needed for MVF derived from LCC. The ontologies are also used by the API4KP specification, the Financial Industry Business Ontology (FIBO), by the emerging Retail Industry Ontology (RIO), and by the Robotics Service Ontology specification.
+
+In addition to their use in OMG standards, initiatives such as the Industrial Ontology Foundry (IOF), sponsored by the U.S. National Institute of Standards and Technology and a joint effort of the Pistoia Alliance and EDM Council for ontologies that facilitate identification of medicinal products (IDMP).
+
+## Notation
+
+The diagrams included herein are ODM-compliant UML diagrams. In other words, they conform to the UML Profiles for RDF and OWL specified in the OMG’s Ontology Definition Metamodel [ODM] Specification. This includes the set of UML stereotypes and graphical notation used in the diagrams provided.
+
+The color scheme employed in these diagrams includes:
+
+- Basic OWL Classes: white for classes defined within the current (local) ontology, amber for classes defined within an imported (referenced) ontology
+- OWL Restriction Classes and other Class Expressions (unions, intersection, complements): green
+- OWL Object Properties: blue
+- OWL Data Properties: dark gray
+- OWL Datatypes: pink
+- OWL Individuals: light gray
+
+These colors are provided for clarification purposes only and are non-normative.
+
+For the library there is an “about” file, which provides metadata about the library, described below in tabular form. The ontologies themselves are documented as ODM-compliant UML models, aside from the “about” file, annotation vocabulary, and mapping ontology. Every ontology is expressed in RDF/XML-serialized OWL and Turtle-serialized OWL [OWL 2].
+
+The notation used to represent description logic expressions (i.e., the expressions in the Parent columns in class tables containing ontology details) is consistent with the notation defined in the Description Logic Handbook [DL Handbook]. The notation used in this specification, representing a subset of OWL 2, is described in Table 6-1, below.
+
+Table: Description Logic Expressions Notation
+
+| Construct | Description | Notation |
+| --- | --- | --- |
+| **Boolean Connectives and Enumeration** | | |
+| intersection | The intersection of two classes consists of exactly those individuals which are instances of both classes. | C∩D |
+| union | The union of two classes contains every individual which is contained in at least one of these classes. | C∪D |
+| enumeration | An enumeration defines a class by enumerating all its instances. | oneOf (i1, i2, i3, … in) |
+| **Property Restrictions** | | |
+| universal quantification | Universal quantification is used to specify a class of individuals for which all related individuals must be instances of a given class (i.e., allValuesFrom in OWL). | ∀R.C, where R is the relation (property) and C is the class that constrains all values for related individuals |
+| existential quantification | Existential quantification is used to specify a class as the set of all individuals that are connected via a particular property to at least one individual which is an instance of a certain class (i.e., someValuesFrom in OWL). | ∃R.C, where R is the relation (property) and C is the class that constrains some values of related individuals |
+| individual value | Individual value restrictions are used to specify classes of individuals that are related to one particular individual (i.e., hasValue in OWL). | R.I, where R is the relation (property) and I is the individual |
+| exact cardinality | Cardinality (number) restrictions specify classes by restricting the cardinality on the sets of fillers for roles (relationships, or properties in OWL). Exact cardinality restrictions restrict the cardinality of possible fillers to exactly the number specified. | = n R (for unqualified restrictions)<br>= n R.C (for qualified restrictions, i.e., including onClass or on DataRange) |
+| maximum cardinality | Maximum cardinality restrictions restrict the cardinality of possible fillers to at most the number specified (inclusive). | ≤ n R (for unqualified restrictions)<br>≤ n R.C (for qualified restrictions) |
+| minimum cardinality | Minimum cardinality restrictions restrict the cardinality of possible fillers to at least the number specified (inclusive). | ≥ n R (for unqualified restrictions)<br>≥ n R.C (for qualified restrictions) |
+| **Class Axioms** | | |
+| equivalent classes | Two classes are considered equivalent if they contain exactly the same individuals. | ≡C |
+| disjoint classes | Disjointness means that membership in one class specifically excludes membership in another. | ¬C |
+| **Property Axioms** | | |
+| complex role inclusions | Role inclusions allow [object] properties to be chained together in a sequence that is a subproperty of a higher-level property. | R○R |
+
+Note that in the case of complex restrictions, where there are nested elements in parentheses, the “dot notation” used as a separator between a property and the role filler is replaced with the embedded parenthetical filler definition. A “role” from a description logic perspective is essentially a property in OWL, and the role “filler” is the class or individual that provides the value for that role in a given axiom (i.e., in a restriction or other logic expression).""" .
+
+ex:architecture-clause a ga:Placement ; ga:component ex:architecture-component ; ga:order 8 .
+ex:architecture-component a ga:Component ; dct:title "Architecture" ; ga:fragment ex:architecture-body .
+ex:architecture-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:body """## “About” the Commons Ontologies
+
+The “about” file for the Commons Ontology Library provides metadata describing the library. This file is designed to (1) describe the machine-readable content of the specification for users that download the entire library directly and imports it into tools that can interpret and display the files, (2) for potential use in tagging the specification document on the OMG site, and (3) to provide a single file that imports the ontologies for ease of use (similar to a “make file” for software), excluding the mapping to the W3C Time Ontology in OWL, which may or may not be desired.
+
+## Namespace Definitions
+
+The namespaces and prefixes corresponding to external elements required for use in the Commons Ontology Library are provided in Table 7-1. Table 7-2 provides the namespace declarations required for use of the ontologies included in the library itself. The prefixes provided in Table 7-1 and 7-2 are normative, and their use is required in any conformant application or extension.
+
+Table: Prefix and Namespaces for referenced/external vocabularies
+
+| Namespace Prefix | Namespace |
+| --- | --- |
+| rdf | http://www.w3.org/1999/02/22-rdf-syntax-ns# |
+| rdfs | http://www.w3.org/2000/01/rdf-schema# |
+| owl | http://www.w3.org/2002/07/owl# |
+| xsd | http://www.w3.org/2001/XMLSchema# |
+| dct | http://purl.org/dc/terms/ |
+| skos | http://www.w3.org/2004/02/skos/core# |
+| time | http://www.w3.org/2006/time# |
+
+The namespace approach taken for Commons Ontology Library is based on OMG guidelines and is constructed as follows:
+
+- The standard protocol, authority, and top level specification part of any OMG specification namespace, which is https://www.omg.org/spec/
+- The abbreviation for the specification: in this case Commons
+- The ontology name
+
+Note that the URI/IRI strategy for the ontologies included in the library takes a “slash” rather than “hash” approach, in order to accommodate server-side applications. Namespace prefixes are constructed as follows with the components separated by “-“:
+
+- The abbreviation used for prefix purposes across the Commons Ontology Library: cmns
+- An abbreviation for the ontology name
+
+The namespaces and prefixes for the individual ontologies are summarized in Table 7-2 These are given in alphabetical order, rather than with any intent to show imports relationships. The table includes the namespace definitions for the “about” file that is part of the machine-readable deliverables for the specification, but that is not required for imports closure. Note that these are not versioned, although version IRIs are included in every OWL ontology and are documented in the metadata for each of them.
+
+Table: Prefix and Namespaces for the Commons Ontology Library Ontologies
+
+| Namespace Prefix | Namespace |
+| --- | --- |
+| cmns-abt | https://www.omg.org/spec/Commons/AboutCommons/ |
+| cmns-av | https://www.omg.org/spec/Commons/AnnotationVocabulary/ |
+| cmns-bauth | https://www.omg.org/spec/Commons/BusinessAuthorizations/ |
+| cmns-cds | https://www.omg.org/spec/Commons/CodesAndCodeSets/ |
+| cmns-cls | https://www.omg.org/spec/Commons/Classifiers/ |
+| cmns-col | https://www.omg.org/spec/Commons/Collections/ |
+| cmns-cxtdsg | https://www.omg.org/spec/Commons/ContextualDesignators/ |
+| cmns-cxtid | https://www.omg.org/spec/Commons/ContextualIdentifiers/ |
+| cmns-doc | https://www.omg.org/spec/Commons/Documents/ |
+| cmns-dsg | https://www.omg.org/spec/Commons/Designators/ |
+| cmns-dt | https://www.omg.org/spec/Commons/DatesAndTimes/ |
+| cmns-id | https://www.omg.org/spec/Commons/Identifiers/ |
+| cmns-lang | https://www.omg.org/spec/Commons/Languages/ |
+| cmns-loc | https://www.omg.org/spec/Commons/Locations/ |
+| cmns-mdt | https://www.omg.org/spec/Commons/MappingDatesAndTimesToOWLTime/ |
+| cmns-org | https://www.omg.org/spec/Commons/Organizations/ |
+| cmns-pts | https://www.omg.org/spec/Commons/PartiesAndSituations/ |
+| cmns-qtu | https://www.omg.org/spec/Commons/QuantitiesAndUnits/ |
+| cmns-ra | https://www.omg.org/spec/Commons/RegistrationAuthorities/ |
+| cmns-rga | https://www.omg.org/spec/Commons/RegulatoryAgencies/ |
+| cmns-rlcmp | https://www.omg.org/spec/Commons/RolesAndCompositions/ |
+| cmns-sfc | https://www.omg.org/spec/Commons/SitesAndFacilities/ |
+| cmns-strcol | https://www.omg.org/spec/Commons/StructuredCollections/ |
+| cmns-txt | https://www.omg.org/spec/Commons/TextDatatype/ |""" .
+
+ex:examples a ga:Placement ; ga:component ex:examples-component ; ga:order 1001 ;
+    ga:sectionKind "appendix" ; ga:normativity "informative" .
+ex:examples-component a ga:Component ; dct:title "Examples" ; ga:fragment ex:examples-body .
+ex:examples-body a ga:Fragment ; ga:subject ex:edition ; ga:contribution ex:authored ; ga:format "text/markdown" ;
+    ga:asset ex:figure-25-asset ; ga:reference ex:figure-25-reference ;
+    ga:body """The ontologies included in the Commons Ontology Library leverage modeling patterns found in many data management and knowledge graph based applications. Some of these patterns are reused in more specific parts of the library, such as many of the annotation properties given in the Annotation Vocabulary. Examples for cases that are not provided in the library itself may be helpful to implementers and a number of such examples that we hope will clarify how to use the ontologies are given below.
+
+## Classifiers and Classification Schemes
+
+From an ontological perspective, a classification scheme is typically used to ‘put things in buckets’ – a controlled vocabulary, organizing scheme, set of categories to support faceted searching and the like. ISO/IEC 11179-3:2013 Information technology – Metadata registries (MDR) – Part 3: Registry metamodel and basic attributes[^iso11179] provides a pattern for representing classification schemes and the classifiers defined in such schemes, which the ontology follows. In finance, the set of ‘asset classes’ used to classify financial instruments, such as those specified in ISO 10962, Securities and related financial instruments – Classification of financial instruments (CFI) code[^iso10962], represent examples of both classifiers and codes at the same time. Another such scheme is the North American Industry Classification System (NAICS), used by federal statistical agencies in classifying business establishments for the purpose of collecting, analyzing, and publishing statistical data related to the U.S. business economy[^naics] Recently published ISO standards for the identification of medicinal products include several classification schemes. For example, in the ISO 11238:2018 Health informatics – Identification of medicinal products – Data elements and structures for the unique identification and exchange of regulated information on substances[^iso11238], taxonomic structures for classifying substances as polymers, proteins, structurally diverse substances, and mixtures are derived from biological matrices. The example that follows shows a kind of classifier for substance names, specified in the ISO 11238 standard for describing and identifying substances, and includes a controlled vocabulary of valid values. Thus, the class ‘substance name classifier’ is a subclass of ‘classifier’, and each of the valid values is modeled as a named individual whose type is ‘substance name classifier’. Note that the use of ‘min 0’ in a restriction is quite useful to show users that while the main ontology for substances does not require a value for all possible substance names it classifies, since new substances are added to various repositories on a regular basis, using inverse reasoning on individuals of type substance name for the property “is classified by” would yield that information.
+
+```xml
+<owl:Class rdf:about="&idmp-sub;SubstanceNameClassifier">
+    <rdfs:subClassOf rdf:resource="&cmns-cls;Classifier"/>
+    <rdfs:subClassOf>
+        <owl:Restriction>
+            <owl:onProperty rdf:resource="&cmns-cls;classifies"/>
+            <owl:onClass rdf:resource="&idmp-sub;SubstanceName"/>
+            <owl:minQualifiedCardinality
+                rdf:datatype="&xsd;nonNegativeInteger">0</owl:minQualifiedCardinality>
+        </owl:Restriction>
+    </rdfs:subClassOf>
+    <rdfs:label>substance name classifier</rdfs:label>
+    <dct:source>ISO 11238:2018 Health informatics - Identification of medicinal
+        products (IDMP) - Data elements and structures for the unique identification and
+        exchange of regulated information on substances, clause 6.4</dct:source>
+    <dct:source>ISO/TS 19844:2018(E) Health informatics - Identification of medicinal
+        products (IDMP) - Implementation guidelines for ISO 11238 for data elements and
+        structures for the unique identification and exchange of regulated information on
+        substances, clause 6.3.2</dct:source>
+    <skos:definition>classifier that describes the nature of the substance name from a
+        pre-defined ISO 19844 code set</skos:definition>
+    <cmns-av:synonym>substance name type</cmns-av:synonym>
+</owl:Class>
+```
+
+Two of the named individuals that are specified in the standard and enumerated in the ISO 19844 implementation guide as a part of this scheme include:
+
+```xml
+<owl:NamedIndividual rdf:about="&idmp-sub;SubstanceNameClassifier-BrandName">
+    <rdf:type rdf:resource="&idmp-sub;SubstanceNameClassifier"/>
+    <rdfs:label>substance name classifier - brand name</rdfs:label>
+    <dct:source>ISO 11238:2018 Health informatics - Identification of medicinal
+        products (IDMP) - Data elements and structures for the unique identification and
+        exchange of regulated information on substances, clause 6.4</dct:source>
+    <dct:source>ISO/TS 19844:2018(E) Health informatics - Identification of medicinal
+        products (IDMP) - Implementation guidelines for ISO 11238 for data elements and
+        structures for the unique identification and exchange of regulated information on
+        substances, clause 6.3.2</dct:source>
+    <skos:definition>substance name classifier for a name by which a company
+        identifies a given substance typically for marketing purposes</skos:definition>
+    <cmns-dsg:isDefinedIn rdf:resource="&idmp-sub;ISO11238ClassificationScheme"/>
+    <cmns-txt:hasTextValue>Brand Name</cmns-txt:hasTextValue>
+</owl:NamedIndividual>
+<owl:NamedIndividual rdf:about="&idmp-sub;SubstanceNameClassifier-OfficialName">
+    <rdf:type rdf:resource="&idmp-sub;SubstanceNameClassifier"/>
+    <rdfs:label>substance name classifier - official name</rdfs:label>
+    <dct:source>ISO 11238:2018 Health informatics - Identification of medicinal
+        products (IDMP) - Data elements and structures for the unique identification and
+        exchange of regulated information on substances, clause 6.4</dct:source>
+    <dct:source>ISO/TS 19844:2018(E) Health informatics - Identification of medicinal
+        products (IDMP) - Implementation guidelines for ISO 11238 for data elements and
+        structures for the unique identification and exchange of regulated information on
+        substances, clause 6.3.2, B.4.27</dct:source>
+    <skos:definition>substance name classifier for a name that is typically
+        nonproprietary used in a given jurisdiction and domain to refer to a specific
+        substance</skos:definition>
+    <skos:example>INN: International Nonproprietary Name, also known as rINN,
+        recommended International Nonproprietary Name or pINN, proposed International
+        Nonproprietary Name or INNM, Modified International Nonproprietary Name published
+        by WHO: World Health Organization: in accordance with rules.</skos:example>
+    <skos:note>The domain, jurisdiction, and authority that assigned the name (USAN,
+        INN, JAN etc.) and the language of the name are also captured.</skos:note>
+    <cmns-dsg:isDefinedIn rdf:resource="&idmp-sub;ISO11238ClassificationScheme"/>
+    <cmns-txt:hasTextValue>Official</cmns-txt:hasTextValue>
+</owl:NamedIndividual>
+```
+
+The representation of the scheme for the set of classifiers defined by ISO 11238 to which these substance name classifiers conform is shown below.
+
+```xml
+<owl:NamedIndividual rdf:about="&idmp-sub;ISO11238-ClassificationScheme">
+    <rdf:type rdf:resource="&cmns-cls;ClassificationScheme"/>
+    <rdfs:label>ISO 11238 classification scheme</rdfs:label>
+    <rdfs:seeAlso
+        rdf:datatype="&xsd;anyURI">https://www.iso.org/standard/71965.html</rdfs:seeAlso>
+    <skos:definition>system for classifying substances and substance-related
+        information specified in the ISO 11238 specification</skos:definition>
+</owl:NamedIndividual>
+```
+
+## Codes and Code Sets
+
+A similar pattern is defined in the library for the representation of codes and code sets, also following the pattern provided in ISO 11179-3. A code set, also called a code system, typically includes a finite number of codes at any point in time, such as the set of codes specified in ISO 10383:2012 Securities and related financial instruments – Codes for exchanges and market identification (MIC), which are revised on a monthly basis by the registration authority. Each MIC code represents a single, unique market, and as such is also an identifier, whereas the NAICS codes mentioned above are both classifiers and codes. The distinction between being an identifier and being a classifier is that the latter is used to characterize a group of things rather than an individual thing. Some code sets are versioned on a regular basis, such as the International Statistical Classification of Diseases and Related Health Problems (ICD), published by the World Health Organization (WHO). The ICD is revised periodically and is currently in its 11th revision. The example provided below defines the concept of a substance code. Certain codes that are also classifiers are used in the IDMP standards as controlled vocabularies. A controlled vocabulary, as defined in ISO 11238, is a “finite set of values that represent the only allowed values for a data item”. Such a vocabulary can include codes, text values, or numeric values according to the standard. One example is used in the implementation guide for ISO 11238 to indicate whether a certain characteristic is required or optional, depending on the kind of substance.
+
+```xml
+<owl:Class rdf:about="&idmp-sub;ConformanceLevel">
+    <rdfs:subClassOf rdf:resource="&cmns-cls;Classifier"/>
+    <rdfs:subClassOf rdf:resource="&cmns-cds;CodeElement"/>
+    <rdfs:label>conformance level</rdfs:label>
+    <dct:source>ISO/TS 19844:2018(E) Health informatics - Identification of medicinal
+        products (IDMP) - Implementation guidelines for ISO 11238 for data elements and
+        structures for the unique identification and exchange of regulated information on
+        substances, clause 5</dct:source>
+    <owl:equivalentClass>
+        <owl:Class>
+            <owl:oneOf rdf:parseType="Collection">
+                <rdf:Description rdf:about="&idmp-sub;ConformanceLevelMandatory">
+                </rdf:Description>
+                <rdf:Description rdf:about="&idmp-sub;ConformanceLevelConditional">
+                </rdf:Description>
+                <rdf:Description rdf:about="&idmp-sub;ConformanceLevel-Optional">
+                </rdf:Description>
+            </owl:oneOf>
+        </owl:Class>
+    </owl:equivalentClass>
+    <skos:definition>classifier that describes whether an element is required for a
+        given substance type or a specified substance group</skos:definition>
+    <skos:scopeNote>Conformance is not meant to be applied globally. Conformance will
+        be expressed based on the following terminology: Mandatory, Conditional and
+        Optional. Whether a data element is conditional by data, by process or by regional
+        rule will be defined within regional implementation guides.</skos:scopeNote>
+</owl:Class>
+```
+
+An example individual code defined as a member of this controlled vocabulary is given below.
+
+```xml
+<owl:NamedIndividual rdf:about="&idmp-sub;ConformanceLevel-Conditional">
+    <rdf:type rdf:resource="&idmp-sub;ConformanceLevel"/>
+    <rdfs:label>conformance level - conditional</rdfs:label>
+    <dct:source>ISO 11238:2018 Health informatics - Identification of medicinal
+        products (IDMP) - Data elements and structures for the unique identification and
+        exchange of regulated information on substances, clause 5.9</dct:source>
+    <dct:source>ISO/TS 19844:2018(E) Health informatics - Identification of medicinal
+        products (IDMP) - Implementation guidelines for ISO 11238 for data elements and
+        structures for the unique identification and exchange of regulated information on
+        substances, clause 5</dct:source>
+    <skos:definition>conformance level that applies to data elements ‘within a
+        category’ as applicable, that are subject to business rules and may become
+        required by: data rules; process rules; regional rules</skos:definition>
+    <skos:note>Conditional applies when there are alternative data sources for a given
+        data element(s) to identify a Substance/Specified Substance. Regional
+        implementation of the ISO 11238 and ISO/TS 19844 may elevate the conditional
+        conformance categories to mandatory per regional requirements.</skos:note>
+    <cmns-col:isMemberOf rdf:resource="&idmp-sub;ISO19844-CodeSet"/>
+    <cmns-txt:hasTextValue>CONDITIONAL</cmns-txt:hasTextValue>
+</owl:NamedIndividual>
+```
+
+The corresponding code set is defined as follows.
+
+```xml
+<owl:NamedIndividual rdf:about="&idmp-sub;ISO19844-CodeSet">
+    <rdf:type rdf:resource="&cmns-cds;CodeSet"/>
+    <rdfs:label>ISO 19844 code set</rdfs:label>
+    <rdfs:seeAlso
+        rdf:datatype="&xsd;anyURI">https://www.iso.org/standard/71965.html</rdfs:seeAlso>
+    <skos:definition>set of controlled vocabularies and codes for reporting of
+        substance-related information specified in the ISO/TS 19844
+        guidelines</skos:definition>
+</owl:NamedIndividual>
+```
+
+## Identifiers and Identification Schemes
+
+Another pattern is defined in the library for the representation of identifiers and identification schemes, again following the pattern provided in ISO 11179-3. Chemical substances typically are assigned numerous codes and identifiers world-wide, which may be minted by some regulatory agency or organization such as a pharmaceutical company. Reconciliation of such codes is a difficult process and can be near impossible to do without having an unambiguous representation of the molecular formula for the substance.
+
+Although the intent is to assign a registration authority to create a globally unique substance identifier per the definition of substance identifier given in the ISO 11238 standard, none has been established to date. The definition of the more general substance code, which is both a code element and identifier, is given below.
+
+```xml
+<owl:Class rdf:about="&idmp-sub;SubstanceCode">
+    <rdfs:subClassOf rdf:resource="&cmns-cds;CodeElement"/>
+    <rdfs:subClassOf rdf:resource="&cmns-id;Identifier"/>
+    <rdfs:subClassOf>
+        <owl:Restriction>
+            <owl:onProperty rdf:resource="&idmp-sub;hasComment"/>
+            <owl:maxCardinality
+                rdf:datatype="&xsd;nonNegativeInteger">1</owl:maxCardinality>
+        </owl:Restriction>
+    </rdfs:subClassOf>
+    <rdfs:subClassOf>
+        <owl:Restriction>
+            <owl:onProperty rdf:resource="&idmp-sub;hasChangeDate"/>
+            <owl:maxQualifiedCardinality
+                rdf:datatype="&xsd;nonNegativeInteger">1</owl:maxQualifiedCardinality>
+            <owl:onDataRange rdf:resource="&cmns-dt;CombinedDateTime"/>
+        </owl:Restriction>
+    </rdfs:subClassOf>
+    <rdfs:subClassOf>
+        <owl:Restriction>
+            <owl:onProperty rdf:resource="&cmns-id;identifies"/>
+            <owl:onClass rdf:resource="&idmp-sub;Substance"/>
+            <owl:qualifiedCardinality
+                rdf:datatype="&xsd;nonNegativeInteger">1</owl:qualifiedCardinality>
+        </owl:Restriction>
+    </rdfs:subClassOf>
+    <rdfs:label>substance code</rdfs:label>
+    <skos:definition>sequence of characters denoting a registered code for a given
+        substance that is associated with a publicly recognized code
+        system</skos:definition>
+    <skos:example>CAS Registry numbers, EC numbers, FDA UNII codes, EMA XEVMPD codes,
+        ASK numbers, EPA Pesticide codes</skos:example>
+    <skos:example>These codes include Chemical Abstract Service (CAS) Registry
+        Numbers, European Inventory of Existing Commercial Chemical Substances (EINECS),
+        European Drug Codes (XEVMPD) and Japanese Drug Codes.</skos:example>
+    <skos:note>Codes typically facilitate mapping and linking of substances to a
+        variety of information sources.</skos:note>
+    <skos:note>The actual code shall be captured using the same format that is used in
+        the code system. Only codes associated with a code system shall be captured. The
+        code shall be specifically associated with a given substance. Many public and
+        non-public databases identify substances with a code, and these codes can be very
+        helpful in mapping substances to various systems. Codes shall always be verified
+        against the source system. Different jurisdictions may require a code from a code
+        system or multiple code systems to be associated and submitted with a
+        substance.</skos:note>
+    <cmns-av:adaptedFrom>ISO 11238:2018 Health informatics - Identification of
+        medicinal products (IDMP) - Data elements and structures for the unique
+        identification and exchange of regulated information on substances, clause
+        7.2.8</cmns-av:adaptedFrom>
+    <cmns-av:adaptedFrom>ISO/TS 19844:2018(E) Health informatics - Identification of
+        medicinal products (IDMP) - Implementation guidelines for ISO 11238 for data
+        elements and structures for the unique identification and exchange of regulated
+        information on substances, clause 6.5</cmns-av:adaptedFrom>
+</owl:Class>
+```
+
+For example, a UNII is a unique code and identifier for a substance that has been registered by the U.S. Food and Drug Administration.
+
+```xml
+<owl:Class rdf:about="&idmp-ra;UniqueIngredientNumber">
+    <rdfs:subClassOf rdf:resource="&idmp-sub;SubstanceCode"/>
+    <rdfs:label>unique ingredient number</rdfs:label>
+    <skos:definition>10-character, randomly generated alpha-numeric string that is
+        used to identify substances in medicinal products in the FDA Global Substance
+        Registration System (G-SRS)</skos:definition>
+    <skos:note>The first nine characters are randomly generated followed by a check
+        character. The integrity check on the UNII is stronger than both the EC# and the
+        CAS Registry Number because of the random generation from a large number of
+        potential UNIIs and the fact that there are 36 possible check characters compared
+        to 10 with both the EC# and CAS Registry Number.</skos:note>
+    <skos:scopeNote>The UNII is freely available for use and there is a mechanism
+        whereby a manufacturer can petition for the generation of a UNII through the FDA.
+        The system has the capability for both public and restricted access to information
+        and can be adapted to produce specified substance identifiers.</skos:scopeNote>
+    <cmns-av:abbreviation>UNII</cmns-av:abbreviation>
+    <cmns-av:directSource>ISO 11238:2018 Health informatics - Identification of
+        medicinal products (IDMP) - Data elements and structures for the unique
+        identification and exchange of regulated information on substances, clause
+        A.1.5</cmns-av:directSource>
+</owl:Class>
+```
+
+Note that some additional details, such as the registration authority and registry have been elided for the sake of simplifying the example. The corresponding code set and identification scheme is defined as follows.
+
+```xml
+<owl:NamedIndividual rdf:about="&idmp-ra;UniqueIngredientNumber-CodeSet">
+    <rdf:type rdf:resource="&cmns-cds;CodeSet"/>
+    <rdf:type rdf:resource="&cmns-id;IdentificationScheme"/>
+    <rdfs:label>unique ingredient number code set</rdfs:label>
+    <skos:definition>code set and identification scheme that specifies the rules for
+        generating the 10-character alpha-numeric string used to identify substances in
+        medicinal products in the FDA Global Substance Registration System
+        (G-SRS)</skos:definition>
+</owl:NamedIndividual>
+```
+
+An example individual UNII for the substance, amlodipine, is given below.
+
+```xml
+<owl:NamedIndividual rdf:about="&idmp-amp;UNII-1J444QC288">
+    <rdf:type rdf:resource="&idmp-ra;UniqueIngredientNumber"/>
+    <rdfs:label>1J444QC288</rdfs:label>
+    <dct:source
+        rdf:resource="https://precision.fda.gov/uniisearch/srs/unii/1J444QC288"/>
+    <cmns-id:identifies
+        rdf:resource="https://gsrs.ncats.nih.gov/api/v1/substances/1J444QC288"/>
+    <cmns-id:identifies rdf:resource="&idmp-amp;Amlodipine"/>
+    <cmns-txt:hasTextValue>1J444QC288</cmns-txt:hasTextValue>
+</owl:NamedIndividual>
+```
+
+Details with respect to the registry and registration authority have been elided to simplify the example.
+
+## Role and Composition
+
+The notion of a composition is widely used in UML modeling but is not provided “out of the box” in the Web Ontology Language (OWL). Ontologists frequently need to reify relationships, for example to represent ternary relations, without having a single pattern built into the language for doing so, although several options are described in ‘Defining N-ary Relations on the Semantic Web’[^nary].
+
+The model described herein provides a pattern for representing roles and compositions and incorporates three restrictions on composition that are optional: (1) inclusion of constituents – parts of something, (2) inclusion of roles, and (3) context.
+
+One common kind of composition is that of a recipe. A recipe has ingredients, each of which may have some amount, and possibly other properties associated with them. In the case of pharmaceutical ingredients which are substances playing the role of ingredients, for example, each has an amount and a strength as well as certain jurisdiction-specific details.
+
+Figure 25, below, provides a partial, high-level diagram from an explanatory wiki page for the Identification of Medicinal Products (IDMP-O)[^idmp] ontology project for a pharmaceutical product composition, showing the relationships between the composition and its ingredients.
+
+![Example product composition](figure-25 "grapharch:figure")
+
+In the diagram, the ‘has ingredient’ property is a subproperty of ‘has role’ in the Commons Roles and Compositions ontology.
+
+A turtle representation of the OWL definitions for product composition, has ingredient and the ingredient class are given below.
+
+```turtle
+idmp-mprd:ProductComposition
+    a owl:Class ;
+    rdfs:subClassOf
+        cmns-rlcmp:Composition ,
+        [
+            a owl:Restriction ;
+            owl:onProperty idmp-mprd:hasReferenceStrength ;
+            owl:onClass idmp-mprd:ReferenceStrength ;
+            owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+        ] ,
+        [
+            a owl:Restriction ;
+            owl:onProperty idmp-sub:hasIngredient ;
+            owl:someValuesFrom idmp-sub:Ingredient ;
+        ] ,
+        [
+            a owl:Restriction ;
+            owl:onProperty cmns-dsg:defines ;
+            owl:someValuesFrom [
+                a owl:Class ;
+                owl:unionOf (
+                    idmp-sub:ManufacturedItem
+                    idmp-mprd:MedicinalProduct
+                    idmp-mprd:PharmaceuticalProduct
+                ) ;
+            ] ;
+        ]
+        ;
+    rdfs:label "product composition" ;
+    skos:definition "composition that defines some product based on its
+        relationship(s) to some other substance(s) (ingredient(s)), potentially with a
+        given strength, in some context" ;
+    cmns-av:usageNote "From an implementation (mapping) perspective, this product
+        composition class provides the basis for a (blank) node in the relationship
+        'product realizes ingredient role played by some substance', where the ingredient
+        role may be that of an active ingredient which, in turn, may have some basis of
+        strength in some context. The same product composition could be used to link
+        inactive ingredients to a product in which they are realized. A given product may
+        include multiple active ingredients, each of which may have a different basis of
+        strength." ;
+    .
+
+idmp-sub:hasIngredient
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf cmns-rlcmp:manifests ;
+    rdfs:label "has ingredient" ;
+    rdfs:range idmp-sub:Ingredient ;
+    skos:definition "relates a substance or product composition to an ingredient of
+        that composition" ;
+    cmns-av:usageNote "This property should be used primarily in a manufacturing
+        context where differentiation of substances or pharmaceutical products in a
+        product from other elements that play roles in the manufacturing context is
+        important." ;
+    .
+
+idmp-sub:Ingredient
+    a owl:Class ;
+    rdfs:subClassOf
+        cmns-rlcmp:FunctionalRole ,
+        [
+            a owl:Restriction ;
+            owl:onProperty cmns-rlcmp:isPlayedBy ;
+            owl:onClass [
+                a owl:Restriction ;
+                owl:onProperty cmns-col:isIncludedIn ;
+                owl:onClass idmp-sub:ManufacturedItem ;
+                owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+            ] ;
+            owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+        ]
+        [
+            a owl:Restriction ;
+            owl:onProperty cmns-rlcmp:isManifestedIn ;
+            owl:onClass idmp-mprd:PharmaceuticalProduct ;
+            owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        ] ,
+        [
+            a owl:Restriction ;
+            owl:onProperty cmns-rlcmp:isManifestedIn ;
+            owl:onClass idmp-sub:ManufacturedItem ;
+            owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+        ] ,
+        [
+            a owl:Restriction ;
+            owl:onProperty idmp-mprd:hasStrength ;
+            owl:onClass idmp-mprd:Strength ;
+            owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+        ] ,
+        [
+            a owl:Restriction ;
+            owl:onProperty cmns-rlcmp:isPlayedBy ;
+            owl:onClass [
+                a owl:Restriction ;
+                owl:onProperty cmns-col:isIncludedIn ;
+                owl:onClass idmp-mprd:PharmaceuticalProduct ;
+                owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+            ] ;
+            owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+        ]
+        ;
+    rdfs:label "ingredient" ;
+    dct:source "ISO/TS 20443:2017(E) Health informatics - Identification of medicinal
+        products (IDMP) - Implementation guidelines for ISO 11615 data elements and
+        structures for the unique identification and exchange of regulated medicinal
+        product information, table D.1, clause D.2.1" ;
+    dct:source "ISO 11615:2017 Health informatics - Identification of medicinal
+        products (IDMP) - Data elements and structures for the unique identification and
+        exchange of regulated information on substances, clauses 3.1.28 and 9.7, Figure
+        12" ;
+    skos:note "An ingredient is part of a medicinal product, either alone or in
+        combination with other ingredients. The ingredient is also a component of a
+        pharmaceutical product. Ingredient is equal to a substance with the indication of
+        the specific role it is playing in the product." ;
+    skos:definition "role of a substance that is specifically part of or used in the
+        preparation of some manufactured item, pharmaceutical product, medication, or
+        drug" ;
+    idmp-cmpl:hasConformanceToISOLevel idmp-cmpl:ConformanceToISOLevelNamingConformant
+        ;
+    cmns-av:synonym "pharmacological role" ;
+    cmns-av:usageNote
+        "An ingredient is defined as a material in the ISO 11238 standard rather than
+            as a role, which would make the model inconsistent. Thus, this concept is
+            consistent in terms of its name but not in terms of its definition." ,
+        "Note that any inactive ingredient that is described as 'ingredient not
+            otherwise specified' in the ISO/TS 20443 implementation guide will simply be
+            classified as an ingredient at this level in the hierarchy in the ontology, or
+            as an inactive ingredient without other differentiation."
+        ;
+    .
+```
+
+[^iso11179]: See <https://www.iso.org/standard/78915.html>
+[^iso10962]: See <https://www.iso.org/standard/81140.html>
+[^naics]: See <https://www.census.gov/naics/>
+[^iso11238]: See <https://www.iso.org/standard/69697.html>
+[^nary]: <https://www.w3.org/TR/swbp-n-aryRelations/>
+[^idmp]: <https://wiki.edmcouncil.org/display/IDMP/Pattern%3A+Representing+Ingredients+-+Approved>""" .
+
+# Annex B's Figure 25, the image embedded in the formal/26-06-05 PDF.
+ex:project ga:collector ex:figure-25-image .
+ex:figure-25-image a ga:CollectorUse ; ga:collectorType ga:ImageCollector ;
+    ga:source "figures/figure-25-product-composition.png" ; ga:sourcePath "figures/figure-25-product-composition.png" ; ga:asset ex:figure-25-asset .
+ex:figure-25-reference a ga:ExternalReference ; dct:identifier "figure-25" ;
+    ga:url "urn:omg-commons:figure-25-asset" ; ga:asset ex:figure-25-asset .
 # OMG house style, refining the catalogue specification theme. Values follow
 # the Commons 1.3 PDF: Times/Arial metric twins, outer-edge page numbers,
 # Roman front matter and blue-headed gridded tables.

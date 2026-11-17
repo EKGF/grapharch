@@ -45,6 +45,7 @@ mod rdf_tables;
 mod record;
 mod specification;
 mod staging;
+mod table_captions;
 mod typst;
 mod typst_breaks;
 mod typst_markdown;

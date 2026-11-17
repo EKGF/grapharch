@@ -298,11 +298,16 @@ pub(super) async fn begin_book(
 
 /// Arabic body numbering starts on the page of the first numbered chapter.
 pub(super) async fn body_numbering(plan: &Plan) -> Result<String> {
-    Ok(match theme(plan).await?.text("bodyNumbering") {
+    let theme = theme(plan).await?;
+    Ok(match theme.text("bodyNumbering") {
         Some(numbering) => {
+            // Recto annexes break to odd physical pages; a body that also
+            // starts on one keeps page numbers and physical sides aligned.
+            let recto = theme.flag("annexRectoStart");
             format!(
-                "#pagebreak(weak: true)\n#counter(page).update(1)\n#set \
+                "#pagebreak(weak: true{})\n#counter(page).update(1)\n#set \
                  page(numbering: {})\n",
+                if recto { ", to: \"odd\"" } else { "" },
                 quote(&numbering)
             )
         },
@@ -350,12 +355,8 @@ pub(super) async fn entry(
         // forbids page breaks inside a heading show rule in that container.
         if annex && let Some(notice) = &style.recto {
             file.write_all(
-                format!(
-                    "#metadata(none)<ga-recto-{appendix}>\n#\
-                     ga-blank-page(<ga-recto-{appendix}>)[#text({})]\n",
-                    quote(notice)
-                )
-                .as_bytes(),
+                format!("#ga-blank-page[#text({})]\n", quote(notice))
+                    .as_bytes(),
             )
             .await?;
         } else if entry.depth == 1 &&
