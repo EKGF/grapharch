@@ -7,9 +7,8 @@ use {
     },
 };
 
-#[tokio::test]
-async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
--> Result<()> {
+/// Render the inventory fixture from a restored KG; return the output root.
+async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
     let source = tempfile::tempdir()?;
     tokio::fs::write(
         source.path().join("index.md"),
@@ -58,10 +57,16 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
     else {
         panic!("publication required")
     };
-    let html = tokio::fs::read_to_string(
-        publication.directory.join("spec-versions/index.html"),
-    )
-    .await?;
+    Ok((output, publication.directory))
+}
+
+#[tokio::test]
+async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
+-> Result<()> {
+    let (_output, directory) = publish().await?;
+    let html =
+        tokio::fs::read_to_string(directory.join("spec-versions/index.html"))
+            .await?;
     assert!(
         html.contains("DPROD 1.0") &&
             html.contains("Develop (latest)") &&
@@ -83,7 +88,6 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
         !html.contains("remain routable"),
         "Hosting implementation details do not belong in reader content"
     );
-    assert!(html.contains("2 November 2026 at 15:00 UTC"));
     assert!(
         html.contains("href=\"/dprod/spec/main/\""),
         "the assembled publication must link to its own spec, not the \
@@ -96,10 +100,9 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
     assert!(
         html.find("Develop (latest)").unwrap() < html.find("ballot/4").unwrap()
     );
-    let manifest = tokio::fs::read_to_string(
-        publication.directory.join("publication-versions.json"),
-    )
-    .await?;
+    let manifest =
+        tokio::fs::read_to_string(directory.join("publication-versions.json"))
+            .await?;
     assert!(
         manifest.contains("merged-branch") &&
             manifest.contains("old.example.org")
@@ -108,6 +111,59 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
     assert!(
         manifest
             .contains("\"status\": \"Unstandardized pull request preview\"")
+    );
+    Ok(())
+}
+
+/// The hero already names the page and provenance records the observation,
+/// so the version cards follow the introduction directly; each whole card is
+/// one link named by its title.
+#[tokio::test]
+async fn version_cards_are_whole_card_links_without_repeated_chrome()
+-> Result<()> {
+    let (_output, directory) = publish().await?;
+    let html =
+        tokio::fs::read_to_string(directory.join("spec-versions/index.html"))
+            .await?;
+    for removed in ["Available versions", "Last checked", "Open specification"]
+    {
+        assert!(
+            !html.contains(removed),
+            "{removed} must not be rendered"
+        );
+    }
+    let document = scraper::Html::parse_document(&html);
+    let card = scraper::Selector::parse(
+        ".project-section .project-card.project-card-linked",
+    )
+    .unwrap();
+    let link = scraper::Selector::parse("a").unwrap();
+    let title = scraper::Selector::parse("h3 > a").unwrap();
+    let cards: Vec<_> = document.select(&card).collect();
+    assert_eq!(
+        cards.len(),
+        3,
+        "one linked card per advertised version"
+    );
+    for card in &cards {
+        assert_eq!(card.select(&link).count(), 1, "one link per card");
+        assert_eq!(
+            card.select(&title).count(),
+            1,
+            "the title is the link"
+        );
+    }
+    let first = cards[0].select(&title).next().unwrap();
+    assert_eq!(
+        first.value().attr("href"),
+        Some("/dprod/spec/main/")
+    );
+    assert_eq!(first.text().collect::<String>(), "DPROD 1.0");
+    let style = tokio::fs::read_to_string(directory.join("style.css")).await?;
+    assert!(
+        style.contains(".project-card-linked h3 a::after") &&
+            style.contains(".project-card-linked:has(a:focus-visible)"),
+        "the title link stretches over the card and shows a focus ring"
     );
     Ok(())
 }

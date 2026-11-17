@@ -21,8 +21,9 @@ in the retained version manifest.
 The inventory's `dct:modified` records when it was observed, not when the
 specification was authored. Optional `ga:order` values place canonical releases
 and development versions before previews; versions without an explicit order
-follow alphabetically by branch. The page shows a readable UTC observation time
-below the version-list heading.
+follow alphabetically by branch. The page lists one card per advertised version
+directly below its introduction; each card's title links the whole card to that
+version. The observation time is recorded in `publication-versions.json`.
 
 ```turtle
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .

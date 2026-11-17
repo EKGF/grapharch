@@ -88,3 +88,11 @@ html[data-color-scheme="dark"] .project-card-icon-accent{color:#ff9b4d}
 .project-card-action svg{min-width:1rem}
 @media(min-width:761px){.project-section:has(>.project-container>.project-card:nth-of-type(3):last-child)>.project-container{grid-template-columns:repeat(3,minmax(0,1fr))}.project-section.project-section-resources:has(.project-card)>.project-container{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:760px){.project-hero-introduction{padding:4rem 1.25rem}.project-hero-introduction h1{font-size:2.25rem;line-height:1.1}.project-section h2{overflow-wrap:anywhere}}
+.project-card-linked{position:relative;transition:border-color .15s,box-shadow .15s}
+.project-card-linked h3 a{color:inherit;text-decoration:none}
+.project-card-linked h3 a::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.project-card-linked h3 a:focus-visible{outline:none}
+.project-card-linked:hover{border-color:var(--accent);box-shadow:0 4px 12px #0000001f}
+.project-card-linked:hover h3 a{color:var(--accent)}
+.project-card-linked:has(a:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.project-card-linked{transition:none}}
