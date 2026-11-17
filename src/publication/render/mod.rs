@@ -31,6 +31,7 @@ mod nested;
 mod normative;
 mod notices;
 mod owned_file;
+mod paired_pdf;
 mod pdf_download;
 mod pdf_file;
 mod pdf_standard;
@@ -252,7 +253,10 @@ impl Publisher {
             return self.run_rdf(handle, root, job).await;
         }
         let mut plan = Plan::read(self.dataset.clone(), handle).await?;
-        if matches!(plan.renderer.as_str(), "typst" | "specification") {
+        if paired_pdf::PairedPdf::read(&plan.source, &plan.target, renderer)
+            .await? ==
+            paired_pdf::PairedPdf::Compiled
+        {
             plan.pdf_file = Some(
                 crate::publication::pdf_name::PdfName::read(
                     &plan.source,

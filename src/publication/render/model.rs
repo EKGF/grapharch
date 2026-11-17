@@ -323,12 +323,11 @@ impl Plan {
         // after their bytes are restored and verified.
         let files =
             if self.renderer == crate::publication::Renderer::Specification {
-                vec![
-                    "index.html".into(),
-                    "style.css".into(),
-                    "main.typ".into(),
-                    self.pdf_file.clone().expect("specification PDF name"),
-                ]
+                ["index.html", "style.css", "main.typ"]
+                    .into_iter()
+                    .map(String::from)
+                    .chain(self.pdf_file.iter().cloned())
+                    .collect()
             } else if self.is_html() {
                 vec!["index.html".into(), "style.css".into()]
             } else {
