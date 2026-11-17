@@ -24,6 +24,14 @@ use {
 /// The file name of a written cover logo, beside `main.typ`.
 const LOGO: &str = "cover-logo";
 
+/// Whether `name` is a cover logo file as `write_logo` names it, which the
+/// publication writing it owns.
+pub(super) fn is_logo_file(name: &str) -> bool {
+    name.strip_prefix(LOGO)
+        .and_then(|rest| rest.strip_prefix('.'))
+        .is_some_and(|extension| Logo::EXTENSIONS.contains(&extension))
+}
+
 /// Target-owned values the cover can show.
 pub(super) struct CoverContent {
     pub publisher: String,

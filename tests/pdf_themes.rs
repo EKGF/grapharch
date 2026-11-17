@@ -46,7 +46,15 @@ ex:changes ga:normativity "informative" .
     )
 }
 
-async fn render(definitions: String) -> Result<(String, tempfile::TempDir)> {
+/// The specification example's dataset and plans, published by `renderer`
+/// with the house `definitions`.
+async fn edition(
+    definitions: String,
+    renderer: &str,
+) -> Result<(
+    Publisher,
+    Vec<grapharch::publication::plan::ResolvedPlan>,
+)> {
     let source = tempfile::tempdir()?;
     let path = source.path().join("project.ttl");
     // The specification example declares a PNG logo; the house theme supplies
@@ -59,17 +67,22 @@ async fn render(definitions: String) -> Result<(String, tempfile::TempDir)> {
         )
         .replacen(
             "grapharch#SpecificationRenderer",
-            "grapharch#TypstRenderer",
+            &format!("grapharch#{renderer}"),
             1,
         );
     tokio::fs::write(&path, format!("{base}\n{definitions}")).await?;
     let (dataset, plans) = showcases::specification(&path).await?;
     source.close()?;
+    let publisher = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default);
+    Ok((publisher, plans))
+}
+
+async fn render(definitions: String) -> Result<(String, tempfile::TempDir)> {
+    let (publisher, plans) = edition(definitions, "TypstRenderer").await?;
     let out = tempfile::tempdir()?;
-    let PublishOutcome::Published(publication) = Publisher::new(dataset)
-        .with_edition(grapharch::publication::pdf_name::Edition::Default)
-        .render(&plans[0], out.path())
-        .await?
+    let PublishOutcome::Published(publication) =
+        publisher.render(&plans[0], out.path()).await?
     else {
         panic!("publication required")
     };
@@ -144,6 +157,47 @@ async fn declarative_cover_places_logo_date_version_and_labelled_rows()
         })
         .expect("written cover logo");
     assert!(std::fs::read_to_string(logo)?.starts_with("<svg"));
+    Ok(())
+}
+
+/// A specification edition owns the cover logo it writes into its own
+/// directory, so publishing it again replaces that output, while a file that
+/// another party put there still stops the publication.
+#[tokio::test]
+async fn republishing_a_cover_logo_edition_replaces_its_own_output()
+-> Result<()> {
+    let (publisher, plans) =
+        edition(house(""), "SpecificationRenderer").await?;
+    let out = tempfile::tempdir()?;
+    let mut directory = None;
+    for _ in 0..2 {
+        let PublishOutcome::Published(publication) =
+            publisher.render(&plans[0], out.path()).await?
+        else {
+            panic!("publication required")
+        };
+        assert!(
+            publication
+                .manifest
+                .files
+                .contains(&"cover-logo.svg".into())
+        );
+        assert!(publication.directory.join("cover-logo.svg").is_file());
+        directory = Some(publication.directory);
+    }
+    let directory = directory.expect("published directory");
+    tokio::fs::write(directory.join("cover-logo.png"), b"foreign").await?;
+    let Err(error) = publisher.render(&plans[0], out.path()).await else {
+        panic!("a foreign file in the output must stop the publication")
+    };
+    assert!(
+        format!("{error:#}").contains("unowned artifact: cover-logo.png"),
+        "{error:#}"
+    );
+    assert_eq!(
+        tokio::fs::read(directory.join("cover-logo.png")).await?,
+        b"foreign"
+    );
     Ok(())
 }
 
