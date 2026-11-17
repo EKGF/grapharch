@@ -151,8 +151,7 @@ async fn declarative_cover_places_logo_date_version_and_labelled_rows()
 async fn annexes_use_label_pattern_normativity_and_recto_start() -> Result<()> {
     let (typst, _out) = render(house("")).await?;
     assert!(typst.contains(
-        "#ga-blank-page(<ga-recto-1>)[#text(\"This page intentionally left \
-         blank.\")]"
+        "#ga-blank-page[#text(\"This page intentionally left blank.\")]"
     ));
     assert!(typst.contains("[#text(\"Annex A: Change history\")]"));
     assert!(typst.contains("#text(\"(informative)\")"));
@@ -163,6 +162,30 @@ async fn annexes_use_label_pattern_normativity_and_recto_start() -> Result<()> {
         .find("#counter(page).update(1)\n#set page(numbering: \"1\")")
         .expect("arabic body");
     assert!(typst.find("#set page(numbering: \"i\")").unwrap() < body);
+    Ok(())
+}
+
+/// Every recto-start annex decides its blank page where it begins, so a run
+/// of annexes converges instead of chaining one layout pass per annex.
+#[tokio::test]
+async fn consecutive_recto_annexes_converge() -> Result<()> {
+    let mut extra = String::from("ex:profile ga:placement");
+    let annexes = (2..=5)
+        .map(|n| format!(" ex:annex-{n}"))
+        .collect::<Vec<_>>();
+    extra.push_str(&annexes.join(","));
+    extra.push_str(" .\n");
+    for n in 2..=5 {
+        extra.push_str(&format!(
+            "ex:annex-{n} a ga:Placement ; ga:component ex:changes-component \
+             ; ga:order {} ; ga:sectionKind \"appendix\" ; ga:normativity \
+             \"informative\" .\n",
+            100 + n
+        ));
+    }
+    let (typst, _out) = render(house(&extra)).await?;
+    assert_eq!(typst.matches("#ga-blank-page[").count(), 5);
+    assert!(typst.contains("[#text(\"Annex E: Change history\")]"));
     Ok(())
 }
 

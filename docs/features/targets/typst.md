@@ -97,7 +97,7 @@ fill, text and grid; link colour and underlining; the footer text
 (`ga:footerText` on the target, else the title) and a page number on the outer
 edge; front and body page numbering; the contents title, alignment and depth;
 and annex labels, a normativity line from the placement's `ga:normativity`, and
-recto starts; and `ga:normativeKeywordStyle`, the small-caps or bold-italic
+recto starts (the body then also starts on an odd page); and `ga:normativeKeywordStyle`, the small-caps or bold-italic
 style of BCP 14 keywords in a target that declares `ga:conformanceLanguage`. [The vocabulary](../../other/ontology/publication.ttl) defines each
 token and its value syntax. GraphArch validates every value and maps it to a
 Typst value; no supplied text is evaluated. An invalid value, an unknown token,
@@ -146,6 +146,12 @@ HTML shows the same caption in a `figcaption`. Authored Markdown can request
 the same presentation with the image title `grapharch:figure`; the alternative
 text is the caption.
 
+A paragraph `Table: <caption>` directly before a Markdown table captions that
+table, as in Pandoc. The PDF numbers it as a table ("Table 1: …") and places
+the caption above or below it by `ga:tableCaptionAbove`; HTML wraps the table
+in a `figure` with that `figcaption`. A paragraph that is not directly followed
+by a table stays ordinary text.
+
 ## The OMG Commons edition
 
 The [Commons showcase](https://github.com/EKGF/grapharch/tree/main/examples/omg-commons)
@@ -153,8 +159,8 @@ declares OMG's house style as a consumer theme, OMG's notices, preface and
 copyright holders, the OMG logo, and the Commons 1.3 release metadata. Its
 profile sets `ga:w3cFrontMatter false`, omits the family overview, coverage,
 quality, diagram-note and per-term class diagram material from the PDF, shows
-OMG's 24 overview figures with their captions, and nests the ontology chapters
-under an authored clause. Its cover states that it is a GraphArch rendering of
+OMG's 24 overview figures with their captions, authors clauses 1 to 7 and
+Annex B as Markdown, and nests the ontology chapters under clause 8. Its cover states that it is a GraphArch rendering of
 Commons 1.3. The design references the
 [Commons 1.3 PDF](https://www.omg.org/spec/Commons/1.3/PDF),
 [OMG core templates at revision 7e9dbce](https://github.com/ObjectManagementGroup/mdsa-omg-core/tree/7e9dbcef362b47a1c362f93b7ee2b840fb694997),

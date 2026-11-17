@@ -22,6 +22,8 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let events = super::image_variants::print_events(&markdown.events)?;
     let (mut notes, events) = super::footnotes::Notes::read(&events)?;
     let mut events = markdown.conformance.coalesce(events, " ");
+    let captions = super::table_captions::TableCaptions::take(&mut events)?;
+    let mut table_figure = false;
     let subjects = super::rdf_tables::subjects(&mut events)?;
     for (index, event) in events.iter().enumerate() {
         if in_image {
@@ -201,6 +203,17 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             })
                             .collect::<Vec<_>>()
                             .join(", ");
+                        if let Some(caption) = captions.get(index) {
+                            // Numbered by Typst; the theme places the caption.
+                            table_figure = true;
+                            output.push_str(&format!(
+                                "#block(width: 100%)[#show figure: set \
+                                 block(breakable: true)\n#figure(kind: table, \
+                                 supplement: [Table], caption: \
+                                 [#text({})])[#set align(left)\n",
+                                quote(caption.text())
+                            ));
+                        }
                         output.push_str(&format!(
                             "#ga-table(columns: ({widths}), align: \
                              ({alignments}), header-row: {}, ",
@@ -262,6 +275,9 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                     TagEnd::Table => {
                         in_table = false;
                         output.push_str(")\n");
+                        if std::mem::take(&mut table_figure) {
+                            output.push_str("]]\n");
+                        }
                     },
                     TagEnd::Item => output.push_str("],"),
                     TagEnd::TableCell => {

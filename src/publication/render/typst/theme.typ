@@ -144,14 +144,13 @@
     ga-notice-heading(T.notice_title_size, title)
   }
 }
-// The marker records the page on which the preceding content ends; a context
-// evaluated after page breaks would otherwise see the following page.
-#let ga-blank-page(marker, notice) = context {
-  if calc.odd(counter(page).at(marker).first()) {
-    pagebreak()
-    align(center + horizon)[#notice]
-    pagebreak()
-  } else { pagebreak() }
+// A recto start breaks natively to the next odd page, so a run of annexes
+// lays out in one pass. The markers bracket the break; the page foreground
+// prints the notice on a page the break left blank, without changing layout.
+#let ga-blank-page(notice) = {
+  [#metadata(notice)<ga-recto-end>]
+  pagebreak(to: "odd")
+  [#metadata(none)<ga-recto-start>]
 }
 #set page(paper: T.paper, margin: (left: T.margin_left, right: T.margin_right, top: T.margin_top, bottom: T.margin_bottom), footer-descent: T.footer_descent,
   background: context {
@@ -170,6 +169,15 @@
         align(top + center, rotate(-90deg, reflow: true)[
           #text(size: calc.min(9pt, (ribbon-height - 2 * ribbon-padding) / ribbon-measure * 9pt), fill: white, weight: "bold")[#text(ga-ribbon)]
         ])))
+    }
+  },
+  foreground: context {
+    let current = here().page()
+    // bounded: one marker pair per recto-start annex.
+    for (end, start) in query(<ga-recto-end>).zip(query(<ga-recto-start>)) {
+      if end.location().page() + 1 == current and start.location().page() == current + 1 {
+        place(center + horizon, end.value)
+      }
     }
   },
   header: context {
