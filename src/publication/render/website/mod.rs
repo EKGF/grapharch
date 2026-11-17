@@ -15,6 +15,7 @@ mod redirects;
 mod repository;
 mod search;
 mod shell;
+mod site_chrome;
 mod site_link;
 mod theme;
 use {
@@ -43,6 +44,8 @@ struct Header {
     links:      header_links::Links,
     metadata:   metadata::Metadata,
     navigation: navigation::Navigations,
+    chrome:     site_chrome::Options,
+    footer:     Option<site_chrome::SiteFooter>,
 }
 
 pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
@@ -66,6 +69,14 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         interactive_files.len(),
     )?;
     let theme = theme::Theme::read(plan).await?;
+    let chrome = site_chrome::Options::read(plan).await?;
+    let colour_tokens = site_chrome::ColourTokens::read(plan).await?.css(
+        if theme.community() {
+            ".theme-ekgf"
+        } else {
+            ":root"
+        },
+    );
     let mut files = vec![
         "style.css".to_owned(),
         ".nojekyll".into(),
@@ -79,7 +90,7 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{keywords}",
+            "{}\n{}\n{}\n{}\n{colour_tokens}\n{}\n{}\n{}\n{}\n{keywords}",
             include_str!("style.css"),
             concat!(
                 include_str!("../callouts.css"),
@@ -90,7 +101,8 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
             theme.css(),
             include_str!("documentation.css"),
             include_str!("search.css"),
-            include_str!("gallery.css")
+            include_str!("gallery.css"),
+            include_str!("site_footer.css")
         ),
     )
     .await?;
@@ -112,6 +124,8 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         links: header_links::Links::read(plan).await?,
         metadata: metadata::Metadata::read(plan).await?,
         navigation: navigation::Navigations::read(plan, &catalog).await?,
+        chrome,
+        footer: site_chrome::SiteFooter::read(plan).await?,
     };
     header.metadata.indexes(stage, &catalog, &mut files).await?;
     let mut diagrams = false;
@@ -282,7 +296,9 @@ pub(super) async fn write(plan: &Plan, stage: &Path) -> Result<Vec<String>> {
         tokio::fs::write(stage.join("publication-versions.json"), serde_json::to_vec_pretty(&inventory)?).await?;
         files.push("publication-versions.json".into());
     }
-    search::write(plan, &catalog, stage, &mut files).await?;
+    if header.chrome.search() {
+        search::write(plan, &catalog, stage, &mut files).await?;
+    }
     let before_aliases = files.len();
     redirects::write(plan, stage, &catalog, &mut files).await?;
     artifacts.validate(files.len() - before_aliases, files.len())?;
@@ -444,7 +460,7 @@ async fn write_page(
             gallery:          &gallery.html,
             previous_next:    &previous_next,
             outline:          &page_outline,
-        });
+        })?;
         tokio::fs::write(output, html).await?;
     }
     files.push(path);
@@ -489,7 +505,7 @@ async fn write_report(
         gallery: "",
         previous_next: "",
         outline: "",
-    });
+    })?;
     tokio::fs::write(stage.join(format!("{slug}.html")), html).await?;
     Ok(())
 }
