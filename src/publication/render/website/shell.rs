@@ -1,7 +1,7 @@
 //! Shared companion website shell for authored pages and generated reports.
 use super::{
     super::{markup::html_escape as esc, model::Plan},
-    Header,
+    header::Header,
 };
 
 pub(super) struct Page<'a> {
