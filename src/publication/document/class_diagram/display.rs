@@ -12,7 +12,7 @@ use {
     crate::publication::view::RevisionView,
     anyhow::{Result, ensure},
     oxrdf::NamedNode,
-    std::collections::BTreeMap,
+    std::collections::{BTreeMap, BTreeSet},
 };
 
 pub(super) async fn apply(
@@ -49,6 +49,7 @@ pub(super) async fn apply(
         &NamedNode::new(diagram.focus.id.clone())?,
     )
     .await?;
+    let mut imported = BTreeSet::new(); // bounded: 357 admitted distinct resources.
     for (id, (qname, role)) in unique {
         let id = NamedNode::new(id)?;
         let mut label = Label::read(view, &id, qname, role, language).await?;
@@ -57,6 +58,7 @@ pub(super) async fn apply(
             .shares_ontology_with(&focus)
         {
             label.qualify();
+            imported.insert(id.into_string());
         }
         labels.push(label);
     }
@@ -69,6 +71,7 @@ pub(super) async fn apply(
         if let Some(label) = labels.get(&node.id) {
             node.label.clone_from(label);
         }
+        node.imported = imported.contains(&node.id);
     }
     Ok(())
 }

@@ -28,6 +28,17 @@ pub(crate) fn safe_link(value: &str) -> Result<()> {
     Ok(())
 }
 
+/// Diagram nodes by the entity name the layout engine gives each box.
+pub(crate) fn entities(
+    diagram: &super::Diagram,
+) -> std::collections::BTreeMap<String, &super::Node> {
+    plantuml_source::PlantUmlSource::index(diagram)
+        .into_values()
+        .enumerate()
+        .map(|(index, node)| (format!("n{index}"), node))
+        .collect() // bounded: at most thirty-seven nodes.
+}
+
 pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
     let mut result = projection.svg.clone();
     for (index, node) in

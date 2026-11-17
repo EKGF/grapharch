@@ -140,7 +140,12 @@ pub(super) fn render(
                     ));
                 }
                 *dest_url = path.into();
-                *title = hints.title.unwrap_or_default().into();
+                // The shared HTML presentation captions a figure.
+                *title = if hints.figure {
+                    hints.encoded()?.into()
+                } else {
+                    hints.title.unwrap_or_default().into()
+                };
             },
             Event::Html(_) |
             Event::InlineHtml(_) |

@@ -67,6 +67,18 @@ pub(crate) const TOKENS: &[Token] = &[
     required("captionSize", Length),
     required("captionBold", Bool),
     required("tableCaptionAbove", Bool),
+    required("figureCaptionAlign", Align),
+    // Generated class diagrams: text font and fill per resource role.
+    required("diagramFont", Font),
+    required("diagramFocusFill", Color),
+    required("diagramClassFill", Color),
+    required("diagramImportedClassFill", Color),
+    required("diagramExpressionFill", Color),
+    required("diagramObjectPropertyFill", Color),
+    required("diagramDatatypePropertyFill", Color),
+    required("diagramPropertyFill", Color),
+    required("diagramDatatypeFill", Color),
+    required("diagramLiteralFill", Color),
     // Code and quotations.
     required("codeFont", Font),
     required("codeSize", Length),

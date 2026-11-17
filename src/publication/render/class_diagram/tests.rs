@@ -4,10 +4,12 @@ use {
 };
 fn retained(link: &str) -> String {
     let node = Node {
-        id:    "urn:test:class".into(),
-        label: "Class".into(),
-        kind:  crate::publication::document::class_diagram::NodeKind::Class,
-        link:  Some(link.into()),
+        id:       "urn:test:class".into(),
+        label:    "Class".into(),
+        kind:     crate::publication::document::class_diagram::NodeKind::Class,
+        link:     Some(link.into()),
+        imported: false,
+        datatype: false,
     };
     serde_json::to_string(&Projection {
         diagram: Diagram {

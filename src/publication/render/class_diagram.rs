@@ -1,5 +1,6 @@
 //! Render retained semantic diagram blocks; no source RDF or files are read.
 mod links;
+mod palette;
 use {
     crate::publication::document::class_diagram::{LANGUAGE, Projection, svg},
     anyhow::Result,
@@ -115,12 +116,32 @@ pub(super) fn typst(source: &str) -> Result<String> {
             "1.0"
         },
         (width * 0.75).min(420.0 * width / height),
-        quote(&svg),
+        palette::ThemedSvg::new(&projection, &svg)?.typst(&svg),
         quote(&svg::description(&projection)?)
     );
     result.push_str(super::diagram_notes::reference_typst());
     result.push_str("]\n");
     Ok(result)
+}
+
+/// Drop every retained class diagram, for a PDF profile without them.
+pub(super) fn omit(events: &mut Vec<Event<'_>>) {
+    let mut inside = false;
+    events.retain(|event| {
+        match event {
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info)))
+                if info.as_ref() == LANGUAGE =>
+            {
+                inside = true;
+                false
+            },
+            Event::End(TagEnd::CodeBlock) if inside => {
+                inside = false;
+                false
+            },
+            _ => !inside,
+        }
+    });
 }
 
 pub(super) fn validate_external(destination: &str) -> Result<()> {

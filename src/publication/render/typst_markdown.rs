@@ -36,7 +36,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
             },
             Event::Start(tag) => {
                 match tag {
-                    Tag::Image { dest_url, .. } => {
+                    Tag::Image { dest_url, title, .. } => {
                         if let Some(icon) =
                             crate::publication::icon::Icon::parse_uri(dest_url)?
                         {
@@ -64,11 +64,22 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                                 _ => {},
                             }
                         }
-                        output.push_str(&format!(
-                            "#image({}, alt: {})",
-                            quote(dest_url),
-                            quote(&alt)
-                        ));
+                        output.push_str(&if crate::publication::image_hints::ImageHints::parse(title)?.figure {
+                            // Numbered by Typst; the theme places the caption.
+                            format!(
+                                "#figure(image({}, alt: {}, width: 100%), \
+                                 caption: [#text({})])",
+                                quote(dest_url),
+                                quote(&alt),
+                                quote(&alt)
+                            )
+                        } else {
+                            format!(
+                                "#image({}, alt: {})",
+                                quote(dest_url),
+                                quote(&alt)
+                            )
+                        });
                         in_image = true;
                     },
                     Tag::Paragraph => {

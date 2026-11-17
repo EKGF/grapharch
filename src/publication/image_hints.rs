@@ -17,6 +17,9 @@ pub(crate) struct ImageHints {
     pub interactive_svg: bool,
     #[serde(default)]
     pub color_scheme:    Option<ColorScheme>,
+    /// A numbered figure captioned with the image's alternative text.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub figure:          bool,
     #[serde(default)]
     pub title:           Option<String>,
 }
@@ -44,6 +47,10 @@ impl ImageHints {
                         "duplicate image interaction hint"
                     );
                     hints.interactive_svg = true;
+                },
+                "figure" => {
+                    ensure!(!hints.figure, "duplicate image figure hint");
+                    hints.figure = true;
                 },
                 "only-light" | "only-dark" => {
                     ensure!(
@@ -94,6 +101,13 @@ mod tests {
         assert!(shorthand.interactive_svg);
         assert_eq!(shorthand.color_scheme, Some(ColorScheme::Light));
         assert!(ImageHints::parse("grapharch:only-light;only-dark").is_err());
+        let figure = ImageHints::parse("grapharch:figure;only-light").unwrap();
+        assert!(figure.figure && figure.title.is_none());
+        assert_eq!(
+            ImageHints::parse(&figure.encoded().unwrap()).unwrap(),
+            figure
+        );
+        assert!(ImageHints::parse("grapharch:figure;figure").is_err());
         assert!(ImageHints::parse("grapharch:onclick=alert(1)").is_err());
         assert!(
             ImageHints::parse("grapharch:image {\"unknown\":true}").is_err()

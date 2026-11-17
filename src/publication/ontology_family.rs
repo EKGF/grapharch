@@ -31,6 +31,7 @@ use {
 };
 pub(crate) mod arrangement;
 mod declarations;
+mod figures;
 mod modules;
 mod reference;
 mod site;
@@ -477,6 +478,25 @@ async fn build(
     managed.persist_inventory(writer, true).await?;
     collect_all(people, writer, concurrency).await?;
     managed.retire(writer, false).await?;
+    if let Some(definitions) = definitions {
+        let collected = RevisionView::new(
+            dataset.clone(),
+            dataset.snapshot_collected_for(project).await?,
+        );
+        let images = figures::Figures::image_collectors(
+            &collected,
+            project,
+            definitions,
+        )
+        .await?;
+        for input in &images {
+            let id = input.identity()?;
+            managed.add(id.processor, id.source, false)?;
+        }
+        managed.persist_inventory(writer, true).await?;
+        collect_all(images, writer, concurrency).await?;
+        managed.retire(writer, false).await?;
+    }
     tracing::info!(
         elapsed_ms = started.elapsed().as_millis(),
         "family sources collected"
@@ -1121,6 +1141,15 @@ async fn build(
                 &introduction,
                 0,
             );
+            let figures =
+                figures::Figures::read(&view, &member.ontology).await?;
+            figures.write(
+                &mut data,
+                &target,
+                &member.ontology,
+                &contribution,
+                1,
+            );
             let groups =
                 layout.group(dataset, &member.view, &member.terms).await?;
             let mut arranged_groups = Vec::new();
@@ -1163,7 +1192,8 @@ async fn build(
                     arranged_groups.push((section, arranged));
                 }
             }
-            let mut position = 1u32;
+            // The figures fragment, when any, follows the introduction.
+            let mut position = 2u32;
             for (section, terms) in arranged_groups {
                 let terms = terms
                     .into_iter()

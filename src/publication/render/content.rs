@@ -309,10 +309,12 @@ pub(super) async fn write_typst(
     let mut entries = Entries::for_pdf(plan).await?;
     let quality = plan.profile_flag("qualityAppendix").await?;
     let diagram_note = plan.profile_flag("diagramNote").await?;
+    let class_diagrams = plan.profile_flag("classDiagrams").await?;
     let mut open = false;
     let mut main_started = false;
     while let Some(entry) = entries.next(plan).await? {
-        diagrams |= super::diagram_notes::contains(&entry.body, &entry.format);
+        diagrams |= class_diagrams &&
+            super::diagram_notes::contains(&entry.body, &entry.format);
         if entry.first {
             if open {
                 typst::close(&mut file).await?;
@@ -326,16 +328,18 @@ pub(super) async fn write_typst(
         }
         let anchor = plan.anchor(&entry.placement, Some(&entry.fragment));
         let markdown = if entry.format == "text/markdown" {
-            Some(
-                Markdown::parse(
-                    &entry.body,
-                    plan,
-                    &anchor,
-                    &entry.fragment,
-                    entry.depth,
-                )
-                .await?,
+            let mut markdown = Markdown::parse(
+                &entry.body,
+                plan,
+                &anchor,
+                &entry.fragment,
+                entry.depth,
             )
+            .await?;
+            if !class_diagrams {
+                super::class_diagram::omit(&mut markdown.events);
+            }
+            Some(markdown)
         } else {
             None
         };
