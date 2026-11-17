@@ -24,7 +24,11 @@ pub(super) struct Page<'a> {
     pub outline:          &'a str,
 }
 
-pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
+pub(super) fn render(
+    plan: &Plan,
+    header: &Header,
+    page: Page<'_>,
+) -> anyhow::Result<String> {
     let active = page.navigation_owner.unwrap_or(page.id);
     let project_title = &header.title;
     let repository = &header.repository;
@@ -70,7 +74,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         repository,
         prefix,
         &header.links.html(prefix),
-        super::search::button(),
+        if header.chrome.search() {
+            super::search::button()
+        } else {
+            ""
+        },
     );
     let brand_context = if header.navigation.sectioned() {
         ""
@@ -114,7 +122,10 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
             format!("{project_brand}{header_links}")
         };
     let identity_attribution = header.theme.attribution(prefix);
-    let community_footer = header.theme.community_footer(prefix);
+    let community_footer = match &header.footer {
+        Some(footer) => footer.html(prefix)?,
+        None => header.theme.community_footer(prefix),
+    };
     let article_footer = if community_footer.is_empty() {
         format!(
             "<footer>{generator_credit} · <a \
@@ -171,6 +182,8 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
             esc(plan.project.as_str()),
             esc(plan.target.as_str())
         )
+    } else if project_page && !header.chrome.project_navigation() {
+        String::new()
     } else if project_page {
         format!(
             "<nav class=\"project-navigation\" \
@@ -186,7 +199,11 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
             esc(plan.target.as_str())
         )
     };
-    let search_dialog = super::search::dialog(prefix);
+    let search_dialog = if header.chrome.search() {
+        super::search::dialog(prefix)
+    } else {
+        String::new()
+    };
     let body = if project_page {
         super::project::sections(
             &format!("{heading}{}", page.body),
@@ -231,7 +248,7 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
     } else {
         ""
     };
-    format!(
+    Ok(format!(
         r##"<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body{body_attribute}{layout_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
@@ -248,5 +265,5 @@ pub(super) fn render(plan: &Plan, header: &Header, page: Page<'_>) -> String {
         id = esc(page.id),
         fragment_count = page.fragment_count,
         body = body,
-    )
+    ))
 }

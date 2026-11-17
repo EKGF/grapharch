@@ -1,0 +1,11 @@
+/* Authored footer (ga:siteFooter): titled columns, then centred notes. */
+.site-footer{margin:0;border-top:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:.875rem;line-height:1.43}
+.site-footer-inner{max-width:80rem;margin:auto;padding:4rem 1.5rem}
+.site-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:2rem}
+.site-footer h2{margin:0 0 1rem;font-size:1.125rem;line-height:1.55;font-weight:600;letter-spacing:0;color:var(--ink)}
+.site-footer p{margin:0}.site-footer ul{list-style:none;margin:0;padding:0}.site-footer li+li{margin-top:.5rem}
+.site-footer a{color:inherit;text-decoration:none}.site-footer a:hover{color:var(--ink)}
+.site-footer-notes{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--line);text-align:center}.site-footer-notes p+p{margin-top:.25rem}
+.site-footer-credit{font-size:.75rem;opacity:.85;margin-top:.75rem!important}
+@media(max-width:480px){.site-footer-inner{padding:2.5rem 1.25rem}}
+@media print{.site-footer{display:none}}

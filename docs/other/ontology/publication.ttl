@@ -3415,3 +3415,63 @@ ga:baseIri a owl:DatatypeProperty ;
     dct:description "Records the base IRI against which a retained RDF source text was parsed when it was collected."@en ;
     rdfs:domain ga:RdfSourceText ;
     rdfs:range xsd:string .
+
+# Source-owned website chrome. Every term is opt-in: an absent value keeps the
+# theme's generated region.
+ga:projectNavigation a owl:DatatypeProperty ;
+    rdfs:label "Project page navigation"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether project-layout website pages show the generated bar linking the site's pages; the default is true."@en ;
+    dct:description "States whether project-layout website pages show the generated bar linking the site's pages; the default is true."@en ;
+    skos:scopeNote "Use false when the site's pages are reached through header links and page content, as on a product landing site. Pages remain in the sitemap, search index and metadata; unlike ga:navigationHidden this does not mark pages noindex."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:siteSearch a owl:DatatypeProperty ;
+    rdfs:label "Website search"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether a website publishes its static search index, search button and search dialog; the default is true."@en ;
+    dct:description "States whether a website publishes its static search index, search button and search dialog; the default is true."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:SiteFooter a owl:Class ;
+    rdfs:label "Website footer"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An authored website footer of ordered groups and notes that replaces the theme's footer."@en ;
+    dct:description "An authored website footer of ordered groups and notes that replaces the theme's footer."@en .
+
+ga:siteFooter a owl:ObjectProperty ;
+    rdfs:label "Website footer"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the authored footer that a website profile renders instead of its theme's footer."@en ;
+    dct:description "Selects the authored footer that a website profile renders instead of its theme's footer."@en ;
+    skos:scopeNote "The engine closes the footer with its generator credit and a provenance link."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:SiteFooter .
+
+ga:footerGroup a owl:ObjectProperty ;
+    rdfs:label "Footer group"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds a titled, ordered footer column with either a dct:description or ga:footerLink entries."@en ;
+    dct:description "Adds a titled, ordered footer column with either a dct:description or ga:footerLink entries."@en ;
+    skos:scopeNote "Groups use dct:title and distinct ga:order values; up to six groups are supported. A description is one paragraph of inline Markdown: text, emphasis, code and links."@en ;
+    rdfs:domain ga:SiteFooter ;
+    rdfs:range rdfs:Resource .
+
+ga:footerLink a owl:ObjectProperty ;
+    rdfs:label "Footer link"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds an ordered link with a title, URL and order to a footer group."@en ;
+    dct:description "Adds an ordered link with a title, URL and order to a footer group."@en ;
+    skos:scopeNote "Entries follow the ga:headerLink URL rules and also permit mailto URLs. Up to sixteen links per group are supported."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range rdfs:Resource .
+
+ga:footerNote a owl:ObjectProperty ;
+    rdfs:label "Footer note"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds an ordered line below the footer groups, written as one paragraph of inline Markdown in dct:description."@en ;
+    dct:description "Adds an ordered line below the footer groups, written as one paragraph of inline Markdown in dct:description."@en ;
+    rdfs:domain ga:SiteFooter ;
+    rdfs:range rdfs:Resource .
