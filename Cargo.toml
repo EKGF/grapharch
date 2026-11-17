@@ -70,6 +70,9 @@ disabled-strategies = ["quick-install", "compile"]
 [dev-dependencies]
 # Parses generated PDFs in tests; the same release Typst uses for PDF images.
 hayro-syntax = { version = "0.9.0", default-features = false, features = ["std"] }
+# Extracts text and renders pages of the OMG reference PDF and of the Commons
+# edition for the acceptance comparison; the same release Typst's SVG export uses.
+hayro = { version = "0.7.1", default-features = false, features = ["embed-fonts"] }
 
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }

@@ -84,3 +84,24 @@ This acceptance run exports and restores the KG before rendering HTML and PDF in
 checks that rendering succeeds after the source directory and HTTP server are
 removed. The generated KG can be inspected at
 `output/commons-review/documentation.nq`.
+
+## Acceptance against the formal specification
+
+`tests/commons_acceptance.rs` compares this edition with OMG's formal/26-06-05 PDF. The test fetches that PDF from <https://www.omg.org/spec/Commons/1.3/PDF> and pins it by SHA-256. It checks:
+
+- cover text and type
+- page size, text margin and footer position
+- clauses, subclauses and ontology chapters
+- the contents title
+- numbered figure and table captions
+- prose and heading typography
+- fonts
+- running footers
+- front-matter length and page count
+- the terms documented in clause 8
+
+It also renders ten corresponding pages side by side. It writes `output/commons-acceptance/report.md` and `output/commons-acceptance/pages/*.png`. A criterion the edition does not meet yet stays in the test's `OPEN` list, with the work or decision that will meet it. When a criterion is met, the test fails until that entry is removed.
+
+```sh
+cargo test --test commons_acceptance -- --ignored --nocapture
+```
