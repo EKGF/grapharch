@@ -37,17 +37,14 @@ pub(crate) async fn document(
         return Ok(())
     };
     let inventory = Inventory::read(dataset, &view, &job.subject).await?;
-    let observed =
-        chrono::DateTime::parse_from_rfc3339(&inventory.observed_at)?
-            .with_timezone(&chrono::Utc)
-            .format("%-d %B %Y at %H:%M UTC")
-            .to_string();
+    // The hero names the page and the provenance report records when the
+    // inventory was observed, so the version cards follow the introduction.
+    // Each card's title is its one link.
     let mut body = format!(
         "---\nnav_order: {}\n---\n# {}\n\nSelect a published specification or \
-         a current preview.\n\n## Available versions\n\nLast checked {}.\n\n",
+         a current preview.\n\n",
         job.order,
         markdown_text(&job.title),
-        observed
     );
     for version in inventory
         .versions
@@ -55,15 +52,15 @@ pub(crate) async fn document(
         .filter(|version| version.advertised)
     {
         body.push_str(&format!(
-            "### {}\n\nBranch: {}\n\n{}[Open specification](<{}>)\n\n",
+            "### [{}](<{}>)\n\nBranch: {}\n\n{}",
             markdown_text(&version.label),
+            version.route.as_deref().unwrap_or(&version.url),
             markdown_text(&version.branch),
             version
                 .status
                 .as_ref()
                 .map(|status| format!("Status: {}\n\n", markdown_text(status)))
                 .unwrap_or_default(),
-            version.route.as_deref().unwrap_or(&version.url)
         ));
     }
     let revision = format!("publication-inventory-v1:{snapshot}");

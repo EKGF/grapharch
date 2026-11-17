@@ -1086,6 +1086,15 @@ ga:metadataDisclosure a owl:DatatypeProperty ;
     rdfs:domain ga:Target ;
     rdfs:range xsd:boolean .
 
+ga:pairedPdf a owl:DatatypeProperty ;
+    rdfs:label "Paired specification PDF"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether a specification renderer target compiles a PDF of its own page and attaches it as the page's download; the default is true."@en ;
+    dct:description "States whether a specification renderer target compiles a PDF of its own page and attaches it as the page's download; the default is true."@en ;
+    skos:scopeNote "Use false when Typst targets of the same family publish the PDF editions and the page links them by target IRI, so the paired PDF would duplicate one of them. Setting it on any other renderer's target is an error."@en ;
+    rdfs:domain ga:Target ;
+    rdfs:range xsd:boolean .
+
 ga:tocFrontMatter a owl:DatatypeProperty ;
     rdfs:label "Include front matter in contents"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

@@ -219,6 +219,20 @@ pub(super) fn link(
     {
         return Ok(href);
     }
+    // A page IRI links to the page itself.
+    if let Some(target) =
+        catalog.pages.get(value).filter(|target| !target.asset)
+    {
+        return Ok(if target.id == page.id {
+            "#".into()
+        } else {
+            format!(
+                "{}{}",
+                "../".repeat(page.route.matches('/').count()),
+                target.route
+            )
+        });
+    }
     if let Some((id, anchor)) = catalog.subjects.get(value) {
         let target = &catalog.pages[id];
         return Ok(if target.id == page.id {

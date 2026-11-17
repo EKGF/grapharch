@@ -1,6 +1,6 @@
 //! Explicit retained route aliases preserve published URLs on static hosts.
 use {
-    super::{catalog::Catalog, esc},
+    super::{super::markup::html_escape as esc, catalog::Catalog},
     crate::publication::render::model::{Plan, node},
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},

@@ -9,7 +9,7 @@ pub(super) const ALIASES: usize = 2048;
 // two search files.
 // At most sixteen retained showcase introduction pages.
 const SHELL: usize = 3 + 5 + 2 + 3 + 1 + 2 + 16;
-pub(super) const MAX_ARTIFACTS: usize =
+pub(in crate::publication::render) const MAX_ARTIFACTS: usize =
     // The common publisher adds its icon license after website generation.
     PAGES + ASSETS + PROJECTIONS + ALIASES + SHELL + 1;
 pub(super) struct ArtifactBudget {

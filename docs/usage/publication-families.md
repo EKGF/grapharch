@@ -103,10 +103,19 @@ The companion prose is excluded from the specification and document profiles.
 The test removes the input files, restores the exported KG, and renders all three
 targets. It checks shared revision provenance and separate profiles.
 
-The specification renderer currently also emits a paired PDF for its own download
-button. That is a rendition of the specification target; it is distinct from the
-independently planned review document. Automatically linking that button to an
-arbitrary alternative PDF target is not implemented.
+The specification renderer also emits a paired PDF for its own download button.
+That is a rendition of the specification target; it is distinct from the
+independently planned review document. When the family's Typst targets already
+publish the PDF editions, set `ga:pairedPdf false` on the specification target
+and link the editions by target IRI, for example in a custom metadata row, so
+the same document is not published twice.
+
+```turtle
+<urn:example:spec> ga:pairedPdf false ; ga:metadataRow <urn:example:pdfs> .
+<urn:example:pdfs> a ga:MetadataRow ; ga:order 1 ; ga:field "custom" ;
+    dct:title "PDF editions:" ;
+    ga:body """<a href="urn:example:pdf">Community draft</a>""" .
+```
 
 ## CLI and implementation boundaries
 

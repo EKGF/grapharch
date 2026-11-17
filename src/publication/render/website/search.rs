@@ -1,8 +1,8 @@
 //! Bounded static search from selected, pinned page bodies.
 use {
     super::{
+        super::markup::html_escape as esc,
         catalog::{Catalog, Page},
-        esc,
     },
     crate::publication::{
         content_blocks::{Boundary, LANGUAGE},

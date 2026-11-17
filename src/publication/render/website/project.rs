@@ -39,6 +39,20 @@ pub(super) async fn panels(
     Ok(panels)
 }
 
+/// Whether a card heading is exactly one link, so that the whole card can
+/// act as that link with the heading as its accessible name.
+fn title_link(heading: ElementRef) -> bool {
+    let mut children = heading.child_elements();
+    match (children.next(), children.next()) {
+        (Some(link), None) => {
+            link.value().name() == "a" &&
+                link.text().collect::<String>() ==
+                    heading.text().collect::<String>()
+        },
+        _ => false,
+    }
+}
+
 /// Group the already rendered Markdown; no authored HTML or source-file access.
 pub(super) fn sections(
     body: &str,
@@ -116,13 +130,28 @@ pub(super) fn sections(
                 }
                 section = true;
             },
-            "h3" if section => {
+            "h3" => {
                 if card {
                     output.push_str(
                         if resource { "</div></div>" } else { "</div>" },
                     );
                 }
-                output.push_str("<div class=\"project-card\">");
+                if !section {
+                    // Cards directly after the introduction form an untitled
+                    // section, for pages whose hero already names them.
+                    output.push_str(
+                        "</div></div><section class=\"project-section\"><div \
+                         class=\"project-container\">",
+                    );
+                    section = true;
+                }
+                output.push_str(
+                    if title_link(element) {
+                        "<div class=\"project-card project-card-linked\">"
+                    } else {
+                        "<div class=\"project-card\">"
+                    },
+                );
                 if let Some((name, tone)) = element
                     .value()
                     .attr("id")
