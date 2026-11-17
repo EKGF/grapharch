@@ -47,7 +47,9 @@ version. The observation time is recorded in `publication-versions.json`.
 ```
 
 The normal website pipeline generates the page before resolving the publication
-plan. Authored Markdown can link to `spec-versions.md` as it would any other page.
+plan. Authored Markdown can link to `spec-versions.md` as it would any other page, or
+by the page IRI that `ga:fragment` names; website links by page IRI resolve to
+the relative route of that page.
 Rendering reads the retained inventory only; it never queries deployment services.
 
 The website also contains `publication-versions.json`: an observation timestamp

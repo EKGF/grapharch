@@ -14,7 +14,7 @@ async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
         source.path().join("index.md"),
         "---\ntitle: Project\npermalink: /\ngrapharch:\n  subject: \
          urn:home\n---\n# Project\n\n[Specification \
-         versions](spec-versions.md)\n",
+         versions](spec-versions.md) [All versions](urn:versions-page)\n",
     )
     .await?;
     let definitions = source.path().join("project.ttl");
@@ -125,6 +125,11 @@ async fn version_cards_are_whole_card_links_without_repeated_chrome()
     let html =
         tokio::fs::read_to_string(directory.join("spec-versions/index.html"))
             .await?;
+    let home = tokio::fs::read_to_string(directory.join("index.html")).await?;
+    assert!(
+        home.contains("href=\"spec-versions/\""),
+        "a link to the page IRI resolves to the relative versions page"
+    );
     for removed in ["Available versions", "Last checked", "Open specification"]
     {
         assert!(
