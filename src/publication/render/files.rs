@@ -318,8 +318,11 @@ fn owned_except(
                     "main.typ" |
                     "grapharch-icon-licenses.txt"
             ) || (manifest.renderer == "specification" &&
-                manifest.pdf.as_deref() == Some(name.as_str()) &&
-                crate::publication::pdf_name::PdfName::is_file_name(name));
+                ((manifest.pdf.as_deref() == Some(name.as_str()) &&
+                    crate::publication::pdf_name::PdfName::is_file_name(
+                        name,
+                    )) ||
+                    super::cover::is_logo_file(name)));
             let book = manifest.renderer == "bookshelf" &&
                 (name == "books.json" ||
                     name.strip_prefix("book-").is_some_and(|s| {

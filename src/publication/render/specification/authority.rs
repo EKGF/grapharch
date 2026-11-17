@@ -67,6 +67,10 @@ pub(in crate::publication::render) struct Logo {
 }
 
 impl Logo {
+    /// The file extensions of the logo formats `read` accepts.
+    pub(in crate::publication::render) const EXTENSIONS: [&'static str; 2] =
+        ["png", "svg"];
+
     pub(in crate::publication::render) async fn read(
         plan: &Plan,
         authority: &oxrdf::NamedNode,
