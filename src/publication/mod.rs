@@ -18,6 +18,7 @@ pub mod governance;
 mod graph_placement;
 pub mod hosting;
 mod href;
+mod language_range;
 mod limits;
 mod markdown;
 mod mermaid;

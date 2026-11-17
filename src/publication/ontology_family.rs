@@ -32,9 +32,11 @@ use {
 pub(crate) mod arrangement;
 mod declarations;
 mod figures;
+mod foreign;
 mod modules;
 mod reference;
 mod site;
+mod tables;
 
 const GOVERNANCE: &str = "https://ekgf.org/ontology/artifact-governance#";
 const PUBLICATION: &str = "https://ekgf.org/ontology/artifact-publication#";
@@ -57,6 +59,8 @@ struct Member {
     view:      RevisionView,
     snapshot:  NamedNode,
     terms:     Vec<NamedNode>,
+    /// Described subjects outside the namespace, shown by term tables.
+    foreign:   Vec<NamedNode>,
     missing:   usize,
 }
 
@@ -751,6 +755,15 @@ async fn build(
                 }
                 terms.push(subject.clone());
             }
+            let foreign = if scheme {
+                Vec::new()
+            } else {
+                foreign::subjects(dataset, &source, ontology, &namespace)
+                    .await?
+                    .into_iter()
+                    .filter(|subject| !aliases.contains(subject))
+                    .collect()
+            };
             let labels = vocabulary_labels(&source, ontology).await?;
             ensure!(
                 labels.len() == 1 && !labels[0].trim().is_empty(),
@@ -766,6 +779,7 @@ async fn build(
                 view: source,
                 snapshot,
                 terms,
+                foreign,
                 missing,
             });
         }
@@ -819,6 +833,15 @@ async fn build(
     let bindings =
         bindings(&view, targets, &target, &profile, &scope, &family).await?;
     let mut placed_all = HashSet::new();
+    let mut table_jobs = tables::TableJobs::default();
+    let project_node = NamedNode::new(project)?;
+    let family_tables = tables::FamilyTables {
+        dataset,
+        collected: &collected_snapshot,
+        project: &project_node,
+        prefixes: &prefixes,
+        known: &known,
+    };
     for (target, profile, scope) in bindings {
         let owner = identity("family-bindings", &[project, target.as_str()]);
         let contribution = identity("contribution", &[
@@ -827,9 +850,15 @@ async fn build(
             target.as_str(),
         ]);
         managed.add(owner.as_str(), target.as_str(), true)?;
+        let term_table =
+            super::document::term_table::TermTable::read(&view, &profile)
+                .await?;
         let term_processor =
             AnnotatedTermDocumentor::processor_identity(project, "en");
         for member in &members {
+            if term_table.is_some() && !member.scheme {
+                continue;
+            }
             for subject in &member.terms {
                 managed.add(term_processor.as_str(), subject.as_str(), true)?;
             }
@@ -1075,6 +1104,21 @@ async fn build(
                 .await?
                 .unwrap_or_else(|| member.prefix.clone());
             page_slug(&mut data, &target, &member.ontology, &slug);
+            if let Some(table) = &term_table &&
+                !member.scheme
+            {
+                table_jobs
+                    .bind(
+                        &family_tables,
+                        &mut data,
+                        &target,
+                        &scope,
+                        member,
+                        table,
+                    )
+                    .await?;
+                continue;
+            }
             let labels =
                 vocabulary_labels(&member.view, &member.ontology).await?;
             let description =
@@ -1331,6 +1375,15 @@ async fn build(
     for (_, subject, _, _) in &jobs {
         managed.add(term_processor.as_str(), subject.as_str(), true)?;
     }
+    let table_processor =
+        super::document::term_table::TermTableDocumentor::processor_identity(
+            project,
+        );
+    for source in table_jobs.sources() {
+        managed.add(table_processor.as_str(), &source, true)?;
+    }
+    managed.persist_inventory(writer, true).await?;
+    table_jobs.run(writer, concurrency).await?;
     let diagram_renderer = Arc::new(
         crate::publication::document::plantuml::LocalRenderer::new(
             std::ffi::OsStr::new("plantuml"),
@@ -1462,16 +1515,17 @@ async fn english(
         .objects_by(subject, &NamedNode::new(predicate)?)
         .await?;
     let mut values = Vec::new();
+    let mut literals = Vec::new(); // bounded: the subject's annotations.
     while let Some(row) = rows.next().await? {
         let Term::Literal(value) = &row["value"] else {
             anyhow::bail!("text annotation must be literal")
         };
-        if value
-            .language()
-            .is_none_or(|language| language.eq_ignore_ascii_case("en"))
-        {
-            values.push(value.value().to_owned());
-        }
+        literals.push(value.clone());
+    }
+    for value in crate::publication::language_range::LanguageRange::english()
+        .preferred(&literals)
+    {
+        values.push(value.value().to_owned());
     }
     values.sort();
     values.dedup();

@@ -1464,9 +1464,9 @@ ga:overviewTitle a owl:AnnotationProperty ;
 ga:referenceSection a owl:ObjectProperty ;
     rdfs:label "Reference section override"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Associates an ontology or a vocabulary reference documentor use with an authored reference section controlling one resource category."@en ;
-    dct:description "Associates an ontology or a vocabulary reference documentor use with an authored reference section controlling one resource category."@en ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( owl:Ontology ga:DocumentorUse ) ] ;
+    skos:definition "Associates an ontology, a vocabulary reference documentor use or a term table with an authored reference section controlling one resource category."@en ;
+    dct:description "Associates an ontology, a vocabulary reference documentor use or a term table with an authored reference section controlling one resource category."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( owl:Ontology ga:DocumentorUse ga:TermTable ) ] ;
     rdfs:range ga:ReferenceSection .
 
 
@@ -1479,6 +1479,93 @@ ga:headingDepth a owl:DatatypeProperty ;
     rdfs:range xsd:integer .
 
 ga:ReferenceSection skos:scopeNote "Use ga:sectionKind to select classes, properties, individuals, shapes, schemes, concepts, collections, or other; dct:title supplies one English or untagged plain-text heading; ga:order supplies a distinct integer from 0 to 1000. Defaults are Classes (10), Properties (20), Named Individuals (30), Shapes (40), Concept Schemes (41), Concepts (42), Collections (43), and Other Terms (50). Empty categories are omitted. Overrides rename and reorder categories without suppressing resources. SKOS schemes, concepts, and collections take precedence over other declared types; then named individuals, classes, properties, shapes, and other terms."@en .
+
+
+ga:TermTable a owl:Class ;
+    rdfs:label "Term table"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A tabular presentation of an ontology family reference, selected by a profile: each ontology chapter shows a captioned metadata table of the ontology's header statements and a captioned details table of its terms, with their labels, source annotations and axioms in description-logic notation."@en ;
+    dct:description "A tabular presentation of an ontology family reference, selected by a profile: each ontology chapter shows a captioned metadata table of the ontology's header statements and a captioned details table of its terms, with their labels, source annotations and axioms in description-logic notation."@en ;
+    skos:scopeNote "Rows are grouped by the term table's reference sections, each selecting terms by one or more ga:termType classes (owl:Class, rdfs:Datatype, owl:ObjectProperty, owl:DatatypeProperty, owl:AnnotationProperty, rdf:Property or owl:NamedIndividual); a term appears in the lowest-ordered section whose type it declares, and a term without one is an error. Terms of the ontology namespace are named by local name and linked by their row; other subjects that the ontology's own document describes, such as the classes a mapping ontology relates, appear as rows named by prefixed name. The Name column lists every English rdfs:label with its language tag. Annotation entries are labelled with the annotation property's English rdfs:label from the collected sources or publication definitions; a missing label is an error. Axioms use ∃ ∀ ≥ ≤ = for restrictions, ⊓ ⊔ ¬ and oneOf for class constructors, ⁻ for inverse properties and ∘ for property chains. SKOS concept scheme members keep the sectioned reference."@en ;
+    skos:example """@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex: <https://example.org/doc/> .
+ex:profile ga:termTable ex:tables .
+ex:tables a ga:TermTable ;
+    ga:metadataCaption "{title} Metadata" ; ga:detailsCaption "{title} Details" ;
+    ga:metadataLeadIn "Metadata for the {title} is given in {table}." ;
+    ga:annotationPredicates ( skos:definition skos:note skos:example ) ;
+    ga:referenceSection ex:classes, ex:properties .
+ex:classes dct:title "Classes" ; ga:order 1 ; ga:termType owl:Class .
+ex:properties dct:title "Properties" ; ga:order 2 ;
+    ga:termType owl:ObjectProperty, owl:DatatypeProperty, owl:AnnotationProperty ."""@en .
+
+ga:termTable a owl:ObjectProperty ;
+    rdfs:label "Term table"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the term table that presents the profile's ontology family reference; without one, each term has its own reference section."@en ;
+    dct:description "Selects the term table that presents the profile's ontology family reference; without one, each term has its own reference section."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:TermTable .
+
+ga:metadataPredicates a owl:ObjectProperty ;
+    rdfs:label "Metadata predicates"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Lists, as an RDF collection, the ontology header predicates a term table's metadata table shows, in row order; without it every header statement is shown, ordered by prefixed name."@en ;
+    dct:description "Lists, as an RDF collection, the ontology header predicates a term table's metadata table shows, in row order; without it every header statement is shown, ordered by prefixed name."@en ;
+    rdfs:domain ga:TermTable ;
+    rdfs:range rdf:List .
+
+ga:annotationPredicates a owl:ObjectProperty ;
+    rdfs:label "Annotation predicates"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Lists, as an RDF collection, the annotation properties a term table's Annotations column shows, in display order; without it every annotation is shown, ordered by its property label."@en ;
+    dct:description "Lists, as an RDF collection, the annotation properties a term table's Annotations column shows, in display order; without it every annotation is shown, ordered by its property label."@en ;
+    rdfs:domain ga:TermTable ;
+    rdfs:range rdf:List .
+
+ga:metadataCaption a owl:DatatypeProperty ;
+    rdfs:label "Metadata caption"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the caption of each ontology's numbered metadata table; {title} stands for the ontology chapter title."@en ;
+    dct:description "Specifies the caption of each ontology's numbered metadata table; {title} stands for the ontology chapter title."@en ;
+    rdfs:domain ga:TermTable ;
+    rdfs:range xsd:string .
+
+ga:detailsCaption a owl:DatatypeProperty ;
+    rdfs:label "Details caption"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the caption of each ontology's numbered details table; {title} stands for the ontology chapter title."@en ;
+    dct:description "Specifies the caption of each ontology's numbered details table; {title} stands for the ontology chapter title."@en ;
+    rdfs:domain ga:TermTable ;
+    rdfs:range xsd:string .
+
+ga:metadataLeadIn a owl:DatatypeProperty ;
+    rdfs:label "Metadata lead-in"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the sentence that introduces each metadata table; {table} stands for the numbered table reference and {title} for the ontology chapter title."@en ;
+    dct:description "Specifies the sentence that introduces each metadata table; {table} stands for the numbered table reference and {title} for the ontology chapter title."@en ;
+    rdfs:domain ga:TermTable ;
+    rdfs:range xsd:string .
+
+ga:detailsLeadIn a owl:DatatypeProperty ;
+    rdfs:label "Details lead-in"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the sentence that introduces each details table; {table} stands for the numbered table reference and {title} for the ontology chapter title."@en ;
+    dct:description "Specifies the sentence that introduces each details table; {table} stands for the numbered table reference and {title} for the ontology chapter title."@en ;
+    rdfs:domain ga:TermTable ;
+    rdfs:range xsd:string .
+
+ga:rowSubject a owl:ObjectProperty ;
+    rdfs:label "Row subject"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies a resource documented by one row of a generated table fragment; links to the resource resolve to that row."@en ;
+    dct:description "Identifies a resource documented by one row of a generated table fragment; links to the resource resolve to that row."@en ;
+    rdfs:domain ga:Fragment ;
+    rdfs:range rdfs:Resource .
 
 
 ga:OntologyModule a owl:Class ;
@@ -2559,6 +2646,14 @@ ga:diagramLiteralFill a owl:DatatypeProperty ;
     dct:description "Specifies the PDF class diagram fill colour of literal values, as #RRGGBB, accent or accent-tint."@en ;
     rdfs:domain ga:Theme ;
     rdfs:range xsd:string .
+
+ga:tableNumberByChapter a owl:DatatypeProperty ;
+    rdfs:label "Table number by chapter"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies whether numbered tables are numbered within their top-level chapter, as in Table 8.3, instead of consecutively through the document."@en ;
+    dct:description "Specifies whether numbered tables are numbered within their top-level chapter, as in Table 8.3, instead of consecutively through the document."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:boolean .
 
 ga:codeFont a owl:DatatypeProperty ;
     rdfs:label "Code font"@en ;

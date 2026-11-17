@@ -8,6 +8,31 @@ use {
 pub(super) struct Containers {
     stack:    Stack,
     pub tabs: bool,
+    // bounded: one entry per open table, at most the 16-container nesting.
+    tables:   Vec<TableCells>,
+}
+/// Cell progress of one open table, which closes only on a complete row.
+struct TableCells {
+    columns: usize,
+    cells:   usize,
+}
+impl TableCells {
+    fn new(columns: usize) -> Self { Self { columns, cells: 0 } }
+
+    /// Count a cell, returning whether it opens and whether it closes a row.
+    fn step(&mut self) -> (bool, bool) {
+        let column = self.cells % self.columns;
+        self.cells += 1;
+        (column == 0, column + 1 == self.columns)
+    }
+
+    fn finish(self) -> Result<()> {
+        anyhow::ensure!(
+            self.cells.is_multiple_of(self.columns),
+            "table ends inside a row"
+        );
+        Ok(())
+    }
 }
 fn escape(value: &str) -> String {
     value
@@ -33,8 +58,18 @@ impl Containers {
         let value = self.stack.step(value)?;
         Ok(if end {
             match value {
-                Boundary::Figure { .. } => "</figure>\n".into(),
+                Boundary::Figure { .. } | Boundary::TableFigure { .. } => {
+                    "</figure>\n".into()
+                },
                 Boundary::Caption => "</figcaption>\n".into(),
+                Boundary::Table { .. } => {
+                    self.close_table()?;
+                    "</tbody></table></div>\n".into()
+                },
+                Boundary::Cell => {
+                    let closes = self.current_row_closes()?;
+                    if closes { "</td></tr>\n" } else { "</td>\n" }.into()
+                },
                 Boundary::CardGroup |
                 Boundary::Alternatives |
                 Boundary::Alternative { .. } => "</section>\n".into(),
@@ -56,6 +91,45 @@ impl Containers {
                     )
                 },
                 Boundary::Caption => "<figcaption>\n".into(),
+                Boundary::TableFigure { caption, label } => {
+                    format!(
+                        "<figure class=\"ga-table-figure\" \
+                         id=\"{}\"><figcaption>{}</figcaption>\n",
+                        escape(&label),
+                        escape(&caption)
+                    )
+                },
+                Boundary::Table { columns } => {
+                    self.tables.push(TableCells::new(columns.len()));
+                    format!(
+                        "<div class=\"table-scroll\" role=\"region\" \
+                         aria-label=\"Data table\" tabindex=\"0\"><table \
+                         class=\"ga-reference-table\"><colgroup>{}</\
+                         colgroup><thead><tr>{}</tr></thead><tbody>\n",
+                        columns
+                            .iter()
+                            .map(|column| {
+                                format!(
+                                    "<col style=\"width:{}%\">",
+                                    column.percent
+                                )
+                            })
+                            .collect::<String>(),
+                        columns
+                            .iter()
+                            .map(|column| {
+                                format!(
+                                    "<th scope=\"col\">{}</th>",
+                                    escape(&column.title)
+                                )
+                            })
+                            .collect::<String>()
+                    )
+                },
+                Boundary::Cell => {
+                    let (opens, _) = self.step_cell()?;
+                    if opens { "<tr><td>\n" } else { "<td>\n" }.into()
+                },
                 Boundary::CardGroup => {
                     "<section class=\"ga-card-group\">\n".into()
                 },
@@ -123,6 +197,17 @@ impl Containers {
             match value {
                 Boundary::Figure { .. } => "]])\n".into(),
                 Boundary::Caption => "]]\n".into(),
+                Boundary::TableFigure { label, .. } => {
+                    format!("]#label({})]\n", quote(&label))
+                },
+                Boundary::Table { .. } => {
+                    self.close_table()?;
+                    ")\n".into()
+                },
+                Boundary::Cell => {
+                    self.current_row_closes()?;
+                    "],\n".into()
+                },
                 Boundary::Admonition { .. } => "]\n".into(),
                 _ => "\n".into(),
             }
@@ -145,6 +230,46 @@ impl Containers {
                 Boundary::Caption => {
                     "#block(above: 6pt)[#text(size: 9pt)[\n".into()
                 },
+                // A figure holding tables may span pages. Its body keeps the
+                // document's left alignment, and its number is the theme's
+                // table numbering.
+                Boundary::TableFigure { caption, .. } => {
+                    format!(
+                        "#block(width: 100%, above: 12pt, below: 12pt)[#show \
+                         figure: set block(breakable: true)\n#figure(kind: \
+                         table, supplement: [Table], numbering: \
+                         ga-table-numbering, caption: [#text({})])[#set \
+                         align(left)\n",
+                        quote(&caption)
+                    )
+                },
+                Boundary::Table { columns } => {
+                    self.tables.push(TableCells::new(columns.len()));
+                    format!(
+                        "#ga-table(columns: ({},), align: ({},), header-row: \
+                         0, cell-spacing: 0.8em, table.header({}), ",
+                        columns
+                            .iter()
+                            .map(|column| format!("{}%", column.percent))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        vec!["left"; columns.len()].join(", "),
+                        columns
+                            .iter()
+                            .map(|column| {
+                                format!(
+                                    "[#strong[#text({})]]",
+                                    quote(&column.title)
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                },
+                Boundary::Cell => {
+                    self.step_cell()?;
+                    "[".into()
+                },
                 Boundary::Alternatives | Boundary::CardGroup => String::new(),
                 Boundary::Alternative { title } => {
                     format!(
@@ -165,7 +290,36 @@ impl Containers {
         })
     }
 
-    pub fn finish(self) -> Result<()> { self.stack.finish() }
+    /// Whether the content being converted is inside a table cell.
+    pub fn in_cell(&self) -> bool { self.stack.in_cell() }
+
+    fn step_cell(&mut self) -> Result<(bool, bool)> {
+        Ok(self
+            .tables
+            .last_mut()
+            .ok_or_else(|| anyhow::anyhow!("table cell outside a table"))?
+            .step())
+    }
+
+    fn current_row_closes(&self) -> Result<bool> {
+        let table = self
+            .tables
+            .last()
+            .ok_or_else(|| anyhow::anyhow!("table cell outside a table"))?;
+        Ok(table.cells.is_multiple_of(table.columns))
+    }
+
+    fn close_table(&mut self) -> Result<()> {
+        self.tables
+            .pop()
+            .ok_or_else(|| anyhow::anyhow!("unbalanced table"))?
+            .finish()
+    }
+
+    pub fn finish(self) -> Result<()> {
+        anyhow::ensure!(self.tables.is_empty(), "unclosed table");
+        self.stack.finish()
+    }
 }
 pub(super) const SCRIPT: &str = include_str!("content_blocks.js");
 
@@ -198,3 +352,7 @@ pub(super) async fn enclosing(
     }
     Ok(result)
 }
+
+#[cfg(test)]
+#[path = "content_blocks_tests.rs"]
+mod tests;

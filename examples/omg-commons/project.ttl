@@ -7,6 +7,9 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix ex: <urn:omg-commons:> .
 @prefix omg: <urn:omg-commons:theme:> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix cmns-av: <https://www.omg.org/spec/Commons/AnnotationVocabulary/> .
 
 # Publication arrangement of the Commons 1.3 edition. Ontology content is
 # collected from OMG's versioned URLs; OMG's house style, boilerplate and logo
@@ -25,9 +28,35 @@ ex:profile a ga:Profile; ga:theme omg:theme; pub:publishesFamily ex:family ;
     # The HTML reference opens with the library overview; the PDF omits it.
     ga:familyOverviewOrder 0 ;
     ga:requiredMetadataField "documentNumber", "latestVersion" ;
+    ga:termTable ex:term-tables ;
     ga:placement ex:preface, ex:scope-clause, ex:conformance-clause, ex:references-clause,
         ex:terms-clause, ex:symbols-clause, ex:information-clause, ex:architecture-clause,
         ex:ontologies, ex:deliverables, ex:examples .
+
+# Clause 8 tables of each ontology (formal/26-06-05 Tables 8.1-8.46): a
+# metadata table of the ontology header and a details table of its terms.
+# owl:imports is not shown, as in the OMG edition; every other header
+# predicate and every annotation property the Commons sources use is listed.
+ex:term-tables a ga:TermTable ;
+    ga:metadataCaption "{title} Metadata" ;
+    ga:detailsCaption "{title} Details" ;
+    ga:metadataLeadIn "Metadata for the {title} is given in {table}." ;
+    ga:detailsLeadIn "The detailed annotations and axioms that comprise the {title} are provided in {table}, below." ;
+    ga:metadataPredicates ( rdfs:label dct:abstract dct:contributor dct:issued dct:modified
+        cmns-av:copyright dct:license dct:references dct:source dct:title owl:versionIRI
+        skos:note skos:changeNote cmns-av:usageNote ) ;
+    ga:annotationPredicates ( skos:definition skos:prefLabel cmns-av:abbreviation cmns-av:synonym
+        skos:example skos:note cmns-av:explanatoryNote cmns-av:usageNote skos:scopeNote
+        cmns-av:adaptedFrom cmns-av:directSource dct:source rdfs:seeAlso ) ;
+    ga:referenceSection ex:classes-rows, ex:datatypes-rows, ex:individuals-rows, ex:properties-rows .
+# The Commons sources label every listed annotation property except
+# rdfs:seeAlso, which RDF Schema itself labels "seeAlso".
+rdfs:seeAlso rdfs:label "see also"@en .
+ex:classes-rows dct:title "Classes" ; ga:order 1 ; ga:termType owl:Class .
+ex:datatypes-rows dct:title "Datatypes" ; ga:order 2 ; ga:termType rdfs:Datatype .
+ex:individuals-rows dct:title "Individuals" ; ga:order 3 ; ga:termType owl:NamedIndividual .
+ex:properties-rows dct:title "Properties" ; ga:order 4 ;
+    ga:termType owl:ObjectProperty, owl:DatatypeProperty, owl:AnnotationProperty .
 
 ex:specification a ga:Target; dct:title "Commons Ontology Library" ;
     dct:description "A reference to the published Commons Ontology Library, including shared patterns for identifiers, organizations, roles, collections, dates, quantities and units." ;
@@ -1021,7 +1050,7 @@ omg:theme a ga:Theme ; rdfs:label "OMG specification" ; ga:baseTheme ga:Specific
     ga:heading3Size "12pt" ; ga:heading4Size "11pt" ;
     ga:tableTextSize "9pt" ; ga:tableHeaderFill "#4e80bc" ; ga:tableHeaderText "#ffffff" ;
     ga:tableGrid true ; ga:tableRuleColor "#83a6d0" ;
-    ga:captionFont "Liberation Sans" ; ga:captionSize "9pt" ; ga:captionBold true ; ga:tableCaptionAbove true ;
+    ga:captionFont "Liberation Sans" ; ga:captionSize "9pt" ; ga:captionBold true ; ga:tableCaptionAbove true ; ga:tableNumberByChapter true ;
     ga:figureCaptionAlign "left" ;
     # ODM notation colours (OMG Commons 1.3, clause 6.5).
     ga:diagramFont "Liberation Sans" ; ga:diagramFocusFill "#ffffff" ; ga:diagramClassFill "#ffffff" ;
@@ -1079,7 +1108,9 @@ omg:end-rule a ga:CoverBlock ; ga:order 14 ; ga:coverElement ga:CoverRule ; ga:s
 <https://www.omg.org/spec/Commons/Documents/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-doc"; sh:namespace "https://www.omg.org/spec/Commons/Documents/" ] .
 <https://www.omg.org/spec/Commons/Identifiers/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-id"; sh:namespace "https://www.omg.org/spec/Commons/Identifiers/" ] .
 <https://www.omg.org/spec/Commons/Languages/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-lang"; sh:namespace "https://www.omg.org/spec/Commons/Languages/" ] .
-<https://www.omg.org/spec/Commons/Locations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-loc"; sh:namespace "https://www.omg.org/spec/Commons/Locations/" ] .
+# Locations declares the WGS 84 position properties it reuses.
+<https://www.omg.org/spec/Commons/Locations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-loc"; sh:namespace "https://www.omg.org/spec/Commons/Locations/" ],
+    [ sh:prefix "geo"; sh:namespace "http://www.w3.org/2003/01/geo/wgs84_pos#" ] .
 <https://www.omg.org/spec/Commons/Organizations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-org"; sh:namespace "https://www.omg.org/spec/Commons/Organizations/" ] .
 <https://www.omg.org/spec/Commons/PartiesAndSituations/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-pts"; sh:namespace "https://www.omg.org/spec/Commons/PartiesAndSituations/" ] .
 <https://www.omg.org/spec/Commons/QuantitiesAndUnits/> gov:inFamily ex:family; sh:declare [ sh:prefix "cmns-qtu"; sh:namespace "https://www.omg.org/spec/Commons/QuantitiesAndUnits/" ] .

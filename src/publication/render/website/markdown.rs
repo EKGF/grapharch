@@ -74,7 +74,11 @@ pub(super) fn render(
             Event::Start(Tag::Link { dest_url, .. }) => {
                 if crate::publication::badge::label(dest_url).is_none() &&
                     crate::publication::anchor::label(dest_url).is_none() &&
-                    crate::publication::temporal::lexical(dest_url).is_none()
+                    crate::publication::temporal::lexical(dest_url).is_none() &&
+                    crate::publication::content_blocks::table_reference(
+                        dest_url,
+                    )
+                    .is_none()
                 {
                     *dest_url = link(dest_url, page, catalog)?.into();
                 }

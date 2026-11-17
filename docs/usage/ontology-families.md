@@ -355,6 +355,68 @@ terms. They may differ (for example, `https://example.org/vocabulary` and
 when different and combines them into one row when equal.
 
 
+Language-tagged labels and definitions are selected by RFC 4647 basic
+filtering: the English range `en` also selects `en-GB` and `en-US`, so a term
+labelled only with regional English variants keeps its labels. Plain-text
+ontology introductions are prose: their indentation and line wrapping are
+source formatting, and blank lines separate paragraphs.
+
+## Tabulate each ontology reference
+
+A standards edition can present each ontology as tables instead of one section
+per term. The profile selects a `ga:TermTable`:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://example.org/doc/profile> ga:termTable <https://example.org/doc/tables> .
+<https://example.org/doc/tables> a ga:TermTable ;
+    ga:metadataCaption "{title} Metadata" ;
+    ga:detailsCaption "{title} Details" ;
+    ga:metadataLeadIn "Metadata for the {title} is given in {table}." ;
+    ga:detailsLeadIn "The terms of the {title} are given in {table}, below." ;
+    ga:metadataPredicates ( rdfs:label dct:abstract dct:license owl:versionIRI ) ;
+    ga:annotationPredicates ( skos:definition skos:note skos:example ) ;
+    ga:referenceSection <https://example.org/doc/classes>,
+        <https://example.org/doc/properties> .
+<https://example.org/doc/classes> dct:title "Classes" ; ga:order 1 ;
+    ga:termType owl:Class .
+<https://example.org/doc/properties> dct:title "Properties" ; ga:order 2 ;
+    ga:termType owl:ObjectProperty, owl:DatatypeProperty, owl:AnnotationProperty .
+```
+
+Each ontology chapter then holds its introduction, a numbered **metadata
+table** and a numbered **details table**. The metadata table lists the
+ontology IRI and one row per header statement, in the order of
+`ga:metadataPredicates` (every header statement by prefixed name when absent);
+multi-line values such as licences keep their lines. The details table has one
+group per reference section, in `ga:order`. A term appears in the first group
+whose `ga:termType` it declares; a term that no group selects fails the
+publication. Rows are ordered by name and have three columns:
+
+| Column | Content |
+| --- | --- |
+| Name | The local name in bold, followed by every English `rdfs:label` with its language tag, for example `Authorization (authorisation@en-GB, authorization@en-US)`. |
+| Annotations | One entry per annotation, labelled by the annotation property's English `rdfs:label` (`skos:definition` reads **Definition**). `ga:annotationPredicates` selects and orders them; without it every annotation is shown, ordered by label. A shown property without a label in the sources or definitions fails the publication. |
+| Class Expressions, Property Axioms or Individual Axioms | Parent classes and properties, restrictions, equivalent and disjoint classes, domains, ranges, inverses, property chains, characteristics, types and property assertions. |
+
+Axioms use description-logic notation: `∃ R.C` (some values), `∀ R.C` (all
+values), `∃ R.{a}` (has value), `≥ n R`, `≤ n R` and `= n R`, qualified as
+`≥ n R.C`; `C ⊓ D`, `C ⊔ D`, `¬ C` and `oneOf (a, b)`; `R⁻` for an inverse
+property; and `R ∘ S` for a property chain. A complex filler is written in
+parentheses after the property, as in `∀ R (C ⊔ D)`. Terms of the ontology's
+own namespace are named by local name; other resources by prefixed name.
+Subjects outside the namespace that the ontology's own document describes,
+such as the classes a mapping ontology relates, are rows named by prefixed
+name. `rdfs:isDefinedBy` is not shown. Missing English labels and definitions
+remain KG diagnostics. Captions and lead-ins replace `{title}` with the
+chapter title and `{table}` with a numbered reference in the PDF and a link in
+HTML. SKOS concept schemes keep the sectioned reference.
+
 ## Native modules and large families
 
 Explicit FIBO `Module` instances and their `dct:hasPart` assertions become

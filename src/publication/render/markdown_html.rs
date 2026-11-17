@@ -49,6 +49,23 @@ pub(super) fn events<'a>(
     }
     for index in 0..events.len() {
         if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] &&
+            let Some(label) =
+                crate::publication::content_blocks::table_reference(dest_url)
+        {
+            let end = events[index..]
+                .iter()
+                .position(|event| matches!(event, Event::End(TagEnd::Link)))
+                .ok_or_else(|| {
+                    anyhow::anyhow!("unterminated table reference")
+                })?;
+            events[index] = Event::InlineHtml(
+                format!("<a class=\"ga-table-ref\" href=\"#{label}\">").into(),
+            );
+            events[index + end] = Event::InlineHtml("</a>".into());
+        }
+    }
+    for index in 0..events.len() {
+        if let Event::Start(Tag::Link { dest_url, .. }) = &events[index] &&
             let Some(lexical) =
                 crate::publication::temporal::lexical(dest_url)
         {

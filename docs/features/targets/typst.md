@@ -93,7 +93,9 @@ only the tokens it changes:
 Tokens cover page size and margins; colours; body, heading, code, caption,
 footer, contents and notice fonts and sizes; justification and hyphenation;
 heading numbering, a fixed number column and chapter page breaks; table header
-fill, text and grid; link colour and underlining; the footer text
+fill, text and grid, caption position, and numbering within each top-level
+chapter (`ga:tableNumberByChapter`, as in Table 8.3); link colour and
+underlining; the footer text
 (`ga:footerText` on the target, else the title) and a page number on the outer
 edge; front and body page numbering; the contents title, alignment and depth;
 and annex labels, a normativity line from the placement's `ga:normativity`, and
@@ -160,7 +162,11 @@ copyright holders, the OMG logo, and the Commons 1.3 release metadata. Its
 profile sets `ga:w3cFrontMatter false`, omits the family overview, coverage,
 quality, diagram-note and per-term class diagram material from the PDF, shows
 OMG's 24 overview figures with their captions, authors clauses 1 to 7 and
-Annex B as Markdown, and nests the ontology chapters under clause 8. Its cover states that it is a GraphArch rendering of
+Annex B as Markdown, and nests the ontology chapters under clause 8. Its `ga:termTable` presents each ontology as OMG's
+clause 8 does: a numbered metadata table of the ontology header and a numbered
+details table of its classes, datatypes, individuals and properties, with
+labels, annotations and axioms in description-logic notation (see
+[Ontology families](../../usage/ontology-families.md#tabulate-each-ontology-reference)). Its cover states that it is a GraphArch rendering of
 Commons 1.3. The design references the
 [Commons 1.3 PDF](https://www.omg.org/spec/Commons/1.3/PDF),
 [OMG core templates at revision 7e9dbce](https://github.com/ObjectManagementGroup/mdsa-omg-core/tree/7e9dbcef362b47a1c362f93b7ee2b840fb694997),

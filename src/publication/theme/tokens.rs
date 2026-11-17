@@ -79,6 +79,7 @@ pub(crate) const TOKENS: &[Token] = &[
     required("diagramPropertyFill", Color),
     required("diagramDatatypeFill", Color),
     required("diagramLiteralFill", Color),
+    required("tableNumberByChapter", Bool),
     // Code and quotations.
     required("codeFont", Font),
     required("codeSize", Length),

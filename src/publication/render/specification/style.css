@@ -108,3 +108,4 @@ table:not(.rdf-properties):has(>thead>tr>th:nth-child(2):last-child)>thead>tr>th
 
 a.authority-banner,a.authority-banner:visited{color:white;text-decoration:none;cursor:pointer}a.authority-banner:hover{filter:brightness(.9)}a.authority-banner:focus-visible{outline:3px solid #e9aa00;outline-offset:3px}
 .copyright-holders{list-style:none;padding:0;margin:1rem 0 0;font-size:.8rem;color:#333}
+.ga-table-figure{margin:1.5rem 0}.ga-table-figure>figcaption{font-weight:600;margin:0 0 .6rem;text-align:center}.ga-table-figure>p{margin:1.2rem 0 .4rem}.ga-reference-table{table-layout:fixed;min-width:40rem;margin:.4rem 0 1.2rem}.ga-reference-table td>p{margin:0 0 .5rem}.ga-reference-table td>p:last-child{margin-bottom:0}

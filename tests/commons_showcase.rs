@@ -298,6 +298,20 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     assert!(typst.contains("#set page(numbering: \"i\")"));
     assert!(typst.contains("#set page(numbering: \"1\")"));
     assert!(html.contains("Roles and Compositions"));
+    // Clause 8 tables: numbered metadata and details tables per ontology,
+    // numbered within the chapter, with regional English labels and DL axioms.
+    assert!(
+        typst.contains("[#text(\"Commons Authorizations Ontology Details\")]")
+    );
+    assert!(
+        typst
+            .contains("#text(\" (authorisation@en-GB, authorization@en-US)\")")
+    );
+    assert!(typst.contains("numbering: ga-table-numbering"));
+    assert!(typst.contains("table_number_by_chapter: true"));
+    assert!(typst.contains("#text(\" ∃ \")"));
+    assert!(typst.contains("[#strong[#text(\"rdf:langString\")]"));
+    assert!(!typst.contains("Not declared in collected sources"));
     assert!(
         tokio::fs::read(only_pdf(&root.join("pdf")))
             .await?

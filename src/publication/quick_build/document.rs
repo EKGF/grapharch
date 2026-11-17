@@ -80,9 +80,8 @@ async fn label(
             .await?;
         while let Some(row) = rows.next().await? {
             if let Term::Literal(value) = &row["value"] &&
-                value.language().is_none_or(|language| {
-                    language.eq_ignore_ascii_case("en")
-                }) &&
+                crate::publication::language_range::LanguageRange::english()
+                    .selects(value) &&
                 !value.value().trim().is_empty()
             {
                 return Ok(Some(value.value().to_owned()));

@@ -19,6 +19,7 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
     let mut table_subject = None;
     let mut in_table = false;
     let mut in_image = false;
+    let mut in_reference = false;
     let events = super::image_variants::print_events(&markdown.events)?;
     let (mut notes, events) = super::footnotes::Notes::read(&events)?;
     let mut events = markdown.conformance.coalesce(events, " ");
@@ -29,6 +30,14 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
         if in_image {
             if matches!(event, Event::End(TagEnd::Image)) {
                 in_image = false;
+            }
+            continue;
+        }
+        // A numbered cross-reference renders the referenced figure's number;
+        // its link text serves renderers without numbering.
+        if in_reference {
+            if matches!(event, Event::End(TagEnd::Link)) {
+                in_reference = false;
             }
             continue;
         }
@@ -137,6 +146,18 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                     Tag::Strong => output.push_str("#strong["),
                     Tag::Strikethrough => output.push_str("#strike["),
                     Tag::Link { dest_url, .. } => {
+                        if let Some(label) =
+                            crate::publication::content_blocks::table_reference(
+                                dest_url,
+                            )
+                        {
+                            output.push_str(&format!(
+                                "#ref(label({}))",
+                                quote(label)
+                            ));
+                            in_reference = true;
+                            continue;
+                        }
                         if let Some(label) =
                             crate::publication::badge::label(dest_url)
                         {
@@ -265,6 +286,11 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                         } else if code_language == crate::publication::document::class_diagram::LANGUAGE {
                             super::class_diagram::typst(&source)?
                         } else { super::code::typst(&source, code_language)? });
+                        if code_language ==
+                            crate::publication::content_blocks::LANGUAGE
+                        {
+                            in_table = containers.in_cell();
+                        }
                         if example {
                             output.push(']');
                             example = false;

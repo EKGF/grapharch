@@ -24,7 +24,40 @@ pub(crate) enum Boundary {
         collapsible: bool,
         expanded:    bool,
     },
+    /// A numbered, captioned figure holding one or more tables. Its label
+    /// is the target of [`TABLE_REFERENCE`] links.
+    TableFigure {
+        caption: String,
+        label:   String,
+    },
+    /// A table whose cells carry full Markdown blocks. Rows are implied:
+    /// every `columns.len()` consecutive cells form one row.
+    Table {
+        columns: Vec<TableColumn>,
+    },
+    /// One table cell; the Markdown up to its end boundary is its content.
+    Cell,
     End,
+}
+
+/// A header cell and the share of the table width its column takes.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct TableColumn {
+    pub title:   String,
+    pub percent: u8,
+}
+
+/// Links to this prefix followed by a table figure label are numbered
+/// cross-references; their link text is the reference in renderers that
+/// do not number tables.
+pub(crate) const TABLE_REFERENCE: &str = "urn:grapharch:table:";
+
+/// The table figure label a cross-reference destination names.
+pub(crate) fn table_reference(destination: &str) -> Option<&str> {
+    destination
+        .strip_prefix(TABLE_REFERENCE)
+        .filter(|label| crate::publication::anchor::valid(label))
 }
 impl Boundary {
     pub fn markdown(&self) -> Result<String> {
@@ -64,6 +97,31 @@ impl Boundary {
                     "invalid admonition metadata"
                 )
             },
+            Self::TableFigure { caption, label } => {
+                ensure!(
+                    !caption.trim().is_empty() &&
+                        caption.len() <= 512 &&
+                        crate::publication::anchor::valid(label),
+                    "invalid table figure caption or label"
+                )
+            },
+            Self::Table { columns } => {
+                ensure!(
+                    (1..=8).contains(&columns.len()) &&
+                        columns.iter().all(|column| {
+                            !column.title.trim().is_empty() &&
+                                column.title.len() <= 128 &&
+                                column.percent > 0
+                        }) &&
+                        columns
+                            .iter()
+                            .map(|column| u32::from(column.percent))
+                            .sum::<u32>() ==
+                            100,
+                    "a table needs one to eight titled columns whose widths \
+                     total 100 percent"
+                )
+            },
             _ => {},
         }
         Ok(value)
@@ -89,6 +147,12 @@ impl Stack {
                 "caption requires a figure"
             );
         }
+        ensure!(
+            matches!(value, Boundary::Cell) ==
+                matches!(self.0.last(), Some(Boundary::Table { .. })),
+            "table cells belong directly to a table, and tables hold only \
+             cells"
+        );
         if matches!(value, Boundary::Alternative { .. }) {
             ensure!(
                 matches!(self.0.last(), Some(Boundary::Alternatives)),
@@ -102,6 +166,11 @@ impl Stack {
         }
         self.0.push(value.clone());
         Ok(value)
+    }
+
+    /// Whether the innermost open container is a table cell.
+    pub fn in_cell(&self) -> bool {
+        matches!(self.0.last(), Some(Boundary::Cell))
     }
 
     pub fn finish(self) -> Result<()> {
