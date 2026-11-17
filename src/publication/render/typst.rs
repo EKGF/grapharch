@@ -165,7 +165,7 @@ pub(super) async fn begin_book(
         };
     file.write_all(
         format!(
-            "// Grapharch project: {}\n// Target: {}\n// Revision: {}\n// \
+            "// GraphArch project: {}\n// Target: {}\n// Revision: {}\n// \
              Scope: {}\n// Profile: {}\n{metadata}#let ga-accent = \
              rgb({})\n{}#let ga-title = {}\n#let ga-publisher = {}\n#let \
              ga-footer-text = {}\n#let ga-ribbon = {ribbon}\n#let \

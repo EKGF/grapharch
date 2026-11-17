@@ -162,11 +162,14 @@ async fn competing_annotations_survive_as_pinned_inline_and_addendum_warnings()
             )
             .unwrap(),
         )
-        .find(|link| link.text().collect::<String>().starts_with("Grapharch "))
+        .find(|link| {
+            link.text().collect::<String>() ==
+                format!("GraphArch {}", env!("GRAPHARCH_BUILD_LABEL"))
+        })
         .expect("versioned generator credit");
     assert_eq!(
         credit.text().collect::<String>(),
-        format!("Grapharch {}", env!("GRAPHARCH_BUILD_LABEL"))
+        format!("GraphArch {}", env!("GRAPHARCH_BUILD_LABEL"))
     );
     assert_eq!(
         credit.value().attr("title"),

@@ -123,7 +123,9 @@ async fn website_collection_pins_enclosing_git_repository_and_recent_committers(
     assert!(provenance.contains("uncommitted changes"));
     assert!(!provenance.contains("private@example.org"));
     assert_eq!(
-        provenance.matches("<dt>Repository</dt>").count(),
+        provenance
+            .matches("<th scope=\"row\">Repository</th>")
+            .count(),
         1,
         "source and definitions in same clone must deduplicate provenance"
     );
