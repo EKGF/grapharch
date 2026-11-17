@@ -55,10 +55,13 @@ pub(super) fn missing_annotations(
     ))
 }
 
+/// Whether a source literal is selected for `language`, a basic language
+/// range: language-neutral text, or a tag that the range matches under RFC
+/// 4647 basic filtering, so `en` also selects `en-GB` and `en-US`.
 pub(super) fn selected(value: &Literal, language: &str) -> bool {
-    value
-        .language()
-        .is_none_or(|tag| tag.eq_ignore_ascii_case(language))
+    crate::publication::language_range::LanguageRange::try_new(language)
+        .expect("documentors select source text by a valid language range")
+        .selects(value)
 }
 
 pub(super) fn select(

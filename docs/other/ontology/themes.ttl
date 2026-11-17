@@ -63,6 +63,7 @@ ga:ReaderTheme a ga:Theme ;
     ga:diagramPropertyFill "#fff5e9" ;
     ga:diagramDatatypeFill "#ffffff" ;
     ga:diagramLiteralFill "#ffffff" ;
+    ga:tableNumberByChapter "false"^^xsd:boolean ;
     ga:codeFont "DejaVu Sans Mono" ;
     ga:codeSize "8.2pt" ;
     ga:codeFill "accent-tint" ;

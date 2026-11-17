@@ -101,6 +101,7 @@ ga:CopyrightHolderShape a sh:NodeShape ;
 
 ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI ;
     sh:property [ sh:path ga:theme ; sh:nodeKind sh:IRI ; sh:class ga:Theme ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:termTable ; sh:nodeKind sh:IRI ; sh:class ga:TermTable ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:familyPlacement ; sh:nodeKind sh:IRI ; sh:class ga:Placement ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:classDiagrams ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:requiredSectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 64 ] ;
@@ -123,6 +124,7 @@ ga:FragmentShape a sh:NodeShape ; sh:targetClass ga:Fragment ; sh:nodeKind sh:IR
     sh:property [ sh:path ga:contentPrefix ; sh:datatype xsd:string ; sh:maxLength 65536 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:contentSuffix ; sh:datatype xsd:string ; sh:maxLength 65536 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:headingDepth ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:maxInclusive 4 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:rowSubject ; sh:nodeKind sh:IRI ] ;
     sh:property [ sh:path ga:order ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 4294967295 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:subject ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
     sh:property [ sh:path ga:body ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
@@ -224,7 +226,21 @@ ga:ReferenceSectionShape a sh:NodeShape ; sh:targetObjectsOf ga:referenceSection
           sh:property [ sh:path ga:component ; sh:nodeKind sh:IRI ; sh:class ga:Component ; sh:minCount 1 ; sh:maxCount 1 ] ;
           sh:property [ sh:path ga:definedTermsOnly ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
           sh:property [ sh:path ga:sectionKind ; sh:maxCount 0 ] ]
+        [ rdfs:comment "A titled group of rows of a term table."@en ;
+          sh:property [ sh:path ga:termType ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 16 ] ;
+          sh:property [ sh:path dct:title ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:uniqueLang true ; sh:minLength 1 ; sh:maxLength 160 ] ;
+          sh:property [ sh:path ga:component ; sh:maxCount 0 ] ;
+          sh:property [ sh:path ga:sectionKind ; sh:maxCount 0 ] ]
     ) .
+
+ga:TermTableShape a sh:NodeShape ; sh:targetClass ga:TermTable ; sh:nodeKind sh:IRI ;
+    sh:property [ sh:path ga:referenceSection ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 16 ] ;
+    sh:property [ sh:path ga:metadataPredicates ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:annotationPredicates ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:metadataCaption ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:maxLength 512 ; sh:pattern "\\{title\\}" ] ;
+    sh:property [ sh:path ga:detailsCaption ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:maxLength 512 ; sh:pattern "\\{title\\}" ] ;
+    sh:property [ sh:path ga:metadataLeadIn ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:maxLength 512 ; sh:pattern "\\{table\\}" ] ;
+    sh:property [ sh:path ga:detailsLeadIn ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:maxLength 512 ; sh:pattern "\\{table\\}" ] .
 
 ga:VocabularyReferenceDocumentorShape a sh:NodeShape ;
     rdfs:comment "A vocabulary reference documentor use names its ontology context and its authored sections."@en ;

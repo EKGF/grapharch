@@ -37,3 +37,24 @@ pub(crate) fn labels(body: &str) -> anyhow::Result<Vec<String>> {
     }
     Ok(labels)
 }
+
+/// The explicit destination of one subject documented inside a larger
+/// fragment, such as a row of a reference table. Its label is derived from
+/// the subject IRI, so a fragment's `ga:rowSubject` statements locate the
+/// rows that its Markdown anchors.
+pub(crate) struct SubjectAnchor(String);
+impl SubjectAnchor {
+    pub(crate) fn new(subject: &oxrdf::NamedNode) -> Self {
+        use sha2::{Digest, Sha256};
+        let digest = Sha256::digest(subject.as_str().as_bytes());
+        Self(format!("row-{}", hex::encode(&digest[..12])))
+    }
+
+    /// The anchor label, unique to the subject.
+    pub(crate) fn label(&self) -> &str { &self.0 }
+
+    /// The empty Markdown link that places this destination.
+    pub(crate) fn markdown(&self) -> String {
+        format!("[]({PREFIX}{})", self.0)
+    }
+}

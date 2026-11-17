@@ -245,9 +245,8 @@ pub(super) async fn introduction(
             let Term::Literal(value) = &row["value"] else {
                 anyhow::bail!("ontology introduction must be literal");
             };
-            if value
-                .language()
-                .is_none_or(|language| language.eq_ignore_ascii_case("en"))
+            if crate::publication::language_range::LanguageRange::english()
+                .selects(value)
             {
                 bytes += value.value().len();
                 ensure!(
@@ -259,7 +258,10 @@ pub(super) async fn introduction(
         }
         for value in values {
             if seen.insert(value.clone()) {
-                paragraphs.push(value);
+                paragraphs.push(
+                    super::super::document::plain_text::PlainText::new(&value)
+                        .prose(),
+                );
             }
         }
     }

@@ -439,6 +439,55 @@ impl Plan {
             );
             self.link_index.entry(subject.clone()).or_insert(anchor);
         }
+        self.index_row_links().await
+    }
+
+    /// Subjects documented by rows of a placed fragment link to their row.
+    async fn index_row_links(&mut self) -> Result<()> {
+        let entries = Dataset::logical_pattern(
+            &self.handle.snapshot,
+            &format!(
+                "{} {} ?entry . ?entry {} ?fragment ; {} ?placement ; {} \
+                 ?order ; {} ?fragmentOrder",
+                self.handle.id,
+                term("entry"),
+                term("fragment"),
+                term("placement"),
+                term("order"),
+                term("fragmentOrder")
+            ),
+            0,
+        );
+        let rows_of = self.source.pattern(
+            &format!("?fragment {} ?subject", term("rowSubject")),
+            1,
+        );
+        let mut rows = self
+            .dataset
+            .select(format!(
+                "SELECT DISTINCT ?subject ?fragment ?placement ?order \
+                 ?fragmentOrder WHERE {{ {entries} {rows_of} }} ORDER BY \
+                 ?order ?fragmentOrder ?fragment ?subject"
+            ))
+            .await?;
+        let mut count = 0;
+        while let Some(row) = rows.next().await? {
+            count += 1;
+            ensure!(
+                count <= crate::publication::limits::LINK_INDEX_ENTRIES,
+                "publication row link index exceeds {}-entry budget",
+                crate::publication::limits::LINK_INDEX_ENTRIES
+            );
+            let subject = &node(&row["subject"])?;
+            let prefix = self.anchor(
+                node(&row["placement"])?,
+                Some(node(&row["fragment"])?),
+            );
+            let label = crate::publication::anchor::SubjectAnchor::new(subject);
+            self.link_index
+                .entry((*subject).clone())
+                .or_insert(format!("#{prefix}-h-{}", label.label()));
+        }
         Ok(())
     }
 

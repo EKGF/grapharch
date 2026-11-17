@@ -46,16 +46,17 @@ pub(crate) async fn name(
         )
         .await?;
     let mut selected = Vec::new();
+    let mut labels = Vec::new(); // bounded: the authority's labels.
     while let Some(row) = names.next().await? {
         let Term::Literal(label) = &row["value"] else {
             anyhow::bail!("authority label must be a literal")
         };
-        if label
-            .language()
-            .is_none_or(|language| language.eq_ignore_ascii_case("en"))
-        {
-            selected.push(label.value().to_owned());
-        }
+        labels.push(label.clone());
+    }
+    for label in crate::publication::language_range::LanguageRange::english()
+        .preferred(&labels)
+    {
+        selected.push(label.value().to_owned());
     }
     ensure!(
         selected.len() == 1,

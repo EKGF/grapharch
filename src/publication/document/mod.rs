@@ -9,6 +9,7 @@ pub(crate) mod maturity;
 mod mermaid;
 pub(crate) mod namespace_bindings;
 pub mod native_metadata;
+pub(crate) mod plain_text;
 pub mod plantuml;
 pub(crate) mod publication_inventory;
 mod query_caption;
@@ -19,6 +20,7 @@ pub mod scope_inclusion;
 pub(crate) mod shacl_class_view;
 mod shacl_queries;
 pub(crate) mod skos;
+pub(crate) mod term_table;
 pub(crate) mod use_cases;
 mod vocabulary_reference;
 use {

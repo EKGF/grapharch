@@ -261,15 +261,22 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     assert!(clauses.windows(2).all(|pair| pair[0] < pair[1]));
     assert!(typst.contains("[#text(\"Annex B: Examples\")]"));
     assert!(typst.contains("#text(\"(informative)\")"));
-    // Table 6-1, 7-1 and 7-2 are captioned, numbered tables.
+    // Tables 6-1, 7-1 and 7-2 plus each ontology's metadata and details
+    // tables (one metadata-only About table) are captioned, numbered
+    // tables, numbered within their chapter.
     assert_eq!(
         typst
             .matches("#figure(kind: table, supplement: [Table]")
             .count(),
-        3
+        50
     );
     assert!(typst.contains(
         "caption: [#text(\"Description Logic Expressions Notation\")]"
+    ));
+    // Authored tables share the chapter-relative numbering (Table 6.1).
+    assert!(typst.contains(
+        "numbering: ga-table-numbering, caption: [#text(\"Description Logic \
+         Expressions Notation\")]"
     ));
     // Annex B's authored figure follows the 24 overview figures.
     assert!(
@@ -298,6 +305,20 @@ async fn live_commons_showcase_from_restored_kg() -> Result<()> {
     assert!(typst.contains("#set page(numbering: \"i\")"));
     assert!(typst.contains("#set page(numbering: \"1\")"));
     assert!(html.contains("Roles and Compositions"));
+    // Clause 8 tables: numbered metadata and details tables per ontology,
+    // numbered within the chapter, with regional English labels and DL axioms.
+    assert!(
+        typst.contains("[#text(\"Commons Authorizations Ontology Details\")]")
+    );
+    assert!(
+        typst
+            .contains("#text(\" (authorisation@en-GB, authorization@en-US)\")")
+    );
+    assert!(typst.contains("numbering: ga-table-numbering"));
+    assert!(typst.contains("table_number_by_chapter: true"));
+    assert!(typst.contains("#text(\" ∃ \")"));
+    assert!(typst.contains("[#strong[#text(\"rdf:langString\")]"));
+    assert!(!typst.contains("Not declared in collected sources"));
     assert!(
         tokio::fs::read(only_pdf(&root.join("pdf")))
             .await?

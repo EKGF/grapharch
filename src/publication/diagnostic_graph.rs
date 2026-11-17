@@ -4,6 +4,7 @@ use {
     oxrdf::{Literal, NamedNode, Quad, Term},
 };
 
+#[derive(Clone)]
 pub(crate) struct Context {
     pub graph:     NamedNode,
     pub id:        NamedNode,

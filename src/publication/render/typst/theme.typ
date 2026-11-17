@@ -39,6 +39,15 @@
 #show figure.caption: set text(font: T.caption_font, size: T.caption_size, weight: if T.caption_bold { "bold" } else { "regular" })
 #show figure.where(kind: table): set figure.caption(position: if T.table_caption_above { top } else { bottom })
 #show figure.where(kind: image): it => { show figure.caption: set align(T.figure_caption_align); it }
+// Numbered tables count through the document, or within each top-level
+// chapter when the theme asks for chapter-relative numbers such as 8.3.
+#let ga-table-numbering(n) = if T.table_number_by_chapter {
+  numbering("1.1", ..counter(heading).get().slice(0, 1), n)
+} else { numbering("1", n) }
+#show heading.where(level: 1): it => {
+  if T.table_number_by_chapter { counter(figure.where(kind: table)).update(0) }
+  it
+}
 #show outline.entry: set text(font: T.toc_font)
 #show outline.entry.where(level: 1): set text(size: T.toc_entry_size)
 // Already highlighted runs share HTML's palette. Wrap grapheme clusters without
@@ -75,9 +84,9 @@
   #set text(size: T.quote_text_size)
   #it.body
 ]
-#let ga-table(columns: (), align: auto, has-header: true, header-row: 0, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
+#let ga-table(columns: (), align: auto, has-header: true, header-row: 0, cell-spacing: 0.4em, ..cells) = block(above: 11pt, below: 12pt, breakable: true)[
   #set text(size: T.table_text_size)
-  #set par(justify: false, leading: 0.55em, spacing: 0.4em)
+  #set par(justify: false, leading: 0.55em, spacing: cell-spacing)
   #show table.cell: it => if has-header and it.y == header-row { text(fill: T.table_header_text, it) } else { it }
   #table(columns: columns, align: align, inset: (x: 7pt, y: 6pt),
     stroke: if T.table_grid { 0.4pt + T.table_rule_color } else { (x: none, y: 0.4pt + T.table_rule_color) },
