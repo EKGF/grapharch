@@ -18,6 +18,7 @@ mod diagnostic_graph;
 mod diagram_notes;
 mod document_metadata;
 mod engine;
+mod file_release;
 mod files;
 mod fonts;
 mod html;
