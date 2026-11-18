@@ -689,11 +689,13 @@ pub async fn run(
         },
         PublicationCommand::Validate { definitions } => {
             let bytes = bounded_file(definitions, 256 * 1024).await?;
+            let source = definitions.display().to_string();
             tokio::task::spawn_blocking(move || -> Result<()> {
                 let store = Store::new()?;
                 // bounded: standalone definitions are capped at 256 KiB, not a
                 // corpus.
                 store.load_from_reader(RdfFormat::Turtle, bytes.as_slice())?;
+                super::vocabulary::Vocabulary::require_store(&store, &source)?;
                 super::catalogue::load(&store)?;
                 validate(&store)
             })

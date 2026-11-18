@@ -62,7 +62,7 @@ async fn edition(
     let base = include_str!("../examples/specification/project.ttl")
         .replacen(
             "ga:url \"https://ekgf.org/\" ; ga:logo",
-            "ga:url \"https://ekgf.org/\" ; ga:unusedLogo",
+            "ga:url \"https://ekgf.org/\" ; <urn:example:unusedLogo>",
             1,
         )
         .replacen(
@@ -272,7 +272,7 @@ async fn invalid_and_removed_theme_values_fail_fast() -> Result<()> {
         ),
         (
             "ex:profile ga:style \"omg\" .".to_owned(),
-            "removed presentation style",
+            "ga:style",
         ),
         (
             "<urn:example:lonely> a ga:Theme ; ga:paper \"a4\" .\nex:profile \
@@ -281,8 +281,8 @@ async fn invalid_and_removed_theme_values_fail_fast() -> Result<()> {
             "must refine a GraphArch catalogue theme",
         ),
         (
-            house("ht:theme ga:pageColour \"#ffffff\" ."),
-            "unsupported token ga:pageColour",
+            house("ht:theme ga:order 1 ."),
+            "unsupported token ga:order",
         ),
     ] {
         let error = render(definitions).await.expect_err("invalid theme");
