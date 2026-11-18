@@ -20,11 +20,11 @@ FILES = ('Cargo.toml', 'Cargo.lock', 'npm/package.json',
 
 
 def git(*args):
-    return subprocess.check_output(['git', *args], text=True).strip()
+    return subprocess.check_output(['git', *args], text=True, encoding='utf-8').strip()
 
 
 def api(path):
-    return json.loads(subprocess.check_output(['gh', 'api', path], text=True))
+    return json.loads(subprocess.check_output(['gh', 'api', path], text=True, encoding='utf-8'))
 
 
 def eligible(run, jobs, repository):
@@ -114,7 +114,7 @@ def prepare(repository, run_id, output, bump):
     if marker in message.splitlines():
         # A retry resumes the same immutable reservation, never bumps again.
         subprocess.run(['git', 'checkout', '--detach', main], check=True)
-        version = tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+        version = tomllib.loads(Path('Cargo.toml').read_text(encoding='utf-8'))['package']['version']
         if git('rev-parse', f'v{version}^{{commit}}') != main:
             raise ValueError('release reservation tag differs from its commit')
         revision = main
@@ -123,16 +123,18 @@ def prepare(repository, run_id, output, bump):
         return
     else:
         subprocess.run(['git', 'checkout', '--detach', source], check=True)
-        current = tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+        current = tomllib.loads(Path('Cargo.toml').read_text(encoding='utf-8'))['package']['version']
         version = next_version(current, git('tag', '--list', 'v*').splitlines(), bump)
         manifest = Path('Cargo.toml')
-        manifest.write_text(manifest.read_text().replace(
-            f'version = "{current}"', f'version = "{version}"', 1))
+        manifest.write_text(manifest.read_text(encoding='utf-8').replace(
+            f'version = "{current}"', f'version = "{version}"', 1),
+            encoding='utf-8')
         lock = Path('Cargo.lock')
         old = f'name = "grapharch"\nversion = "{current}"'
-        if lock.read_text().count(old) != 1:
+        if lock.read_text(encoding='utf-8').count(old) != 1:
             raise ValueError('lockfile must identify exactly one source package')
-        lock.write_text(lock.read_text().replace(old, f'name = "grapharch"\nversion = "{version}"'))
+        lock.write_text(lock.read_text(encoding='utf-8').replace(old, f'name = "grapharch"\nversion = "{version}"'),
+                        encoding='utf-8')
         subprocess.run(['python3', '-B', 'packaging/distribute.py', 'sync-version'], check=True)
         changed = git('diff', '--name-only').splitlines()
         if set(changed) != set(FILES):
@@ -147,7 +149,7 @@ def prepare(repository, run_id, output, bump):
         # Atomic compare-and-swap rejects a racing main push without rewriting it.
         subprocess.run(['git', 'push', '--atomic', 'origin', 'HEAD:refs/heads/main',
                         f'refs/tags/v{version}'], check=True)
-    with output.open('a') as stream:
+    with output.open('a', encoding='utf-8') as stream:
         stream.write(f'revision={revision}\nsource={source}\nrun={run_id}\nversion={version}\nready=true\n')
 
 
@@ -162,15 +164,15 @@ def verify_release(repository, run_id, revision, source):
     if changed != set(FILES):
         raise ValueError('release differs from verified code beyond version metadata')
     old = tomllib.loads(git('show', f'{source}:Cargo.toml'))['package']['version']
-    new = tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+    new = tomllib.loads(Path('Cargo.toml').read_text(encoding='utf-8'))['package']['version']
     if new.split('.')[0] != old.split('.')[0] or tuple(map(int, new.split('.'))) <= tuple(map(int, old.split('.'))):
         raise ValueError('release cannot automatically change major or decrease version')
     # Compare metadata semantics too: arbitrary edits inside allowed files are forbidden.
     for name in FILES:
         before = git('show', f'{source}:{name}')
-        after = Path(name).read_text().strip()
+        after = Path(name).read_text(encoding='utf-8').strip()
         old = tomllib.loads(git('show', f'{source}:Cargo.toml'))['package']['version']
-        new = tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+        new = tomllib.loads(Path('Cargo.toml').read_text(encoding='utf-8'))['package']['version']
         if name == 'npm/package.json':
             a, b = json.loads(before), json.loads(after)
             a['version'] = new

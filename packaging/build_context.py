@@ -90,7 +90,7 @@ def main():
         raise ValueError('release build context requires source and full validation run together')
     context = (release_context(arguments.revision, arguments.verified_source, arguments.verified_run)
                if arguments.verified_run else BuildContext.current(arguments.revision))
-    with Path(os.environ['GITHUB_ENV']).open('a') as output:
+    with Path(os.environ['GITHUB_ENV']).open('a', encoding='utf-8') as output:
         output.write('GRAPHARCH_BUILD_CONTEXT=' + context.json() + '\n')
 
 
