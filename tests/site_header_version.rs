@@ -135,7 +135,7 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         .unwrap();
     assert!(
         footer.text().collect::<String>().contains(&format!(
-            "Grapharch {}",
+            "GraphArch {}",
             env!("GRAPHARCH_BUILD_LABEL")
         ))
     );

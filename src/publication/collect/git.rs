@@ -19,6 +19,7 @@ use {
 };
 
 mod blob;
+mod build_run;
 mod code;
 mod definitions;
 mod documentation;
@@ -65,6 +66,7 @@ struct Revision {
     tags:           Vec<String>,
     local_location: Option<String>,
     working_tree:   bool,
+    build_run:      Option<build_run::BuildRun>,
 }
 impl RepositoryScan {
     /// Project owning this scan's contributions.
@@ -95,6 +97,7 @@ impl Revision {
             },
             local_location: None,
             working_tree,
+            build_run: build_run::BuildRun::from_environment()?,
         })
     }
 

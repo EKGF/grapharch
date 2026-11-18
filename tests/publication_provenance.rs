@@ -15,14 +15,48 @@ const EVIDENCE: &str = r#"
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <urn:repo> a schema:SoftwareSourceCode ; schema:codeRepository <https://github.com/example/ontology> ; prov:hadMember <urn:commit:tip> ; schema:version "v1.1-preview" .
-<urn:commit:tip> a prov:Entity ; dct:identifier "0123456789abcdef0123456789abcdef01234567" ; prov:wasDerivedFrom <urn:repo> ; prov:wasRevisionOf <urn:commit:previous> ; prov:generatedAtTime "2026-10-30T10:20:30Z" ; prov:qualifiedAttribution <urn:attribution:tip> .
-<urn:attribution:tip> prov:agent <urn:person:tip> ; prov:hadRole <urn:grapharch:git-role:committer> .
-<urn:person:tip> foaf:name "Recent Committer" ; schema:email "private@example.org" .
-<urn:commit:previous> a prov:Entity ; dct:identifier "abcdef0123456789abcdef0123456789abcdef01" ; prov:generatedAtTime "2026-10-29T09:00:00Z" ; prov:qualifiedAttribution <urn:attribution:previous> .
-<urn:attribution:previous> prov:agent <urn:person:previous> ; prov:hadRole <urn:grapharch:git-role:committer> .
-<urn:person:previous> foaf:name "Earlier Committer" .
+<urn:commit:tip> a prov:Entity ; dct:identifier "0123456789abcdef0123456789abcdef01234567" ; prov:wasDerivedFrom <urn:repo> ; prov:wasRevisionOf <urn:commit:previous> ; prov:generatedAtTime "2026-10-30T10:20:30Z" ; dct:created "2026-10-30T09:15:00Z" ; prov:qualifiedAttribution <urn:attribution:tip>, <urn:attribution:tip-author> .
+<urn:attribution:tip> prov:agent <urn:person:forge> ; prov:hadRole <urn:grapharch:git-role:committer> .
+<urn:attribution:tip-author> prov:agent <urn:person:tip> ; prov:hadRole <urn:grapharch:git-role:author> .
+<urn:person:forge> foaf:name "GitHub" ; schema:email "noreply@github.com" .
+<urn:person:tip> foaf:name "Recent Author" ; schema:email "private@example.org" .
+<urn:commit:previous> a prov:Entity ; dct:identifier "abcdef0123456789abcdef0123456789abcdef01" ; prov:generatedAtTime "2026-10-29T09:00:00Z" ; dct:created "2026-10-29T08:00:00Z" ; prov:qualifiedAttribution <urn:attribution:previous>, <urn:attribution:previous-author> .
+<urn:attribution:previous> prov:agent <urn:person:forge> ; prov:hadRole <urn:grapharch:git-role:committer> .
+<urn:attribution:previous-author> prov:agent <urn:person:previous> ; prov:hadRole <urn:grapharch:git-role:author> .
+<urn:person:previous> foaf:name "Earlier Author" .
 <urn:release> a <http://usefulinc.com/ns/doap#Version> ; prov:wasDerivedFrom <urn:commit:tip> ; dct:title "Community preview" ; schema:url <https://github.com/example/ontology/releases/tag/v1.1-preview> .
 "#;
+
+const TIP: &str = "0123456789abcdef0123456789abcdef01234567";
+const PREVIOUS: &str = "abcdef0123456789abcdef0123456789abcdef01";
+const OPERATOR: &str = "<https://github.com/example/ontology/actions/runs/42/attempts/1> a <http://www.w3.org/ns/prov#Activity> ; <http://www.w3.org/2000/01/rdf-schema#label> \"Publish, run 42 attempt 1\" ; <http://www.w3.org/ns/prov#used> <urn:commit:tip> ; <http://www.w3.org/ns/prov#wasAssociatedWith> <urn:github-actions>, <https://github.com/octocat> . <urn:github-actions> <http://www.w3.org/2000/01/rdf-schema#label> \"GitHub Actions\" . <https://github.com/octocat> <http://www.w3.org/2000/01/rdf-schema#label> \"octocat\" .";
+
+fn select<'a>(
+    doc: &'a scraper::Html,
+    selector: &str,
+) -> Vec<scraper::ElementRef<'a>> {
+    doc.select(&scraper::Selector::parse(selector).unwrap())
+        .collect()
+}
+
+fn rows(doc: &scraper::Html) -> Vec<(String, String)> {
+    select(
+        doc,
+        "#document-provenance table.provenance-fields tr",
+    )
+    .into_iter()
+    .map(|row| {
+        let cell = |name| {
+            row.select(&scraper::Selector::parse(name).unwrap())
+                .next()
+                .unwrap()
+                .text()
+                .collect::<String>()
+        };
+        (cell("th"), cell("td"))
+    })
+    .collect()
+}
 
 async fn render(
     renderer: &str,
@@ -131,10 +165,11 @@ async fn provenance_is_a_linked_closing_appendix_from_restored_kg() -> Result<()
             .collect::<String>()
             .contains("B. Document provenance")
     );
+    assert!(html.contains("Recent Author") && html.contains("Earlier Author"));
     assert!(
-        html.contains("Recent Committer") && html.contains("Earlier Committer")
+        !section.text().collect::<String>().contains("GitHub"),
+        "merge/squash committers must not replace commit authors"
     );
-    assert!(html.contains("0123456789abcdef0123456789abcdef01234567"));
     assert!(
         html.contains("v1.1-preview") && html.contains("Community preview")
     );
@@ -144,9 +179,13 @@ async fn provenance_is_a_linked_closing_appendix_from_restored_kg() -> Result<()
             .await?;
     assert!(
         typst.contains("Document provenance") &&
-            typst.contains("Earlier Committer")
+            typst.contains("Earlier Author") &&
+            !typst.contains("\"GitHub\"")
     );
-    assert!(typst.contains(env!("GRAPHARCH_BUILD_LABEL")));
+    assert!(typst.contains(&format!(
+        "GraphArch {}",
+        env!("CARGO_PKG_VERSION")
+    )));
     if !env!("GRAPHARCH_BUILD_RUN_URL").is_empty() {
         for value in [
             env!("GRAPHARCH_BUILD_NUMBER"),
@@ -172,8 +211,15 @@ async fn non_git_sources_report_missing_git_evidence_honestly() -> Result<()> {
     assert!(html.contains(
         "No Git repository revision was recorded for these sources."
     ));
-    assert!(html.contains("Build operator was not recorded."));
-    assert!(!html.contains("Recent Committer"));
+    assert!(!html.contains("not recorded."));
+    let doc = scraper::Html::parse_document(&html);
+    assert!(
+        rows(&doc)
+            .iter()
+            .all(|(label, _)| label != "Build operator"),
+        "an unknown build operator is omitted, not described"
+    );
+    assert!(!html.contains("Recent Author"));
     assert!(!html.contains("https://example.org/not-a-build-source"));
     Ok(())
 }
@@ -190,7 +236,8 @@ async fn paginated_spec_links_to_its_shared_provenance_appendix() -> Result<()>
 #[tokio::test]
 #[ignore = "manual HTML/PDF visual review artifact"]
 async fn retain_provenance_review_document() -> Result<()> {
-    let (output, _) = render("SpecificationRenderer", EVIDENCE).await?;
+    let evidence = format!("{EVIDENCE}\n{OPERATOR}");
+    let (output, _) = render("SpecificationRenderer", &evidence).await?;
     println!(
         "Provenance review: {}",
         output.keep().join("specification").display()
@@ -201,7 +248,7 @@ async fn retain_provenance_review_document() -> Result<()> {
 #[tokio::test]
 async fn provenance_follows_quality_and_preserves_explicit_operator_and_local_state()
 -> Result<()> {
-    let evidence = format!("{EVIDENCE}\n<urn:repo> <http://www.w3.org/ns/prov#atLocation> <file:///example/local-clone/> .\n<urn:specification:target> <http://www.w3.org/ns/prov#wasGeneratedBy> <urn:build> . <urn:build> <http://www.w3.org/ns/prov#wasAssociatedWith> <urn:operator> . <urn:operator> <http://www.w3.org/2000/01/rdf-schema#label> \"Documentation CI\" .\n<urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> \"First\"@en, \"Second\"@en .");
+    let evidence = format!("{EVIDENCE}\n<urn:repo> <http://www.w3.org/ns/prov#atLocation> <file:///example/local-clone/> .\n{OPERATOR}\n<urn:specification:subject> <http://www.w3.org/2000/01/rdf-schema#label> \"First\"@en, \"Second\"@en .");
     let (_, html) = render("SpecificationRenderer", &evidence).await?;
     let document = scraper::Html::parse_document(&html);
     let provenance = document
@@ -211,8 +258,21 @@ async fn provenance_follows_quality_and_preserves_explicit_operator_and_local_st
         .text()
         .collect::<String>();
     assert!(provenance.contains("C. Document provenance"));
-    assert!(provenance.contains("Documentation CI"));
-    assert!(provenance.contains("uncommitted changes"));
+    let operator = rows(&document)
+        .into_iter()
+        .find(|(label, _)| label == "Build operator")
+        .expect("recorded build operator row")
+        .1;
+    assert_eq!(
+        operator,
+        "Publish, run 42 attempt 1 (GitHub Actions, octocat)"
+    );
+    assert!(!select(
+        &document,
+        "#document-provenance td a[href='https://github.com/example/ontology/actions/runs/42/attempts/1']"
+    )
+    .is_empty());
+    assert!(provenance.contains("may include uncommitted changes"));
     assert!(
         html.find("id=\"quality-issues\"").unwrap() <
             html.find("id=\"document-provenance\"").unwrap()
@@ -253,6 +313,107 @@ async fn provenance_accepts_sanitized_ssh_and_git_transport_origins()
         );
         let (_, html) = render("SpecificationRenderer", &evidence).await?;
         assert!(html.contains(origin));
+        let doc = scraper::Html::parse_document(&html);
+        assert!(
+            select(
+                &doc,
+                "#document-provenance .provenance-source a[href*='/commit/'], \
+                 #document-provenance .provenance-commits a[href*='/commit/']"
+            )
+            .is_empty(),
+            "only known forges get commit links"
+        );
+        assert!(html.contains(&format!("<code>{TIP}</code>")));
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn provenance_is_one_table_with_linked_short_commits_and_no_duplicates()
+-> Result<()> {
+    let (output, html) = render("SpecificationRenderer", EVIDENCE).await?;
+    let doc = scraper::Html::parse_document(&html);
+    let labels = rows(&doc)
+        .into_iter()
+        .map(|(label, _)| label)
+        .collect::<Vec<_>>();
+    let expected_head = if env!("GRAPHARCH_GENERATOR_REVISION").is_empty() {
+        vec!["Generator"]
+    } else {
+        vec!["Generator", "Generator commit"]
+    };
+    assert_eq!(labels[..expected_head.len()], expected_head[..]);
+    assert_eq!(labels[expected_head.len()..], [
+        "Repository",
+        "Source commit",
+        "Source state",
+        "Git tags",
+        "Release"
+    ]);
+    assert_eq!(
+        select(&doc, "#document-provenance table").len(),
+        1
+    );
+    let section = select(&doc, "#document-provenance")[0]
+        .text()
+        .collect::<String>();
+    assert!(!section.contains("Source repository"));
+    assert!(!section.contains("Grapharch") && !section.contains("Graparch"));
+    assert!(section.contains(&format!(
+        "GraphArch {}",
+        env!("CARGO_PKG_VERSION")
+    )));
+    for (sha, link) in [(TIP, "Source commit"), (PREVIOUS, "Recent commits")] {
+        let anchors = select(
+            &doc,
+            &format!(
+                "#document-provenance a[href='https://github.com/example/ontology/commit/{sha}']"
+            ),
+        );
+        assert!(!anchors.is_empty(), "{link} must link {sha}");
+        assert_eq!(
+            section.matches(&sha[..12]).count(),
+            1,
+            "{sha} must be shown exactly once"
+        );
+        assert!(
+            !section.contains(sha),
+            "full SHA is not shown as text"
+        );
+    }
+    let tip = select(
+        &doc,
+        &format!("#document-provenance td a[title='{TIP}'] code"),
+    );
+    assert_eq!(tip[0].text().collect::<String>(), &TIP[..12]);
+    let revision = env!("GRAPHARCH_GENERATOR_REVISION");
+    if !revision.is_empty() {
+        assert_eq!(
+            select(
+                &doc,
+                &format!(
+                    "#document-provenance a[href='https://github.com/EKGF/grapharch/commit/{revision}']"
+                )
+            )
+            .len(),
+            1
+        );
+        assert_eq!(section.matches(&revision[..12]).count(), 1);
+    }
+    assert_eq!(
+        section
+            .matches("https://github.com/example/ontology")
+            .count(),
+        1
+    );
+    let typst =
+        tokio::fs::read_to_string(output.path().join("specification/main.typ"))
+            .await?;
+    assert!(typst.contains(&format!(
+        "#link(\"https://github.com/example/ontology/commit/{PREVIOUS}\")[#raw(\"{}\")]",
+        &PREVIOUS[..12]
+    )));
+    assert!(typst.contains("#ga-table(columns: (auto, 1fr)"));
+    assert!(!typst.contains("Source repository"));
     Ok(())
 }

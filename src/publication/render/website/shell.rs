@@ -250,7 +250,7 @@ pub(super) fn render(
     };
     Ok(format!(
         r##"<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="GraphArch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body{body_attribute}{layout_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">{header_content}{primary_navigation}</header>
 <div class="{layout}">{navigation_panel}
