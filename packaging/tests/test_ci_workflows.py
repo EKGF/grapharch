@@ -7,6 +7,13 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class CandidateWorkflows(unittest.TestCase):
+    def test_release_workflows_read_text_as_utf8_on_windows_runners(self):
+        # Python on Windows decodes text with the locale codec; release metadata is UTF-8.
+        for name in ('distribute', 'automatic-release'):
+            workflow = (ROOT / f'.github/workflows/{name}.yml').read_text(encoding='utf-8')
+            self.assertRegex(workflow, r"(?m)^env:\n(?:  .*\n)*?  PYTHONUTF8: '1'\n", name)
+
+
     def test_only_candidate_workflow_automatically_builds_source(self):
         for name in ('pages', 'sparql-integration'):
             workflow = (ROOT / f'.github/workflows/{name}.yml').read_text()
