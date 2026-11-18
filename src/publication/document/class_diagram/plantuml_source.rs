@@ -206,11 +206,10 @@ impl<'a> PlantUmlSource<'a> {
             self.diagram,
             &self.identifiers,
         );
+        // Constraint rows follow the attributes. A PlantUML separator would
+        // be emitted inside the preceding member's link and break hit regions.
         self.output.push_str(&fields);
-        if !constraints.is_empty() {
-            self.output.push_str("  ..\n");
-            self.output.push_str(&constraints);
-        }
+        self.output.push_str(&constraints);
     }
 
     fn placeholder(&mut self) {

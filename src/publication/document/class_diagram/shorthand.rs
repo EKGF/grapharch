@@ -35,11 +35,24 @@ impl<'a> Shorthand<'a> {
         let mut associations = Vec::new(); // bounded: 81 pairs of eighteen facts.
         let mut consumed = BTreeSet::new(); // bounded: eighteen edge indices.
         let mut visited = BTreeSet::new(); // bounded: thirty-seven nodes.
+        let restrictions =
+            Self::notations(diagram, &diagram.edges, Scope::Focus);
+        let existences = super::nested_existence::collect(diagram);
+        // Facts drawn as restriction notation no longer tie a property to an
+        // explicit box, so its declarations can still become an edge.
+        let mut drawn = BTreeSet::new(); // bounded: eighteen edge indices.
+        for (restriction, _) in &restrictions {
+            drawn.extend(&restriction.consumed);
+        }
+        for existence in &existences {
+            drawn.extend(&existence.consumed);
+        }
         for node in diagram.nodes() {
             if !visited.insert(node.id.as_str()) {
                 continue;
             }
-            let Some(declaration) = Declaration::read(diagram, node) else {
+            let Some(declaration) = Declaration::read(diagram, node, &drawn)
+            else {
                 continue;
             };
             let Some(drawing) = declaration.drawing() else {
@@ -78,15 +91,7 @@ impl<'a> Shorthand<'a> {
                 },
             }
         }
-        let existences = super::nested_existence::collect(diagram);
-        for existence in &existences {
-            consumed.extend(&existence.consumed);
-        }
-        let restrictions =
-            Self::notations(diagram, &diagram.edges, Scope::Focus);
-        for (restriction, _) in &restrictions {
-            consumed.extend(&restriction.consumed);
-        }
+        consumed.extend(drawn);
         let neighbours = Self::notations(
             diagram,
             &diagram.context.restrictions,
@@ -161,7 +166,11 @@ impl<'a> Shorthand<'a> {
     ) -> bool {
         self.restrictions
             .iter()
-            .chain(&self.neighbours)
+            .chain(
+                // A neighbour's member never hides the association linking
+                // it to the documented class; only attributes are replaced.
+                self.neighbours.iter().filter(|_| target.is_empty()),
+            )
             .any(|(r, n)| {
                 r.class.id == class &&
                     r.property.id == property &&

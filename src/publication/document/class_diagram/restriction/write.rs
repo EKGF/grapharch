@@ -109,7 +109,8 @@ impl<'a> Prohibition<'a> {
         Self { property, filler }
     }
 
-    /// `{no p}` or `{no p in C}` in the class constraint compartment.
+    /// `{no p}` or `{no p in C}` as a class constraint row after the
+    /// attributes.
     pub fn line(&self, ids: &BTreeMap<&str, usize>) -> String {
         let text = match self.filler {
             Some(filler) => {

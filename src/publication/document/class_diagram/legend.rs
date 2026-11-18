@@ -28,9 +28,9 @@ pub(crate) const LEGEND: &str =
      convention: equal bounds show one number such as 1, an unconstrained \
      range shows *, and otherwise lower..upper such as 0..1 or 1..*. A \
      maximum or exact count of zero, in OWL or SHACL, is a prohibition rather \
-     than a multiplicity: it appears in the class constraint compartment as \
-     {no p}, or {no p in C} when only values in C are excluded. A zero \
-     minimum imposes no restriction and is omitted. {redefines} marks a \
+     than a multiplicity: it appears as a class constraint row after the \
+     attributes, {no p}, or {no p in C} when only values in C are excluded. A \
+     zero minimum imposes no restriction and is omitted. {redefines} marks a \
      restriction on a property whose declared domain is an asserted \
      superclass, redefining the inherited property of the same name. An \
      existential with a simple zero-minimum filler still requires a value; a \

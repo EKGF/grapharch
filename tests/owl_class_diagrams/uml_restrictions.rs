@@ -59,7 +59,7 @@ async fn null_value_max_zero_on_an_inherited_datatype_property_is_a_constraint()
     )
     .await?;
     assert!(
-        source.contains("  ..\n  {field} {no literal value}"),
+        source.contains("  {field} {no literal value} [["),
         "{source}"
     );
     assert_no_zero_multiplicity(&source);
@@ -302,5 +302,33 @@ async fn shacl_counts_follow_the_same_multiplicity_and_prohibition_rules()
     assert!(source.contains("{field} {no open}"), "{source}");
     assert!(!source.contains("[1..1]") && !source.contains("[0..*]"));
     assert_no_zero_multiplicity(source);
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_restricted_declared_property_is_one_association_not_a_box()
+-> Result<()> {
+    let body = diagram(&format!(
+        "{PRELUDE}ex:uses a owl:ObjectProperty ; rdfs:label \"uses\" ; \
+         rdfs:domain ex:Core ; rdfs:range ex:Target . ex:Core a owl:Class ; \
+         rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:uses ; \
+         owl:minCardinality 1 ] ."
+    ))
+    .await?;
+    let json: serde_json::Value = serde_json::from_str(
+        body.split("```grapharch-class-diagram\n")
+            .nth(1)
+            .unwrap()
+            .split("\n```")
+            .next()
+            .unwrap(),
+    )?;
+    let source = json["source"].as_str().unwrap();
+    assert!(
+        !source.contains("<<Object property>>"),
+        "{source}"
+    );
+    assert_eq!(source.matches(": uses").count(), 1, "{source}");
+    assert!(source.contains("\"1..*\" n"), "{source}");
     Ok(())
 }

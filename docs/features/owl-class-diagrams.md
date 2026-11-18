@@ -78,7 +78,7 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   inheritance is not executed as an ad hoc inference rule. `rdfs:Resource`
   itself never counts as a specific domain or range.
 - A property stays an explicit box only when it takes part in another
-  displayed relationship, such as an OWL restriction, or when nothing can own
+  displayed relationship, such as an explicit OWL expression box, or when nothing can own
   it: a datatype property without a domain, or a property with neither a
   specific domain nor a specific range. The retained documentation graph
   preserves every original assertion regardless of shorthand.
@@ -184,7 +184,7 @@ multiplicity would read as exactly one), and other ranges show
 A count of zero is not drawn as a `[0..0]` or `[0]` multiplicity. A member
 with an upper bound of zero would show a property the class cannot have, so
 the diagram states the prohibition instead, as a UML constraint in the
-class's constraint compartment below its attributes: `{no literal value}`.
+class box, on a constraint row after its attributes: `{no literal value}`.
 A qualified zero excludes only values in the filler, so it reads
 `{no start in Date}`: other values of the property remain possible. A SHACL
 `sh:maxCount 0` uses the same constraint.

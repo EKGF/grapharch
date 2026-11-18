@@ -92,12 +92,7 @@ ex:connects a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range ex:Target .
 #[tokio::test]
 async fn referenced_or_ownerless_properties_keep_explicit_assertions()
 -> Result<()> {
-    for source in [
-        "ex:p a owl:ObjectProperty ; rdfs:domain ex:Core ; rdfs:range \
-         ex:Target . ex:Core rdfs:subClassOf [ a owl:Restriction ; \
-         owl:onProperty ex:p ; owl:someValuesFrom ex:Target ] .",
-        "ex:p a owl:DatatypeProperty ; rdfs:range ex:Core .",
-    ] {
+    for source in ["ex:p a owl:DatatypeProperty ; rdfs:range ex:Core ."] {
         let body = diagram(&format!(
             "ex:Core a owl:Class . ex:Other a owl:Class . ex:Target a \
              owl:Class . {source}"

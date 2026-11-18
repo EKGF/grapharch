@@ -104,6 +104,7 @@ impl Context {
                 .properties
                 .push(Self::read_use(sources, class, property).await?);
         }
+        context.canonicalize(diagram);
         Ok(context)
     }
 
@@ -130,6 +131,18 @@ impl Context {
             _ => false,
         };
         Ok(PropertyUse { class, property, ranges, inherited })
+    }
+
+    /// Use the focus neighbourhood's node wherever the same resource appears,
+    /// so one identity never carries two different presentations.
+    fn canonicalize(&mut self, diagram: &Diagram) {
+        let known: BTreeMap<&str, &Node> =
+            diagram.nodes().map(|n| (n.id.as_str(), n)).collect(); // bounded: the selected diagram nodes.
+        for node in self.nodes_mut() {
+            if let Some(canonical) = known.get(node.id.as_str()) {
+                *node = (*canonical).clone();
+            }
+        }
     }
 
     /// Whether an asserted superclass chain reaches a declared domain.
@@ -185,7 +198,14 @@ impl Context {
                 if edges.len() + group.len() > RESTRICTION_FACTS {
                     return Ok(edges);
                 }
-                if !Restriction::collect(&group).is_empty() {
+                // A restriction already in the focus neighbourhood is drawn
+                // there; never describe one node twice.
+                let shared = group.iter().any(|edge| {
+                    diagram.nodes().any(|n| {
+                        n.kind == NodeKind::OwlExpression && n.id == edge.to.id
+                    })
+                });
+                if !shared && !Restriction::collect(&group).is_empty() {
                     edges.extend(group);
                 }
             }
