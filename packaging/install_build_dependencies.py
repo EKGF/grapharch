@@ -4,15 +4,15 @@ import subprocess
 import sys
 
 
-def install(*, apt=("sudo", "apt-get"), timeout=120):
+def install(*, apt=("sudo", "apt-get"), timeout=600):
     options = (
-        "-o", "Acquire::Retries=0",
-        "-o", "Acquire::http::Timeout=30",
-        "-o", "Acquire::https::Timeout=30",
+        "-o", "Acquire::Retries=5",
+        "-o", "Acquire::http::Timeout=60",
+        "-o", "Acquire::https::Timeout=60",
     )
     for operation in (
         ("update",),
-        ("install", "-y", "clang", "libclang-dev", "pkg-config", "libssl-dev"),
+        ("install", "-y", "--no-install-recommends", "clang", "libclang-dev", "pkg-config", "libssl-dev"),
     ):
         subprocess.run([*apt, *options, *operation], check=True, timeout=timeout)
 
