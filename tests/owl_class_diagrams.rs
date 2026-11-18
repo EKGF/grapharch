@@ -120,7 +120,7 @@ ex:Core a owl:Class ; rdfs:subClassOf ex:Other, [ a owl:Restriction ; owl:onProp
 ex:Other a owl:Class ; rdfs:subClassOf ex:Core .
 "#).await?;
     assert!(body.contains("owl:someValuesFrom"));
-    assert!(body.contains("Anonymous OWL expression"));
+    assert!(body.contains("Anonymous OWL restriction"));
     let source = "ex:Core a owl:Class .\n".to_owned() +
         &(0..30)
             .map(|i| {
@@ -291,8 +291,8 @@ ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p 
 async fn different_anonymous_restrictions_have_distinguishable_captions()
 -> Result<()> {
     let body = diagram(r#"ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:someValuesFrom ex:A ], [ a owl:Restriction ; owl:onProperty ex:q ; owl:someValuesFrom ex:B ] ."#).await?;
-    assert!(body.contains("Anonymous OWL expression 1"));
-    assert!(body.contains("Anonymous OWL expression 2"));
+    assert!(body.contains("Anonymous OWL restriction 1"));
+    assert!(body.contains("Anonymous OWL restriction 2"));
     Ok(())
 }
 
@@ -568,3 +568,6 @@ mod property_edges;
 
 #[path = "owl_class_diagrams/ontology_labels.rs"]
 mod ontology_labels;
+
+#[path = "owl_class_diagrams/uml_restrictions.rs"]
+mod uml_restrictions;

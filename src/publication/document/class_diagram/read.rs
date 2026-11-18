@@ -150,16 +150,7 @@ BIND(?s AS ?group)
         }
         let target = match &o {
             Term::NamedNode(to) => nodes[to].clone(),
-            Term::Literal(value) => {
-                Node {
-                    id:       value.to_string(),
-                    label:    value.value().into(),
-                    kind:     NodeKind::LiteralValue,
-                    link:     None,
-                    imported: false,
-                    datatype: false,
-                }
-            },
+            Term::Literal(value) => Node::literal(value),
             _ => anyhow::bail!("unsupported diagram endpoint"),
         };
         groups[group].push(Edge {
@@ -200,6 +191,7 @@ BIND(?s AS ?group)
         edges,
         shapes: Vec::new(),
         limited: overflow,
+        context: super::context::Context::default(),
     };
     for node in diagram.nodes_mut() {
         if unions.contains(&node.id) {
@@ -210,6 +202,18 @@ BIND(?s AS ?group)
         &diagram, dataset, view, metadata, prefixes, documented,
     )
     .await?;
+    diagram.context = super::context::Context::read(
+        &diagram,
+        &super::context_read::Sources {
+            dataset,
+            assertions: view,
+            metadata,
+            prefixes,
+            documented,
+        },
+    )
+    .await?;
+    super::expression_label::apply(&mut diagram);
     super::display::apply(&mut diagram, metadata, views.language).await?;
     let projection = Projection::generate(diagram, renderer).await?;
     write(body, projection)?;
@@ -310,7 +314,10 @@ pub(super) async fn node(
         datatype,
     })
 }
-fn compact(iri: &str, prefixes: &BTreeMap<String, String>) -> String {
+pub(super) fn compact(
+    iri: &str,
+    prefixes: &BTreeMap<String, String>,
+) -> String {
     prefixes
         .iter()
         .filter_map(|(ns, prefix)| {

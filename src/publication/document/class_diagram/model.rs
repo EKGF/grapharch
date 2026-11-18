@@ -1,6 +1,6 @@
 //! The bounded semantic input of one class diagram.
 use {
-    super::{NodeKind, constraints},
+    super::{NodeKind, constraints, context::Context},
     anyhow::{Result, ensure},
     serde::{Deserialize, Serialize},
 };
@@ -40,6 +40,47 @@ pub(crate) struct Diagram {
     pub shapes:  Vec<constraints::Shape>,
     #[serde(default)]
     pub limited: bool,
+    #[serde(default, skip_serializing_if = "Context::is_empty")]
+    pub context: Context,
+}
+impl Node {
+    /// A literal value endpoint, identified by its typed RDF form.
+    pub fn literal(value: &oxrdf::Literal) -> Node {
+        Node {
+            id:       value.to_string(),
+            label:    value.value().into(),
+            kind:     NodeKind::LiteralValue,
+            link:     None,
+            imported: false,
+            datatype: false,
+        }
+    }
+}
+impl Node {
+    /// A non-negative OWL count, parsed from the original typed RDF value
+    /// and never from its presentation label.
+    pub fn count(&self) -> Option<u64> {
+        if self.kind != NodeKind::LiteralValue {
+            return None;
+        }
+        let literal = self.id.parse::<oxrdf::Literal>().ok()?;
+        if !matches!(
+            literal.datatype().as_str(),
+            "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" |
+                "http://www.w3.org/2001/XMLSchema#integer"
+        ) {
+            return None;
+        }
+        literal.value().parse().ok()
+    }
+
+    /// The name of a datatype or class used as a member type.
+    pub fn type_label(&self) -> String {
+        self.id
+            .strip_prefix("http://www.w3.org/2001/XMLSchema#")
+            .map(|name| format!("xsd:{name}"))
+            .unwrap_or_else(|| self.label.clone())
+    }
 }
 impl Edge {
     pub fn declares_domain(&self) -> bool {
@@ -71,6 +112,7 @@ impl Diagram {
                     128,
             "class diagram shape budget exceeded"
         );
+        diagram.context.validate()?;
         let mut identities = std::collections::BTreeMap::new(); // bounded: at most thirty-seven nodes.
         for node in diagram.nodes() {
             if let Some(previous) = identities.insert(&node.id, node) {
@@ -104,11 +146,13 @@ impl Diagram {
         std::iter::once(&self.focus)
             .chain(self.edges.iter().flat_map(|e| [&e.from, &e.to]))
             .chain(self.shapes.iter().flat_map(|s| s.nodes()))
+            .chain(self.context.nodes())
     }
 
     pub fn nodes_mut(&mut self) -> impl Iterator<Item = &mut Node> {
         std::iter::once(&mut self.focus)
             .chain(self.edges.iter_mut().flat_map(|e| [&mut e.from, &mut e.to]))
             .chain(self.shapes.iter_mut().flat_map(|s| s.nodes_mut()))
+            .chain(self.context.nodes_mut())
     }
 }

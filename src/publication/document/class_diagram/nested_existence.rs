@@ -5,26 +5,23 @@ use {
         Node,
         NodeKind,
         escape::Escaped,
-        qualified_count::{
-            MINIMUM,
-            ON_CLASS,
-            ON_PROPERTY,
-            QualifiedCount,
-            SUBCLASS,
-            count_value,
-        },
+        restriction::{Notation, Restriction},
     },
     std::collections::BTreeMap,
 };
 const SOME: &str = "http://www.w3.org/2002/07/owl#someValuesFrom";
+const SUBCLASS: &str = "http://www.w3.org/2000/01/rdf-schema#subClassOf";
+const ON_PROPERTY: &str = "http://www.w3.org/2002/07/owl#onProperty";
+const ON_CLASS: &str = "http://www.w3.org/2002/07/owl#onClass";
+const MINIMUM: &str = "http://www.w3.org/2002/07/owl#minQualifiedCardinality";
 pub(super) struct Existence<'a> {
     pub class:    &'a Node,
     property:     &'a Node,
     pub consumed: Vec<usize>,
 }
 impl Existence<'_> {
-    pub fn covered(&self, counts: &[QualifiedCount<'_>]) -> bool {
-        counts.iter().any(|count| {
+    pub fn covered(&self, counts: &[(Restriction<'_>, Notation<'_>)]) -> bool {
+        counts.iter().any(|(count, _)| {
             count.class.id == self.class.id &&
                 count.property.id == self.property.id &&
                 count.guarantees_existence()
@@ -35,7 +32,7 @@ impl Existence<'_> {
         &self,
         output: &mut String,
         identifiers: &BTreeMap<&str, usize>,
-        counts: &[QualifiedCount<'_>],
+        counts: &[(Restriction<'_>, Notation<'_>)],
     ) {
         if !self.covered(counts) {
             output.push_str(&format!(
@@ -119,7 +116,7 @@ pub(super) fn collect(diagram: &Diagram) -> Vec<Existence<'_>> {
             ) || !matches!(
                 target(ON_CLASS)?.kind,
                 NodeKind::Class | NodeKind::Resource
-            ) || count_value(target(MINIMUM)?)? != 0
+            ) || target(MINIMUM)?.count()? != 0
             {
                 return None;
             }

@@ -86,39 +86,26 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   guillemets and other PlantUML syntax characters in labels are passed to the
   layout engine as numeric character references, so a label can never become
   a stereotype, template parameter, link or markup.
-- A simple anonymous subclass restriction with one named `owl:onProperty` and
-  one named `owl:someValuesFrom` becomes a class-scoped association when the
-  property is declared as an object property, or an undeclared/RDF predicate
-  has an explicitly collected class filler. The association uses the property
-  label, target-end `1..*`, and `{qualified}`. This does not mean every property
-  value belongs to that filler or declare a global range. No property
-  declaration is invented and no import is fetched. Universal restrictions,
-  undeclared predicates with unknown fillers, datatype predicates, inverse
-  paths, complex fillers and additional qualifiers stay explicit.
-- A simple direct subclass restriction with a named `owl:onProperty`, named
-  `owl:onClass`, and `owl:minQualifiedCardinality`, `owl:qualifiedCardinality`,
-  or `owl:maxQualifiedCardinality` becomes an association with `n..*`, exact `n`,
-  or `0..n`, respectively, at the target end and `{qualified}` beside the
-  property label. Only
-  values belonging to that target class count; other property values are not
-  excluded. A zero qualified minimum imposes no restriction and is omitted from
-  the drawing. A maximum of zero is shown as `0..0`: values in the named target
-  class are prohibited, while other property values remain possible. A maximum
-  never guarantees existence. Exact zero counts, inverse properties, boolean
-  expressions, malformed counts and restrictions with extra constraints stay
-  explicit. A positive exact qualified count does not make the property globally
-  functional: values outside the named class remain possible.
+- OWL class restrictions use UML notation instead of an expression box. This
+  covers every direct `rdfs:subClassOf` restriction of the documented class
+  whose node has exactly one named `owl:onProperty` and one recognised form,
+  and the same restrictions on neighbouring classes shown in the diagram. The
+  notation is scoped to the restricted class: it never declares a global
+  range or count, and no property declaration is invented or import fetched.
+  The mapping is in [Restriction notation](#restriction-notation) below.
+- Other direct restrictions retain their `owl:onProperty`, value constraints,
+  and cardinalities as explicit relationships: boolean class expressions
+  (`owl:intersectionOf`, `owl:unionOf`, `owl:complementOf`), enumerations,
+  nested restrictions, inverse properties, property chains, complex fillers,
+  malformed counts and restrictions with additional predicates. Each explicit
+  box is named after its form and numbered within the neighbourhood, such as
+  "Anonymous OWL intersection 1" or "Anonymous OWL restriction 2". Union and
+  intersection RDF lists are expanded into labeled member relationships.
 - An outer existential whose filler is a simple zero qualified minimum still
   requires a value. GraphArch inspects one additional restriction level within
   the same bounded relationship group, and shows a linked `[1..*]` member. If
-  the same class has a positive qualified minimum or exact count on that property,
-  that count already guarantees existence, so the duplicate member is omitted.
-  Different properties, additional filler constraints and other nested forms
-  are not simplified. Original statements remain in source details and the graph.
-- Other direct restrictions retain their `owl:onProperty`, value constraints,
-  and cardinalities as explicit relationships. Union and intersection RDF lists
-  are expanded into labeled member relationships. Anonymous expressions have
-  distinct identities and numbered captions within the class neighborhood.
+  the same class has a positive minimum or exact count on that property, that
+  count already guarantees existence, so the duplicate member is omitted.
 - Simple authored SHACL property constraints enrich the same UML attributes and
   association multiplicities. They remain validation constraints rather than OWL
   entailments. Conflicting qualifiers are omitted from the drawing, not silently
@@ -169,19 +156,49 @@ The renderer runs with PlantUML’s sandbox security profile.
 This automatic feature is independent of [authored PlantUML diagrams](../collectors/plantuml.md),
 which remain supported by the dedicated collector and documentor.
 
-Datatype-qualified restrictions with a named `owl:onDataRange` use a class
-field, for example `has time value : xsd:string [1] {qualified}`. The count
-applies only to values in that datatype on instances of the restricted class;
-it neither declares a global range nor excludes other values. Minimum and
-maximum counts use `[n..*]` and `[0..n]`; minimum zero is omitted, maximum zero
-remains a prohibition. Complex datatype expressions remain explicit.
+## Restriction notation
 
-| Named restriction filler | Minimum | Exact positive | Maximum, including zero | Complex filler |
-| --- | --- | --- | --- | --- |
-| `owl:onClass` | Target `n..*`; zero omitted | Target `n` | Target `0..n` | Explicit expression |
-| `owl:onDataRange` | Field `[n..*]`; zero omitted | Field `[n]` | Field `[0..n]` | Explicit expression |
+In the table, `p` is the restricted property, `C` a named filler class, `D` a
+named datatype, and `m` the multiplicity. Datatype properties, and data
+fillers, use attributes of the restricted class; object properties use
+associations from the restricted class to the filler class, with `m` at the
+target end. A neighbouring class draws its own restrictions as attributes
+only, typed by the filler, so the neighbourhood does not grow new boxes.
 
-Exact zero currently remains explicit. Data counts concern distinct data values,
-not the number of lexical spellings of a literal. The original predicates,
-values and source links remain retained in either presentation.
+| OWL restriction | Datatype values | Individuals |
+| --- | --- | --- |
+| `owl:minCardinality`, `owl:cardinality`, `owl:maxCardinality` | `p : range [m]` with the declared property range | association to the single declared class range, otherwise `p [m]` |
+| `owl:minQualifiedCardinality`, `owl:qualifiedCardinality`, `owl:maxQualifiedCardinality` with `owl:onDataRange` or `owl:onClass` | `p : D [m] {qualified}` | association `m` to `C`, `{qualified}` |
+| `owl:someValuesFrom` | `p : D [1..*] {qualified}` | association `1..*` to `C`, `{qualified}` |
+| `owl:allValuesFrom` | `p : D {all values}` | association `*` to `C`, `{all values}` |
+| `owl:hasValue` | `p {= value}` | association to the individual, `{= value}` |
+| maximum or exact count of zero | class constraint `{no p}` | class constraint `{no p}`, or `{no p in C}` when qualified |
+| minimum of zero | omitted: it imposes nothing | omitted |
 
+Multiplicities follow one UML convention everywhere, including SHACL counts:
+equal bounds show one number (`1`, never `1..1`), an unconstrained range
+shows `*` (never `0..*`, and never omitted, because an attribute without a
+multiplicity would read as exactly one), and other ranges show
+`lower..upper` (`0..1`, `2..*`).
+
+A count of zero is not drawn as a `[0..0]` or `[0]` multiplicity. A member
+with an upper bound of zero would show a property the class cannot have, so
+the diagram states the prohibition instead, as a UML constraint in the
+class's constraint compartment below its attributes: `{no literal value}`.
+A qualified zero excludes only values in the filler, so it reads
+`{no start in Date}`: other values of the property remain possible. A SHACL
+`sh:maxCount 0` uses the same constraint.
+
+When the restricted class is not a declared domain of the property but an
+asserted superclass is, the property is inherited and the restriction
+narrows it on the subclass. The member or association then adds
+`{redefines}`, meaning it redefines the inherited property of the same name.
+For example, `ekg-raw:NullValue` is a subclass of `ekg-raw:Value`, the domain
+of `ekg-raw:literalValue`, and has
+`rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ekg-raw:literalValue ;
+owl:maxCardinality 0 ]`; its box shows the constraint `{no Literal value}`
+with no expression box, literal box or property box.
+
+Data counts concern distinct data values, not the number of lexical spellings
+of a literal. The original predicates, values and source links remain
+retained in the published graph whichever notation is drawn.

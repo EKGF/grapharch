@@ -14,33 +14,41 @@ pub(crate) const LEGEND: &str =
      as one source box whose class alternatives are joined by or. A dotted \
      rdfs:Resource source box is a presentation placeholder when no specific \
      domain is declared in the selected inputs, not an asserted domain or a \
-     claim that none can be entailed. Simple existential subclass \
-     restrictions use a class-scoped association with target-end 1..* and \
-     {qualified}, meaning at least one value in the named filler class; this \
-     does not constrain all property values or declare a global range. \
-     Datatype-qualified restrictions appear as class fields with the declared \
-     datatype and bracketed count of distinct data values; they do not \
-     declare a global property range. Qualified cardinality associations show \
-     n..* for minima, n for exact counts, or 0..n for maxima at the named \
-     target with {qualified}: only values in that target class count, and \
-     other property values are not excluded. A zero maximum prohibits values \
-     in that named target class; it is never omitted. A simple zero qualified \
-     minimum imposes no restriction and is omitted visually. An existential \
-     with a simple zero-minimum filler still requires a value; a positive \
-     qualified minimum or exact count on the same class and property already \
-     guarantees that existence. Unsupported anonymous OWL expressions remain \
-     explicit. Types and counts from simple property shapes enrich the UML \
-     notation. Identical qualifiers are shown once; where declaring shapes \
-     disagree, the disputed type or multiplicity is omitted from the drawing \
-     and remains in the dedicated shape documentation. No shape is chosen \
-     arbitrarily and conflicting counts are not silently intersected. An \
-     absent count imposes no lower or upper bound beyond zero or unbounded, \
-     respectively. Complex constraints require the linked full shape \
-     definition. Original OWL facts and shape provenance remain in the \
-     published source graph. Some diagrams show at most five complete OWL \
-     relationship groups within an eighteen-fact budget, selected in \
-     deterministic IRI order; omitted groups remain in the published source \
-     graph. These views are not exhaustive. Names from the same ontology as \
-     the documented class are shown by label; names from another ontology add \
-     their prefixed name in parentheses, and unlabelled names show their \
-     prefixed name.";
+     claim that none can be entailed. OWL class restrictions on the \
+     documented class and on neighbouring classes use UML notation instead of \
+     expression boxes, scoped to the restricted class and never declaring a \
+     global range or count. A datatype restriction is an attribute, name : \
+     type [multiplicity]; an object restriction is an association to its \
+     filler class with the multiplicity at the target end (a neighbouring \
+     class shows it as a typed attribute instead). An unqualified count uses \
+     the declared property range. someValuesFrom gives 1..* {qualified}; \
+     allValuesFrom gives * {all values}, narrowing the value type; a \
+     qualified count counts only values in the named filler and adds \
+     {qualified}; hasValue adds {= value}. Multiplicities follow one \
+     convention: equal bounds show one number such as 1, an unconstrained \
+     range shows *, and otherwise lower..upper such as 0..1 or 1..*. A \
+     maximum or exact count of zero, in OWL or SHACL, is a prohibition rather \
+     than a multiplicity: it appears in the class constraint compartment as \
+     {no p}, or {no p in C} when only values in C are excluded. A zero \
+     minimum imposes no restriction and is omitted. {redefines} marks a \
+     restriction on a property whose declared domain is an asserted \
+     superclass, redefining the inherited property of the same name. An \
+     existential with a simple zero-minimum filler still requires a value; a \
+     positive count on the same class and property already guarantees that \
+     existence. Boolean class expressions, nested restrictions, inverse \
+     properties and property chains remain explicit boxes named after their \
+     form, such as Anonymous OWL intersection 1. Types and counts from simple \
+     property shapes enrich the UML notation. Identical qualifiers are shown \
+     once; where declaring shapes disagree, the disputed type or multiplicity \
+     is omitted from the drawing and remains in the dedicated shape \
+     documentation. No shape is chosen arbitrarily and conflicting counts are \
+     not silently intersected. An absent count imposes no lower or upper \
+     bound beyond zero or unbounded, respectively. Complex constraints \
+     require the linked full shape definition. Original OWL facts and shape \
+     provenance remain in the published source graph. Some diagrams show at \
+     most five complete OWL relationship groups within an eighteen-fact \
+     budget, selected in deterministic IRI order; omitted groups remain in \
+     the published source graph. These views are not exhaustive. Names from \
+     the same ontology as the documented class are shown by label; names from \
+     another ontology add their prefixed name in parentheses, and unlabelled \
+     names show their prefixed name.";

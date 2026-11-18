@@ -93,7 +93,7 @@ ex:B a sh:NodeShape ; sh:targetClass ex:Core ; sh:property
         .lines()
         .find(|line| line.contains("{field} ex:name"))
         .unwrap();
-    assert!(name.contains("string [1..1]"));
+    assert!(name.contains("string [1] "));
     let ambiguous = source
         .lines()
         .find(|line| line.contains("{field} ex:ambiguous"))
@@ -108,13 +108,7 @@ ex:B a sh:NodeShape ; sh:targetClass ex:Core ; sh:property
         .lines()
         .find(|line| line.contains(" : ") && line.contains("parent"))
         .unwrap();
-    assert!(
-        association
-            .split(" : ")
-            .next()
-            .unwrap()
-            .contains("\"1..1\"")
-    );
+    assert!(association.split(" : ").next().unwrap().contains("\"1\""));
     assert_eq!(
         value["diagram"]["shapes"].as_array().unwrap().len(),
         2
