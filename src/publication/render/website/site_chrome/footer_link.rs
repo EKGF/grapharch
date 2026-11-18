@@ -2,6 +2,7 @@
 use {
     super::super::{
         super::{markup::html_escape as esc, model::Plan},
+        site_base::SiteBases,
         site_link::{NAVIGATION_SCHEMES, SiteLink},
     },
     anyhow::{Result, ensure},
@@ -17,7 +18,11 @@ pub(super) struct FooterLink {
 }
 
 impl FooterLink {
-    pub async fn read(plan: &Plan, link: &Term) -> Result<Self> {
+    pub async fn read(
+        plan: &Plan,
+        link: &Term,
+        bases: &SiteBases,
+    ) -> Result<Self> {
         let Term::NamedNode(link) = link else {
             anyhow::bail!("footer link must be an identified resource")
         };
@@ -26,6 +31,7 @@ impl FooterLink {
             &plan.source.text(link, "url").await?,
             NAVIGATION_SCHEMES,
             "footer link",
+            bases,
         )?;
         Ok(Self {
             order: order(plan, link, "footer link").await?,

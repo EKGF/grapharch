@@ -341,6 +341,7 @@ impl Entry {
                     &value,
                     NAVIGATION_SCHEMES,
                     "navigation",
+                    &catalog.bases,
                 )?)
             } else {
                 None

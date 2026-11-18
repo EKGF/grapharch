@@ -487,6 +487,7 @@ ga:thisVersion a owl:ObjectProperty ;
     rdfs:label "This published document version"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Identifies the public location of the particular document version described by the publication metadata."@en ;
+    skos:scopeNote "On a website target the value is an HTTP(S) directory URL and is metadata only: canonical and Open Graph URLs and the sitemap. A link in the website to a URL beneath its ga:thisVersion or ga:latestVersion renders relative to the linking page, so every deployment, preview or mirror links its own pages."@en ;
     dct:description "Identifies the public location of the particular document version described by the publication metadata."@en ;
     rdfs:domain ga:Target ;
     rdfs:range rdfs:Resource .
@@ -495,6 +496,7 @@ ga:latestVersion a owl:ObjectProperty ;
     rdfs:label "Latest published document version"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Identifies the public location of the latest published version of a document."@en ;
+    skos:scopeNote "On a website target the value is an HTTP(S) directory URL and is metadata only: canonical and Open Graph URLs and the sitemap. A link in the website to a URL beneath its ga:thisVersion or ga:latestVersion renders relative to the linking page, so every deployment, preview or mirror links its own pages."@en ;
     dct:description "Identifies the public location of the latest published version of a document."@en ;
     rdfs:domain ga:Target ;
     rdfs:range rdfs:Resource .

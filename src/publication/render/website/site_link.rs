@@ -5,6 +5,7 @@
 //! follows the hosting mount without naming it. Host-relative paths would name
 //! the mount and are rejected, as are targets that could leave the website.
 use {
+    super::site_base::SiteBases,
     crate::publication::href::Href,
     anyhow::{Context, Result, bail, ensure},
 };
@@ -38,7 +39,14 @@ impl SiteLink {
     }
 
     /// Validates an authored target of a link `kind` permitting `schemes`.
-    pub fn authored(value: &str, schemes: &[&str], kind: &str) -> Result<Self> {
+    /// An absolute URL beneath one of the website's own `bases` is a page of
+    /// this website and renders relative to the linking page.
+    pub fn authored(
+        value: &str,
+        schemes: &[&str],
+        kind: &str,
+        bases: &SiteBases,
+    ) -> Result<Self> {
         ensure!(
             !value.is_empty() && !value.chars().any(char::is_control),
             "{kind} URL is empty or contains control characters"
@@ -53,6 +61,17 @@ impl SiteLink {
                      website root",
                     schemes.join(", ")
                 );
+                if let Some(local) = bases.localize(&url) {
+                    if local.is_empty() {
+                        return Ok(Self::page(local));
+                    }
+                    return Self::authored(
+                        &local,
+                        schemes,
+                        kind,
+                        &SiteBases::default(),
+                    );
+                }
                 Placement::Absolute
             },
             Href::Fragment => Placement::Fragment,
@@ -84,6 +103,9 @@ impl SiteLink {
     /// The `href` from a page whose path to the website root is `prefix`.
     pub fn href(&self, prefix: &str) -> String {
         match self.placement {
+            Placement::Root if prefix.is_empty() && self.target.is_empty() => {
+                "./".into()
+            },
             Placement::Root => format!("{prefix}{}", self.target),
             Placement::Absolute | Placement::Fragment => self.target.clone(),
         }
@@ -92,7 +114,37 @@ impl SiteLink {
 
 #[cfg(test)]
 mod tests {
-    use super::{HEADER_SCHEMES, NAVIGATION_SCHEMES, SiteLink};
+    use super::{HEADER_SCHEMES, NAVIGATION_SCHEMES, SiteBases, SiteLink};
+
+    #[test]
+    fn links_beneath_the_website_location_render_relative() {
+        let bases =
+            SiteBases::try_new(&["https://example.org/project/"]).unwrap();
+        for (value, href) in [
+            (
+                "https://example.org/project/versions/",
+                "../versions/",
+            ),
+            (
+                "https://example.org/project/spec/#shape",
+                "../spec/#shape",
+            ),
+            ("https://example.org/project/", "../"),
+            (
+                "https://example.org/about/",
+                "https://example.org/about/",
+            ),
+        ] {
+            let link = SiteLink::authored(
+                value,
+                NAVIGATION_SCHEMES,
+                "navigation",
+                &bases,
+            )
+            .unwrap_or_else(|error| panic!("{value}: {error:#}"));
+            assert_eq!(link.href("../"), href, "{value}");
+        }
+    }
 
     #[test]
     fn relative_targets_render_behind_the_page_root_prefix() {
@@ -110,9 +162,13 @@ mod tests {
                 "mailto:team@example.org",
             ),
         ] {
-            let link =
-                SiteLink::authored(value, NAVIGATION_SCHEMES, "navigation")
-                    .unwrap_or_else(|error| panic!("{value}: {error:#}"));
+            let link = SiteLink::authored(
+                value,
+                NAVIGATION_SCHEMES,
+                "navigation",
+                &SiteBases::default(),
+            )
+            .unwrap_or_else(|error| panic!("{value}: {error:#}"));
             assert_eq!(link.href("../../"), href, "{value}");
         }
         assert_eq!(
@@ -139,8 +195,13 @@ mod tests {
             "spec/\nmain/",
         ] {
             assert!(
-                SiteLink::authored(value, NAVIGATION_SCHEMES, "navigation")
-                    .is_err(),
+                SiteLink::authored(
+                    value,
+                    NAVIGATION_SCHEMES,
+                    "navigation",
+                    &SiteBases::default(),
+                )
+                .is_err(),
                 "accepted {value:?}"
             );
         }
@@ -148,7 +209,8 @@ mod tests {
             SiteLink::authored(
                 "mailto:team@example.org",
                 HEADER_SCHEMES,
-                "header link"
+                "header link",
+                &SiteBases::default(),
             )
             .is_err()
         );

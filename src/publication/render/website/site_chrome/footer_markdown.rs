@@ -3,6 +3,7 @@
 use {
     super::super::{
         super::markup::html_escape as esc,
+        site_base::SiteBases,
         site_link::{NAVIGATION_SCHEMES, SiteLink},
     },
     anyhow::{Result, bail, ensure},
@@ -10,10 +11,13 @@ use {
 };
 
 /// Validated inline Markdown, rendered per page so links follow its prefix.
-pub(super) struct FooterText(String);
+pub(super) struct FooterText {
+    source: String,
+    bases:  SiteBases,
+}
 
 impl FooterText {
-    pub fn try_new(source: String) -> Result<Self> {
+    pub fn try_new(source: String, bases: &SiteBases) -> Result<Self> {
         ensure!(
             !source.trim().is_empty(),
             "footer text must not be empty"
@@ -22,7 +26,7 @@ impl FooterText {
             source.len() <= 2048,
             "footer text exceeds 2048 bytes"
         );
-        let text = Self(source);
+        let text = Self { source, bases: bases.clone() };
         text.html("")?;
         Ok(text)
     }
@@ -30,7 +34,7 @@ impl FooterText {
     pub fn html(&self, prefix: &str) -> Result<String> {
         let mut html = String::new();
         let mut paragraphs = 0usize;
-        for event in Parser::new(&self.0) {
+        for event in Parser::new(&self.source) {
             match event {
                 Event::Start(Tag::Paragraph) => {
                     paragraphs += 1;
@@ -54,6 +58,7 @@ impl FooterText {
                         &dest_url,
                         NAVIGATION_SCHEMES,
                         "footer text link",
+                        &self.bases,
                     )?;
                     html.push_str(&format!(
                         "<a href=\"{}\">",

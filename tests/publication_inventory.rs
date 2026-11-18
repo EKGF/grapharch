@@ -14,7 +14,10 @@ async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
         source.path().join("index.md"),
         "---\ntitle: Project\npermalink: /\ngrapharch:\n  subject: \
          urn:home\n---\n# Project\n\n[Specification \
-         versions](spec-versions.md) [All versions](urn:versions-page)\n",
+         versions](spec-versions.md) [All versions](urn:versions-page) \
+         [Versions again](https://example.org/dprod/spec-versions/) \
+         [Concept](https://example.org/dprod/spec/#shape) \
+         [Elsewhere](https://example.org/about/)\n",
     )
     .await?;
     let definitions = source.path().join("project.ttl");
@@ -25,7 +28,7 @@ async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 <urn:project> a ga:Project; dct:title "Project"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:theme ga:EkgfProjectTheme .
-<urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
+<urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site"; ga:thisVersion <https://example.org/dprod/> .
 <urn:inventory-job> a ga:DocumentorUse; ga:project <urn:project>; ga:documentorType ga:PublicationInventoryDocumentor; ga:subject <urn:inventory>; ga:fragment <urn:versions-page>; ga:route "spec-versions/"; ga:sourcePath "spec-versions.md"; ga:navigationOrder 6; dct:title "Specification versions" .
 <urn:inventory> dct:modified "2026-11-02T15:00:00Z"; dct:hasPart <urn:main>,<urn:develop>,<urn:preview>,<urn:hidden> .
 <urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; ga:route "/dprod/spec/main/"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true .
@@ -89,7 +92,7 @@ async fn publication_inventory_is_a_pinned_generated_page_and_route_manifest()
         "Hosting implementation details do not belong in reader content"
     );
     assert!(
-        html.contains("href=\"/dprod/spec/main/\""),
+        html.contains("href=\"../spec/main/\""),
         "the assembled publication must link to its own spec, not the \
          production host"
     );
@@ -159,10 +162,7 @@ async fn version_cards_are_whole_card_links_without_repeated_chrome()
         );
     }
     let first = cards[0].select(&title).next().unwrap();
-    assert_eq!(
-        first.value().attr("href"),
-        Some("/dprod/spec/main/")
-    );
+    assert_eq!(first.value().attr("href"), Some("../spec/main/"));
     assert_eq!(first.text().collect::<String>(), "DPROD 1.0");
     let style = tokio::fs::read_to_string(directory.join("style.css")).await?;
     assert!(
@@ -170,5 +170,50 @@ async fn version_cards_are_whole_card_links_without_repeated_chrome()
             style.contains(".project-card-linked:has(a:focus-visible)"),
         "the title link stretches over the card and shows a focus ring"
     );
+    Ok(())
+}
+
+/// The website's own location is metadata: canonical and Open Graph URLs and
+/// the sitemap use it, but no link inside the website does.
+#[tokio::test]
+async fn the_website_location_never_becomes_an_internal_link() -> Result<()> {
+    let (_output, directory) = publish().await?;
+    let base = "https://example.org/dprod/";
+    let href = scraper::Selector::parse("[href]").unwrap();
+    let mut pages = 0;
+    let mut canonical = 0;
+    for page in ["index.html", "spec-versions/index.html"] {
+        let html = tokio::fs::read_to_string(directory.join(page)).await?;
+        pages += 1;
+        for element in scraper::Html::parse_document(&html).select(&href) {
+            let value = element.value().attr("href").unwrap();
+            if element.value().name() == "link" &&
+                element.value().attr("rel") == Some("canonical")
+            {
+                assert!(
+                    value.starts_with(base),
+                    "{page}: canonical {value}"
+                );
+                canonical += 1;
+                continue;
+            }
+            assert!(
+                !value.starts_with(base) && !value.starts_with("/dprod/"),
+                "{page}: internal link {value} must be relative"
+            );
+        }
+    }
+    assert_eq!((pages, canonical), (2, 2));
+    let home = tokio::fs::read_to_string(directory.join("index.html")).await?;
+    for href in [
+        "href=\"spec-versions/\">Versions again",
+        "href=\"spec/#shape\">Concept",
+        "href=\"https://example.org/about/\">Elsewhere",
+    ] {
+        assert!(home.contains(href), "missing {href}");
+    }
+    let sitemap =
+        tokio::fs::read_to_string(directory.join("sitemap.xml")).await?;
+    assert!(sitemap.contains("https://example.org/dprod/spec-versions/"));
     Ok(())
 }
