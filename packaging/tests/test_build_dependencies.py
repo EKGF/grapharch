@@ -36,6 +36,17 @@ class BuildDependencyTests(unittest.TestCase):
             run.assert_called_once()
             self.assertEqual(run.call_args.args[0][-1], "update")
 
+    def test_transient_mirror_failures_are_retried_within_a_bound(self):
+        with patch.object(INSTALLER.subprocess, "run") as run:
+            INSTALLER.install()
+        for call in run.call_args_list:
+            command = call.args[0]
+            self.assertIn("Acquire::Retries=5", command)
+            self.assertIn("Acquire::http::Timeout=60", command)
+            self.assertIsNotNone(call.kwargs["timeout"])
+        install = run.call_args_list[-1].args[0]
+        self.assertIn("--no-install-recommends", install)
+
 
 if __name__ == "__main__":
     unittest.main()

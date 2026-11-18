@@ -407,7 +407,7 @@ jobs:
           ref: ${{ inputs.revision || github.sha }}
           fetch-depth: 0
       - name: Install native dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev pkg-config
+        run: python3 -B packaging/install_build_dependencies.py
       - uses: actions-rust-lang/setup-rust-toolchain@v2
       - id: auth
         uses: rust-lang/crates-io-auth-action@v1
