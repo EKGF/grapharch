@@ -25,6 +25,8 @@ permissions:
 concurrency:
   group: grapharch-automatic-release-${{ github.event_name == 'workflow_run' && 'build' || 'publish' }}
   cancel-in-progress: false
+env:
+  PYTHONUTF8: '1'
 jobs:
   reserve:
     if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
