@@ -95,17 +95,10 @@ async fn grapharch_authority_alias_is_rejected() -> Result<()> {
     let source = tempfile::tempdir()?;
     let path = source.path().join("project.ttl");
     std::fs::write(&path, fixture)?;
-    let (dataset, plans) = showcases::specification(&path).await?;
-    let output = tempfile::tempdir()?;
-    let failure = showcases::publish(
-        &Publisher::new(dataset)
-            .with_edition(grapharch::publication::pdf_name::Edition::Default),
-        &plans,
-        output.path(),
-    )
-    .await
-    .err()
-    .expect("obsolete ga:Authority must be rejected");
+    let failure = showcases::specification(&path)
+        .await
+        .err()
+        .expect("obsolete ga:Authority must be rejected");
     assert!(format!("{failure:#}").contains("Authority"));
     Ok(())
 }

@@ -23,6 +23,13 @@ use-case-tree, and portfolio definitions:
 cargo run -- publication validate --definitions tests/fixtures/publication/projects.ttl
 ```
 
+Definitions may use only terms of the GraphArch namespace
+(`https://ekgf.org/ontology/grapharch#`) that this GraphArch release declares
+in its ontology and catalogues. An undeclared predicate, class or individual is
+rejected with the term, the source file and the GraphArch version: the
+definitions either need a newer GraphArch release or contain a mistake. Mentions
+of such IRIs in collected content are not checked.
+
 Collect those RDF definitions into a persistent shared dataset:
 
 ```bash

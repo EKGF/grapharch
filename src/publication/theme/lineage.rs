@@ -23,11 +23,6 @@ impl Lineage {
         profile: &NamedNode,
         default: Builtin,
     ) -> Result<Self> {
-        ensure!(
-            view.optional(profile, "style").await?.is_none(),
-            "profile {profile} uses the removed presentation style string; \
-             select an IRI-identified theme with ga:theme"
-        );
         let mut current = match view.optional(profile, "theme").await? {
             None => default.iri(),
             Some(Term::NamedNode(theme)) => theme,

@@ -118,6 +118,7 @@ impl Build<'_> {
             self.inputs.definitions.path(),
             self.inputs.definitions.commit()
         );
+        definitions.require_declared_terms().await?;
         let targets =
             self.inputs.targets.resolve(&definitions, project).await?;
         configured_git::collect(

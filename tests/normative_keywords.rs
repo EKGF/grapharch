@@ -145,7 +145,7 @@ async fn without_a_declaration_keywords_are_ordinary_text() -> Result<()> {
 
 #[tokio::test]
 async fn an_unknown_conformance_language_is_rejected() {
-    let error = render(";ga:conformanceLanguage ga:Iso2119")
+    let error = render(";ga:conformanceLanguage <urn:example:Iso2119>")
         .await
         .err()
         .expect("an undeclared conformance language must fail");

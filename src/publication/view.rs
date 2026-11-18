@@ -20,6 +20,8 @@ pub struct RevisionView {
 }
 
 impl RevisionView {
+    pub(crate) fn dataset(&self) -> &Dataset { &self.dataset }
+
     /// Bind all reads to one snapshot.
     pub fn new(dataset: Dataset, revision: NamedNode) -> Self {
         Self { dataset, revision }

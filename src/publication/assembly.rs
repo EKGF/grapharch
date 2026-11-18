@@ -31,6 +31,7 @@ impl Assembler {
             view.has_type(&NamedNode::new(project)?, "Project").await?,
             "undefined project {project}"
         );
+        view.require_declared_terms().await?;
         view.validate().await?;
         self.promote(project, &snapshot).await?;
         Ok(snapshot)

@@ -44,6 +44,7 @@ mod temporal;
 mod theme;
 mod validation;
 pub mod view;
+mod vocabulary;
 pub mod website;
 pub mod writer;
 

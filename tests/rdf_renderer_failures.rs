@@ -63,7 +63,7 @@ async fn invalid_rdf_targets_fail_the_build() -> Result<()> {
         (
             TARGETS.replace(
                 "ga:rdfFormat ga:SourceTextFormat",
-                "ga:rdfFormat ga:N3Format",
+                "ga:rdfFormat <urn:example:N3Format>",
             ),
             "references undefined RdfFormat",
         ),
