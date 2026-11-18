@@ -9,6 +9,12 @@ use {
 
 /// Render the inventory fixture from a restored KG; return the output root.
 async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
+    publish_with(|definitions| definitions.to_owned()).await
+}
+
+async fn publish_with(
+    edit: impl Fn(&str) -> String,
+) -> Result<(tempfile::TempDir, std::path::PathBuf)> {
     let source = tempfile::tempdir()?;
     tokio::fs::write(
         source.path().join("index.md"),
@@ -21,7 +27,7 @@ async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
     )
     .await?;
     let definitions = source.path().join("project.ttl");
-    tokio::fs::write(&definitions,r#"
+    tokio::fs::write(&definitions, edit(r#"
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix doap: <http://usefulinc.com/ns/doap#> .
@@ -36,7 +42,7 @@ async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
 <urn:develop> a doap:Version; ga:order 2; dct:title "Develop (latest)"; dct:identifier "develop"; doap:branch "develop"; dcat:accessURL <https://example.org/dprod/spec/develop/>; ga:advertised true .
 <urn:preview> a doap:Version; dct:title "ballot/4"; dct:identifier "ballot-4"; doap:branch "ballot/4"; ga:publicationStatus "Unstandardized pull request preview"; dcat:accessURL <https://preview.example.org/dprod/spec/>; ga:advertised true .
 <urn:hidden> a doap:Version; dct:title "merged-branch"; dct:identifier "merged-branch"; doap:branch "merged-branch"; dcat:accessURL <https://old.example.org/dprod/spec/>; ga:advertised false .
-"#).await?;
+"#)).await?;
     let collected = website::collect(
         source.path(),
         &definitions,
@@ -256,6 +262,41 @@ async fn versions_carry_their_own_badge_description_icon_and_location()
     assert_eq!(
         text(".project-section-resources .project-card-linked").len(),
         3
+    );
+    Ok(())
+}
+
+/// A declared website root displays each version beneath it by its
+/// site-relative path, while its link still points at the version.
+#[tokio::test]
+async fn versions_beneath_the_landing_page_show_site_relative_paths()
+-> Result<()> {
+    let (_output, directory) = publish_with(|definitions| {
+        definitions.replace(
+            "<urn:inventory> dct:modified",
+            "<urn:inventory> dcat:landingPage <https://example.org/dprod/>; \
+             dct:modified",
+        )
+    })
+    .await?;
+    let html =
+        tokio::fs::read_to_string(directory.join("spec-versions/index.html"))
+            .await?;
+    let document = scraper::Html::parse_document(&html);
+    let meta = document
+        .select(&scraper::Selector::parse("p.project-card-meta").unwrap())
+        .map(|element| element.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert_eq!(meta[0], "/spec/main");
+    assert_eq!(meta[1], "/spec/develop");
+    assert!(meta[2].starts_with("https://preview.example.org/dprod/spec/"));
+    assert!(html.contains("href=\"../spec/main/\""), "{html}");
+    // The route manifest that hosting reads keeps its own fields only.
+    let manifest =
+        tokio::fs::read_to_string(directory.join("publication-versions.json"))
+            .await?;
+    assert!(
+        !manifest.contains("landingPage") && !manifest.contains("\"site\"")
     );
     Ok(())
 }

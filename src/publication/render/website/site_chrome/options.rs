@@ -7,11 +7,13 @@ use {
 
 const PROJECT_NAVIGATION: Flag<'static> = Flag::new("projectNavigation", true);
 const SITE_SEARCH: Flag<'static> = Flag::new("siteSearch", true);
+const GENERATOR_CREDIT: Flag<'static> = Flag::new("generatorCredit", true);
 
 #[derive(Clone, Copy)]
 pub(in crate::publication::render::website) struct Options {
     project_navigation: bool,
     search:             bool,
+    generator_credit:   bool,
 }
 
 impl Options {
@@ -21,6 +23,9 @@ impl Options {
                 .read(plan, &plan.profile)
                 .await?,
             search:             SITE_SEARCH.read(plan, &plan.profile).await?,
+            generator_credit:   GENERATOR_CREDIT
+                .read(plan, &plan.profile)
+                .await?,
         })
     }
 
@@ -29,4 +34,7 @@ impl Options {
 
     /// Whether the site publishes its search index, button and dialog.
     pub fn search(self) -> bool { self.search }
+
+    /// Whether page footers carry the generator credit and provenance link.
+    pub fn generator_credit(self) -> bool { self.generator_credit }
 }

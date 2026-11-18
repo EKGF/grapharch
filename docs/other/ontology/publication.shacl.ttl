@@ -337,6 +337,18 @@ ga:ProjectCardPresentationShape a sh:NodeShape ;
 ga:PageResourceSectionShape a sh:NodeShape ; sh:targetSubjectsOf ga:resourceSection ;
     sh:property [ sh:path ga:resourceSection ; sh:datatype xsd:string ; sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ; sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .
 
+ga:PageCalloutSectionShape a sh:NodeShape ; sh:targetSubjectsOf ga:calloutSection ;
+    sh:property [ sh:path ga:calloutSection ; sh:datatype xsd:string ; sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ; sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .
+
+ga:PageTermSectionShape a sh:NodeShape ; sh:targetSubjectsOf ga:termSection ;
+    sh:property [ sh:path ga:termSection ; sh:datatype xsd:string ; sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ; sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .
+
+ga:PageCompactSectionShape a sh:NodeShape ; sh:targetSubjectsOf ga:compactSection ;
+    sh:property [ sh:path ga:compactSection ; sh:datatype xsd:string ; sh:maxCount 32 ; sh:minLength 1 ; sh:maxLength 128 ; sh:pattern "^[\\p{L}\\p{N}_-]+$" ] .
+
+ga:GeneratorCreditShape a sh:NodeShape ; sh:targetSubjectsOf ga:generatorCredit ;
+    sh:property [ sh:path ga:generatorCredit ; sh:datatype xsd:boolean ; sh:maxCount 1 ] .
+
 ga:PageHeroShape a sh:NodeShape ; sh:targetSubjectsOf ga:heroKind ;
     sh:property [ sh:path ga:heroKind ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:in ("landing" "introduction") ] .
 

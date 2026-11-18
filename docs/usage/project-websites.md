@@ -183,7 +183,13 @@ timeline_statuses:
   Planned: {name: circle, tone: muted}
 ```
 
-An undeclared status fails the build. A thematic break (`---`) ends the current card, so a following block quote is shown as the section's closing note. A footer link may name a bundled icon with `ga:iconName`, such as `github`.
+An undeclared status fails the build.
+
+Three more section presentations are selected by heading anchor. `callout_sections: [join-us]` presents a section as a call-to-action band on the accent colour, keeping its heading, prose, list and links-only action row; the first actions are solid and a final one of several is outlined. `term_sections: [standards]` presents a section's level-three cards as a term/definition list: each heading is a term in its card presentation's tone, a following wholly strong paragraph is its expansion, and the rest of the card is the definition beside it; a term heading that is one link makes the row that link. `compact_sections: [step-1, step-2]` gives sections a smaller heading and a tighter rhythm, so consecutive compact sections read as one section of steps. A section takes one of the callout, term, feature, resource or timeline presentations; compact combines with any of them. Links in a section's action row are marked as leading to another page or away from the site, as in cards.
+
+A publication inventory may declare its website root with `dcat:landingPage`. Versions beneath it then show their path relative to that root, such as `/spec/main`, while their links stay relative and correct.
+
+Website footers end with a line naming the generating GraphArch build and linking the provenance page. A profile may omit that line with `ga:generatorCredit false`; the provenance page and build metadata are still published. A thematic break (`---`) ends the current card, so a following block quote is shown as the section's closing note. A footer link may name a bundled icon with `ga:iconName`, such as `github`.
 
 Links to absolute URLs beneath the website target's `ga:thisVersion` or `ga:latestVersion` render relative to the linking page; those locations are used only for canonical, Open Graph and sitemap URLs.
 

@@ -60,6 +60,8 @@ pub(super) struct VersionPage<'a> {
     pub job:         &'a Job,
     pub description: Option<&'a str>,
     pub versions:    &'a [Version],
+    /// The website root; a version beneath it shows its site-relative path.
+    pub site:        Option<&'a str>,
 }
 
 impl VersionPage<'_> {
@@ -87,7 +89,7 @@ impl VersionPage<'_> {
                     badge: version.status.clone(),
                 });
             }
-            body.push_str(&Self::card(version));
+            body.push_str(&self.card(version));
         }
         let frontmatter = serde_yaml::to_string(&Frontmatter {
             nav_order: self.job.order,
@@ -97,7 +99,7 @@ impl VersionPage<'_> {
     }
 
     /// One version: its linked title, description and location line.
-    fn card(version: &Version) -> String {
+    fn card(&self, version: &Version) -> String {
         let mut card = format!(
             "### [{}](<{}>)\n\n",
             text(&version.label),
@@ -107,7 +109,7 @@ impl VersionPage<'_> {
             card.push_str(&format!("{}\n\n", text(description)));
         }
         // Double-backtick spans hold any branch name verbatim.
-        let mut location = format!("`` {} ``", version.location());
+        let mut location = format!("`` {} ``", self.location(version));
         if version.branch != version.slug {
             location.push_str(&format!(" · branch `` {} ``", version.branch));
         }
@@ -117,6 +119,17 @@ impl VersionPage<'_> {
         }
         card.push_str(&format!("*{location}*\n\n"));
         card
+    }
+}
+
+impl VersionPage<'_> {
+    /// Where a version is shown to be served: beneath the website root as a
+    /// root-relative path, such as `/spec/main`, else its route or URL.
+    fn location(&self, version: &Version) -> String {
+        match self.site.and_then(|site| version.url.strip_prefix(site)) {
+            Some(path) => format!("/{}", path.trim_end_matches('/')),
+            None => version.location().to_owned(),
+        }
     }
 }
 
