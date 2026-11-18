@@ -47,7 +47,7 @@ ex:duration a owl:ObjectProperty; rdfs:label "has duration" .
     let captions = scraper::Selector::parse("figcaption").unwrap();
     let texts = scraper::Selector::parse("svg text").unwrap();
     for (class, count, instances) in
-        [("Period", "0..1", 3), ("No date", "0..0", 1)]
+        [("Period", "0..1", 3), ("No date", "0..0", 0)]
     {
         let f = document
             .select(&figures)
@@ -66,6 +66,14 @@ ex:duration a owl:ObjectProperty; rdfs:label "has duration" .
             instances
         );
         assert!(!visible.iter().any(|s| s.contains("expression")));
+        if class == "No date" {
+            // A zero maximum is a class constraint, never a 0..0 end.
+            let joined = visible.concat();
+            assert!(
+                joined.contains("{no ") && joined.contains(" in "),
+                "{joined}"
+            );
+        }
     }
     let time = document
         .select(&figures)

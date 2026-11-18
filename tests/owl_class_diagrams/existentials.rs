@@ -69,9 +69,16 @@ async fn simple_existential_is_a_scoped_association_without_global_multiplicity(
             .next()
             .unwrap(),
     )?;
+    // The neighbour's own restriction is its member; nothing is invented
+    // on the documented subclass or drawn as a global association.
     assert!(
-        !other.source.contains("{qualified}"),
+        !other.source.contains("\\n{qualified}"),
         "no global or inherited constraint is invented"
+    );
+    assert!(
+        other.source.contains("Document [1..*] {qualified} [["),
+        "{}",
+        other.source
     );
     Ok(())
 }
@@ -82,7 +89,6 @@ async fn unsupported_restrictions_are_not_simplified_to_existentials()
     for constraint in [
         "owl:onProperty ex:unknown ; owl:someValuesFrom ex:UnknownFiller",
         "owl:onProperty ex:data ; owl:someValuesFrom ex:Document",
-        "owl:onProperty ex:isMemberOf ; owl:allValuesFrom ex:Document",
         "owl:onProperty [ owl:inverseOf ex:isMemberOf ] ; owl:someValuesFrom \
          ex:Document",
         "owl:onProperty ex:isMemberOf ; owl:someValuesFrom [ owl:unionOf \

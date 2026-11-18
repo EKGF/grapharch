@@ -181,15 +181,19 @@ pub(crate) fn description(projection: &Projection) -> Result<String> {
              be entailed. ",
         );
     }
-    if !super::qualified_count::collect(&projection.diagram).is_empty() ||
-        !super::existential::collect(&projection.diagram).is_empty()
+    if !super::restriction::Restriction::collect(&projection.diagram.edges)
+        .is_empty() ||
+        !projection.diagram.context.restrictions.is_empty()
     {
         description.push_str(
-            " Qualified counts count only property values in the named target \
-             class or datatype; other values are not excluded. A zero \
-             qualified maximum prohibits values in that target class or \
-             datatype, not other property values. A zero qualified minimum \
-             imposes no restriction and is omitted visually. ",
+            " OWL restrictions are drawn as class-scoped members, \
+             associations and constraints. Qualified counts count only \
+             property values in the named target class or datatype; other \
+             values are not excluded. A constraint such as {no p} states that \
+             the class has no value of p, or {no p in C} none in the named \
+             target. A zero minimum imposes no restriction and is omitted \
+             visually. {redefines} marks a restriction on a property \
+             inherited from a superclass domain. ",
         );
     }
     if !super::nested_existence::collect(&projection.diagram).is_empty() {

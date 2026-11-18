@@ -41,6 +41,9 @@ impl NodeKind {
         )
     }
 
+    /// A property declared to relate individuals to data values only.
+    pub fn is_data(self) -> bool { self == Self::DatatypeProperty }
+
     /// Anonymous OWL syntax drawn as its own box.
     pub fn is_expression(self) -> bool {
         matches!(self, Self::OwlExpression | Self::OwlUnion)

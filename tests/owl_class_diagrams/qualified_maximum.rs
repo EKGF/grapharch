@@ -24,7 +24,18 @@ async fn drawing(constraint: &str) -> Result<Drawing> {
 #[tokio::test]
 async fn qualified_maximum_including_zero_is_a_target_end_prohibition_or_bound()
 -> Result<()> {
-    for n in [0, 1, 3] {
+    let d = drawing(
+        "owl:onProperty ex:p; owl:onClass ex:Target; \
+         owl:maxQualifiedCardinality 0",
+    )
+    .await?;
+    assert!(
+        d.source.contains("{field} {no ex:p in ex:Target}"),
+        "{}",
+        d.source
+    );
+    assert!(!d.source.contains("0..0") && !d.source.contains("OWL expression"));
+    for n in [1, 3] {
         let d = drawing(&format!(
             "owl:onProperty ex:p; owl:onClass ex:Target; \
              owl:maxQualifiedCardinality {n}"

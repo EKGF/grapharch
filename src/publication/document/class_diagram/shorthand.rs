@@ -9,6 +9,7 @@ use {
             Drawing,
             RangeOnly,
         },
+        restriction::{Notation, Restriction, Scope},
     },
     std::collections::BTreeSet,
 };
@@ -16,14 +17,16 @@ pub(super) const GENERIC_RESOURCE: &str =
     "http://www.w3.org/2000/01/rdf-schema#Resource";
 
 pub(super) struct Shorthand<'a> {
-    pub range_only:       Vec<RangeOnly<'a>>,
-    pub attributes:       Vec<Attribute<'a>>,
-    pub associations:     Vec<Association<'a>>,
-    pub existentials:     Vec<super::existential::Existential<'a>>,
-    pub qualified_counts: Vec<super::qualified_count::QualifiedCount<'a>>,
-    pub existences:       Vec<super::nested_existence::Existence<'a>>,
-    pub consumed:         BTreeSet<usize>,
-    pub visible:          BTreeSet<&'a str>,
+    pub range_only:   Vec<RangeOnly<'a>>,
+    pub attributes:   Vec<Attribute<'a>>,
+    pub associations: Vec<Association<'a>>,
+    /// Restrictions on the documented class.
+    pub restrictions: Vec<(Restriction<'a>, Notation<'a>)>,
+    /// Restrictions on neighbouring classes, drawn as their members.
+    pub neighbours:   Vec<(Restriction<'a>, Notation<'a>)>,
+    pub existences:   Vec<super::nested_existence::Existence<'a>>,
+    pub consumed:     BTreeSet<usize>,
+    pub visible:      BTreeSet<&'a str>,
 }
 impl<'a> Shorthand<'a> {
     pub fn new(diagram: &'a Diagram) -> Self {
@@ -32,11 +35,24 @@ impl<'a> Shorthand<'a> {
         let mut associations = Vec::new(); // bounded: 81 pairs of eighteen facts.
         let mut consumed = BTreeSet::new(); // bounded: eighteen edge indices.
         let mut visited = BTreeSet::new(); // bounded: thirty-seven nodes.
+        let restrictions =
+            Self::notations(diagram, &diagram.edges, Scope::Focus);
+        let existences = super::nested_existence::collect(diagram);
+        // Facts drawn as restriction notation no longer tie a property to an
+        // explicit box, so its declarations can still become an edge.
+        let mut drawn = BTreeSet::new(); // bounded: eighteen edge indices.
+        for (restriction, _) in &restrictions {
+            drawn.extend(&restriction.consumed);
+        }
+        for existence in &existences {
+            drawn.extend(&existence.consumed);
+        }
         for node in diagram.nodes() {
             if !visited.insert(node.id.as_str()) {
                 continue;
             }
-            let Some(declaration) = Declaration::read(diagram, node) else {
+            let Some(declaration) = Declaration::read(diagram, node, &drawn)
+            else {
                 continue;
             };
             let Some(drawing) = declaration.drawing() else {
@@ -75,18 +91,12 @@ impl<'a> Shorthand<'a> {
                 },
             }
         }
-        let existences = super::nested_existence::collect(diagram);
-        for existence in &existences {
-            consumed.extend(&existence.consumed);
-        }
-        let qualified_counts = super::qualified_count::collect(diagram);
-        for minimum in &qualified_counts {
-            consumed.extend(&minimum.consumed);
-        }
-        let existentials = super::existential::collect(diagram);
-        for existential in &existentials {
-            consumed.extend(&existential.consumed);
-        }
+        consumed.extend(drawn);
+        let neighbours = Self::notations(
+            diagram,
+            &diagram.context.restrictions,
+            Scope::Neighbour,
+        );
         // Suppress only the generic RDF root in this presentation, never facts.
         consumed.extend(
             diagram
@@ -112,19 +122,9 @@ impl<'a> Shorthand<'a> {
                 association.range.id.as_str(),
             ]);
         }
-        for existential in &existentials {
-            visible.extend([
-                existential.class.id.as_str(),
-                existential.filler.id.as_str(),
-            ]);
-        }
-        for minimum in &qualified_counts {
-            if minimum.visible() {
-                visible.insert(minimum.class.id.as_str());
-                if !minimum.datatype {
-                    visible.insert(minimum.filler.id.as_str());
-                }
-            }
+        for (restriction, notation) in &restrictions {
+            visible.insert(restriction.class.id.as_str());
+            visible.extend(notation.target().map(|t| t.id.as_str()));
         }
         visible.extend(existences.iter().map(|e| e.class.id.as_str()));
         visible.extend(range_only.iter().map(|p| p.range.id.as_str()));
@@ -133,11 +133,55 @@ impl<'a> Shorthand<'a> {
             range_only,
             attributes,
             associations,
-            existentials,
-            qualified_counts,
+            restrictions,
+            neighbours,
             existences,
             consumed,
             visible,
         }
+    }
+
+    fn notations(
+        diagram: &'a Diagram,
+        edges: &'a [super::Edge],
+        scope: Scope,
+    ) -> Vec<(Restriction<'a>, Notation<'a>)> {
+        Restriction::collect(edges)
+            .into_iter()
+            .map(|restriction| {
+                let notation = restriction.notation(&diagram.context, scope);
+                (restriction, notation)
+            })
+            .collect() // bounded: one per retained fact.
+    }
+
+    /// Whether a restriction drawing replaces the plain domain/range drawing
+    /// of a property on this class: a member or prohibition, or an
+    /// association to the same target.
+    pub fn supersedes(
+        &self,
+        class: &str,
+        property: &str,
+        target: &str,
+    ) -> bool {
+        self.restrictions
+            .iter()
+            .chain(
+                // A neighbour's member never hides the association linking
+                // it to the documented class; only attributes are replaced.
+                self.neighbours.iter().filter(|_| target.is_empty()),
+            )
+            .any(|(r, n)| {
+                r.class.id == class &&
+                    r.property.id == property &&
+                    match n {
+                        Notation::Hidden => false,
+                        Notation::Association { target: t, .. } => {
+                            t.id == target
+                        },
+                        Notation::Member { .. } |
+                        Notation::Prohibition { .. } => true,
+                    }
+            })
     }
 }

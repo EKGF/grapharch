@@ -1,7 +1,14 @@
 //! Ordinary UML qualifiers from unambiguous constraints; provenance stays
 //! retained.
 use {
-    super::{Diagram, Node, constraints::Field, escape::Escaped},
+    super::{
+        Diagram,
+        Node,
+        constraints::Field,
+        escape::Escaped,
+        multiplicity::Cardinality,
+        restriction::Prohibition,
+    },
     std::collections::BTreeMap,
 };
 
@@ -9,7 +16,7 @@ pub(super) struct Property<'a> {
     pub property: &'a Node,
     pub range:    Option<&'a Node>,
     pub object:   bool,
-    count:        String,
+    count:        Option<Cardinality>,
 }
 impl<'a> Property<'a> {
     fn from_fields(fields: &[&'a Field]) -> Self {
@@ -27,20 +34,20 @@ impl<'a> Property<'a> {
             property: &first.property,
             range:    same_type.then_some(first.range.as_ref()).flatten(),
             object:   same_type && first.object,
-            count:    if same_count {
-                first.cardinality()
-            } else {
-                String::new()
-            },
+            count:    same_count.then(|| first.cardinality()).flatten(),
         }
     }
 
     fn endpoint(&self) -> String {
-        if self.count.is_empty() {
-            String::new()
-        } else {
-            format!("\"{}\" ", Escaped::inline(&self.count))
-        }
+        self.count
+            .and_then(Cardinality::multiplicity)
+            .map(|m| format!("\"{m}\" "))
+            .unwrap_or_default()
+    }
+
+    /// A maximum of zero values, drawn as a class constraint.
+    pub fn prohibited(&self) -> bool {
+        self.count == Some(Cardinality::Prohibited)
     }
 }
 pub(super) fn properties(diagram: &Diagram) -> Vec<(&Node, Property<'_>)> {
@@ -71,6 +78,7 @@ pub(super) fn constrained(
 }
 pub(super) fn members(
     output: &mut String,
+    constraints: &mut String,
     node: &Node,
     diagram: &Diagram,
     ids: &BTreeMap<&str, usize>,
@@ -78,8 +86,16 @@ pub(super) fn members(
     let shorthand = super::shorthand::Shorthand::new(diagram);
     for (_, field) in properties(diagram)
         .into_iter()
-        .filter(|(class, f)| class.id == node.id && !f.object)
+        .filter(|(class, _)| class.id == node.id)
     {
+        if field.prohibited() {
+            constraints
+                .push_str(&Prohibition::new(field.property, None).line(ids));
+            continue;
+        }
+        if field.object {
+            continue;
+        }
         if field.range.is_none() &&
             shorthand.associations.iter().any(|association| {
                 association.domain.id == node.id &&
@@ -92,11 +108,11 @@ pub(super) fn members(
             .range
             .map(|r| format!(" : {}", Escaped::inline(&r.label)))
             .unwrap_or_default();
-        let count = if field.count.is_empty() {
-            String::new()
-        } else {
-            format!(" [{}]", Escaped::inline(&field.count))
-        };
+        let count = field
+            .count
+            .and_then(Cardinality::multiplicity)
+            .map(|m| format!(" [{m}]"))
+            .unwrap_or_default();
         output.push_str(&format!(
             "  {{field}} {}{range}{count} [[[./grapharch-node/n{}]]]\n",
             Escaped::inline(&field.property.label),
@@ -131,7 +147,7 @@ pub(super) fn associations(
         properties(diagram).into_iter().filter(|(_, f)| f.object)
     {
         let Some(range) = field.range else { continue };
-        if has_owl(&class.id, &field) {
+        if field.prohibited() || has_owl(&class.id, &field) {
             continue;
         }
         output.push_str(&format!(

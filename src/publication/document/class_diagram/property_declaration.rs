@@ -14,8 +14,9 @@
 //!   `rdfs:Resource` presentation placeholder. An attribute needs an owner, so
 //!   a property with neither a specific domain nor a specific range, or a
 //!   datatype property without a domain, stays an explicit resource.
-//! - A property that takes part in any other drawn relationship, such as an OWL
-//!   restriction, stays explicit so that relationship keeps its endpoint.
+//! - A property that takes part in any other drawn relationship, such as an
+//!   explicit OWL expression, stays explicit so that relationship keeps its
+//!   endpoint. Facts already drawn as restriction notation do not count.
 use {
     super::{Diagram, Node, NodeKind, shorthand::GENERIC_RESOURCE},
     std::collections::BTreeSet,
@@ -53,7 +54,11 @@ pub(super) struct Declaration<'a> {
     pub incident: BTreeSet<usize>, // bounded: eighteen edge indices.
 }
 impl<'a> Declaration<'a> {
-    pub fn read(diagram: &'a Diagram, node: &'a Node) -> Option<Self> {
+    pub fn read(
+        diagram: &'a Diagram,
+        node: &'a Node,
+        drawn: &BTreeSet<usize>,
+    ) -> Option<Self> {
         if !(node.kind.is_property() || node.kind == NodeKind::Resource) {
             return None;
         }
@@ -64,7 +69,9 @@ impl<'a> Declaration<'a> {
             incident: BTreeSet::new(),
         };
         for (index, edge) in diagram.edges.iter().enumerate() {
-            if edge.from.id != node.id && edge.to.id != node.id {
+            if drawn.contains(&index) ||
+                (edge.from.id != node.id && edge.to.id != node.id)
+            {
                 continue;
             }
             if edge.from.id != node.id ||

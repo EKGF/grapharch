@@ -28,7 +28,6 @@ async fn qualified_datatype_counts_are_class_fields_not_object_associations()
         ("qualifiedCardinality", 1, "[1]"),
         ("minQualifiedCardinality", 2, "[2..*]"),
         ("maxQualifiedCardinality", 1, "[0..1]"),
-        ("maxQualifiedCardinality", 0, "[0..0]"),
     ] {
         let d = drawing(
             predicate,
@@ -78,7 +77,6 @@ async fn datatype_counts_reject_inverse_properties_invalid_counts_and_mixed_fill
         "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality \"1\"",
         "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality -1",
         "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:onClass ex:Other; owl:qualifiedCardinality 1",
-        "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality 0",
     ] {
         let body=diagram(&format!("ex:Core a owl:Class; rdfs:subClassOf [a owl:Restriction; {restriction}] . ex:p a owl:DatatypeProperty . ex:Other a owl:Class .")).await?;
         let d:Drawing=serde_json::from_str(body.split("```grapharch-class-diagram\n").nth(1).unwrap().split("\n```").next().unwrap())?;
