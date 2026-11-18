@@ -29,7 +29,7 @@ publish = (
     os.environ.get("REQUEST_PUBLISH") == "true"
     or os.environ.get("GITHUB_EVENT_NAME") == "push"
 )
-with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
     output.write(
         f"revision={head}\nversion={release_version}\nmatrix={json.dumps({'include': PLATFORMS})}\npublish={str(publish).lower()}\n"
     )

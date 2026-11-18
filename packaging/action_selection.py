@@ -50,7 +50,7 @@ class ActionCheckout:
                    os.environ.get('GRAPHARCH_ACTION_REF', ''))
 
     def version(self):
-        manifest = tomllib.loads((self.path / 'Cargo.toml').read_text())
+        manifest = tomllib.loads((self.path / 'Cargo.toml').read_text(encoding='utf-8'))
         return exact_version(manifest['package']['version'], 'the action checkout Cargo.toml version')
 
     def commit(self):
@@ -125,7 +125,7 @@ def main():
                                      os.environ.get('GRAPHARCH_EXPECTED_REVISION', ''),
                                      os.environ.get('GRAPHARCH_SOURCE_REVISION', ''),
                                      ActionCheckout.from_environment())
-    with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+    with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
         output.write(chosen.outputs())
 
 

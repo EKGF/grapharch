@@ -60,7 +60,7 @@ def main():
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise ValueError("version must be an exact MAJOR.MINOR.PATCH release without v")
     triple = target()
-    with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         output.write(f"target={triple}\n")
     if sys.argv[1] == "identify":
         return
@@ -110,9 +110,9 @@ def main():
     )
     if result.stdout.strip() != f"grapharch {version}":
         raise ValueError("Installed binary version does not match requested release")
-    with open(os.environ["GITHUB_PATH"], "a") as output:
+    with open(os.environ["GITHUB_PATH"], "a", encoding="utf-8") as output:
         output.write(str(directory) + "\n")
-    with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         output.write(f"version={version}\nrevision={revision}\nbinary-path={binary}\n")
 
 

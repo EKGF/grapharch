@@ -88,14 +88,14 @@ def record(root, revision, messages, destination, native, archive=None):
         result['archive'] = {'name': archive.name, 'sha256': digest(archive)}
     result['fingerprint'] = seal(result)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(result, indent=2) + '\n')
+    destination.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     return result
 
 
 def load(root, revision, manifest, fingerprint=None):
     if manifest.stat().st_size > 64 * 1024:
         raise ValueError('candidate manifest exceeds budget')
-    result = json.loads(manifest.read_text())
+    result = json.loads(manifest.read_text(encoding='utf-8'))
     if result.get('schema_version') != 1 or result.get('fingerprint') != seal(result) or fingerprint is not None and result.get('fingerprint') != fingerprint:
         raise ValueError('candidate manifest fingerprint mismatch')
     expected = identity(root, revision)
@@ -223,7 +223,7 @@ def build(root, revision, suite, manifest, native, docs=False):
     result = record(root, revision, messages, manifest, native, archive)
     print('Candidate fingerprint: ' + result['fingerprint'], flush=True)
     if 'GITHUB_OUTPUT' in os.environ:
-        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
             output.write('fingerprint=' + result['fingerprint'] + '\n')
 
 
