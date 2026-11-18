@@ -29,9 +29,10 @@ async fn publish() -> Result<(tempfile::TempDir, std::path::PathBuf)> {
 <urn:project> a ga:Project; dct:title "Project"; ga:scope <urn:scope>; ga:target <urn:target> .
 <urn:scope> a ga:Scope . <urn:profile> a ga:Profile; ga:theme ga:EkgfProjectTheme .
 <urn:target> a ga:Target; dct:title "Project"; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site"; ga:thisVersion <https://example.org/dprod/> .
-<urn:inventory-job> a ga:DocumentorUse; ga:project <urn:project>; ga:documentorType ga:PublicationInventoryDocumentor; ga:subject <urn:inventory>; ga:fragment <urn:versions-page>; ga:route "spec-versions/"; ga:sourcePath "spec-versions.md"; ga:navigationOrder 6; dct:title "Specification versions" .
+<urn:inventory-job> a ga:DocumentorUse; ga:project <urn:project>; ga:documentorType ga:PublicationInventoryDocumentor; ga:subject <urn:inventory>; ga:fragment <urn:versions-page>; ga:route "spec-versions/"; ga:sourcePath "spec-versions.md"; ga:navigationOrder 6; dct:title "Specification versions"; ga:eyebrow "Specification" .
+<urn:versions-page> dct:description "Every published version." .
 <urn:inventory> dct:modified "2026-11-02T15:00:00Z"; dct:hasPart <urn:main>,<urn:develop>,<urn:preview>,<urn:hidden> .
-<urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; ga:route "/dprod/spec/main/"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true .
+<urn:main> a doap:Version; ga:order 1; dct:title "DPROD 1.0"; dct:identifier "main"; doap:branch "main"; ga:route "/dprod/spec/main/"; dcat:accessURL <https://example.org/dprod/spec/main/>; ga:advertised true; ga:publicationStatus "Frozen · Normative"; dct:description "The frozen release."; ga:iconName "archive"; ga:iconTone "accent" .
 <urn:develop> a doap:Version; ga:order 2; dct:title "Develop (latest)"; dct:identifier "develop"; doap:branch "develop"; dcat:accessURL <https://example.org/dprod/spec/develop/>; ga:advertised true .
 <urn:preview> a doap:Version; dct:title "ballot/4"; dct:identifier "ballot-4"; doap:branch "ballot/4"; ga:publicationStatus "Unstandardized pull request preview"; dcat:accessURL <https://preview.example.org/dprod/spec/>; ga:advertised true .
 <urn:hidden> a doap:Version; dct:title "merged-branch"; dct:identifier "merged-branch"; doap:branch "merged-branch"; dcat:accessURL <https://old.example.org/dprod/spec/>; ga:advertised false .
@@ -215,5 +216,46 @@ async fn the_website_location_never_becomes_an_internal_link() -> Result<()> {
     let sitemap =
         tokio::fs::read_to_string(directory.join("sitemap.xml")).await?;
     assert!(sitemap.contains("https://example.org/dprod/spec-versions/"));
+    Ok(())
+}
+
+/// Version presentation is inventory data: the engine names no statuses.
+#[tokio::test]
+async fn versions_carry_their_own_badge_description_icon_and_location()
+-> Result<()> {
+    let (_output, directory) = publish().await?;
+    let html =
+        tokio::fs::read_to_string(directory.join("spec-versions/index.html"))
+            .await?;
+    let document = scraper::Html::parse_document(&html);
+    let text = |selector: &str| {
+        document
+            .select(&scraper::Selector::parse(selector).unwrap())
+            .map(|element| element.text().collect::<String>())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(text(".project-hero p:first-child"), [
+        "Specification"
+    ]);
+    assert!(
+        text(".project-hero p").contains(&"Every published version.".into())
+    );
+    assert!(!html.contains("Select a published specification"));
+    assert_eq!(text(".project-badge.project-badge-accent"), [
+        "Frozen · Normative"
+    ]);
+    assert_eq!(text(".project-card-icon-accent").len(), 1);
+    assert!(html.contains("The frozen release."));
+    let meta = text("p.project-card-meta");
+    assert_eq!(meta[0], "/dprod/spec/main/");
+    assert_eq!(
+        meta[2],
+        "https://preview.example.org/dprod/spec/ · branch ballot/4 · \
+         Unstandardized pull request preview"
+    );
+    assert_eq!(
+        text(".project-section-resources .project-card-linked").len(),
+        3
+    );
     Ok(())
 }

@@ -170,7 +170,22 @@ Select `grapharch.resource_sections: [articles-talks]` to present a level-two se
 
 Project pages use a left-aligned introduction by default. A campaign landing page opts into `grapharch.hero: landing`; `introduction` is the other supported value. These are semantic roles, with widths and typography supplied by the shared theme. All ordinary card grids share the same title, muted prose, padding, border and elevation system as feature cards. Resource lists retain their horizontal composition. Plain prose uses a narrower reading measure than card grids.
 
-`card_icons` can also identify a level-two section heading, for example an adoption step or a concept panel. Supported icons include the original network, file-json, git-branch, shield and book-open icons, plus triangle-alert, search, plug, users, megaphone, layers, store, cloud, rocket, folder-open, quote, package, database, file-box, sparkles, vote and circle-check. Decorative icons are bundled with their license and remain explicit source metadata.
+`card_icons` can also identify a level-two section heading, for example an adoption step or a concept panel. Supported icons include the original network, file-json, git-branch, shield and book-open icons, plus triangle-alert, search, plug, users, megaphone, layers, store, cloud, rocket, folder-open, quote, package, database, file-box, sparkles, vote, circle-check, archive, clock, circle, github and arrow-right. Tones are `primary`, `accent` or `muted`. Decorative icons are bundled with their license and remain explicit source metadata.
+
+A card presentation may add `badge: Frozen` to show a short status badge beside the card title in the icon's tone. Naming the page title's anchor in `resource_sections` presents the cards directly after the introduction as a resource list. In a resource list, a card whose title is one link gets a trailing arrow and acts as that link, and a paragraph that is wholly emphasized becomes the card's small metadata line.
+
+Select `grapharch.timeline_sections: [timeline]` to present a section's ordered list as a vertical timeline. Each item opens with a `Status — when` paragraph; a following paragraph that is wholly strong text is the item's title. Declare every status with its icon and tone:
+
+```yaml
+timeline_statuses:
+  Done: {name: circle-check, tone: primary}
+  In progress: {name: clock, tone: accent}
+  Planned: {name: circle, tone: muted}
+```
+
+An undeclared status fails the build. A thematic break (`---`) ends the current card, so a following block quote is shown as the section's closing note. A footer link may name a bundled icon with `ga:iconName`, such as `github`.
+
+Links to absolute URLs beneath the website target's `ga:thisVersion` or `ga:latestVersion` render relative to the linking page; those locations are used only for canonical, Open Graph and sitemap URLs.
 
 ## Separate website sections
 

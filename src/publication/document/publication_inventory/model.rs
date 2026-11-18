@@ -24,97 +24,23 @@ pub(crate) struct Inventory {
     pub versions:    Vec<Version>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct Version {
-    pub slug:       String,
-    pub branch:     String,
-    pub label:      String,
-    pub url:        String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub route:      Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status:     Option<String>,
-    pub advertised: bool,
-}
-
-impl Version {
-    pub fn validate(&self) -> Result<()> {
-        ensure!(
-            !self.slug.is_empty() &&
-                self.slug.len() <= 128 &&
-                self.slug != "." &&
-                self.slug != ".." &&
-                self.slug.bytes().all(|c| {
-                    c.is_ascii_alphanumeric() || b"-_.".contains(&c)
-                }),
-            "invalid publication slug"
-        );
-        ensure!(
-            !self.branch.is_empty() &&
-                self.branch.len() <= 256 &&
-                !self.branch.chars().any(char::is_control),
-            "invalid publication branch"
-        );
-        ensure!(
-            !self.label.trim().is_empty() &&
-                self.label.len() <= 512 &&
-                !self.label.chars().any(char::is_control),
-            "invalid publication label"
-        );
-        if let Some(status) = &self.status {
-            ensure!(
-                !status.trim().is_empty() &&
-                    status.len() <= 512 &&
-                    !status.chars().any(char::is_control),
-                "invalid publication status"
-            );
-        }
-        let url = url::Url::parse(&self.url)?;
-        ensure!(
-            matches!(url.scheme(), "http" | "https") &&
-                url.host_str().is_some() &&
-                url.username().is_empty() &&
-                url.password().is_none() &&
-                url.query().is_none() &&
-                url.fragment().is_none() &&
-                self.url.ends_with('/'),
-            "publication URL must be a credential-free HTTP(S) directory URL"
-        );
-        if let Some(route) = &self.route {
-            ensure!(
-                route.starts_with('/') &&
-                    route.ends_with('/') &&
-                    route.len() > 2 &&
-                    route.len() <= 512 &&
-                    !route.starts_with("//") &&
-                    route[1..route.len() - 1].split('/').all(|segment| {
-                        !segment.is_empty() &&
-                            segment != "." &&
-                            segment != ".." &&
-                            segment.bytes().all(|c| {
-                                c.is_ascii_alphanumeric() || b"-_.".contains(&c)
-                            })
-                    }),
-                "publication route must be a safe host-root directory path"
-            );
-        }
-        Ok(())
-    }
-}
+pub(crate) use super::version::Version;
 
 #[derive(Default)]
 struct Record {
-    id:         Option<NamedNode>,
-    kind:       bool,
-    slug:       Option<String>,
-    branch:     Option<String>,
-    label:      Option<String>,
-    url:        Option<String>,
-    route:      Option<String>,
-    status:     Option<String>,
-    advertised: Option<bool>,
-    order:      Option<u32>,
+    id:          Option<NamedNode>,
+    kind:        bool,
+    slug:        Option<String>,
+    branch:      Option<String>,
+    label:       Option<String>,
+    url:         Option<String>,
+    route:       Option<String>,
+    status:      Option<String>,
+    description: Option<String>,
+    icon:        Option<String>,
+    tone:        Option<String>,
+    advertised:  Option<bool>,
+    order:       Option<u32>,
 }
 impl Record {
     fn finish(self) -> Result<(Option<u32>, Version)> {
@@ -128,13 +54,16 @@ impl Record {
             })
         };
         let value = Version {
-            slug:       required(self.slug, "identifier")?,
-            branch:     required(self.branch, "branch")?,
-            label:      required(self.label, "title")?,
-            url:        required(self.url, "accessURL")?,
-            route:      self.route,
-            status:     self.status,
-            advertised: self.advertised.ok_or_else(|| {
+            slug:        required(self.slug, "identifier")?,
+            branch:      required(self.branch, "branch")?,
+            label:       required(self.label, "title")?,
+            url:         required(self.url, "accessURL")?,
+            route:       self.route,
+            status:      self.status,
+            description: self.description,
+            icon:        self.icon,
+            tone:        self.tone,
+            advertised:  self.advertised.ok_or_else(|| {
                 anyhow::anyhow!(
                     "publication inventory member missing advertised"
                 )
@@ -201,6 +130,9 @@ impl Record {
                 p if p == term("publicationStatus").as_str() => {
                     &mut self.status
                 },
+                p if p == format!("{DCT}description") => &mut self.description,
+                p if p == term("iconName").as_str() => &mut self.icon,
+                p if p == term("iconTone").as_str() => &mut self.tone,
                 _ => anyhow::bail!("unexpected inventory predicate"),
             };
             (slot, value.value().to_owned())
@@ -238,8 +170,10 @@ impl Inventory {
                 "SELECT DISTINCT ?version ?predicate ?object WHERE {{ \
                  {members} OPTIONAL {{ {fields} FILTER(?predicate \
                  IN(<{DCT}identifier>,<{DCT}title>,<{DOAP}branch>,\
-                 <{DCAT}accessURL>,{},{},{},{},<{}>)) }} }} ORDER BY ?version \
-                 ?predicate ?object",
+                 <{DCAT}accessURL>,<{DCT}description>,{},{},{},{},{},{},\
+                 <{}>)) }} }} ORDER BY ?version ?predicate ?object",
+                term("iconName"),
+                term("iconTone"),
                 term("advertised"),
                 term("order"),
                 term("route"),
@@ -299,6 +233,8 @@ impl Inventory {
 
 pub(crate) struct Job {
     pub id:      NamedNode,
+    /// A short label above the page title.
+    pub eyebrow: Option<String>,
     pub subject: NamedNode,
     pub page:    NamedNode,
     pub title:   String,
@@ -347,14 +283,26 @@ pub(crate) async fn configured_job(
         view.optional(id, "navigationOrder").await?.ok_or_else(|| {
             anyhow::anyhow!("inventory page requires navigationOrder")
         })?;
+    let eyebrow = match view.optional(id, "eyebrow").await? {
+        None => None,
+        Some(Term::Literal(value))
+            if !value.value().trim().is_empty() &&
+                value.value().chars().count() <= 64 &&
+                !value.value().contains(['\n', '\r']) =>
+        {
+            Some(value.value().to_owned())
+        },
+        Some(_) => anyhow::bail!("inventory eyebrow must be a short literal"),
+    };
     Ok(Some(Job {
-        id:      id.clone(),
+        id: id.clone(),
+        eyebrow,
         subject: view.node(id, "subject").await?,
-        page:    view.node(id, "fragment").await?,
-        title:   title.value().into(),
-        route:   view.text(id, "route").await?,
-        path:    view.text(id, "sourcePath").await?,
-        order:   crate::publication::validation::unsigned(
+        page: view.node(id, "fragment").await?,
+        title: title.value().into(),
+        route: view.text(id, "route").await?,
+        path: view.text(id, "sourcePath").await?,
+        order: crate::publication::validation::unsigned(
             &order,
             "inventory navigation order",
         )?,

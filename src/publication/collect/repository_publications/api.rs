@@ -235,6 +235,9 @@ pub(super) fn discover(
         let version = Version {
             route: None,
             status: None,
+            description: None,
+            icon: None,
+            tone: None,
             slug,
             advertised: open.contains(&branch) &&
                 !hidden.iter().any(|p| branch.starts_with(p)),

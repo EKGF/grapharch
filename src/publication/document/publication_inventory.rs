@@ -11,18 +11,9 @@ use {
 };
 
 pub(crate) mod model;
+mod page;
+mod version;
 use model::{Inventory, configured_job};
-
-fn markdown_text(text: &str) -> String {
-    let mut output = String::new();
-    for c in text.chars() {
-        if "\\`*_{}[]<>#|!".contains(c) {
-            output.push('\\');
-        }
-        output.push(c);
-    }
-    output
-}
 
 pub(crate) async fn document(
     dataset: &Dataset,
@@ -37,34 +28,25 @@ pub(crate) async fn document(
         return Ok(())
     };
     let inventory = Inventory::read(dataset, &view, &job.subject).await?;
-    // The hero names the page and the provenance report records when the
-    // inventory was observed, so the version cards follow the introduction.
-    // Each card's title is its one link.
-    let mut body = format!(
-        "---\nnav_order: {}\n---\n# {}\n\nSelect a published specification or \
-         a current preview.\n\n",
-        job.order,
-        markdown_text(&job.title),
-    );
-    for version in inventory
-        .versions
-        .iter()
-        .filter(|version| version.advertised)
+    let description = match view
+        .optional_by(
+            &job.page,
+            &NamedNode::new("http://purl.org/dc/terms/description")?,
+        )
+        .await?
     {
-        body.push_str(&format!(
-            "### [{}](<{}>)\n\nBranch: {}\n\n{}",
-            markdown_text(&version.label),
-            // The renderer links a URL beneath the website's own location
-            // relative to the page, so every deployment links its own copy.
-            version.url,
-            markdown_text(&version.branch),
-            version
-                .status
-                .as_ref()
-                .map(|status| format!("Status: {}\n\n", markdown_text(status)))
-                .unwrap_or_default(),
-        ));
+        None => None,
+        Some(oxrdf::Term::Literal(value)) => Some(value.value().to_owned()),
+        Some(_) => {
+            anyhow::bail!("inventory page description must be a literal")
+        },
+    };
+    let body = page::VersionPage {
+        job:         &job,
+        description: description.as_deref(),
+        versions:    &inventory.versions,
     }
+    .markdown()?;
     let revision = format!("publication-inventory-v1:{snapshot}");
     let page =
         MarkdownFile::generated(project, job.id.as_str(), GeneratedPage {
