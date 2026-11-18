@@ -1840,6 +1840,10 @@ ga:timelineStatus a owl:ObjectProperty ; rdfs:label "timeline status"@en ; rdfs:
 ga:statusLabel a owl:DatatypeProperty ; rdfs:label "status label"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Names a timeline status exactly as timeline items write it."@en ; dct:description "Names a timeline status exactly as timeline items write it."@en ; rdfs:domain rdfs:Resource ; rdfs:range xsd:string .
 ga:eyebrow a owl:DatatypeProperty ; rdfs:label "eyebrow"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Supplies the short label shown above the title of a generated page."@en ; dct:description "Supplies the short label shown above the title of a generated page."@en ; rdfs:domain ga:DocumentorUse ; rdfs:range xsd:string .
 
+ga:calloutSection a owl:DatatypeProperty ; rdfs:label "callout section"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a level-two heading anchor whose section is presented as a call-to-action band on the theme's accent colour."@en ; dct:description "Selects a level-two heading anchor whose section is presented as a call-to-action band on the theme's accent colour."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string ; skos:scopeNote "The band keeps the section's heading, prose, list and links-only action row. The first actions are solid and a final one of several is outlined."@en .
+ga:termSection a owl:DatatypeProperty ; rdfs:label "term section"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a level-two heading anchor whose level-three cards are presented as a term/definition list."@en ; dct:description "Selects a level-two heading anchor whose level-three cards are presented as a term/definition list."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string ; skos:scopeNote "Each level-three heading is a term, shown in its card presentation's tone. A following paragraph that is wholly strong text is the term's expansion beneath it; the rest of the card is its definition beside it. A term heading that is one link makes the row that link."@en .
+ga:compactSection a owl:DatatypeProperty ; rdfs:label "compact section"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a level-two heading anchor for a compact section with a smaller heading; consecutive compact sections read as one continuous section."@en ; dct:description "Selects a level-two heading anchor for a compact section with a smaller heading; consecutive compact sections read as one continuous section."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string ; skos:scopeNote "Suits a sequence of steps. A compact section may also select another presentation."@en .
+
 ga:resourceSection a owl:DatatypeProperty ; rdfs:label "resource section"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a level-two heading anchor for a single-column list of resource cards."@en ; dct:description "Selects a level-two heading anchor for a single-column list of resource cards."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string ; skos:scopeNote "Naming the anchor of the page title presents the cards directly after the introduction as this list. A card whose title is one link gains a trailing arrow and acts as that link; a wholly emphasized paragraph in a card is shown as its metadata line."@en .
 
 ga:heroKind a owl:DatatypeProperty ; rdfs:label "hero kind"@en ; rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ; skos:definition "Selects a landing campaign hero or an interior introduction for a project page."@en ; dct:description "Selects a landing campaign hero or an interior introduction for a project page."@en ; rdfs:domain ga:Page ; rdfs:range xsd:string .
@@ -3537,6 +3541,15 @@ ga:projectNavigation a owl:DatatypeProperty ;
     skos:definition "States whether project-layout website pages show the generated bar linking the site's pages; the default is true."@en ;
     dct:description "States whether project-layout website pages show the generated bar linking the site's pages; the default is true."@en ;
     skos:scopeNote "Use false when the site's pages are reached through header links and page content, as on a product landing site. Pages remain in the sitemap, search index and metadata; unlike ga:navigationHidden this does not mark pages noindex."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:generatorCredit a owl:DatatypeProperty ;
+    rdfs:label "Generator credit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether website page footers show the line naming the generating GraphArch build and linking the provenance page; the default is true."@en ;
+    dct:description "States whether website page footers show the line naming the generating GraphArch build and linking the provenance page; the default is true."@en ;
+    skos:scopeNote "Use false only when the publisher states provenance elsewhere. The provenance page and the build metadata are still published."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range xsd:boolean .
 

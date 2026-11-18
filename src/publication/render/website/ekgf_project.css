@@ -1,0 +1,13 @@
+/* EKGF project sites follow the ekgf.org product layout metrics. The values
+   are theme tokens; the rules below only apply them. */
+.theme-ekgf{--project-body-leading:1.5;--project-heading-weight:700;--project-heading-tracking:normal;--project-nav-padding:8px 16px;--project-nav-height:36px;--project-control-size:36px;--project-header-start:max(20px,calc(50vw - 654px));--project-header-end:max(20px,calc(50vw - 616px))}
+.theme-ekgf{line-height:var(--project-body-leading)}
+.theme-ekgf .project-section h2,.theme-ekgf .project-section-heading h2{font-weight:var(--project-heading-weight);letter-spacing:var(--project-heading-tracking)}
+.theme-ekgf .project-section-callout h2{font-weight:600}
+.community-menu .ekgf-header-navigation a{padding:var(--project-nav-padding);line-height:20px}
+.community-header-row .source-link,.community-header-row .color-scheme-toggle{box-sizing:border-box;min-width:var(--project-control-size);min-height:var(--project-control-size);width:var(--project-control-size);height:var(--project-control-size);padding:8px;display:inline-flex;align-items:center;justify-content:center}
+.community-header-row .source-link svg{width:20px;height:20px}
+@media(min-width:1151px){.community-header-row{max-width:none;padding-inline:var(--project-header-start) var(--project-header-end)}}
+.community-menu>nav{gap:4px}
+.community-header-row .site-links{gap:16px}
+.community-header-row .source-link svg{fill:none;stroke:currentColor}

@@ -49,12 +49,23 @@ enum Kind {
     Grid,
     Resources,
     Timeline,
+    Terms,
 }
 
 /// The open card; a linked resource card closes with a trailing arrow.
 struct Card {
     resource: bool,
     arrow:    bool,
+    /// A term row; `definition` once its definition column has opened.
+    term:     Option<TermRow>,
+}
+
+/// The open row of a term list.
+#[derive(Clone, Copy)]
+struct TermRow {
+    definition: bool,
+    /// The trailing icon of a term whose heading is one link.
+    icon:       Option<&'static str>,
 }
 
 struct Builder<'a> {
@@ -111,6 +122,25 @@ impl Builder<'_> {
 
     fn content(&mut self, element: ElementRef) {
         let html = element.html();
+        if let Some(row) =
+            self.card.as_mut().and_then(|card| card.term.as_mut())
+        {
+            if !row.definition && strong_paragraph(element) {
+                self.output.push_str(&html.replacen(
+                    "<p>",
+                    "<p class=\"project-term-expansion\">",
+                    1,
+                ));
+                return;
+            }
+            if !row.definition {
+                row.definition = true;
+                self.output
+                    .push_str("</div><div class=\"project-term-definition\">");
+            }
+            self.output.push_str(&html);
+            return;
+        }
         if self.section.is_none() && action_paragraph(element) {
             self.output.push_str(&html.replacen(
                 "<p>",
@@ -118,7 +148,8 @@ impl Builder<'_> {
                 1,
             ));
         } else if self.card.is_some() && action_paragraph(element) {
-            self.output.push_str(&card_actions(element));
+            self.output
+                .push_str(&linked_actions(element, "project-card-action"));
         } else if self.card.is_some() && emphasis_paragraph(element) {
             self.output.push_str(&html.replacen(
                 "<p>",
@@ -126,10 +157,9 @@ impl Builder<'_> {
                 1,
             ));
         } else if self.section.is_some() && action_paragraph(element) {
-            self.output.push_str(&html.replacen(
-                "<p>",
-                "<p class=\"project-section-actions\">",
-                1,
+            self.output.push_str(&linked_actions(
+                element,
+                "project-section-actions",
             ));
         } else {
             self.output.push_str(&html);
@@ -151,6 +181,8 @@ impl Builder<'_> {
             Kind::Resources
         } else if selected(&self.presentation.timelines) {
             Kind::Timeline
+        } else if selected(&self.presentation.terms) {
+            Kind::Terms
         } else {
             Kind::Grid
         };
@@ -161,9 +193,16 @@ impl Builder<'_> {
         if selected(&self.presentation.features) {
             classes.push_str(" project-section-features");
         }
+        if selected(&self.presentation.callouts) {
+            classes.push_str(" project-section-callout");
+        }
+        if selected(&self.presentation.compacts) {
+            classes.push_str(" project-section-compact");
+        }
         classes.push_str(match kind {
             Kind::Resources => " project-section-resources",
             Kind::Timeline => " project-section-timeline",
+            Kind::Terms => " project-section-terms",
             Kind::Grid => "",
         });
         self.output.push_str(&format!(
@@ -178,6 +217,28 @@ impl Builder<'_> {
             let title = self.title.clone();
             self.open_section(title.as_deref());
         }
+        let style = heading
+            .value()
+            .attr("id")
+            .and_then(|id| self.presentation.icons.get(id));
+        if self.section == Some(Kind::Terms) {
+            let tone =
+                style.map_or("primary", |style| style.marker.tone.class());
+            self.output.push_str(&format!(
+                "<div class=\"project-term project-term-{tone}\"><div \
+                 class=\"project-term-name\">{}",
+                heading.html()
+            ));
+            self.card = Some(Card {
+                resource: false,
+                arrow:    false,
+                term:     Some(TermRow {
+                    definition: false,
+                    icon:       title_link(heading).then(|| link_icon(heading)),
+                }),
+            });
+            return;
+        }
         let linked = title_link(heading);
         let resource = self.section == Some(Kind::Resources);
         self.output.push_str(
@@ -187,10 +248,6 @@ impl Builder<'_> {
                 "<div class=\"project-card\">"
             },
         );
-        let style = heading
-            .value()
-            .attr("id")
-            .and_then(|id| self.presentation.icons.get(id));
         if let Some(style) = style {
             self.output.push_str(&style.marker.html());
         }
@@ -206,11 +263,23 @@ impl Builder<'_> {
             },
             None => self.output.push_str(&heading.html()),
         }
-        self.card = Some(Card { resource, arrow: resource && linked });
+        self.card =
+            Some(Card { resource, arrow: resource && linked, term: None });
     }
 
     fn close_card(&mut self) {
         let Some(card) = self.card.take() else { return };
+        if let Some(row) = card.term {
+            self.output.push_str("</div>");
+            if let Some(icon) = row.icon {
+                self.output.push_str(&format!(
+                    "<span class=\"project-term-arrow\" \
+                     aria-hidden=\"true\">{icon}</span>"
+                ));
+            }
+            self.output.push_str("</div>");
+            return;
+        }
         if card.resource {
             self.output.push_str("</div>");
         }
@@ -251,26 +320,42 @@ fn title_link(heading: ElementRef) -> bool {
     }
 }
 
-/// A card's call-to-action row, each link marked internal or external.
-fn card_actions(element: ElementRef) -> String {
+/// A call-to-action row in `class`, each link marked internal or external.
+fn linked_actions(element: ElementRef, class: &str) -> String {
     let mut actions =
         element
             .html()
-            .replacen("<p>", "<p class=\"project-card-action\">", 1);
+            .replacen("<p>", &format!("<p class=\"{class}\">"), 1);
     for link in element.child_elements() {
-        let icon = if link.value().attr("href").is_some_and(|href| {
-            href.starts_with("https://") || href.starts_with("http://")
-        }) {
-            include_str!("icons/external-link.svg")
-        } else {
-            include_str!("icons/arrow-right.svg")
-        };
+        let icon = link_icon(link);
         actions = actions.replace(
             &link.html(),
             &link.html().replace("</a>", &format!("{icon}</a>")),
         );
     }
     actions
+}
+
+/// The icon marking where the first link within `element` leads: away from
+/// the site, or to another of its pages.
+fn link_icon(element: ElementRef) -> &'static str {
+    let link = if element.value().name() == "a" {
+        Some(element)
+    } else {
+        element
+            .child_elements()
+            .find(|child| child.value().name() == "a")
+    };
+    if link
+        .and_then(|link| link.value().attr("href"))
+        .is_some_and(|href| {
+            href.starts_with("https://") || href.starts_with("http://")
+        })
+    {
+        include_str!("icons/external-link.svg")
+    } else {
+        include_str!("icons/arrow-right.svg")
+    }
 }
 
 /// Whether a paragraph consists only of `element_name` children and
@@ -295,6 +380,11 @@ fn only_children(element: ElementRef<'_>, element_name: &str) -> bool {
 // introductory sentence containing an inline link remains normal prose.
 fn action_paragraph(element: ElementRef<'_>) -> bool {
     only_children(element, "a")
+}
+
+// A wholly strong paragraph names a term's expansion.
+fn strong_paragraph(element: ElementRef<'_>) -> bool {
+    only_children(element, "strong")
 }
 
 // A wholly emphasized card paragraph is secondary metadata, such as a path.

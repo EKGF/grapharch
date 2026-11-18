@@ -20,6 +20,10 @@ pub(crate) const DCAT: &str = "http://www.w3.org/ns/dcat#";
 #[serde(deny_unknown_fields)]
 pub(crate) struct Inventory {
     pub observed_at: String,
+    /// The website root that version paths are displayed beneath. Display
+    /// only: the route manifest that hosting reads never carries it.
+    #[serde(skip)]
+    pub site:        Option<String>,
     // bounded: explicit catalogue limited to 1000 publication records.
     pub versions:    Vec<Version>,
 }
@@ -162,6 +166,23 @@ impl Inventory {
             anyhow::bail!("publication inventory requires observation time")
         };
         chrono::DateTime::parse_from_rfc3339(observed_at.value())?;
+        let site = match view
+            .optional_by(
+                subject,
+                &NamedNode::new(format!("{DCAT}landingPage"))?,
+            )
+            .await?
+        {
+            None => None,
+            Some(Term::NamedNode(site)) if site.as_str().ends_with('/') => {
+                Some(site.into_string())
+            },
+            Some(_) => {
+                anyhow::bail!(
+                    "publication inventory landingPage must be a directory IRI"
+                )
+            },
+        };
         let members =
             view.pattern(&format!("{subject} <{DCT}hasPart> ?version"), 0);
         let fields = view.pattern("?version ?predicate ?object", 1);
@@ -227,7 +248,11 @@ impl Inventory {
             versions.iter().all(|v| slugs.insert(v.slug.clone())),
             "publication slugs collide"
         );
-        Ok(Self { observed_at: observed_at.value().into(), versions })
+        Ok(Self {
+            observed_at: observed_at.value().into(),
+            site,
+            versions,
+        })
     }
 }
 

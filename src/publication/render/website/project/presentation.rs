@@ -14,6 +14,12 @@ pub(in crate::publication::render::website) struct Presentation {
     pub resources:     Vec<String>,
     pub icons:         BTreeMap<String, CardStyle>,
     pub timelines:     Vec<String>,
+    /// Sections presented as a call-to-action band.
+    pub callouts:      Vec<String>,
+    /// Sections whose cards are presented as a term/definition list.
+    pub terms:         Vec<String>,
+    /// Sections sharing one tighter rhythm with adjacent compact sections.
+    pub compacts:      Vec<String>,
     pub statuses:      BTreeMap<String, Marker>,
 }
 
@@ -176,6 +182,27 @@ impl Presentation {
             );
             value.timelines.push(anchor);
         }
+        value.callouts =
+            anchors(plan, page, "calloutSection", "callout section").await?;
+        value.terms =
+            anchors(plan, page, "termSection", "term section").await?;
+        for anchor in value.callouts.iter().chain(&value.terms) {
+            ensure!(
+                !value.features.contains(anchor) &&
+                    !value.resources.contains(anchor) &&
+                    !value.timelines.contains(anchor),
+                "section {anchor} has conflicting presentations"
+            );
+        }
+        if let Some(anchor) = value
+            .callouts
+            .iter()
+            .find(|anchor| value.terms.contains(anchor))
+        {
+            anyhow::bail!("section {anchor} has conflicting presentations")
+        }
+        value.compacts =
+            anchors(plan, page, "compactSection", "compact section").await?;
         let mut rows = plan.source.objects(page, "timelineStatus").await?;
         while let Some(row) = rows.next().await? {
             ensure!(
@@ -201,6 +228,23 @@ impl Presentation {
         Ok(value)
     }
 }
+/// The heading anchors a page selects for one section presentation.
+async fn anchors(
+    plan: &Plan,
+    page: &NamedNode,
+    property: &str,
+    name: &str,
+) -> Result<Vec<String>> {
+    // bounded: at most 32 sections per presentation.
+    let mut anchors = Vec::new();
+    let mut rows = plan.source.objects(page, property).await?;
+    while let Some(row) = rows.next().await? {
+        ensure!(anchors.len() < 32, "page exceeds 32 {name}s");
+        anchors.push(literal(&row["value"], name)?);
+    }
+    Ok(anchors)
+}
+
 fn literal(value: &Term, name: &str) -> Result<String> {
     let Term::Literal(value) = value else {
         anyhow::bail!("{name} must be a literal")
