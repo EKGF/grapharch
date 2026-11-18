@@ -509,7 +509,9 @@ pub(super) async fn write(
     pool.drain().await?;
     compiled?;
     if let Some(worker) = pinned_worker {
-        tokio::fs::remove_file(worker).await?;
+        super::file_release::FileRelease::platform()
+            .remove_file(&worker)
+            .await?;
     }
     let mut total_pdf_bytes = 0u64;
     for book in &books {

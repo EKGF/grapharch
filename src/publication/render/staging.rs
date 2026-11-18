@@ -1,6 +1,7 @@
 //! The private staging directory one publication is written into before it
 //! is promoted to its destination.
 use {
+    super::file_release::FileRelease,
     anyhow::Result,
     std::path::{Path, PathBuf},
     uuid::Uuid,
@@ -36,7 +37,7 @@ impl Staging {
     }
 
     async fn cleanup(&self) -> Result<()> {
-        match tokio::fs::remove_dir_all(&self.path).await {
+        match FileRelease::platform().remove_dir_all(&self.path).await {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 Ok(())
