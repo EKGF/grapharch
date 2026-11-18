@@ -99,7 +99,7 @@ def main():
         elif not path.is_file():
             raise ValueError(f"Publication report file does not exist: {key}")
         outputs[key.replace("_", "-")] = str(path)
-    with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         for key, value in outputs.items():
             output.write(f"{key}={value}\n")
     print(f"GraphArch publication: {report['publication_path']}")

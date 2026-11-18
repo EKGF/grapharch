@@ -15,7 +15,7 @@ args.output = args.output.resolve(strict=True)
 verify_release(args.output)
 for item in PLATFORMS:
     manifest = json.loads(
-        (args.output / f"grapharch-{item['target']}.json").read_text()
+        (args.output / f"grapharch-{item['target']}.json").read_text(encoding="utf-8")
     )
     if npm_published(manifest['npm_package'], manifest['version'], args.output / manifest['npm_archive']):
         print(f"Already published identical npm artifact: {manifest['npm_package']}")
@@ -31,7 +31,7 @@ for item in PLATFORMS:
         ],
         check=True,
     )
-main = json.loads((args.output / "grapharch-npm.json").read_text())
+main = json.loads((args.output / "grapharch-npm.json").read_text(encoding="utf-8"))
 if not npm_published('@ekgf/grapharch', main['version'], args.output / main['archive']):
     subprocess.run(
         npm_command()

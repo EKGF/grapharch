@@ -56,11 +56,11 @@ def main():
     if head != os.environ['GITHUB_SHA']:
         raise ValueError('candidate checkout differs from event revision')
     event = os.environ['GITHUB_EVENT_NAME']
-    payload = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+    payload = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text(encoding='utf-8'))
     result = select(os.environ.get('CANDIDATE_SCOPE', 'candidate'), event,
                     os.environ['GITHUB_REF'], changed(root, event, payload))
     result['revision'] = head
-    with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+    with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
         for key, value in result.items():
             output.write(f'{key}={str(value).lower() if isinstance(value, bool) else value}\n')
     print(json.dumps(result, sort_keys=True))

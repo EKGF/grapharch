@@ -37,7 +37,7 @@ def linux_runtime_environment(*, compiler=None, previous=None):
 
 def write_shell(path, values):
     path.write_text("".join(f"export {name}={shlex.quote(value)}\n"
-                            for name, value in values.items()))
+                            for name, value in values.items()), encoding="utf-8")
 
 
 if __name__ == "__main__":
@@ -51,6 +51,6 @@ if __name__ == "__main__":
             raise ValueError("Compiler runtime search paths are only configured inside Linux builds")
         write_shell(args.shell_output, linux_runtime_environment())
     else:
-        with Path(os.environ["GITHUB_ENV"]).open("a") as output:
+        with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as output:
             for name, value in values.items():
                 output.write(f"{name}={value}\n")
