@@ -19,6 +19,7 @@ mod repository;
 mod search;
 mod shell;
 mod site;
+mod site_base;
 mod site_chrome;
 mod site_link;
 mod theme;

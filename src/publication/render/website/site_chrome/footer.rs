@@ -2,6 +2,7 @@
 //! notes. When a profile declares one it replaces the theme's footer.
 use {
     super::{
+        super::site_base::SiteBases,
         footer_link::{FooterLink, order, title},
         footer_markdown::FooterText,
     },
@@ -45,6 +46,7 @@ impl SiteFooter {
             plan.source.has_type(&footer, "SiteFooter").await?,
             "{footer} is not a declared ga:SiteFooter"
         );
+        let bases = SiteBases::read(plan).await?;
         let mut groups = Vec::new();
         let mut rows = plan.source.objects(&footer, "footerGroup").await?;
         while let Some(row) = rows.next().await? {
@@ -52,7 +54,7 @@ impl SiteFooter {
                 groups.len() < MAX_GROUPS,
                 "footer exceeds {MAX_GROUPS} groups"
             );
-            groups.push(Group::read(plan, &row["value"]).await?);
+            groups.push(Group::read(plan, &row["value"], &bases).await?);
         }
         ensure!(
             !groups.is_empty(),
@@ -74,6 +76,7 @@ impl SiteFooter {
                             "footer note {note} requires dct:description"
                         )
                     })?,
+                    &bases,
                 )?,
             ));
         }
@@ -114,7 +117,11 @@ impl SiteFooter {
 }
 
 impl Group {
-    async fn read(plan: &Plan, value: &Term) -> Result<Self> {
+    async fn read(
+        plan: &Plan,
+        value: &Term,
+        bases: &SiteBases,
+    ) -> Result<Self> {
         let group = identified(value, "footer group")?;
         let mut links = Vec::new();
         let mut rows = plan.source.objects(&group, "footerLink").await?;
@@ -123,10 +130,12 @@ impl Group {
                 links.len() < MAX_LINKS,
                 "footer group exceeds {MAX_LINKS} links"
             );
-            links.push(FooterLink::read(plan, &row["value"]).await?);
+            links.push(FooterLink::read(plan, &row["value"], bases).await?);
         }
         let body = match (description(plan, &group).await?, links.is_empty()) {
-            (Some(text), true) => GroupBody::Text(FooterText::try_new(text)?),
+            (Some(text), true) => {
+                GroupBody::Text(FooterText::try_new(text, bases)?)
+            },
             (None, false) => {
                 links.sort_by_key(FooterLink::order);
                 distinct(

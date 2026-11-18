@@ -54,7 +54,9 @@ pub(crate) async fn document(
         body.push_str(&format!(
             "### [{}](<{}>)\n\nBranch: {}\n\n{}",
             markdown_text(&version.label),
-            version.route.as_deref().unwrap_or(&version.url),
+            // The renderer links a URL beneath the website's own location
+            // relative to the page, so every deployment links its own copy.
+            version.url,
             markdown_text(&version.branch),
             version
                 .status

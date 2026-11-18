@@ -271,6 +271,15 @@ pub(super) fn link(
             matches!(url.scheme(), "https" | "http" | "mailto"),
             "unsupported website link {value}"
         );
+        // A link beneath the website's own location stays inside the website.
+        if let Some(local) = catalog.bases.localize(&url) {
+            let prefix = "../".repeat(page.route.matches('/').count());
+            return Ok(if prefix.is_empty() && local.is_empty() {
+                "./".into()
+            } else {
+                format!("{prefix}{local}")
+            });
+        }
         return Ok(value.into());
     }
     let base = url::Url::parse(&format!(

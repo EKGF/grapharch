@@ -2,6 +2,7 @@
 use {
     super::{
         super::{markup::html_escape, model::Plan},
+        site_base::SiteBases,
         site_link::{HEADER_SCHEMES, SiteLink},
     },
     anyhow::{Result, ensure},
@@ -12,6 +13,7 @@ pub(super) struct Links(Vec<(u32, String, SiteLink)>);
 
 impl Links {
     pub async fn read(plan: &Plan) -> Result<Self> {
+        let bases = SiteBases::read(plan).await?;
         let mut rows = plan.source.objects(&plan.profile, "headerLink").await?;
         // bounded: a website header permits at most sixteen project links.
         let mut links = Vec::new();
@@ -39,6 +41,7 @@ impl Links {
                 &plan.source.text(link, "url").await?,
                 HEADER_SCHEMES,
                 "header link",
+                &bases,
             )?;
             let order = crate::publication::validation::unsigned(
                 &plan.source.optional(link, "order").await?.ok_or_else(
