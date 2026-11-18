@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from auto_release import eligible, next_version, REQUIRED_JOBS, verify_proof, select_bump
+from auto_release import api, git, eligible, next_version, REQUIRED_JOBS, verify_proof, select_bump
 from action_refs import may_advance
 
 
@@ -84,6 +84,14 @@ class AutomaticRelease(unittest.TestCase):
         with patch('auto_release.api', side_effect=[self.run_record(), jobs]):
             with self.assertRaisesRegex(ValueError, 'full main-push'):
                 verify_proof('EKGF/grapharch', 42, 'a' * 40)
+
+    def test_release_metadata_is_decoded_as_utf8_on_every_platform(self):
+        # The ontology file carries non-ASCII text; Windows' locale codec cannot decode it.
+        with patch('auto_release.subprocess.check_output', return_value='{}') as run:
+            git('show', 'HEAD:docs/other/ontology/publication.ttl')
+            api('repos/EKGF/grapharch')
+        for call in run.call_args_list:
+            self.assertEqual(call.kwargs.get('encoding'), 'utf-8')
 
 
 if __name__ == '__main__':
