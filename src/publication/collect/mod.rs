@@ -24,6 +24,7 @@ mod material_blocks;
 pub(crate) mod mkdocs;
 mod module_hints;
 pub(crate) mod page;
+mod page_presentation;
 mod pages_navigation;
 pub(crate) mod people;
 pub mod plantuml;

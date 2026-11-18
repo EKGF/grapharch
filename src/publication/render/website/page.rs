@@ -135,7 +135,7 @@ impl PageWriter<'_> {
             let panels = project::panels(plan, id).await?;
             let presentation = project::Presentation::read(plan, id).await?;
             for anchor in
-                presentation.features.iter().chain(&presentation.resources)
+                presentation.features.iter().chain(&presentation.timelines)
             {
                 ensure!(
                     content
@@ -143,6 +143,16 @@ impl PageWriter<'_> {
                         .iter()
                         .any(|h| h.level == 2 && h.anchor == *anchor),
                     "presentation section {anchor} is not a level-two heading"
+                );
+            }
+            // The page title's anchor selects the cards after the introduction.
+            for anchor in &presentation.resources {
+                ensure!(
+                    content.headings.iter().any(|h| {
+                        matches!(h.level, 1 | 2) && h.anchor == *anchor
+                    }),
+                    "resource section {anchor} is not the page title or a \
+                     level-two heading"
                 );
             }
             for anchor in presentation.icons.keys() {

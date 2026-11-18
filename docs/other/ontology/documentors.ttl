@@ -1,6 +1,7 @@
 @prefix ga: <https://ekgf.org/ontology/grapharch#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 # Definitions are shared; project settings belong to ga:DocumentorUse.
 
@@ -14,7 +15,8 @@ ga:MaturityOverviewDocumentor a ga:Documentor ;
 
 ga:PublicationInventoryDocumentor a ga:Documentor ;
     rdfs:label "Publication inventory documentor"@en ;
-    dct:description "Generates the specification versions page from collected repository publication metadata."@en .
+    dct:description "Generates the specification versions page from collected repository publication metadata."@en ;
+    skos:scopeNote "The page shows the use's optional ga:eyebrow, its dct:title and the fragment's dct:description, then one linked card per advertised doap:Version. A version's dct:description, ga:iconName and ga:iconTone and its ga:publicationStatus as a badge come from the inventory data; the engine holds no status vocabulary."@en .
 
 ga:VocabularyReferenceDocumentor a ga:Documentor ;
     rdfs:label "Vocabulary reference documentor"@en ;

@@ -209,7 +209,7 @@ pub(super) fn render(
             &format!("{heading}{}", page.body),
             page.panels,
             page.presentation,
-        )
+        )?
     } else {
         page.body.into()
     };

@@ -15,6 +15,8 @@ pub(super) struct FooterLink {
     order: u32,
     label: String,
     url:   SiteLink,
+    /// A bundled icon shown before the label.
+    icon:  Option<&'static str>,
 }
 
 impl FooterLink {
@@ -33,10 +35,27 @@ impl FooterLink {
             "footer link",
             bases,
         )?;
+        let icon = match plan.source.optional(link, "iconName").await? {
+            None => None,
+            Some(Term::Literal(name)) => {
+                Some(
+                    super::super::project::icon_svg(name.value()).ok_or_else(
+                        || {
+                            anyhow::anyhow!(
+                                "unsupported footer link icon {}",
+                                name.value()
+                            )
+                        },
+                    )?,
+                )
+            },
+            Some(_) => anyhow::bail!("footer link icon must be a literal"),
+        };
         Ok(Self {
             order: order(plan, link, "footer link").await?,
             label,
             url,
+            icon,
         })
     }
 
@@ -44,8 +63,13 @@ impl FooterLink {
 
     pub fn html(&self, prefix: &str) -> String {
         format!(
-            "<li><a href=\"{}\">{}</a></li>",
+            "<li><a href=\"{}\">{}{}</a></li>",
             esc(&self.url.href(prefix)),
+            self.icon
+                .map(|svg| {
+                    format!("<span class=\"site-footer-icon\">{svg}</span>")
+                })
+                .unwrap_or_default(),
             esc(&self.label)
         )
     }

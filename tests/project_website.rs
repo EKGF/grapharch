@@ -205,7 +205,7 @@ async fn invalid_feature_card_hints_fail_publication() -> Result<()> {
         ),
         (
             "resource_sections: [missing]",
-            "presentation section missing",
+            "resource section missing is not the page title",
         ),
         (
             "feature_sections: [benefits]\n  resource_sections: [benefits]",
