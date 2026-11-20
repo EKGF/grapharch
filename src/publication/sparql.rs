@@ -142,11 +142,24 @@ impl<R: Read> Read for LimitedRead<R> {
         Ok(n)
     }
 }
+/// Converts a transport failure into an I/O error that names every cause.
+///
+/// `reqwest` reports connect failures, timeouts and dropped connections all as
+/// "error sending request"; the distinguishing cause is only in the source
+/// chain, so the chain is rendered rather than discarded.
 pub(crate) fn http_error(error: reqwest::Error) -> io::Error {
-    io::Error::other(format!(
-        "SPARQL HTTP request failed: {}",
-        error.without_url()
-    ))
+    let error = error.without_url();
+    let mut message = format!("SPARQL HTTP request failed: {error}");
+    let mut cause = std::error::Error::source(&error);
+    while let Some(inner) = cause {
+        message.push_str(": ");
+        message.push_str(&inner.to_string());
+        cause = inner.source();
+    }
+    if error.is_timeout() {
+        message.push_str(" (timed out)");
+    }
+    io::Error::other(message)
 }
 pub(crate) fn status(status: reqwest::StatusCode) -> io::Result<()> {
     if status.is_success() {

@@ -67,7 +67,22 @@ impl Server {
                         let state = shared.clone();
                         let base = origin.clone();
                         thread::spawn(move || {
-                            if let Err(error) = serve(stream, &base, state)
+                            let started = std::time::Instant::now();
+                            let outcome = serve(stream, &base, state);
+                            let elapsed = started.elapsed();
+                            if elapsed > std::time::Duration::from_millis(250) ||
+                                outcome.is_err()
+                            {
+                                let _ = std::io::Write::write_all(
+                                    &mut std::io::stderr(),
+                                    format!(
+                                        "DIAG mock request {elapsed:?} {:?}\n",
+                                        outcome.as_ref().err()
+                                    )
+                                    .as_bytes(),
+                                );
+                            }
+                            if let Err(error) = outcome
                                 && !error.downcast_ref::<std::io::Error>().is_some_and(|e| matches!(e.kind(), std::io::ErrorKind::BrokenPipe | std::io::ErrorKind::ConnectionReset)) { panic!("{error:#}"); }
                         });
                     },
@@ -165,7 +180,24 @@ fn serve(
     if delay > 0 {
         thread::sleep(std::time::Duration::from_millis(delay));
     }
+    let waited = std::time::Instant::now();
     let mut state = state.lock().unwrap();
+    let wait = waited.elapsed();
+    if wait > std::time::Duration::from_millis(100) {
+        let _ = std::io::Write::write_all(
+            &mut std::io::stderr(),
+            format!("DIAG mock lock wait {wait:?} {method} {path}\n")
+                .as_bytes(),
+        );
+    }
+    let handling = std::time::Instant::now();
+    let _guard = Timing(
+        handling,
+        format!(
+            "{method} {path} quads={}",
+            state.store.len().unwrap_or(0)
+        ),
+    );
     state.authenticated |= headers
         .to_ascii_lowercase()
         .contains("authorization: bearer grapharch-test-only");
@@ -336,5 +368,18 @@ fn query_json(store: &Store, query: &str) -> Result<Vec<u8>> {
         QueryResults::Graph(_) => {
             anyhow::bail!("protocol mock requires SELECT or ASK")
         },
+    }
+}
+
+struct Timing(std::time::Instant, String);
+impl Drop for Timing {
+    fn drop(&mut self) {
+        let e = self.0.elapsed();
+        if e > std::time::Duration::from_millis(100) {
+            let _ = std::io::Write::write_all(
+                &mut std::io::stderr(),
+                format!("DIAG mock handled {e:?} {}\n", self.1).as_bytes(),
+            );
+        }
     }
 }
