@@ -45,6 +45,7 @@ pub(crate) async fn document(
         job:         &job,
         description: description.as_deref(),
         versions:    &inventory.versions,
+        site:        inventory.site.as_deref(),
     }
     .markdown()?;
     let revision = format!("publication-inventory-v1:{snapshot}");

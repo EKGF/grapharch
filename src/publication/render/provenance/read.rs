@@ -1,12 +1,18 @@
 use {
-    super::{Commit, Provenance, Repository},
+    super::{
+        identifiers::{CommitSha, RepositoryUrl},
+        model::{Commit, Provenance, Repository},
+    },
     crate::publication::{dataset::Rows, render::model::Plan},
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
 };
-const PROV: &str = "http://www.w3.org/ns/prov#";
+pub(super) const PROV: &str = "http://www.w3.org/ns/prov#";
 const DCT: &str = "http://purl.org/dc/terms/";
-const SCHEMA: &str = "https://schema.org/";
+pub(super) const SCHEMA: &str = "https://schema.org/";
+pub(super) const CONTROL: &str = "GRAPH <urn:grapharch:control> { ?_attempt0 \
+                                  <https://ekgf.org/ontology/grapharch#collector> \
+                                  <urn:grapharch:git-provenance> }";
 
 pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
     let mut result = Provenance::default();
@@ -17,7 +23,13 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
         ),
         0,
     );
-    let mut rows = plan.dataset.select(format!("SELECT DISTINCT ?repo ?url ?commit WHERE {{ {pattern} GRAPH <urn:grapharch:control> {{ ?_attempt0 <https://ekgf.org/ontology/grapharch#collector> <urn:grapharch:git-provenance> }} }} ORDER BY ?url ?commit")).await?;
+    let mut rows = plan
+        .dataset
+        .select(format!(
+            "SELECT DISTINCT ?repo ?url ?commit WHERE {{ {pattern} {CONTROL} \
+             }} ORDER BY ?url ?commit"
+        ))
+        .await?;
     while let Some(row) = rows.next().await? {
         ensure!(
             result.repositories.len() < 128,
@@ -25,15 +37,12 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
         );
         let node = super::super::model::node(&row["commit"])?;
         let repo = super::super::model::node(&row["repo"])?;
-        let url = super::super::model::node(&row["url"])?;
-        ensure!(
-            matches!(
-                url::Url::parse(url.as_str())?.scheme(),
-                "https" | "http" | "file" | "ssh" | "git"
-            ),
-            "unsupported provenance repository URL"
-        );
-        let commit = literal(plan, node, &format!("{DCT}identifier")).await?;
+        let url = RepositoryUrl::try_new(
+            super::super::model::node(&row["url"])?.as_str(),
+        )?;
+        let commit = CommitSha::try_new(
+            &literal(plan, node, &format!("{DCT}identifier")).await?,
+        )?;
         let tags =
             literals(plan, repo, &format!("{SCHEMA}version"), 64).await?;
         let mut state =
@@ -45,28 +54,33 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
             if commits.len() == 5 {
                 break;
             }
-            let sha = literal(plan, &id, &format!("{DCT}identifier")).await?;
+            let sha = CommitSha::try_new(
+                &literal(plan, &id, &format!("{DCT}identifier")).await?,
+            )?;
+            // The author wrote the change; a merge or squash committer
+            // (often the forge itself) only applied it.
             let time = chrono::DateTime::parse_from_rfc3339(
-                &literal(plan, &id, &format!("{PROV}generatedAtTime")).await?,
+                &literal(plan, &id, &format!("{DCT}created")).await?,
             )?
             .with_timezone(&chrono::Utc);
-            let p = plan.source.pattern(&format!("{id} <{PROV}qualifiedAttribution> ?a . ?a <{PROV}hadRole> <urn:grapharch:git-role:committer> ; <{PROV}agent> ?person . ?person <http://xmlns.com/foaf/0.1/name> ?name"), 0);
-            let mut people = plan.dataset.select(format!("SELECT DISTINCT ?name WHERE {{ {p} GRAPH <urn:grapharch:control> {{ ?_attempt0 <https://ekgf.org/ontology/grapharch#collector> <urn:grapharch:git-provenance> }} }}")).await?;
+            let p = plan.source.pattern(&format!("{id} <{PROV}qualifiedAttribution> ?a . ?a <{PROV}hadRole> <urn:grapharch:git-role:author> ; <{PROV}agent> ?person . ?person <http://xmlns.com/foaf/0.1/name> ?name"), 0);
+            let mut people = plan
+                .dataset
+                .select(format!(
+                    "SELECT DISTINCT ?name WHERE {{ {p} {CONTROL} }}"
+                ))
+                .await?;
             let person = people.next().await?.ok_or_else(|| {
-                anyhow::anyhow!("Git commit has no recorded committer")
+                anyhow::anyhow!("Git commit has no recorded author")
             })?;
             let Term::Literal(name) = &person["name"] else {
-                anyhow::bail!("Git committer name must be a literal")
+                anyhow::bail!("Git author name must be a literal")
             };
             ensure!(
                 people.next().await?.is_none(),
-                "Git commit has multiple committers"
+                "Git commit has multiple authors"
             );
-            commits.push(Commit {
-                id: sha,
-                committer: name.value().into(),
-                time,
-            });
+            commits.push(Commit { id: sha, author: name.value().into(), time });
             let mut parents =
                 objects(plan, &id, &format!("{PROV}wasRevisionOf")).await?;
             current = match parents.next().await? {
@@ -115,7 +129,7 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
             release_links.push((title.value().into(), url.as_str().into()));
         }
         result.repositories.push(Repository {
-            url: url.as_str().into(),
+            url,
             commit,
             working_tree,
             tags,
@@ -123,26 +137,10 @@ pub(super) async fn read(plan: &Plan) -> Result<Provenance> {
             commits,
         });
     }
-    let p = plan.source.pattern(&format!("{} <{PROV}wasGeneratedBy> ?activity . ?activity <{PROV}wasAssociatedWith> ?agent . ?agent <http://www.w3.org/2000/01/rdf-schema#label> ?name", plan.target), 0);
-    let mut operators = plan
-        .dataset
-        .select(format!(
-            "SELECT DISTINCT ?name WHERE {{ {p} }} ORDER BY ?name"
-        ))
-        .await?;
-    while let Some(row) = operators.next().await? {
-        ensure!(
-            result.operators.len() < 16,
-            "provenance build operator limit exceeded"
-        );
-        let Term::Literal(name) = &row["name"] else {
-            anyhow::bail!("build operator label must be a literal")
-        };
-        result.operators.push(name.value().into());
-    }
+    result.operators = super::operator::read(plan).await?;
     Ok(result)
 }
-async fn literal(
+pub(super) async fn literal(
     plan: &Plan,
     id: &NamedNode,
     predicate: &str,
@@ -164,7 +162,11 @@ async fn objects(plan: &Plan, id: &NamedNode, predicate: &str) -> Result<Rows> {
     let pattern = plan
         .source
         .pattern(&format!("{id} <{predicate}> ?value"), 0);
-    plan.dataset.select(format!("SELECT DISTINCT ?value WHERE {{ {pattern} GRAPH <urn:grapharch:control> {{ ?_attempt0 <https://ekgf.org/ontology/grapharch#collector> <urn:grapharch:git-provenance> }} }}")).await
+    plan.dataset
+        .select(format!(
+            "SELECT DISTINCT ?value WHERE {{ {pattern} {CONTROL} }}"
+        ))
+        .await
 }
 async fn literals(
     plan: &Plan,

@@ -58,7 +58,7 @@ def validate_directory(directory, revision, version):
         path = directory / f'grapharch-{item["target"]}.json'
         if path.stat().st_size > 64 * 1024:
             raise ValueError('native manifest exceeds bounded metadata budget')
-        manifest = json.loads(path.read_text())
+        manifest = json.loads(path.read_text(encoding='utf-8'))
         if (manifest.get('source_commit') != revision or manifest.get('version') != version
                 or manifest.get('target') != item['target']
                 or manifest.get('npm_package') != npm_package(item)):

@@ -68,7 +68,14 @@ pub(super) fn render(
             "<p><a href=\"{prefix}quality-issues.html\">Quality issues</a></p>"
         )
     };
-    let generator_credit = super::super::credit::html();
+    let generator_credit = if header.chrome.generator_credit() {
+        format!(
+            "{} · <a href=\"{prefix}provenance.html\">Provenance</a> · ",
+            super::super::credit::html()
+        )
+    } else {
+        String::new()
+    };
     let organization_identity = header.theme.identity();
     let header_links = header.theme.links(
         repository,
@@ -123,14 +130,18 @@ pub(super) fn render(
         };
     let identity_attribution = header.theme.attribution(prefix);
     let community_footer = match &header.footer {
-        Some(footer) => footer.html(prefix)?,
-        None => header.theme.community_footer(prefix),
+        Some(footer) => {
+            footer.html(prefix, header.chrome.generator_credit())?
+        },
+        None => {
+            header
+                .theme
+                .community_footer(prefix, header.chrome.generator_credit())
+        },
     };
     let article_footer = if community_footer.is_empty() {
         format!(
-            "<footer>{generator_credit} · <a \
-             href=\"{prefix}provenance.html\">Provenance</a> · <a \
-             href=\"{prefix}\">Documentation \
+            "<footer>{generator_credit}<a href=\"{prefix}\">Documentation \
              home</a>{identity_attribution}</footer>"
         )
     } else {
@@ -250,7 +261,7 @@ pub(super) fn render(
     };
     Ok(format!(
         r##"<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="Grapharch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{page_title} · {project_title}</title><meta name="generator" content="GraphArch"><meta name="grapharch-revision" content="{revision}"><meta name="grapharch-target" content="{target}"><meta name="grapharch-page" content="{id}"><meta name="grapharch-fragment-count" content="{fragment_count}">{prepaint}{extra_head}<link rel="stylesheet" href="{prefix}style.css"><link rel="icon" href="data:,"></head>
 <body{body_attribute}{layout_attribute}><a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">{header_content}{primary_navigation}</header>
 <div class="{layout}">{navigation_panel}

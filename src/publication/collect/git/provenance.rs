@@ -1,6 +1,6 @@
 //! A bounded first-parent history and exact tag associations observed by gix.
 use {
-    super::{Collector, Revision, SourceIdentity, identity},
+    super::{Collector, Revision, SourceIdentity, build_run, identity},
     crate::publication::{RDF_TYPE, writer::ContributionStream},
     anyhow::{Context, Result, ensure},
     async_trait::async_trait,
@@ -256,6 +256,11 @@ impl Collector for Revision {
                 }
             }
         }
+        if let Some(run) = &self.build_run {
+            for assertion in run.quads(&self.entity())? {
+                stream.write(assertion).await?;
+            }
+        }
         if self.working_tree {
             let working = identity("git-working-tree", &[&self.origin]);
             stream
@@ -280,8 +285,12 @@ impl Collector for Revision {
         // metadata in the source revision so an unchanged commit cannot
         // reuse stale tags.
         let metadata = format!(
-            "{}:{}:{:?}:{:?}",
-            self.commit, self.working_tree, self.tags, self.local_location
+            "{}:{}:{:?}:{:?}:{:?}",
+            self.commit,
+            self.working_tree,
+            self.tags,
+            self.local_location,
+            self.build_run.as_ref().map(build_run::BuildRun::url)
         );
         Ok(identity("git-provenance-v3", &[&metadata]).into_string())
     }

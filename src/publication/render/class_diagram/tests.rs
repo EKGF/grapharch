@@ -16,6 +16,7 @@ fn retained(link: &str) -> String {
             focus:   node.clone(),
             shapes:  Vec::new(),
             limited: false,
+            context: Default::default(),
             edges:   vec![Edge {
                 predicate: None,
                 from:      node.clone(),

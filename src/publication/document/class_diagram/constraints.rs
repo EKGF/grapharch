@@ -50,16 +50,16 @@ impl Shape {
     }
 }
 impl Field {
-    pub fn cardinality(&self) -> String {
+    /// The drawn bounds, or `None` when no count is declared.
+    pub(super) fn cardinality(
+        &self,
+    ) -> Option<super::multiplicity::Cardinality> {
         if self.minimum.is_none() && self.maximum.is_none() {
-            return String::new();
+            return None;
         }
-        format!(
-            "{}..{}",
+        super::multiplicity::Cardinality::try_new(
             self.minimum.unwrap_or(0),
-            self.maximum
-                .map(|n| n.to_string())
-                .unwrap_or_else(|| "*".into())
+            self.maximum,
         )
     }
 }

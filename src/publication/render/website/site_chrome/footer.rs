@@ -93,8 +93,9 @@ impl SiteFooter {
         Ok(Some(Self { groups, notes }))
     }
 
-    /// The footer, closed by the engine's generator credit and provenance.
-    pub fn html(&self, prefix: &str) -> Result<String> {
+    /// The footer, closed by the engine's generator credit and provenance
+    /// unless the profile omits them.
+    pub fn html(&self, prefix: &str, credit: bool) -> Result<String> {
         let mut html = String::from(
             "<footer class=\"site-footer\"><div \
              class=\"site-footer-inner\"><div class=\"site-footer-grid\">",
@@ -106,12 +107,14 @@ impl SiteFooter {
         for (_, note) in &self.notes {
             html.push_str(&format!("<p>{}</p>", note.html(prefix)?));
         }
-        html.push_str(&format!(
-            "<p class=\"site-footer-credit\">{} · <a \
-             href=\"{prefix}provenance.html\">Provenance</a></p></div></div></\
-             footer>",
-            super::super::super::credit::html()
-        ));
+        if credit {
+            html.push_str(&format!(
+                "<p class=\"site-footer-credit\">{} · <a \
+                 href=\"{prefix}provenance.html\">Provenance</a></p>",
+                super::super::super::credit::html()
+            ));
+        }
+        html.push_str("</div></div></footer>");
         Ok(html)
     }
 }

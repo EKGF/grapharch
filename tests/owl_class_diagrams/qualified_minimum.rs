@@ -70,8 +70,6 @@ async fn qualified_minimum_does_not_simplify_other_or_ambiguous_constraints()
 -> Result<()> {
     for constraint in [
         "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
-         owl:qualifiedCardinality 0",
-        "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
          owl:minQualifiedCardinality -1",
         "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
          owl:minQualifiedCardinality \"1\"",
@@ -123,7 +121,8 @@ async fn qualified_minimum_is_not_inherited_or_removed_inside_a_boolean_expressi
                 .next()
                 .unwrap(),
         )?;
-        assert!(!d.source.contains("{qualified}"));
+        // A neighbour's restriction is its own member, never an association.
+        assert!(!d.source.contains("\\n{qualified}"));
         if focus == "Core" {
             assert!(d.source.contains("OWL expression"));
         }

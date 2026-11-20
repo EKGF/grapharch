@@ -20,13 +20,13 @@ from pathlib import Path
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
-PLATFORMS = json.loads((ROOT / "packaging/platforms.json").read_text())
+PLATFORMS = json.loads((ROOT / "packaging/platforms.json").read_text(encoding="utf-8"))
 REPOSITORY = "https://github.com/EKGF/grapharch"
 MAX_BINARY = 512 * 1024 * 1024
 
 
 def version() -> str:
-    value = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"]["version"]
+    value = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["package"]["version"]
     if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", value):
         raise ValueError(
             "distribution currently requires a stable MAJOR.MINOR.PATCH version"
@@ -51,7 +51,7 @@ def sha256(path: Path) -> str:
 
 def ontology_metadata() -> tuple[Path, str, str, str]:
     path = ROOT / "docs/other/ontology/publication.ttl"
-    text = path.read_text()
+    text = path.read_text(encoding="utf-8")
     iri = re.findall(r'^\s*owl:versionIRI <([^>]+)> ;$', text, re.MULTILINE)
     info = re.findall(r'^\s*owl:versionInfo "([^"\n]+)" ;$', text, re.MULTILINE)
     if len(iri) != 1 or len(info) != 1:
@@ -86,7 +86,7 @@ def check() -> None:
         raise ValueError(
             "ontology version differs from Cargo.toml; run packaging/distribute.py sync-version"
         )
-    manifest = json.loads((ROOT / "npm/package.json").read_text())
+    manifest = json.loads((ROOT / "npm/package.json").read_text(encoding="utf-8"))
     if manifest["version"] != expected:
         raise ValueError(
             "npm version differs from Cargo.toml; run packaging/distribute.py sync-version"
@@ -98,7 +98,7 @@ def check() -> None:
         raise ValueError(
             "npm platform dependencies differ from the declared platform matrix/version"
         )
-    python = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    python = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     if python["project"]["name"] != "grapharch" or python["project"]["dynamic"] != [
         "version"
     ]:
@@ -115,14 +115,14 @@ def sync_version() -> None:
         f"owl:versionIRI <{old_iri}>",
         f"owl:versionIRI <https://ekgf.org/ontology/grapharch/{expected}>",
     ).replace(f'owl:versionInfo "{old_info}"', f'owl:versionInfo "{expected}{suffix}"')
-    ontology.write_text(text)
+    ontology.write_text(text, encoding="utf-8")
     path = ROOT / "npm/package.json"
-    manifest = json.loads(path.read_text())
+    manifest = json.loads(path.read_text(encoding="utf-8"))
     manifest["version"] = expected
     manifest["optionalDependencies"] = {
         npm_package(p): expected for p in PLATFORMS
     }
-    path.write_text(json.dumps(manifest, indent=2) + "\n")
+    path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     check()
 
 
@@ -248,7 +248,7 @@ def build(binary: Path | None, wheel: Path | None, target: str, output: Path) ->
         }
         if "libc" in item:
             metadata["libc"] = [item["libc"]]
-        (package / "package.json").write_text(json.dumps(metadata, indent=2) + "\n")
+        (package / "package.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         shutil.copyfile(ROOT / "LICENSE", package / "LICENSE")
         (package / "licenses").mkdir()
         for notice in notices():
@@ -275,7 +275,7 @@ def build(binary: Path | None, wheel: Path | None, target: str, output: Path) ->
                 info.compress_type = zipfile.ZIP_DEFLATED
                 zipped.writestr(info, notice.read_bytes())
         digest = sha256(archive)
-        (output / f"{archive.name}.sha256").write_text(f"{digest}  {archive.name}\n")
+        (output / f"{archive.name}.sha256").write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
         manifest = {
             "version": version(),
             "target": target,
@@ -295,14 +295,14 @@ def build(binary: Path | None, wheel: Path | None, target: str, output: Path) ->
             manifest["wheel"] = wheel.name
             manifest["wheel_sha256"] = sha256(destination)
         (output / f"grapharch-{target}.json").write_text(
-            json.dumps(manifest, indent=2) + "\n"
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
         )
     verify(output, target)
 
 
 def verify(output: Path, target: str) -> None:
     item = platform(target)
-    manifest = json.loads((output / f"grapharch-{target}.json").read_text())
+    manifest = json.loads((output / f"grapharch-{target}.json").read_text(encoding="utf-8"))
     if (manifest["version"] != version() or manifest["target"] != target
             or manifest.get("npm_package") != npm_package(item)):
         raise ValueError("release manifest identifies a different version/target/npm package")
@@ -310,7 +310,7 @@ def verify(output: Path, target: str) -> None:
     digest = sha256(archive)
     if (
         manifest["archive_sha256"] != digest
-        or (output / f"{archive.name}.sha256").read_text()
+        or (output / f"{archive.name}.sha256").read_text(encoding="utf-8")
         != f"{digest}  {archive.name}\n"
     ):
         raise ValueError(f"checksum mismatch: {archive.name}")
@@ -321,7 +321,7 @@ def verify(output: Path, target: str) -> None:
         for name, digest in manifest["notices"].items():
             if hashlib.sha256(zipped.read(f"licenses/{name}")).hexdigest() != digest:
                 raise ValueError("archive license notice mismatch")
-    staged_metadata = json.loads((output / "npm" / f"cli-{item['key']}" / "package.json").read_text())
+    staged_metadata = json.loads((output / "npm" / f"cli-{item['key']}" / "package.json").read_text(encoding="utf-8"))
     verify_npm_metadata(staged_metadata, item)
     native = output / "npm" / f"cli-{item['key']}" / "bin" / binary_name(item)
     if sha256(native) != manifest["binary_sha256"]:
@@ -434,9 +434,9 @@ def pack_npm(output: Path, target: str | None) -> None:
         raise ValueError("invalid npm package filename")
     if target:
         path = output / f"grapharch-{target}.json"
-        manifest = json.loads(path.read_text())
+        manifest = json.loads(path.read_text(encoding="utf-8"))
         manifest.update(npm_archive=name, npm_sha256=sha256(output / name))
-        path.write_text(json.dumps(manifest, indent=2) + "\n")
+        path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         verify(output, target)
     else:
         (output / "grapharch-npm.json").write_text(
@@ -448,17 +448,18 @@ def pack_npm(output: Path, target: str | None) -> None:
                 },
                 indent=2,
             )
-            + "\n"
+            + "\n",
+            encoding="utf-8",
         )
 
 
 def verify_release(output: Path) -> None:
     for item in PLATFORMS:
         verify(output, item["target"])
-        manifest = json.loads((output / f"grapharch-{item['target']}.json").read_text())
+        manifest = json.loads((output / f"grapharch-{item['target']}.json").read_text(encoding="utf-8"))
         if "wheel" not in manifest or "npm_archive" not in manifest:
             raise ValueError(f"incomplete Python/npm release for {item['target']}")
-    main = json.loads((output / "grapharch-npm.json").read_text())
+    main = json.loads((output / "grapharch-npm.json").read_text(encoding="utf-8"))
     if (
         main["version"] != version()
         or main["archive"] != f"ekgf-grapharch-{version()}.tgz"
@@ -475,7 +476,7 @@ def verify_release(output: Path) -> None:
     with tarfile.open(output / main["archive"], "r:gz") as packed:
         metadata = packed.extractfile("package/package.json")
         if metadata is None or json.load(metadata) != json.loads(
-            (ROOT / "npm/package.json").read_text()
+            (ROOT / "npm/package.json").read_text(encoding="utf-8")
         ):
             raise ValueError(
                 "main npm package differs from the reviewed source manifest"
@@ -489,7 +490,7 @@ def homebrew(output: Path, destination: Path) -> None:
             continue
         verify(output, item["target"])
         manifests[item["key"]] = json.loads(
-            (output / f"grapharch-{item['target']}.json").read_text()
+            (output / f"grapharch-{item['target']}.json").read_text(encoding="utf-8")
         )
     lines = [
         "class Grapharch < Formula",
@@ -522,7 +523,7 @@ def homebrew(output: Path, destination: Path) -> None:
         "",
     ]
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text("\n".join(lines))
+    destination.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:

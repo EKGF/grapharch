@@ -113,12 +113,71 @@ html[data-color-scheme="dark"] .project-badge-accent{color:#ff9b4d}
 .project-section-resources .project-card-linked:hover{background:color-mix(in srgb,var(--accent) 5%,transparent);box-shadow:none}
 .project-section>.project-container>blockquote{grid-column:1/-1;margin:2rem 0 0;padding:1.5rem;border:1px dashed var(--line);border-radius:.5rem;color:var(--muted);background:none;font-size:.875rem;line-height:1.5}
 .project-section>.project-container>blockquote p{margin:0}
-.project-timeline{list-style:none;margin:0;padding:0 0 0 1.75rem;border-left:1px solid var(--line);display:grid;gap:1.5rem}
+.project-timeline{list-style:none;margin:0;padding:0 0 0 2rem;border-left:1px solid var(--line);display:grid;gap:2.5rem}
 .project-timeline-item{position:relative;margin:0}
-.project-timeline-item>.project-card-icon{position:absolute;left:-2.5rem;top:0;width:1.5rem;height:1.5rem;margin:0;padding:.2rem;border-radius:999px;background:var(--paper);border:1px solid currentColor;box-sizing:border-box}
+.project-timeline-item>.project-card-icon{position:absolute;left:-2.4rem;top:0;width:2rem;height:2rem;margin:0;padding:.45rem;border-radius:999px;background:var(--paper);border:1px solid currentColor;box-sizing:border-box}
 .project-timeline-meta{display:flex;align-items:center;gap:.75rem;margin:0 0 .25rem}
 .project-timeline-meta .project-badge{border:0;background:none;padding:0}
 .project-timeline-date{font-size:.75rem;color:var(--muted)}
 .project-timeline-content p.project-timeline-title{font-size:1.125rem;line-height:1.75rem;font-weight:600;color:var(--ink);margin:0 0 .5rem}
 .project-timeline-content p{color:var(--muted);margin:0}
 @media(prefers-reduced-motion:reduce){.project-card-arrow{transition:none}}
+
+/* Section actions mark each link internal or external, as in cards. */
+.project-section-actions a{gap:.5rem;padding:.5rem .75rem;border-radius:.375rem;background:var(--paper);color:var(--ink)}
+.project-section-actions svg{width:1rem;height:1rem;flex:none}
+
+/* Compact sections: consecutive steps read as one section with smaller headings. */
+.project-section-compact:has(+.project-section-compact){border-bottom:0;padding-bottom:0}
+.project-section-compact+.project-section-compact{padding-top:4rem}
+.project-section-compact h2{font-size:1.5rem;line-height:2rem;font-weight:700}
+.project-section-compact .project-section-heading{align-items:center;gap:.75rem;margin-bottom:1rem}
+.project-section-compact h2+p,.project-section-compact .project-section-heading+p{margin-top:0}
+.project-section-compact p{color:var(--muted);margin-bottom:1.5rem}
+.project-section-compact pre{margin:0 0 1.5rem}
+.project-section-compact>.project-container>:last-child{margin-bottom:0}
+
+/* A callout band: the section's content on an accent panel. */
+.project-section-callout>.project-container{max-width:56rem;padding:1.5rem;border-radius:.75rem;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 75%,#000));color:#fff;box-shadow:0 1px 3px #0000001a,0 1px 2px #0000000f}
+.project-section-callout h2{font-size:1.5rem;line-height:2rem;font-weight:600;color:#fff;margin:0 0 .5rem}
+.project-section-callout p,.project-section-callout li{color:#ffffffe6}
+.project-section-callout p{margin:0}
+.project-section-callout ul{list-style:none;margin:1rem 0 0;padding:0;font-size:.875rem;line-height:1.25rem}
+.project-section-callout li+li{margin-top:.5rem}
+.project-section-callout li::before{content:"•";margin-right:.5rem}
+.project-section-callout .project-section-actions{margin-top:1.5rem;gap:1rem}
+.project-section-callout .project-section-actions a{height:2.5rem;box-sizing:border-box;padding:0 1rem;border:0;background:#fff;color:var(--accent)}
+.project-section-callout .project-section-actions a:hover{background:#ffffffe6;color:var(--accent)}
+.project-section-callout .project-section-actions a:last-child:not(:first-child){padding:0 1.5rem;border:1px solid #fff;background:none;color:#fff}
+.project-section-callout .project-section-actions a:last-child:not(:first-child)>svg{display:none}
+.project-section-callout a:focus-visible{outline-color:#fff}
+
+/* A term list: each term and its expansion beside the definition. */
+.project-section-terms>.project-container{max-width:64rem}
+.project-section-terms .project-section-heading{align-items:center;gap:.75rem;margin-bottom:2.5rem}
+.project-section-terms .project-section-heading .project-card-icon{width:1.75rem;height:1.75rem;margin:0}
+.project-section-terms h2+p,.project-section-terms .project-section-heading+p{max-width:48rem;font-size:1.125rem;line-height:1.75rem;color:var(--muted);margin-bottom:2.5rem}
+.project-term{position:relative;display:flex;gap:1.5rem;align-items:flex-start;padding:1.5rem;margin:0 0 1rem;border:1px solid var(--line);border-radius:.5rem;transition:background-color .15s}
+.project-term-name{flex:0 0 10rem;min-width:0}
+.project-term-name h3{margin:0!important;font-size:1.5rem!important;line-height:2rem!important;font-weight:900!important;letter-spacing:-.025em!important}
+.project-term-primary h3,.project-term-primary h3 a{color:var(--accent)}
+.project-term-accent h3,.project-term-accent h3 a{color:#ff6f00}
+html[data-color-scheme="dark"] .project-term-accent h3,html[data-color-scheme="dark"] .project-term-accent h3 a{color:#ff9b4d}
+.project-term-muted h3{color:var(--muted)}
+.project-term h3 a{text-decoration:none}
+.project-term h3 a::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.project-term:has(h3 a):hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.project-term:has(h3 a:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.project-term h3 a:focus-visible{outline:none}
+.project-section-terms p.project-term-expansion{margin:0;font-size:.875rem;line-height:1.25rem;color:var(--muted)}
+.project-term-expansion strong{font-weight:400}
+.project-term-definition{flex:1;min-width:0;color:var(--muted)}
+.project-term-definition p{margin:0 0 .5rem}
+.project-term-definition>:last-child{margin-bottom:0}
+@media(max-width:760px){.project-term{flex-direction:column;gap:.5rem}.project-term-name{flex:none}}
+@media(prefers-reduced-motion:reduce){.project-term{transition:none}}
+.project-term-arrow{flex:none;width:1rem;height:1rem;margin-left:auto;color:var(--muted)}
+.project-term-arrow svg{display:block;width:100%;height:100%}
+.project-term:hover .project-term-arrow{color:var(--accent)}
+@media(max-width:760px){.project-term-arrow{position:absolute;top:1.5rem;right:1.5rem}}
+.project-section-actions a{flex-direction:row-reverse}

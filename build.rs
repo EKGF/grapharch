@@ -217,4 +217,5 @@ fn identity() {
         "cargo:rustc-env=GRAPHARCH_BUILD_DETAILS={}",
         value.details
     );
+    println!("cargo:rustc-env=GRAPHARCH_GENERATOR_MODIFIED={dirty}");
 }

@@ -32,7 +32,7 @@ def install(root, revision):
     validate_checkout(root, revision)
     if platform.system() != 'Linux':
         raise ValueError('source-revision installation currently supports Linux runners only')
-    toolchain = tomllib.loads((root / 'rust-toolchain.toml').read_text())['toolchain']['channel']
+    toolchain = tomllib.loads((root / 'rust-toolchain.toml').read_text(encoding='utf-8'))['toolchain']['channel']
     if not re.fullmatch(r'(nightly-\d{4}-\d{2}-\d{2}|\d+\.\d+\.\d+)', toolchain):
         raise ValueError('source action requires an exact pinned Rust toolchain')
     subprocess.run([sys.executable, str(root / 'packaging/install_build_dependencies.py')], check=True)
@@ -41,14 +41,14 @@ def install(root, revision):
     subprocess.run(['cargo', '+' + toolchain, 'build', '--locked', '--release', '--bin', 'grapharch',
                     '--target-dir', str(directory)], cwd=root, check=True, env={**os.environ, 'GRAPHARCH_BUILD_REVISION': revision, 'GRAPHARCH_BUILD_RELEASE_VERSION': '', 'GRAPHARCH_BUILD_CONTEXT': ''})
     binary = directory / 'release/grapharch'
-    version = tomllib.loads((root / 'Cargo.toml').read_text())['package']['version']
+    version = tomllib.loads((root / 'Cargo.toml').read_text(encoding='utf-8'))['package']['version']
     canonical = subprocess.check_output([str(binary), '-V'], text=True).strip()
     actual = subprocess.check_output([str(binary), '--version'], text=True).strip()
     if canonical != f'grapharch {version}' or actual.splitlines()[0] != f'grapharch {version} (source {revision[:12]})' or revision not in actual:
         raise ValueError('source binary version differs from pinned manifest')
-    with open(os.environ['GITHUB_PATH'], 'a') as output:
+    with open(os.environ['GITHUB_PATH'], 'a', encoding='utf-8') as output:
         output.write(str(binary.parent) + '\n')
-    with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+    with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
         output.write(f'version={version}\nrevision={revision}\nbinary-path={binary}\n')
 
 

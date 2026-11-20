@@ -120,6 +120,7 @@ mod tests {
                 edges:   Vec::new(),
                 shapes:  Vec::new(),
                 limited: false,
+                context: Default::default(),
             },
             source:  "@startuml\n' previous generated layout \
                       revision\nrectangle Class\n@enduml\n"

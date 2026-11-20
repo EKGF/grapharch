@@ -247,7 +247,12 @@ async fn rdf12_publication_preserves_modern_metadata_and_document_structure()
             labels.contains("Status of This Document") &&
             labels.contains("Set of Documents")
     );
-    for selector in ["pre", "dfn", "table td", "dl.bibliography dt"] {
+    for selector in [
+        "pre",
+        "dfn",
+        "table:not(.provenance-fields) td",
+        "dl.bibliography dt",
+    ] {
         let selector = scraper::Selector::parse(selector).unwrap();
         let text = |doc: &scraper::Html| {
             doc.select(&selector)

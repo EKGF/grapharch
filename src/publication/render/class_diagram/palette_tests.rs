@@ -40,6 +40,7 @@ fn projection() -> Projection {
             focus,
             shapes: Vec::new(),
             limited: false,
+            context: Default::default(),
         },
         source:  String::new(),
         engine:  "PlantUML version fixture".into(),

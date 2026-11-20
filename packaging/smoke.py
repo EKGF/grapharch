@@ -44,7 +44,7 @@ def smoke(output: Path, target: str) -> None:
             "install smoke tests must execute on the artifact's native platform"
         )
     verify(output, target)
-    manifest = json.loads((output / f"grapharch-{target}.json").read_text())
+    manifest = json.loads((output / f"grapharch-{target}.json").read_text(encoding="utf-8"))
     expected = f"grapharch {version()}"
     with tempfile.TemporaryDirectory(prefix="grapharch-package-smoke-") as temporary:
         root = Path(temporary)
@@ -85,7 +85,8 @@ def smoke(output: Path, target: str) -> None:
                     "private": True,
                     "scripts": {"grapharch": "grapharch"},
                 }
-            )
+            ),
+            encoding="utf-8",
         )
         checked(
             npm_command()

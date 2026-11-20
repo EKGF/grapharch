@@ -99,7 +99,7 @@ pub(in crate::publication::render) async fn write(
     .await?;
     let header = Header {
         title: title(&plan.source, &plan.project).await?,
-        repository: repository::link(plan).await?,
+        repository: repository::link(plan, theme).await?,
         theme,
         links: header_links::Links::read(plan).await?,
         metadata: metadata::Metadata::read(plan).await?,

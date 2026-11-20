@@ -35,6 +35,12 @@ pub(super) struct Hints {
     #[serde(default)]
     timeline_sections:    Vec<String>,
     #[serde(default)]
+    callout_sections:     Vec<String>,
+    #[serde(default)]
+    term_sections:        Vec<String>,
+    #[serde(default)]
+    compact_sections:     Vec<String>,
+    #[serde(default)]
     card_icons:           BTreeMap<String, CardIcon>,
     #[serde(default)]
     timeline_statuses:    BTreeMap<String, Marker>,
@@ -71,6 +77,9 @@ impl Hints {
             ("featureSection", &self.feature_sections),
             ("resourceSection", &self.resource_sections),
             ("timelineSection", &self.timeline_sections),
+            ("calloutSection", &self.callout_sections),
+            ("termSection", &self.term_sections),
+            ("compactSection", &self.compact_sections),
         ] {
             ensure!(
                 anchors.len() <= SECTIONS,

@@ -7,7 +7,6 @@ use {
         constraint_projection,
         escape::Escaped,
         layout::{self, Layout},
-        qualified_count::QualifiedCount,
         shorthand::Shorthand,
     },
     std::collections::{BTreeMap, BTreeSet},
@@ -42,6 +41,7 @@ impl<'a> PlantUmlSource<'a> {
         for (class, field) in constraint_projection::properties(diagram) {
             visible.insert(class.id.as_str());
             if field.object &&
+                !field.prohibited() &&
                 let Some(range) = field.range
             {
                 visible.insert(range.id.as_str());
@@ -152,6 +152,7 @@ impl<'a> PlantUmlSource<'a> {
         let mut fields = String::new();
         for attribute in self.shorthand.attributes.iter().filter(|a| {
             a.domain.id == node.id &&
+                !self.shorthand.supersedes(&node.id, &a.node.id, "") &&
                 !constraint_projection::constrained(
                     self.diagram,
                     &node.id,
@@ -184,22 +185,31 @@ impl<'a> PlantUmlSource<'a> {
             existence.write(
                 &mut fields,
                 &self.identifiers,
-                &self.shorthand.qualified_counts,
+                &self.shorthand.restrictions,
             );
         }
-        QualifiedCount::members(
-            &mut fields,
-            node,
-            &self.shorthand.qualified_counts,
-            &self.identifiers,
-        );
+        let mut constraints = String::new();
+        for (_, notation) in self
+            .shorthand
+            .restrictions
+            .iter()
+            .chain(&self.shorthand.neighbours)
+            .filter(|(r, _)| r.class.id == node.id)
+        {
+            fields.extend(notation.member(&self.identifiers));
+            constraints.extend(notation.constraint(&self.identifiers));
+        }
         constraint_projection::members(
             &mut fields,
+            &mut constraints,
             node,
             self.diagram,
             &self.identifiers,
         );
+        // Constraint rows follow the attributes. A PlantUML separator would
+        // be emitted inside the preceding member's link and break hit regions.
         self.output.push_str(&fields);
+        self.output.push_str(&constraints);
     }
 
     fn placeholder(&mut self) {
@@ -224,7 +234,11 @@ impl<'a> PlantUmlSource<'a> {
 
     fn associations(&mut self) {
         let mut lines = String::new();
-        for association in &self.shorthand.associations {
+        for association in self.shorthand.associations.iter().filter(|a| {
+            !self
+                .shorthand
+                .supersedes(&a.domain.id, &a.node.id, &a.range.id)
+        }) {
             lines.push_str(&format!(
                 "n{} {} {}n{} [[./grapharch-node/n{}]] : {}\n",
                 self.id(association.domain),
@@ -260,22 +274,12 @@ impl<'a> PlantUmlSource<'a> {
     }
 
     fn restrictions(&mut self) {
-        for minimum in &self.shorthand.qualified_counts {
-            minimum.write(&mut self.output, &self.identifiers, &self.layout);
-        }
         let mut lines = String::new();
-        for existential in &self.shorthand.existentials {
-            lines.push_str(&format!(
-                "n{} {} \"1..*\" n{} [[./grapharch-node/n{}]] : \
-                 {}\\n{{qualified}}\n",
-                self.id(existential.class),
-                self.layout.association_arrow(
-                    &existential.class.id,
-                    &existential.filler.id
-                ),
-                self.id(existential.filler),
-                self.id(existential.property),
-                Escaped::wrapped(&existential.property.label),
+        for (restriction, notation) in &self.shorthand.restrictions {
+            lines.extend(notation.association(
+                restriction.class,
+                &self.identifiers,
+                &self.layout,
             ));
         }
         self.output.push_str(&lines);

@@ -1,11 +1,16 @@
 //! Repository identity comes from the pinned project, never the template.
 use {
-    super::super::{markup::html_escape as esc, model::Plan},
+    super::{
+        super::{markup::html_escape as esc, model::Plan},
+        theme::Theme,
+    },
     anyhow::{Result, ensure},
     oxrdf::Term,
 };
 
-pub(super) async fn link(plan: &Plan) -> Result<String> {
+/// The header's source link; a project theme draws GitHub with the outline
+/// mark its decorative icons share.
+pub(super) async fn link(plan: &Plan, theme: Theme) -> Result<String> {
     let Some(repository) =
         plan.source.optional(&plan.project, "repository").await?
     else {
@@ -28,7 +33,11 @@ pub(super) async fn link(plan: &Plan) -> Result<String> {
     ) {
         (
             "View source on GitHub",
-            include_str!("icons/github.svg"),
+            if theme.project() {
+                include_str!("project/icons/github.svg")
+            } else {
+                include_str!("icons/github.svg")
+            },
         )
     } else {
         ("View source repository", "Source")
