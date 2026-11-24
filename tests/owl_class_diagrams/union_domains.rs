@@ -19,11 +19,12 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "navigation profile";
             .unwrap(),
     )?;
     let source = value["source"].as_str().unwrap();
-    assert!(
-        source.contains("Collector or Documentor"),
+    assert_eq!(
+        source.matches(": navigation profile\\n{xor}").count(),
+        2,
         "{source}"
     );
-    assert!(source.contains("navigation profile"), "{source}");
+    assert!(!source.contains(" or "), "{source}");
     for raw in [
         "Anonymous OWL",
         "rdfs:domain",
@@ -233,9 +234,11 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "Navigation publication pr
         .collect::<Vec<_>>()
         .join(" ");
     assert!(
-        labels.contains("Collector or Documentor"),
+        labels.contains("Collector") && labels.contains("Documentor"),
         "{labels}"
     );
+    assert_eq!(labels.matches("{xor}").count(), 2, "{labels}");
+    assert!(!labels.contains(" or "), "{labels}");
     assert!(
         labels.contains("Navigation publication") && labels.contains("profile"),
         "{labels}"
@@ -253,7 +256,7 @@ ex:navigationProfile a owl:ObjectProperty; rdfs:label "Navigation publication pr
     };
     let typst = tokio::fs::read_to_string(pdf.typst_source()).await?;
     assert!(
-        typst.contains("Collector or Documentor"),
+        typst.contains("{xor}"),
         "retained SVG must reach PDF"
     );
     assert!(

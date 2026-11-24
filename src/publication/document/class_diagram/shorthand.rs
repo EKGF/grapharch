@@ -2,6 +2,7 @@
 use {
     super::{
         Diagram,
+        axiom_plan::AxiomPlan,
         property_declaration::{
             Association,
             Attribute,
@@ -9,7 +10,7 @@ use {
             Drawing,
             RangeOnly,
         },
-        restriction::{Notation, Restriction, Scope},
+        restriction::{Constraint, Notation, Restriction, Scope},
     },
     std::collections::BTreeSet,
 };
@@ -24,7 +25,8 @@ pub(super) struct Shorthand<'a> {
     pub restrictions: Vec<(Restriction<'a>, Notation<'a>)>,
     /// Restrictions on neighbouring classes, drawn as their members.
     pub neighbours:   Vec<(Restriction<'a>, Notation<'a>)>,
-    pub existences:   Vec<super::nested_existence::Existence<'a>>,
+    /// Generalizations, notes and enumerations of the documented class.
+    pub plan:         AxiomPlan<'a>,
     pub consumed:     BTreeSet<usize>,
     pub visible:      BTreeSet<&'a str>,
 }
@@ -35,24 +37,17 @@ impl<'a> Shorthand<'a> {
         let mut associations = Vec::new(); // bounded: 81 pairs of eighteen facts.
         let mut consumed = BTreeSet::new(); // bounded: eighteen edge indices.
         let mut visited = BTreeSet::new(); // bounded: thirty-seven nodes.
-        let restrictions =
-            Self::notations(diagram, &diagram.edges, Scope::Focus);
-        let existences = super::nested_existence::collect(diagram);
-        // Facts drawn as restriction notation no longer tie a property to an
-        // explicit box, so its declarations can still become an edge.
-        let mut drawn = BTreeSet::new(); // bounded: eighteen edge indices.
-        for (restriction, _) in &restrictions {
-            drawn.extend(&restriction.consumed);
-        }
-        for existence in &existences {
-            drawn.extend(&existence.consumed);
-        }
+        let mut plan = AxiomPlan::new(&diagram.axioms, Scope::Focus);
+        let restrictions = Self::notations(
+            diagram,
+            std::mem::take(&mut plan.restrictions),
+            Scope::Focus,
+        );
         for node in diagram.nodes() {
             if !visited.insert(node.id.as_str()) {
                 continue;
             }
-            let Some(declaration) = Declaration::read(diagram, node, &drawn)
-            else {
+            let Some(declaration) = Declaration::read(diagram, node) else {
                 continue;
             };
             let Some(drawing) = declaration.drawing() else {
@@ -82,19 +77,24 @@ impl<'a> Shorthand<'a> {
                 },
                 Drawing::Associations => {
                     for domain in &declaration.domains {
-                        associations.extend(
-                            declaration.ranges.iter().map(|range| {
-                                Association { node, domain, range }
-                            }),
-                        );
+                        associations.extend(declaration.ranges.iter().map(
+                            |range| {
+                                Association {
+                                    node,
+                                    domain,
+                                    range,
+                                    alternative: declaration.alternatives,
+                                }
+                            },
+                        ));
                     }
                 },
             }
         }
-        consumed.extend(drawn);
         let neighbours = Self::notations(
             diagram,
-            &diagram.context.restrictions,
+            AxiomPlan::new(&diagram.context.axioms, Scope::Neighbour)
+                .restrictions,
             Scope::Neighbour,
         );
         // Suppress only the generic RDF root in this presentation, never facts.
@@ -126,7 +126,13 @@ impl<'a> Shorthand<'a> {
             visible.insert(restriction.class.id.as_str());
             visible.extend(notation.target().map(|t| t.id.as_str()));
         }
-        visible.extend(existences.iter().map(|e| e.class.id.as_str()));
+        for generalization in &plan.generalizations {
+            visible.extend([
+                generalization.child.id.as_str(),
+                generalization.parent.id.as_str(),
+            ]);
+        }
+        visible.extend(plan.notes.iter().map(|n| n.class.id.as_str()));
         visible.extend(range_only.iter().map(|p| p.range.id.as_str()));
         visible.remove(GENERIC_RESOURCE);
         Self {
@@ -135,7 +141,7 @@ impl<'a> Shorthand<'a> {
             associations,
             restrictions,
             neighbours,
-            existences,
+            plan,
             consumed,
             visible,
         }
@@ -143,16 +149,34 @@ impl<'a> Shorthand<'a> {
 
     fn notations(
         diagram: &'a Diagram,
-        edges: &'a [super::Edge],
+        restrictions: Vec<Restriction<'a>>,
         scope: Scope,
     ) -> Vec<(Restriction<'a>, Notation<'a>)> {
-        Restriction::collect(edges)
+        let covered: Vec<(&str, &str)> = restrictions
+            .iter()
+            .filter(|r| r.guarantees_existence())
+            .map(|r| (r.class.id.as_str(), r.property.id.as_str()))
+            .collect(); // bounded: one per drawn restriction.
+        restrictions
             .into_iter()
             .map(|restriction| {
-                let notation = restriction.notation(&diagram.context, scope);
+                // A positive count on the same class and property already
+                // guarantees the value an untyped existential requires.
+                let notation =
+                    if matches!(restriction.constraint, Constraint::Exists) &&
+                        !restriction.inverse &&
+                        covered.contains(&(
+                            restriction.class.id.as_str(),
+                            restriction.property.id.as_str(),
+                        ))
+                    {
+                        Notation::Hidden
+                    } else {
+                        restriction.notation(&diagram.context, scope)
+                    };
                 (restriction, notation)
             })
-            .collect() // bounded: one per retained fact.
+            .collect() // bounded: one per drawn restriction.
     }
 
     /// Whether a restriction drawing replaces the plain domain/range drawing
@@ -174,13 +198,14 @@ impl<'a> Shorthand<'a> {
             .any(|(r, n)| {
                 r.class.id == class &&
                     r.property.id == property &&
+                    r.path.is_empty() &&
                     match n {
                         Notation::Hidden => false,
                         Notation::Association { target: t, .. } => {
                             t.id == target
                         },
                         Notation::Member { .. } |
-                        Notation::Prohibition { .. } => true,
+                        Notation::Prohibition { .. } => !r.inverse,
                     }
             })
     }

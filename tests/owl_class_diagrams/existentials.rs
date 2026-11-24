@@ -48,9 +48,18 @@ async fn simple_existential_is_a_scoped_association_without_global_multiplicity(
     assert!(drawing.svg.contains("1..*"));
     assert_eq!(
         drawing.diagram["edges"].as_array().unwrap().len(),
-        4
+        1
     );
-    assert!(drawing.diagram.to_string().contains("someValuesFrom"));
+    assert_eq!(
+        drawing.diagram["axioms"].as_array().unwrap().len(),
+        1,
+        "the restriction is retained as a typed axiom"
+    );
+    assert!(
+        drawing.diagram["axioms"][0]["expression"]["restriction"]["quantifier"]
+            ["some"]
+            .is_object()
+    );
     let other = diagram_with_focus(
         "ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; \
          owl:onProperty ex:p ; owl:someValuesFrom ex:Document ] . ex:Document \
@@ -84,15 +93,47 @@ async fn simple_existential_is_a_scoped_association_without_global_multiplicity(
 }
 
 #[tokio::test]
-async fn unsupported_restrictions_are_not_simplified_to_existentials()
+async fn existentials_beyond_a_named_declared_filler_use_their_own_notation()
 -> Result<()> {
+    for (constraint, expected, count) in [
+        (
+            "owl:onProperty ex:unknown ; owl:someValuesFrom ex:UnknownFiller",
+            "\\n{qualified}",
+            1,
+        ),
+        (
+            "owl:onProperty [ owl:inverseOf ex:isMemberOf ] ; \
+             owl:someValuesFrom ex:Document",
+            "\\n{qualified}",
+            1,
+        ),
+        (
+            "owl:onProperty ex:isMemberOf ; owl:someValuesFrom [ owl:unionOf \
+             (ex:Document ex:Other) ]",
+            "\\n{qualified, xor}",
+            2,
+        ),
+        (
+            "owl:onProperty ex:data ; owl:someValuesFrom ex:Document",
+            "note \"inv: self.ex:data-&#62;exists",
+            1,
+        ),
+    ] {
+        let drawing = drawing(constraint).await?;
+        assert_eq!(
+            drawing.source.matches(expected).count(),
+            count,
+            "{constraint}\n{}",
+            drawing.source
+        );
+        assert!(!drawing.source.contains("OWL expression"));
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn malformed_restrictions_keep_their_authored_facts() -> Result<()> {
     for constraint in [
-        "owl:onProperty ex:unknown ; owl:someValuesFrom ex:UnknownFiller",
-        "owl:onProperty ex:data ; owl:someValuesFrom ex:Document",
-        "owl:onProperty [ owl:inverseOf ex:isMemberOf ] ; owl:someValuesFrom \
-         ex:Document",
-        "owl:onProperty ex:isMemberOf ; owl:someValuesFrom [ owl:unionOf \
-         (ex:Document ex:Other) ]",
         "owl:onProperty ex:isMemberOf ; owl:someValuesFrom ex:Document ; \
          owl:allValuesFrom ex:Other",
         "owl:onProperty ex:isMemberOf ; owl:someValuesFrom ex:Document ; \
@@ -128,7 +169,8 @@ async fn merchant_named_external_predicates_need_no_invented_type_declaration()
         d.source
     );
     assert!(!d.source.contains("OWL expression"));
-    assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 7);
+    assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 1);
+    assert_eq!(d.diagram["axioms"].as_array().unwrap().len(), 2);
     assert!(!d.diagram.to_string().contains("Object property"));
     assert!(!d.diagram.to_string().contains("#range"));
     Ok(())

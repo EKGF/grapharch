@@ -1,12 +1,14 @@
 //! The bounded semantic input of one class diagram.
 use {
-    super::{NodeKind, constraints, context::Context},
+    super::{NodeKind, constraints, context::Context, expression::ClassAxiom},
     anyhow::{Result, ensure},
     serde::{Deserialize, Serialize},
 };
 
 const DOMAIN: &str = "http://www.w3.org/2000/01/rdf-schema#domain";
 const RANGE: &str = "http://www.w3.org/2000/01/rdf-schema#range";
+/// At most this many anonymous class axioms of the focus class.
+pub(super) const AXIOMS: usize = 8;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,6 +23,9 @@ pub(crate) struct Node {
     /// An RDF datatype rather than a class of individuals.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub datatype: bool,
+    /// The vocabulary named under a box whose label another box shares.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from:     Option<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -38,6 +43,9 @@ pub(crate) struct Diagram {
     pub edges:   Vec<Edge>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub shapes:  Vec<constraints::Shape>,
+    /// Axioms relating the focus class to anonymous class expressions.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub axioms:  Vec<ClassAxiom>,
     #[serde(default)]
     pub limited: bool,
     #[serde(default, skip_serializing_if = "Context::is_empty")]
@@ -53,6 +61,7 @@ impl Node {
             link:     None,
             imported: false,
             datatype: false,
+            from:     None,
         }
     }
 }
@@ -74,8 +83,16 @@ impl Node {
         literal.value().parse().ok()
     }
 
+    /// The UML metaclass this resource names, if any.
+    pub(super) fn metaclass(&self) -> Option<super::metaclass::Metaclass> {
+        super::metaclass::Metaclass::of(&self.id)
+    }
+
     /// The name of a datatype or class used as a member type.
     pub fn type_label(&self) -> String {
+        if let Some(metaclass) = self.metaclass() {
+            return metaclass.name().to_owned();
+        }
         self.id
             .strip_prefix("http://www.w3.org/2001/XMLSchema#")
             .map(|name| format!("xsd:{name}"))
@@ -113,6 +130,11 @@ impl Diagram {
             "class diagram shape budget exceeded"
         );
         diagram.context.validate()?;
+        ensure!(
+            diagram.axioms.len() <= AXIOMS &&
+                diagram.axioms.iter().all(|a| a.nodes().len() <= 64),
+            "class diagram axiom budget exceeded"
+        );
         let mut identities = std::collections::BTreeMap::new(); // bounded: at most thirty-seven nodes.
         for node in diagram.nodes() {
             if let Some(previous) = identities.insert(&node.id, node) {
@@ -146,6 +168,7 @@ impl Diagram {
         std::iter::once(&self.focus)
             .chain(self.edges.iter().flat_map(|e| [&e.from, &e.to]))
             .chain(self.shapes.iter().flat_map(|s| s.nodes()))
+            .chain(self.axioms.iter().flat_map(ClassAxiom::nodes))
             .chain(self.context.nodes())
     }
 
@@ -153,6 +176,23 @@ impl Diagram {
         std::iter::once(&mut self.focus)
             .chain(self.edges.iter_mut().flat_map(|e| [&mut e.from, &mut e.to]))
             .chain(self.shapes.iter_mut().flat_map(|s| s.nodes_mut()))
+            .chain(self.axioms.iter_mut().flat_map(ClassAxiom::nodes_mut))
             .chain(self.context.nodes_mut())
+    }
+
+    /// Number each anonymous expression box in order of first appearance.
+    pub fn number_expressions(&mut self) {
+        let mut ordinals = std::collections::BTreeMap::new(); // bounded: thirty-seven nodes.
+        for node in self.nodes() {
+            if node.kind.is_expression() {
+                let next = ordinals.len() + 1;
+                ordinals.entry(node.id.clone()).or_insert(next);
+            }
+        }
+        for node in self.nodes_mut() {
+            if let Some(ordinal) = ordinals.get(&node.id) {
+                node.label = format!("Anonymous OWL expression {ordinal}");
+            }
+        }
     }
 }

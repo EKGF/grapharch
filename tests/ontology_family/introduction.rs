@@ -256,13 +256,13 @@ ex:managedBy a owl:ObjectProperty; rdfs:label "is managed by" .
     }
     assert!(positive && zero);
     assert!(
-        html.contains("minQualifiedCardinality"),
-        "original details retained"
+        html.contains("multiplicity 1..*, qualified"),
+        "the accessible description states the UML reading"
     );
     let typst = tokio::fs::read_to_string(publication.typst_source()).await?;
     assert!(
         typst.contains("qualified") &&
-            typst.contains("minQualifiedCardinality")
+            typst.contains("multiplicity 1..*, qualified")
     );
     assert!(
         tokio::fs::read(publication.pdf().expect("published PDF edition"))

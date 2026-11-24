@@ -20,6 +20,8 @@ pub(super) struct Label {
     pub qname: String,
     pub text:  String,
     pub role:  LabelRole,
+    /// The vocabulary shown under a box name another box shares.
+    pub from:  Option<String>,
 }
 
 impl Label {
@@ -46,7 +48,13 @@ impl Label {
             .best
             .map(|(_, text)| text)
             .unwrap_or_else(|| qname.clone());
-        Ok(Self { iri: id.as_str().into(), qname, text, role })
+        Ok(Self {
+            iri: id.as_str().into(),
+            qname,
+            text,
+            role,
+            from: None,
+        })
     }
 }
 
@@ -57,6 +65,50 @@ impl Label {
     pub fn qualify(&mut self) {
         if self.text != self.qname {
             self.text = format!("{} ({})", self.text, self.qname);
+        }
+    }
+
+    /// The vocabulary prefix of the prefixed name, when it has one.
+    fn vocabulary(&self) -> Option<&str> {
+        self.qname
+            .split_once(':')
+            .map(|(prefix, _)| prefix)
+            .filter(|prefix| !prefix.is_empty() && *prefix != self.qname)
+    }
+}
+
+impl Label {
+    /// Distinguish boxes of different vocabularies that share a name with a
+    /// UML `(from vocabulary)` line; whether every collision was resolved.
+    fn separate_vocabularies(
+        labels: &mut [Label],
+        ids: &BTreeSet<String>,
+    ) -> bool {
+        let colliding: Vec<&Label> =
+            labels.iter().filter(|l| ids.contains(&l.iri)).collect(); // bounded: the colliding labels.
+        let mut vocabularies = BTreeSet::new(); // bounded: the colliding labels.
+        for label in &colliding {
+            let Some(vocabulary) = label.vocabulary() else {
+                return false;
+            };
+            vocabularies.insert(vocabulary.to_owned());
+        }
+        if vocabularies.len() != ids.len() {
+            return false;
+        }
+        for label in labels.iter_mut().filter(|l| ids.contains(&l.iri)) {
+            label.from = label.vocabulary().map(str::to_owned);
+        }
+        true
+    }
+}
+
+impl Label {
+    /// The drawn name, with its vocabulary line when it has one.
+    fn shown(&self) -> String {
+        match &self.from {
+            Some(from) => format!("{}\n(from {from})", self.text),
+            None => self.text.clone(),
         }
     }
 }
@@ -149,21 +201,29 @@ pub(super) fn disambiguate(labels: &mut [Label]) -> Result<()> {
             .or_default()
             .insert(label.iri.clone());
     }
+    for ((role, _), ids) in &groups {
+        if *role == LabelRole::Box && ids.len() > 1 {
+            Label::separate_vocabularies(labels, ids);
+        }
+    }
     for label in labels.iter_mut() {
-        if groups[&(label.role, label.text.clone())].len() > 1 {
+        if label.from.is_none() &&
+            groups[&(label.role, label.text.clone())].len() > 1
+        {
             label.text = format!("{} ({})", label.text, label.qname);
         }
     }
     groups.clear();
     for label in labels.iter() {
         groups
-            .entry((label.role, label.text.clone()))
+            .entry((label.role, label.shown()))
             .or_default()
             .insert(label.iri.clone());
     }
     for label in labels.iter_mut() {
-        if groups[&(label.role, label.text.clone())].len() > 1 {
+        if groups[&(label.role, label.shown())].len() > 1 {
             label.text = format!("{} [{}]", label.text, label.iri);
+            label.from = None;
         }
         ensure!(
             label.text.len() <= 512,
@@ -172,7 +232,7 @@ pub(super) fn disambiguate(labels: &mut [Label]) -> Result<()> {
     }
     groups.clear();
     for label in labels.iter() {
-        let ids = groups.entry((label.role, label.text.clone())).or_default();
+        let ids = groups.entry((label.role, label.shown())).or_default();
         ids.insert(label.iri.clone());
         ensure!(
             ids.len() == 1,
@@ -254,6 +314,7 @@ mod tests {
             qname: qname.into(),
             text:  text.into(),
             role:  LabelRole::Box,
+            from:  None,
         }
     }
     #[test]

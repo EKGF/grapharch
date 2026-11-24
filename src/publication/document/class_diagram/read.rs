@@ -11,6 +11,7 @@ use {
 };
 const OWL: &str = "http://www.w3.org/2002/07/owl#";
 const RDFS: &str = "http://www.w3.org/2000/01/rdf-schema#";
+const RDF: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
 pub(crate) struct Views<'a> {
     pub assertions: &'a RevisionView,
@@ -29,10 +30,13 @@ pub(crate) async fn append(
 ) -> Result<()> {
     let view = views.assertions;
     let metadata = views.metadata;
+    let skolem = "urn:grapharch:skolem:";
+    // Anonymous class expressions are read as typed axioms, not as facts.
     let direct = view.pattern(&format!(r#"
 {{ {subject} ?p ?o . BIND({subject} AS ?s) }} UNION
 {{ ?s ?p {subject} . BIND({subject} AS ?o) }}
 FILTER(?p IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>, <{OWL}disjointWith>, <{RDFS}domain>, <{RDFS}range>))
+FILTER(?p IN (<{RDFS}domain>, <{RDFS}range>) || !(STRSTARTS(STR(?s), "{skolem}") || STRSTARTS(STR(?o), "{skolem}")))
 BIND(IF(?p IN (<{RDFS}domain>, <{RDFS}range>), ?s, IF(?s = {subject}, ?o, ?s)) AS ?group)
 "#), 41);
     let touching = view.pattern(
@@ -47,34 +51,37 @@ BIND(IF(?p IN (<{RDFS}domain>, <{RDFS}range>), ?s, IF(?s = {subject}, ?o, ?s)) A
 ?property ?p ?o . FILTER(?p IN (<{RDFS}domain>, <{RDFS}range>)) BIND(?property AS ?s) BIND(?property AS ?group)
 "#), 45);
     let property = format!("{touching} {declarations}");
-    let restrictions = view.pattern(&format!(r#"
-{subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
-BIND(?s AS ?group)
-?s a <{OWL}Restriction> ; ?p ?o . FILTER(STRSTARTS(STR(?p), "{OWL}"))
-"#), 43);
-    // One additional authored restriction level, retained in its complete root
-    // group. This is bounded syntax inspection, not an inferred graph.
-    let nested = view.pattern(
+    // Pairwise disjointness of an owl:AllDisjointClasses statement, grouped
+    // with the other class like an asserted owl:disjointWith.
+    let all_disjoint = view.pattern(
         &format!(
             r#"
-{subject} <{RDFS}subClassOf> ?root .
-?root a <{OWL}Restriction>; <{OWL}someValuesFrom> ?s .
-?s a <{OWL}Restriction>; ?p ?o . FILTER(STRSTARTS(STR(?p), "{OWL}"))
-BIND(?root AS ?group)
+?all a <{OWL}AllDisjointClasses> ; <{OWL}members> ?list .
+?list <{RDF}rest>*/<{RDF}first> {subject} .
+?list <{RDF}rest>*/<{RDF}first> ?o . FILTER(?o != {subject})
+BIND({subject} AS ?s) BIND(<{OWL}disjointWith> AS ?p) BIND(?o AS ?group)
 "#
         ),
-        46,
+        43,
     );
-    let expressions = view.pattern(&format!(r#"
-{subject} ?relation ?s . FILTER(?relation IN (<{RDFS}subClassOf>, <{OWL}equivalentClass>))
-BIND(?s AS ?group)
-?s ?p ?list . FILTER(?p IN (<{OWL}unionOf>, <{OWL}intersectionOf>))
-?list <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?o
-"#), 44);
+    // The shared superclass of a disjoint class, so that disjoint siblings
+    // can form a generalization set.
+    let siblings = view.pattern(
+        &format!(
+            r#"
+{{ {subject} <{OWL}disjointWith> ?s }} UNION {{ ?s <{OWL}disjointWith> {subject} }} UNION
+{{ ?all a <{OWL}AllDisjointClasses> ; <{OWL}members> ?list .
+  ?list <{RDF}rest>*/<{RDF}first> {subject} . ?list <{RDF}rest>*/<{RDF}first> ?s . FILTER(?s != {subject}) }}
+?s <{RDFS}subClassOf> ?o . {subject} <{RDFS}subClassOf> ?o .
+BIND(<{RDFS}subClassOf> AS ?p) BIND(?s AS ?group)
+"#
+        ),
+        44,
+    );
     let selection = format!(
-        "{{ {direct} }} UNION {{ {property} }} UNION {{ {restrictions} }} \
-         UNION {{ {nested} }} UNION {{ {expressions} }} FILTER(isIRI(?s) && \
-         (isIRI(?o) || isLiteral(?o)))"
+        "{{ {direct} }} UNION {{ {property} }} UNION {{ {all_disjoint} }} \
+         UNION {{ {siblings} }} FILTER(isIRI(?s) && (isIRI(?o) || \
+         isLiteral(?o)))"
     );
     let order = AnonymousOrder::new(dataset, view);
     let mut groups = Vec::<Vec<Edge>>::new(); // bounded: ninety-six facts.
@@ -131,14 +138,6 @@ BIND(?s AS ?group)
             if !nodes.contains_key(id) {
                 let mut value =
                     node(metadata, &order, id, prefixes, documented).await?;
-                if value.kind == NodeKind::OwlExpression {
-                    let ordinal = nodes
-                        .values()
-                        .filter(|node| node.kind == NodeKind::OwlExpression)
-                        .count() +
-                        1;
-                    value.label = format!("Anonymous OWL expression {ordinal}");
-                }
                 let base = value.id.clone();
                 let mut copy = 1;
                 while !ids.insert(value.id.clone()) {
@@ -167,6 +166,22 @@ BIND(?s AS ?group)
             to:        target,
         });
     }
+    let sources = super::sources::Sources {
+        dataset,
+        assertions: view,
+        metadata,
+        prefixes,
+        documented,
+    };
+    let axioms = super::expression::Axioms::read(
+        &sources,
+        &focus,
+        &super::expression::AxiomRelation::ALL,
+        super::model::AXIOMS,
+    )
+    .await?;
+    overflow |= axioms.limited;
+    groups.extend(axioms.fallback);
     let mut edges = Vec::new(); // bounded: eighteen facts in complete relationship groups.
     let mut group_ends = Vec::new(); // bounded: five complete groups.
     let mut unions = HashSet::new(); // bounded: at most five admitted union domains.
@@ -190,9 +205,11 @@ BIND(?s AS ?group)
         focus,
         edges,
         shapes: Vec::new(),
+        axioms: axioms.axioms,
         limited: overflow,
         context: super::context::Context::default(),
     };
+    diagram.number_expressions();
     for node in diagram.nodes_mut() {
         if unions.contains(&node.id) {
             node.kind = NodeKind::OwlUnion;
@@ -202,17 +219,7 @@ BIND(?s AS ?group)
         &diagram, dataset, view, metadata, prefixes, documented,
     )
     .await?;
-    diagram.context = super::context::Context::read(
-        &diagram,
-        &super::context_read::Sources {
-            dataset,
-            assertions: view,
-            metadata,
-            prefixes,
-            documented,
-        },
-    )
-    .await?;
+    diagram.context = super::context::Context::read(&diagram, &sources).await?;
     super::expression_label::apply(&mut diagram);
     super::display::apply(&mut diagram, metadata, views.language).await?;
     let projection = Projection::generate(diagram, renderer).await?;
@@ -312,6 +319,7 @@ pub(super) async fn node(
         link,
         imported: false,
         datatype,
+        from: None,
     })
 }
 pub(super) fn compact(

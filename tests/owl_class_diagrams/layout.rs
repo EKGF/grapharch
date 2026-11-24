@@ -116,9 +116,9 @@ async fn named_external_superclasses_keep_vertical_inheritance_without_invented_
     assert!(retained.source.contains("-up-|>"));
     assert!(!retained.source.contains("subClassOf"));
     assert!(
-        retained.source.contains("<<Resource>>"),
-        "Missing source typing must not be replaced by an invented owl:Class \
-         assertion"
+        retained.source.contains("<<external>>"),
+        "Missing source typing must not be replaced by an invented class \
+         declaration"
     );
     Ok(())
 }

@@ -37,8 +37,9 @@ async fn zero_qualified_minimum_has_no_visual_restriction_but_retains_facts()
     );
     assert!(!d.source.contains("Minister") && !d.source.contains("managedBy"));
     assert!(d.source.contains("-up-|>"));
-    assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 5);
-    assert!(d.diagram.to_string().contains("minQualifiedCardinality"));
+    assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 1);
+    assert_eq!(d.diagram["axioms"].as_array().unwrap().len(), 1);
+    assert!(d.diagram.to_string().contains("\"bound\":\"minimum\""));
     Ok(())
 }
 #[tokio::test]
@@ -60,7 +61,7 @@ async fn positive_qualified_minimum_is_at_the_named_target_end() -> Result<()> {
                 !d.source.contains("minQualifiedCardinality")
         );
         assert!(d.svg.contains(&format!("{n}..*")));
-        assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 5);
+        assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 1);
         assert!(!d.diagram.to_string().contains("#range"));
     }
     Ok(())
@@ -75,10 +76,6 @@ async fn qualified_minimum_does_not_simplify_other_or_ambiguous_constraints()
          owl:minQualifiedCardinality \"1\"",
         "owl:onProperty ex:managedBy; owl:onClass ex:Minister; \
          owl:minQualifiedCardinality 0; owl:allValuesFrom ex:Parent",
-        "owl:onProperty [owl:inverseOf ex:managedBy]; owl:onClass \
-         ex:Minister; owl:minQualifiedCardinality 1",
-        "owl:onProperty ex:managedBy; owl:onClass [owl:unionOf (ex:Minister \
-         ex:Parent)]; owl:minQualifiedCardinality 1",
     ] {
         let d = drawing(constraint).await?;
         assert!(
@@ -87,6 +84,35 @@ async fn qualified_minimum_does_not_simplify_other_or_ambiguous_constraints()
             d.source
         );
         assert!(!d.source.contains("{qualified}"));
+    }
+    let inverse = drawing(
+        "owl:onProperty [owl:inverseOf ex:managedBy]; owl:onClass \
+         ex:Minister; owl:minQualifiedCardinality 1",
+    )
+    .await?;
+    assert_eq!(
+        inverse.source.matches("\\n{qualified}").count(),
+        1,
+        "{}",
+        inverse.source
+    );
+    let union = drawing(
+        "owl:onProperty ex:managedBy; owl:onClass [owl:unionOf (ex:Minister \
+         ex:Parent)]; owl:minQualifiedCardinality 1",
+    )
+    .await?;
+    assert_eq!(
+        union.source.matches("\"1..*\" n").count(),
+        2,
+        "{}",
+        union.source
+    );
+    assert_eq!(
+        union.source.matches("{qualified, xor}").count(),
+        2
+    );
+    for d in [inverse, union] {
+        assert!(!d.source.contains("OWL expression"));
     }
     Ok(())
 }
@@ -124,7 +150,12 @@ async fn qualified_minimum_is_not_inherited_or_removed_inside_a_boolean_expressi
         // A neighbour's restriction is its own member, never an association.
         assert!(!d.source.contains("\\n{qualified}"));
         if focus == "Core" {
-            assert!(d.source.contains("OWL expression"));
+            assert!(
+                !d.source.contains("OWL expression"),
+                "{}",
+                d.source
+            );
+            assert!(d.source.contains("note \"inv: "), "{}", d.source);
         }
     }
     Ok(())

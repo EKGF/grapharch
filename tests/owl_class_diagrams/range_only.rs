@@ -16,7 +16,7 @@ async fn range_only_association_uses_a_non_asserted_dotted_domain_placeholder()
             .unwrap(),
     )?;
     let source = projection["source"].as_str().unwrap();
-    assert!(source.contains("rdfs:Resource"), "{source}");
+    assert!(source.contains("&#171;any&#187;"), "{source}");
     assert!(
         source.contains("line.dotted"),
         "placeholder must be visually distinct: {source}"

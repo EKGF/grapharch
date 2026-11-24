@@ -39,20 +39,33 @@ label and attribute, including the documented class itself:
 Two resources belong to the same ontology when both declare `rdfs:isDefinedBy`
 and share a defining ontology, or, when either declares none, when their IRIs
 share a namespace. A class and a property with the same label are not
-ambiguous, because one is a box and the other an edge or attribute. Only
-different boxes, or different properties, with colliding names gain a further
-QName qualifier; original IRIs remain in links, HTML tooltips and the retained
-graph.
+ambiguous, because one is a box and the other an edge or attribute. When two
+different class boxes would show the same name, for example `Capability` from
+two namespaces of one ontology, each of those boxes, and only those, adds the
+UML `(from <vocabulary>)` line under its name, using the vocabulary's prefix.
+Colliding names that a vocabulary line cannot separate, and colliding property
+names, gain a QName qualifier instead; original IRIs remain in links, HTML
+tooltips and the retained graph.
 
 ## What the arrows mean
 
-Named OWL classes use UML class boxes marked `«owl:Class»`. Explicit
-OWL/RDFS labels preserve relationships that have no direct UML equivalent:
+Named OWL classes use plain UML class boxes. Stereotypes appear only where
+they discriminate: `«external»` for a class that the selected inputs use but
+do not declare, such as an imported class, `«datatype»` for an RDF datatype,
+`«metaclass»` for `rdfs:Class`, `owl:Class` and `rdf:Property` used as a
+type (drawn as `Class` and `Property`), and `«enumeration»` for an
+enumerated class. No arrow is labelled with an OWL, RDF or RDFS term:
 
-- Asserted `rdfs:subClassOf` between named class references uses a UML generalization
-  arrow: its hollow triangle points to the superclass. Anonymous subclass endpoints,
-  `owl:equivalentClass`, and `owl:disjointWith` remain explicitly labeled arrows.
-  No inference is performed.
+- Asserted `rdfs:subClassOf` between named class references uses a UML
+  generalization arrow: its hollow triangle points to the superclass. No
+  inference is performed.
+- `owl:disjointWith`, and each pair of an `owl:AllDisjointClasses` statement
+  that includes the documented class, is the UML constraint `{disjoint}`.
+  When both classes are drawn with a generalization to the same parent, both
+  generalizations carry `{disjoint}`, forming a generalization set; otherwise
+  a dashed line labelled `{disjoint}` joins the two classes.
+- `owl:equivalentClass` between named classes is a dashed line labelled
+  `«equivalent»`. An equivalence never looks like a generalization.
 - A property is drawn as an edge or a member, never as a box with
   `rdfs:domain` and `rdfs:range` arrows. An object, annotation or generic RDF
   property with a declared domain and range is one labelled association from
@@ -70,8 +83,14 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   link to the property documentation. This is presentation shorthand: RDF
   properties remain independent resources, and no requiredness, ownership, or
   multiplicity is inferred.
+- An object property declared `owl:inverseOf` another is one association with
+  both end names: the name at each end is the property that reaches it. The
+  inverse's own association is not drawn a second time.
+- A property whose single domain is an explicit union of named classes is
+  drawn from each member: one association per member, tagged `{xor}`, or the
+  attribute on each member. There is no union box.
 - A non-datatype property with declared ranges but no domain in the selected
-  inputs uses a dotted `rdfs:Resource` source box and one labelled association
+  inputs uses a dotted `«any»` source box and one labelled association
   per range. This box is a presentation placeholder, not a new RDF assertion
   or a claim that a specific domain cannot be entailed. Declarations in other
   pinned family sources are checked before using the placeholder; subproperty
@@ -86,26 +105,19 @@ OWL/RDFS labels preserve relationships that have no direct UML equivalent:
   guillemets and other PlantUML syntax characters in labels are passed to the
   layout engine as numeric character references, so a label can never become
   a stereotype, template parameter, link or markup.
-- OWL class restrictions use UML notation instead of an expression box. This
-  covers every direct `rdfs:subClassOf` restriction of the documented class
-  whose node has exactly one named `owl:onProperty` and one recognised form,
-  and the same restrictions on neighbouring classes shown in the diagram. The
-  notation is scoped to the restricted class: it never declares a global
-  range or count, and no property declaration is invented or import fetched.
-  The mapping is in [Restriction notation](#restriction-notation) below.
-- Other direct restrictions retain their `owl:onProperty`, value constraints,
-  and cardinalities as explicit relationships: boolean class expressions
-  (`owl:intersectionOf`, `owl:unionOf`, `owl:complementOf`), enumerations,
-  nested restrictions, inverse properties, property chains, complex fillers,
-  malformed counts and restrictions with additional predicates. Each explicit
-  box is named after its form and numbered within the neighbourhood, such as
-  "Anonymous OWL intersection 1" or "Anonymous OWL restriction 2". Union and
-  intersection RDF lists are expanded into labeled member relationships.
-- An outer existential whose filler is a simple zero qualified minimum still
-  requires a value. GraphArch inspects one additional restriction level within
-  the same bounded relationship group, and shows a linked `[1..*]` member. If
-  the same class has a positive minimum or exact count on that property, that
-  count already guarantees existence, so the duplicate member is omitted.
+- Anonymous OWL class expressions of the documented class, in
+  `rdfs:subClassOf`, `owl:equivalentClass` or `owl:disjointWith`, use UML
+  notation instead of an expression box. The notation is scoped to the
+  restricted class: it never declares a global range or count, and no
+  property declaration is invented or import fetched. The mapping is in
+  [Class expression notation](#class-expression-notation) below. The same
+  restrictions on neighbouring classes shown in the diagram appear as their
+  attributes.
+- An anonymous expression that is not well-formed OWL, such as an unknown or
+  repeated constructor, a malformed count or a malformed RDF list, keeps its
+  authored facts as an explicit box named after its form, such as
+  "Anonymous OWL restriction 1". A domain or range that is an anonymous
+  expression other than an admitted union is drawn the same way.
 - Simple authored SHACL property constraints enrich the same UML attributes and
   association multiplicities. They remain validation constraints rather than OWL
   entailments. Conflicting qualifiers are omitted from the drawing, not silently
@@ -117,9 +129,11 @@ The diagram is deliberately local. It shows up to five complete relationship gro
 an 18-fact budget, selected in deterministic IRI order. Domain/range facts for a
 property and facts describing a direct restriction stay together. An oversized
 group is omitted whole, with the scope explained in the shared endnote; it is never cut into a
-misleading partial assertion. Full source assertions remain in the
-publication; nested expressions beyond the direct neighborhood are not expanded
-recursively. Isolated classes still receive a class box.
+misleading partial assertion. At most eight anonymous class axioms are read,
+each with at most four levels of nesting, 24 resources and eight members per
+list; an axiom beyond that budget is omitted whole and the diagram is marked
+as limited. Full source assertions remain in the publication. Isolated classes
+still receive a class box.
 
 Superclasses are placed above the focal class, subclasses below, and associations
 laterally where compatible with that hierarchy. Without a hierarchy, both engine
@@ -127,7 +141,11 @@ orientations are compared against a balanced 900-by-600 figure area.
 The score balances readable label scaling with a penalty for tall, narrow
 figures. Layout does not remove
 assertions to fit a phone. On narrow screens, the diagram stays readable inside a
-keyboard-focusable horizontal scroll region, with an accessible description. PDF figures retain a physical height limit. PDF class boxes,
+keyboard-focusable horizontal scroll region, with an accessible description.
+The description is generated from the same UML projection as the drawing: one
+plain sentence per drawn element, such as "Core is a kind of Parent." or
+"Core is associated with Target by has, multiplicity 1..*, qualified.", never
+the underlying triples. PDF figures retain a physical height limit. PDF class boxes,
 member names, and relationship labels are individually clickable. Subjects included
 in the PDF link to their internal document anchors; other HTTP(S) resources link
 to their original IRIs. In a bookshelf, a subject documented in another book links
@@ -155,6 +173,41 @@ The renderer runs with PlantUML’s sandbox security profile.
 
 This automatic feature is independent of [authored PlantUML diagrams](../collectors/plantuml.md),
 which remain supported by the dedicated collector and documentor.
+
+## Class expression notation
+
+| OWL axiom of class `C` | UML |
+| --- | --- |
+| `C ⊑ R` for a restriction `R` | the restriction notation below |
+| `C ≡ R` | the same notation, adding `{defining}` |
+| `C ⊑ A ⊓ R …`, `C ≡ A ⊓ R …` | a generalization to each named part `A` (correct, since `C ⊑ A`) and the notation of each restriction part, with `{defining}` for an equivalence |
+| `C ≡ A ⊔ B` | `A` and `B` generalize to `C`, marked `{complete}` |
+| `C ⊑ {a, b}`, `C ≡ {a, b}` | `C` is an `«enumeration»` with the literals `a` and `b` |
+| `C ⊑ ¬ D` | the constraint note `{not D}` |
+| `C ≡ D` for a named class `D` | a dashed `«equivalent»` line |
+| any other expression | an OCL-style constraint note, such as `inv: self.p->exists(x \| x.q->forAll(y \| y.oclIsKindOf(D)))` |
+
+A restriction filler may itself be an expression:
+
+- A union of named classes, `p some (A ⊔ B)`, is one association end per
+  member, each tagged `{xor}`.
+- A chain of existentials, `p some (q some C)`, is the path member
+  `p.q : C [1..*]`.
+- A filler every individual satisfies, such as `owl:Thing` or a zero
+  qualified minimum, leaves an unqualified existential: the member `p [1..*]`.
+  If the same class has a positive minimum or exact count on that property,
+  that count already guarantees the value, so the member is omitted.
+- An intersection, complement or enumeration filler, and any other nesting,
+  is an OCL-style constraint note.
+- A restriction on an inverse property, `[ owl:inverseOf p ]`, is an
+  association from the filler to the restricted class, with the multiplicity
+  at the filler's end. A data property has no inverse, and a prohibition on an
+  inverse property is a constraint note.
+
+An undeclared property in a restriction, such as one from an import that was
+not collected, takes the kind of its filler: a datatype filler makes it an
+attribute, any other filler an association to that filler's class, drawn
+`«external»` when it is undeclared too.
 
 ## Restriction notation
 
