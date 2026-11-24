@@ -8,6 +8,7 @@ use {
         escape::Escaped,
         multiplicity::Cardinality,
         restriction::Prohibition,
+        verbalization::{Qualifiers, Verbalization},
     },
     std::collections::BTreeMap,
 };
@@ -82,6 +83,7 @@ pub(super) fn members(
     node: &Node,
     diagram: &Diagram,
     ids: &BTreeMap<&str, usize>,
+    words: &mut Verbalization,
 ) {
     let shorthand = super::shorthand::Shorthand::new(diagram);
     for (_, field) in properties(diagram)
@@ -89,8 +91,9 @@ pub(super) fn members(
         .filter(|(class, _)| class.id == node.id)
     {
         if field.prohibited() {
-            constraints
-                .push_str(&Prohibition::new(field.property, None).line(ids));
+            let prohibition = Prohibition::new(field.property, None);
+            words.constraint(node, &prohibition.text());
+            constraints.push_str(&prohibition.line(ids));
             continue;
         }
         if field.object {
@@ -104,15 +107,21 @@ pub(super) fn members(
         {
             continue;
         }
+        let multiplicity = field.count.and_then(Cardinality::multiplicity);
+        words.attribute(
+            node,
+            &field.property.label,
+            &field.range.map(|r| r.label.clone()).unwrap_or_default(),
+            &Qualifiers {
+                multiplicity: multiplicity.map(|m| m.to_string()),
+                tags:         &[],
+            },
+        );
         let range = field
             .range
             .map(|r| format!(" : {}", Escaped::inline(&r.label)))
             .unwrap_or_default();
-        let count = field
-            .count
-            .and_then(Cardinality::multiplicity)
-            .map(|m| format!(" [{m}]"))
-            .unwrap_or_default();
+        let count = multiplicity.map(|m| format!(" [{m}]")).unwrap_or_default();
         output.push_str(&format!(
             "  {{field}} {}{range}{count} [[[./grapharch-node/n{}]]]\n",
             Escaped::inline(&field.property.label),
@@ -140,6 +149,7 @@ pub(super) fn associations(
     output: &mut String,
     diagram: &Diagram,
     ids: &BTreeMap<&str, usize>,
+    words: &mut Verbalization,
     has_owl: impl Fn(&str, &Property<'_>) -> bool,
 ) {
     let layout = super::layout::Layout::new(diagram);
@@ -150,6 +160,13 @@ pub(super) fn associations(
         if field.prohibited() || has_owl(&class.id, &field) {
             continue;
         }
+        words.association(class, range, &field.property.label, &Qualifiers {
+            multiplicity: field
+                .count
+                .and_then(Cardinality::multiplicity)
+                .map(|m| m.to_string()),
+            tags:         &[],
+        });
         output.push_str(&format!(
             "n{} {} {}n{} [[./grapharch-node/n{}]] : {}\n",
             ids[class.id.as_str()],

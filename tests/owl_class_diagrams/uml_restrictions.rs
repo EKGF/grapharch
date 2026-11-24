@@ -262,16 +262,14 @@ async fn neighbour_restrictions_are_members_of_the_neighbour() -> Result<()> {
 }
 
 #[tokio::test]
-async fn boolean_expressions_stay_explicit_and_are_named_by_form() -> Result<()>
-{
+async fn an_intersection_equivalence_generalizes_to_every_named_part()
+-> Result<()> {
     let source = source(
         "owl:equivalentClass [ owl:intersectionOf ( ex:Value ex:Target ) ]",
     )
     .await?;
-    assert!(
-        source.contains("Anonymous OWL\\nintersection 1"),
-        "{source}"
-    );
+    assert_eq!(source.matches("-|>").count(), 2, "{source}");
+    assert!(!source.contains("Anonymous OWL"), "{source}");
     Ok(())
 }
 

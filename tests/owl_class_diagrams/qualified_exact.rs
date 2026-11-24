@@ -40,7 +40,7 @@ async fn positive_exact_count_is_qualified_and_scoped_to_named_target()
         assert!(!d.source.contains("OWL expression"));
         assert!(d.source.contains("-up-|>"));
         assert!(d.svg.contains("qualified"));
-        assert!(d.diagram.to_string().contains("qualifiedCardinality"));
+        assert!(d.diagram.to_string().contains("\"bound\":\"exact\""));
         assert!(!d.diagram.to_string().contains("FunctionalProperty"));
     }
     Ok(())
@@ -60,10 +60,10 @@ async fn nested_zero_preserves_outer_existence_without_expression_boxes()
             !d.source.contains("Literal value")
     );
     assert!(
-        d.diagram.to_string().contains("minQualifiedCardinality"),
+        d.diagram.to_string().contains("\"bound\":\"minimum\""),
         "nested proof facts retained"
     );
-    assert!(d.diagram.to_string().contains("someValuesFrom"));
+    assert!(d.diagram.to_string().contains("\"some\""));
     Ok(())
 }
 #[tokio::test]
@@ -86,7 +86,8 @@ async fn same_property_positive_qualified_count_covers_nested_top_existence()
         "positive same-property count entails existence"
     );
     assert!(d.source.contains("\"1\" n"));
-    assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 12);
+    assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 2);
+    assert_eq!(d.diagram["axioms"].as_array().unwrap().len(), 2);
     let other = drawing(&format!(
         "{nested}, {}",
         exact.replace("ex:plays", "ex:member")
@@ -101,20 +102,43 @@ async fn same_property_positive_qualified_count_covers_nested_top_existence()
 #[tokio::test]
 async fn nested_nonzero_or_extra_constraints_are_not_treated_as_top()
 -> Result<()> {
-    for inner in [
-        "owl:minQualifiedCardinality 1",
-        "owl:qualifiedCardinality 0",
-        "owl:maxQualifiedCardinality 0",
-        "owl:minQualifiedCardinality 0; owl:allValuesFrom ex:Person",
-        "owl:minQualifiedCardinality \"0\"",
-    ] {
-        let d = drawing(&format!(
+    let nested = |inner: &str| {
+        format!(
             "[a owl:Restriction; owl:onProperty ex:plays; owl:someValuesFrom \
              [a owl:Restriction; owl:onProperty ex:member; owl:onClass \
              ex:Body; {inner}]]"
-        ))
-        .await?;
-        assert!(d.source.contains("OWL expression"));
+        )
+    };
+    let path = drawing(&nested("owl:minQualifiedCardinality 1")).await?;
+    assert!(
+        path.source
+            .contains("{field} ex:plays.ex:member : ex:Body [1..*]"),
+        "{}",
+        path.source
+    );
+    for inner in [
+        "owl:qualifiedCardinality 0",
+        "owl:maxQualifiedCardinality 0",
+    ] {
+        let d = drawing(&nested(inner)).await?;
+        assert!(
+            d.source.contains("note \"inv: "),
+            "{inner}: {}",
+            d.source
+        );
+        assert!(!d.source.contains("OWL expression"));
+        assert!(!d.source.contains("[1..*]"));
+    }
+    for inner in [
+        "owl:minQualifiedCardinality 0; owl:allValuesFrom ex:Person",
+        "owl:minQualifiedCardinality \"0\"",
+    ] {
+        let d = drawing(&nested(inner)).await?;
+        assert!(
+            d.source.contains("OWL expression"),
+            "{inner}: {}",
+            d.source
+        );
         assert!(!d.source.contains("[1..*]"));
     }
     Ok(())

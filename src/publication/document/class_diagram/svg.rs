@@ -131,7 +131,7 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
     result = result.replacen(
         "<svg ",
         &format!(
-            "<svg role=\"img\" aria-label=\"{} class neighborhood\" ",
+            "<svg role=\"img\" aria-label=\"UML class diagram of {}\" ",
             xml(&projection.diagram.focus.label)
         ),
         1,
@@ -151,65 +151,7 @@ pub(crate) fn draw(projection: &Projection, links: bool) -> Result<String> {
     Ok(result)
 }
 
-/// Describe the retained visual labels without introducing a visible duplicate.
+/// The retained plain-language description of the drawn UML elements.
 pub(crate) fn description(projection: &Projection) -> Result<String> {
-    let document = roxmltree::Document::parse(&projection.svg)?;
-    let mut description = format!(
-        "UML class diagram for {}. Diagram labels: ",
-        projection.diagram.focus.label
-    );
-    // bounded: labels in the validated, capped retained SVG only.
-    for node in document
-        .descendants()
-        .filter(|node| node.has_tag_name("text"))
-    {
-        for text in node
-            .descendants()
-            .filter_map(|node| node.is_text().then(|| node.text()).flatten())
-        {
-            description.push_str(text);
-        }
-        description.push_str("; ");
-    }
-    if document.descendants().any(|node| {
-        node.attribute("data-qualified-name") == Some("unknownDomain")
-    }) {
-        description.push_str(
-            " The dotted rdfs:Resource source is a presentation placeholder: \
-             no specific domain is declared in the selected inputs. It is not \
-             an asserted domain or a claim that no more specific domain can \
-             be entailed. ",
-        );
-    }
-    if !super::restriction::Restriction::collect(&projection.diagram.edges)
-        .is_empty() ||
-        !projection.diagram.context.restrictions.is_empty()
-    {
-        description.push_str(
-            " OWL restrictions are drawn as class-scoped members, \
-             associations and constraints. Qualified counts count only \
-             property values in the named target class or datatype; other \
-             values are not excluded. A constraint such as {no p} states that \
-             the class has no value of p, or {no p in C} none in the named \
-             target. A zero minimum imposes no restriction and is omitted \
-             visually. {redefines} marks a restriction on a property \
-             inherited from a superclass domain. ",
-        );
-    }
-    if !super::nested_existence::collect(&projection.diagram).is_empty() {
-        description.push_str(
-            " The nested zero-minimum filler is unconstrained, but its outer \
-             existential still requires a property value. A positive \
-             qualified minimum or exact count on the same class and property \
-             already guarantees that existence; otherwise the member retains \
-             [1..*]. ",
-        );
-    }
-    for edge in &projection.diagram.edges {
-        description.push_str(&format!(
-            " {} {} {}.",
-            edge.from.label, edge.relation, edge.to.label
-        ));
-    }
-    Ok(description)
+    Ok(projection.description.clone())
 }

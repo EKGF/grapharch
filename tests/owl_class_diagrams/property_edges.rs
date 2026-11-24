@@ -105,7 +105,7 @@ ex:title a owl:DatatypeProperty ; rdfs:domain ex:Core, ex:Dataset ;
     let drawing = retained(&body)?;
     assert_no_property_box(&drawing.source);
     assert!(
-        drawing.source.contains("\" as n3 <<Resource>> "),
+        drawing.source.contains("\" as n3 <<external>> "),
         "an undeclared domain still owns its attributes: {}",
         drawing.source
     );
@@ -131,7 +131,7 @@ async fn range_only_properties_with_several_ranges_share_the_placeholder()
     .await?;
     let drawing = retained(&body)?;
     assert_eq!(
-        drawing.source.matches("class \"rdfs:Resource\"").count(),
+        drawing.source.matches("class \"&#171;any&#187;\"").count(),
         1
     );
     assert_eq!(

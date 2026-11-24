@@ -235,9 +235,7 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
         1
     );
     assert!(
-        note.contains(
-            "Class diagrams use UML shorthand for asserted OWL facts"
-        )
+        note.contains("Class diagrams use UML notation for asserted OWL facts")
     );
     // bounded: this fixture has one home, one reference page and one note.
     let mut selected = None;

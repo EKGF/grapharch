@@ -2,22 +2,24 @@
 use {
     super::{
         Diagram,
-        Edge,
         Node,
         NodeKind,
-        context::{Context, PROPERTY_USES, PropertyUse, RESTRICTION_FACTS},
-        read,
-        restriction::Restriction,
+        axiom_plan::AxiomPlan,
+        context::{
+            Context,
+            Inverse,
+            NEIGHBOUR_AXIOMS,
+            PROPERTY_USES,
+            PropertyUse,
+        },
+        expression::{AxiomRelation, Axioms, ClassAxiom},
+        restriction::Scope,
         shorthand::{GENERIC_RESOURCE, Shorthand},
+        sources::Sources,
     },
-    crate::publication::{
-        dataset::Dataset,
-        document::anonymous_order::AnonymousOrder,
-        view::RevisionView,
-    },
-    anyhow::{Result, bail},
+    anyhow::Result,
     oxrdf::{NamedNode, Term},
-    std::collections::{BTreeMap, BTreeSet, HashSet},
+    std::collections::{BTreeMap, BTreeSet},
 };
 const OWL: &str = "http://www.w3.org/2002/07/owl#";
 const SUBCLASS: &str = "http://www.w3.org/2000/01/rdf-schema#subClassOf";
@@ -25,71 +27,28 @@ const DOMAIN: &str = "http://www.w3.org/2000/01/rdf-schema#domain";
 const RANGE: &str = "http://www.w3.org/2000/01/rdf-schema#range";
 /// Neighbouring classes inspected for their own restrictions.
 const NEIGHBOURS: usize = 12;
-/// Rows read per neighbour; reaching it skips that neighbour whole.
-const NEIGHBOUR_ROWS: usize = 32;
+/// Axioms read per neighbour.
+const NEIGHBOUR_LIMIT: usize = 8;
 /// Superclasses visited when deciding whether a property is inherited.
 const ANCESTORS: usize = 64;
 
-/// The sources a context is read from.
-pub(super) struct Sources<'a> {
-    pub dataset:    &'a Dataset,
-    pub assertions: &'a RevisionView,
-    pub metadata:   &'a RevisionView,
-    pub prefixes:   &'a BTreeMap<String, String>,
-    pub documented: &'a HashSet<NamedNode>,
-}
-impl Sources<'_> {
-    async fn node(&self, id: &NamedNode) -> Result<Node> {
-        let order = AnonymousOrder::new(self.dataset, self.assertions);
-        read::node(
-            self.metadata,
-            &order,
-            id,
-            self.prefixes,
-            self.documented,
-        )
-        .await
-    }
-
-    /// Named objects of one predicate, at most `limit`, in IRI order.
-    async fn objects(
-        &self,
-        subject: &str,
-        predicate: &str,
-        limit: usize,
-    ) -> Result<Option<BTreeSet<NamedNode>>> {
-        let mut rows = self
-            .metadata
-            .objects_by(
-                &NamedNode::new(subject)?,
-                &NamedNode::new_unchecked(predicate),
-            )
-            .await?;
-        let mut values = BTreeSet::new(); // bounded: `limit` values.
-        while let Some(row) = rows.next().await? {
-            if let Term::NamedNode(value) = &row["value"] {
-                if values.len() == limit {
-                    return Ok(None);
-                }
-                values.insert(value.clone());
-            }
-        }
-        Ok(Some(values))
-    }
-}
 impl Context {
     pub(super) async fn read(
         diagram: &Diagram,
         sources: &Sources<'_>,
     ) -> Result<Self> {
         let mut context = Self {
-            restrictions: Self::neighbours(diagram, sources).await?,
-            properties:   Vec::new(),
+            axioms:     Self::neighbours(diagram, sources).await?,
+            properties: Vec::new(),
+            inverses:   Self::inverses(diagram, sources).await?,
         };
         let mut pairs = BTreeSet::new(); // bounded: PROPERTY_USES pairs.
-        for restriction in Restriction::collect(&diagram.edges)
+        for restriction in AxiomPlan::new(&diagram.axioms, Scope::Focus)
+            .restrictions
             .into_iter()
-            .chain(Restriction::collect(&context.restrictions))
+            .chain(
+                AxiomPlan::new(&context.axioms, Scope::Neighbour).restrictions,
+            )
         {
             if pairs.len() == PROPERTY_USES {
                 break;
@@ -171,11 +130,12 @@ impl Context {
         Ok(false)
     }
 
-    /// Complete simple restrictions on visible neighbouring classes.
+    /// Restriction axioms of visible neighbouring classes that draw as
+    /// members.
     async fn neighbours(
         diagram: &Diagram,
         sources: &Sources<'_>,
-    ) -> Result<Vec<Edge>> {
+    ) -> Result<Vec<ClassAxiom>> {
         let visible = Shorthand::new(diagram).visible;
         let classes: BTreeSet<&str> = diagram
             .nodes()
@@ -187,88 +147,89 @@ impl Context {
             .map(|n| n.id.as_str())
             .take(NEIGHBOURS)
             .collect(); // bounded: twelve neighbours.
-        let mut edges = Vec::new(); // bounded: RESTRICTION_FACTS facts.
+        let mut axioms = Vec::new(); // bounded: NEIGHBOUR_AXIOMS.
         for class in classes {
             let node = diagram
                 .nodes()
                 .find(|n| n.id == class)
                 .cloned()
                 .unwrap_or_else(|| unreachable!("selected from the diagram"));
-            for group in Self::groups(sources, &node).await? {
-                if edges.len() + group.len() > RESTRICTION_FACTS {
-                    return Ok(edges);
+            let read = Axioms::read(
+                sources,
+                &node,
+                &[AxiomRelation::Subclass],
+                NEIGHBOUR_LIMIT,
+            )
+            .await?;
+            for axiom in read.axioms {
+                // An expression the focus already draws is never drawn twice.
+                let shared = diagram.axioms.iter().any(|a| a.id == axiom.id);
+                let drawn = !AxiomPlan::new(
+                    std::slice::from_ref(&axiom),
+                    Scope::Neighbour,
+                )
+                .restrictions
+                .is_empty();
+                if shared || !drawn {
+                    continue;
                 }
-                // A restriction already in the focus neighbourhood is drawn
-                // there; never describe one node twice.
-                let shared = group.iter().any(|edge| {
-                    diagram.nodes().any(|n| {
-                        n.kind == NodeKind::OwlExpression && n.id == edge.to.id
-                    })
-                });
-                if !shared && !Restriction::collect(&group).is_empty() {
-                    edges.extend(group);
+                if axioms.len() == NEIGHBOUR_AXIOMS {
+                    return Ok(axioms);
                 }
+                axioms.push(axiom);
             }
         }
-        Ok(edges)
+        Ok(axioms)
     }
 
-    /// The restriction groups of one class, each with its subclass fact.
-    async fn groups(
+    /// The single declared inverse of each property drawn in the diagram.
+    async fn inverses(
+        diagram: &Diagram,
         sources: &Sources<'_>,
-        class: &Node,
-    ) -> Result<Vec<Vec<Edge>>> {
-        let id = NamedNode::new(class.id.as_str())?;
-        let pattern = sources.assertions.pattern(
-            &format!(
-                "{id} <{SUBCLASS}> ?s . ?s a <{OWL}Restriction> ; ?p ?o . \
-                 FILTER(STRSTARTS(STR(?p), \"{OWL}\")) FILTER(isIRI(?s) && \
-                 (isIRI(?o) || isLiteral(?o)))"
-            ),
-            47,
-        );
-        let mut rows = sources
-            .dataset
-            .select(format!(
-                "SELECT DISTINCT ?s ?p ?o WHERE {{ {pattern} }} ORDER BY ?s \
-                 ?p ?o LIMIT {}",
-                NEIGHBOUR_ROWS + 1
-            ))
-            .await?;
-        let mut facts = Vec::new(); // bounded: NEIGHBOUR_ROWS + 1 rows.
-        while let Some(row) = rows.next().await? {
-            facts.push([row["s"].clone(), row["p"].clone(), row["o"].clone()]);
-        }
-        if facts.len() > NEIGHBOUR_ROWS {
-            return Ok(Vec::new());
-        }
-        let mut groups = BTreeMap::<String, Vec<Edge>>::new(); // bounded: the rows above.
-        for [s, p, o] in facts {
-            let (Term::NamedNode(s), Term::NamedNode(p)) = (&s, &p) else {
-                bail!("class diagram restriction must identify resources");
-            };
-            let restriction = sources.node(s).await?;
-            let target = match &o {
-                Term::NamedNode(o) => sources.node(o).await?,
-                Term::Literal(value) => Node::literal(value),
-                _ => bail!("unsupported diagram endpoint"),
-            };
-            let group =
-                groups.entry(restriction.id.clone()).or_insert_with(|| {
-                    vec![Edge {
-                        from:      class.clone(),
-                        relation:  read::compact(SUBCLASS, sources.prefixes),
-                        predicate: Some(SUBCLASS.into()),
-                        to:        restriction.clone(),
-                    }]
+    ) -> Result<Vec<Inverse>> {
+        let properties: BTreeSet<&str> = diagram
+            .nodes()
+            .filter(|n| {
+                matches!(
+                    n.kind,
+                    NodeKind::ObjectProperty | NodeKind::RdfProperty
+                )
+            })
+            .map(|n| n.id.as_str())
+            .take(PROPERTY_USES)
+            .collect(); // bounded: PROPERTY_USES properties.
+        let mut inverses = Vec::new(); // bounded: PROPERTY_USES.
+        for property in properties {
+            let id = NamedNode::new(property)?;
+            let pattern = sources.metadata.pattern(
+                &format!(
+                    "{{ {id} <{OWL}inverseOf> ?q }} UNION {{ ?q \
+                     <{OWL}inverseOf> {id} }} FILTER(isIRI(?q) && ?q != {id})"
+                ),
+                49,
+            );
+            let mut rows = sources
+                .dataset
+                .select(format!(
+                    "SELECT DISTINCT ?q WHERE {{ {pattern} }} LIMIT 2"
+                ))
+                .await?;
+            let mut found = Vec::new(); // bounded: two rows.
+            while let Some(row) = rows.next().await? {
+                if let Term::NamedNode(q) = &row["q"] {
+                    found.push(q.clone());
+                }
+            }
+            drop(rows);
+            if let [inverse] = found.as_slice() &&
+                !inverse.as_str().starts_with("urn:grapharch:skolem:")
+            {
+                inverses.push(Inverse {
+                    property: property.to_owned(),
+                    inverse:  sources.node(inverse).await?,
                 });
-            group.push(Edge {
-                from:      restriction,
-                relation:  read::compact(p.as_str(), sources.prefixes),
-                predicate: Some(p.as_str().into()),
-                to:        target,
-            });
+            }
         }
-        Ok(groups.into_values().collect()) // bounded: the rows above.
+        Ok(inverses)
     }
 }

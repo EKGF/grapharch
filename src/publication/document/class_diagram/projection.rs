@@ -9,17 +9,21 @@ use {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Projection {
-    pub diagram: Diagram,
-    pub source:  String,
-    pub engine:  String,
-    pub svg:     String,
+    pub diagram:     Diagram,
+    pub source:      String,
+    /// The plain-language description of the drawn UML elements.
+    pub description: String,
+    pub engine:      String,
+    pub svg:         String,
 }
 impl Projection {
     pub async fn generate(
         diagram: Diagram,
         renderer: &LocalRenderer,
     ) -> Result<Self> {
-        let mut source = PlantUmlSource::new(&diagram).render();
+        let rendering = PlantUmlSource::new(&diagram).render();
+        let description = rendering.description;
+        let mut source = rendering.source;
         let engine = renderer.version().await?;
         let mut svg = render(renderer, &source).await?;
         if !diagram.edges.is_empty() &&
@@ -40,7 +44,11 @@ impl Projection {
             svg.len() <= 256 * 1024,
             "class diagram SVG exceeds 256 KiB"
         );
-        Ok(Self { diagram, source, engine, svg })
+        ensure!(
+            description.len() <= 64 * 1024,
+            "class diagram description exceeds 64 KiB"
+        );
+        Ok(Self { diagram, source, description, engine, svg })
     }
 
     pub fn parse(text: &str) -> Result<Self> {
@@ -53,6 +61,10 @@ impl Projection {
         ensure!(
             value.source.len() <= 128 * 1024,
             "retained PlantUML source exceeds 128 KiB"
+        );
+        ensure!(
+            value.description.len() <= 64 * 1024,
+            "retained class diagram description exceeds 64 KiB"
         );
         // Retained source is provenance, never an instruction to rerender.
         ensure!(
@@ -108,7 +120,7 @@ mod tests {
     fn restoring_a_drawing_does_not_regenerate_its_source_with_new_layout_rules()
      {
         let retained = Projection {
-            diagram: Diagram {
+            diagram:     Diagram {
                 focus:   super::super::Node {
                     id:       "urn:test:class".into(),
                     label:    "Class".into(),
@@ -116,18 +128,22 @@ mod tests {
                     link:     None,
                     imported: false,
                     datatype: false,
+                    from:     None,
                 },
                 edges:   Vec::new(),
                 shapes:  Vec::new(),
+                axioms:  Vec::new(),
                 limited: false,
                 context: Default::default(),
             },
-            source:  "@startuml\n' previous generated layout \
-                      revision\nrectangle Class\n@enduml\n"
+            source:      "@startuml\n' previous generated layout \
+                          revision\nrectangle Class\n@enduml\n"
                 .into(),
-            engine:  "PlantUML version retained-fixture".into(),
-            svg:     "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" \
-                      height=\"50\"><rect width=\"120\" height=\"50\"/></svg>"
+            description: "UML class diagram of Class.".into(),
+            engine:      "PlantUML version retained-fixture".into(),
+            svg:         "<svg xmlns=\"http://www.w3.org/2000/svg\" \
+                          width=\"120\" height=\"50\"><rect width=\"120\" \
+                          height=\"50\"/></svg>"
                 .into(),
         };
         let restored =

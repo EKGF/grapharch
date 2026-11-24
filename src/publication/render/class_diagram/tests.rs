@@ -10,11 +10,13 @@ fn retained(link: &str) -> String {
         link:     Some(link.into()),
         imported: false,
         datatype: false,
+        from:     None,
     };
     serde_json::to_string(&Projection {
-        diagram: Diagram {
+        diagram:     Diagram {
             focus:   node.clone(),
             shapes:  Vec::new(),
+            axioms:  Vec::new(),
             limited: false,
             context: Default::default(),
             edges:   vec![Edge {
@@ -24,12 +26,13 @@ fn retained(link: &str) -> String {
                 to:        node,
             }],
         },
-        source:  "@startuml\n@enduml\n".into(),
-        engine:  "PlantUML version fixture".into(),
-        svg:     "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" \
-                  height=\"800\" viewBox=\"0 0 400 800\"><a \
-                  href=\"./grapharch-node/n0\"><rect width=\"400\" \
-                  height=\"800\"/></a></svg>"
+        source:      "@startuml\n@enduml\n".into(),
+        description: "UML class diagram of Class.".into(),
+        engine:      "PlantUML version fixture".into(),
+        svg:         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" \
+                      height=\"800\" viewBox=\"0 0 400 800\"><a \
+                      href=\"./grapharch-node/n0\"><rect width=\"400\" \
+                      height=\"800\"/></a></svg>"
             .into(),
     })
     .unwrap()
@@ -52,7 +55,7 @@ fn diagram_has_accessible_description_without_duplicate_sections() {
         description
             .text()
             .collect::<String>()
-            .contains("Class rdfs:subClassOf Class")
+            .contains("UML class diagram of Class.")
     );
     assert!(!output.contains("Relationships as text"));
 }

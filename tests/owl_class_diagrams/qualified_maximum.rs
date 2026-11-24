@@ -51,8 +51,8 @@ async fn qualified_maximum_including_zero_is_a_target_end_prohibition_or_bound()
                 !d.source.contains("OWL expression")
         );
         assert!(d.svg.contains(&format!("0..{n}")));
-        assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 5);
-        assert!(d.diagram.to_string().contains("maxQualifiedCardinality"));
+        assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 1);
+        assert!(d.diagram.to_string().contains("\"bound\":\"maximum\""));
         assert!(!d.diagram.to_string().contains("#range"));
     }
     Ok(())
@@ -84,13 +84,33 @@ async fn maximum_does_not_guarantee_outer_existence() -> Result<()> {
     Ok(())
 }
 #[tokio::test]
-async fn maximum_keeps_complex_or_malformed_restrictions_explicit() -> Result<()>
-{
-    for clause in [
+async fn maximum_keeps_malformed_restrictions_explicit() -> Result<()> {
+    let inverse = drawing(
         "owl:onProperty [owl:inverseOf ex:p]; owl:onClass ex:Target; \
          owl:maxQualifiedCardinality 1",
+    )
+    .await?;
+    assert_eq!(
+        inverse.source.matches("\"0..1\" -").count(),
+        1,
+        "{}",
+        inverse.source
+    );
+    let union = drawing(
         "owl:onProperty ex:p; owl:onClass [owl:unionOf (ex:Target \
          ex:Parent)]; owl:maxQualifiedCardinality 1",
+    )
+    .await?;
+    assert_eq!(
+        union.source.matches("{qualified, xor}").count(),
+        2,
+        "{}",
+        union.source
+    );
+    for d in [inverse, union] {
+        assert!(!d.source.contains("OWL expression"));
+    }
+    for clause in [
         "owl:onProperty ex:p; owl:onClass ex:Target; \
          owl:maxQualifiedCardinality -1",
         "owl:onProperty ex:p; owl:onClass ex:Target; \

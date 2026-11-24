@@ -1,4 +1,4 @@
-//! The typed meaning of one simple, direct OWL class restriction.
+//! The typed meaning of one OWL restriction that UML notation can state.
 use super::super::{Node, multiplicity::Cardinality};
 
 /// A named restriction filler: a class or a datatype.
@@ -22,22 +22,34 @@ pub(in super::super) enum Constraint<'a> {
     All(Filler<'a>),
     /// `owl:hasValue`: this individual or literal is among the values.
     Value(&'a Node),
+    /// At least one value, of any type: an existential whose filler every
+    /// individual satisfies.
+    Exists,
 }
-/// One `rdfs:subClassOf` restriction with its complete retained facts.
+/// One restriction on one class, drawn as a member, association or class
+/// constraint.
 #[derive(Clone, Debug)]
 pub(in super::super) struct Restriction<'a> {
-    pub class:      &'a Node,
-    pub property:   &'a Node,
-    pub constraint: Constraint<'a>,
-    /// Indices of every retained fact the notation replaces.
-    pub consumed:   Vec<usize>, // bounded: four facts of one restriction.
+    pub class:       &'a Node,
+    pub property:    &'a Node,
+    /// Further properties of a path member `p.q`, outermost first.
+    pub path:        Vec<&'a Node>, // bounded: the expression nesting depth.
+    /// The restricted property is the inverse of `property`.
+    pub inverse:     bool,
+    pub constraint:  Constraint<'a>,
+    /// The restriction is part of an equivalence: it defines the class.
+    pub defining:    bool,
+    /// One member of a union filler, drawn as one of exclusive ends.
+    pub alternative: bool,
 }
 impl Restriction<'_> {
     /// Whether the restriction requires at least one individual value.
     pub fn guarantees_existence(&self) -> bool {
         match self.constraint {
             Constraint::Count { cardinality, filler } => {
-                filler.is_none_or(|f| !f.data) &&
+                !self.alternative &&
+                    self.path.is_empty() &&
+                    filler.is_none_or(|f| !f.data) &&
                     cardinality
                         .multiplicity()
                         .is_some_and(|m| m.requires_value())

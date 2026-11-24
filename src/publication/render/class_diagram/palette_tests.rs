@@ -11,6 +11,7 @@ fn node(id: &str, kind: NodeKind) -> Node {
         link: None,
         imported: false,
         datatype: false,
+        from: None,
     }
 }
 
@@ -35,16 +36,18 @@ fn projection() -> Projection {
     // Entity names follow identity order: n0 expression, n1 xsd:string,
     // n2 Focus, n3 Imported.
     Projection {
-        diagram: Diagram {
+        diagram:     Diagram {
             edges: vec![edge(&imported), edge(&datatype), edge(&restriction)],
             focus,
             shapes: Vec::new(),
+            axioms: Vec::new(),
             limited: false,
             context: Default::default(),
         },
-        source:  String::new(),
-        engine:  "PlantUML version fixture".into(),
-        svg:     String::new(),
+        source:      String::new(),
+        description: String::new(),
+        engine:      "PlantUML version fixture".into(),
+        svg:         String::new(),
     }
 }
 

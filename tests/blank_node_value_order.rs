@@ -195,8 +195,8 @@ async fn class_diagrams_ignore_blank_identity_and_triple_order() -> Result<()> {
     let subject = "https://example.org/Core";
     let reference = body("urn:class-a", "class.ttl", CLASS, subject).await?;
     assert!(
-        reference.contains("Anonymous OWL restriction"),
-        "{reference}"
+        reference.contains("\"id\":\"expression-"),
+        "anonymous expressions keep content-derived identities: {reference}"
     );
     assert!(
         reference.contains("property-shape-"),

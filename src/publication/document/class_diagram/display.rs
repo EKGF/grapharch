@@ -65,11 +65,15 @@ pub(super) async fn apply(
     disambiguate(&mut labels)?;
     let labels: BTreeMap<_, _> = labels
         .into_iter()
-        .map(|label| (label.iri, label.text))
+        .map(|label| (label.iri, (label.text, label.from)))
         .collect(); // bounded: 357 resources.
     for node in diagram.nodes_mut() {
-        if let Some(label) = labels.get(&node.id) {
+        if let Some((label, from)) = labels.get(&node.id) {
             node.label.clone_from(label);
+            node.from.clone_from(from);
+        }
+        if let Some(metaclass) = node.metaclass() {
+            node.label = metaclass.name().to_owned();
         }
         node.imported = imported.contains(&node.id);
     }

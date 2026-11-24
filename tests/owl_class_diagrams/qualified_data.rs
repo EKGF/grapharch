@@ -45,14 +45,15 @@ async fn qualified_datatype_counts_are_class_fields_not_object_associations()
             !d.source.contains("OWL expression") &&
                 !d.source.contains("Literal value")
         );
-        assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 5);
-        assert!(d.diagram.to_string().contains("onDataRange"));
+        assert_eq!(d.diagram["edges"].as_array().unwrap().len(), 1);
+        assert_eq!(d.diagram["axioms"].as_array().unwrap().len(), 1);
+        assert!(d.diagram.to_string().contains("\"datatype\":true"));
         assert!(!d.diagram.to_string().contains("#range"));
     }
     Ok(())
 }
 #[tokio::test]
-async fn datatype_zero_minimum_is_omitted_but_complex_ranges_stay_explicit()
+async fn datatype_zero_minimum_is_omitted_and_complex_ranges_are_a_note()
 -> Result<()> {
     let zero = drawing(
         "minQualifiedCardinality",
@@ -65,15 +66,45 @@ async fn datatype_zero_minimum_is_omitted_but_complex_ranges_stay_explicit()
             !zero.source.contains("OWL expression")
     );
     let complex=drawing("qualifiedCardinality",1,"[owl:unionOf (<http://www.w3.org/2001/XMLSchema#string> <http://www.w3.org/2001/XMLSchema#integer>)]").await?;
-    assert!(complex.source.contains("OWL expression"));
+    assert!(
+        !complex.source.contains("OWL expression"),
+        "{}",
+        complex.source
+    );
+    assert!(
+        complex
+            .source
+            .contains("note \"inv: self.has time value-&#62;select"),
+        "{}",
+        complex.source
+    );
     Ok(())
 }
 
 #[tokio::test]
 async fn datatype_counts_reject_inverse_properties_invalid_counts_and_mixed_fillers()
 -> Result<()> {
+    let inverse = "owl:onProperty [owl:inverseOf ex:p]; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality 1";
+    let body = diagram(&format!(
+        "ex:Core a owl:Class; rdfs:subClassOf [a owl:Restriction; {inverse}] \
+         . ex:p a owl:DatatypeProperty ."
+    ))
+    .await?;
+    let d: Drawing = serde_json::from_str(
+        body.split("```grapharch-class-diagram\n")
+            .nth(1)
+            .unwrap()
+            .split("\n```")
+            .next()
+            .unwrap(),
+    )?;
+    assert!(
+        d.source.contains("note \"inv: self.inverse&#40;"),
+        "{}",
+        d.source
+    );
+    assert!(!d.source.contains("{field}"));
     for restriction in [
-        "owl:onProperty [owl:inverseOf ex:p]; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality 1",
         "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality \"1\"",
         "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:qualifiedCardinality -1",
         "owl:onProperty ex:p; owl:onDataRange <http://www.w3.org/2001/XMLSchema#string>; owl:onClass ex:Other; owl:qualifiedCardinality 1",

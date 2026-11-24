@@ -31,6 +31,27 @@ impl Escaped {
     pub fn wrapped(value: &str) -> Self {
         Self(super::label_lines::render(value))
     }
+
+    /// A paragraph of literal text wrapped at spaces into lines of at most
+    /// forty-eight characters, as for a constraint note.
+    pub fn paragraph(value: &str) -> Self {
+        let mut lines = Vec::new(); // bounded: the note's source text.
+        let mut line = String::new();
+        for word in value.split_whitespace() {
+            if !line.is_empty() &&
+                line.chars().count() + 1 + word.chars().count() > 48
+            {
+                lines.push(Self::inline(&line).0);
+                line.clear();
+            }
+            if !line.is_empty() {
+                line.push(' ');
+            }
+            line.push_str(word);
+        }
+        lines.push(Self::inline(&line).0);
+        Self(lines.join("\\n"))
+    }
 }
 impl fmt::Display for Escaped {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {

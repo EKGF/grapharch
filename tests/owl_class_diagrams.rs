@@ -4,7 +4,6 @@ use {
         collect::{Collector, RdfFile},
         dataset::Dataset,
         document::{AnnotatedTermDocumentor, Documentor},
-        view::RevisionView,
         writer::GraphWriter,
     },
     oxrdf::NamedNode,
@@ -27,48 +26,12 @@ async fn diagram_with_focus(
     prefix: &str,
     focus: &str,
 ) -> Result<String> {
-    let root = tempfile::tempdir()?;
-    let path = root.path().join("ontology.ttl");
-    tokio::fs::write(
-        &path,
-        format!(
-            r#"
-@prefix ex: <https://example.org/> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-{source}
-"#
-        ),
+    support::diagram_with_prefixes(
+        source,
+        &[("https://example.org/", prefix)],
+        focus,
     )
-    .await?;
-    let dataset = Dataset::memory()?;
-    let (writer, worker) = GraphWriter::spawn(dataset.clone(), 4, 1024 * 1024)?;
-    RdfFile::new("urn:diagram:project", "urn:diagram:source", path)?
-        .collect(&writer)
-        .await?;
-    let snapshot = dataset.snapshot_for("urn:diagram:project").await?;
-    let documentor = AnnotatedTermDocumentor::new(
-        dataset.clone(),
-        snapshot,
-        "urn:diagram:project",
-        NamedNode::new(format!("https://example.org/{focus}"))?,
-        "en",
-        Arc::new(BTreeMap::from([(
-            "https://example.org/".into(),
-            prefix.into(),
-        )])),
-        Arc::new(HashSet::new()),
-    )?
-    .with_source_annotations();
-    documentor.document(&writer).await?;
-    let view = RevisionView::new(
-        dataset.clone(),
-        dataset.snapshot_for("urn:diagram:project").await?,
-    );
-    let body = view.text(&documentor.fragment_id(), "body").await?;
-    drop(writer);
-    worker.await??;
-    Ok(body)
+    .await
 }
 
 #[tokio::test]
@@ -119,8 +82,8 @@ async fn restrictions_cycles_and_large_neighborhoods_are_explicit() -> Result<()
 ex:Core a owl:Class ; rdfs:subClassOf ex:Other, [ a owl:Restriction ; owl:onProperty ex:p ; owl:someValuesFrom ex:Target ] .
 ex:Other a owl:Class ; rdfs:subClassOf ex:Core .
 "#).await?;
-    assert!(body.contains("owl:someValuesFrom"));
-    assert!(body.contains("Anonymous OWL restriction"));
+    assert!(body.contains("{qualified}"), "{body}");
+    assert!(!body.contains("Anonymous OWL"), "{body}");
     let source = "ex:Core a owl:Class .\n".to_owned() +
         &(0..30)
             .map(|i| {
@@ -231,7 +194,7 @@ ex:incoming a owl:ObjectProperty ; rdfs:label "delegates control to" ; rdfs:comm
     }
     assert!(!html.contains("language-grapharch-class-diagram"));
     assert!(html.contains("1..*") && html.contains("qualified"));
-    assert!(html.contains("presentation placeholder"));
+    assert!(html.contains("Any resource is associated with"));
     assert!(html.contains("delegates control to"));
     assert!(html.contains("title=\"https://example.org/incoming\""));
     let store_path = output.path().join("retained-store");
@@ -265,7 +228,7 @@ ex:incoming a owl:ObjectProperty ; rdfs:label "delegates control to" ; rdfs:comm
 }
 
 #[tokio::test]
-async fn list_expressions_and_cardinalities_remain_explicit() -> Result<()> {
+async fn list_expressions_and_cardinalities_use_uml_notation() -> Result<()> {
     // Check each semantic construct independently: the combined neighborhood
     // can exceed the layout budget with different platform font metrics.
     let union = diagram(
@@ -274,25 +237,34 @@ ex:Core a owl:Class ; owl:equivalentClass [ owl:unionOf (ex:A ex:B) ] .
 "#,
     )
     .await?;
-    assert!(union.contains("owl:unionOf member"));
+    assert_eq!(
+        union.matches(" : {complete}").count(),
+        2,
+        "{union}"
+    );
     assert!(union.contains("ex:A"));
     assert!(union.contains("ex:B"));
     let restriction = diagram(r#"
 ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:minCardinality 2 ] .
 "#).await?;
-    assert!(restriction.contains("owl:minCardinality"));
-    assert!(restriction.contains("Literal value"));
+    assert!(restriction.contains("[2..*]"), "{restriction}");
+    assert!(!restriction.contains("Literal value"));
+    assert!(!restriction.contains("Anonymous OWL"));
     assert!(!union.contains("urn:grapharch:skolem:"));
     assert!(!restriction.contains("urn:grapharch:skolem:"));
     Ok(())
 }
 
 #[tokio::test]
-async fn different_anonymous_restrictions_have_distinguishable_captions()
+async fn different_anonymous_restrictions_are_separate_associations()
 -> Result<()> {
     let body = diagram(r#"ex:Core a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:onProperty ex:p ; owl:someValuesFrom ex:A ], [ a owl:Restriction ; owl:onProperty ex:q ; owl:someValuesFrom ex:B ] ."#).await?;
-    assert!(body.contains("Anonymous OWL restriction 1"));
-    assert!(body.contains("Anonymous OWL restriction 2"));
+    assert_eq!(
+        body.matches("\\\\n{qualified}").count(),
+        2,
+        "{body}"
+    );
+    assert!(!body.contains("Anonymous OWL"));
     Ok(())
 }
 
@@ -467,7 +439,7 @@ async fn named_classes_use_uml_class_and_generalization_notation() -> Result<()>
         retained.source.contains("class \"ex:"),
         "OWL classes need UML class declarations"
     );
-    assert!(retained.source.contains("<<owl:Class>>"));
+    assert!(!retained.source.contains("owl:Class"));
     assert!(
         retained.source.contains("n0 -up-|> n1"),
         "generalization must point from child to parent"
@@ -571,3 +543,12 @@ mod ontology_labels;
 
 #[path = "owl_class_diagrams/uml_restrictions.rs"]
 mod uml_restrictions;
+
+#[path = "owl_class_diagrams/support.rs"]
+mod support;
+
+#[path = "owl_class_diagrams/uml_notation.rs"]
+mod uml_notation;
+
+#[path = "owl_class_diagrams/uml_expressions.rs"]
+mod uml_expressions;

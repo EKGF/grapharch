@@ -1,12 +1,12 @@
 //! Bounded facts that refine notation but are never drawn as raw edges.
 use {
-    super::{Edge, Node},
+    super::{Node, expression::ClassAxiom},
     anyhow::{Result, ensure},
     serde::{Deserialize, Serialize},
 };
 
-/// At most this many restriction facts on neighbouring classes.
-pub(super) const RESTRICTION_FACTS: usize = 32;
+/// At most this many restriction axioms on neighbouring classes.
+pub(super) const NEIGHBOUR_AXIOMS: usize = 16;
 /// At most this many restricted class-property pairs.
 pub(super) const PROPERTY_USES: usize = 24;
 
@@ -27,21 +27,35 @@ pub(crate) struct PropertyUse {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Context {
-    /// Complete simple restrictions on visible neighbouring classes.
+    /// Restriction axioms of visible neighbouring classes.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub restrictions: Vec<Edge>,
+    pub axioms:     Vec<ClassAxiom>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub properties:   Vec<PropertyUse>,
+    pub properties: Vec<PropertyUse>,
+    /// Declared inverses of the diagram's properties.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub inverses:   Vec<Inverse>,
+}
+/// A property declared `owl:inverseOf` another.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Inverse {
+    pub property: String,
+    pub inverse:  Node,
 }
 impl Context {
     pub fn is_empty(&self) -> bool {
-        self.restrictions.is_empty() && self.properties.is_empty()
+        self.axioms.is_empty() &&
+            self.properties.is_empty() &&
+            self.inverses.is_empty()
     }
 
     pub fn validate(&self) -> Result<()> {
         ensure!(
-            self.restrictions.len() <= RESTRICTION_FACTS &&
+            self.axioms.len() <= NEIGHBOUR_AXIOMS &&
+                self.axioms.iter().all(|a| a.nodes().len() <= 64) &&
                 self.properties.len() <= PROPERTY_USES &&
+                self.inverses.len() <= PROPERTY_USES &&
                 self.properties.iter().all(|u| u.ranges.len() <= 4),
             "class diagram notation context exceeds its budget"
         );
@@ -49,17 +63,27 @@ impl Context {
     }
 
     pub fn nodes(&self) -> impl Iterator<Item = &Node> {
-        self.restrictions
+        self.axioms
             .iter()
-            .flat_map(|e| [&e.from, &e.to])
+            .flat_map(ClassAxiom::nodes)
             .chain(self.properties.iter().flat_map(|u| u.ranges.iter()))
+            .chain(self.inverses.iter().map(|i| &i.inverse))
     }
 
     pub fn nodes_mut(&mut self) -> impl Iterator<Item = &mut Node> {
-        self.restrictions
+        self.axioms
             .iter_mut()
-            .flat_map(|e| [&mut e.from, &mut e.to])
+            .flat_map(ClassAxiom::nodes_mut)
             .chain(self.properties.iter_mut().flat_map(|u| u.ranges.iter_mut()))
+            .chain(self.inverses.iter_mut().map(|i| &mut i.inverse))
+    }
+
+    /// The declared inverse of a property, when one was read.
+    pub fn inverse(&self, property: &str) -> Option<&Node> {
+        self.inverses
+            .iter()
+            .find(|i| i.property == property)
+            .map(|i| &i.inverse)
     }
 
     /// The declared use of a property by a class, when it was read.
