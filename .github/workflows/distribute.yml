@@ -125,6 +125,8 @@ jobs:
       - name: Install native dependencies
         timeout-minutes: 5
         run: python3 packaging/install_build_dependencies.py
+      - name: Keep only the pinned Rust toolchain in the cache key
+        run: python3 -B packaging/rust_toolchains.py
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           cache-on-failure: false
@@ -175,6 +177,8 @@ jobs:
           architecture: ${{ matrix.cpu }}
       - name: Configure native runtime linking
         run: python packaging/link_environment.py --target ${{ matrix.target }}
+      - name: Keep only the pinned Rust toolchain in the cache key
+        run: python3 -B packaging/rust_toolchains.py
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
@@ -409,6 +413,8 @@ jobs:
           fetch-depth: 0
       - name: Install native dependencies
         run: python3 -B packaging/install_build_dependencies.py
+      - name: Keep only the pinned Rust toolchain in the cache key
+        run: python3 -B packaging/rust_toolchains.py
       - uses: actions-rust-lang/setup-rust-toolchain@v2
       - id: auth
         uses: rust-lang/crates-io-auth-action@v1
