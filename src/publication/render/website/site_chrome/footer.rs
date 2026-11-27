@@ -1,5 +1,5 @@
 //! An authored website footer: ordered groups of text or links, then ordered
-//! notes. When a profile declares one it replaces the theme's footer.
+//! notes. A profile's footer replaces that of its theme lineage.
 use {
     super::{
         super::site_base::SiteBases,
@@ -35,13 +35,18 @@ enum GroupBody {
 }
 
 impl SiteFooter {
-    pub async fn read(plan: &Plan) -> Result<Option<Self>> {
-        let footer =
-            match plan.source.optional(&plan.profile, "siteFooter").await? {
-                None => return Ok(None),
-                Some(Term::NamedNode(footer)) => footer,
-                Some(_) => bail!("ga:siteFooter must be a footer IRI"),
-            };
+    pub async fn read(
+        plan: &Plan,
+        sources: &super::ChromeSources,
+    ) -> Result<Option<Self>> {
+        let Some(subject) = sources.nearest(plan, "siteFooter").await? else {
+            return Ok(None);
+        };
+        let footer = match plan.source.optional(subject, "siteFooter").await? {
+            None => return Ok(None),
+            Some(Term::NamedNode(footer)) => footer,
+            Some(_) => bail!("ga:siteFooter must be a footer IRI"),
+        };
         ensure!(
             plan.source.has_type(&footer, "SiteFooter").await?,
             "{footer} is not a declared ga:SiteFooter"

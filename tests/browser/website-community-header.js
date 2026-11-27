@@ -12,11 +12,11 @@ async (page) => {
     });
     check(geometry.height === (width > 1150 ? 80 : 72), `Incorrect community header height at ${width}: ${JSON.stringify(geometry)}`);
     check(!geometry.overflow, `Page overflow at ${width}`);
-    check(await row.locator('.ekgf-identity').isVisible(), 'Missing EKGF identity');
+    check(await row.locator('.brand-identity').isVisible(), 'Missing EKGF identity');
     check(await page.locator('header .brand-version').isVisible(), 'Missing project version');
     if (width > 1150) {
       check(await menu.evaluate(node => node.open), 'Desktop navigation must be open');
-      const logo = await row.locator('.ekgf-identity').boundingBox();
+      const logo = await row.locator('.brand-identity').boundingBox();
       const nav = await row.locator('nav').boundingBox();
       const tools = await row.locator('.site-links').boundingBox();
       check(logo.x + logo.width < nav.x && nav.x + nav.width <= tools.x, 'Header columns overlap');

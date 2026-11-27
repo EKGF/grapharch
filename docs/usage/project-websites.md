@@ -26,6 +26,42 @@ A relative `ga:url`, such as `spec/`, resolves from the website root on every
 page and follows the hosting mount. Absolute `http` and `https` URLs link
 elsewhere. Host-relative paths, backslashes and parent segments are rejected.
 
+## Organization identity in the header
+
+The header shell is the same for every theme; only its skin differs. Its
+organization identity is RDF, declared on the profile or on a theme that the
+profile's `ga:theme` lineage reaches, so a house theme carries it to every site
+that selects it:
+
+- `ga:brandLogo` places one `ga:BrandMark` at the start of the header;
+- `ga:headerLink` entries follow it, those of the nearest theme declaring any
+  first and then the profile's own;
+- `ga:identityMark` adds up to four ordered marks after the search, colour
+  scheme and repository controls, for example an umbrella organization;
+- `ga:siteFooter` supplies the footer.
+
+The profile's declaration replaces a theme's, except that header links of the
+theme and the profile combine. A `ga:BrandMark` has a `dct:title` (the
+accessible name), a `ga:url`, a `ga:image` and optionally a `ga:wordmark` shown
+beside the image. The image is a base64 SVG or PNG `data:` URL, published once
+beside the pages, or an image URL following the header link rules.
+
+```turtle
+<urn:example:profile> ga:brandLogo <urn:example:brand> ;
+    ga:identityMark <urn:example:umbrella> .
+<urn:example:brand> a ga:BrandMark ; dct:title "Example" ;
+    ga:wordmark "Example" ; ga:url "https://example.org/" ;
+    ga:image "assets/logo.svg" .
+<urn:example:umbrella> a ga:BrandMark ; dct:title "Umbrella Body" ;
+    ga:url "https://umbrella.example/" ; ga:image "assets/umbrella.svg" ;
+    ga:order 1 .
+```
+
+`ga:EkgfTheme` declares the EKGF identity this way in the
+[theme catalogue](../other/ontology/themes.ttl). A documentation site without
+identity or header links keeps its title, sections, search and repository link
+on one row.
+
 Use ordinary Markdown and the same page frontmatter as a documentation site.
 The content before the first level-two heading forms the hero. Level-two headings
 start sections; level-three headings within a section start cards. Deeper headings,

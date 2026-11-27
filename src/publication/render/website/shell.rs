@@ -76,17 +76,26 @@ pub(super) fn render(
     } else {
         String::new()
     };
-    let organization_identity = header.theme.identity();
+    let organization_identity = header.identity.brand_html(prefix);
+    let identity_marks = header.identity.marks_html(prefix);
     let header_links = header.theme.links(
-        repository,
-        prefix,
+        header.identity.organization(),
         &header.links.html(prefix),
-        if header.chrome.search() {
-            super::search::button()
-        } else {
-            ""
+        super::theme::Controls {
+            search: if header.chrome.search() {
+                super::search::button()
+            } else {
+                ""
+            },
+            repository,
+            marks: &identity_marks,
         },
     );
+    // A header without organization identity or header links keeps its
+    // controls on the product row, beside the title and sections.
+    let community_row = header.theme.community() ||
+        !header.identity.is_empty() ||
+        !header.links.is_empty();
     let brand_context = if header.navigation.sectioned() {
         ""
     } else {
@@ -106,43 +115,35 @@ pub(super) fn render(
         esc(env!("GRAPHARCH_BUILD_DETAILS")),
         esc(env!("GRAPHARCH_BUILD_LABEL"))
     );
-    let header_content =
-        if header.navigation.documentation && header.theme.community() {
-            format!(
-                "<div class=\"community-header-row\"\
-                 >{organization_identity}{header_links}</div>"
-            )
-        } else if header.navigation.documentation {
-            header_links
-        } else if header.theme.project() {
-            format!(
-                "<div class=\"community-header-row\"\
-                 >{organization_identity}{header_links}</div>"
-            )
-        } else if header.theme.community() {
-            format!(
-                "<div class=\"community-header-row\"\
-                 >{organization_identity}{header_links}</div><div \
-                 class=\"project-identity-row\">{project_brand}</div>"
-            )
-        } else {
-            format!("{project_brand}{header_links}")
-        };
-    let identity_attribution = header.theme.attribution(prefix);
+    let header_content = if header.theme.project() ||
+        (community_row && header.navigation.documentation)
+    {
+        format!(
+            "<div class=\"community-header-row\"\
+             >{organization_identity}{header_links}</div>"
+        )
+    } else if community_row {
+        format!(
+            "<div class=\"community-header-row\"\
+             >{organization_identity}{header_links}</div><div \
+             class=\"project-identity-row\">{project_brand}</div>"
+        )
+    } else if header.navigation.documentation {
+        String::new()
+    } else {
+        format!("{project_brand}{header_links}")
+    };
+    let product_controls = if community_row { "" } else { &header_links };
     let community_footer = match &header.footer {
         Some(footer) => {
             footer.html(prefix, header.chrome.generator_credit())?
         },
-        None => {
-            header
-                .theme
-                .community_footer(prefix, header.chrome.generator_credit())
-        },
+        None => String::new(),
     };
     let article_footer = if community_footer.is_empty() {
         format!(
             "<footer>{generator_credit}<a href=\"{prefix}\">Documentation \
-             home</a>{identity_attribution}</footer>"
+             home</a></footer>"
         )
     } else {
         String::new()
@@ -164,14 +165,15 @@ pub(super) fn render(
     let primary_navigation = if header.navigation.sectioned() {
         format!(
             "<div class=\"project-identity-row \
-             documentation-product-row\">{project_brand}{primary_navigation}</\
-             div>"
+             documentation-product-row\"\
+             >{project_brand}{primary_navigation}{product_controls}</div>"
         )
     } else if header.navigation.documentation {
         format!(
             "<div class=\"project-identity-row documentation-product-row\"><a \
              class=\"documentation-title\" \
-             href=\"{prefix}\">{}</a>{primary_navigation}</div>",
+             href=\"{prefix}\">{}</a>{primary_navigation}{product_controls}</\
+             div>",
             esc(project_title)
         )
     } else {
