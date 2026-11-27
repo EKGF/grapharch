@@ -502,7 +502,18 @@ def homebrew(output: Path, destination: Path) -> None:
     ]
     for os_name, stanza in [("darwin", "macos"), ("linux", "linux")]:
         lines += [f"  on_{stanza} do"]
-        for arch, selector in [("arm64", "arm"), ("x64", "intel")]:
+        arches = [
+            (arch, selector)
+            for arch, selector in [("arm64", "arm"), ("x64", "intel")]
+            if f"{os_name}-{arch}" in manifests
+        ]
+        if not arches:
+            raise ValueError(f"no Homebrew release platform declared for {os_name}")
+        if len(arches) == 1:
+            # A single declared architecture: other CPUs must be rejected by
+            # Homebrew itself instead of resolving to a formula without a URL.
+            lines += [f"    depends_on arch: :{arches[0][0] if arches[0][0] == 'arm64' else 'x86_64'}"]
+        for arch, selector in arches:
             manifest = manifests[f"{os_name}-{arch}"]
             lines += [
                 f"    on_{selector} do",

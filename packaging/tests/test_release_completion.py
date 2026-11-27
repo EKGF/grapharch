@@ -13,7 +13,7 @@ class Completion(unittest.TestCase):
         return [{'id': index, 'name': 'distribute / ' + name, 'conclusion': 'success'}
                 for index, name in enumerate(names)] + [
                     {'id': 10 + index, 'name': f'distribute / binaries (target{index})', 'conclusion': 'success'}
-                    for index in range(6)]
+                    for index in range(5)]
 
     def test_every_real_publication_stage_must_succeed_before_action_upgrade(self):
         require_complete_publication(self.records())

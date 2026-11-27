@@ -50,6 +50,28 @@ class DistributionTests(unittest.TestCase):
             self.assertEqual(metadata['name'], '@ekgf/grapharch')
             self.assertEqual(metadata['bin'], {'grapharch': 'bin/grapharch.cjs'})
 
+    def test_homebrew_formula_rejects_intel_macs(self):
+        from unittest.mock import patch
+        import distribute
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            for item in distribute.PLATFORMS:
+                if item['os'] != 'win32':
+                    (output / f"grapharch-{item['target']}.json").write_text(json.dumps(
+                        {'archive': f"grapharch-{item['target']}.zip",
+                         'archive_sha256': item['key']}))
+            with patch.object(distribute, 'verify'):
+                distribute.homebrew(output, output / 'grapharch.rb')
+            formula = (output / 'grapharch.rb').read_text()
+        macos = formula.split('  on_macos do\n', 1)[1].split('\n  end\n', 1)[0]
+        self.assertIn('depends_on arch: :arm64', macos)
+        self.assertIn('on_arm do', macos)
+        self.assertNotIn('on_intel', macos)
+        self.assertNotIn('x86_64-apple-darwin', formula)
+        linux = formula.split('  on_linux do\n', 1)[1]
+        self.assertIn('on_intel do', linux)
+        self.assertNotIn('depends_on', linux)
+
     def test_failed_release_jobs_do_not_publish_immutable_partial_compiler_caches(self):
         workflow = (ROOT / ".github/workflows/distribute.yml").read_text()
         for name, following in (("verify-source", "binaries"), ("binaries", "assemble")):

@@ -31,7 +31,18 @@ def target():
         libc, version = platform.libc_ver()
         if libc != "glibc" or tuple(map(int, version.split("."))) < (2, 28):
             raise ValueError("GraphArch requires Linux with glibc 2.28 or newer")
-    return f"{cpus[cpu]}-{systems[system]}"
+    triple = f"{cpus[cpu]}-{systems[system]}"
+    if triple not in released_targets():
+        raise ValueError(
+            f"Unsupported platform: {system}/{cpu}; no GraphArch release is built for {triple}"
+        )
+    return triple
+
+
+def released_targets():
+    """Targets in the release matrix shipped beside this action."""
+    matrix = Path(__file__).resolve().parent / "platforms.json"
+    return {item["target"] for item in json.loads(matrix.read_text(encoding="utf-8"))}
 
 
 
