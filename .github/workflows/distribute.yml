@@ -9,10 +9,6 @@ on:
         required: true
         type: boolean
         default: false
-      publish-homebrew:
-        description: Update the separately owned Homebrew tap
-        type: boolean
-        default: false
       publish-packages:
         description: Publish Python, npm and crates.io packages
         type: boolean
@@ -39,9 +35,6 @@ on:
         description: The caller publishes PyPI and npm itself, because their trusted publishing rejects reusable workflows
         type: boolean
         default: false
-      publish-homebrew:
-        type: boolean
-        default: false
       publish-packages:
         type: boolean
         default: false
@@ -49,9 +42,6 @@ on:
       released:
         description: 'true once the GitHub release is complete and the artifacts may be published to registries'
         value: ${{ jobs.github-release.outputs.released }}
-    secrets:
-      HOMEBREW_TAP_TOKEN:
-        required: false
 permissions:
   contents: read
   actions: read
@@ -429,39 +419,3 @@ jobs:
       - run: python3 -B packaging/publish_crate.py
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-  publish-homebrew:
-    if: ${{ !cancelled() && needs.metadata.result == 'success' && needs.github-release.result == 'success' && inputs.publish-homebrew == true }}
-    needs: [metadata, github-release]
-    runs-on: ubuntu-latest
-    environment: homebrew
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: release-distribution
-          path: dist
-          run-id: ${{ inputs.artifact-run || github.run_id }}
-          github-token: ${{ github.token }}
-      - name: Require tap credentials
-        env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        run: test -n "$TAP_TOKEN" || { printf 'HOMEBREW_TAP_TOKEN is required\n' >&2; exit 1; }
-      - uses: actions/checkout@v7
-        with:
-          repository: legra-ai/homebrew-tap
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: tap
-      - name: Update the existing Legra tap
-        working-directory: tap
-        env:
-          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
-        run: |
-          cp ../dist/homebrew/grapharch.rb Formula/grapharch.rb || exit $?
-          git config user.name 'github-actions[bot]' || exit $?
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com' || exit $?
-          if git diff --quiet -- Formula/grapharch.rb && git ls-files --error-unmatch Formula/grapharch.rb >/dev/null 2>&1; then
-            printf 'Formula already matches this validated release\n'
-          else
-            git add Formula/grapharch.rb || exit $?
-            git commit -m "feat: release GraphArch $RELEASE_VERSION" || exit $?
-            git push origin HEAD || exit $?
-          fi

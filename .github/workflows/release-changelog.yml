@@ -11,10 +11,6 @@ on:
         description: Publish Python, npm and crates.io packages
         type: boolean
         default: false
-      publish-homebrew:
-        description: Update the separately owned Homebrew tap
-        type: boolean
-        default: false
 permissions:
   contents: write
   id-token: write
@@ -24,5 +20,4 @@ jobs:
     with:
       publish: ${{ inputs.publish }}
       publish-packages: ${{ inputs.publish-packages }}
-      publish-homebrew: ${{ inputs.publish-homebrew }}
     secrets: inherit

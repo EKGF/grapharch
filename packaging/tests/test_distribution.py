@@ -68,6 +68,8 @@ class DistributionTests(unittest.TestCase):
         self.assertIn('on_arm do', macos)
         self.assertNotIn('on_intel', macos)
         self.assertNotIn('x86_64-apple-darwin', formula)
+        # brew audit --strict: the version is already in the URLs.
+        self.assertNotIn('  version "', formula)
         linux = formula.split('  on_linux do\n', 1)[1]
         self.assertIn('on_intel do', linux)
         self.assertNotIn('depends_on', linux)
