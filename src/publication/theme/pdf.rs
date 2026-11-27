@@ -59,7 +59,9 @@ impl PdfTheme {
                     continue;
                 };
                 match local {
-                    "baseTheme" => {},
+                    // Website chrome a theme carries; websites read it.
+                    "baseTheme" | "brandLogo" | "identityMark" |
+                    "headerLink" | "siteFooter" => {},
                     "coverBlock" => {
                         let Term::NamedNode(block) = &row["value"] else {
                             bail!("theme {theme} ga:coverBlock must be an IRI")

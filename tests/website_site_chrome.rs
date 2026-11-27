@@ -96,10 +96,12 @@ async fn authored_footer_replaces_theme_footer_and_opt_outs_apply() -> Result<()
     for route in ["index.html", "why/index.html"] {
         let html = tokio::fs::read_to_string(directory.join(route)).await?;
         let document = scraper::Html::parse_document(&html);
-        assert!(
-            select(&document, ".ekgf-footer").is_empty(),
-            "{route}"
+        assert_eq!(
+            select(&document, "footer.site-footer").len(),
+            1,
+            "{route}: the authored footer replaces the theme footer"
         );
+        assert!(!html.contains("About EKGF"), "{route}");
         assert!(select(&document, "nav.project-navigation").is_empty());
         assert!(select(&document, ".site-search-open").is_empty());
         assert!(select(&document, "dialog.site-search").is_empty());
@@ -166,7 +168,7 @@ async fn website_chrome_defaults_are_unchanged() -> Result<()> {
     let (_output, directory) = publish("ga:order 1").await?;
     let html = tokio::fs::read_to_string(directory.join("index.html")).await?;
     let document = scraper::Html::parse_document(&html);
-    assert_eq!(select(&document, ".ekgf-footer").len(), 1);
+    assert_eq!(select(&document, ".site-footer").len(), 1);
     assert_eq!(
         select(&document, "nav.project-navigation").len(),
         1

@@ -5,6 +5,7 @@ pub(super) struct Header {
     pub(super) title:       String,
     pub(super) repository:  String,
     pub(super) theme:       theme::Theme,
+    pub(super) identity:    site_chrome::SiteIdentity,
     pub(super) links:       header_links::Links,
     pub(super) metadata:    metadata::Metadata,
     pub(super) navigation:  navigation::Navigations,

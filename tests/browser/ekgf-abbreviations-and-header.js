@@ -15,13 +15,13 @@ async (page) => {
         if (term.textContent === 'EKG' && /^[Fs]/.test(term.nextSibling?.textContent ?? '')) throw new Error('EKG incorrectly matched inside EKGF or EKGs');
       }
       if (article.querySelector('code abbr, pre abbr')) throw new Error('Abbreviation markup altered literal code');
-      const identity = document.querySelector('.ekgf-identity');
-      const logo = document.querySelector('.omg-identity img');
+      const identity = document.querySelector('.brand-identity');
+      const logo = document.querySelector('.identity-mark img');
       if (!identity || !logo || !logo.complete || !logo.naturalWidth) throw new Error('Shared community identity missing');
       const header = document.querySelector('.community-header-row');
       const style = getComputedStyle(document.querySelector('.site-header'));
       const body = getComputedStyle(document.body);
-      const links = [...document.querySelectorAll('.ekgf-header-navigation > a')].slice(0, 5).map(link => [link.textContent, link.href]);
+      const links = [...document.querySelectorAll('.header-navigation > a')].slice(0, 5).map(link => [link.textContent, link.href]);
       return {
         title: document.title,
         terms: abbreviations.slice(0, 8).map(term => [term.textContent, term.title]),

@@ -16,7 +16,7 @@ async (page) => {
             landing: hero.classList.contains('project-hero-landing'),
             heroSize: size(hero.querySelector('h1')),
             header: !!document.querySelector('.community-header-row'),
-            footer: !!document.querySelector('.ekgf-footer'),
+            footer: !!document.querySelector('.site-footer'),
             overflow: document.documentElement.scrollWidth > innerWidth,
             sections: [...document.querySelectorAll('.project-section')].map(section => ({
               width: section.querySelector('.project-container').getBoundingClientRect().width,
