@@ -1,12 +1,12 @@
 # Distribution maintenance
 
-GraphArch distributes one CLI through standalone GitHub release ZIPs, platform-specific Python wheels, and npm packages. The executable in each platform wheel is copied byte-for-byte into its ZIP and npm native package. Installation smoke checks run on every supported native runner before release assembly. Linux requires glibc 2.28 or newer; macOS requires 11 or newer; Windows uses the static runtime. x64 and ARM64 are supported. Other platforms fail explicitly.
+GraphArch distributes one CLI through standalone GitHub release ZIPs, platform-specific Python wheels, and npm packages. The executable in each platform wheel is copied byte-for-byte into its ZIP and npm native package. Installation smoke checks run on every supported native runner before release assembly. Linux requires glibc 2.28 or newer; macOS requires 11 or newer on Apple silicon (Intel Macs are not supported); Windows uses the static runtime. Linux and Windows support x64 and ARM64. Other platforms fail explicitly.
 
-GitHub binaries and the `grapharch` crate are published through the existing release workflow. Python remains `grapharch`; npm is `@ekgf/grapharch` with six `@ekgf/grapharch-<platform>-<architecture>` packages. Scoped npm publication requires its own first publication and trusted-publisher grants; existing unscoped releases are immutable and are not reused under the new names.
+GitHub binaries and the `grapharch` crate are published through the existing release workflow. Python remains `grapharch`; npm is `@ekgf/grapharch` with five `@ekgf/grapharch-<platform>-<architecture>` packages. Scoped npm publication requires its own first publication and trusted-publisher grants; existing unscoped releases are immutable and are not reused under the new names.
 
 ## Validate a candidate
 
-Run the **Build and distribute** workflow manually with both publishing switches disabled. This builds six platforms, audits runtime dependencies, runs offline installs through Python/npm and the standalone ZIP, and uploads `release-distribution`. Inspect that artifact and workflow results before publishing.
+Run the **Build and distribute** workflow manually with both publishing switches disabled. This builds five platforms, audits runtime dependencies, runs offline installs through Python/npm and the standalone ZIP, and uploads `release-distribution`. Inspect that artifact and workflow results before publishing.
 
 Source verification and native jobs save compiler caches only after success.
 GitHub cache entries are immutable: caching a canceled or failed build can leave
@@ -100,7 +100,7 @@ because existing tests use compile-time source/executable paths; an unexpected
 workspace or target location is a hard error.
 
 This does not make debug tests, Clippy analysis, Rustdoc harnesses, and native
-optimized release builds interchangeable. Release verification and the six
+optimized release builds interchangeable. Release verification and the five
 OS/architecture builds in `distribute.yml` remain distinct configurations.
 Each release platform's wheel still supplies the same executable bytes to its
 standalone and npm packages. Consumer actions selecting a published `version`
@@ -138,7 +138,7 @@ prepared tree are checked before the atomic main/tag update.
 
 The existing distributor checks the exact successful source and verifies that
 its release child changed only those version fields. It therefore reuses the
-source validation instead of compiling its test suite again. Six optimized
+source validation instead of compiling its test suite again. Five optimized
 OS/architecture executables still need release builds; each executable feeds
 its standalone archive, Python wheel, and npm platform package. There is one
 publisher pipeline. The `workflow_run` coordinator prepares the native artifacts
@@ -150,7 +150,7 @@ Build and publication have separate serialized concurrency groups.
 The handoff reuses the original `release-distribution` artifact: it does not
 compile GraphArch, repack packages, relabel producer identity, or overwrite
 GitHub assets. It requires the same repository/main source, successful source
-proof, all six native builds, assembly and original GitHub publication. Every
+proof, all five native builds, assembly and original GitHub publication. Every
 manifest must match the requested release revision/version, all package checksums
 are rechecked, and the public GitHub assets must still match. An absent, expired,
 conflicting or incomplete artifact fails explicitly. Homebrew remains a separate
@@ -183,8 +183,8 @@ Before the first registry publication, an owner must establish:
 
 - PyPI project `grapharch`: GitHub trusted publisher `EKGF/grapharch`, workflow
   `automatic-release.yml`, environment `pypi`.
-- npm package `@ekgf/grapharch` and six organization-scoped native packages `@ekgf/grapharch-linux-x64`,
-  `@ekgf/grapharch-linux-arm64`, `@ekgf/grapharch-darwin-x64`, `@ekgf/grapharch-darwin-arm64`,
+- npm package `@ekgf/grapharch` and five organization-scoped native packages `@ekgf/grapharch-linux-x64`,
+  `@ekgf/grapharch-linux-arm64`, `@ekgf/grapharch-darwin-arm64`,
   `@ekgf/grapharch-win32-x64`, and `@ekgf/grapharch-win32-arm64`: authenticated package
   ownership and GitHub trusted publishing for `EKGF/grapharch`,
   workflow `automatic-release.yml`, environment `npm`, for every package.

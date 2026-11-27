@@ -32,6 +32,19 @@ class SetupActionTest(unittest.TestCase):
         ):
             setup.target()
 
+    def test_intel_mac_is_an_unsupported_platform(self):
+        with (
+            patch.object(setup.platform, "system", return_value="Darwin"),
+            patch.object(setup.platform, "machine", return_value="x86_64"),
+            self.assertRaisesRegex(ValueError, "Unsupported platform: Darwin/x86_64"),
+        ):
+            setup.target()
+        with (
+            patch.object(setup.platform, "system", return_value="Darwin"),
+            patch.object(setup.platform, "machine", return_value="arm64"),
+        ):
+            self.assertEqual(setup.target(), "aarch64-apple-darwin")
+
     def test_windows_architecture_names(self):
         for machine, expected in [
             ("ARM64", "aarch64-pc-windows-msvc"),
