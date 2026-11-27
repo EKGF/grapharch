@@ -93,6 +93,16 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
                 count += 1;
                 ensure!(count <= 4096, "SVG exceeds element budget");
                 let tag = element.tag_name().name().to_ascii_lowercase();
+                // Label content is checked against its own allowlist.
+                if element.ancestors().skip(1).any(is_foreign_object) {
+                    continue;
+                }
+                if is_foreign_object(element) {
+                    super::svg_foreign_object::ForeignObject::validate(
+                        element,
+                    )?;
+                    continue;
+                }
                 ensure!(
                     !matches!(
                         tag.as_str(),
@@ -188,6 +198,13 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
         _ => bail!("unsupported collected image MIME {mime}"),
     }
     Ok(())
+}
+
+/// An SVG-namespace `<foreignObject>` element.
+fn is_foreign_object(node: roxmltree::Node<'_, '_>) -> bool {
+    node.is_element() &&
+        node.tag_name().name().eq_ignore_ascii_case("foreignobject") &&
+        node.tag_name().namespace() == Some("http://www.w3.org/2000/svg")
 }
 
 #[cfg(test)]
