@@ -6,8 +6,8 @@ use {
     super::{
         AnnotatedTermDocumentor,
         Documentor,
+        class_diagram::ClassDiagrams,
         namespace_bindings::NamespaceBindings,
-        plantuml::LocalRenderer,
         scope_inclusion,
         skos::SchemeArrangement,
     },
@@ -277,9 +277,7 @@ impl VocabularyReferenceDocumentor {
                 .await?
                 .into_map(),
         );
-        let renderer = Arc::new(LocalRenderer::new(std::ffi::OsStr::new(
-            "plantuml",
-        )));
+        let class_diagrams = ClassDiagrams::local();
         for section in sections {
             for (position, subject) in section.terms.iter().enumerate() {
                 let documentor = AnnotatedTermDocumentor::new(
@@ -291,7 +289,7 @@ impl VocabularyReferenceDocumentor {
                     prefixes.clone(),
                     known.clone(),
                 )?
-                .with_diagram_renderer(renderer.clone())
+                .with_class_diagrams(class_diagrams.clone())
                 .with_ontology_context(ontology.clone())
                 .with_arrangement(skos.decoration(subject, 1))
                 .with_source_annotations();

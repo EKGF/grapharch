@@ -39,7 +39,7 @@ pub struct AnnotatedTermDocumentor {
     family_reference:   bool,
     arrangement:        super::skos::Decoration,
     ontology_context:   Option<NamedNode>,
-    diagram_renderer:   Arc<super::plantuml::LocalRenderer>,
+    class_diagrams:     super::class_diagram::ClassDiagrams,
 }
 impl AnnotatedTermDocumentor {
     pub(crate) fn processor_identity(
@@ -72,9 +72,7 @@ impl AnnotatedTermDocumentor {
             family_reference: false,
             arrangement: super::skos::Decoration::default(),
             ontology_context: None,
-            diagram_renderer: Arc::new(super::plantuml::LocalRenderer::new(
-                std::ffi::OsStr::new("plantuml"),
-            )),
+            class_diagrams: super::class_diagram::ClassDiagrams::local(),
         })
     }
 
@@ -85,11 +83,12 @@ impl AnnotatedTermDocumentor {
         self
     }
 
-    pub(crate) fn with_diagram_renderer(
+    /// Share one diagram policy and renderer across a build's documentors.
+    pub(crate) fn with_class_diagrams(
         mut self,
-        renderer: Arc<super::plantuml::LocalRenderer>,
+        class_diagrams: super::class_diagram::ClassDiagrams,
     ) -> Self {
-        self.diagram_renderer = renderer;
+        self.class_diagrams = class_diagrams;
         self
     }
 
@@ -809,9 +808,11 @@ impl Documentor for AnnotatedTermDocumentor {
                 2,
             &caption,
         );
-        if types.iter().any(|(kind, _)| {
-            kind.as_str() == "http://www.w3.org/2002/07/owl#Class"
-        }) {
+        if let Some(renderer) = self.class_diagrams.renderer() &&
+            types.iter().any(|(kind, _)| {
+                kind.as_str() == "http://www.w3.org/2002/07/owl#Class"
+            })
+        {
             let metadata = RevisionView::new(
                 self.dataset.clone(),
                 self.diagram_metadata.clone(),
@@ -827,7 +828,7 @@ impl Documentor for AnnotatedTermDocumentor {
                 &self.prefixes,
                 &self.documented,
                 &mut body,
-                &self.diagram_renderer,
+                renderer,
             )
             .await?;
         }

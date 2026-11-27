@@ -104,6 +104,7 @@ ga:ProfileShape a sh:NodeShape ; sh:targetClass ga:Profile ; sh:nodeKind sh:IRI 
     sh:property [ sh:path ga:termTable ; sh:nodeKind sh:IRI ; sh:class ga:TermTable ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:familyPlacement ; sh:nodeKind sh:IRI ; sh:class ga:Placement ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:classDiagrams ; sh:datatype xsd:boolean ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:disableRenderer ; sh:nodeKind sh:IRI ; sh:in ( ga:OwlClassDiagramRenderer ) ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:requiredSectionRole ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:requiredMetadata ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:allowedPublicationStatus ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 128 ; sh:maxCount 16 ] ;
