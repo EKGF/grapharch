@@ -13,6 +13,12 @@ GitHub cache entries are immutable: caching a canceled or failed build can leave
 a partial entry that later successful builds cannot replace. Remove such an
 entry before expecting a complete dependency cache to be saved under that key.
 
+The cache key hashes every installed rustup toolchain. Hosted runner images
+preinstall a floating `stable` that GraphArch never uses, so each image update
+changed the key and release builds started cold. `packaging/rust_toolchains.py`
+therefore removes every toolchain other than the `rust-toolchain.toml` pin
+before the cache is restored.
+
 The `publish` switch creates the GitHub release. The separate `publish-packages` switch enables registry publication; `publish-homebrew` independently enables the tap update. A native-only release can therefore be published before registry ownership is ready. Tag pushes build and publish native GitHub artifacts, while registry publishing remains disabled. Only stable `MAJOR.MINOR.PATCH` versions are supported. For a manually reviewed release, bump Cargo.toml and run `python3 packaging/distribute.py sync-version`; the reviewed version and tag must agree. That synchronization command does not push. The automatic main workflow below owns its own atomic version reservation. After a hotfix on an isolated release branch, synchronize only its base version metadata back to main through the same command; do not copy unreleased code into the release branch.
 
 Main CI builds display `PACKAGE (build RUN)`, using the actual compiler workflow's run number. The exact producer attempt remains in structured provenance, HTML metadata, CLI details and the attempt-specific run URL. The full source revision, workflow and run URL remain in CLI details, the documentation tooltip and HTML/PDF provenance. The badge, credit, PDF and CLI `--version` share this compile-time identity; `-V` remains the canonical package SemVer for installation checks. Artifact consumers preserve the sealed producer identity even when only their job is retried. A different run or source revision fails validation rather than relabelling an executable.
