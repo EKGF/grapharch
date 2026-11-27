@@ -38,6 +38,7 @@ pub mod showcases;
 mod showcases_mkdocs;
 mod showcases_revision;
 mod showcases_semantic;
+pub(crate) mod source_link;
 mod table_subject;
 mod target_links;
 mod temporal;

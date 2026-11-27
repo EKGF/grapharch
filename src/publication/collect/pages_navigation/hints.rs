@@ -1,5 +1,6 @@
 //! Bounded reading of .pages.yaml and its directory membership.
 use {
+    crate::publication::website::exclusions::{EntryKind, SourceExclusions},
     anyhow::{Result, ensure},
     serde::Deserialize,
     sha2::{Digest, Sha256},
@@ -40,7 +41,7 @@ impl Directory {
     pub async fn read(
         root: &Path,
         directory: &Path,
-        exclusions: &[PathBuf],
+        exclusions: &SourceExclusions,
     ) -> Result<Self> {
         let mut selected = None;
         for name in [".pages", ".pages.yaml"] {
@@ -108,16 +109,14 @@ impl Directory {
                     anyhow::anyhow!("navigation names must be UTF-8")
                 })?
                 .to_owned();
-            if exclusions
-                .iter()
-                .any(|excluded| entry.path().starts_with(excluded))
-            {
-                continue;
-            }
             if name.starts_with(['.', '_']) {
                 continue;
             }
             let kind = entry.file_type().await?;
+            if exclusions.excludes(&entry.path(), EntryKind::of(kind.is_dir()))
+            {
+                continue;
+            }
             if kind.is_dir() &&
                 !super::discovery::has_markdown(&entry.path(), exclusions)
                     .await?
@@ -206,10 +205,16 @@ impl Directory {
                         .all(|part| matches!(part, Component::Normal(_))),
                 "navigation path must be relative without traversal"
             );
-            if exclusions
-                .iter()
-                .any(|excluded| directory.join(&path).starts_with(excluded))
+            let kind = match tokio::fs::symlink_metadata(directory.join(&path))
+                .await
             {
+                Ok(metadata) => EntryKind::of(metadata.is_dir()),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    EntryKind::File
+                },
+                Err(error) => return Err(error.into()),
+            };
+            if exclusions.excludes(&directory.join(&path), kind) {
                 continue;
             }
             ensure!(

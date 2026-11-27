@@ -274,7 +274,41 @@ Exclude generated files or legacy host instructions from automatic source discov
 <urn:project> ga:excludeSourcePath "generated-diagrams", "CNAME" .
 ```
 
-Each path must be relative to the documentation root without traversal or symlinks. Excluded generated output need not exist in a clean checkout. Directory exclusions cover their subtrees; this is exact path selection, not a glob language. Definitions are retained before discovery, so these hints are included in provenance and apply before the source budget. Explicit navigation to an excluded page still fails rather than silently dropping the link.
+Each path must be relative to the documentation root without traversal or symlinks. Excluded generated output need not exist in a clean checkout. Directory exclusions cover their subtrees; `ga:excludeSourcePath` is exact path selection. Definitions are retained before discovery, so these hints are included in provenance and apply before the source budget. Explicit navigation to an excluded page still fails rather than silently dropping the link.
+
+To exclude a file name or a directory name wherever it occurs, use a glob:
+
+```turtle
+<urn:project> ga:excludeSourcePattern "**/AGENTS.md", "**/tests/" .
+```
+
+A single `*` stays within one path segment and `**` spans directories, so
+`**/AGENTS.md` matches that file at the root and at any depth. A trailing slash
+restricts a pattern to directories: `**/tests/` excludes every directory named
+`tests` and everything beneath it, but not a page named `tests.md`. Patterns are
+relative to the documentation root and may not start with `/` or contain `..`.
+Exact paths and patterns share one budget of 64 exclusions.
+
+### Links to repository files that are not pages
+
+A README often links to a file beside it, such as a configuration file or a
+source file. Discovery collects only pages and assets, so by default such a link
+fails the build with an unresolved documentation link. To send it to the file in
+the repository instead, declare the repository's HTTPS browse location:
+
+```turtle
+<urn:project> ga:sourceLinkBase <https://github.com/example/project> .
+```
+
+A relative link to an uncollected file then renders as
+`https://github.com/example/project/blob/<commit>/<path>`, where `<commit>` is
+the commit the build collected and `<path>` is resolved from the linking page.
+A fragment such as `#L10` is kept. A link that would leave the repository still
+fails. Collection records the commit and the documentation root's directory in
+the repository as a `ga:SourceCheckout`, so rendering needs no access to the
+checkout. The documentation source must therefore be a Git checkout. This is a
+separate setting from `ga:repository`, which only adds the header's source link:
+declaring a repository never turns a mistyped page link into an external link.
 
 A repository can keep authored pages in `docs/` and RDF dependencies in `metadata/`. Pass the repository as `--source`, set `ga:contentSource "docs"` on the project, and configure collectors relative to the repository root (for example `ga:source "metadata/model.ttl"`). Page routes stay relative to `docs/`. The directory navigation collector should use `ga:source "docs"` too. Source exclusions remain relative to the content directory.
 

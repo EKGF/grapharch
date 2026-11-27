@@ -8,9 +8,11 @@ use {
             LocalImageFile,
             MarkdownFile,
             TextAssetFile,
-            git::RepositoryScan,
+            git::{self, RepositoryScan},
+            source_checkout::SourceCheckout,
         },
         dataset::identity,
+        source_link::{self, CommitId, RepositoryPath},
         view::RevisionView,
     },
     anyhow::Result,
@@ -55,6 +57,11 @@ impl SitePages<'_> {
         // bounded: discovery admits at most 256 sources, each with at most one
         // provenance record.
         let mut work: Vec<Arc<dyn Collector>> = Vec::new();
+        if let Some(checkout) =
+            self.source_checkout(view, &project_id, &content).await?
+        {
+            work.push(Arc::new(checkout));
+        }
         for path in paths {
             if self.skip == Some(path.as_path()) {
                 continue;
@@ -112,5 +119,39 @@ impl SitePages<'_> {
             }
         }
         Ok(work)
+    }
+
+    /// The commit and content directory that links to uncollected
+    /// repository files resolve against, when the project asks for them.
+    async fn source_checkout(
+        &self,
+        view: &RevisionView,
+        project: &NamedNode,
+        content: &Path,
+    ) -> Result<Option<SourceCheckout>> {
+        if view
+            .optional(project, source_link::SETTING)
+            .await?
+            .is_none()
+        {
+            return Ok(None);
+        }
+        let (root, commit) = if let Some(repository) = self.repository {
+            (self.source.to_owned(), repository.commit.clone())
+        } else if let Some(scan) =
+            git::enclosing_repository(self.source, project.as_str()).await?
+        {
+            (scan.root, scan.commit)
+        } else {
+            anyhow::bail!(
+                "ga:{} requires the documentation source to be a Git checkout",
+                source_link::SETTING
+            )
+        };
+        Ok(Some(SourceCheckout::new(
+            project.clone(),
+            CommitId::try_new(&commit)?,
+            RepositoryPath::within(&root, content)?,
+        )))
     }
 }

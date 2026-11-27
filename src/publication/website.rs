@@ -1,6 +1,7 @@
 //! Discover a Markdown documentation tree, collect independent files in
 //! parallel, and assemble a website plan. Rendering only reads that pinned KG.
 pub(crate) mod discovery;
+pub(crate) mod exclusions;
 mod native_models;
 mod pages;
 pub(crate) use pages::SitePages;

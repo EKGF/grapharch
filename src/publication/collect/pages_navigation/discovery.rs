@@ -1,11 +1,12 @@
 //! Asset directories do not create empty documentation navigation sections.
 use {
+    crate::publication::website::exclusions::{EntryKind, SourceExclusions},
     anyhow::{Result, ensure},
-    std::path::{Path, PathBuf},
+    std::path::Path,
 };
 pub(super) async fn has_markdown(
     directory: &Path,
-    exclusions: &[PathBuf],
+    exclusions: &SourceExclusions,
 ) -> Result<bool> {
     let mut pending = vec![directory.to_owned()]; // bounded: 512 discovered directories.
     let mut visited = 0;
@@ -18,12 +19,12 @@ pub(super) async fn has_markdown(
                 visited <= 4096,
                 "navigation subtree discovery exceeds 4096 entries"
             );
-            if exclusions.iter().any(|path| entry.path().starts_with(path)) ||
+            let kind = entry.file_type().await?;
+            if exclusions.excludes(&entry.path(), EntryKind::of(kind.is_dir())) ||
                 entry.file_name().to_string_lossy().starts_with(['.', '_'])
             {
                 continue;
             }
-            let kind = entry.file_type().await?;
             ensure!(!kind.is_symlink(), "navigation rejects symlinks");
             if kind.is_file() &&
                 entry.path().extension().is_some_and(|ext| ext == "md")

@@ -1,5 +1,6 @@
 //! Bounded filesystem discovery with source-owned project exclusions.
 use {
+    super::exclusions::{EntryKind, SourceExclusions},
     crate::publication::{collect::LocalImageFile, view::RevisionView},
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
@@ -67,44 +68,8 @@ pub(crate) async fn exclusions(
     root: &Path,
     view: &RevisionView,
     project: &NamedNode,
-) -> Result<Vec<PathBuf>> {
-    let mut paths = Vec::new(); // bounded: 64 authored exclusions.
-    let mut rows = view.objects(project, "excludeSourcePath").await?;
-    while let Some(row) = rows.next().await? {
-        ensure!(
-            paths.len() < 64,
-            "source exclusions exceed 64 paths"
-        );
-        let Term::Literal(value) = &row["value"] else {
-            anyhow::bail!("source exclusion must be a path literal")
-        };
-        let path = Path::new(value.value());
-        ensure!(
-            !value.value().is_empty() &&
-                path.components()
-                    .all(|part| matches!(part, Component::Normal(_))),
-            "source exclusion must be a relative path without traversal"
-        );
-        let mut ancestor = root.to_owned();
-        for part in path.components() {
-            ancestor.push(part);
-            match tokio::fs::symlink_metadata(&ancestor).await {
-                Ok(metadata) => {
-                    ensure!(
-                        !metadata.is_symlink(),
-                        "source exclusion must not traverse a symlink"
-                    )
-                },
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                    break
-                },
-                Err(error) => return Err(error.into()),
-            }
-        }
-        // Excluded build output need not exist in a clean checkout.
-        paths.push(root.join(path));
-    }
-    Ok(paths)
+) -> Result<SourceExclusions> {
+    SourceExclusions::read(root, view, project).await
 }
 
 pub(super) async fn discover(
@@ -131,13 +96,11 @@ pub(super) async fn discover(
             if name.starts_with('.') || name.starts_with('_') {
                 continue;
             }
-            if exclusions
-                .iter()
-                .any(|excluded| entry.path().starts_with(excluded))
+            let kind = entry.file_type().await?;
+            if exclusions.excludes(&entry.path(), EntryKind::of(kind.is_dir()))
             {
                 continue;
             }
-            let kind = entry.file_type().await?;
             ensure!(
                 !kind.is_symlink(),
                 "website discovery rejects symlinks: {}",

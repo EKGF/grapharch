@@ -34,6 +34,7 @@ mod rdf;
 mod repository_publications;
 pub(crate) mod semantic_images;
 mod source;
+pub(crate) mod source_checkout;
 mod text_asset;
 mod w3c;
 
