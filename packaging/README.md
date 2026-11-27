@@ -133,6 +133,14 @@ workflow and supply the successful full candidate run ID. Automatic major
 increments are forbidden; a major release requires separate user approval of
 its exact version and scope and the existing reviewed release procedure.
 
+Release notes start with a **Breaking changes** section when the release
+contains commits marked with `!` or a `BREAKING CHANGE:` (or `BREAKING-CHANGE:`)
+footer since the previous version tag, including markers inside squash-merge
+bodies. `packaging/release_notes.py` writes that section and GitHub's generated
+notes follow it. Each section links the
+[migration notes](../docs/usage/migration.md); add an entry there for any
+breaking change that needs more than its commit footer to migrate.
+
 A serialized coordinator skips a source superseded before reservation. It
 atomically advances main and creates the immutable version tag with a
 metadata-only commit. Cargo, its package lock entry, npm, and ontology version
