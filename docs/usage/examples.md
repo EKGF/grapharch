@@ -100,6 +100,7 @@ showcase. Unknown `ga:` settings are errors.
 | Ontology family over Git | `ga:gitRepository`, `ga:gitRef` (exact commit or moving reference such as `HEAD`), optional `ga:hintsPath` and an ordered `ga:showcaseTargets` selection of hinted targets (every registered target when absent), or local definitions |
 | Ontology family over RDF URLs | `ga:rdfDocument` IRIs, each with `ga:format`, plus local definitions |
 | MkDocs | `ga:gitRepository`, `ga:gitCommit`, `ga:mkdocsConfiguration`, `ga:materializedPath`, `ga:licensePath` |
+| Repository | `ga:gitRepository`, `ga:gitCommit`, `ga:materializedPath` (which must contain each license), one or more `ga:licensePath` |
 
 Local definitions are `ga:definitionsPath` (beneath the configuration),
 `ga:showcaseProject` and `ga:showcaseTargets`, whose first target is the family
@@ -107,6 +108,15 @@ publication. Copied fixture files are recorded with `ga:copiedSource` entries
 (`ga:localPath`, `ga:contentDigest`, and `ga:sourcePath` or `ga:copiedFrom`),
 plus `ga:copiedRepository`, `ga:copiedRevision` and `ga:copiedFromWorkingTree`
 on the showcase; `showcases::verify_copied_sources` checks every digest.
+
+A repository showcase (`ga:RepositoryShowcaseRunner`) publishes a code
+repository without GraphArch configuration. Only its selected paths are
+materialized from the pinned commit, and they are collected with the same
+defaults as `grapharch build`: the README becomes the home page, and Markdown,
+images and RDF are discovered. Unselected files, such as agent instructions,
+build scripts or test fixtures, are never read. A selected tree containing
+GraphArch or MkDocs configuration is rejected in favour of the exact-revision
+or MkDocs runner.
 
 ## Adding a showcase
 

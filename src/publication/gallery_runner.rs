@@ -10,6 +10,7 @@ pub(super) enum ShowcaseRunner {
     Authored,
     RevisionBuild,
     Mkdocs,
+    Repository,
     OntologyFamily,
     Skos,
     UseCases,
@@ -29,6 +30,9 @@ impl ShowcaseRunner {
             },
             "https://ekgf.org/ontology/grapharch#MkdocsShowcaseRunner" => {
                 Ok(Self::Mkdocs)
+            },
+            "https://ekgf.org/ontology/grapharch#RepositoryShowcaseRunner" => {
+                Ok(Self::Repository)
             },
             "https://ekgf.org/ontology/grapharch#OntologyFamilyShowcaseRunner" => {
                 Ok(Self::OntologyFamily)
@@ -83,7 +87,7 @@ mod tests {
                 count += 1;
             }
         }
-        assert_eq!(count, 9);
+        assert_eq!(count, 10);
     }
 
     #[test]

@@ -1267,8 +1267,8 @@ ga:mkdocsConfiguration a owl:DatatypeProperty ;
 ga:materializedPath a owl:DatatypeProperty ;
     rdfs:label "Materialized repository path"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Selects a file or directory of the pinned repository that a MkDocs showcase reads."@en ;
-    dct:description "Selects a file or directory of the pinned repository that a MkDocs showcase reads."@en ;
+    skos:definition "Selects a file or directory of the pinned repository that a MkDocs or repository showcase reads."@en ;
+    dct:description "Selects a file or directory of the pinned repository that a MkDocs or repository showcase reads."@en ;
     rdfs:domain ga:Showcase ;
     rdfs:range xsd:string .
 

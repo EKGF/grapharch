@@ -28,6 +28,7 @@ use {
 pub use super::{
     gallery::{GalleryReport, ShowcaseReport},
     showcases_mkdocs::build as mkdocs,
+    showcases_repository::build as repository,
 };
 
 /// Run every declared live showcase and retain structured diagnostics and KG

@@ -308,6 +308,13 @@ async fn build_case(
             )
             .await?
         },
+        ShowcaseRunner::Repository => {
+            super::showcases_repository::configured(
+                &configuration(&case, &source).await?,
+                &cache,
+            )
+            .await?
+        },
         ShowcaseRunner::OntologyFamily => {
             showcases::family_configured(
                 &configuration(&case, &source).await?,
