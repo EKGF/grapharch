@@ -1,0 +1,37 @@
+name: Retry release runner acquisition
+# GitHub-hosted runners have no configurable queue/acquisition timeout: a job no
+# runner acquires within ~15 minutes is cancelled before it starts. Re-run such
+# an automatic release attempt (both its Prepare and its Publish runs) a bounded
+# number of times; never re-run a job that started or failed for another reason.
+on:
+  workflow_run:
+    workflows: ['Automatic release']
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+env:
+  PYTHONUTF8: '1'
+concurrency:
+  group: release-runner-retry-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+jobs:
+  retry:
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt < 4
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+      checks: read
+    steps:
+      # Execute only trusted main automation.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Re-run only jobs GitHub never acquired a runner for
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_RUN: ${{ github.event.workflow_run.id }}
+          RELEASE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: python3 -B packaging/runner_retry.py --run "$RELEASE_RUN" --attempt "$RELEASE_ATTEMPT"

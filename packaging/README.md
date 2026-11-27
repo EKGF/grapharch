@@ -211,6 +211,15 @@ reusable file containing the upload step. See the official
 Register `release-changelog.yml` separately if registry publication through the
 manual release entry point is also required.
 
+GitHub-hosted runners have no configurable queue or acquisition timeout
+(`timeout-minutes` limits execution only). When GitHub cannot acquire a runner,
+typically macOS arm64, it cancels the job after about 15 minutes with the
+annotation "The job was not acquired by Runner of type hosted even after multiple
+attempts". The `Retry release runner acquisition` workflow then re-runs the failed
+jobs of that `Automatic release` attempt, up to attempt 4, only when every
+unsuccessful job is such an unstarted job carrying that annotation. Any job that
+started or failed otherwise stops automatic retries.
+
 Resume a partially published release with GitHub's **re-run failed jobs** action,
 so the successful release build artifacts and original producer identity remain
 unchanged. npm, PyPI and crates.io retries skip only artifacts whose registry
