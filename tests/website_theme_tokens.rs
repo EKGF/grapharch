@@ -94,15 +94,15 @@ async fn consumer_theme_tokens_refine_the_reader_website() -> Result<()> {
             ga:accent "#aa3300"; ga:headingColor "accent"; ga:linkColor "#112233";
             ga:tableHeaderFill "accent-tint"; ga:tableGrid true; ga:linkUnderline false;
             ga:bodyFont "Liberation Serif"; ga:heading1Weight "regular";
-            ga:paper "us-letter"; ga:heading1Size "30pt" ."##,
+            ga:paper "us-letter"; ga:heading1Size "30pt"; ga:contentWidth "80rem" ."##,
     )
     .await?;
     let css = site.css().await?;
     assert!(
         css.contains(
-            ":root{--accent:#aa3300;--heading:var(--accent);--link:#112233;\
-             --table-head:color-mix(in srgb,var(--accent) \
-             6%,var(--paper,#fff))}"
+            ":root{--accent:#aa3300;--content-width:80rem;--heading:\
+             var(--accent);--link:#112233;--table-head:color-mix(in \
+             srgb,var(--accent) 6%,var(--paper,#fff))}"
         ),
         "colour tokens, including accent references, become properties"
     );
@@ -184,6 +184,7 @@ async fn invalid_screen_tokens_fail() -> Result<()> {
         "ga:tableGrid \"yes\"",
         "ga:bodyFont \"A\\\";}\"",
         "ga:figureCaptionAlign \"justify\"",
+        "ga:contentWidth \"80vw\"",
     ] {
         let result = Site::publish(
             "<urn:house>",

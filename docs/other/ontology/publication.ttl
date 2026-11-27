@@ -3711,3 +3711,12 @@ ga:siteRegistry a owl:ObjectProperty ;
     skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> . <urn:example:profile> ga:siteRegistry ( <urn:example:records-site> ) . <urn:example:records-site> a ga:RegisteredSite ; ga:repository <https://github.com/example-org/records> ; ga:url \"https://example-org.github.io/records/\" ; ga:contentSource \"docs\" ; ga:gitRef \"main\" ."@en ;
     rdfs:domain ga:Profile ;
     rdfs:range rdf:List .
+
+ga:contentWidth a owl:DatatypeProperty ;
+    rdfs:label "Website content width"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Specifies the maximum width of a website's content column, shared by every section, the section navigation and the header."@en ;
+    dct:description "Specifies the maximum width of a website's content column, shared by every section, the section navigation and the header."@en ;
+    skos:scopeNote "The value is a positive length in em, rem or px, such as 72rem, the default. Narrower screens use their full width less a gutter. Prose keeps a readable measure within the column; code blocks, tables and cards use its full width. PDF renderers ignore the token."@en ;
+    rdfs:domain ga:Theme ;
+    rdfs:range xsd:string .

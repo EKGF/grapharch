@@ -61,6 +61,26 @@ pub(super) fn font(
     Ok(format!("\"{value}\",{fallback}"))
 }
 
+/// A positive length in `em`, `rem` or `px` units, such as `72rem`.
+pub(super) fn length<'a>(token: &str, value: &'a Term) -> Result<&'a str> {
+    let value = plain(token, value)?;
+    let number = ["rem", "em", "px"]
+        .iter()
+        .find_map(|unit| value.strip_suffix(unit))
+        .unwrap_or_default();
+    let (whole, fraction) = number.split_once('.').unwrap_or((number, ""));
+    ensure!(
+        (1..=4).contains(&whole.len()) &&
+            whole.bytes().all(|byte| byte.is_ascii_digit()) &&
+            fraction.len() <= 3 &&
+            fraction.bytes().all(|byte| byte.is_ascii_digit()) &&
+            whole.bytes().any(|byte| byte != b'0'),
+        "website theme token {token} must be a positive length in em, rem or \
+         px, not {value}"
+    );
+    Ok(value)
+}
+
 /// A heading weight as a CSS numeric weight.
 pub(super) fn weight(token: &str, value: &Term) -> Result<&'static str> {
     Ok(match plain(token, value)? {
