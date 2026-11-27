@@ -20,6 +20,7 @@ mod model;
 mod multiplicity;
 mod ontology;
 mod plantuml_source;
+mod policy;
 mod projection;
 mod property_declaration;
 mod read;
@@ -35,5 +36,6 @@ pub(crate) use {
     kind::NodeKind,
     legend::{LANGUAGE, LEGEND},
     model::{Diagram, Edge, Node},
+    policy::ClassDiagrams,
     projection::Projection,
 };

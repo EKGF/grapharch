@@ -10,7 +10,11 @@ use {
             published_artifact::PublishedArtifactFile,
         },
         dataset::{Dataset, identity},
-        document::{AnnotatedTermDocumentor, Documentor},
+        document::{
+            AnnotatedTermDocumentor,
+            Documentor,
+            class_diagram::ClassDiagrams,
+        },
         plan::TargetPlanner,
         render::{PublishOutcome, Publisher},
         term,
@@ -283,11 +287,7 @@ async fn build(
             q(&fragment, "contribution", contribution.clone()),
         ]);
     }
-    let diagram_renderer = Arc::new(
-        crate::publication::document::plantuml::LocalRenderer::new(
-            std::ffi::OsStr::new("plantuml"),
-        ),
-    );
+    let class_diagrams = ClassDiagrams::for_profile(&view, &profile).await?;
     for (position, (kind, title, terms)) in groups.into_iter().enumerate() {
         let component = identity("ontology-group", &[target.as_str(), kind]);
         placement(
@@ -313,7 +313,7 @@ async fn build(
                 prefixes.clone(),
                 known.clone(),
             )?
-            .with_diagram_renderer(diagram_renderer.clone());
+            .with_class_diagrams(class_diagrams.clone());
             let documentor = if external_set.contains(&subject) {
                 documentor.with_source_annotations()
             } else {

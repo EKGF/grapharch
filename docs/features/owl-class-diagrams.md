@@ -47,6 +47,27 @@ Colliding names that a vocabulary line cannot separate, and colliding property
 names, gain a QName qualifier instead; original IRIs remain in links, HTML
 tooltips and the retained graph.
 
+## Turn class diagrams off
+
+A publication profile can turn off the class-diagram fragment renderer:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:example:profile> a ga:Profile ;
+    ga:disableRenderer ga:OwlClassDiagramRenderer .
+```
+
+Documentation built with that profile, by `publication build-family` for its
+primary target or by `publication build-site` for a target with
+`ga:ontologySource`, then generates no class diagrams. Classes keep their
+reference text, and the build needs neither PlantUML nor Java. The switch
+applies to every output, unlike `ga:classDiagrams false`, which omits already
+generated diagrams from a PDF only. `ga:OwlClassDiagramRenderer` is the one
+value accepted; any other renderer or a literal fails the build. Authored
+[PlantUML diagrams](../collectors/plantuml.md) still require the local
+renderer. A build without a profile, such as `grapharch build`, always draws
+class diagrams, as do `ga:VocabularyReferenceDocumentor` uses.
+
 ## What the arrows mean
 
 Named OWL classes use plain UML class boxes. Stereotypes appear only where

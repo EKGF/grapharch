@@ -5,8 +5,11 @@ import os
 import platform
 import shlex
 import subprocess
+import sys
 import urllib.request
 from pathlib import Path
+
+import headless_fonts
 
 VERSION = "1.2026.9"
 SHA256 = "835b2f2eb1d756da3f03bffdbd0baf252b4b858547a741ac8e972958a09c7f91"
@@ -33,15 +36,17 @@ def verify(path):
         raise ValueError("PlantUML jar checksum mismatch; remove the corrupt cache explicitly")
 
 
-def launcher(root, java, jar, windows):
-    for path in (java, jar):
+def launcher(root, java, jar, windows, fontconfig=None):
+    for path in (java, jar, *([fontconfig] if fontconfig else [])):
         if any(char in str(path) for char in '\r\n"%!'):
             raise ValueError("unsafe PlantUML launcher path")
     path = root / ("plantuml.cmd" if windows else "plantuml")
     if windows:
-        text = f'@echo off\r\n"{java}" -Djava.awt.headless=true -jar "{jar}" %*\r\nexit /b %errorlevel%\r\n'
+        options = f' "-Dsun.awt.fontconfig={fontconfig}"' if fontconfig else ""
+        text = f'@echo off\r\n"{java}" -Djava.awt.headless=true{options} -jar "{jar}" %*\r\nexit /b %errorlevel%\r\n'
     else:
-        text = f'#!/bin/sh\nexec {shlex.quote(str(java))} -Djava.awt.headless=true -jar {shlex.quote(str(jar))} "$@"\n'
+        options = f" {shlex.quote(f'-Dsun.awt.fontconfig={fontconfig}')}" if fontconfig else ""
+        text = f'#!/bin/sh\nexec {shlex.quote(str(java))} -Djava.awt.headless=true{options} -jar {shlex.quote(str(jar))} "$@"\n'
     path.write_text(text, encoding="utf-8", newline="")
     path.chmod(0o755)
     return path
@@ -60,9 +65,19 @@ def probe(command, arguments, source, environment):
         ) from error
 
 
+def java_home(environment):
+    """A preinstalled GRAPHARCH_JAVA_HOME takes precedence over JAVA_HOME."""
+    for name in ("GRAPHARCH_JAVA_HOME", "JAVA_HOME"):
+        if environment.get(name):
+            return Path(environment[name])
+    raise ValueError("Java is not configured: set GRAPHARCH_JAVA_HOME or JAVA_HOME")
+
+
 def install():
-    windows = windows_platform(platform.system())
-    java = Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if windows else "java")
+    system = platform.system()
+    windows = windows_platform(system)
+    home = java_home(os.environ)
+    java = home / "bin" / ("java.exe" if windows else "java")
     if not java.is_file():
         raise ValueError(f"Java is not installed: {java}")
     root = Path(os.environ["RUNNER_TOOL_CACHE"]) / "grapharch-plantuml" / VERSION / SHA256
@@ -83,8 +98,13 @@ def install():
         finally:
             pending.unlink(missing_ok=True)
     verify(jar)
-    command = launcher(root, java, jar, windows)
-    environment = dict(os.environ, PLANTUML_SECURITY_PROFILE="SANDBOX")
+    fontconfig = None
+    if headless_fonts.fontconfig_missing(system):
+        # Without fontconfig, Java needs an explicit logical-font mapping.
+        fontconfig = headless_fonts.install(root)
+        print(f"No fontconfig fonts found; mapping Java fonts with {fontconfig}")
+    command = launcher(root, java, jar, windows, fontconfig)
+    environment = dict(os.environ, JAVA_HOME=str(home), PLANTUML_SECURITY_PROFILE="SANDBOX")
     # -version also probes external Graphviz and fails when dot is absent.
     # The standard preprocessor version function requires no layout engine.
     version = probe(command, ["-preproc", "-pipe"], "@startuml\n%version()\n@enduml\n", environment)
@@ -97,8 +117,42 @@ def install():
         raise ValueError("Pinned PlantUML failed the Smetana rendering probe")
     with Path(os.environ["GITHUB_PATH"]).open("a", encoding="utf-8") as output:
         output.write(str(root) + "\n")
+    if os.environ.get("GITHUB_ENV"):
+        # GraphArch passes JAVA_HOME to the launcher; keep the probed JRE.
+        with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as output:
+            output.write(f"JAVA_HOME={home}\n")
     print(f"Verified local PlantUML MIT {VERSION} ({SHA256}); Smetana probe passed")
 
 
+def selection(environment):
+    """Validate the action's renderer inputs before any Java is installed.
+
+    Returns whether to install the renderer and whether a preinstalled JRE
+    replaces the downloaded Temurin runtime.
+    """
+    renderer = environment.get("GRAPHARCH_UML_RENDERER", "")
+    if renderer not in ("true", "false"):
+        raise ValueError("uml-renderer must be true or false")
+    home = environment.get("GRAPHARCH_JAVA_HOME", "")
+    if home:
+        if any(char in home for char in "\r\n\x00") or not Path(home).is_absolute():
+            raise ValueError("java-home must be one absolute directory path")
+        if renderer == "false":
+            raise ValueError("java-home requires uml-renderer true")
+    return renderer == "true", bool(home)
+
+
+def select():
+    renderer, provided = selection(os.environ)
+    with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+        output.write(f"install={str(renderer).lower()}\n")
+        output.write(f"java={'provided' if provided else 'temurin'}\n")
+
+
 if __name__ == "__main__":
-    install()
+    if sys.argv[1:] == ["select"]:
+        select()
+    elif sys.argv[1:]:
+        raise SystemExit("usage: setup_plantuml.py [select]")
+    else:
+        install()

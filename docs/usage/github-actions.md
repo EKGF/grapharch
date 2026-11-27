@@ -262,3 +262,39 @@ collected and documented KG requires neither Java nor PlantUML.
 Repository CI uses `.github/actions/setup-plantuml`, which calls the same
 installer. Direct CLI users must install Java and PlantUML on PATH themselves.
 The JAR is an explicit CI tool dependency, not bundled into GraphArch binaries.
+
+### Runners without fontconfig, fonts or Temurin downloads
+
+Java draws text through fontconfig on Linux. On a runner without fontconfig or
+without installed fonts, such as a minimal self-hosted container without root,
+PlantUML stops with `Fontconfig head is null`. When `fc-list` is absent or
+lists no fonts, setup maps Java's logical fonts to the Liberation Sans, Serif
+and Mono files that GraphArch already bundles for its PDFs. It copies them into
+the tool cache next to the launcher, writes a `fontconfig.properties` there and
+starts Java with `-Dsun.awt.fontconfig` pointing to it. No package, root
+access or font download is needed, and the Java installation is not modified.
+Liberation Sans is metric-compatible with Arial, which the layout engine
+measures. A runner with working fontconfig keeps its system fonts.
+
+`actions/setup-java` downloads Temurin from the Adoptium service. When a runner
+cannot reach it, supply a preinstalled Java runtime instead; setup then skips
+the download and uses that runtime for the probe and for every diagram:
+
+```yaml
+- uses: EKGF/GraphArch@v0
+  with:
+    java-home: /opt/java/temurin-21-jre
+```
+
+The value must be an absolute path whose `bin/java` exists. Outside the action,
+`python3 packaging/setup_plantuml.py` reads the same runtime from
+`GRAPHARCH_JAVA_HOME`, falling back to `JAVA_HOME`, and needs the
+`RUNNER_TOOL_CACHE` and `GITHUB_PATH` variables that every Actions runner sets.
+The PlantUML JAR itself is still downloaded from its GitHub release and
+checked against the pinned SHA-256.
+
+A build whose profile declares
+`ga:disableRenderer ga:OwlClassDiagramRenderer` (see
+[OWL class diagrams](../features/owl-class-diagrams.md#turn-class-diagrams-off))
+and that has no authored PlantUML source needs neither Java nor PlantUML. Set
+`uml-renderer: 'false'` to skip their setup; `java-home` then must stay unset.

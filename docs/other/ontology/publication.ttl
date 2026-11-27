@@ -3413,6 +3413,14 @@ ga:classDiagrams a owl:DatatypeProperty ;
     rdfs:domain ga:Profile ;
     rdfs:range xsd:boolean .
 
+ga:disableRenderer a owl:ObjectProperty ;
+    rdfs:label "Disabled renderer"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Turns off a fragment renderer for the documentation built with a profile. ga:OwlClassDiagramRenderer is the one supported value: no class diagram is generated, and the build needs neither PlantUML nor Java. Unlike ga:classDiagrams false, which omits generated diagrams from a PDF only, it applies to every output."@en ;
+    dct:description "Turns off a fragment renderer for the documentation built with a profile. ga:OwlClassDiagramRenderer is the one supported value: no class diagram is generated, and the build needs neither PlantUML nor Java. Unlike ga:classDiagrams false, which omits generated diagrams from a PDF only, it applies to every output."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range ga:FragmentRenderer .
+
 ga:Figure a owl:Class ;
     rdfs:label "Authored figure"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

@@ -13,6 +13,7 @@ use {
         document::{
             AnnotatedTermDocumentor,
             Documentor,
+            class_diagram::ClassDiagrams,
             namespace_bindings::NamespaceBindings,
         },
         plan::{ResolvedPlan, TargetPlanner},
@@ -527,6 +528,7 @@ async fn build(
          specification-pages, bookshelf or typst renderer"
     );
     let profile = view.node(&target, "profile").await?;
+    let class_diagrams = ClassDiagrams::for_profile(&view, &profile).await?;
     let scope = view.node(&target, "scope").await?;
     let family = view
         .optional_by(
@@ -1298,6 +1300,7 @@ async fn build(
                         prefixes.clone(),
                         known.clone(),
                     )?
+                    .with_class_diagrams(class_diagrams.clone())
                     .with_family_reference();
                     data.extend([
                         q(&scope, "include", subject.clone()),
@@ -1393,23 +1396,18 @@ async fn build(
     }
     managed.persist_inventory(writer, true).await?;
     table_jobs.run(writer, concurrency).await?;
-    let diagram_renderer = Arc::new(
-        crate::publication::document::plantuml::LocalRenderer::new(
-            std::ffi::OsStr::new("plantuml"),
-        ),
-    );
     futures::stream::iter(jobs.into_iter().map(
         |(snapshot, subject, ontology, arrangement)| {
             let dataset = dataset.clone();
             let prefixes = prefixes.clone();
             let known = known.clone();
-            let diagram_renderer = diagram_renderer.clone();
+            let class_diagrams = class_diagrams.clone();
             let diagram_metadata = collected_snapshot.clone();
             async move {
                 let documentor = AnnotatedTermDocumentor::new(
                     dataset, snapshot, project, subject, "en", prefixes, known,
                 )?
-                .with_diagram_renderer(diagram_renderer)
+                .with_class_diagrams(class_diagrams)
                 .with_diagram_metadata(diagram_metadata)
                 .with_family_reference()
                 .with_arrangement(arrangement);

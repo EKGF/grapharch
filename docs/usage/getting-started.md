@@ -78,7 +78,11 @@ For OWL class diagrams, install Java and PlantUML on `PATH` first. Smetana, the
 layout engine used by GraphArch, is included in PlantUML; Graphviz is not required.
 The GraphArch GitHub Action installs a checksum-verified renderer during setup.
 Markdown-only builds and rendering a retained documentation graph do not invoke
-PlantUML. See [OWL class diagrams](../features/owl-class-diagrams.md).
+PlantUML. A configured publication profile can turn the diagrams off, so
+its build needs neither tool; on a Linux machine without fontconfig, the
+action's setup supplies the fonts Java needs. See
+[OWL class diagrams](../features/owl-class-diagrams.md#turn-class-diagrams-off)
+and [GitHub Actions](github-actions.md#runners-without-fontconfig-fonts-or-temurin-downloads).
 
 ```sh
 grapharch build ./ontology.ttl

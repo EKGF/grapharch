@@ -6,6 +6,7 @@ use {
         document::{
             AnnotatedTermDocumentor,
             Documentor,
+            class_diagram::ClassDiagrams,
             namespace_bindings::NamespaceBindings,
         },
         term,
@@ -168,11 +169,7 @@ pub(super) async fn rdf_pages(
             .await?
             .into_map(),
     );
-    let diagram_renderer = Arc::new(
-        crate::publication::document::plantuml::LocalRenderer::new(
-            std::ffi::OsStr::new("plantuml"),
-        ),
-    );
+    let class_diagrams = ClassDiagrams::local();
     let mut has_home = has_home(dataset, &view).await?;
     let mut any = false;
     let mut documented: BTreeMap<NamedNode, String> = BTreeMap::new(); // bounded: shared 20,000 subject budget.
@@ -277,7 +274,7 @@ pub(super) async fn rdf_pages(
                 prefixes.clone(),
                 known.clone(),
             )?
-            .with_diagram_renderer(diagram_renderer.clone())
+            .with_class_diagrams(class_diagrams.clone())
             .with_source_annotations();
             documentor.document(writer).await?;
             let fragment = documentor.fragment_id();

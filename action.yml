@@ -34,6 +34,12 @@ inputs:
   cache:
     description: Cache verified release binaries
     default: 'true'
+  uml-renderer:
+    description: Install Java and the local PlantUML renderer (true); false for a profile that declares ga:disableRenderer ga:OwlClassDiagramRenderer and has no authored PlantUML
+    default: 'true'
+  java-home:
+    description: Absolute path of a preinstalled Java runtime to use instead of downloading Temurin 21 from Adoptium
+    required: false
 outputs:
   version:
     value: ${{ steps.install.outputs.version || steps.source-install.outputs.version }}
@@ -87,12 +93,23 @@ runs:
         GRAPHARCH_OUTPUT: ${{ inputs.output }}
         GRAPHARCH_EDITION: ${{ inputs.edition }}
       run: python -B "$GITHUB_ACTION_PATH/packaging/build_action.py" validate
+    - id: uml
+      name: Select the local UML renderer
+      shell: bash
+      env:
+        GRAPHARCH_UML_RENDERER: ${{ inputs.uml-renderer }}
+        GRAPHARCH_JAVA_HOME: ${{ inputs.java-home }}
+      run: python -B "$GITHUB_ACTION_PATH/packaging/setup_plantuml.py" select
     - uses: actions/setup-java@v6
+      if: steps.uml.outputs.install == 'true' && steps.uml.outputs.java == 'temurin'
       with:
         distribution: temurin
         java-version: '21'
     - name: Set up local UML renderer
+      if: steps.uml.outputs.install == 'true'
       shell: bash
+      env:
+        GRAPHARCH_JAVA_HOME: ${{ inputs.java-home }}
       run: python -B "$GITHUB_ACTION_PATH/packaging/setup_plantuml.py"
     - id: platform
       if: steps.select.outputs.kind == 'release'
