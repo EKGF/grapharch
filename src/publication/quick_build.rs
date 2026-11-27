@@ -3,6 +3,7 @@
 mod aliases;
 mod discover;
 mod document;
+pub(crate) mod pinned;
 
 use {
     super::{
@@ -97,100 +98,16 @@ impl BuildRequest {
         let origin = url::Url::from_file_path(&source)
             .map_err(|_| anyhow::anyhow!("invalid source path"))?;
         let project = identity("quick-project", &[origin.as_str()]);
-        let target = identity("quick-target", &[project.as_str()]);
-        let dataset = Dataset::memory()?;
-        let (writer, worker) =
-            GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
-        let result = async {
-            let mut inputs: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: discovery caps sources at 256.
-            for path in &inventory.files {
-                let relative =
-                    super::collect::page::source_path(&inventory.root, path)?;
-                let collector =
-                    identity("quick-source", &[project.as_str(), &relative]);
-                if path.extension().is_some_and(|ext| ext == "md") {
-                    inputs.push(Arc::new(
-                        MarkdownFile::in_site(
-                            project.as_str(),
-                            collector.as_str(),
-                            inventory.root.clone(),
-                            path.clone(),
-                        )?
-                        .with_default_title(),
-                    ));
-                } else if LocalImageFile::supported(path) {
-                    inputs.push(Arc::new(
-                        LocalImageFile::new(
-                            project.as_str(),
-                            &inventory.root,
-                            path,
-                        )
-                        .await?,
-                    ));
-                } else {
-                    inputs.push(Arc::new(RdfFile::new(
-                        project.as_str(),
-                        collector.as_str(),
-                        path.clone(),
-                    )?));
-                }
-            }
-            if let Some(repository) = super::collect::git::enclosing_repository(
-                &inventory.root,
-                project.as_str(),
-            )
-            .await?
-            {
-                inputs.push(repository.provenance);
-            }
-            collect_all(inputs, &writer, 4).await?;
-            let snapshot =
-                dataset.snapshot_collected_for(project.as_str()).await?;
-            let view = RevisionView::new(dataset.clone(), snapshot.clone());
-            let mut projects = dataset
-                .select(format!(
-                    "SELECT ?p WHERE {{ {} }} LIMIT 1",
-                    view.pattern(
-                        &format!("?p a {}", super::term("Project")),
-                        0
-                    )
-                ))
-                .await?;
-            ensure!(
-                projects.next().await?.is_none(),
-                "publication configuration was found outside \
-                 grapharch.ttl/project.ttl; use publication build-family or \
-                 build-site with explicit identifiers"
-            );
-            let title = document::title(&dataset, &view, &inventory).await?;
-            document::defaults(&writer, &project, &target, &title).await?;
-            document::rdf_pages(&dataset, &writer, &project, &inventory)
-                .await?;
-            document::home(&dataset, &writer, &project, &title).await?;
-            let images = super::collect::http_image_collectors(
-                &dataset,
-                project.as_str(),
-            )
-            .await?;
-            collect_all(images, &writer, 4).await?;
-            super::website::bind(
-                &dataset,
-                &writer,
-                project.as_str(),
-                target.as_str(),
-            )
-            .await?;
-            let revision = Assembler::new(dataset.clone())
-                .assemble(project.as_str())
-                .await?;
-            TargetPlanner::new(dataset.clone(), revision)
-                .resolve(project.as_str(), &target, &writer)
-                .await
+        let mut extra: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: at most the enclosing repository's provenance.
+        if let Some(repository) = super::collect::git::enclosing_repository(
+            &inventory.root,
+            project.as_str(),
+        )
+        .await?
+        {
+            extra.push(repository.provenance);
         }
-        .await;
-        drop(writer);
-        worker.await??;
-        Ok((dataset, result?))
+        plain(&inventory, project, extra).await
     }
 
     async fn configured(
@@ -307,4 +224,92 @@ fn title_quad(subject: &NamedNode, title: &str) -> oxrdf::Quad {
         Literal::new_simple_literal(title),
         oxrdf::GraphName::DefaultGraph,
     )
+}
+
+/// Collect an unconfigured tree of Markdown, RDF and images as one website.
+async fn plain(
+    inventory: &discover::Inventory,
+    project: NamedNode,
+    extra: Vec<Arc<dyn Collector>>,
+) -> Result<(Dataset, ResolvedPlan)> {
+    let target = identity("quick-target", &[project.as_str()]);
+    let dataset = Dataset::memory()?;
+    let (writer, worker) =
+        GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
+    let result = async {
+        let mut inputs: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: discovery caps sources at 256.
+        for path in &inventory.files {
+            let relative =
+                super::collect::page::source_path(&inventory.root, path)?;
+            let collector =
+                identity("quick-source", &[project.as_str(), &relative]);
+            if path.extension().is_some_and(|ext| ext == "md") {
+                inputs.push(Arc::new(
+                    MarkdownFile::in_site(
+                        project.as_str(),
+                        collector.as_str(),
+                        inventory.root.clone(),
+                        path.clone(),
+                    )?
+                    .with_default_title(),
+                ));
+            } else if LocalImageFile::supported(path) {
+                inputs.push(Arc::new(
+                    LocalImageFile::new(
+                        project.as_str(),
+                        &inventory.root,
+                        path,
+                    )
+                    .await?,
+                ));
+            } else {
+                inputs.push(Arc::new(RdfFile::new(
+                    project.as_str(),
+                    collector.as_str(),
+                    path.clone(),
+                )?));
+            }
+        }
+        inputs.extend(extra);
+        collect_all(inputs, &writer, 4).await?;
+        let snapshot = dataset.snapshot_collected_for(project.as_str()).await?;
+        let view = RevisionView::new(dataset.clone(), snapshot.clone());
+        let mut projects = dataset
+            .select(format!(
+                "SELECT ?p WHERE {{ {} }} LIMIT 1",
+                view.pattern(&format!("?p a {}", super::term("Project")), 0)
+            ))
+            .await?;
+        ensure!(
+            projects.next().await?.is_none(),
+            "publication configuration was found outside \
+             grapharch.ttl/project.ttl; use publication build-family or \
+             build-site with explicit identifiers"
+        );
+        let title = document::title(&dataset, &view, inventory).await?;
+        document::defaults(&writer, &project, &target, &title).await?;
+        document::rdf_pages(&dataset, &writer, &project, inventory).await?;
+        document::home(&dataset, &writer, &project, &title).await?;
+        let images =
+            super::collect::http_image_collectors(&dataset, project.as_str())
+                .await?;
+        collect_all(images, &writer, 4).await?;
+        super::website::bind(
+            &dataset,
+            &writer,
+            project.as_str(),
+            target.as_str(),
+        )
+        .await?;
+        let revision = Assembler::new(dataset.clone())
+            .assemble(project.as_str())
+            .await?;
+        TargetPlanner::new(dataset.clone(), revision)
+            .resolve(project.as_str(), &target, &writer)
+            .await
+    }
+    .await;
+    drop(writer);
+    worker.await??;
+    Ok((dataset, result?))
 }

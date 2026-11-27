@@ -1,0 +1,12 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
+# A Rust crate with Node.js and Python bindings, published with the
+# zero-configuration defaults from one pinned commit. Only the selected user
+# documentation is read; agent instructions and build files are not published.
+<urn:grapharch:showcase:dotenvage> a ga:Showcase ;
+    ga:gitRepository "https://github.com/legra-ai/dotenvage.git" ;
+    ga:gitCommit "f8810672ced3648cfc32db00898abb84a6515eb0" ;
+    ga:materializedPath "README.md", "CONTRIBUTING.md", "npm", "python",
+        "LICENSE-MIT", "LICENSE-APACHE" ;
+    ga:licensePath "LICENSE-MIT", "LICENSE-APACHE", "npm/LICENSE-MIT",
+        "npm/LICENSE-APACHE" .

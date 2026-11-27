@@ -16,6 +16,10 @@ ga:MkdocsShowcaseRunner a ga:ShowcaseRunner ;
     rdfs:label "MkDocs site showcase"@en ;
     dct:description "Collects a remote MkDocs documentation site with its navigation."@en .
 
+ga:RepositoryShowcaseRunner a ga:ShowcaseRunner ;
+    rdfs:label "Repository showcase"@en ;
+    dct:description "Publishes selected paths of a pinned Git repository with the zero-configuration defaults: Markdown pages, images and RDF, without executing repository files."@en .
+
 ga:OntologyFamilyShowcaseRunner a ga:ShowcaseRunner ;
     rdfs:label "Ontology family showcase"@en ;
     dct:description "Collects a registered family of RDF ontologies from a remote repository or explicit documents."@en .

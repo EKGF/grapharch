@@ -450,7 +450,7 @@ ga:ShowcaseConfigurationShape a sh:NodeShape ;
     sh:property [ sh:path ga:rdfDocument ; sh:nodeKind sh:IRI ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:mkdocsConfiguration ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:materializedPath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] ;
-    sh:property [ sh:path ga:licensePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:licensePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 8 ] ;
     sh:property [ sh:path ga:copiedSource ; sh:maxCount 64 ] ;
     sh:property [ sh:path ga:copiedRepository ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
     sh:property [ sh:path ga:copiedRevision ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] ;

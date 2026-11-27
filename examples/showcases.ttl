@@ -4,7 +4,7 @@
 # Where the gallery deploys showcase artifacts; an exact-revision showcase is
 # published beneath it at its slug, whatever its own definitions say.
 <urn:grapharch:docs> ga:showcaseArtifactsUrl <https://ekgf.github.io/grapharch/showcases/artifacts/> .
-<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch, ex:fibo-be .
+<urn:grapharch:docs> ga:showcase ex:authored, ex:mixed, ex:specification, ex:dprod, ex:rdf12, ex:ekgf, ex:skos, ex:use-cases, ex:commons, ex:code-highlighting, ex:mkdocs-bootswatch, ex:fibo-be, ex:dotenvage, ex:dr-ts-versioning .
 ex:authored a ga:Showcase ; ga:slug "authored" ; dct:title "One graph, three publications" ;
     dct:description "Shared fragments arranged as specification HTML, reader HTML, and a review PDF." ;
     ga:order 1 ; ga:showcaseRunner ga:AuthoredShowcaseRunner ; ga:source "showcase/project.ttl" ;
@@ -94,3 +94,27 @@ ex:mkdocs-bootswatch dct:abstract "The original MkDocs Bootswatch Themes sources
 ex:code-highlighting dct:abstract "Python, Bash, JavaScript, TypeScript, JSON, JSON-LD and SPARQL examples use the same offline syntax colours in HTML and PDF. The Code examples and syntax colours guide explains fence names and practical Markdown examples." .
 
 ex:dprod dct:abstract "The EKGF community and OMG submission-preview PDF editions share the same pinned repository revision and technical chapters. Publication profiles select different front matter and publisher branding. The submission preview does not claim OMG approval or an assigned OMG document number. A separate illustrated overview explains the bigger picture and adoption path." .
+
+ex:dotenvage a ga:Showcase ; ga:slug "dotenvage" ;
+    dct:title "Rust crate without configuration" ;
+    dct:description "A Rust crate with Node.js and Python bindings, published from a pinned commit with the zero-configuration defaults. The README becomes the home page; binding guides, search and provenance need no GraphArch files in the repository." ;
+    ga:order 13 ; ga:showcaseRunner ga:RepositoryShowcaseRunner ; ga:source "dotenvage/showcase.ttl" ;
+    ga:previewPath "site/index.html" ;
+    ga:showcaseInput "Markdown" ;
+    ga:showcaseCapability "Zero configuration", "Search" ;
+    ga:showcaseUseCase "Code project documentation" ;
+    dct:source <https://github.com/legra-ai/dotenvage> ;
+    dct:rights "dotenvage by DataRoad Inc, MIT or Apache-2.0 license. This is a GraphArch rendering of the repository documentation at a pinned commit." ;
+    dct:abstract "Selected README, contributing and binding guides are read from immutable Git blobs at one commit and published with the zero-configuration defaults. No repository file is executed, and agent instructions and build files are not selected. Rust API reference is not yet extracted from rustdoc." .
+
+ex:dr-ts-versioning a ga:Showcase ; ga:slug "dr-ts-versioning" ;
+    dct:title "TypeScript package without configuration" ;
+    dct:description "A TypeScript command-line package, published from a pinned commit with the zero-configuration defaults: README home page, guides, changelog, search and provenance." ;
+    ga:order 14 ; ga:showcaseRunner ga:RepositoryShowcaseRunner ; ga:source "dr-ts-versioning/showcase.ttl" ;
+    ga:previewPath "site/index.html" ;
+    ga:showcaseInput "Markdown" ;
+    ga:showcaseCapability "Zero configuration", "Search" ;
+    ga:showcaseUseCase "Code project documentation" ;
+    dct:source <https://github.com/legra-ai/dr-ts-versioning> ;
+    dct:rights "@dataroadinc/versioning by DataRoad Inc, MIT license. This is a GraphArch rendering of the repository documentation at a pinned commit." ;
+    dct:abstract "The README, changelog and guides are read from immutable Git blobs at one commit and published with the zero-configuration defaults, without running package scripts. The authored API reference is published as written; TypeScript declarations are not yet extracted." .

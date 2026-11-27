@@ -138,6 +138,25 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
         ),
     )
     .await?;
+    // Zero-configuration repository showcases read synthetic local
+    // repositories with the selected paths their live configuration names.
+    let dotenvage_repository = repository_showcase(
+        &source.path().join("examples/dotenvage/showcase.ttl"),
+        "urn:grapharch:showcase:dotenvage",
+        &[
+            "README.md",
+            "CONTRIBUTING.md",
+            "npm/README.md",
+            "python/README.md",
+        ],
+        &["LICENSE-MIT", "LICENSE-APACHE"],
+    )?;
+    let versioning_repository = repository_showcase(
+        &source.path().join("examples/dr-ts-versioning/showcase.ttl"),
+        "urn:grapharch:showcase:dr-ts-versioning",
+        &["README.md", "CHANGELOG.md", "docs/cli-usage.md"],
+        &["LICENSE"],
+    )?;
     let docs = source.path().join("docs");
     std::fs::create_dir(&docs)?;
     std::fs::write(
@@ -217,6 +236,8 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     tokio::fs::remove_dir_all(fibo_repository.path()).await?;
     dprod.close()?;
     tokio::fs::remove_dir_all(mkdocs_repository.path()).await?;
+    tokio::fs::remove_dir_all(dotenvage_repository.path()).await?;
+    tokio::fs::remove_dir_all(versioning_repository.path()).await?;
     let restored = Dataset::memory()?;
     restored.import(archive).await?;
     let PublishOutcome::Published(publication) = Publisher::new(restored)
@@ -236,7 +257,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
     }
     let document = scraper::Html::parse_document(&html);
     let cards = scraper::Selector::parse(".showcase-card").unwrap();
-    assert_eq!(document.select(&cards).count(), 12);
+    assert_eq!(document.select(&cards).count(), 14);
     assert!(!html.contains("Open HTML"));
     assert!(!html.contains("class=\"site-navigation\""));
     assert!(html.contains("gallery-home"));
@@ -260,7 +281,7 @@ async fn gallery_preserves_live_showcase_artifacts_in_the_exported_graph()
                     .unwrap()
             )
             .count(),
-        12
+        14
     );
     let mut detail_html = String::new();
     for link in
@@ -389,4 +410,53 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Create a local Git repository holding Markdown `pages` and `licenses`, and
+/// point the showcase at it with the same materialized selection.
+fn repository_showcase(
+    configuration: &Path,
+    id: &str,
+    pages: &[&str],
+    licenses: &[&str],
+) -> Result<tempfile::TempDir> {
+    let repository = tempfile::tempdir()?;
+    let root = repository.path();
+    for page in pages {
+        let path = root.join(page);
+        std::fs::create_dir_all(path.parent().unwrap())?;
+        std::fs::write(&path, format!("# {page}\n\nRepository page.\n"))?;
+    }
+    for license in licenses {
+        std::fs::write(
+            root.join(license),
+            "Copyright original authors. Redistribution permitted.\n",
+        )?;
+    }
+    family_repository::git(root, &["init", "-b", "main"])?;
+    family_repository::git(root, &["add", "."])?;
+    family_repository::git(root, &["commit", "-m", "Repository fixture"])?;
+    let commit = family_repository::git(root, &["rev-parse", "HEAD"])?;
+    let url = url::Url::from_directory_path(root).unwrap();
+    let selected = pages
+        .iter()
+        .chain(licenses)
+        .map(|path| format!("\"{path}\""))
+        .collect::<Vec<_>>()
+        .join(", ");
+    std::fs::write(
+        configuration,
+        format!(
+            "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<{id}> a \
+             ga:Showcase ; ga:gitRepository \"{url}\" ; ga:gitCommit \
+             \"{commit}\" ; ga:materializedPath {selected} ; ga:licensePath \
+             {} .\n",
+            licenses
+                .iter()
+                .map(|path| format!("\"{path}\""))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    )?;
+    Ok(repository)
 }

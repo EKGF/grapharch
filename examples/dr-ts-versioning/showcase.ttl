@@ -1,0 +1,14 @@
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+
+# A TypeScript command-line package published with the zero-configuration
+# defaults from one pinned commit. docs/README.md links to package.json, which
+# is not documentation, so the index of guides is not selected.
+<urn:grapharch:showcase:dr-ts-versioning> a ga:Showcase ;
+    ga:gitRepository "https://github.com/legra-ai/dr-ts-versioning.git" ;
+    ga:gitCommit "2249068ccef37e996e00a394e18c0ae9ac67b952" ;
+    ga:materializedPath "README.md", "CHANGELOG.md", "LICENSE",
+        "docs/api-reference.md", "docs/changelog-generation.md",
+        "docs/cli-usage.md", "docs/conventional-commits.md",
+        "docs/development.md", "docs/formatting.md",
+        "docs/markdown-formatting.md", "docs/versioning-system.md" ;
+    ga:licensePath "LICENSE" .

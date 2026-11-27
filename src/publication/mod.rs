@@ -36,6 +36,7 @@ pub mod scope;
 mod showcase_configuration;
 pub mod showcases;
 mod showcases_mkdocs;
+mod showcases_repository;
 mod showcases_revision;
 mod showcases_semantic;
 mod table_subject;
