@@ -18,7 +18,48 @@ pub(super) struct BuildRun {
     run_id:     u64,
     attempt:    u64,
     workflow:   String,
-    actor:      String,
+    actor:      Option<GitHubLogin>,
+}
+
+/// The login that triggered a run, exactly as GitHub reported it.
+///
+/// GitHub decides which logins exist (ordinary users, `[bot]` apps and
+/// Enterprise Managed Users with their `_<shortcode>` suffix), so any
+/// non-empty value is recorded; the actor never fails a build.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct GitHubLogin(String);
+
+impl GitHubLogin {
+    /// Recognize a reported login; an absent or blank one records no actor.
+    fn new(value: Option<String>) -> Option<Self> {
+        value
+            .map(|value| value.trim().to_owned())
+            .filter(|value| {
+                !value.is_empty() &&
+                    value.len() <= 256 &&
+                    !value.chars().any(char::is_control)
+            })
+            .map(Self)
+    }
+
+    /// The agent IRI beneath the GitHub server, with the login as one
+    /// percent-encoded path segment.
+    fn iri(&self, server: &url::Url) -> Result<NamedNode> {
+        let segment = self
+            .0
+            .bytes()
+            .map(|b| {
+                if b.is_ascii_alphanumeric() || b"-_.~".contains(&b) {
+                    char::from(b).to_string()
+                } else {
+                    format!("%{b:02X}")
+                }
+            })
+            .collect::<String>();
+        Ok(NamedNode::new(format!("{server}{segment}"))?)
+    }
+
+    fn as_str(&self) -> &str { &self.0 }
 }
 
 impl BuildRun {
@@ -72,16 +113,7 @@ impl BuildRun {
             workflow.len() <= 256 && !workflow.chars().any(char::is_control),
             "invalid GITHUB_WORKFLOW"
         );
-        let actor = required("GITHUB_ACTOR")?;
-        ensure!(
-            actor.len() <= 64 &&
-                actor
-                    .strip_suffix("[bot]")
-                    .unwrap_or(&actor)
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b == b'-'),
-            "invalid GITHUB_ACTOR"
-        );
+        let actor = GitHubLogin::new(lookup("GITHUB_ACTOR"));
         Ok(Some(Self {
             server,
             repository,
@@ -107,7 +139,6 @@ impl BuildRun {
             self.server.as_str(),
             "github-actions",
         ]);
-        let actor = NamedNode::new(format!("{}{}", self.server, self.actor))?;
         let quad = |s: &NamedNode, p: &str, o: oxrdf::Term| -> Result<Quad> {
             Ok(Quad::new(
                 s.clone(),
@@ -120,7 +151,7 @@ impl BuildRun {
             Ok(NamedNode::new(value)?.into())
         };
         let text = |value: &str| Literal::new_simple_literal(value).into();
-        Ok(vec![
+        let mut quads = vec![
             quad(&run, RDF_TYPE, iri(format!("{PROV}Activity"))?)?,
             quad(
                 &run,
@@ -141,19 +172,25 @@ impl BuildRun {
                 service.clone().into(),
             )?,
             quad(
-                &run,
-                &format!("{PROV}wasAssociatedWith"),
-                actor.clone().into(),
-            )?,
-            quad(
                 &service,
                 RDF_TYPE,
                 iri(format!("{PROV}SoftwareAgent"))?,
             )?,
             quad(&service, RDFS_LABEL, text("GitHub Actions"))?,
-            quad(&actor, RDF_TYPE, iri(format!("{PROV}Agent"))?)?,
-            quad(&actor, RDFS_LABEL, text(&self.actor))?,
-        ])
+        ];
+        if let Some(login) = &self.actor {
+            let actor = login.iri(&self.server)?;
+            quads.extend([
+                quad(
+                    &run,
+                    &format!("{PROV}wasAssociatedWith"),
+                    actor.clone().into(),
+                )?,
+                quad(&actor, RDF_TYPE, iri(format!("{PROV}Agent"))?)?,
+                quad(&actor, RDFS_LABEL, text(login.as_str()))?,
+            ]);
+        }
+        Ok(quads)
     }
 }
 
@@ -206,12 +243,59 @@ mod tests {
             (name != "GITHUB_RUN_ID").then(|| lookup(name)).flatten()
         };
         assert!(BuildRun::from_lookup(missing).is_err());
-        let invalid = |name: &str| {
+    }
+
+    fn with_actor(actor: Option<&'static str>) -> BuildRun {
+        BuildRun::from_lookup(move |name| {
             match name {
-                "GITHUB_ACTOR" => Some("not a login".into()),
+                "GITHUB_ACTOR" => actor.map(Into::into),
                 _ => lookup(name),
             }
-        };
-        assert!(BuildRun::from_lookup(invalid).is_err());
+        })
+        .unwrap()
+        .unwrap()
+    }
+
+    fn actor_iris(run: &BuildRun) -> Vec<String> {
+        let commit = NamedNode::new("urn:commit").unwrap();
+        run.quads(&commit)
+            .unwrap()
+            .into_iter()
+            .filter(|quad| {
+                quad.object ==
+                    NamedNode::new("http://www.w3.org/ns/prov#Agent")
+                        .unwrap()
+                        .into()
+            })
+            .map(|quad| quad.subject.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn enterprise_managed_user_login_is_recorded() {
+        let run = with_actor(Some("name-surname_shortcode"));
+        assert_eq!(actor_iris(&run), [
+            "<https://github.com/name-surname_shortcode>"
+        ]);
+    }
+
+    #[test]
+    fn bot_and_unusual_logins_are_recorded_without_failing() {
+        assert_eq!(
+            actor_iris(&with_actor(Some("dependabot[bot]"))),
+            ["<https://github.com/dependabot%5Bbot%5D>"]
+        );
+        assert_eq!(actor_iris(&with_actor(Some("not a login"))), [
+            "<https://github.com/not%20a%20login>"
+        ]);
+    }
+
+    #[test]
+    fn missing_actor_records_the_run_without_an_agent() {
+        for actor in [None, Some(""), Some("  ")] {
+            let run = with_actor(actor);
+            assert!(actor_iris(&run).is_empty());
+            assert!(run.url().ends_with("/attempts/2"));
+        }
     }
 }

@@ -10,7 +10,7 @@ use {
         shell,
     },
     crate::publication::render::{markup::html_escape as esc, model::Plan},
-    anyhow::{Result, ensure},
+    anyhow::{Context, Result, ensure},
     oxrdf::NamedNode,
     std::path::Path,
 };
@@ -62,7 +62,8 @@ impl PageWriter<'_> {
                     plan, first, last, body,
                 )
                 .await?;
-            let content = markdown::render(&contextual, page, catalog)?;
+            let content = markdown::render(&contextual, page, catalog)
+                .with_context(|| format!("failed to render {}", page.source))?;
             let prefix = "../".repeat(page.route.matches('/').count());
             let navigation = catalog.navigation(id, &prefix)?;
             let gallery = gallery::render(plan, catalog, id, &prefix).await?;

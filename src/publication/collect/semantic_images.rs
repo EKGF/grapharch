@@ -7,41 +7,48 @@ use {
 };
 
 pub(super) fn normalize(body: &str) -> Result<String> {
+    let objects = Regex::new(r"(?is)<object\b[^>]*>.*?</object\s*>")?;
+    if !objects.is_match(body) {
+        return Ok(body.to_owned());
+    }
     ensure!(
         body.len() <= 1024 * 1024,
         "SVG object source exceeds 1 MiB"
     );
-    // bounded: protected ranges belong to one capped authored Markdown file.
-    let mut protected = Vec::new();
-    let mut block = None;
-    for (event, range) in
+    // Code spans and blocks arrive in source order and never overlap, so
+    // they are merged with the ordered object matches as a stream: nothing
+    // proportional to the number of code ranges is retained.
+    let mut protected =
         Parser::new_ext(body, crate::publication::markdown::options())
             .into_offset_iter()
-    {
-        match event {
-            Event::Start(Tag::CodeBlock(_)) => block = Some(range.start),
-            Event::End(TagEnd::CodeBlock) => {
-                if let Some(start) = block.take() {
-                    protected.push(start..range.end);
-                }
-            },
-            Event::Code(_) => protected.push(range),
-            _ => {},
-        }
-        ensure!(
-            protected.len() <= 1024,
-            "SVG object source exceeds code-range budget"
-        );
-    }
-    let objects = Regex::new(r"(?is)<object\b[^>]*>.*?</object\s*>")?;
+            .scan(None, |block, (event, range)| {
+                Some(match event {
+                    Event::Start(Tag::CodeBlock(_)) => {
+                        *block = Some(range.start);
+                        None
+                    },
+                    Event::End(TagEnd::CodeBlock) => {
+                        block.take().map(|start| start..range.end)
+                    },
+                    Event::Code(_) => Some(range),
+                    _ => None,
+                })
+            })
+            .flatten()
+            .peekable();
     let selector = Selector::parse("object").expect("constant object selector");
     let mut result = String::new();
     let mut offset = 0;
     let mut count = 0;
     for matched in objects.find_iter(body) {
-        if protected.iter().any(|range| {
-            range.start <= matched.start() && matched.start() < range.end
-        }) {
+        while protected
+            .next_if(|range| range.end <= matched.start())
+            .is_some()
+        {}
+        if protected
+            .peek()
+            .is_some_and(|range| range.start <= matched.start())
+        {
             continue;
         }
         count += 1;
@@ -131,5 +138,26 @@ mod tests {
         let inline = "An example: `<object data=\"a.svg\" \
                       type=\"image/svg+xml\"></object>`.";
         assert_eq!(normalize(inline).unwrap(), inline);
+    }
+
+    #[test]
+    fn many_code_spans_without_objects_are_accepted() {
+        let source = "Use `a` and `b`.\n".repeat(1300);
+        assert_eq!(normalize(&source).unwrap(), source);
+    }
+
+    #[test]
+    fn many_code_spans_around_an_object_keep_object_detection() {
+        let mut source = "Use `a` and `b`.\n".repeat(1300);
+        source.push_str(
+            "\n<object data=\"a.svg\" type=\"image/svg+xml\"></object>\n",
+        );
+        source.push_str(&"`<object data=\"b.svg\"></object>`\n".repeat(3));
+        let normalized = normalize(&source).unwrap();
+        assert!(normalized.contains("![Diagram](<a.svg>"));
+        assert_eq!(
+            normalized.matches("<object data=\"b.svg\">").count(),
+            3
+        );
     }
 }
