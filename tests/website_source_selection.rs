@@ -116,3 +116,75 @@ async fn content_root_is_independent_from_project_dependencies() -> Result<()> {
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn pattern_exclusions_match_names_and_directories_at_any_depth()
+-> Result<()> {
+    let root = tempfile::tempdir()?;
+    for (path, text) in [
+        ("index.md", "# Kept home\n"),
+        ("AGENTS.md", "# Excluded agent notes root\n"),
+        (
+            "guide/AGENTS.md",
+            "# Excluded agent notes nested\n",
+        ),
+        ("guide/tests/case.md", "# Excluded nested tests\n"),
+        ("tests/case.md", "# Excluded root tests\n"),
+        ("guide/tests.md", "# Kept tests page\n"),
+        (
+            "guide/tests-notes/note.md",
+            "# Kept similar directory\n",
+        ),
+        ("guide/AGENTS.md.md", "# Kept similar name\n"),
+    ] {
+        let file = root.path().join(path);
+        tokio::fs::create_dir_all(file.parent().unwrap()).await?;
+        tokio::fs::write(file, text).await?;
+    }
+    let defs = root.path().join("project.ttl");
+    let config = r#"
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:project> a ga:Project; ga:target <urn:target>; ga:excludeSourcePattern "**/AGENTS.md", "**/tests/" .
+<urn:target> a ga:Target; ga:scope <urn:scope>; ga:profile <urn:profile>; ga:renderer <https://ekgf.org/ontology/grapharch#WebsiteRenderer>; ga:destination "site" .
+<urn:scope> a ga:Scope . <urn:profile> a ga:Profile .
+"#;
+    tokio::fs::write(&defs, config).await?;
+    let built =
+        website::collect(root.path(), &defs, "urn:project", "urn:target", 2)
+            .await?;
+    let archive = root.path().join("output.nq");
+    built.dataset.export(archive.clone()).await?;
+    let retained = tokio::fs::read_to_string(archive).await?;
+    assert!(!retained.contains("# Excluded"), "{retained}");
+    for kept in [
+        "# Kept home",
+        "# Kept tests page",
+        "# Kept similar directory",
+        "# Kept similar name",
+    ] {
+        assert!(retained.contains(kept), "{kept}");
+    }
+    assert!(retained.contains("excludeSourcePattern"));
+    for unsafe_pattern in ["../**/x.md", "/abs/**", "a\\\\b"] {
+        tokio::fs::write(
+            &defs,
+            config.replace("\"**/tests/\"", &format!("\"{unsafe_pattern}\"")),
+        )
+        .await?;
+        let error = website::collect(
+            root.path(),
+            &defs,
+            "urn:project",
+            "urn:target",
+            2,
+        )
+        .await
+        .err()
+        .expect("unsafe pattern rejected");
+        assert!(
+            error.to_string().contains("source exclusion pattern"),
+            "{unsafe_pattern}: {error:#}"
+        );
+    }
+    Ok(())
+}

@@ -48,6 +48,8 @@ pub(super) struct Catalog {
     pub targets:          crate::publication::target_links::TargetLinks,
     /// The website's own public locations, for links into the website.
     pub bases:            super::site_base::SiteBases,
+    /// Where links to uncollected repository files point, when declared.
+    pub source_links:     Option<crate::publication::source_link::SourceLinks>,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -66,6 +68,12 @@ impl Catalog {
             projections:      HashMap::new(),
             targets:          plan.targets.clone(),
             bases:            super::site_base::SiteBases::read(plan).await?,
+            source_links:
+                crate::publication::source_link::SourceLinks::read(
+                    &plan.source,
+                    &plan.project,
+                )
+                .await?,
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;

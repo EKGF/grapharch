@@ -1930,6 +1930,46 @@ ga:excludeSourcePath a owl:DatatypeProperty ;
     rdfs:domain ga:Project ;
     rdfs:range xsd:string .
 
+ga:excludeSourcePattern a owl:DatatypeProperty ;
+    rdfs:label "Excluded source pattern"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Excludes every file or directory matching a glob, relative to the project documentation root, from automatic documentation source discovery."@en ;
+    dct:description "Excludes every file or directory matching a glob, relative to the project documentation root, from automatic documentation source discovery."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "A single star stays within one path segment and a double star spans directories, so \"**/AGENTS.md\" matches that name at any depth. A trailing slash restricts the pattern to directories, so \"**/tests/\" excludes every directory named tests and its contents. Patterns are relative without traversal. Exact paths and patterns share one budget of 64 exclusions."@en .
+
+ga:sourceLinkBase a owl:ObjectProperty ;
+    rdfs:label "Source link base"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the HTTPS browse location of a project's repository, under which links from authored pages to repository files that are not collected as pages resolve at the collected source commit."@en ;
+    dct:description "Identifies the HTTPS browse location of a project's repository, under which links from authored pages to repository files that are not collected as pages resolve at the collected source commit."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range rdfs:Resource ;
+    skos:scopeNote "A relative link to an uncollected file renders as <base>/blob/<commit>/<path>, the layout GitHub uses. The path resolves from the linking page and must stay inside the repository. It is separate from ga:repository, which only names the repository for the header source link, so declaring a repository never turns a broken documentation link into an external one. Without this property such a link fails the build."@en .
+
+ga:SourceCheckout a owl:Class ;
+    rdfs:label "Source checkout"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The collected Git commit of a project's documentation source and the documentation root's directory in that repository, recorded so that source links resolve without reading the source again."@en ;
+    dct:description "The collected Git commit of a project's documentation source and the documentation root's directory in that repository, recorded so that source links resolve without reading the source again."@en .
+
+ga:sourceCommit a owl:DatatypeProperty ;
+    rdfs:label "Source commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The full lowercase Git object identifier of the commit from which a source checkout was collected."@en ;
+    dct:description "The full lowercase Git object identifier of the commit from which a source checkout was collected."@en ;
+    rdfs:domain ga:SourceCheckout ;
+    rdfs:range xsd:string .
+
+ga:contentDirectory a owl:DatatypeProperty ;
+    rdfs:label "Content directory"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The slash-separated directory of the documentation root inside the repository of a source checkout; absent when the documentation root is the repository root."@en ;
+    dct:description "The slash-separated directory of the documentation root inside the repository of a source checkout; absent when the documentation root is the repository root."@en ;
+    rdfs:domain ga:SourceCheckout ;
+    rdfs:range xsd:string .
+
 ga:contentPrefix a owl:DatatypeProperty ;
     rdfs:label "Enclosing content prefix"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

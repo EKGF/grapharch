@@ -2357,6 +2357,7 @@ dependencies = [
  "fs2",
  "futures",
  "gix",
+ "globset",
  "hayro",
  "hayro-syntax 0.9.0",
  "hex",

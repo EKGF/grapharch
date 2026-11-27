@@ -305,10 +305,19 @@ pub(super) fn link(
         })
     {
         catalog.pages.get(id).unwrap()
+    } else if let Some(links) = &catalog.source_links {
+        // A repository file that is not a page, such as a configuration file
+        // beside a README, links to the collected commit.
+        return links
+            .href(&page.source, value)
+            .map_err(|error| anyhow::anyhow!("{}: {error:#}", page.source));
     } else {
         anyhow::bail!(
-            "{}: unresolved documentation link {value} (source {path})",
-            page.source
+            "{}: unresolved documentation link {value} (source {path}); \
+             declare ga:{} on the project to link repository files that are \
+             not pages",
+            page.source,
+            crate::publication::source_link::SETTING
         )
     };
     let anchor = url.fragment();

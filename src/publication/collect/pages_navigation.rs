@@ -16,7 +16,7 @@ pub(super) struct PagesNavigation {
     pub processor:  NamedNode,
     pub profile:    NamedNode,
     pub root:       PathBuf,
-    pub exclusions: Vec<PathBuf>,
+    pub exclusions: crate::publication::website::exclusions::SourceExclusions,
 }
 #[async_trait]
 impl Collector for PagesNavigation {

@@ -382,6 +382,19 @@ ga:NavigationCollectorShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigationPr
 ga:SourceExclusionsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePath ;
     sh:property [ sh:path ga:excludeSourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] .
 
+ga:SourceExclusionPatternsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePattern ;
+    sh:property [ sh:path ga:excludeSourcePattern ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 2048 ; sh:maxCount 64 ;
+        sh:pattern "^[^/\\\\]" ] .
+
+ga:SourceLinkBaseShape a sh:NodeShape ; sh:targetSubjectsOf ga:sourceLinkBase ;
+    sh:property [ sh:path ga:sourceLinkBase ; sh:nodeKind sh:IRI ; sh:pattern "^https://[^/?#@]+/[^?#]*$" ; sh:maxCount 1 ] .
+
+ga:SourceCheckoutShape a sh:NodeShape ; sh:targetClass ga:SourceCheckout ;
+    sh:property [ sh:path ga:project ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ga:sourceCommit ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:pattern "^([0-9a-f]{40}|[0-9a-f]{64})$" ] ;
+    sh:property [ sh:path ga:contentDirectory ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] .
+
 
 ga:ContainsTargetShape a sh:NodeShape ; sh:targetSubjectsOf ga:containsTarget ;
     sh:property [ sh:path ga:containsTarget ; sh:nodeKind sh:IRI ; sh:class ga:Target ; sh:maxCount 64 ] .
