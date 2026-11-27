@@ -50,13 +50,11 @@ pub(in crate::publication::render) async fn write(
     )?;
     let theme = theme::Theme::read(plan).await?;
     let chrome = site_chrome::Options::read(plan).await?;
-    let colour_tokens = site_chrome::ColourTokens::read(plan).await?.css(
-        if theme.community() {
-            ".theme-ekgf"
-        } else {
-            ":root"
-        },
-    );
+    let tokens = site_chrome::ThemeTokens::read(plan).await?;
+    let theme_tokens = tokens.css(theme.root())?;
+    let status_band =
+        site_chrome::StatusBand::read(plan, tokens.flag("statusRibbon")?)
+            .await?;
     let mut files = vec![
         "style.css".to_owned(),
         ".nojekyll".into(),
@@ -70,7 +68,7 @@ pub(in crate::publication::render) async fn write(
     tokio::fs::write(
         stage.join("style.css"),
         format!(
-            "{}\n{}\n{}\n{}\n{colour_tokens}\n{}\n{}\n{}\n{}\n{keywords}",
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{keywords}\n{theme_tokens}",
             include_str!("style.css"),
             concat!(
                 include_str!("../callouts.css"),
@@ -106,6 +104,7 @@ pub(in crate::publication::render) async fn write(
         navigation: navigation::Navigations::read(plan, &catalog).await?,
         chrome,
         footer: site_chrome::SiteFooter::read(plan).await?,
+        status_band,
     };
     header.metadata.indexes(stage, &catalog, &mut files).await?;
     let pages = PageWriter { plan, stage, catalog: &catalog, header: &header };

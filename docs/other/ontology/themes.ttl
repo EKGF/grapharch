@@ -126,6 +126,7 @@ ga:SpecificationTheme a ga:Theme ;
     ga:coverBlock <https://ekgf.org/ontology/grapharch/theme/specification#top>, <https://ekgf.org/ontology/grapharch/theme/specification#publisher>, <https://ekgf.org/ontology/grapharch/theme/specification#publisher-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#publisher-rule>, <https://ekgf.org/ontology/grapharch/theme/specification#title-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#title>, <https://ekgf.org/ontology/grapharch/theme/specification#subtitle>, <https://ekgf.org/ontology/grapharch/theme/specification#bar-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#bar>, <https://ekgf.org/ontology/grapharch/theme/specification#summary-gap>, <https://ekgf.org/ontology/grapharch/theme/specification#summary> ;
     ga:accent "#005a9c" ;
     ga:authorityAccent "true"^^xsd:boolean ;
+    ga:statusRibbon "true"^^xsd:boolean ;
     ga:bodySize "10pt" ;
     ga:headingColor "accent" ;
     ga:heading1Size "19pt" ;
