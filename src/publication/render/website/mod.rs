@@ -16,12 +16,14 @@ mod project;
 mod redirects;
 mod report;
 mod repository;
+mod repository_path;
 mod search;
 mod shell;
 mod site;
 mod site_base;
 mod site_chrome;
 mod site_link;
+mod site_registry;
 mod theme;
 
 pub(super) use {budget::MAX_ARTIFACTS, site::write};

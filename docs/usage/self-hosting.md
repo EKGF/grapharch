@@ -230,6 +230,32 @@ another website. Several websites that share one primary navigation, where
 entries lead to sibling sites with `ga:url`, therefore use the `documentation`
 layout with explicit primary and sidebar trees.
 
+### Link sibling websites
+
+Sites of one family often link each other's repositories, for example
+`https://github.com/example-org/models/blob/main/docs/guide/intro.md`. Declare
+the family once, as an RDF list on the profile, and such links lead to the
+sibling website instead:
+
+```turtle
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+<urn:profile> ga:siteRegistry ( <urn:records-site> <urn:models-site> ) .
+<urn:records-site> a ga:RegisteredSite ;
+    ga:repository <https://github.com/example-org/records> ;
+    ga:url "https://example-org.github.io/records/" .
+<urn:models-site> a ga:RegisteredSite ;
+    ga:repository <https://github.com/example-org/models> ;
+    ga:url "https://example-org.github.io/models/" ;
+    ga:contentSource "docs" ; ga:gitRef "main" .
+```
+
+A link to a registered repository leads to its site's home. A link to a
+Markdown file beneath `ga:contentSource`, at `ga:gitRef` when declared, leads to
+the page published from it, keeping its fragment. For the site's own repository
+the page must also exist in this build. Source files, directories, issues,
+files outside the content directory and other references stay on the code host.
+A shared definitions generator can emit the same registry for every site.
+
 Configured trees replace automatic navigation only in their selected regions.
 Existing page-derived navigation still applies when no explicit sidebar tree is
 selected. Entry destinations must be selected pages, anchors must exist, sibling

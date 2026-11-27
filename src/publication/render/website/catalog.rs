@@ -50,6 +50,8 @@ pub(super) struct Catalog {
     pub bases:            super::site_base::SiteBases,
     /// Where links to uncollected repository files point, when declared.
     pub source_links:     Option<crate::publication::source_link::SourceLinks>,
+    /// Registered sibling websites that repository links lead to.
+    pub siblings:         super::site_registry::SiteRegistry,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -73,6 +75,8 @@ impl Catalog {
                     &plan.source,
                     &plan.project,
                 )
+                .await?,
+            siblings:         super::site_registry::SiteRegistry::read(plan)
                 .await?,
         };
         let mut rows = plan.entries().await?;

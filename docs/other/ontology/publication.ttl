@@ -666,7 +666,8 @@ ga:repository a owl:ObjectProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Identifies the source repository of a documentation project, enabling source links and repository-specific presentation."@en ;
     dct:description "Identifies the source repository of a documentation project, enabling source links and repository-specific presentation."@en ;
-    rdfs:domain ga:Project ;
+    skos:scopeNote "On a ga:RegisteredSite it names the repository a sibling website is published from."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Project ga:RegisteredSite ) ] ;
     rdfs:range rdfs:Resource .
 
 ga:showcase a owl:ObjectProperty ;
@@ -792,7 +793,7 @@ ga:gitRef a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
     dct:description "Selects the branch, tag, commit, or HEAD reference read by a configured Git collector; the concrete observed commit remains recorded in the collected source provenance."@en ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:Showcase ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:CollectorUse ga:Showcase ga:RegisteredSite ) ] ;
     rdfs:range xsd:string ;
     skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> .\n<urn:example:governance-source> a ga:CollectorUse ;\n    ga:collectorType ga:GitRdfFileCollector ;\n    ga:source \"https://github.com/EKGF/ekg-ontologies.git\" ;\n    ga:sourcePath \"ekgf-artifact-governance.ttl\" ;\n    ga:gitRef \"HEAD\" ."@en .
 
@@ -1992,7 +1993,8 @@ ga:contentSource a owl:DatatypeProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
     dct:description "Names the directory containing authored documentation pages relative to the project source root, independently of configured RDF and other source dependencies."@en ;
-    rdfs:domain ga:Project ; rdfs:range xsd:string .
+    skos:scopeNote "On a ga:RegisteredSite it names the directory of that repository whose Markdown pages the sibling website publishes."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Project ga:RegisteredSite ) ] ; rdfs:range xsd:string .
 
 ga:containsTarget a owl:ObjectProperty ;
     rdfs:label "Contains target"@en ;
@@ -3692,3 +3694,20 @@ ga:wordmark a owl:DatatypeProperty ;
     dct:description "Gives the visible text shown beside a brand logo image."@en ;
     rdfs:domain ga:BrandMark ;
     rdfs:range xsd:string .
+
+ga:RegisteredSite a owl:Class ;
+    rdfs:label "Registered sibling website"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A website of a family of documentation sites, identified by the repository it is published from and the URL it is published at."@en ;
+    dct:description "A website of a family of documentation sites, identified by the repository it is published from and the URL it is published at."@en ;
+    skos:scopeNote "An entry has a ga:repository (an HTTPS repository URL), a ga:url (the absolute HTTP(S) directory URL of the website), an optional ga:contentSource (the directory of its Markdown pages, else the repository root) and an optional ga:gitRef (the published branch; when declared, deep links at other references stay on the code host)."@en .
+
+ga:siteRegistry a owl:ObjectProperty ;
+    rdfs:label "Sibling website registry"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Lists, as an RDF collection of ga:RegisteredSite entries, the websites published from repositories that a website's pages link to."@en ;
+    dct:description "Lists, as an RDF collection of ga:RegisteredSite entries, the websites published from repositories that a website's pages link to."@en ;
+    skos:scopeNote "A Markdown link to a registered repository leads to its website: the repository itself to the site's home, and a Markdown file beneath the content directory, linked as blob/<reference>/<path>, to the page published from it. For the website's own repository the page must exist in the build. All other repository links, such as source files, directories and issues, stay on the code host. Up to 64 websites are supported."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> . <urn:example:profile> ga:siteRegistry ( <urn:example:records-site> ) . <urn:example:records-site> a ga:RegisteredSite ; ga:repository <https://github.com/example-org/records> ; ga:url \"https://example-org.github.io/records/\" ; ga:contentSource \"docs\" ; ga:gitRef \"main\" ."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range rdf:List .
