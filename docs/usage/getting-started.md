@@ -28,7 +28,7 @@ The release platforms are:
 | System | CPU | Requirement |
 | --- | --- | --- |
 | Linux | x64 or ARM64 | glibc 2.28 or newer |
-| macOS | Intel or Apple silicon | macOS 11 or newer |
+| macOS | Apple silicon (ARM64) | macOS 11 or newer; Intel Macs are not supported |
 | Windows | x64 or ARM64 | Native Windows executable |
 
 Musl-based Linux distributions and 32-bit systems are not included in this

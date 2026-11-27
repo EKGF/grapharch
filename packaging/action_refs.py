@@ -31,7 +31,7 @@ def require_complete_publication(jobs):
     reused = latest.get('distribute / verify-artifacts', {}).get('conclusion') == 'success'
     if not (native_ready or reused) or any(latest.get(name, {}).get('conclusion') != 'success'
                                          for name in required):
-        raise ValueError('Action references require all six artifacts and every publication channel to succeed; skipped is not published')
+        raise ValueError('Action references require every native artifact and every publication channel to succeed; skipped is not published')
 
 
 def verify_publication_run():

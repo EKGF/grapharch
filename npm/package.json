@@ -27,7 +27,6 @@
   "optionalDependencies": {
     "@ekgf/grapharch-linux-x64": "0.2.31",
     "@ekgf/grapharch-linux-arm64": "0.2.31",
-    "@ekgf/grapharch-darwin-x64": "0.2.31",
     "@ekgf/grapharch-darwin-arm64": "0.2.31",
     "@ekgf/grapharch-win32-x64": "0.2.31",
     "@ekgf/grapharch-win32-arm64": "0.2.31"

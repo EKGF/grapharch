@@ -11,7 +11,7 @@ test('selects only a declared operating system, architecture, and libc', () => {
   assert.equal(platformPackage({platform:'darwin', arch:'arm64'}), '@ekgf/grapharch-darwin-arm64');
   assert.equal(platformPackage({platform:'win32', arch:'x64'}), '@ekgf/grapharch-win32-x64');
   assert.equal(platformPackage({platform:'linux', arch:'arm64', glibc:'2.40'}), '@ekgf/grapharch-linux-arm64');
-  assert.equal(platformPackage({platform:'darwin', arch:'x64'}), '@ekgf/grapharch-darwin-x64');
+  assert.throws(() => platformPackage({platform:'darwin', arch:'x64'}), /unsupported platform darwin\/x64/);
   assert.equal(platformPackage({platform:'win32', arch:'arm64'}), '@ekgf/grapharch-win32-arm64');
   assert.throws(() => platformPackage({platform:'linux', arch:'x64'}), /glibc/);
   assert.throws(() => platformPackage({platform:'linux', arch:'x64', glibc:'2.17'}), /2.28/);
