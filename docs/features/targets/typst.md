@@ -69,6 +69,35 @@ the publisher's accent colour), `ga:OverviewTheme`, `ga:EkgfTheme` and
 The EKGF themes select the EKGF website identity; for PDF they use the reader
 tokens.
 
+### Themes on websites
+
+Every catalogue theme also publishes a website. The reader and EKGF themes are
+website skins: they own their screen colours and typography. A theme refining
+a skin, such as `ga:SpecificationTheme`, `ga:OverviewTheme` or a consumer
+theme, overrides the skin with the screen tokens it declares; the most specific
+declaration wins. `ga:SpecificationTheme` thus gives a website the publisher's
+accent (`ga:authorityAccent` with the publisher's `ga:accentColor`), accent
+headings, grid tables and, when the target declares `ga:publicationStatus`, a
+vertical status band (`ga:statusRibbon`) with the publisher's acronym.
+
+Screen tokens: `ga:accent`, `ga:authorityAccent`, `ga:statusRibbon`,
+`ga:inkColor`, `ga:mutedColor`, `ga:ruleColor`, `ga:panelColor`,
+`ga:headingColor`, `ga:linkColor`, `ga:linkUnderline`, `ga:bodyFont`,
+`ga:justify`, `ga:hyphenate`, `ga:headingFont`, `ga:heading1Weight`,
+`ga:heading2Weight`, `ga:tableHeaderFill`, `ga:tableHeaderText`, `ga:tableGrid`,
+`ga:tableRuleColor`, `ga:captionFont`, `ga:captionBold`,
+`ga:tableCaptionAbove`, `ga:figureCaptionAlign`, `ga:codeFont`, `ga:codeFill`,
+`ga:codeRuleColor`, `ga:codeHighlight`, `ga:quoteRuleColor`,
+`ga:tintedCallouts`, `ga:normativeKeywordStyle` and `ga:footerColor`. Colours
+may refer to `accent` and `accent-tint` as in PDF. A font names a family the
+reader's browser has; GraphArch does not ship web fonts for theme tokens.
+
+All other tokens are print-only: paper and margins, print type sizes and
+spacing, heading numbering and page breaks, page numbers and running footers,
+contents, annexes, notices, covers, and PDF class diagram fonts and fills.
+Websites keep their responsive type scale. A website validates its screen
+tokens; print tokens are validated when a PDF is rendered.
+
 A consumer theme refines a catalogue theme with `ga:baseTheme` and declares
 only the tokens it changes:
 

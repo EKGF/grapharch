@@ -10,12 +10,13 @@ mod pdf;
 mod tokens;
 mod values;
 
-#[cfg(test)]
-pub(crate) use pdf::catalogue_typst;
 pub(crate) use {
     builtin::Builtin,
     cover::{CoverBlock, CoverElement, DateFormat},
     keyword_style::KeywordStyle,
     lineage::Lineage,
     pdf::PdfTheme,
+    values::boolean,
 };
+#[cfg(test)]
+pub(crate) use {pdf::catalogue_typst, tokens::TOKENS};

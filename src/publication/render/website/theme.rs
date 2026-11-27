@@ -16,18 +16,26 @@ pub(super) enum Theme {
 
 impl Theme {
     pub async fn read(plan: &Plan) -> Result<Self> {
-        match Lineage::read(&plan.source, &plan.profile, Builtin::Reader)
-            .await?
-            .builtin()
-        {
-            Builtin::Reader => Ok(Self::Default),
-            Builtin::Ekgf => Ok(Self::Ekgf),
-            Builtin::EkgfProject => Ok(Self::EkgfProject),
-            theme => {
-                anyhow::bail!(
-                    "unsupported website presentation theme {theme:?}"
-                )
+        Ok(
+            match Lineage::read(&plan.source, &plan.profile, Builtin::Reader)
+                .await?
+                .builtin()
+            {
+                Builtin::Reader |
+                Builtin::Specification |
+                Builtin::Overview => Self::Default,
+                Builtin::Ekgf => Self::Ekgf,
+                Builtin::EkgfProject => Self::EkgfProject,
             },
+        )
+    }
+
+    /// The selector of the skin's root, where theme tokens apply.
+    pub fn root(self) -> &'static str {
+        if self.community() {
+            ".theme-ekgf"
+        } else {
+            ":root"
         }
     }
 
