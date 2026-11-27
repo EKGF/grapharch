@@ -19,5 +19,8 @@ main{min-width:0;padding:36px 0 20px}.breadcrumbs{display:flex;flex-wrap:wrap;al
 .report-layout .self-link{margin-left:.35em;font-size:.65em;text-decoration:none;font-weight:400}
 .report-layout .self-link:not(:focus):not(:hover){color:var(--muted)}
 
-/* Table headings retain whole words; the table wrapper owns overflow. */
+/* Table cells retain whole words and short identifiers such as 0002: a cell
+   never shrinks below its longest word, and the table wrapper owns overflow.
+   A word longer than the cell still breaks once the table is at its widest. */
 th{overflow-wrap:normal}
+td{overflow-wrap:break-word;min-width:2.5em}

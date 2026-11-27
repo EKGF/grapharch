@@ -65,7 +65,11 @@ impl Navigations {
             ensure!(
                 !trees.contains_key("sidebar"),
                 "sectioned layout derives its sidebar from page ownership; \
-                 omit independent sidebar navigation"
+                 omit independent sidebar navigation. Each primary tab owns \
+                 this website's pages, so a tab cannot lead to another \
+                 website; for primary navigation that links sibling websites, \
+                 use ga:layout \"documentation\" with explicit primary and \
+                 sidebar trees"
             );
             Some(sections::Sections::read(
                 trees.get("primary").ok_or_else(|| {

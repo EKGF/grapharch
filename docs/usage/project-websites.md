@@ -210,3 +210,9 @@ showcase introductions retain the gallery's active tab. All routes remain the
 existing page routes. Section names and destinations are publication data, not
 renderer-specific product names. The ordinary `documentation` layout continues
 to support independently authored primary, sidebar and footer trees.
+
+Because each primary tab owns a set of this website's pages, a sectioned
+website cannot also take an independent sidebar, and its tabs cannot lead to
+another website. A family of sites whose shared primary navigation links to
+sibling websites uses `ga:layout "documentation"` instead, with explicit
+primary and sidebar trees; see [self-hosted documentation](self-hosting.md).
