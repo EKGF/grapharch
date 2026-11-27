@@ -6,7 +6,7 @@ use {
         typst_markdown,
     },
     crate::publication::theme::{Builtin, PdfTheme},
-    anyhow::Result,
+    anyhow::{Context, Result},
     tokio::{
         fs::File,
         io::{AsyncWriteExt, BufWriter},
@@ -477,12 +477,19 @@ pub(super) async fn entry(
     }
     let body = if entry.format == "text/html" {
         super::native_typst::NativeTypst::new(diagnostics, plan.conformance)
-            .convert(&entry.body)?
+            .convert(&entry.body)
     } else if let Some(markdown) = markdown {
-        typst_markdown::convert(markdown)?
+        typst_markdown::convert(markdown)
     } else {
-        super::code::typst(&entry.body, code_language(&entry.format)?)?
-    };
+        code_language(&entry.format)
+            .and_then(|language| super::code::typst(&entry.body, language))
+    }
+    .with_context(|| {
+        format!(
+            "failed to render {} ({})",
+            entry.fragment, entry.title
+        )
+    })?;
     file.write_all(format!("{body}]#label({})\n", quote(anchor)).as_bytes())
         .await?;
     Ok(())

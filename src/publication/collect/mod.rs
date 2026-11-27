@@ -100,6 +100,8 @@ pub trait Collector: Send + Sync {
         let revision = match self.produce(&mut stream).await {
             Ok(revision) => revision,
             Err(error) => {
+                let error = error
+                    .context(format!("failed to collect {}", identity.source));
                 stream.abort().await?;
                 let diagnostic = super::diagnostics::Diagnostic {
                     severity:        super::diagnostics::Severity::Error,
