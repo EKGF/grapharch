@@ -112,7 +112,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
             }
         }
         let logo = scraper::Selector::parse(
-            ".site-header a.ekgf-identity[href='https://ekgf.org/'] svg",
+            ".site-header a.brand-identity[href='https://ekgf.org/'] img",
         )
         .unwrap();
         let version =
@@ -159,7 +159,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
             assert!(
                 report
                     .select(
-                        &scraper::Selector::parse("body > footer.ekgf-footer")
+                        &scraper::Selector::parse("body > footer.site-footer")
                             .unwrap()
                     )
                     .next()
@@ -169,7 +169,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
 
             let footer = document
                 .select(
-                    &scraper::Selector::parse("body > footer.ekgf-footer")
+                    &scraper::Selector::parse("body > footer.site-footer")
                         .unwrap(),
                 )
                 .next()
@@ -179,7 +179,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
                 );
             let groups = footer
                 .select(
-                    &scraper::Selector::parse(".ekgf-footer-group").unwrap(),
+                    &scraper::Selector::parse(".site-footer-group").unwrap(),
                 )
                 .count();
             assert_eq!(groups, 4);

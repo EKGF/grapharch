@@ -11,7 +11,7 @@ async (page) => {
     check(await page.locator('.site-navigation').count() === 0, 'Documentation rail leaked into project layout');
     check(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `Project overflows at ${width}`);
     if (width > 1150) {
-      const community = await page.locator('.ekgf-identity span,.community-menu nav a').evaluateAll(nodes => nodes.map(node => {
+      const community = await page.locator('.brand-identity span,.community-menu nav a').evaluateAll(nodes => nodes.map(node => {
         const marker = document.createElement('span');
         marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0';
         node.append(marker);

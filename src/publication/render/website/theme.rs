@@ -1,5 +1,6 @@
-//! Source-selected companion website identity; specification authority styling
-//! is separate.
+//! The bundled website skin a profile's theme lineage selects: stylesheet,
+//! colour scheme support and font. Organization identity, header links and
+//! footers are RDF on the profile or its themes; see `site_chrome`.
 use {
     super::super::model::Plan,
     crate::publication::theme::{Builtin, Lineage},
@@ -16,18 +17,26 @@ pub(super) enum Theme {
 
 impl Theme {
     pub async fn read(plan: &Plan) -> Result<Self> {
-        match Lineage::read(&plan.source, &plan.profile, Builtin::Reader)
-            .await?
-            .builtin()
-        {
-            Builtin::Reader => Ok(Self::Default),
-            Builtin::Ekgf => Ok(Self::Ekgf),
-            Builtin::EkgfProject => Ok(Self::EkgfProject),
-            theme => {
-                anyhow::bail!(
-                    "unsupported website presentation theme {theme:?}"
-                )
+        Ok(
+            match Lineage::read(&plan.source, &plan.profile, Builtin::Reader)
+                .await?
+                .builtin()
+            {
+                Builtin::Reader |
+                Builtin::Specification |
+                Builtin::Overview => Self::Default,
+                Builtin::Ekgf => Self::Ekgf,
+                Builtin::EkgfProject => Self::EkgfProject,
             },
+        )
+    }
+
+    /// The selector of the skin's root, where theme tokens apply.
+    pub fn root(self) -> &'static str {
+        if self.community() {
+            ".theme-ekgf"
+        } else {
+            ":root"
         }
     }
 
@@ -37,7 +46,13 @@ impl Theme {
 
     pub fn css(self) -> &'static str {
         match self {
-            Self::Default => include_str!("project.css"),
+            Self::Default => {
+                concat!(
+                    include_str!("project.css"),
+                    "\n",
+                    include_str!("shell.css")
+                )
+            },
             Self::Ekgf => {
                 concat!(
                     include_str!("ekgf.css"),
@@ -80,58 +95,32 @@ impl Theme {
         }
     }
 
-    pub fn identity(self) -> String {
-        if self == Self::Default {
-            return String::new();
-        }
-        format!(
-            "<a class=\"ekgf-identity\" href=\"https://ekgf.org/\" \
-             aria-label=\"EKGF home\">{}<span>EKGF</span></a>",
-            include_str!("brand/ekgf-mark.svg")
-        )
-    }
-
+    /// The header's controls: an optional menu of header links labelled
+    /// for `organization`, then search, the colour scheme toggle of skins
+    /// supporting it, the repository and identity marks.
     pub fn links(
         self,
-        repository: &str,
-        prefix: &str,
-        project_links: &str,
-        search: &str,
+        organization: Option<&str>,
+        header_links: &str,
+        controls: Controls<'_>,
     ) -> String {
-        if self == Self::Default {
-            return format!("{search}{repository}");
-        }
-        format!("<details class=\"community-menu\" open><summary aria-label=\"Toggle community navigation\">Menu</summary><nav class=\"ekgf-header-navigation\" aria-label=\"EKGF\"><a href=\"https://ekgf.org/about/\">About</a><a href=\"https://ekgf.org/quadrants/\">Quadrants</a><a href=\"https://ekgf.org/resources/\">Resources</a><a href=\"https://ekgf.org/membership/\">Membership</a><a href=\"https://ekgf.org/contact/\">Contact</a>{project_links}</nav></details><div class=\"site-links\">{search}<button class=\"color-scheme-toggle\" type=\"button\" aria-label=\"Dark theme\" aria-pressed=\"false\" title=\"Use dark theme\"><svg class=\"theme-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20.5 13.3A8.5 8.5 0 0 1 10.7 3.5 8.5 8.5 0 1 0 20.5 13.3Z\"/></svg><svg class=\"theme-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5\"/></svg></button>{repository}<a class=\"omg-identity\" href=\"https://www.omg.org/\" aria-label=\"Object Management Group\"><img src=\"{prefix}brand/omg-logo.svg\" alt=\"Object Management Group — Standards Development Organization\"></a></div>")
-    }
-
-    pub fn community_footer(self, prefix: &str, credit: bool) -> String {
-        if self == Self::Default {
-            return String::new();
-        }
-        let home = if prefix.is_empty() { "./" } else { prefix };
-        include_str!("community_footer.html")
-            .replace("{prefix}", prefix)
-            .replace("{home}", home)
-            .replace(
-                "{generator_credit}",
-                &if credit {
-                    format!(
-                        "{} · <a href=\"{prefix}provenance.html\">Provenance</\
-                         a> · ",
-                        super::super::credit::html()
-                    )
-                } else {
-                    String::new()
-                },
+        let menu = if header_links.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "<details class=\"community-menu\" open><summary \
+                 aria-label=\"Toggle site navigation\">Menu</summary><nav \
+                 class=\"header-navigation\" \
+                 aria-label=\"{}\">{header_links}</nav></details>",
+                super::super::markup::html_escape(
+                    organization.unwrap_or("Site")
+                )
             )
-    }
-
-    pub fn attribution(self, prefix: &str) -> String {
-        if self == Self::Default {
-            return String::new();
-        }
+        };
+        let toggle = if self.community() { COLOR_TOGGLE } else { "" };
         format!(
-            " · <a href=\"{prefix}brand/NOTICE.txt\">EKGF identity credits</a>"
+            "{menu}<div class=\"site-links\">{}{toggle}{}{}</div>",
+            controls.search, controls.repository, controls.marks
         )
     }
 
@@ -144,16 +133,11 @@ impl Theme {
             return Ok(());
         }
         tokio::fs::create_dir_all(stage.join("brand")).await?;
-        // bounded: five fixed, bundled identity/font/license assets, under 600
-        // KiB combined.
-        let assets: [(&str, &[u8]); 5] = [
+        // bounded: four fixed, bundled font and license assets.
+        let assets: [(&str, &[u8]); 4] = [
             (
                 "brand/roboto.ttf",
                 include_bytes!("brand/roboto.ttf"),
-            ),
-            (
-                "brand/omg-logo.svg",
-                include_bytes!("brand/omg-logo.svg"),
             ),
             ("brand/OFL.txt", include_bytes!("brand/OFL.txt")),
             (
@@ -172,3 +156,20 @@ impl Theme {
         Ok(())
     }
 }
+
+/// The header controls every skin places after its links.
+pub(super) struct Controls<'a> {
+    pub search:     &'a str,
+    pub repository: &'a str,
+    pub marks:      &'a str,
+}
+
+const COLOR_TOGGLE: &str =
+    "<button class=\"color-scheme-toggle\" type=\"button\" aria-label=\"Dark \
+     theme\" aria-pressed=\"false\" title=\"Use dark theme\"><svg \
+     class=\"theme-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path \
+     d=\"M20.5 13.3A8.5 8.5 0 0 1 10.7 3.5 8.5 8.5 0 1 0 20.5 \
+     13.3Z\"/></svg><svg class=\"theme-sun\" viewBox=\"0 0 24 24\" \
+     aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 \
+     2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 \
+     5\"/></svg></button>";

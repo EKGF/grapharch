@@ -74,7 +74,7 @@ async fn ekgf_products_share_the_same_community_shell() -> Result<()> {
             .expect("every EKGF product uses the shared community header")
             .inner_html();
         let footer = doc
-            .select(&scraper::Selector::parse(".ekgf-footer").unwrap())
+            .select(&scraper::Selector::parse(".site-footer").unwrap())
             .next()
             .expect("shared footer")
             .inner_html();
@@ -142,7 +142,7 @@ async fn authored_landing_and_documentation_share_one_theme() -> Result<()> {
     assert!(guide.contains("class=\"site-navigation\""));
     for html in [&home, &guide] {
         assert!(html.contains("community-header-row"));
-        assert!(html.contains("ekgf-footer"));
+        assert!(html.contains("site-footer"));
     }
     Ok(())
 }

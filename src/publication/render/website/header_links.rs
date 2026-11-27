@@ -1,8 +1,10 @@
-//! Ordered project navigation from the publication's pinned profile.
+//! Ordered header links: those of the nearest theme declaring any, such as a
+//! house theme's organization links, then the profile's own project links.
 use {
     super::{
         super::{markup::html_escape, model::Plan},
         site_base::SiteBases,
+        site_chrome::ChromeSources,
         site_link::{HEADER_SCHEMES, SiteLink},
     },
     anyhow::{Result, ensure},
@@ -12,9 +14,29 @@ use {
 pub(super) struct Links(Vec<(u32, String, SiteLink)>);
 
 impl Links {
-    pub async fn read(plan: &Plan) -> Result<Self> {
+    pub async fn read(plan: &Plan, sources: &ChromeSources) -> Result<Self> {
         let bases = SiteBases::read(plan).await?;
-        let mut rows = plan.source.objects(&plan.profile, "headerLink").await?;
+        let mut links = match sources.nearest_theme(plan, "headerLink").await? {
+            Some(theme) => Self::declared(plan, theme, &bases).await?,
+            None => Vec::new(),
+        };
+        links.extend(Self::declared(plan, sources.profile(), &bases).await?);
+        ensure!(
+            links.len() <= 16,
+            "website header exceeds sixteen links"
+        );
+        Ok(Self(links))
+    }
+
+    /// Whether the header has any link.
+    pub fn is_empty(&self) -> bool { self.0.is_empty() }
+
+    async fn declared(
+        plan: &Plan,
+        subject: &NamedNode,
+        bases: &SiteBases,
+    ) -> Result<Vec<(u32, String, SiteLink)>> {
+        let mut rows = plan.source.objects(subject, "headerLink").await?;
         // bounded: a website header permits at most sixteen project links.
         let mut links = Vec::new();
         while let Some(row) = rows.next().await? {
@@ -41,7 +63,7 @@ impl Links {
                 &plan.source.text(link, "url").await?,
                 HEADER_SCHEMES,
                 "header link",
-                &bases,
+                bases,
             )?;
             let order = crate::publication::validation::unsigned(
                 &plan.source.optional(link, "order").await?.ok_or_else(
@@ -56,7 +78,7 @@ impl Links {
             links.push((order, label, url));
         }
         links.sort_by_key(|(order, _, _)| *order);
-        Ok(Self(links))
+        Ok(links)
     }
 
     pub fn html(&self, prefix: &str) -> String {

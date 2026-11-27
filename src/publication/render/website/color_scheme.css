@@ -8,14 +8,14 @@ html[data-color-scheme="dark"] .theme-ekgf{--ink:#e4e4e7;--muted:#b4b4bf;--line:
 html[data-color-scheme="dark"] .theme-moon{display:none}html[data-color-scheme="dark"] .color-scheme-toggle .theme-sun{display:block}
 html[data-color-scheme="dark"] .theme-ekgf a:hover{color:#c4cbff}
 html[data-color-scheme="dark"] .theme-ekgf .site-header{background:#141419f5}
-html[data-color-scheme="dark"] .ekgf-identity,html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a{color:var(--ink)}
-html[data-color-scheme="dark"] .community-menu .ekgf-header-navigation a:hover{background:var(--chrome)}
+html[data-color-scheme="dark"] .brand-identity,html[data-color-scheme="dark"] .community-menu .header-navigation a{color:var(--ink)}
+html[data-color-scheme="dark"] .community-menu .header-navigation a:hover{background:var(--chrome)}
 @media(max-width:1150px){html[data-color-scheme="dark"] .community-menu>nav{background:var(--chrome)}}
 html[data-color-scheme="dark"] .project-identity-row{border-color:var(--line)}
 html[data-color-scheme="dark"] .project-identity-row .brand-version{background:var(--chrome)}
 /* Keep the actual unmodified OMG logo readable, including its small lettering. */
-html[data-color-scheme="dark"] .omg-identity{background:#fff;border-radius:4px;opacity:1}
-html[data-color-scheme="dark"] .theme-ekgf .ekgf-footer,html[data-color-scheme="dark"] .project-navigation{background:var(--chrome)}
+html[data-color-scheme="dark"] .identity-mark{background:#fff;border-radius:4px;opacity:1}
+html[data-color-scheme="dark"] .theme-ekgf .site-footer,html[data-color-scheme="dark"] .project-navigation{background:var(--chrome)}
 html[data-color-scheme="dark"] .theme-ekgf .page-neighbors a,html[data-color-scheme="dark"] .theme-ekgf .showcase-card,html[data-color-scheme="dark"] .project-card{background:var(--chrome)}
 html[data-color-scheme="dark"] .theme-ekgf .page-neighbors a:hover{background:var(--soft);border-color:var(--accent)}
 html[data-color-scheme="dark"] .project-hero{background:linear-gradient(135deg,#252944,var(--paper) 75%)}

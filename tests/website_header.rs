@@ -63,7 +63,7 @@ async fn ekgf_header_uses_community_row_and_source_owned_project_links()
         let document = scraper::Html::parse_document(&html);
         let links = document
             .select(
-                &scraper::Selector::parse("header .ekgf-header-navigation a")
+                &scraper::Selector::parse("header .header-navigation a")
                     .unwrap(),
             )
             .collect::<Vec<_>>();
@@ -90,9 +90,9 @@ async fn ekgf_header_uses_community_row_and_source_owned_project_links()
             "https://example.org/docs/spec/develop/"
         );
         for selector in [
-            "header .community-header-row .ekgf-identity",
+            "header .community-header-row .brand-identity",
             "header .community-header-row .source-link",
-            "header .community-header-row .omg-identity",
+            "header .community-header-row .identity-mark",
             "header .project-identity-row .brand-version",
             "header .community-menu summary",
         ] {

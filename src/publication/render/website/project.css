@@ -181,3 +181,6 @@ html[data-color-scheme="dark"] .project-term-accent h3,html[data-color-scheme="d
 .project-term:hover .project-term-arrow{color:var(--accent)}
 @media(max-width:760px){.project-term-arrow{position:absolute;top:1.5rem;right:1.5rem}}
 .project-section-actions a{flex-direction:row-reverse}
+
+/* Callout headings keep the band's text colour over theme heading colours. */
+.project-section-callout :is(h1,h2,h3,h4){color:inherit}

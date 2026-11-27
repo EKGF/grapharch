@@ -52,7 +52,7 @@ async (page) => {
         const style = getComputedStyle(node);
         return { color: style.color, background: style.backgroundColor };
       };
-      return { body: get('body'), note: get('.markdown-alert-note'), warning: get('.markdown-alert-warning'), footer: get('.ekgf-footer'), code: get('pre'), button: document.querySelector('.color-scheme-toggle').getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > innerWidth };
+      return { body: get('body'), note: get('.markdown-alert-note'), warning: get('.markdown-alert-warning'), footer: get('.site-footer'), code: get('pre'), button: document.querySelector('.color-scheme-toggle').getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > innerWidth };
     });
     check(contrast(geometry.body.color, geometry.body.background) >= 7, 'Dark body contrast');
     check(contrast(geometry.note.color, geometry.note.background) >= 4.5, 'Dark note contrast');

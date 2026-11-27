@@ -1775,10 +1775,10 @@ ga:collectionTerm a owl:AnnotationProperty ;
 ga:headerLink a owl:ObjectProperty ;
     rdfs:label "Website header link"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "Links a website profile to an ordered navigation entry with a title, URL and order."@en ;
-    dct:description "Links a website profile to an ordered navigation entry with a title, URL and order."@en ;
-    skos:scopeNote "Entries use dct:title, ga:url and distinct ga:order values. A ga:url is an absolute http or https URL, or a URL relative to the website root, such as spec/main/, which each page links relative to itself so that it follows the hosting mount. Host-relative paths with a leading slash, backslashes and parent segments are rejected, as is any target resolving outside the website root. Up to sixteen project entries are supported."@en ;
-    rdfs:domain ga:Profile ;
+    skos:definition "Links a website profile or theme to an ordered header link with a title, URL and order."@en ;
+    dct:description "Links a website profile or theme to an ordered header link with a title, URL and order."@en ;
+    skos:scopeNote "Entries use dct:title, ga:url and distinct ga:order values. A ga:url is an absolute http or https URL, or a URL relative to the website root, such as spec/main/, which each page links relative to itself so that it follows the hosting mount. Host-relative paths with a leading slash, backslashes and parent segments are rejected, as is any target resolving outside the website root. A header shows the links of the nearest theme of the profile's lineage declaring any, such as an organization's links, followed by the profile's own links; up to sixteen links in all are supported."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Profile ga:Theme ) ] ;
     rdfs:range rdfs:Resource .
 
 ga:advertised a owl:DatatypeProperty ;
@@ -3620,8 +3620,8 @@ ga:siteFooter a owl:ObjectProperty ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "Selects the authored footer that a website profile renders instead of its theme's footer."@en ;
     dct:description "Selects the authored footer that a website profile renders instead of its theme's footer."@en ;
-    skos:scopeNote "The engine closes the footer with its generator credit and a provenance link."@en ;
-    rdfs:domain ga:Profile ;
+    skos:scopeNote "A theme may declare a footer for every website selecting it; the profile's footer, else that of the nearest theme of its lineage, applies. The engine closes the footer with its generator credit and a provenance link."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Profile ga:Theme ) ] ;
     rdfs:range ga:SiteFooter .
 
 ga:footerGroup a owl:ObjectProperty ;
@@ -3649,3 +3649,46 @@ ga:footerNote a owl:ObjectProperty ;
     dct:description "Adds an ordered line below the footer groups, written as one paragraph of inline Markdown in dct:description."@en ;
     rdfs:domain ga:SiteFooter ;
     rdfs:range rdfs:Resource .
+
+ga:BrandMark a owl:Class ;
+    rdfs:label "Brand mark"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An organization identity shown in a website header: an image linking to the organization, with an accessible name."@en ;
+    dct:description "An organization identity shown in a website header: an image linking to the organization, with an accessible name."@en ;
+    skos:scopeNote "A mark has a dct:title (its accessible name and image text alternative), a ga:url following the ga:headerLink URL rules, a ga:image and, for a brand logo, an optional ga:wordmark. Identity marks also take distinct ga:order values."@en ;
+    skos:example "@prefix ga: <https://ekgf.org/ontology/grapharch#> . @prefix dct: <http://purl.org/dc/terms/> . <urn:example:profile> ga:brandLogo <urn:example:brand> . <urn:example:brand> a ga:BrandMark ; dct:title \"Example\" ; ga:wordmark \"Example\" ; ga:url \"https://example.org/\" ; ga:image \"assets/logo.svg\" ."@en .
+
+ga:brandLogo a owl:ObjectProperty ;
+    rdfs:label "Website brand logo"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the organization identity at the start of a website header."@en ;
+    dct:description "Selects the organization identity at the start of a website header."@en ;
+    skos:scopeNote "The profile's brand logo, else that of the nearest theme of its lineage declaring one, applies; a subject declares at most one."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Profile ga:Theme ) ] ;
+    rdfs:range ga:BrandMark .
+
+ga:identityMark a owl:ObjectProperty ;
+    rdfs:label "Website identity mark"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds a further organization identity, such as an umbrella or standards organization, at the end of a website header."@en ;
+    dct:description "Adds a further organization identity, such as an umbrella or standards organization, at the end of a website header."@en ;
+    skos:scopeNote "The identity marks of the profile, else those of the nearest theme of its lineage declaring any, apply in ga:order; up to four are supported. Narrow screens omit them."@en ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ga:Profile ga:Theme ) ] ;
+    rdfs:range ga:BrandMark .
+
+ga:image a owl:DatatypeProperty ;
+    rdfs:label "Brand mark image"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Gives the image that represents a brand mark in a website header."@en ;
+    dct:description "Gives the image that represents a brand mark in a website header."@en ;
+    skos:scopeNote "The value is a base64 data: URL of an SVG or PNG image of at most 256 KiB, which the website publishes once beside its pages after validating it, or an image URL following the ga:headerLink URL rules."@en ;
+    rdfs:domain ga:BrandMark ;
+    rdfs:range xsd:string .
+
+ga:wordmark a owl:DatatypeProperty ;
+    rdfs:label "Brand wordmark"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Gives the visible text shown beside a brand logo image."@en ;
+    dct:description "Gives the visible text shown beside a brand logo image."@en ;
+    rdfs:domain ga:BrandMark ;
+    rdfs:range xsd:string .

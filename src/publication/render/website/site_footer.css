@@ -1,5 +1,5 @@
 /* Authored footer (ga:siteFooter): titled columns, then centred notes. */
-.site-footer{margin:0;border-top:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:.875rem;line-height:1.43}
+.site-footer{margin:0;border-top:1px solid var(--line);background:var(--paper);color:var(--footer-text,var(--muted));font-size:.875rem;line-height:1.43}
 .site-footer-inner{max-width:80rem;margin:auto;padding:4rem 1.5rem}
 .site-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:2rem}
 .site-footer h2{margin:0 0 1rem;font-size:1.125rem;line-height:1.55;font-weight:600;letter-spacing:0;color:var(--ink)}

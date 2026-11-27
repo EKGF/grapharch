@@ -2,12 +2,14 @@
 use super::{header_links, metadata, navigation, site_chrome, theme};
 
 pub(super) struct Header {
-    pub(super) title:      String,
-    pub(super) repository: String,
-    pub(super) theme:      theme::Theme,
-    pub(super) links:      header_links::Links,
-    pub(super) metadata:   metadata::Metadata,
-    pub(super) navigation: navigation::Navigations,
-    pub(super) chrome:     site_chrome::Options,
-    pub(super) footer:     Option<site_chrome::SiteFooter>,
+    pub(super) title:       String,
+    pub(super) repository:  String,
+    pub(super) theme:       theme::Theme,
+    pub(super) identity:    site_chrome::SiteIdentity,
+    pub(super) links:       header_links::Links,
+    pub(super) metadata:    metadata::Metadata,
+    pub(super) navigation:  navigation::Navigations,
+    pub(super) chrome:      site_chrome::Options,
+    pub(super) footer:      Option<site_chrome::SiteFooter>,
+    pub(super) status_band: site_chrome::StatusBand,
 }
