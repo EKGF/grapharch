@@ -11,10 +11,10 @@ const REST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest";
 const NIL: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil";
 
 /// The most members a configured or source RDF collection may hold.
-pub(super) const MEMBERS: usize = 256;
+pub(crate) const MEMBERS: usize = 256;
 
 /// One RDF collection, identified by its head cell.
-pub(super) struct RdfList<'a> {
+pub(crate) struct RdfList<'a> {
     view: &'a RevisionView,
     head: Term,
 }

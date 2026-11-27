@@ -14,7 +14,7 @@ mod metadata;
 mod names;
 mod pattern;
 mod quality;
-mod rdf_list;
+pub(crate) mod rdf_list;
 mod restriction;
 mod row;
 

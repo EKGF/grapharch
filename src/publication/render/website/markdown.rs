@@ -280,7 +280,9 @@ pub(super) fn link(
                 format!("{prefix}{local}")
             });
         }
-        return Ok(value.into());
+        return Ok(
+            sibling_link(&url, page, catalog).unwrap_or_else(|| value.into())
+        );
     }
     let base = url::Url::parse(&format!(
         "https://grapharch.invalid/{}",
@@ -338,4 +340,40 @@ pub(super) fn link(
         target.route,
         anchor.map(|a| format!("#{a}")).unwrap_or_default()
     ))
+}
+
+/// A repository link to a page of a registered website: a sibling site's
+/// page, or a page of this build when the repository is this site's own.
+fn sibling_link(
+    url: &url::Url,
+    page: &Page,
+    catalog: &Catalog,
+) -> Option<String> {
+    match catalog.siblings.destination(url)? {
+        super::site_registry::Destination::Sibling(site) => Some(site.into()),
+        super::site_registry::Destination::Local(source, anchor) => {
+            let target = if source.is_empty() {
+                catalog
+                    .routes
+                    .get("")
+                    .and_then(|id| catalog.pages.get(id))?
+            } else {
+                catalog.pages.get(catalog.sources.get(&source)?)?
+            };
+            if let Some(anchor) = &anchor {
+                target.headings.contains(anchor.as_str()).then_some(())?;
+            }
+            let prefix = "../".repeat(page.route.matches('/').count());
+            let route = format!("{prefix}{}", target.route);
+            let route = if route.is_empty() {
+                "./".to_owned()
+            } else {
+                route
+            };
+            Some(match anchor {
+                Some(anchor) => format!("{route}#{anchor}"),
+                None => route,
+            })
+        },
+    }
 }
