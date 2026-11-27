@@ -24,6 +24,7 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 | Generate navigable OWL class neighborhoods | [OWL class diagrams](../features/owl-class-diagrams.md) |
 | Document separately declared class validation shapes | [SHACL views of classes](shacl-class-views.md) |
 | Build an ontology family in CI or publish it to Pages | [GitHub Actions](github-actions.md) |
+| Upgrade across a breaking release | [Migration notes](migration.md) |
 
 The `publication` commands provide the current publishing workflows. See
 [Getting started](getting-started.md) for prebuilt installation options, current

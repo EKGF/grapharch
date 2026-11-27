@@ -305,12 +305,19 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.revision || github.sha }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v8
         with:
           name: release-distribution
           path: dist
           run-id: ${{ inputs.artifact-run || github.run_id }}
           github-token: ${{ github.token }}
+      - name: Collect breaking changes since the previous release
+        if: inputs.artifact-run == ''
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+          RELEASE_REVISION: ${{ needs.metadata.outputs.revision }}
+        run: python3 -B packaging/release_notes.py --version "$RELEASE_VERSION" --revision "$RELEASE_REVISION" --output "$RUNNER_TEMP/release-notes.md"
       - uses: actions/checkout@v7
         if: inputs.artifact-run != ''
         with:
@@ -335,6 +342,7 @@ jobs:
           tag_name: v${{ needs.metadata.outputs.version }}
           target_commitish: ${{ needs.metadata.outputs.revision }}
           generate_release_notes: true
+          body_path: ${{ runner.temp }}/release-notes.md
           fail_on_unmatched_files: true
           files: |
             dist/*.zip
