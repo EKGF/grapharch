@@ -223,6 +223,13 @@ its content or change the PDF reading order. `ga:headingAnchor` on an entry
 selects an existing heading on its destination page. Explicit entries can link
 to pages excluded from automatic navigation with `nav_exclude`.
 
+`ga:layout "sectioned"` is the alternative for a single site whose primary
+tabs partition its own pages. It derives each tab's sidebar from page
+ownership, so it refuses an independent sidebar tree, and a tab cannot point to
+another website. Several websites that share one primary navigation, where
+entries lead to sibling sites with `ga:url`, therefore use the `documentation`
+layout with explicit primary and sidebar trees.
+
 Configured trees replace automatic navigation only in their selected regions.
 Existing page-derived navigation still applies when no explicit sidebar tree is
 selected. Entry destinations must be selected pages, anchors must exist, sibling

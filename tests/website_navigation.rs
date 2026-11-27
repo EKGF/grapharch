@@ -318,6 +318,23 @@ async fn sectioned_navigation_rejects_unassigned_and_duplicate_pages()
 }
 
 #[tokio::test]
+async fn sectioned_navigation_explains_why_it_refuses_an_independent_sidebar()
+-> Result<()> {
+    let config = CONFIG.replace(
+        "ga:layout \"documentation\"",
+        "ga:layout \"sectioned\"",
+    );
+    let error = format!("{:#}", render(&config).await.unwrap_err());
+    assert!(
+        error.contains("derives its sidebar from page ownership") &&
+            error.contains("cannot lead to another website") &&
+            error.contains("ga:layout \"documentation\""),
+        "the refusal names the alternative for sites linking siblings: {error}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
 async fn relative_navigation_urls_follow_the_website_root_from_every_page()
 -> Result<()> {
     let config = CONFIG.replace(
