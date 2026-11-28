@@ -49,27 +49,21 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
         },
         "image/svg+xml" => {
             let source = std::str::from_utf8(bytes)?;
-            // Tokenization rejects empty DTDs too; roxmltree permits them
+            // Tokenization checks empty DTDs too; roxmltree permits them
             // despite allow_dtd=false. Tokens borrow the original
             // input; source bytes are never rewritten.
+            let mut standard_doctype = false;
             for token in xmlparser::Tokenizer::from(source) {
-                ensure!(
-                    !matches!(
-                        token?,
-                        xmlparser::Token::DtdStart { .. } |
-                            xmlparser::Token::EmptyDtd { .. } |
-                            xmlparser::Token::EntityDeclaration { .. } |
-                            xmlparser::Token::DtdEnd { .. } |
-                            xmlparser::Token::ProcessingInstruction { .. }
-                    ),
-                    "SVG document types, custom entities and processing \
-                     instructions are unsupported"
-                );
+                let token = super::svg_preamble::SvgToken(token?);
+                token.check()?;
+                standard_doctype |= token.is_doctype();
             }
             let document = roxmltree::Document::parse_with_options(
                 source,
                 roxmltree::ParsingOptions {
-                    allow_dtd:       false,
+                    // Only a checked W3C SVG doctype without an internal
+                    // subset, so no entity can be declared or resolved.
+                    allow_dtd:       standard_doctype,
                     nodes_limit:     8192,
                     entity_resolver: None,
                 },
@@ -84,7 +78,11 @@ pub(crate) fn validate(bytes: &[u8], mime: &str) -> Result<()> {
             let mut count = 0;
             for element in document.descendants() {
                 ensure!(
-                    !element.is_pi(),
+                    element.pi().is_none_or(|pi| {
+                        super::svg_preamble::SvgToken::is_inert_instruction(
+                            pi.target,
+                        )
+                    }),
                     "SVG processing instructions are unsupported"
                 );
                 if !element.is_element() {
@@ -236,6 +234,26 @@ mod tests {
         let before = source.to_vec();
         validate(source, "image/svg+xml").unwrap();
         assert_eq!(source.as_slice(), before);
+    }
+    /// Illustrator, draw.io and PlantUML exports: the standard W3C SVG public
+    /// document type without an internal subset, and PlantUML's inert source
+    /// annotation. Bytes are published unchanged; nothing is fetched.
+    #[test]
+    fn standard_svg_doctypes_and_plantuml_annotations_are_accepted() {
+        for source in [
+            r#"<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg"/>"#,
+            "<?xml version=\"1.0\"?>\n<!-- Generator: Adobe Illustrator -->\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n<svg xmlns=\"http://www.w3.org/2000/svg\"/>",
+            "<svg xmlns='http://www.w3.org/2000/svg'><g><?plantuml 1.2025.0?></g></svg>",
+        ] {
+            assert!(validate(source.as_bytes(), "image/svg+xml").is_ok(), "{source}");
+        }
+        for source in [
+            "<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'https://example.org/evil.dtd'><svg xmlns='http://www.w3.org/2000/svg'/>",
+            "<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd' [<!ENTITY a 'b'>]><svg xmlns='http://www.w3.org/2000/svg'/>",
+            "<svg xmlns='http://www.w3.org/2000/svg'><?xml-stylesheet href='a.css'?></svg>",
+        ] {
+            assert!(validate(source.as_bytes(), "image/svg+xml").is_err(), "{source}");
+        }
     }
     #[test]
     fn svg_xml_parser_and_element_counts_are_bounded() {

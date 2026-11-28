@@ -70,6 +70,7 @@ pub mod sparql;
 
 pub(crate) mod image_assets;
 mod svg_foreign_object;
+mod svg_preamble;
 
 pub(crate) mod image_hints;
 
