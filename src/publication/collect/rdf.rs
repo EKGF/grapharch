@@ -128,6 +128,18 @@ impl Collector for RdfFile {
             };
             let quad = blanks.normalize(quad);
             modules.observe(&quad)?;
+            if quad.predicate.as_str() ==
+                crate::publication::document::description::MARKDOWN &&
+                let oxrdf::Term::Literal(body) = &quad.object
+            {
+                for reference in super::reference_facts::describe_description(
+                    &self.0,
+                    &quad.subject.to_string(),
+                    body.value(),
+                ) {
+                    stream.write(reference).await?;
+                }
+            }
             stream.write(quad).await?;
         }
         drop(parser);

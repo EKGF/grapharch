@@ -31,6 +31,8 @@ pub(crate) enum ReferenceContext {
     Image,
     Html,
     DiagramInclude,
+    /// A link in a Markdown description held in RDF.
+    Description,
 }
 
 impl ReferenceContext {
@@ -40,6 +42,7 @@ impl ReferenceContext {
             Self::Image => "ImageContext",
             Self::Html => "HtmlContext",
             Self::DiagramInclude => "DiagramIncludeContext",
+            Self::Description => "DescriptionContext",
         }
     }
 }
@@ -224,6 +227,44 @@ pub(super) fn describe(
         }
     }
     Ok(quads)
+}
+
+/// The `ga:Reference` records of the Markdown description of `subject` in
+/// an RDF source; `ga:referenceSource` is the described subject's IRI.
+pub(super) fn describe_description(
+    input: &FileInput,
+    subject: &str,
+    body: &str,
+) -> Vec<Quad> {
+    let mut quads = Vec::new(); // bounded: MAX_REFERENCES references.
+    for (context, value) in find(body) {
+        let context = if context == ReferenceContext::Link {
+            ReferenceContext::Description
+        } else {
+            context
+        };
+        let node = identity("reference", &[subject, &value]);
+        quads.extend([
+            input.quad(&node, "type", term("Reference")),
+            input.quad(
+                &node,
+                "referenceSource",
+                Literal::new_simple_literal(subject),
+            ),
+            input.quad(
+                &node,
+                "originalReference",
+                Literal::new_simple_literal(&value),
+            ),
+            input.quad(
+                &node,
+                "referenceForm",
+                term(ReferenceForm::parse(&value).term()),
+            ),
+            input.quad(&node, "referenceContext", term(context.term())),
+        ]);
+    }
+    quads
 }
 
 #[cfg(test)]

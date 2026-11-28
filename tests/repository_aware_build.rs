@@ -310,3 +310,90 @@ async fn workspaces_without_one_version_list_their_crates() -> Result<()> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn mkdocs_navigation_wins_over_default_exclusions() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let r = root.path();
+    write(
+        r,
+        "mkdocs.yml",
+        "site_name: Process\nnav:\n  - Home: index.md\n  - Build: \
+         process/build/index.md\n  - Tests: tests/strategy.md\n",
+    );
+    write(r, "docs/index.md", "# Home\n");
+    write(
+        r,
+        "docs/process/build/index.md",
+        "# Build process\n",
+    );
+    write(r, "docs/tests/strategy.md", "# Test strategy\n");
+    let result = build(r, &[]).await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let site = r.join("output/grapharch/site");
+    let found = |needle: &str| {
+        walk(&site).iter().any(|path| {
+            std::fs::read_to_string(path)
+                .is_ok_and(|html| html.contains(needle))
+        })
+    };
+    assert!(
+        found("Build process"),
+        "docs/process/build is content"
+    );
+    assert!(
+        found("Test strategy"),
+        "a navigated tests/ page is collected"
+    );
+    Ok(())
+}
+
+fn walk(root: &Path) -> Vec<std::path::PathBuf> {
+    let mut found = Vec::new();
+    let mut pending = vec![root.to_owned()];
+    while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                pending.push(path);
+            } else if path.extension().is_some_and(|ext| ext == "html") {
+                found.push(path);
+            }
+        }
+    }
+    found
+}
+
+#[tokio::test]
+async fn links_in_rdf_descriptions_are_recorded_references() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let r = root.path();
+    write(r, "README.md", "# Pets\n");
+    write(
+        r,
+        "pets.ttl",
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n\
+         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\
+         @prefix an: <https://ekgf.org/ontology/annotation#> .\n\
+         <https://example.org/pets#Pet> a owl:Class ; rdfs:label \"Pet\" ;\n\
+         an:markdownDescription \"See [care](https://example.org/care).\" .\n",
+    );
+    let result = build(r, &[]).await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let graph =
+        std::fs::read_to_string(r.join("output/grapharch/documentation.nq"))?;
+    assert!(
+        graph.contains("grapharch#DescriptionContext>"),
+        "description link recorded"
+    );
+    assert!(graph.contains("\"https://example.org/care\""));
+    Ok(())
+}

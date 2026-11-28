@@ -345,7 +345,8 @@ directory such as `docs/process/build/` is never treated as build output. Bring 
 ```
 
 An inclusion overrides only the defaults; ignore files and authored exclusions
-still apply. Discovery selects at most 16,384 sources. Raise or lower that with
+still apply. A page that explicit navigation names (MkDocs `nav`, `SUMMARY.md`,
+`.pages`) is always collected, even where a default exclusion would skip it. Discovery selects at most 16,384 sources. Raise or lower that with
 `ga:maxDiscoveredSources` (`--max-sources` for `grapharch build`); exceeding it
 fails with an error that names the setting.
 
@@ -397,7 +398,8 @@ and decides what it points at (`ga:referenceKind`): a page (anchors are checked
 against its headings), an anchor, an asset, a diagram source, a repository file
 that is not a page, a forge issue, pull request, commit, release or discussion,
 a sibling site, an absolute link into this site, a badge, an external location,
-or nothing. Each decision is published as a `ga:Reference` in the site's
+or nothing. Links in Markdown descriptions held in RDF (`markdownDescription`) are recorded
+too, with the described subject as their source. Each decision is published as a `ga:Reference` in the site's
 `references.nq`, and a zero-configuration build adds them to `documentation.nq`
 for backlink and broken-link queries.
 

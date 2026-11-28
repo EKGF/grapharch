@@ -167,3 +167,26 @@ async fn build_output_is_anchored_at_the_root_and_docs_named_build_stay() {
         "docs/release/target/index.md"
     ]);
 }
+
+#[tokio::test]
+async fn explicit_navigation_wins_over_default_exclusions() {
+    let root = archive();
+    let files = SourceWalk::new(root.path(), markdown)
+        .with_navigated(
+            ["tests/README.md".to_owned(), "PLAN.md".to_owned()].into(),
+        )
+        .files()
+        .await
+        .unwrap();
+    let names = names(root.path(), files);
+    assert!(
+        names.contains(&"tests/README.md".to_owned()),
+        "{names:?}"
+    );
+    assert!(names.contains(&"PLAN.md".to_owned()), "{names:?}");
+    assert!(!names.contains(&"CLAUDE.md".to_owned()));
+    assert!(
+        !names.contains(&"generated/api.md".to_owned()),
+        "ignore files still apply"
+    );
+}
