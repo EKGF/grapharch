@@ -120,6 +120,15 @@ impl Metadata {
         }
         sitemap.push_str("</urlset>");
         tokio::fs::write(stage.join("sitemap.xml"), sitemap).await?;
+        files.push("sitemap.xml".into());
+        if catalog
+            .pages
+            .values()
+            .any(|page| page.asset && page.route == "robots.txt")
+        {
+            // An authored robots.txt is published as-is from the source.
+            return Ok(());
+        }
         tokio::fs::write(
             stage.join("robots.txt"),
             format!(
@@ -128,7 +137,7 @@ impl Metadata {
             ),
         )
         .await?;
-        files.extend(["sitemap.xml".into(), "robots.txt".into()]);
+        files.push("robots.txt".into());
         Ok(())
     }
 }

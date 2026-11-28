@@ -4,6 +4,11 @@ mod extensions;
 pub(super) mod metadata;
 mod navigation;
 mod paths;
+mod plantuml_hint;
+mod plugins;
+mod presentation;
+mod warning;
+mod yaml_tags;
 use {
     super::{Collector, SourceIdentity},
     crate::publication::{dataset::identity, term, writer::ContributionStream},
@@ -215,8 +220,47 @@ impl Collector for MkDocs {
                 ))
                 .await?;
         }
+        for pattern in &config.hints.exclude_patterns {
+            stream
+                .write(q(
+                    &self.project,
+                    "excludeSourcePattern",
+                    lit(pattern),
+                ))
+                .await?;
+        }
+        if let Some(hint) = &config.hints.plantuml {
+            // The remaining budget leaves room for the dictionary and
+            // navigation collectors within the 32 configured sources.
+            for source in hint.files(&self.root, 24).await? {
+                let Some(output) = hint.destination(&source) else {
+                    continue
+                };
+                let (source, output) =
+                    (path_text(&source)?, path_text(&output)?);
+                let collector = identity("mkdocs-plantuml", &[
+                    self.project.as_str(),
+                    &source,
+                ]);
+                for quad in [
+                    q(&self.project, "collector", collector.clone()),
+                    q(&collector, "type", term("CollectorUse")),
+                    q(
+                        &collector,
+                        "collectorType",
+                        term("PlantUmlFileCollector"),
+                    ),
+                    q(&collector, "source", lit(&source)),
+                    q(&collector, "destination", lit(&output)),
+                ] {
+                    stream.write(quad).await?;
+                }
+            }
+        }
         for warning in config.warnings {
             eprintln!("MkDocs import: {warning}");
+            let code = warning.code.as_str();
+            let warning = warning.message;
             let diagnostic = identity("mkdocs-import-diagnostic", &[
                 &self.source,
                 &warning,
@@ -226,11 +270,7 @@ impl Collector for MkDocs {
                 q(&source, "diagnostic", diagnostic.clone()),
                 q(&diagnostic, "type", term("Diagnostic")),
                 q(&diagnostic, "severity", lit("warning")),
-                q(
-                    &diagnostic,
-                    "code",
-                    lit("mkdocs-presentation-substitution"),
-                ),
+                q(&diagnostic, "code", lit(code)),
                 q(&diagnostic, "message", lit(&warning)),
                 q(&diagnostic, "about", source.clone()),
             ] {
@@ -262,6 +302,14 @@ impl Collector for MkDocs {
             hex::encode(Sha256::digest(body.as_bytes()))
         ))
     }
+}
+fn path_text(path: &Path) -> Result<String> {
+    let parts = path
+        .components()
+        .map(|part| part.as_os_str().to_str())
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| anyhow::anyhow!("diagram path must be UTF-8"))?;
+    Ok(parts.join("/"))
 }
 fn lit(value: &str) -> Literal { Literal::new_simple_literal(value) }
 fn q(subject: &NamedNode, predicate: &str, value: impl Into<Term>) -> Quad {

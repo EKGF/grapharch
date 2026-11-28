@@ -1,0 +1,177 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+site_name: EKG Maturity
+site_description: Maturity Model for the Enterprise Knowledge Graph (EKG)
+repo_name: 'EKGF/ekg-maturity'
+repo_url: https://github.com/EKGF/ekg-maturity
+site_url: https://maturity.ekgf.org
+edit_uri: edit/main/docs/
+site_dir: site
+site_author: Object Management Group (OMG) Enterprise Knowledge Graph Forum
+copyright: >-
+  Copyright © 2026 EDMCouncil Inc., d/b/a Enterprise Data Management Association ("EDMA")
+
+# Navigation
+# nav: omitted, because we're using the awesome-pages plugin (https://squidfunk.github.io/mkdocs-material/plugins/awesome-pages/)
+watch:
+  - docs-fragments
+theme:
+  name: material
+  language: en
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: ekgf-logo-symbol
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: light-blue
+      toggle:
+#        icon: material/toggle-switch-off-outline
+#        icon: material/lightbulb-outline
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep orange
+      toggle:
+#        icon: material/toggle-switch
+#        icon: material/lightbulb
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - search.highlight
+    - navigation.top
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+#    - navigation.sections
+#    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - content.code.annotate
+    - content.tabs.link
+extra:
+  homepage: https://ekgf.org/quadrants
+  generator: false
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/EKG_Foundation
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/EKGF
+    - icon: fontawesome/brands/github
+      link: https://github.com/EKGF/ekg-maturity
+  analytics:
+    provider: google
+    property: G-0FZFTDFDHQ
+extra_javascript:
+  - "https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"
+  - javascripts/darkable-objects.js
+extra_css:
+  - stylesheets/extra.css
+plugins:
+  - material-ekgf
+  - include-markdown
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
+      locale: en
+      type: timeago
+      timezone: America/New_York
+      exclude:
+        - pillar/*
+  - search:
+      lang:
+        - en
+  - exclude-search:
+      exclude:
+        - 'fragment/*'
+  - build_plantuml:
+      render: "server" # or "local" for local rendering
+      bin_path: "/usr/local/bin/plantuml" # ignored when render: server
+      server: "http://www.plantuml.com/plantuml" # official plantuml server
+      output_format: "svg" # or "png"
+      diagram_root: "docs/diagrams" # should reside under docs_dir
+      output_folder: "out"
+      input_folder: "src"
+      input_extensions: "" # comma separated list of extensions to parse, by default every file is parsed
+      theme_enabled: true
+      theme_folder: "include/themes"
+      theme_light: "light.puml"
+      theme_dark: "dark.puml"
+  - awesome-pages:
+      filename: .pages.yaml
+      collapse_single_pages: false
+      strict: true
+  - exclude:
+      glob:
+        - "*.tmp"
+        - "*.sparql"
+        - "*.gz"
+        - 'diagrams/src/*'
+        - 'fragment/*'
+      regex:
+        - '.*\.(tmp|bin|tar)$'
+        - '_.*\.md$'
+  - gen-files:
+      scripts:
+        - docs/generate_maturity_model.py
+  - redirects:
+      redirect_maps:
+        'index.md': 'intro/index.md'
+#  - exclude-search:
+#      exclude:
+#        - 'fragment/*'
+
+markdown_extensions:
+  - footnotes
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - meta
+# - mdx_spanner
+  - def_list
+  - abbr
+  - admonition
+# - mdx_emdash (causes too many warnings)
+  - tables
+  - mkdocs_graphviz
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      base_path:
+        - .
+        - docs
+      check_paths: true
+      auto_append:
+        - abbreviations.md
+  - pymdownx.details
+  - pymdownx.mark
+  - pymdownx.magiclink
+  - pymdownx.smartsymbols
+  - pymdownx.critic
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      separator: "-"
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

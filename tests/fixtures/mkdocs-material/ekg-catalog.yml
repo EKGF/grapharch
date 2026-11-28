@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+site_name: EKG Catalog
+site_description: Catalog and repository for components of the Enterprise Knowledge Graph
+repo_name: "EKGF/ekg-catalog"
+repo_url: https://github.com/EKGF/ekg-catalog
+site_url: https://catalog.ekgf.org
+edit_uri: edit/main/docs/
+site_dir: site
+site_author: Object Management Group (OMG) Enterprise Knowledge Graph Forum
+copyright: >-
+  Copyright © 2026 EDMCouncil Inc., d/b/a Enterprise Data Management Association ("EDMA")
+  Copyright © 2026 agnos.ai UK Ltd
+
+# Navigation
+# nav: omitted, because we're using the awesome-pages plugin (https://squidfunk.github.io/mkdocs-material/plugins/awesome-pages/)
+theme:
+  name: material
+  custom_dir: docs-overrides
+  language: en
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: ekgf-logo-symbol
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        #        icon: material/toggle-switch-off-outline
+        #        icon: material/lightbulb-outline
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        #        icon: material/toggle-switch
+        #        icon: material/lightbulb
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - search.highlight
+    - navigation.top
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    #    - navigation.sections
+    #    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - content.code.annotate
+extra:
+  homepage: https://ekgf.org/quadrants
+  method_site_url: https://method.ekgf.org
+  generator: false
+  google_site_verification: "Q_9d2He8XxoBrVAXrAXsEm2R_UrGZ6KcOCXkeNRQ058"
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/EKG_Foundation
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/EKGF
+    - icon: fontawesome/brands/github
+      link: https://github.com/EKGF/ekg-catalog
+  analytics:
+    provider: google
+    property: 331824165
+extra_javascript:
+  - javascripts/mermaid.js
+  - javascripts/darkable-objects.js
+  - javascripts/objective-badges.js
+
+hooks:
+  - docs/main.py
+
+plugins:
+  - material-ekgf
+  - include-markdown
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
+      locale: en
+      type: timeago
+      timezone: America/New_York
+      exclude:
+        - pillar/*
+  - search:
+      lang:
+        - en
+  - exclude-search:
+      exclude:
+        - "fragment/*"
+  - awesome-pages:
+      filename: .pages.yaml
+      collapse_single_pages: false
+      strict: true
+  - exclude:
+      glob:
+        - "*.tmp"
+        - "*.sparql"
+        - "*.gz"
+        - "diagrams/src/*"
+        - "fragment/*"
+      regex:
+        - '.*\.(tmp|bin|tar)$'
+        - '_.*\.md$'
+  - kroki:
+      server_url: https://kroki.io/
+
+markdown_extensions:
+  - footnotes
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - meta
+  # - mdx_spanner
+  - def_list
+  - abbr
+  - admonition
+  - mdx_emdash
+  - tables
+  - mkdocs_graphviz
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      base_path:
+        - .
+        - docs
+      check_paths: true
+      auto_append:
+        - abbreviations.md
+  - pymdownx.details
+  - pymdownx.magiclink
+  - pymdownx.critic
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      options:
+        custom_icons:
+          - docs-overrides/.icons
+  # Mermaid diagram support - using Material for MkDocs native integration
+  # NOTE: Do NOT use mkdocs-mermaid2-plugin - it conflicts with Material's native support
+  # Material for MkDocs has built-in Mermaid.js support that works better with instant loading
+  # Custom colors are configured using:
+  #   1. Theme palette set to 'custom' (primary/accent colors)
+  #   2. CSS variables in docs/stylesheets/extra.css
+  #   3. Inline %%{init}%% directives in individual diagrams (docs/fragment/uctm-diagram-*.md)
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
