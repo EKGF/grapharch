@@ -110,8 +110,9 @@ async fn authored_robots_txt_is_published_as_is() -> Result<()> {
     let robots = "User-agent: *\nDisallow: /search/\n";
     tokio::fs::write(source.path().join("docs/robots.txt"), robots).await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;

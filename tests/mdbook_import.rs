@@ -40,8 +40,9 @@ async fn mdbook_summary_becomes_navigation_without_executing_anything()
     let source = book().await?;
     let output = tempfile::tempdir()?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -108,8 +109,10 @@ async fn mdbook_rejects_unsafe_summary_destinations() -> Result<()> {
         tokio::fs::write(source.path().join("chapters/SUMMARY.md"), summary)
             .await?;
         let error = BuildRequest {
-            source: source.path().to_owned(),
-            output: source.path().join("output"),
+            source:  source.path().to_owned(),
+            output:  source.path().join("output"),
+            options: grapharch::publication::quick_build::BuildOptions::offline(
+            ),
         }
         .collect()
         .await
