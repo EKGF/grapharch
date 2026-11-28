@@ -101,7 +101,9 @@ markdown_extensions:
 ```
 
 `abbreviations.md` must contain standard `*[TERM]: Meaning` declarations.
-Duplicate or conflicting terms, missing include files, ambiguous include roots,
+A term declared again keeps its later meaning, as in MkDocs, and the
+redefinition is recorded as an `abbreviation-redefined` warning. Missing
+include files, ambiguous include roots,
 cycles, traversal, and unsafe source assets fail before publication.
 
 ## Unsupported behavior is reported

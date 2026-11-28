@@ -155,14 +155,6 @@ async fn malformed_conflicting_and_oversized_dictionaries_fail() -> Result<()> {
             "no definitions",
         ),
         (
-            b"*[EKG]: One\n*[EKG]: Other\n".to_vec(),
-            "duplicate abbreviation",
-        ),
-        (
-            b"*[EKG]: One\n*[EKG]: One\n".to_vec(),
-            "duplicate abbreviation",
-        ),
-        (
             format!("*[{}]: Definition", "X".repeat(129)).into_bytes(),
             "128",
         ),
@@ -249,5 +241,33 @@ async fn dictionary_symlinks_cannot_escape_the_project_root() -> Result<()> {
     };
     assert!(error.contains("escapes project root"), "{error}");
     assert!(error.contains("abbreviations.md"), "{error}");
+    Ok(())
+}
+
+/// Python-Markdown's `abbr` keeps the last definition of a term; an imported
+/// dictionary keeps that meaning and records the redefinition.
+#[tokio::test]
+async fn redefined_abbreviation_keeps_the_last_meaning_with_a_diagnostic()
+-> Result<()> {
+    let source =
+        fixture(b"*[EKG]: One\n*[EKG]: Enterprise Knowledge Graph\n").await?;
+    let built = website::collect(
+        source.path(),
+        &source.path().join("project.ttl"),
+        "urn:p",
+        "urn:web",
+        2,
+    )
+    .await?;
+    let archive = source.path().join("documentation.nq");
+    built.dataset.export(archive.clone()).await?;
+    let graph = tokio::fs::read_to_string(archive).await?;
+    assert!(graph.contains("\"Enterprise Knowledge Graph\""));
+    assert!(
+        !graph.contains(
+            "<http://www.w3.org/2004/02/skos/core#definition> \"One\""
+        )
+    );
+    assert!(graph.contains("\"abbreviation-redefined\""));
     Ok(())
 }

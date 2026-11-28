@@ -119,7 +119,40 @@ impl AbbreviationFile {
         ] {
             stream.write(quad).await?;
         }
-        for (notation, definition) in dictionary.0 {
+        for redefinition in &dictionary.redefinitions {
+            let message = redefinition.message();
+            let diagnostic = identity("abbreviation-redefinition", &[
+                fragment.as_str(),
+                &message,
+            ]);
+            for quad in [
+                self.input.quad(&fragment, "diagnostic", diagnostic.clone()),
+                self.input.quad(
+                    &diagnostic,
+                    "severity",
+                    Literal::new_simple_literal("warning"),
+                ),
+                self.input.quad(
+                    &diagnostic,
+                    "code",
+                    Literal::new_simple_literal("abbreviation-redefined"),
+                ),
+                self.input.quad(
+                    &diagnostic,
+                    "message",
+                    Literal::new_simple_literal(&message),
+                ),
+                self.input.quad(&diagnostic, "about", fragment.clone()),
+                standard(
+                    &diagnostic,
+                    RDF_TYPE,
+                    crate::publication::term("Diagnostic"),
+                ),
+            ] {
+                stream.write(quad).await?;
+            }
+        }
+        for (notation, definition) in dictionary.entries {
             let concept =
                 identity("abbreviation", &[self.scheme.as_str(), &notation]);
             for quad in [
@@ -188,7 +221,29 @@ struct Definition {
     meaning: String,
     line:    usize,
 }
-struct Dictionary(BTreeMap<String, Definition>); // bounded: 1024 entries and 128 KiB authored text.
+/// A term declared again later in the dictionary; the later meaning wins, as
+/// in Python-Markdown's `abbr` extension.
+struct Redefinition {
+    notation: String,
+    line:     usize,
+    previous: usize,
+}
+impl Redefinition {
+    fn message(&self) -> String {
+        format!(
+            "abbreviation {} at line {} redefines line {}; the later \
+             definition is used",
+            self.notation, self.line, self.previous
+        )
+    }
+}
+struct Dictionary {
+    entries:       BTreeMap<String, Definition>, /* bounded: 1024 entries
+                                                  * and 128 KiB authored
+                                                  * text. */
+    redefinitions: Vec<Redefinition>, /* bounded: one per source line of 128
+                                       * KiB. */
+}
 impl Dictionary {
     fn parse(source: &str) -> Result<Self> {
         ensure!(
@@ -196,6 +251,7 @@ impl Dictionary {
             "abbreviation dictionary contains a NUL byte"
         );
         let mut entries: BTreeMap<String, Definition> = BTreeMap::new();
+        let mut redefinitions = Vec::new();
         for (index, line) in source.lines().enumerate() {
             let number = index + 1;
             let line = line.trim();
@@ -234,14 +290,14 @@ impl Dictionary {
                  bytes of text"
             );
             if let Some(previous) = entries.get(notation) {
-                anyhow::bail!(
-                    "duplicate abbreviation {notation} at line {number}; \
-                     first declared at line {}",
-                    previous.line
-                );
+                redefinitions.push(Redefinition {
+                    notation: notation.to_owned(),
+                    line:     number,
+                    previous: previous.line,
+                });
             }
             ensure!(
-                entries.len() < 1024,
+                entries.len() < 1024 || entries.contains_key(notation),
                 "abbreviation dictionary exceeds 1024 entries at line {number}"
             );
             entries.insert(notation.to_owned(), Definition {
@@ -253,6 +309,6 @@ impl Dictionary {
             !entries.is_empty(),
             "abbreviation dictionary contains no definitions"
         );
-        Ok(Self(entries))
+        Ok(Self { entries, redefinitions })
     }
 }
