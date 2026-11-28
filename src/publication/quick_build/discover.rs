@@ -8,6 +8,7 @@ pub(super) struct Inventory {
     pub files:       Vec<PathBuf>,
     pub definitions: Option<PathBuf>,
     pub mkdocs:      Option<PathBuf>,
+    pub mdbook:      Option<PathBuf>,
 }
 impl Inventory {
     pub async fn read(source: &Path, output: &Path) -> Result<Self> {
@@ -24,6 +25,7 @@ impl Inventory {
                 files:       vec![source.to_owned()],
                 definitions: None,
                 mkdocs:      None,
+                mdbook:      None,
             });
         }
         ensure!(
@@ -58,6 +60,7 @@ impl Inventory {
                 files: Vec::new(),
                 definitions,
                 mkdocs: None,
+                mdbook: None,
             });
         }
         let mut mkdocs = None;
@@ -82,7 +85,26 @@ impl Inventory {
                 files: Vec::new(),
                 definitions: None,
                 mkdocs,
+                mdbook: None,
             });
+        }
+        let book = source.join("book.toml");
+        match tokio::fs::symlink_metadata(&book).await {
+            Ok(metadata) => {
+                ensure!(
+                    metadata.is_file(),
+                    "book.toml must be a regular file"
+                );
+                return Ok(Self {
+                    root:        source.to_owned(),
+                    files:       Vec::new(),
+                    definitions: None,
+                    mkdocs:      None,
+                    mdbook:      Some(book),
+                });
+            },
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+            Err(error) => return Err(error.into()),
         }
         let excluded = if output.is_absolute() {
             output.to_owned()
@@ -153,6 +175,7 @@ impl Inventory {
             files,
             definitions: None,
             mkdocs: None,
+            mdbook: None,
         })
     }
 }

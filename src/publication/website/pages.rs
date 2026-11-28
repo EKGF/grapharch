@@ -15,8 +15,8 @@ use {
         source_link::{self, CommitId, RepositoryPath},
         view::RevisionView,
     },
-    anyhow::Result,
-    oxrdf::NamedNode,
+    anyhow::{Result, bail, ensure},
+    oxrdf::{NamedNode, Term},
     std::{path::Path, sync::Arc},
 };
 
@@ -34,6 +34,25 @@ pub(crate) struct SitePages<'a> {
 }
 
 impl SitePages<'_> {
+    /// The page a source format designates as the home page, if any.
+    async fn home(
+        view: &RevisionView,
+        project: &NamedNode,
+    ) -> Result<Option<String>> {
+        let mut rows = view.objects(project, "homeSourcePath").await?;
+        let Some(row) = rows.next().await? else {
+            return Ok(None);
+        };
+        let Term::Literal(value) = &row["value"] else {
+            bail!("home source path must be a literal")
+        };
+        ensure!(
+            rows.next().await?.is_none(),
+            "a project declares at most one home source path"
+        );
+        Ok(Some(value.value().to_owned()))
+    }
+
     /// One collector per discovered page or asset, plus the blob provenance of
     /// each file read from a pinned repository.
     pub(crate) async fn collectors(
@@ -53,6 +72,7 @@ impl SitePages<'_> {
             &content,
         )
         .await?;
+        let home = Self::home(view, &project_id).await?;
         let paths = discovery::discover(&content, view, &project_id).await?;
         // bounded: discovery admits at most 256 sources, each with at most one
         // provenance record.
@@ -90,6 +110,9 @@ impl SitePages<'_> {
                 .with_mkdocs_metadata(self.mkdocs_metadata)
                 .with_image_bindings(image_bindings.clone())
                 .with_include_roots(include_roots.clone())?;
+                if home.as_deref() == Some(relative.as_str()) {
+                    markdown = markdown.with_home_route();
+                }
                 if let Some(blob) = blob {
                     markdown = markdown.with_source_identity(blob.source())?;
                 }
