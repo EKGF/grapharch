@@ -24,9 +24,22 @@ struct FactLink {
 /// What the website shows about the documented software project.
 #[derive(Default)]
 pub(super) struct Software {
-    version: Option<String>,
-    license: Option<(String, Option<String>)>,
-    links:   Vec<FactLink>, // bounded: MAX_LINKS.
+    version:  Option<String>,
+    license:  Option<(String, Option<String>)>,
+    links:    Vec<FactLink>, // bounded: MAX_LINKS.
+    /// Workspace packages with their own versions, when there is no single
+    /// project version.
+    packages: Vec<PackageFact>, // bounded: MAX_PACKAGES.
+}
+
+/// Most workspace packages listed on the home page.
+const MAX_PACKAGES: usize = 64;
+
+/// One package of a workspace: name, version and registry page.
+struct PackageFact {
+    name:     String,
+    version:  Option<String>,
+    registry: Option<String>,
 }
 
 impl Software {
@@ -59,6 +72,17 @@ impl Software {
             ),
             ..Self::default()
         };
+        if let Some(Term::NamedNode(repository)) = view
+            .optional_by(&project, &predicate(DOAP, "repository"))
+            .await? &&
+            software.version.is_none()
+        {
+            software.version =
+                literal(view.optional(&repository, "latestTag").await?);
+        }
+        if software.version.is_none() {
+            software.packages = Self::packages(view, &project).await?;
+        }
         if let Some(expression) =
             literal(view.optional(&project, "licenseExpression").await?)
         {
@@ -126,6 +150,49 @@ impl Software {
         Ok(Some(software))
     }
 
+    async fn packages(
+        view: &crate::publication::view::RevisionView,
+        project: &NamedNode,
+    ) -> Result<Vec<PackageFact>> {
+        let mut packages = Vec::new(); // bounded: MAX_PACKAGES.
+        let mut rows = view.objects(project, "codePackage").await?;
+        while let Some(row) = rows.next().await? {
+            let Term::NamedNode(package) = &row["value"] else {
+                continue
+            };
+            if packages.len() == MAX_PACKAGES {
+                break;
+            }
+            let text = |term: Option<Term>| {
+                match term {
+                    Some(Term::Literal(value)) => {
+                        Some(value.value().to_owned())
+                    },
+                    Some(Term::NamedNode(node)) => Some(node.into_string()),
+                    _ => None,
+                }
+            };
+            let Some(name) = text(
+                view.optional_by(package, &predicate(DOAP, "name")).await?,
+            ) else {
+                continue;
+            };
+            packages.push(PackageFact {
+                name,
+                version: text(
+                    view.optional_by(
+                        package,
+                        &predicate(SCHEMA, "softwareVersion"),
+                    )
+                    .await?,
+                ),
+                registry: text(view.optional(package, "registryPage").await?),
+            });
+        }
+        packages.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(packages)
+    }
+
     fn push(&mut self, label: &str, url: String) {
         if self.links.len() < MAX_LINKS &&
             !self.links.iter().any(|link| link.url == url)
@@ -173,6 +240,38 @@ impl Software {
                 .join(" · ");
             items.push_str(&format!(
                 "<div><dt>Links</dt><dd>{links}</dd></div>"
+            ));
+        }
+        if !self.packages.is_empty() {
+            let packages = self
+                .packages
+                .iter()
+                .map(|package| {
+                    let name = match &package.registry {
+                        Some(url) => {
+                            format!(
+                                "<a href=\"{}\">{}</a>",
+                                esc(url),
+                                esc(&package.name)
+                            )
+                        },
+                        None => esc(&package.name).to_string(),
+                    };
+                    match &package.version {
+                        Some(version) => {
+                            format!(
+                                "{name} <span \
+                                 class=\"package-version\">{}</span>",
+                                esc(version)
+                            )
+                        },
+                        None => name,
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" · ");
+            items.push_str(&format!(
+                "<div><dt>Packages</dt><dd>{packages}</dd></div>"
             ));
         }
         if items.is_empty() {

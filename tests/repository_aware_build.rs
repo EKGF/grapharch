@@ -240,3 +240,57 @@ async fn archive_copies_link_repository_files_from_the_manifest_repository()
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn workspaces_without_one_version_list_their_crates() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let r = root.path();
+    write(
+        r,
+        "Cargo.toml",
+        "[workspace]\nmembers = [\"a\", \"b\"]\n",
+    );
+    write(
+        r,
+        "a/Cargo.toml",
+        "[package]\nname = \"kit-a\"\nversion = \"0.1.0\"\n",
+    );
+    write(
+        r,
+        "b/Cargo.toml",
+        "[package]\nname = \"kit-b\"\nversion = \"0.2.0\"\n",
+    );
+    write(r, "README.md", "# Kit\n");
+    let result = build(r, &[]).await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let home =
+        std::fs::read_to_string(r.join("output/grapharch/site/index.html"))?;
+    let document = scraper::Html::parse_document(&home);
+    let chip = document
+        .select(&scraper::Selector::parse(".brand-version").unwrap())
+        .next()
+        .expect("version chip element");
+    assert!(
+        chip.value().attr("hidden").is_some(),
+        "no single version: chip hidden"
+    );
+    let facts = document
+        .select(&scraper::Selector::parse(".project-facts").unwrap())
+        .next()
+        .expect("project facts")
+        .html();
+    for expected in [
+        "kit-a",
+        "0.1.0",
+        "kit-b",
+        "0.2.0",
+        "https://crates.io/crates/kit-b",
+    ] {
+        assert!(facts.contains(expected), "{expected} in {facts}");
+    }
+    Ok(())
+}
