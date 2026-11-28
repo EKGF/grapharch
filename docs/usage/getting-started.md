@@ -39,7 +39,7 @@ release matrix. Select the archive for the system where GraphArch will run.
 With [cargo-binstall](https://github.com/cargo-bins/cargo-binstall) installed:
 
 ```sh
-cargo binstall grapharch --version 0.2.4
+cargo binstall grapharch
 ```
 
 This downloads the prebuilt executable for your system. Unsupported platforms
@@ -49,11 +49,11 @@ or missing release files fail installation.
 
 These commands require a published package version; see [PyPI](https://pypi.org/project/grapharch/)
 and [npm](https://www.npmjs.com/package/@ekgf/grapharch) for available versions.
-Homebrew requires its separate tap publication. Each channel installs the same CLI:
+Each channel installs the same CLI:
 
 | Channel | Install or run |
 | --- | --- |
-| Homebrew | `brew install legra-ai/tap/grapharch` |
+| Homebrew (macOS on Apple silicon, Linux) | `brew install ekgf/tap/grapharch` |
 | Python with uv | `uv tool install grapharch`, or `uvx grapharch --help` for an isolated run |
 | Python with pip | `python -m pip install grapharch` |
 | npm project dependency | `npm install --save-dev @ekgf/grapharch`, then `npx grapharch --help` |

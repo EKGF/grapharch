@@ -496,7 +496,6 @@ def homebrew(output: Path, destination: Path) -> None:
         "class Grapharch < Formula",
         '  desc "Publish documentation websites, specifications, and PDFs from a knowledge graph"',
         '  homepage "https://ekgf.github.io/grapharch/"',
-        f'  version "{version()}"',
         '  license "MIT"',
         "",
     ]
