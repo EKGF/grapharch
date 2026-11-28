@@ -226,7 +226,7 @@ impl Collector for MarkdownFile {
         .await?;
         let containers = super::material_blocks::normalize(&expansion.body)?;
         let icons = super::inline_icons::normalize(&containers)?;
-        let semantic_images = super::semantic_images::normalize(&icons)?;
+        let semantic_images = super::semantic_images::normalize(&icons.body)?;
         let variants = super::image_variants::normalize(&semantic_images)?;
         let figures = super::figures::normalize(&variants)?;
         let normalized_blocks = super::badges::normalize(
@@ -288,6 +288,10 @@ impl Collector for MarkdownFile {
             .map(NamedNode::new)
             .transpose()?;
         let mut metadata = expansion.metadata;
+        for warning in &icons.warnings {
+            eprintln!("{}: {}", self.0.path.display(), warning.message);
+            metadata.extend(warning.quads(&input, &input.fragment_id()));
+        }
         if self.1.is_some() || !fragments.is_empty() {
             let page = subject.clone().unwrap_or_else(|| input.fragment_id());
             metadata.extend(super::markdown_structure::describe(

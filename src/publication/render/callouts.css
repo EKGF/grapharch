@@ -39,7 +39,7 @@ html[data-color-scheme="dark"] [data-image-scheme="dark"]{display:var(--image-di
 @media(prefers-color-scheme:dark){html:not([data-color-scheme="light"]) [data-image-scheme="light"]{display:none}html:not([data-color-scheme="light"]) [data-image-scheme="dark"]{display:var(--image-display,revert)}}
 @media print{html [data-image-scheme="dark"]{display:none!important}html [data-image-scheme="light"]{display:var(--image-display,revert)!important}}
 /* Builtin icons are decorative companions to retained text labels. */
-svg.inline-icon{display:inline-block;width:1em;height:1em;vertical-align:-.125em;flex:none;color:inherit}svg.inline-icon-large{width:2em;height:2em}
+svg.inline-icon{display:inline-block;width:1.125em;height:1.125em;vertical-align:text-top;flex:none;color:inherit}svg.inline-icon-lg,svg.inline-icon-xl,svg.inline-icon-xxl{vertical-align:text-bottom}svg.inline-icon-lg{width:1.5em;height:1.5em}svg.inline-icon-xl{width:2.25em;height:2.25em}svg.inline-icon-xxl{width:3em;height:3em}svg.inline-icon-middle{vertical-align:middle}
 /* Source-qualified notes remain linked and readable after fragment assembly. */
 .footnote-reference{font-size:.75em;line-height:0}.footnote-definition{display:flex;gap:.5em;margin:.75em 0;color:var(--muted,#555);font-size:.9em}.footnote-definition>p{margin:0}.footnote-definition-label{flex:none}
 

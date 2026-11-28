@@ -56,8 +56,8 @@ pub(super) fn convert(markdown: &Markdown<'_>) -> Result<String> {
                             output.push_str(&format!(
                                 "#box[#pdf.artifact[#image(bytes({}), format: \
                                  \"svg\", width: {}em)]]",
-                                quote(icon.svg()),
-                                if icon.large { 2 } else { 1 }
+                                quote(&icon.svg()?),
+                                icon.em()
                             ));
                             in_image = true;
                             continue;
