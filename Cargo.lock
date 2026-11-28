@@ -2355,6 +2355,7 @@ dependencies = [
  "console",
  "const_format",
  "core-foundation",
+ "flate2",
  "fs2",
  "futures",
  "gix",

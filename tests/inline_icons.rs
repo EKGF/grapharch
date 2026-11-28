@@ -126,3 +126,81 @@ async fn decorative_icons_are_pdf_artifacts_in_pdf_ua_documents() -> Result<()>
     assert!(bytes.windows(part.len()).any(|window| window == part));
     Ok(())
 }
+
+/// Every Material for MkDocs icon set resolves from the bundle, attribute
+/// lists set the size and alignment, and an unknown shortcode stays visible
+/// with a typed warning instead of disappearing.
+#[tokio::test]
+async fn bundled_icon_sets_attribute_lists_and_unknown_icon_warnings()
+-> Result<()> {
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::write(
+        source.path().join("index.md"),
+        "# Icons\n\n:material-account-group-outline:{ .lg .middle } \
+         Teams\n\n:fontawesome-brands-github: :fontawesome-solid-house: \
+         :fontawesome-regular-heart: :simple-rust: :octicons-arrow-right-24:{ \
+         .xl }\n\n:material-no-such-icon: stays\n\n:simple-rust:{ .heart } \
+         custom class\n",
+    )
+    .await?;
+    let config = source.path().join("project.ttl");
+    tokio::fs::write(
+        &config,
+        r#"@prefix ga:<https://ekgf.org/ontology/grapharch#>. <urn:p> a ga:Project;ga:target <urn:t>. <urn:t> a ga:Target;ga:scope <urn:s>;ga:profile <urn:f>;ga:renderer ga:WebsiteRenderer;ga:destination "site". <urn:s> a ga:Scope. <urn:f> a ga:Profile."#,
+    )
+    .await?;
+    let built =
+        website::collect(source.path(), &config, "urn:p", "urn:t", 2).await?;
+    let archive = output.path().join("kg.nq");
+    built.dataset.export(archive.clone()).await?;
+    let graph = tokio::fs::read_to_string(&archive).await?;
+    assert!(
+        graph.contains("\"icon-unknown\""),
+        "unknown icon diagnostic"
+    );
+    assert!(graph.contains("material-no-such-icon"));
+    assert!(graph.contains("\"icon-attribute-ignored\""));
+    tokio::fs::remove_dir_all(source.path()).await?;
+    let restored = Dataset::memory()?;
+    restored.import(archive).await?;
+    let PublishOutcome::Published(site) = Publisher::new(restored)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&built.plan, output.path())
+        .await?
+    else {
+        panic!("HTML failed")
+    };
+    let html =
+        tokio::fs::read_to_string(site.directory.join("index.html")).await?;
+    let document = scraper::Html::parse_document(&html);
+    let icons = scraper::Selector::parse("svg.inline-icon").unwrap();
+    let icons = document.select(&icons).collect::<Vec<_>>();
+    assert_eq!(icons.len(), 7, "{html}");
+    for icon in &icons {
+        assert_eq!(icon.attr("fill"), Some("currentColor"));
+        assert_eq!(icon.attr("aria-hidden"), Some("true"));
+        assert!(icon.attr("viewBox").is_some());
+    }
+    let first = icons[0].attr("class").unwrap();
+    assert!(
+        first.contains("inline-icon-lg") &&
+            first.contains("inline-icon-middle")
+    );
+    assert!(html.contains("inline-icon-xl"));
+    assert!(
+        html.contains(":material-no-such-icon:"),
+        "unknown stays visible"
+    );
+    assert!(!html.contains(":simple-rust:"));
+    assert!(!html.contains("{ .lg .middle }") && !html.contains("{ .heart }"));
+    let licenses = tokio::fs::read_to_string(
+        site.directory.join("grapharch-icon-licenses.txt"),
+    )
+    .await?;
+    for notice in ["Font Awesome", "Octicons", "Simple Icons", "Pictogrammers"]
+    {
+        assert!(licenses.contains(notice), "{notice}");
+    }
+    Ok(())
+}

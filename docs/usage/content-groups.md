@@ -138,18 +138,26 @@ including after the source files have been removed.
 
 ## Decorative icons
 
-GraphArch recognizes four bundled inline icon names used by the EKGF source
-sites: `:octicons-arrow-right-24:`, `:material-cached:`,
-`:material-floor-plan:`, and `:material-run:`. An optional `{ .lg }` suffix
-requests a larger icon. Icons can appear inside ordinary Markdown links; the
-visible text label and link destination remain authoritative. Code examples
-remain literal, and an unknown Material or Octicons name produces an error.
+GraphArch reads icon shortcodes as pymdownx.emoji writes them for Material
+for MkDocs: `:material-*:` (Material Design Icons), `:octicons-*:`,
+`:simple-*:` (Simple Icons) and `:fontawesome-brands-*:`,
+`:fontawesome-regular-*:` and `:fontawesome-solid-*:` (Font Awesome Free).
+The sets are bundled with GraphArch; no icon service or browser framework is
+required. An attribute list after the shortcode, such as `{ .lg .middle }`,
+sets the size (`.lg`, `.xl`, `.xxl`) and middle alignment. Icons can appear
+inside ordinary Markdown links; the visible text label and link destination
+remain authoritative. Code examples remain literal.
 
-Collection records these as empty-alt builtin image references using the
+An unknown icon name stays visible as its literal shortcode, and an
+attribute-list entry without a GraphArch equivalent is dropped. Both are
+recorded as warning diagnostics (`icon-unknown`, `icon-attribute-ignored`)
+in the publication KG and reported during the build.
+
+Collection records icons as empty-alt builtin image references using the
 `urn:grapharch:icon:` namespace. HTML emits decorative, accessibility-hidden
-SVGs; PDF uses the same bundled vector artwork. No icon service or browser
-framework is required. Each source is limited to 128 icons, and generated
-publications include `grapharch-icon-licenses.txt` with the artwork notices.
+inline SVGs coloured with `currentColor`; PDF uses the same vector artwork.
+Each source is limited to 128 icons, and generated publications include
+`grapharch-icon-licenses.txt` with the artwork notices.
 
 ## Footnotes
 
