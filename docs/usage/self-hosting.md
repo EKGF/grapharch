@@ -334,9 +334,11 @@ documentation-specific exclusions.
 Some files are skipped by default because no repository means to publish them:
 agent instructions (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`), planning and status
 notes (`PLAN.md`, `TODO.md`, `*_STATUS.md`), forge templates, test fixtures
-(`tests/`, `test/`, `__tests__/`, `fixtures/`, `testdata/`, `test_data/`,
-`__snapshots__/`, and RDF beneath `spec/`), and dependency or build output (`node_modules/`,
-`target/`, `dist/`, `build/`, `vendor/`). Bring any of them back with a glob:
+(`tests/` and `__tests__/` at any depth, `test/` at the root, `fixtures/`,
+`testdata/`, `test_data/`, `__snapshots__/`, and RDF beneath `spec/`),
+dependencies (`node_modules/`, `.venv/`) and build output at the discovery root
+(`target/`, `dist/`, `build/`, `output/`, `vendor/`, `venv/`). A documentation
+directory such as `docs/process/build/` is never treated as build output. Bring any of them back with a glob:
 
 ```turtle
 <urn:project> ga:includeSourcePattern "**/AGENTS.md", "tests/**" .

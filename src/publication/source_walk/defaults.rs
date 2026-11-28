@@ -33,17 +33,20 @@ pub(crate) const PATTERNS: &[&str] = &[
     "**/test-data/",
     "**/__snapshots__/",
     "**/tests/",
-    "**/test/",
+    "test/",
     "**/__tests__/",
     "**/spec/**/*.{ttl,rdf,nt,nq,trig,n3,jsonld}",
     // Dependencies and build output.
     "**/node_modules/",
-    "**/target/",
-    "**/dist/",
-    "**/build/",
-    "**/output/",
-    "**/vendor/",
-    "**/venv/",
+    // Build output is anchored at the discovery root: a documentation
+    // directory such as docs/process/build/ is content, not output.
+    "target/",
+    "dist/",
+    "build/",
+    "output/",
+    "vendor/",
+    "venv/",
+    "**/.venv/",
     "**/site-packages/",
 ];
 
