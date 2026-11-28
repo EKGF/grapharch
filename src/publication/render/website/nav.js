@@ -61,3 +61,26 @@
     }
   });
 })();
+
+(() => {
+  // Primary sections scroll sideways when they do not fit; keep the current
+  // section in view and fade the trailing edge while more sections follow.
+  const tabs = document.querySelector('.documentation-product-row .primary-navigation');
+  if (!tabs) return;
+  const update = () => {
+    const more = tabs.scrollWidth - tabs.clientWidth - tabs.scrollLeft > 1;
+    if (more) tabs.dataset.overflow = 'more';
+    else delete tabs.dataset.overflow;
+  };
+  const active = tabs.querySelector('.active-section');
+  if (active && tabs.scrollWidth > tabs.clientWidth) {
+    const left = active.offsetLeft - tabs.offsetLeft;
+    const right = left + active.offsetWidth;
+    if (left < tabs.scrollLeft || right > tabs.scrollLeft + tabs.clientWidth) {
+      tabs.scrollLeft = Math.max(0, right - tabs.clientWidth + 16);
+    }
+  }
+  update();
+  tabs.addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', update, { passive: true });
+})();
