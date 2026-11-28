@@ -1,0 +1,67 @@
+/* EKGF documentation sites: the arrangement of EKGF's Material for MkDocs
+   sites. An identity row (logo, centred title, OMG mark), a tab row, a wide
+   reading column and the EKGF footer. Colours stay theme tokens. */
+.ekgf-documentation{--content-width:76.25rem;--ink:rgba(0,0,0,.87);--muted:rgba(0,0,0,.54);--heading:var(--ink);--line:rgba(0,0,0,.07);--accent:#4051b5;--paper:#fff;--ekgf-orange:#ff9900;font-size:1rem;line-height:1.6}
+.ekgf-documentation .site-header{display:block;height:auto;min-height:0;padding:0;background:rgba(255,255,255,.95);border:0;position:sticky;top:0;z-index:3}
+.documentation-identity-row{position:relative;max-width:calc(var(--content-width) + 6rem);margin:auto;height:52px;padding:0 1rem 0 3rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.documentation-identity-row .brand-identity{font-size:30px;font-weight:900;letter-spacing:-1.5px;gap:8px;color:#333}
+.documentation-identity-row .brand-identity img{width:30px;height:30px}
+html body.ekgf-documentation .site-title{position:absolute;left:50%;transform:translateX(-50%);max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:1.45rem;font-weight:400;color:var(--ink);text-decoration:none}
+.identity-marks{display:flex;align-items:center;gap:.5rem}.identity-marks .identity-mark{border:0;padding:0}.identity-marks .identity-mark img{width:auto;height:34px}
+.documentation-tabs-row{max-width:var(--content-width);margin:auto;height:56px;padding:0 .7rem;display:flex;align-items:center;gap:1rem}
+.documentation-tabs-row .primary-navigation{flex:1;min-width:0;max-width:none;margin:0;padding:0}
+.documentation-tabs-row .primary-navigation>ul{gap:1.5rem}
+html body.ekgf-documentation .primary-navigation a{padding:.6rem 0;font-size:.875rem;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+html body.ekgf-documentation .primary-navigation a[aria-current=page],html body.ekgf-documentation .primary-navigation a.active-section{color:var(--ekgf-orange);box-shadow:none}
+html body.ekgf-documentation .primary-navigation a:hover{color:var(--ekgf-orange)}
+.documentation-tabs-row .site-links{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.ekgf-documentation .site-search-open{min-width:44px;min-height:44px;color:var(--ink)}
+/* The reading column spans the content width; the sidebar, when a page has
+   one, sits inside it as Material's grid does. */
+html body.ekgf-documentation .site-layout{max-width:var(--content-width);margin:auto;padding:0 .7rem;gap:0 2rem;grid-template-columns:minmax(0,1fr)}
+html body.ekgf-documentation .site-layout:has(>.site-navigation){grid-template-columns:12.1rem minmax(0,1fr)}
+html body.ekgf-documentation .site-layout:has(>.page-outline){grid-template-columns:minmax(0,1fr) 12.1rem}
+html body.ekgf-documentation .site-layout:has(>.site-navigation):has(>.page-outline){grid-template-columns:12.1rem minmax(0,1fr) 12.1rem}
+html body.ekgf-documentation .site-layout.section-landing,html body.ekgf-documentation .site-layout.gallery-home{display:grid;max-width:var(--content-width);padding-inline:.7rem}
+html body.ekgf-documentation .section-landing main>article{max-width:none}
+html body.ekgf-documentation .site-layout main{padding:1.25rem 0 1rem}
+html body.ekgf-documentation .site-navigation,html body.ekgf-documentation .page-outline{top:108px;height:calc(100dvh - 108px);border:0}
+.ekgf-documentation .site-navigation a[aria-current]{box-shadow:none;background:none;color:var(--ekgf-orange)}
+.ekgf-documentation .integrated-outline{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line)}
+.ekgf-documentation .integrated-outline a{padding-left:9px}
+.sidebar-sections>details>nav>ul>li>:is(a,details>summary){font-weight:700;color:var(--ink)}
+/* Material typography: light page titles, plain links. */
+html body.ekgf-documentation .site-layout article h1{font-size:2rem;font-weight:300;letter-spacing:-.01em;line-height:1.3;color:var(--muted);margin:1.5rem 0 2.5rem}
+.ekgf-documentation article h2{font-size:1.5625rem;font-weight:300;letter-spacing:-.01em;line-height:1.4}
+.ekgf-documentation article h3{font-size:1.25rem;font-weight:400;letter-spacing:-.01em}
+.ekgf-documentation article a{color:var(--link,var(--accent));text-decoration:none}
+.ekgf-documentation article a:hover{color:var(--ekgf-orange)}
+.ekgf-documentation article :is(p,li){line-height:1.6}
+/* Content tabs as Material's: small bold labels, a thin rule, the selected
+   label underlined in its own colour. */
+.ekgf-documentation .ga-tab-list{gap:0;border-bottom:1px solid var(--line);margin-bottom:.5rem}
+.ekgf-documentation .ga-tab-list button{padding:.65rem 1.25em .5rem;font-size:.8rem;font-weight:700;color:var(--muted);border-bottom:2px solid transparent}
+.ekgf-documentation .ga-tab-list button[aria-selected="true"]{color:var(--ink);border-bottom-color:currentColor}
+.ekgf-documentation .ga-tab-list button:hover{color:var(--accent)}
+/* Page dates as Material's source-file facts. */
+.ekgf-documentation .page-dates{margin:2rem 0 0;font-size:.8rem}
+/* EKGF footer on the page colour, its columns on the content grid. */
+.ekgf-documentation .site-footer{background:var(--paper);border:0;padding:0;font-size:.8rem}
+.ekgf-documentation .site-footer-inner{max-width:var(--content-width);padding:2.5rem .7rem 2rem}
+.ekgf-documentation .site-footer-grid,.ekgf-documentation .site-footer-grid:has(>:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr));gap:2rem}
+.ekgf-documentation .site-footer h2{font-size:1rem;font-weight:700;margin-bottom:1rem}
+.ekgf-documentation .site-footer-notes{margin-top:2rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,.12)}
+html[data-color-scheme="dark"] .ekgf-documentation{--ink:#e2e4e9;--muted:rgba(226,228,233,.64);--line:rgba(226,228,233,.12);--paper:#1e2129;--accent:#5d6cc0;--chrome:#2e303e;--soft:#2e303e;--link:#7e8cd6}
+html[data-color-scheme="dark"] .ekgf-documentation .site-header{background:rgba(30,33,41,.95)}
+html[data-color-scheme="dark"] .ekgf-documentation .site-footer{background:var(--paper)}
+html[data-color-scheme="dark"] .documentation-identity-row .brand-identity{color:var(--ink)}
+@media(max-width:1219px){.documentation-identity-row{padding-left:1rem}}
+@media(max-width:959px){html body.ekgf-documentation .site-title{position:static;transform:none;max-width:none;flex:1;font-size:1.1rem}.identity-marks{display:none}.ekgf-documentation .site-layout:has(>.site-navigation),html body.ekgf-documentation .site-layout:has(>.page-outline){display:block}.ekgf-documentation .site-footer-grid,.ekgf-documentation .site-footer-grid:has(>:nth-child(4):last-child){grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.documentation-identity-row{padding:0 .8rem}.documentation-tabs-row{padding:0 .8rem;height:48px}.documentation-tabs-row .primary-navigation{overflow-x:auto;scrollbar-width:none}.documentation-tabs-row .primary-navigation::-webkit-scrollbar{display:none}.ekgf-documentation .site-layout{padding:0 .8rem}.ekgf-documentation .site-navigation,.ekgf-documentation .page-outline{position:static;height:auto}.ekgf-documentation article h1{font-size:1.6rem;margin-bottom:1.5rem}}
+@media(max-width:480px){.documentation-identity-row .brand-identity{font-size:24px}.documentation-identity-row .brand-identity img{width:24px;height:24px}.ekgf-documentation .site-title{font-size:1rem}.ekgf-documentation .site-footer-grid,.ekgf-documentation .site-footer-grid:has(>:nth-child(4):last-child){grid-template-columns:1fr}.ekgf-documentation .site-footer-notes{text-align:left}}
+@media print{.documentation-tabs-row,.documentation-identity-row .identity-marks{display:none}.ekgf-documentation .site-header{position:static;box-shadow:none}}
+html body.ekgf-documentation article li{margin:0 0 .5em}html body.ekgf-documentation article li+li{margin-top:0}html body.ekgf-documentation article li>:is(ul,ol){margin-top:.5em}
+/* Phone width: Material's compact header keeps the logo mark and title. */
+@media(max-width:959px){.documentation-identity-row{height:56px;justify-content:flex-start;gap:1.25rem}.documentation-identity-row .brand-identity span{display:none}}
+/* The footer closes the viewport on short pages, as Material's does. */
+html body.ekgf-documentation{min-height:100dvh;display:flex;flex-direction:column}html body.ekgf-documentation>.site-layout{flex:1 0 auto;width:100%}

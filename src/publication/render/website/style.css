@@ -34,3 +34,4 @@ body[data-status-band]{padding-left:26px}
    interactive control, so it draws no focus outline. */
 main:focus{outline:none}
 .project-facts{display:flex;flex-wrap:wrap;gap:.35rem 1.5rem;margin:.75rem 0 1.25rem;padding:.6rem .9rem;border:1px solid var(--line);border-radius:.5rem;background:var(--chrome);font-size:.875rem}.project-facts div{display:flex;gap:.45rem;min-width:0;flex-wrap:wrap}.project-facts dt{color:var(--muted);font-weight:550}.project-facts dd{margin:0;overflow-wrap:anywhere}.project-facts .package-version{color:var(--muted);font-variant-numeric:tabular-nums}.brand-version[hidden]{display:none}.page-updated{margin-top:2rem;color:var(--muted);font-size:.85rem}
+.page-dates{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;margin-top:2rem;color:var(--muted);font-size:.85rem}.page-date{display:inline-flex;align-items:center;gap:.4rem}.page-date-icon svg{display:block;width:1.1em;height:1.1em}

@@ -4,6 +4,7 @@ mod brand_mark;
 mod chrome_sources;
 mod flag;
 mod footer;
+mod footer_license;
 mod footer_link;
 mod footer_markdown;
 mod identity;
@@ -11,6 +12,7 @@ mod mark_image;
 mod options;
 mod screen_rules;
 mod screen_value;
+mod social;
 mod status_band;
 mod theme_tokens;
 

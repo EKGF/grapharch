@@ -10,16 +10,18 @@ pub(crate) enum Builtin {
     Overview,
     Ekgf,
     EkgfProject,
+    EkgfDocumentation,
 }
 
 impl Builtin {
     // bounded: the fixed catalogue.
-    const ALL: [Self; 5] = [
+    const ALL: [Self; 6] = [
         Self::Reader,
         Self::Specification,
         Self::Overview,
         Self::Ekgf,
         Self::EkgfProject,
+        Self::EkgfDocumentation,
     ];
 
     fn local(self) -> &'static str {
@@ -29,6 +31,7 @@ impl Builtin {
             Self::Overview => "OverviewTheme",
             Self::Ekgf => "EkgfTheme",
             Self::EkgfProject => "EkgfProjectTheme",
+            Self::EkgfDocumentation => "EkgfDocumentationTheme",
         }
     }
 
@@ -39,7 +42,10 @@ impl Builtin {
     pub(crate) fn website_skin(self) -> bool {
         matches!(
             self,
-            Self::Reader | Self::Ekgf | Self::EkgfProject
+            Self::Reader |
+                Self::Ekgf |
+                Self::EkgfProject |
+                Self::EkgfDocumentation
         )
     }
 

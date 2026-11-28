@@ -186,6 +186,11 @@ ga:EkgfTheme a ga:Theme ;
     dct:description "EKGF community identity for companion websites; PDF tokens are those of the reader theme."@en ;
     ga:baseTheme ga:ReaderTheme .
 
+ga:EkgfDocumentationTheme a ga:Theme ;
+    rdfs:label "EKGF documentation"@en ;
+    dct:description "EKGF community identity for a documentation website in the arrangement of EKGF's Material for MkDocs sites: the EKGF logo, a centred site title, the OMG mark, top-level tabs and the EKGF documentation footer; PDF tokens are those of the reader theme."@en ;
+    ga:baseTheme ga:ReaderTheme .
+
 ga:EkgfProjectTheme a ga:Theme ;
     rdfs:label "EKGF project"@en ;
     dct:description "EKGF community identity for a project website with project navigation."@en ;
@@ -237,3 +242,18 @@ ga:EkgfTheme ga:brandLogo <https://ekgf.org/ontology/grapharch/theme/ekgf#brand>
     dct:description "An initiative of the [Enterprise Knowledge Graph Forum (EKGF)](https://ekgf.org/), a Managed Community of the [Object Management Group (OMG)](https://www.omg.org/)." .
 <https://ekgf.org/ontology/grapharch/theme/ekgf#footer-credits> ga:order 2 ;
     dct:description "[Documentation home](./) · [EKGF identity credits](brand/NOTICE.txt) · [GraphArch license](https://github.com/EKGF/grapharch/blob/main/LICENSE)" .
+
+# EKGF documentation sites (principles, method, maturity, catalog) share the
+# community identity without the ekgf.org header links; their footer lists
+# the EKGF documentation sites and the website's own social links.
+ga:EkgfDocumentationTheme ga:brandLogo <https://ekgf.org/ontology/grapharch/theme/ekgf#brand> ;
+    ga:identityMark <https://ekgf.org/ontology/grapharch/theme/ekgf#omg> ;
+    ga:siteFooter <https://ekgf.org/ontology/grapharch/theme/ekgf#documentation-footer> .
+<https://ekgf.org/ontology/grapharch/theme/ekgf#documentation-footer> a ga:SiteFooter ;
+    ga:footerGroup <https://ekgf.org/ontology/grapharch/theme/ekgf#footer-about>, <https://ekgf.org/ontology/grapharch/theme/ekgf#documentation-sites>, <https://ekgf.org/ontology/grapharch/theme/ekgf#footer-resources>, <https://ekgf.org/ontology/grapharch/theme/ekgf#documentation-connect> ;
+    ga:footerLicense <https://ekgf.org/ontology/grapharch/theme/ekgf#cc-by-sa> ;
+    ga:footerNote <https://ekgf.org/ontology/grapharch/theme/ekgf#footer-initiative> .
+<https://ekgf.org/ontology/grapharch/theme/ekgf#documentation-sites> dct:title "Documentation" ; ga:order 2 ;
+    ga:footerLink <https://ekgf.org/ontology/grapharch/theme/ekgf#doc-quadrants>, <https://ekgf.org/ontology/grapharch/theme/ekgf#doc-method>, <https://ekgf.org/ontology/grapharch/theme/ekgf#doc-catalog>, <https://ekgf.org/ontology/grapharch/theme/ekgf#doc-maturity>, <https://ekgf.org/ontology/grapharch/theme/ekgf#doc-principles>, <https://ekgf.org/ontology/grapharch/theme/ekgf#doc-dprod> .
+<https://ekgf.org/ontology/grapharch/theme/ekgf#documentation-connect> dct:title "Connect" ; ga:order 4 ; ga:socialLinks "true"^^xsd:boolean .
+<https://ekgf.org/ontology/grapharch/theme/ekgf#cc-by-sa> dct:title "CC BY-SA 4.0" ; ga:url "https://creativecommons.org/licenses/by-sa/4.0/" .

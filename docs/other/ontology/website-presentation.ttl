@@ -1,0 +1,113 @@
+# Website presentation switches: generated regions a profile or page may
+# omit or rearrange, typographic symbols, and footer content taken from the
+# profile. Absent values keep the generated region.
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ga:breadcrumbs a owl:DatatypeProperty ;
+    rdfs:label "Breadcrumbs"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether website pages show the breadcrumb trail above the page; the default is true."@en ;
+    dct:description "States whether website pages show the breadcrumb trail above the page; the default is true."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:pageNeighbors a owl:DatatypeProperty ;
+    rdfs:label "Previous and next links"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether website pages end with links to the previous and next page in navigation order; the default is true."@en ;
+    dct:description "States whether website pages end with links to the previous and next page in navigation order; the default is true."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:outlineInSidebar a owl:DatatypeProperty ;
+    rdfs:label "Outline in the sidebar"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether a page's outline of headings is placed at the end of the navigation sidebar instead of beside the page; the default is false."@en ;
+    dct:description "States whether a page's outline of headings is placed at the end of the navigation sidebar instead of beside the page; the default is false."@en ;
+    skos:scopeNote "A page without a sidebar then shows no outline."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:smartSymbols a owl:DatatypeProperty ;
+    rdfs:label "Smart symbols"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether website pages present typed character sequences as typographic symbols: --- as an em dash, -- as an en dash, (c), (r) and (tm) as ©, ® and ™, arrows such as --> and <=> as →, ⇔, +/- and =/= as ± and ≠, and 1/2, 1/4 and 3/4 as fractions; the default is false."@en ;
+    dct:description "States whether website pages present typed character sequences as typographic symbols: --- as an em dash, -- as an en dash, (c), (r) and (tm) as ©, ® and ™, arrows such as --> and <=> as →, ⇔, +/- and =/= as ± and ≠, and 1/2, 1/4 and 3/4 as fractions; the default is false."@en ;
+    skos:scopeNote "Code spans, code blocks and URLs are never changed."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:PageRegion a owl:Class ;
+    rdfs:label "Page region"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A generated region around a website page's content that the page may hide."@en ;
+    dct:description "A generated region around a website page's content that the page may hide."@en .
+
+ga:NavigationRegion a owl:NamedIndividual , ga:PageRegion ;
+    rdfs:label "Navigation sidebar"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The sidebar listing the pages of the website or of the page's section."@en ;
+    dct:description "The sidebar listing the pages of the website or of the page's section."@en .
+
+ga:OutlineRegion a owl:NamedIndividual , ga:PageRegion ;
+    rdfs:label "Page outline"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The outline of the page's headings."@en ;
+    dct:description "The outline of the page's headings."@en .
+
+ga:hiddenRegion a owl:ObjectProperty ;
+    rdfs:label "Hidden region"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Hides a generated region on one website page."@en ;
+    dct:description "Hides a generated region on one website page."@en ;
+    skos:scopeNote "Collected from the hide list of Markdown frontmatter, as written for Material for MkDocs: navigation and toc select ga:NavigationRegion and ga:OutlineRegion."@en ;
+    rdfs:domain ga:Page ;
+    rdfs:range ga:PageRegion .
+
+ga:socialLink a owl:ObjectProperty ;
+    rdfs:label "Social link"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Adds a link to the publisher's presence on a social or code-hosting service, with ga:url, ga:order, ga:iconName and an optional dct:title as its accessible name."@en ;
+    dct:description "Adds a link to the publisher's presence on a social or code-hosting service, with ga:url, ga:order, ga:iconName and an optional dct:title as its accessible name."@en ;
+    skos:scopeNote "Footer groups with ga:socialLinks present these links as icons. An icon name ends in the service, such as fontawesome/brands/github; up to sixteen links are supported."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range rdfs:Resource .
+
+ga:socialLinks a owl:DatatypeProperty ;
+    rdfs:label "Social links group"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States that a footer group presents the profile's social links as icons instead of its own links or description."@en ;
+    dct:description "States that a footer group presents the profile's social links as icons instead of its own links or description."@en ;
+    skos:scopeNote "The group is omitted when the profile declares no social link."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:boolean .
+
+ga:footerLicense a owl:ObjectProperty ;
+    rdfs:label "Footer licence"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Shows a licence badge, with the licence's dct:title and ga:url, above a website footer's notes."@en ;
+    dct:description "Shows a licence badge, with the licence's dct:title and ga:url, above a website footer's notes."@en ;
+    rdfs:domain ga:SiteFooter ;
+    rdfs:range rdfs:Resource .
+
+ga:primaryNavigation a owl:DatatypeProperty ;
+    rdfs:label "Primary navigation tabs"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether documentation-layout website pages show the primary navigation as tabs in the header; the default is true."@en ;
+    dct:description "States whether documentation-layout website pages show the primary navigation as tabs in the header; the default is true."@en ;
+    skos:scopeNote "With false, the sidebar alone navigates the website."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .
+
+ga:sidebarSections a owl:DatatypeProperty ;
+    rdfs:label "Sidebar sections"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "States whether the navigation sidebar presents its top-level entries as always expanded, titled sections instead of collapsible entries; the default is false."@en ;
+    dct:description "States whether the navigation sidebar presents its top-level entries as always expanded, titled sections instead of collapsible entries; the default is false."@en ;
+    rdfs:domain ga:Profile ;
+    rdfs:range xsd:boolean .

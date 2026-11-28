@@ -63,7 +63,7 @@ pub(super) struct Catalog {
     /// The decision for each recorded reference, made before rendering.
     pub decisions:        decisions::Decisions,
     /// The newest Git change date of each page source, when collected.
-    pub last_updated:     HashMap<String, String>,
+    pub last_updated:     HashMap<String, revisions::PageDates>,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {

@@ -22,6 +22,7 @@ pub(super) struct Page<'a> {
     pub gallery:          &'a str,
     pub previous_next:    &'a str,
     pub outline:          &'a str,
+    pub hidden:           super::page_regions::PageRegions,
 }
 
 pub(super) fn render(
@@ -163,6 +164,23 @@ pub(super) fn render(
         format!("{project_brand}{header_links}")
     };
     let product_controls = if community_row { "" } else { &header_links };
+    let header_content = if header.theme.documentation_identity() {
+        super::documentation_header::DocumentationHeader {
+            header,
+            prefix,
+            tabs: &if header.chrome.primary_navigation() {
+                header
+                    .navigation
+                    .html_context("primary", page.id, active, prefix)
+                    .unwrap_or_default()
+            } else {
+                String::new()
+            },
+        }
+        .html()
+    } else {
+        header_content
+    };
     let community_footer = match &header.footer {
         Some(footer) => {
             footer.html(prefix, header.chrome.generator_credit())?
@@ -187,11 +205,17 @@ pub(super) fn render(
         )
     };
     let explicit_sidebar = section_sidebar;
-    let primary_navigation = header
-        .navigation
-        .html_context("primary", page.id, active, prefix)
-        .unwrap_or_default();
-    let primary_navigation = if header.navigation.sectioned() {
+    let primary_navigation = if header.chrome.primary_navigation() {
+        header
+            .navigation
+            .html_context("primary", page.id, active, prefix)
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+    let primary_navigation = if header.theme.documentation_identity() {
+        String::new()
+    } else if header.navigation.sectioned() {
         format!(
             "<div class=\"project-identity-row \
              documentation-product-row\"\
@@ -212,15 +236,33 @@ pub(super) fn render(
         .navigation
         .html("footer", active, prefix)
         .unwrap_or_default();
+    let outline_in_sidebar =
+        header.chrome.outline_in_sidebar() && !page_outline.is_empty();
+    let integrated_outline = if outline_in_sidebar && !page.hidden.outline() {
+        page_outline.replacen(
+            "class=\"page-outline\"",
+            "class=\"integrated-outline\"",
+            1,
+        )
+    } else {
+        String::new()
+    };
+    let sidebar_class = if header.chrome.sidebar_sections() {
+        "site-navigation sidebar-sections"
+    } else {
+        "site-navigation"
+    };
     let navigation_panel = if without_sidebar ||
+        page.hidden.navigation() ||
         (project_page && header.navigation.documentation)
     {
         String::new()
     } else if let Some(sidebar) = explicit_sidebar {
         format!(
-            "<aside class=\"site-navigation\" data-project=\"{}\" \
+            "<aside class=\"{sidebar_class}\" data-project=\"{}\" \
              data-target=\"{}\"><details open><summary>Browse \
-             documentation</summary>{sidebar}</details></aside>",
+             documentation</summary>{sidebar}{integrated_outline}</details></\
+             aside>",
             esc(plan.project.as_str()),
             esc(plan.target.as_str())
         )
@@ -258,7 +300,7 @@ pub(super) fn render(
     let heading = if project_page { "" } else { heading };
     let (root_label, root_route) =
         page.breadcrumb_root.unwrap_or(("Docs", prefix));
-    let trail = if project_page {
+    let trail = if project_page || !header.chrome.breadcrumbs() {
         String::new()
     } else {
         format!(
@@ -269,12 +311,19 @@ pub(super) fn render(
             esc(page.title)
         )
     };
-    let neighbors = if project_page {
+    let neighbors = if project_page || !header.chrome.page_neighbors() {
         String::new()
     } else {
         neighbors
     };
-    let page_outline = if project_page { "" } else { page_outline };
+    let page_outline = if project_page ||
+        page.hidden.outline() ||
+        header.chrome.outline_in_sidebar()
+    {
+        ""
+    } else {
+        page_outline
+    };
     let prepaint = header.theme.prepaint();
     let body_attribute = if project_page && !header.theme.project() {
         if header.theme.community() {

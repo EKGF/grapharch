@@ -11,7 +11,7 @@ use {
 };
 
 /// The vocabulary, shapes and catalogues that declare GraphArch terms.
-const DECLARATIONS: [&str; 13] = [
+const DECLARATIONS: [&str; 15] = [
     include_str!("../../docs/other/ontology/publication.ttl"),
     include_str!("../../docs/other/ontology/publication.shacl.ttl"),
     include_str!("../../docs/other/ontology/collectors.ttl"),
@@ -25,6 +25,8 @@ const DECLARATIONS: [&str; 13] = [
     include_str!("../../docs/other/ontology/renderers.ttl"),
     include_str!("../../docs/other/ontology/showcase-runners.ttl"),
     include_str!("../../docs/other/ontology/themes.ttl"),
+    include_str!("../../docs/other/ontology/mkdocs-import.ttl"),
+    include_str!("../../docs/other/ontology/website-presentation.ttl"),
 ];
 
 // bounded: the compile-time vocabulary, independent of any corpus.

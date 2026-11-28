@@ -62,6 +62,9 @@ impl Presentation {
                 let key = key.as_str().ok_or_else(|| {
                     anyhow::anyhow!("extra keys must be text")
                 })?;
+                if matches!(key, "generator" | "social") {
+                    continue; // imported as the credit switch and footer links
+                }
                 warnings.push(ImportWarning::substituted(format!(
                     "extra.{key}: template variables, social links and \
                      analytics are not reproduced; nothing is injected"

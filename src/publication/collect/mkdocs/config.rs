@@ -6,14 +6,20 @@ use {
 };
 
 pub(super) struct Config {
-    pub title:       String,
-    pub docs:        String,
-    pub description: Option<String>,
-    pub repository:  Option<String>,
-    pub site_url:    Option<String>,
-    pub nav:         Option<Value>,
-    pub warnings:    Vec<ImportWarning>,
-    pub hints:       extensions::Hints,
+    pub title:         String,
+    pub docs:          String,
+    pub description:   Option<String>,
+    pub repository:    Option<String>,
+    pub site_url:      Option<String>,
+    pub nav:           Option<Value>,
+    pub warnings:      Vec<ImportWarning>,
+    pub hints:         extensions::Hints,
+    pub theme_name:    Option<String>,
+    // bounded: the plugin entries of a 4096-node document.
+    pub plugins:       Vec<String>,
+    pub material:      super::material::Material,
+    /// Whether a Markdown extension asks for typographic symbols.
+    pub smart_symbols: bool,
 }
 impl Config {
     pub fn parse(body: &str) -> Result<Self> {
@@ -73,7 +79,6 @@ impl Config {
             "site_author",
             "repo_name",
             "edit_uri",
-            "copyright",
             "site_dir",
             "strict",
             "dev_addr",
@@ -137,7 +142,7 @@ impl Config {
                              never rendered; content they add needs a native \
                              GraphArch documentor"
                         )));
-                    } else if key != "name" {
+                    } else if !matches!(key, "name" | "features" | "palette") {
                         warnings.push(ImportWarning::substituted(format!(
                             "theme.{key}: retained as source metadata; \
                              GraphArch controls this presentation setting"
@@ -151,7 +156,24 @@ impl Config {
             "Unsupported MkDocs configuration:\n{}",
             errors.join("\n")
         );
+        let material = super::material::Material::read(map, &mut warnings)?;
         Ok(Self {
+            theme_name: map.get("theme").and_then(|theme| {
+                theme
+                    .as_str()
+                    .or_else(|| theme.get("name").and_then(Value::as_str))
+                    .map(str::to_owned)
+            }),
+            plugins: names(map.get("plugins")),
+            smart_symbols: names(map.get("markdown_extensions")).iter().any(
+                |name| {
+                    matches!(
+                        name.as_str(),
+                        "pymdownx.smartsymbols" | "mdx_emdash" | "smarty"
+                    )
+                },
+            ),
+            material,
             title: text(map, "site_name")?.ok_or_else(|| {
                 anyhow::anyhow!("mkdocs.yml requires site_name")
             })?,
@@ -164,6 +186,23 @@ impl Config {
             hints,
         })
     }
+}
+/// The names of a plugin or extension list, whose entries are names or
+/// one-entry option mappings.
+fn names(list: Option<&Value>) -> Vec<String> {
+    list.and_then(Value::as_sequence)
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            entry.as_str().or_else(|| {
+                entry
+                    .as_mapping()
+                    .and_then(|m| m.keys().next())
+                    .and_then(Value::as_str)
+            })
+        })
+        .map(str::to_owned)
+        .collect()
 }
 fn text(map: &Mapping, key: &str) -> Result<Option<String>> {
     map.get(key)

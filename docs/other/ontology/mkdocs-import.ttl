@@ -1,0 +1,99 @@
+# Import of MkDocs configurations: how a mkdocs.yml theme or plugin name is
+# presented by GraphArch. The MkDocs collector reads this table; it never
+# executes the named theme or plugin. A mapping's screen tokens, such as
+# ga:contentWidth, are declared on the theme the import generates for the
+# website, which refines the mapped GraphArch theme.
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ga:MkDocsMapping a owl:Class ;
+    rdfs:label "MkDocs presentation mapping"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Relates an MkDocs theme or plugin name to the GraphArch theme and screen tokens that present a website configured with it."@en ;
+    dct:description "Relates an MkDocs theme or plugin name to the GraphArch theme and screen tokens that present a website configured with it."@en ;
+    skos:scopeNote "A plugin mapping takes precedence over a theme mapping; the first listed plugin with a mapping selects the theme. Screen tokens of every matching mapping apply."@en .
+
+ga:mkdocsTheme a owl:DatatypeProperty ;
+    rdfs:label "MkDocs theme name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Gives the theme.name of an MkDocs configuration that a mapping applies to."@en ;
+    dct:description "Gives the theme.name of an MkDocs configuration that a mapping applies to."@en ;
+    rdfs:domain ga:MkDocsMapping ;
+    rdfs:range xsd:string .
+
+ga:mkdocsPlugin a owl:DatatypeProperty ;
+    rdfs:label "MkDocs plugin name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Gives the name of an MkDocs plugin that a mapping applies to when the configuration lists it."@en ;
+    dct:description "Gives the name of an MkDocs plugin that a mapping applies to when the configuration lists it."@en ;
+    rdfs:domain ga:MkDocsMapping ;
+    rdfs:range xsd:string .
+
+ga:mappedTheme a owl:ObjectProperty ;
+    rdfs:label "Mapped theme"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects the GraphArch theme that presents a website whose MkDocs configuration matches the mapping."@en ;
+    dct:description "Selects the GraphArch theme that presents a website whose MkDocs configuration matches the mapping."@en ;
+    rdfs:domain ga:MkDocsMapping ;
+    rdfs:range ga:Theme .
+
+ga:MaterialColor a owl:Class ;
+    rdfs:label "Material for MkDocs colour"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A named palette colour of Material for MkDocs, with ga:mkdocsColor as its name and ga:screenColor as its value."@en ;
+    dct:description "A named palette colour of Material for MkDocs, with ga:mkdocsColor as its name and ga:screenColor as its value."@en ;
+    skos:scopeNote "A palette primary colour becomes the link and accent colour of the generated theme; custom and unknown names keep the mapped theme's colours."@en .
+
+ga:mkdocsColor a owl:DatatypeProperty ;
+    rdfs:label "Material colour name"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Gives the name of a Material for MkDocs palette colour as written in theme.palette."@en ;
+    dct:description "Gives the name of a Material for MkDocs palette colour as written in theme.palette."@en ;
+    rdfs:domain ga:MaterialColor ;
+    rdfs:range xsd:string .
+
+ga:screenColor a owl:DatatypeProperty ;
+    rdfs:label "Screen colour"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Gives a colour as a six-digit hexadecimal CSS colour."@en ;
+    dct:description "Gives a colour as a six-digit hexadecimal CSS colour."@en ;
+    rdfs:domain ga:MaterialColor ;
+    rdfs:range xsd:string .
+
+# Material lays content out on a 61rem grid of its 20px root size.
+<https://ekgf.org/ontology/grapharch/mkdocs#material> a ga:MkDocsMapping ;
+    ga:mkdocsTheme "material" ;
+    ga:contentWidth "76.25rem" .
+
+# EKGF's Material customisation: identity, header and footer of the EKGF
+# documentation sites.
+<https://ekgf.org/ontology/grapharch/mkdocs#material-ekgf> a ga:MkDocsMapping ;
+    ga:mkdocsPlugin "material-ekgf" ;
+    ga:mappedTheme ga:EkgfDocumentationTheme .
+
+# Material for MkDocs primary colours (--md-primary-fg-color).
+<https://ekgf.org/ontology/grapharch/mkdocs#red> a ga:MaterialColor ; ga:mkdocsColor "red" ; ga:screenColor "#ef5552" .
+<https://ekgf.org/ontology/grapharch/mkdocs#pink> a ga:MaterialColor ; ga:mkdocsColor "pink" ; ga:screenColor "#e92063" .
+<https://ekgf.org/ontology/grapharch/mkdocs#purple> a ga:MaterialColor ; ga:mkdocsColor "purple" ; ga:screenColor "#ab47bd" .
+<https://ekgf.org/ontology/grapharch/mkdocs#deep-purple> a ga:MaterialColor ; ga:mkdocsColor "deep purple" ; ga:screenColor "#7e56c2" .
+<https://ekgf.org/ontology/grapharch/mkdocs#indigo> a ga:MaterialColor ; ga:mkdocsColor "indigo" ; ga:screenColor "#4051b5" .
+<https://ekgf.org/ontology/grapharch/mkdocs#blue> a ga:MaterialColor ; ga:mkdocsColor "blue" ; ga:screenColor "#2094f3" .
+<https://ekgf.org/ontology/grapharch/mkdocs#light-blue> a ga:MaterialColor ; ga:mkdocsColor "light blue" ; ga:screenColor "#02a6f2" .
+<https://ekgf.org/ontology/grapharch/mkdocs#cyan> a ga:MaterialColor ; ga:mkdocsColor "cyan" ; ga:screenColor "#00bdd6" .
+<https://ekgf.org/ontology/grapharch/mkdocs#teal> a ga:MaterialColor ; ga:mkdocsColor "teal" ; ga:screenColor "#009485" .
+<https://ekgf.org/ontology/grapharch/mkdocs#green> a ga:MaterialColor ; ga:mkdocsColor "green" ; ga:screenColor "#4cae4f" .
+<https://ekgf.org/ontology/grapharch/mkdocs#light-green> a ga:MaterialColor ; ga:mkdocsColor "light green" ; ga:screenColor "#8bc34b" .
+<https://ekgf.org/ontology/grapharch/mkdocs#lime> a ga:MaterialColor ; ga:mkdocsColor "lime" ; ga:screenColor "#cbdc38" .
+<https://ekgf.org/ontology/grapharch/mkdocs#yellow> a ga:MaterialColor ; ga:mkdocsColor "yellow" ; ga:screenColor "#ffec3d" .
+<https://ekgf.org/ontology/grapharch/mkdocs#amber> a ga:MaterialColor ; ga:mkdocsColor "amber" ; ga:screenColor "#ffc105" .
+<https://ekgf.org/ontology/grapharch/mkdocs#orange> a ga:MaterialColor ; ga:mkdocsColor "orange" ; ga:screenColor "#ffa724" .
+<https://ekgf.org/ontology/grapharch/mkdocs#deep-orange> a ga:MaterialColor ; ga:mkdocsColor "deep orange" ; ga:screenColor "#ff6e42" .
+<https://ekgf.org/ontology/grapharch/mkdocs#brown> a ga:MaterialColor ; ga:mkdocsColor "brown" ; ga:screenColor "#795649" .
+<https://ekgf.org/ontology/grapharch/mkdocs#grey> a ga:MaterialColor ; ga:mkdocsColor "grey" ; ga:screenColor "#757575" .
+<https://ekgf.org/ontology/grapharch/mkdocs#blue-grey> a ga:MaterialColor ; ga:mkdocsColor "blue grey" ; ga:screenColor "#546d78" .
+<https://ekgf.org/ontology/grapharch/mkdocs#black> a ga:MaterialColor ; ga:mkdocsColor "black" ; ga:screenColor "#000000" .
+<https://ekgf.org/ontology/grapharch/mkdocs#white> a ga:MaterialColor ; ga:mkdocsColor "white" ; ga:screenColor "#ffffff" .

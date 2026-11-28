@@ -56,6 +56,7 @@ pub(super) fn render(
     body: &str,
     page: &Page,
     catalog: &Catalog,
+    smart_symbols: bool,
 ) -> Result<Content> {
     let body = catalog.abbreviations.clean(body)?;
     let body = crate::publication::footnotes::complete(&body, &body)?;
@@ -65,6 +66,9 @@ pub(super) fn render(
                 .collect(),
         ),
     )?;
+    if smart_symbols {
+        super::smart_symbols::SmartSymbols::apply(&mut events);
+    }
     let headings = index(&events);
     let mut heading_index = 0;
     let mut image_presentations = Vec::new(); // bounded: one capped Markdown page.
