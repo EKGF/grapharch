@@ -161,6 +161,39 @@ pub(crate) fn http_error(error: reqwest::Error) -> io::Error {
     }
     io::Error::other(message)
 }
+/// Upper bound on the body bytes read and discarded to return a connection to
+/// the client's pool; a larger remainder closes the connection instead.
+const DRAIN_LIMIT: u64 = 64 * 1024;
+/// Reads what remains of a response body to its end, so `reqwest` returns the
+/// connection to its pool instead of closing it.
+///
+/// A response dropped with unread body bytes closes its connection; on a
+/// long publication every such close leaves a TIME_WAIT socket behind, and on
+/// Windows those exhaust the dynamic port range (`os error 10048`).
+pub(crate) trait Drain: Read + Sized {
+    /// Discards the remaining body, at most [`DRAIN_LIMIT`] bytes.
+    fn drain(&mut self) -> io::Result<()> {
+        io::copy(
+            &mut self.by_ref().take(DRAIN_LIMIT),
+            &mut io::sink(),
+        )
+        .map(|_| ())
+    }
+}
+impl Drain for reqwest::blocking::Response {}
+impl<R: Read> Drain for LimitedRead<R> {}
+/// A response whose body carries nothing the caller reads.
+pub(crate) trait Settle {
+    /// Discards the body, then reports the status like [`status`].
+    fn settle(self) -> io::Result<()>;
+}
+impl Settle for reqwest::blocking::Response {
+    fn settle(mut self) -> io::Result<()> {
+        let drained = self.drain();
+        status(self.status())?;
+        drained
+    }
+}
 pub(crate) fn status(status: reqwest::StatusCode) -> io::Result<()> {
     if status.is_success() {
         Ok(())

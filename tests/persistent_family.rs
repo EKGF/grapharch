@@ -205,6 +205,14 @@ async fn external_family_publishes_from_restored_pinned_kg() -> Result<()> {
     let server = support::Server::new(true)?;
     publish_restore(Dataset::sparql(server.config()).await?).await?;
     assert_eq!(server.transaction_count(), 0);
+    // Regression: one connection per request exhausted the Windows dynamic
+    // port range (os error 10048) part-way through this publication.
+    let (connections, requests) = server.traffic();
+    assert!(
+        connections * 10 < requests,
+        "{connections} connections for {requests} requests; the store client \
+         must reuse its connections"
+    );
     Ok(())
 }
 #[tokio::test]
