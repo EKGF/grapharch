@@ -33,6 +33,7 @@ pub mod plantuml;
 mod preamble;
 pub(crate) mod published_artifact;
 mod rdf;
+mod reference_facts;
 mod repository_publications;
 pub(crate) mod semantic_images;
 mod source;

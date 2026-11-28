@@ -143,8 +143,10 @@ fn git(root: &Path, args: &[&str]) -> String {
 }
 
 const LINKS: &str = "# Guide\n\nSee [the manifest](../package.json), \
+    [a deleted file](../gone.json), \
     [a missing page](/missing/) and the \
-    [![build](https://img.shields.io/badge/build-passing-green?logo=github)](https://github.com/example/tool/issues/1).\n";
+    [![build](https://img.shields.io/badge/build-passing-green?logo=github)](https://github.com/example/tool/issues/1).\n\n\
+    ```plantuml\n@startuml\n!include common.puml\n@enduml\n```\n";
 
 #[tokio::test]
 async fn repository_files_link_to_the_forge_and_badges_are_never_fetched()
@@ -190,11 +192,21 @@ async fn repository_files_link_to_the_forge_and_badges_are_never_fetched()
         "repository file links to the forge blob at the commit"
     );
     assert!(html.contains("a missing page") && !html.contains("/missing/"));
+    assert!(
+        html.contains("a deleted file") && !html.contains("gone.json"),
+        "a link to a file absent from the Git index is broken, not a forge \
+         link"
+    );
     assert!(html.contains(
         "https://img.shields.io/badge/build-passing-green?logo=github"
     ));
     let graph =
         std::fs::read_to_string(r.join("output/grapharch/documentation.nq"))?;
+    assert!(
+        graph.contains("grapharch#DiagramIncludeContext>"),
+        "diagram include recorded"
+    );
+    assert!(graph.contains("grapharch#repositoryFileExists>"));
     for kind in [
         "RepositoryFileLink",
         "BrokenLink",
@@ -208,7 +220,11 @@ async fn repository_files_link_to_the_forge_and_badges_are_never_fetched()
     }
     let strict = build(r, &["--strict"]).await?;
     assert!(!strict.status.success());
-    assert!(String::from_utf8_lossy(&strict.stderr).contains("/missing/"));
+    let stderr = String::from_utf8_lossy(&strict.stderr);
+    assert!(
+        stderr.contains("/missing/") || stderr.contains("gone.json"),
+        "{stderr}"
+    );
     Ok(())
 }
 

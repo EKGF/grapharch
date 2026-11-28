@@ -281,9 +281,21 @@ pub(super) fn link(
     page: &Page,
     catalog: &Catalog,
 ) -> Result<Option<String>> {
-    let lookup = super::reference_lookup::PageLookup { page, catalog };
-    let classification = ReferenceClassifier::new(&lookup, catalog.link_policy)
-        .classify(value, &page.source, &page.route, false)?;
+    // Recorded references were decided before rendering; only references
+    // generated from the graph itself (diagram and SVG IRIs) decide here.
+    let classification =
+        match catalog
+            .decisions
+            .get(&(page.source.clone(), value.to_owned()))
+        {
+            Some(decided) => decided.clone(),
+            None => {
+                let lookup =
+                    super::reference_lookup::PageLookup { page, catalog };
+                ReferenceClassifier::new(&lookup, catalog.link_policy)
+                    .classify(value, &page.source, &page.route, false)?
+            },
+        };
     catalog
         .recorder
         .record(&page.source, value, &classification)?;
