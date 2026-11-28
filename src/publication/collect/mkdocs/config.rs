@@ -1,5 +1,5 @@
 use {
-    super::extensions,
+    super::{extensions, warning::ImportWarning, yaml_tags::Untagged},
     anyhow::{Result, ensure},
     serde_yaml::{Mapping, Value},
     std::collections::BTreeSet,
@@ -12,7 +12,7 @@ pub(super) struct Config {
     pub repository:  Option<String>,
     pub site_url:    Option<String>,
     pub nav:         Option<Value>,
-    pub warnings:    Vec<String>,
+    pub warnings:    Vec<ImportWarning>,
     pub hints:       extensions::Hints,
 }
 impl Config {
@@ -21,15 +21,16 @@ impl Config {
             body.len() <= 128 * 1024,
             "MkDocs configuration exceeds 128 KiB"
         );
-        reject_tags(body)?;
-        let value: Value = serde_yaml::from_str(body)?;
+        reject_aliases(body)?;
+        let Untagged { body, warnings: tag_warnings } = Untagged::read(body);
+        let value: Value = serde_yaml::from_str(&body)?;
         let mut count = 0;
         safe(&value, 0, &mut count)?;
         let map = value.as_mapping().ok_or_else(|| {
             anyhow::anyhow!("MkDocs configuration must be a mapping")
         })?;
         let mut errors = Vec::new(); // bounded: YAML node limit 4096.
-        let mut warnings = Vec::new(); // bounded: same node limit.
+        let mut warnings = tag_warnings; // bounded: same node limit.
         let supported: BTreeSet<&str> = [
             "site_name",
             "site_description",
@@ -50,6 +51,10 @@ impl Config {
             "watch",
             "use_directory_urls",
             "validation",
+            "extra",
+            "extra_css",
+            "extra_javascript",
+            "hooks",
         ]
         .into_iter()
         .collect();
@@ -76,10 +81,10 @@ impl Config {
             "validation",
         ] {
             if map.contains_key(key) {
-                warnings.push(format!(
+                warnings.push(ImportWarning::substituted(format!(
                     "{key}: retained in the source configuration; GraphArch \
                      uses its own publication, validation, and output settings"
-                ));
+                )));
             }
         }
         if map
@@ -92,14 +97,22 @@ impl Config {
                     .into(),
             );
         }
+        warnings.extend(super::presentation::Presentation::read(map)?);
         let mut hints = extensions::Hints::default();
         extensions::read(
             map.get("markdown_extensions"),
             false,
             &mut errors,
+            &mut warnings,
             &mut hints,
         )?;
-        extensions::read(map.get("plugins"), true, &mut errors, &mut hints)?;
+        extensions::read(
+            map.get("plugins"),
+            true,
+            &mut errors,
+            &mut warnings,
+            &mut hints,
+        )?;
         if let Some(theme) = map.get("theme") {
             ensure!(
                 theme.is_string() || theme.is_mapping(),
@@ -109,25 +122,26 @@ impl Config {
                 .as_str()
                 .or_else(|| theme.get("name").and_then(Value::as_str))
                 .unwrap_or("custom");
-            warnings.push(format!(
+            warnings.push(ImportWarning::substituted(format!(
                 "MkDocs theme {name:?} is presented with GraphArch's shared \
                  documentation theme; Python/Jinja/CSS is not imported"
-            ));
+            )));
             if let Some(theme) = theme.as_mapping() {
                 for key in theme.keys() {
                     let key = key.as_str().ok_or_else(|| {
                         anyhow::anyhow!("theme keys must be strings")
                     })?;
                     if matches!(key, "custom_dir" | "static_templates") {
-                        errors.push(format!(
-                            "theme.{key}: custom theme execution is not \
-                             supported"
-                        ));
+                        warnings.push(ImportWarning::not_executed(format!(
+                            "theme.{key}: Jinja templates and partials are \
+                             never rendered; content they add needs a native \
+                             GraphArch documentor"
+                        )));
                     } else if key != "name" {
-                        warnings.push(format!(
+                        warnings.push(ImportWarning::substituted(format!(
                             "theme.{key}: retained as source metadata; \
                              GraphArch controls this presentation setting"
-                        ));
+                        )));
                     }
                 }
             }
@@ -172,10 +186,11 @@ fn safe(value: &Value, depth: usize, count: &mut usize) -> Result<()> {
         "MkDocs YAML exceeds 4096 nodes or depth 16"
     );
     match value {
-        Value::Tagged(_) => {
+        Value::Tagged(tagged) => {
             anyhow::bail!(
-                "MkDocs YAML tags (including Python objects and !ENV) are not \
-                 executed; use literal configuration values"
+                "MkDocs YAML tag {} remained after tag reading; tags are not \
+                 executed",
+                tagged.tag
             )
         },
         Value::Sequence(values) => {
@@ -193,7 +208,15 @@ fn safe(value: &Value, depth: usize, count: &mut usize) -> Result<()> {
     }
     Ok(())
 }
+/// Anchors and aliases could expand past the node budget; tags are read as
+/// data by [`Untagged`].
+fn reject_aliases(body: &str) -> Result<()> { scan(body, &['&', '*']) }
+
 pub(super) fn reject_tags(body: &str) -> Result<()> {
+    scan(body, &['!', '&', '*'])
+}
+
+fn scan(body: &str, forbidden: &[char]) -> Result<()> {
     for line in body.lines() {
         let mut quote = None;
         let mut escaped = false;
@@ -221,7 +244,7 @@ pub(super) fn reject_tags(body: &str) -> Result<()> {
                 continue;
             }
             ensure!(
-                !(boundary && matches!(ch, '!' | '&' | '*')),
+                !(boundary && forbidden.contains(&ch)),
                 "MkDocs YAML tags and aliases are not executed; replace \
                  Python tags, !ENV, anchors, and aliases with literal \
                  configuration values"

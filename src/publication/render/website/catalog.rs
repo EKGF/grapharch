@@ -304,9 +304,8 @@ impl Catalog {
                     "manifest.yaml" |
                     "404.html" |
                     ".nojekyll" |
-                    "sitemap.xml" |
-                    "robots.txt"
-            ),
+                    "sitemap.xml"
+            ) && !(artifact == "robots.txt" && !asset),
             "website route collides with reserved artifact {artifact}"
         );
         ensure!(

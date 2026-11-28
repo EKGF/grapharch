@@ -60,12 +60,34 @@ load the Python extension. Support for `attr_list` and `md_in_html` is limited
 to GraphArch's documented semantic constructs; arbitrary HTML or attributes
 remain errors.
 
-Recognized plugins are `search`, `awesome-pages`, and `include-markdown`.
-GraphArch supplies its own local search, directory-navigation collector, and
-bounded include collector. The supported option set is deliberately explicit:
-unknown plugin or extension options fail with their configuration path.
-For example, arbitrary `custom_fences`, custom search-language processing,
-and Python API generation through `mkdocstrings` are not silently approximated.
+Material for MkDocs configurations import unchanged. Each plugin is read as
+data, mapped to a GraphArch capability, or reported with a typed warning; a
+plugin never fails the import and is never executed:
+
+| Plugin | GraphArch behavior |
+| --- | --- |
+| `search` | Built-in local search; `lang` and other options are warnings |
+| `awesome-pages` | Directory navigation from `.pages` and `.pages.yaml` |
+| `include-markdown` | Bounded include collector |
+| `exclude` | Each `glob` becomes a `ga:excludeSourcePattern`; `regex` is a warning |
+| `build_plantuml` | One `ga:PlantUmlFileCollector` use per `.puml` file under `diagram_root`/`input_folder`, written to the plugin's `output_folder`; rendering is local, no server is contacted |
+| `material-ekgf` | The EKGF theme; plugin options are warnings |
+| `git-revision-date-localized` | Git provenance; display options are warnings |
+| `exclude-search`, `kroki`, `gen-files`, `redirects`, `social`, `tags`, unknown plugins | Warnings (`mkdocs-native-equivalent`, `mkdocs-not-executed`, `mkdocs-presentation-substitution`) |
+
+Material's Python YAML tags are read as data, never imported:
+`!!python/name:material.extensions.emoji.to_svg`,
+`!!python/name:material.extensions.emoji.twemoji`,
+`!!python/name:pymdownx.superfences.fence_code_format` (Mermaid custom
+fences) and `!!python/object/apply:pymdownx.slugs.slugify` with its `kwds`.
+Any other tag drops its option with an `mkdocs-unknown-yaml-tag` warning.
+`extra`, `extra_css`, `extra_javascript`, `hooks` and `theme.custom_dir` are
+never injected, rendered or executed; each entry is a warning that names the
+native equivalent where one exists.
+
+Markdown extensions are an explicit list. Unknown extension options still fail
+with their configuration path, because an extension changes the meaning of the
+Markdown it reads.
 
 For shared abbreviations and snippets:
 
@@ -84,9 +106,8 @@ cycles, traversal, and unsafe source assets fail before publication.
 
 ## Unsupported behavior is reported
 
-Python hooks, YAML executable tags, environment tags, YAML aliases, inherited
-configuration, unknown plugins, custom executable Markdown extensions, and
-unrecognized top-level settings are rejected. Nothing is executed while
+YAML aliases, inherited configuration, custom executable Markdown extensions,
+and unrecognized top-level settings are rejected. Nothing is executed while
 interpreting the configuration. Error messages identify the setting so the
 author can remove it or express the intended behavior in source-owned
 GraphArch configuration.

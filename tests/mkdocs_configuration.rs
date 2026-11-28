@@ -89,3 +89,42 @@ async fn native_pages_hints_reject_yaml_aliases() -> Result<()> {
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn authored_robots_txt_is_published_as_is() -> Result<()> {
+    let source = tempfile::tempdir()?;
+    let output = tempfile::tempdir()?;
+    tokio::fs::create_dir(source.path().join("docs")).await?;
+    tokio::fs::write(
+        source.path().join("mkdocs.yml"),
+        "site_name: Knowledge\nsite_url: https://example.org/\n",
+    )
+    .await?;
+    tokio::fs::write(
+        source.path().join("docs/index.md"),
+        "# Knowledge\n",
+    )
+    .await?;
+    let robots = "User-agent: *\nDisallow: /search/\n";
+    tokio::fs::write(source.path().join("docs/robots.txt"), robots).await?;
+    let (dataset, plan) = BuildRequest {
+        source: source.path().to_owned(),
+        output: output.path().to_owned(),
+    }
+    .collect()
+    .await?;
+    let PublishOutcome::Published(publication) = Publisher::new(dataset)
+        .with_edition(grapharch::publication::pdf_name::Edition::Default)
+        .render(&plan, output.path())
+        .await?
+    else {
+        panic!("superseded")
+    };
+    assert_eq!(
+        tokio::fs::read_to_string(publication.directory.join("robots.txt"))
+            .await?,
+        robots
+    );
+    assert!(publication.directory.join("sitemap.xml").exists());
+    Ok(())
+}

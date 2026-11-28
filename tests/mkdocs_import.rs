@@ -71,14 +71,13 @@ async fn mkdocs_nested_navigation_survives_source_removal() -> Result<()> {
 async fn mkdocs_rejects_unsupported_execution_and_invalid_paths() -> Result<()>
 {
     for (extra, expected) in [
-        ("hooks: [hooks.py]\n", "hooks"),
         ("theme: [material]\n", "theme must"),
         ("use_directory_urls: bananas\n", "must be true"),
         ("site_url: ftp://example.org/\n", "HTTP(S)"),
-        ("plugins: [mkdocstrings]\n", "mkdocstrings"),
         (
+            // An unknown tag is dropped, leaving no valid theme.
             "theme: !!python/object/apply:os.system ['touch BAD']\n",
-            "YAML tags",
+            "theme must",
         ),
         (
             "docs_dir: ../outside\n",
@@ -88,10 +87,6 @@ async fn mkdocs_rejects_unsupported_execution_and_invalid_paths() -> Result<()>
             "markdown_extensions:\n  - pymdownx.superfences:\n      \
              custom_fences: [{name: unknown}]\n",
             "custom_fences",
-        ),
-        (
-            "plugins:\n  - search:\n      lang: [ja]\n",
-            "lang",
         ),
     ] {
         let source = tempfile::tempdir()?;
