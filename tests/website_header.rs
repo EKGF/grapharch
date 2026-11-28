@@ -93,7 +93,7 @@ async fn ekgf_header_uses_community_row_and_source_owned_project_links()
             "header .community-header-row .brand-identity",
             "header .community-header-row .source-link",
             "header .community-header-row .identity-mark",
-            "header .project-identity-row .brand-version",
+            "header .project-identity-row .brand",
             "header .community-menu summary",
         ] {
             assert!(

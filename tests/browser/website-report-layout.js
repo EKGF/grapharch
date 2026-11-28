@@ -15,7 +15,7 @@ async (page) => {
           overflow: document.documentElement.scrollWidth > innerWidth,
         };
       });
-      check(await page.locator('header.site-header .brand-version').count() === 1, `${route}: missing branded header`);
+      check(await page.locator('header.site-header .brand').count() === 1, `${route}: missing branded header`);
       check(await page.locator('.site-layout .site-navigation').count() === 1, `${route}: missing shared navigation`);
       check(await page.locator('main h1').count() === 1, `${route}: one page heading required`);
       check(geometry.left >= 16 && geometry.width <= 900, `${route}: unconstrained content at ${width}`);

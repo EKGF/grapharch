@@ -1,13 +1,14 @@
 //! Repository facts read from a Git work tree with gix; never changes it.
 use {
-    super::forge::{ForgeRepository, GitRef},
+    super::{
+        forge::{ForgeRepository, GitRef},
+        release_tags::TagCandidates,
+    },
     anyhow::{Context, Result, ensure},
     chrono::{DateTime, Utc},
     std::path::{Path, PathBuf},
 };
 
-/// Most tag references examined for the latest release tag.
-const MAX_TAGS: usize = 100_000;
 /// Most first-parent commits walked to find the first commit.
 const MAX_HISTORY: usize = 10_000_000;
 
@@ -30,7 +31,7 @@ impl CommitSha {
     pub(crate) fn as_str(&self) -> &str { &self.0 }
 }
 
-/// The highest semantic-version tag in the repository.
+/// The highest semantic-version tag at or before the checked-out commit.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ReleaseTag {
     pub(crate) name:    GitRef,
@@ -81,7 +82,11 @@ impl GitFacts {
         let mut current = Some(head.id);
         let mut walked = 0;
         let mut truncated = false;
+        // A tag counts only when the first-parent history reaches it, so a
+        // later release never names an earlier checkout.
+        let mut tags = TagCandidates::read(repo)?;
         while let Some(id) = current.take() {
+            tags.reach(id);
             walked += 1;
             ensure!(
                 walked <= MAX_HISTORY,
@@ -112,7 +117,7 @@ impl GitFacts {
             root,
             head: CommitSha::try_new(&head.id.to_string())?,
             default_branch: default_branch(repo)?,
-            latest_tag: latest_tag(repo)?,
+            latest_tag: tags.latest(repo)?,
             dirty: repo.is_dirty().context("read work tree status")?,
             origin,
             first_commit: first,
@@ -140,45 +145,4 @@ fn default_branch(repo: &gix::Repository) -> Result<Option<GitRef>> {
     Ok(repo
         .head_name()?
         .and_then(|name| GitRef::try_new(&name.shorten().to_string()).ok()))
-}
-
-/// The tag with the highest semantic version, `v` prefix allowed.
-fn latest_tag(repo: &gix::Repository) -> Result<Option<ReleaseTag>> {
-    let mut best: Option<(semver::Version, String, gix::ObjectId)> = None;
-    let references = repo.references()?;
-    for (index, reference) in references.tags()?.enumerate() {
-        ensure!(index < MAX_TAGS, "Git tags exceed {MAX_TAGS}");
-        let mut reference = reference.map_err(|e| anyhow::anyhow!("{e}"))?;
-        let name = reference.name().shorten().to_string();
-        let Ok(version) = semver::Version::parse(
-            name.rsplit('/')
-                .next()
-                .unwrap_or(&name)
-                .trim_start_matches('v'),
-        ) else {
-            continue;
-        };
-        if best
-            .as_ref()
-            .is_some_and(|(current, ..)| *current >= version)
-        {
-            continue;
-        }
-        let id = reference.peel_to_id()?.detach();
-        best = Some((version, name, id));
-    }
-    let Some((version, name, id)) = best else {
-        return Ok(None)
-    };
-    let date = repo
-        .find_object(id)?
-        .peel_to_commit()
-        .ok()
-        .and_then(|commit| commit.committer().ok()?.time().ok())
-        .and_then(|time| DateTime::from_timestamp(time.seconds, 0));
-    Ok(Some(ReleaseTag {
-        name: GitRef::try_new(&name)?,
-        version,
-        date,
-    }))
 }

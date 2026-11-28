@@ -8,7 +8,7 @@ use {
 };
 
 #[tokio::test]
-async fn documentation_header_identifies_the_generator_version_from_restored_kg()
+async fn a_project_without_a_version_shows_no_chip_and_credits_the_generator()
 -> Result<()> {
     let source = tempfile::tempdir()?;
     let settings = source.path().join("project.ttl");
@@ -22,7 +22,7 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         source.path().join("index.md"),
         "---\ntitle: Home\npermalink: /\ngrapharch:\n  subject: \
          urn:header:home\n---\n\n# Home\n\nThe generator version belongs in \
-         the documentation header.\n",
+         the credit, not the header.\n",
     )
     .await?;
     let built = website::collect(
@@ -50,51 +50,22 @@ async fn documentation_header_identifies_the_generator_version_from_restored_kg(
         tokio::fs::read_to_string(publication.directory.join("index.html"))
             .await?;
     let document = scraper::Html::parse_document(&html);
-    let version = document
-        .select(
-            &scraper::Selector::parse(".site-header .brand-version").unwrap(),
-        )
-        .next()
-        .expect("visible version badge in the header");
-    if env!("GRAPHARCH_BUILD_CHANNEL") != "release" {
-        assert!(
-            ["ci", "local", "source"]
-                .contains(&env!("GRAPHARCH_BUILD_CHANNEL")),
-            "unreleased documentation must identify its source build"
-        );
-    }
-    assert_eq!(
-        version.text().collect::<String>(),
-        format!("Version {}", env!("GRAPHARCH_BUILD_LABEL"))
-    );
-    assert_eq!(
-        version
-            .select(&scraper::Selector::parse(".visually-hidden").unwrap())
+    // The generator's build is not the documented project's version.
+    assert!(
+        document
+            .select(&scraper::Selector::parse(".brand-version").unwrap())
             .next()
-            .expect("accessible version label")
+            .is_none(),
+        "the header must not show the generator's version as the project's"
+    );
+    assert!(
+        !document
+            .select(&scraper::Selector::parse("header").unwrap())
+            .next()
+            .unwrap()
             .text()
-            .collect::<String>(),
-        "Version "
-    );
-    assert_eq!(
-        version.value().attr("data-generator-revision"),
-        Some(env!("GRAPHARCH_GENERATOR_REVISION"))
-    );
-    assert_eq!(
-        version.value().attr("data-build-channel"),
-        Some(env!("GRAPHARCH_BUILD_CHANNEL"))
-    );
-    assert_eq!(
-        version.value().attr("data-build-number"),
-        Some(env!("GRAPHARCH_BUILD_NUMBER"))
-    );
-    assert_eq!(
-        version.value().attr("data-build-attempt"),
-        Some(env!("GRAPHARCH_BUILD_ATTEMPT"))
-    );
-    assert_eq!(
-        version.value().attr("title"),
-        Some(env!("GRAPHARCH_BUILD_DETAILS"))
+            .collect::<String>()
+            .contains(env!("GRAPHARCH_BUILD_LABEL"))
     );
     let binary = tokio::process::Command::new(env!("CARGO_BIN_EXE_grapharch"))
         .arg("--version")

@@ -14,6 +14,7 @@ mod manifest;
 pub(crate) mod package;
 pub(crate) mod page_revisions;
 mod record;
+mod release_tags;
 
 #[cfg(test)]
 use facts::DiagnosticCode;

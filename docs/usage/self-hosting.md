@@ -384,8 +384,14 @@ schema.org for versions, dates, keywords and the discussion URL, and SPDX
 license IRIs; `ga:softwareProject` links the documentation project to it and
 each manifest package is a `ga:CodePackage` (see `repository.ttl`). The site
 takes its title from the package or repository name, its version chip shows
-the package version (the GraphArch build stays in the chip's data attributes),
-and the home page lists the version, license, and links to the repository,
+the project version: the root package's, else the version every package shares,
+else the highest release tag (`vX.Y.Z`) at or before the documented commit.
+A forge's latest release is not used, since it may postdate that commit. When
+no version is determinable there is no chip. The GraphArch build never stands
+in for it; it appears only in the footer credit and on the provenance page.
+When two sidebar pages share a title, such as a repository README and a
+binding's README, each label adds its source directory, else its source path.
+The home page lists the version, license, and links to the repository,
 issues, discussions, latest release, homepage, registry page (crates.io, PyPI,
 npm, pkg.go.dev) and API reference (docs.rs).
 

@@ -2,6 +2,7 @@ mod decisions;
 mod metadata;
 #[cfg(test)]
 mod metadata_tests;
+mod navigation_labels;
 mod references;
 pub(super) mod revisions;
 mod source_aliases;
@@ -20,17 +21,19 @@ use {
 
 #[derive(Clone)]
 pub(super) struct Page {
-    pub id:           NamedNode,
-    pub title:        String,
-    pub source:       String,
-    pub route:        String,
-    pub asset:        bool,
-    pub binary:       bool,
-    pub hidden:       bool,
-    pub order:        u32,
-    pub parent:       Option<NamedNode>,
-    pub parent_title: Option<String>,
-    pub headings:     HashSet<String>,
+    pub id:               NamedNode,
+    pub title:            String,
+    /// The sidebar label: the title, qualified when another page shares it.
+    pub navigation_label: String,
+    pub source:           String,
+    pub route:            String,
+    pub asset:            bool,
+    pub binary:           bool,
+    pub hidden:           bool,
+    pub order:            u32,
+    pub parent:           Option<NamedNode>,
+    pub parent_title:     Option<String>,
+    pub headings:         HashSet<String>,
 }
 pub(super) struct Catalog {
     pub abbreviations:
@@ -258,6 +261,7 @@ impl Catalog {
         for page in catalog.pages.values() {
             catalog.ancestors(&page.id)?;
         }
+        catalog.qualify_navigation_labels();
         let paths: Vec<_> = catalog
             .pages
             .values()
@@ -373,8 +377,10 @@ impl Catalog {
                 .transpose()?;
             (hidden, order, parent_title)
         };
+        let title = title(&plan.source, &owner).await?;
         self.pages.insert(owner.as_str().into(), Page {
-            title: title(&plan.source, &owner).await?,
+            navigation_label: title.clone(),
+            title,
             id: owner.clone(),
             source,
             route,
@@ -434,9 +440,7 @@ impl Catalog {
         let mut pages: Vec<_> = self
             .pages
             .values()
-            .filter(|page| {
-                !page.asset && !page.hidden && page.parent.as_ref() == parent
-            })
+            .filter(|page| page.listed() && page.parent.as_ref() == parent)
             .collect();
         pages.sort_by(|a, b| {
             (a.order, &a.title, &a.id).cmp(&(b.order, &b.title, &b.id))
@@ -483,7 +487,7 @@ impl Catalog {
                 } else {
                     ""
                 },
-                esc(&page.title)
+                esc(&page.navigation_label)
             );
             if children.is_empty() {
                 out.push_str(&format!("<li>{link}</li>"));
@@ -528,7 +532,7 @@ impl Catalog {
                 out.push_str(&format!(
                     "<a href=\"{prefix}{}\"><small>{label}</small>{}</a>",
                     esc(&page.route),
-                    esc(&page.title)
+                    esc(&page.navigation_label)
                 ));
             }
         }
