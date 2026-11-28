@@ -33,4 +33,4 @@ body[data-status-band]{padding-left:26px}
 /* The main area takes focus from the skip link and from clicks; it is not an
    interactive control, so it draws no focus outline. */
 main:focus{outline:none}
-.project-facts{display:flex;flex-wrap:wrap;gap:.35rem 1.5rem;margin:.75rem 0 1.25rem;padding:.6rem .9rem;border:1px solid var(--line);border-radius:.5rem;background:var(--chrome);font-size:.875rem}.project-facts div{display:flex;gap:.45rem;min-width:0;flex-wrap:wrap}.project-facts dt{color:var(--muted);font-weight:550}.project-facts dd{margin:0;overflow-wrap:anywhere}
+.project-facts{display:flex;flex-wrap:wrap;gap:.35rem 1.5rem;margin:.75rem 0 1.25rem;padding:.6rem .9rem;border:1px solid var(--line);border-radius:.5rem;background:var(--chrome);font-size:.875rem}.project-facts div{display:flex;gap:.45rem;min-width:0;flex-wrap:wrap}.project-facts dt{color:var(--muted);font-weight:550}.project-facts dd{margin:0;overflow-wrap:anywhere}.project-facts .package-version{color:var(--muted);font-variant-numeric:tabular-nums}.brand-version[hidden]{display:none}

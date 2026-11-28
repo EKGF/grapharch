@@ -37,6 +37,14 @@ pub(super) fn render(
         .software
         .as_ref()
         .and_then(super::software::Software::version);
+    // A discovered project without one version (a workspace of separately
+    // versioned crates) shows no chip rather than the generator's version.
+    let chip_hidden = if header.software.is_some() && package_version.is_none()
+    {
+        " hidden"
+    } else {
+        ""
+    };
     let facts = match &header.software {
         Some(software) if page.prefix.is_empty() && !page.report => {
             software.facts_html()
@@ -117,7 +125,7 @@ pub(super) fn render(
         "<a class=\"brand\" href=\"{prefix}\">{}<span class=\"brand-version\" \
          data-build-channel=\"{}\" data-generator-revision=\"{}\" \
          data-build-number=\"{}\" data-build-attempt=\"{}\" \
-         title=\"{}\"><span class=\"visually-hidden\">Version \
+         title=\"{}\"{chip_hidden}><span class=\"visually-hidden\">Version \
          </span>{}</span>{brand_context}</a>",
         esc(project_title),
         esc(env!("GRAPHARCH_BUILD_CHANNEL")),
