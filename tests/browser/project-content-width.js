@@ -35,7 +35,9 @@ async (page) => {
         const cards = container.querySelectorAll(':scope>.project-card').length;
         for (const child of container.querySelectorAll(':scope>.table-scroll,:scope>table,:scope>pre,:scope>.project-card')) {
           if (child.classList.contains('project-card') && cards > 1) continue;
-          if (child.getBoundingClientRect().width < container.getBoundingClientRect().width - 2) {
+          // A boxed (panel or callout) section insets its content by its padding.
+          const inner = edges(container);
+          if (child.getBoundingClientRect().width < inner.right - inner.left - 2) {
             halves.push(`${container.parentElement.className}: ${child.className || child.tagName}`);
           }
         }
@@ -54,7 +56,8 @@ async (page) => {
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(home);
-  await page.mouse.click(720, 700);
+  // Click text that is not a control, as a reader selecting prose does.
+  await page.locator('main :is(h1,h2,p):not(:has(a))').first().click();
   const outline = await page.evaluate(() => {
     const active = document.activeElement;
     const style = getComputedStyle(active);
