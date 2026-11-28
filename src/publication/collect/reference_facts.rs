@@ -212,7 +212,6 @@ pub(super) fn describe(
                 term(ReferenceForm::parse(&value).term()),
             ),
             input.quad(&node, "referenceContext", term(context.term())),
-            input.quad(&input.fragment_id(), "reference", node.clone()),
         ]);
         if let Some(path) =
             local_path(files.boundary(root), &input.path, &value)
