@@ -282,6 +282,11 @@ pub(in crate::publication::render::website) fn icon_svg(
         "circle" => Some(include_str!("icons/circle.svg")),
         "github" => Some(include_str!("icons/github.svg")),
         "arrow-right" => Some(include_str!("icons/arrow-right.svg")),
+        "twitter" => Some(include_str!("icons/twitter.svg")),
+        "linkedin" => Some(include_str!("icons/linkedin.svg")),
+        "youtube" => Some(include_str!("icons/youtube.svg")),
+        "history" => Some(include_str!("icons/history.svg")),
+        "clock-plus" => Some(include_str!("icons/clock-plus.svg")),
         _ => None,
     }
 }

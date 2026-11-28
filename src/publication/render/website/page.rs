@@ -62,8 +62,13 @@ impl PageWriter<'_> {
                     plan, first, last, body,
                 )
                 .await?;
-            let content = markdown::render(&contextual, page, catalog)
-                .with_context(|| format!("failed to render {}", page.source))?;
+            let content = markdown::render(
+                &contextual,
+                page,
+                catalog,
+                header.chrome.smart_symbols(),
+            )
+            .with_context(|| format!("failed to render {}", page.source))?;
             let prefix = "../".repeat(page.route.matches('/').count());
             let navigation = catalog.navigation(id, &prefix)?;
             let gallery = gallery::render(plan, catalog, id, &prefix).await?;
@@ -173,37 +178,32 @@ impl PageWriter<'_> {
                     "panel section {anchor} is not a level-two page heading"
                 );
             }
+            let hidden =
+                super::page_regions::PageRegions::read(plan, id).await?;
             let html = shell::render(plan, header, shell::Page {
-                panels:           &panels,
-                presentation:     &presentation,
-                extra_head:       &extra_head,
-                report:           false,
-                title:            &page.title,
-                id:               id.as_str(),
+                hidden,
+                panels: &panels,
+                presentation: &presentation,
+                extra_head: &extra_head,
+                report: false,
+                title: &page.title,
+                id: id.as_str(),
                 navigation_owner: None,
-                breadcrumb_root:  None,
-                fragment_count:   fragments.len(),
-                prefix:           &prefix,
-                navigation:       &navigation,
-                breadcrumbs:      &breadcrumbs,
-                heading:          &heading,
-                body:             &match self
-                    .catalog
-                    .last_updated
-                    .get(&page.source)
-                {
+                breadcrumb_root: None,
+                fragment_count: fragments.len(),
+                prefix: &prefix,
+                navigation: &navigation,
+                breadcrumbs: &breadcrumbs,
+                heading: &heading,
+                body: &match self.catalog.last_updated.get(&page.source) {
                     Some(date) => {
-                        format!(
-                            "{}{}",
-                            content.html,
-                            super::catalog::revisions::footer(date)
-                        )
+                        format!("{}{}", content.html, date.html())
                     },
                     None => content.html.clone(),
                 },
-                gallery:          &gallery.html,
-                previous_next:    &previous_next,
-                outline:          &page_outline,
+                gallery: &gallery.html,
+                previous_next: &previous_next,
+                outline: &page_outline,
             })?;
             tokio::fs::write(output, html).await?;
         }

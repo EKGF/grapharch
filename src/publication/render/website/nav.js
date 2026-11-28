@@ -84,3 +84,4 @@
   tabs.addEventListener('scroll', update, { passive: true });
   addEventListener('resize', update, { passive: true });
 })();
+(()=>{const units=[["year",31536e6],["month",2592e6],["week",6048e5],["day",864e5],["hour",36e5],["minute",6e4]];let format;try{format=new Intl.RelativeTimeFormat(document.documentElement.lang||"en",{numeric:"auto"})}catch{return}for(const time of document.querySelectorAll("time[data-relative-time]")){const at=Date.parse(time.dateTime);if(Number.isNaN(at))continue;const elapsed=at-Date.now();const [unit,size]=units.find(([,size])=>Math.abs(elapsed)>=size)||units[units.length-1];time.textContent=format.format(Math.trunc(elapsed/size),unit)}})();

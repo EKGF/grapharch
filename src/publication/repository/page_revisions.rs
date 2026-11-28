@@ -1,10 +1,11 @@
-//! The newest commit that changed each collected page source: the date and
-//! author behind "Last updated" (git-revision-date-localized parity).
+//! The newest and the oldest commit that changed each collected page source:
+//! the dates and author behind "Last update" and "Created"
+//! (git-revision-date-localized parity).
 //!
-//! One bounded walk over first-parent history from HEAD compares each
-//! still-pending path's blob with the parent's; memory is a map bounded by
-//! the number of collected sources. Sources outside a Git work tree get no
-//! record.
+//! One bounded walk over first-parent history from HEAD compares each path's
+//! blob with the parent's; the newest change is the first seen and the
+//! creation the last. Memory is a map bounded by the number of collected
+//! sources. Sources outside a Git work tree get no record.
 use {
     crate::publication::{
         RDF_TYPE,
@@ -35,24 +36,22 @@ const PROCESSOR: &str = "urn:grapharch:page-revisions";
 /// The newest change of one source.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct PageRevision {
-    pub(crate) date:   DateTime<Utc>,
-    pub(crate) author: String,
+    pub(crate) date:    DateTime<Utc>,
+    pub(crate) author:  String,
+    /// The date of the oldest commit that changed the source.
+    pub(crate) created: DateTime<Utc>,
 }
 
 /// Newest change per repository-relative path at HEAD of `root`.
-pub(crate) fn newest_changes(
+pub(crate) fn changes(
     root: &Path,
     paths: &[String],
 ) -> Result<BTreeMap<String, PageRevision>> {
     let repo = gix::open(root).context("open Git repository")?;
-    let mut pending: Vec<&String> = paths.iter().collect(); // bounded: paths.
-    let mut found = BTreeMap::new(); // bounded: paths.
+    let mut found: BTreeMap<String, PageRevision> = BTreeMap::new(); // bounded: paths.
     let mut current = Some(repo.head_commit()?.id);
     let mut walked = 0;
     while let Some(id) = current.take() {
-        if pending.is_empty() {
-            break;
-        }
         walked += 1;
         ensure!(
             walked <= MAX_COMMITS,
@@ -72,15 +71,13 @@ pub(crate) fn newest_changes(
             },
             None => None,
         };
+        let unchanged = parent_tree
+            .as_ref()
+            .is_some_and(|parent| parent.id == tree.id);
         let signature = commit.author()?;
-        let revision = PageRevision {
-            date:   DateTime::from_timestamp(signature.time()?.seconds, 0)
-                .context("invalid Git timestamp")?,
-            author: signature.name.to_string(),
-        };
-        let mut index = 0;
-        while index < pending.len() {
-            let path = pending[index];
+        let date = DateTime::from_timestamp(signature.time()?.seconds, 0)
+            .context("invalid Git timestamp")?;
+        for path in paths.iter().filter(|_| !unchanged) {
             let here = tree
                 .lookup_entry_by_path(path)?
                 .map(|entry| entry.object_id());
@@ -90,12 +87,19 @@ pub(crate) fn newest_changes(
                 },
                 None => None,
             };
-            if here.is_some() && here != before {
-                found.insert(path.clone(), revision.clone());
-                pending.swap_remove(index);
-            } else {
-                index += 1;
+            if here.is_none() || here == before {
+                continue;
             }
+            found
+                .entry(path.clone())
+                .and_modify(|revision| revision.created = date)
+                .or_insert_with(|| {
+                    PageRevision {
+                        date,
+                        author: signature.name.to_string(),
+                        created: date,
+                    }
+                });
         }
         current = parent_tree.and(parent);
     }
@@ -165,7 +169,7 @@ pub(crate) async fn collectors(
             for (root, sources) in by_repository {
                 let paths: Vec<String> =
                     sources.iter().map(|(_, repo)| repo.clone()).collect();
-                let found = newest_changes(&root, &paths)?;
+                let found = changes(&root, &paths)?;
                 for (page, repo) in sources {
                     if let Some(revision) = found.get(&repo) {
                         dated.push((page, revision.clone()));
@@ -221,6 +225,18 @@ impl Collector for PageRevisions {
                 ),
                 (
                     NamedNode::new_unchecked(
+                        "http://purl.org/dc/terms/created",
+                    ),
+                    Literal::new_typed_literal(
+                        revision.created.to_rfc3339(),
+                        NamedNode::new_unchecked(
+                            "http://www.w3.org/2001/XMLSchema#dateTime",
+                        ),
+                    )
+                    .into(),
+                ),
+                (
+                    NamedNode::new_unchecked(
                         "http://purl.org/dc/terms/modified",
                     ),
                     Literal::new_typed_literal(
@@ -245,10 +261,14 @@ impl Collector for PageRevisions {
                     ))
                     .await?;
             }
-            digest.push_str(&format!("{path}={};", revision.date.timestamp()));
+            digest.push_str(&format!(
+                "{path}={}/{};",
+                revision.date.timestamp(),
+                revision.created.timestamp()
+            ));
         }
         Ok(format!(
-            "page-revisions-v1:{}",
+            "page-revisions-v2:{}",
             hex::encode(<sha2::Sha256 as sha2::Digest>::digest(
                 digest.as_bytes()
             ))

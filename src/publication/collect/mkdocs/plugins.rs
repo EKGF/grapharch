@@ -66,8 +66,9 @@ impl Plugin {
             Self::IncludeMarkdown => {},
             Self::MaterialEkgf => {
                 warnings.push(ImportWarning::native(format!(
-                    "{name}: presented with GraphArch's EKGF theme; plugin \
-                     options such as social cards are not reproduced"
+                    "{name}: presented with GraphArch's EKGF documentation \
+                     theme; plugin options such as social cards are not \
+                     reproduced"
                 )))
             },
             Self::GitRevisionDate => {

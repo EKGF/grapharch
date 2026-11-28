@@ -43,7 +43,37 @@ importer. Having both MkDocs configuration filenames is also an error.
 
 The importer uses GraphArch's documentation layout. A Material, MkDocs, or
 Bootswatch theme name produces an explicit presentation-substitution warning;
-it does not cause GraphArch to execute or copy that theme. Theme options that
+it does not cause GraphArch to execute or copy that theme.
+
+The GraphArch theme follows a mapping table in RDF,
+[`mkdocs-import.ttl`](../other/ontology/mkdocs-import.ttl): each
+`ga:MkDocsMapping` names an MkDocs theme (`ga:mkdocsTheme`) or plugin
+(`ga:mkdocsPlugin`), the theme that presents it (`ga:mappedTheme`) and screen
+tokens such as `ga:contentWidth`. A listed plugin's mapping wins over the theme's.
+The importer declares a theme for the website that refines the mapped theme with
+those tokens and the palette's primary colour (`ga:MaterialColor`).
+`material-ekgf` selects `ga:EkgfDocumentationTheme`: the EKGF logo, the centred
+site title, the OMG mark, top tabs and the EKGF documentation footer.
+
+Material's presentation options become profile switches and footer content:
+
+| Material option | GraphArch behavior |
+| --- | --- |
+| `navigation.tabs` | Primary navigation as header tabs; without it `ga:primaryNavigation false` |
+| `navigation.sections` | `ga:sidebarSections true`: top-level sidebar entries as expanded sections |
+| `navigation.indexes` | Section index pages (GraphArch's default) |
+| `toc.integrate` | `ga:outlineInSidebar true`: the page outline ends the sidebar |
+| `navigation.path` | Breadcrumbs; without it `ga:breadcrumbs false` |
+| `navigation.footer` | Previous and next links; without it `ga:pageNeighbors false` |
+| `palette` primary | Link and accent colour of the website's theme; `custom` keeps the mapped theme's |
+| `extra.generator: true` | GraphArch credit in the footer; otherwise `ga:generatorCredit false` |
+| `extra.social` | `ga:socialLink` icons in a footer group with `ga:socialLinks` |
+| `copyright` | `dct:rights` of the profile, shown in the footer |
+| `pymdownx.smartsymbols`, `mdx_emdash`, `smarty` | `ga:smartSymbols true`: `---` and `--` as em and en dashes, arrows, ©, ®, ™, ±, ≠ and fractions outside code |
+| Page `hide: [navigation, toc]` | `ga:hiddenRegion` of the page: no sidebar or no outline on that page |
+
+Other features are reported as warnings. Every page collected from Git shows
+its last update and creation as relative times, with the date in a tooltip. Theme options that
 GraphArch does not project are reported and retained in the source configuration.
 Custom Jinja directories, CSS, and JavaScript require a source migration or
 native GraphArch theme/renderer support. Supplying explicit GraphArch
@@ -71,7 +101,7 @@ plugin never fails the import and is never executed:
 | `include-markdown` | Bounded include collector |
 | `exclude` | Each `glob` becomes a `ga:excludeSourcePattern`; `regex` is a warning |
 | `build_plantuml` | One `ga:PlantUmlFileCollector` use per `.puml` file under `diagram_root`/`input_folder`, written to the plugin's `output_folder`; rendering is local, no server is contacted |
-| `material-ekgf` | The EKGF theme; plugin options are warnings |
+| `material-ekgf` | The EKGF documentation theme, through the mapping table; plugin options are warnings |
 | `git-revision-date-localized` | Git provenance; display options are warnings |
 | `exclude-search`, `kroki`, `gen-files`, `redirects`, `social`, `tags`, unknown plugins | Warnings (`mkdocs-native-equivalent`, `mkdocs-not-executed`, `mkdocs-presentation-substitution`) |
 
@@ -81,7 +111,7 @@ Material's Python YAML tags are read as data, never imported:
 `!!python/name:pymdownx.superfences.fence_code_format` (Mermaid custom
 fences) and `!!python/object/apply:pymdownx.slugs.slugify` with its `kwds`.
 Any other tag drops its option with an `mkdocs-unknown-yaml-tag` warning.
-`extra`, `extra_css`, `extra_javascript`, `hooks` and `theme.custom_dir` are
+`extra` keys other than `generator` and `social`, `extra_css`, `extra_javascript`, `hooks` and `theme.custom_dir` are
 never injected, rendered or executed; each entry is a warning that names the
 native equivalent where one exists.
 

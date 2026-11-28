@@ -35,6 +35,9 @@ struct Frontmatter {
     grapharch:     super::page_presentation::Hints,
     #[serde(flatten)]
     page:          super::page::PageHints,
+    /// Material for MkDocs' per-page `hide` list.
+    #[serde(default)]
+    hide:          Vec<super::page_regions::HiddenRegion>,
 }
 
 pub(crate) struct GeneratedPage<'a> {
@@ -353,6 +356,15 @@ impl Collector for MarkdownFile {
                 ));
             }
             metadata.extend(frontmatter.grapharch.quads(&input, &fragment)?);
+            for region in &frontmatter.hide {
+                if let Some(region) = region.term() {
+                    metadata.push(input.quad(
+                        &fragment,
+                        "hiddenRegion",
+                        region,
+                    ));
+                }
+            }
             if frontmatter.grapharch.showcase_gallery {
                 metadata.push(input.quad(
                     &fragment,

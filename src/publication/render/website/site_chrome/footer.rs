@@ -5,6 +5,7 @@ use {
         super::site_base::SiteBases,
         footer_link::{FooterLink, order, title},
         footer_markdown::FooterText,
+        social::SocialLinks,
     },
     crate::publication::render::{markup::html_escape as esc, model::Plan},
     anyhow::{Result, bail, ensure},
@@ -12,14 +13,19 @@ use {
 };
 
 const DESCRIPTION: &str = "http://purl.org/dc/terms/description";
+const RIGHTS: &str = "http://purl.org/dc/terms/rights";
 const MAX_GROUPS: usize = 6;
 const MAX_LINKS: usize = 16;
 const MAX_NOTES: usize = 4;
 
 pub(in crate::publication::render::website) struct SiteFooter {
     // bounded: at most MAX_GROUPS groups and MAX_NOTES notes.
-    groups: Vec<Group>,
-    notes:  Vec<(u32, FooterText)>,
+    groups:  Vec<Group>,
+    notes:   Vec<(u32, FooterText)>,
+    social:  SocialLinks,
+    license: Option<super::footer_license::FooterLicense>,
+    /// The profile's copyright statement (`dct:rights`).
+    rights:  Option<String>,
 }
 
 struct Group {
@@ -32,6 +38,8 @@ enum GroupBody {
     Text(FooterText),
     // bounded: at most MAX_LINKS links.
     Links(Vec<FooterLink>),
+    /// The profile's social links, as icons.
+    Social,
 }
 
 impl SiteFooter {
@@ -95,7 +103,29 @@ impl SiteFooter {
             notes.iter().map(|(order, _)| *order),
             "footer notes",
         )?;
-        Ok(Some(Self { groups, notes }))
+        let social = SocialLinks::read(plan, &bases).await?;
+        if social.is_empty() {
+            groups.retain(|group| !matches!(group.body, GroupBody::Social));
+        }
+        let license =
+            super::footer_license::FooterLicense::read(plan, &footer, &bases)
+                .await?;
+        let rights = match plan
+            .source
+            .optional_by(&plan.profile, &NamedNode::new_unchecked(RIGHTS))
+            .await?
+        {
+            None => None,
+            Some(Term::Literal(text)) => Some(text.value().to_owned()),
+            Some(_) => bail!("profile dct:rights must be a literal"),
+        };
+        Ok(Some(Self {
+            groups,
+            notes,
+            social,
+            license,
+            rights,
+        }))
     }
 
     /// The footer, closed by the engine's generator credit and provenance
@@ -106,9 +136,18 @@ impl SiteFooter {
              class=\"site-footer-inner\"><div class=\"site-footer-grid\">",
         );
         for group in &self.groups {
-            html.push_str(&group.html(prefix)?);
+            html.push_str(&group.html(prefix, &self.social)?);
         }
         html.push_str("</div><div class=\"site-footer-notes\">");
+        if let Some(license) = &self.license {
+            html.push_str(&license.html(prefix));
+        }
+        if let Some(rights) = &self.rights {
+            html.push_str(&format!(
+                "<p class=\"site-footer-rights\">{}</p>",
+                esc(rights)
+            ));
+        }
         for (_, note) in &self.notes {
             html.push_str(&format!("<p>{}</p>", note.html(prefix)?));
         }
@@ -140,11 +179,15 @@ impl Group {
             );
             links.push(FooterLink::read(plan, &row["value"], bases).await?);
         }
+        let social = super::flag::Flag::new("socialLinks", false)
+            .read(plan, &group)
+            .await?;
         let body = match (description(plan, &group).await?, links.is_empty()) {
-            (Some(text), true) => {
+            (None, true) if social => GroupBody::Social,
+            (Some(text), true) if !social => {
                 GroupBody::Text(FooterText::try_new(text, bases)?)
             },
-            (None, false) => {
+            (None, false) if !social => {
                 links.sort_by_key(FooterLink::order);
                 distinct(
                     links.iter().map(FooterLink::order),
@@ -155,7 +198,7 @@ impl Group {
             _ => {
                 bail!(
                     "footer group {group} requires exactly one of \
-                     dct:description or ga:footerLink"
+                     dct:description, ga:footerLink or ga:socialLinks"
                 )
             },
         };
@@ -166,7 +209,7 @@ impl Group {
         })
     }
 
-    fn html(&self, prefix: &str) -> Result<String> {
+    fn html(&self, prefix: &str, social: &SocialLinks) -> Result<String> {
         let title = esc(&self.title);
         Ok(match &self.body {
             GroupBody::Text(text) => {
@@ -174,6 +217,14 @@ impl Group {
                     "<section class=\"site-footer-group\"><h2>{title}</\
                      h2><p>{}</p></section>",
                     text.html(prefix)?
+                )
+            },
+            GroupBody::Social => {
+                format!(
+                    "<nav class=\"site-footer-group\" \
+                     aria-label=\"{title}\"><h2>{title}</h2><div \
+                     class=\"site-footer-social\">{}</div></nav>",
+                    social.html(prefix)
                 )
             },
             GroupBody::Links(links) => {

@@ -1,12 +1,15 @@
 //! Bounded, non-executing import of source-owned MkDocs instructions.
 mod config;
 mod extensions;
+mod mapping;
+mod material;
 pub(super) mod metadata;
 mod navigation;
 mod paths;
 mod plantuml_hint;
 mod plugins;
 mod presentation;
+mod site_presentation;
 mod warning;
 mod yaml_tags;
 use {
@@ -130,6 +133,13 @@ impl Collector for MkDocs {
         ] {
             stream.write(quad).await?;
         }
+        site_presentation::SitePresentation {
+            config:  &config,
+            project: &self.project,
+            profile: &profile,
+        }
+        .write(stream)
+        .await?;
         for root in &config.hints.roots {
             crate::publication::website::discovery::directory(&self.root, root)
                 .await?;

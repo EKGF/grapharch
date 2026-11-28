@@ -389,10 +389,12 @@ and the home page lists the version, license, and links to the repository,
 issues, discussions, latest release, homepage, registry page (crates.io, PyPI,
 npm, pkg.go.dev) and API reference (docs.rs).
 
-Each page collected from a Git work tree also records its newest change at the
-build commit (`ga:PageRevision` with `dct:modified` and `schema:author`), found
-by one bounded walk over first-parent history; the website shows "Last updated"
-on the page. Sources without Git history show no date.
+Each page collected from a Git work tree also records its newest and oldest
+change at the build commit (`ga:PageRevision` with `dct:modified`,
+`schema:author` and `dct:created`), found by one bounded walk over
+first-parent history; the website shows "Last update" and "Created" as
+relative times, with the date in a tooltip. Sources without Git history show
+no date.
 
 ### References and links
 

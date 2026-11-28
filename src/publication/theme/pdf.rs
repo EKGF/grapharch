@@ -221,6 +221,7 @@ mod tests {
             super::Builtin::Overview,
             super::Builtin::Ekgf,
             super::Builtin::EkgfProject,
+            super::Builtin::EkgfDocumentation,
         ] {
             assert!(
                 super::catalogue_typst(theme)

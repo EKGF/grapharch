@@ -439,11 +439,14 @@ async fn pages_show_their_last_git_change() -> Result<()> {
     let home = std::fs::read_to_string(site.join("index.html"))?;
     let guide = std::fs::read_to_string(site.join("guide/index.html"))?;
     assert!(
-        home.contains("Last updated <time datetime=\"2024-01-02"),
+        home.contains("title=\"Last update: 2 January 2024\""),
         "{home}"
     );
-    assert!(guide.contains("Last updated <time datetime=\"2025-06-07"));
+    assert!(home.contains("<time datetime=\"2024-01-02"));
+    assert!(guide.contains("<time datetime=\"2025-06-07"));
     assert!(guide.contains(">7 June 2025</time>"));
+    // The guide was created by the first commit.
+    assert!(guide.contains("title=\"Created: 2 January 2024\""));
     let graph =
         std::fs::read_to_string(r.join("output/grapharch/documentation.nq"))?;
     assert!(graph.contains("<http://purl.org/dc/terms/modified>"));
@@ -454,6 +457,6 @@ async fn pages_show_their_last_git_change() -> Result<()> {
     let result = build(r, &[]).await?;
     assert!(result.status.success());
     let home = std::fs::read_to_string(site.join("index.html"))?;
-    assert!(!home.contains("Last updated"));
+    assert!(!home.contains("page-dates"));
     Ok(())
 }

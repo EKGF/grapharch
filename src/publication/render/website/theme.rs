@@ -13,6 +13,8 @@ pub(super) enum Theme {
     Default,
     Ekgf,
     EkgfProject,
+    /// EKGF's documentation sites: identity row, tabs, EKGF footer.
+    EkgfDocumentation,
 }
 
 impl Theme {
@@ -27,6 +29,7 @@ impl Theme {
                 Builtin::Overview => Self::Default,
                 Builtin::Ekgf => Self::Ekgf,
                 Builtin::EkgfProject => Self::EkgfProject,
+                Builtin::EkgfDocumentation => Self::EkgfDocumentation,
             },
         )
     }
@@ -44,6 +47,12 @@ impl Theme {
 
     pub fn community(self) -> bool { self != Self::Default }
 
+    /// Whether the header is the documentation identity row: brand logo,
+    /// centred site title and identity marks above the tabs.
+    pub fn documentation_identity(self) -> bool {
+        self == Self::EkgfDocumentation
+    }
+
     pub fn css(self) -> &'static str {
         match self {
             Self::Default => {
@@ -60,6 +69,17 @@ impl Theme {
                     include_str!("project.css"),
                     "\n",
                     include_str!("color_scheme.css")
+                )
+            },
+            Self::EkgfDocumentation => {
+                concat!(
+                    include_str!("ekgf.css"),
+                    "\n",
+                    include_str!("project.css"),
+                    "\n",
+                    include_str!("color_scheme.css"),
+                    "\n",
+                    include_str!("ekgf_documentation.css")
                 )
             },
             Self::EkgfProject => {
@@ -92,6 +112,9 @@ impl Theme {
             Self::Default => "",
             Self::Ekgf => " class=\"theme-ekgf\"",
             Self::EkgfProject => " class=\"theme-ekgf project-website\"",
+            Self::EkgfDocumentation => {
+                " class=\"theme-ekgf ekgf-documentation\""
+            },
         }
     }
 
@@ -164,7 +187,7 @@ pub(super) struct Controls<'a> {
     pub marks:      &'a str,
 }
 
-const COLOR_TOGGLE: &str =
+pub(super) const COLOR_TOGGLE: &str =
     "<button class=\"color-scheme-toggle\" type=\"button\" aria-label=\"Dark \
      theme\" aria-pressed=\"false\" title=\"Use dark theme\"><svg \
      class=\"theme-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path \

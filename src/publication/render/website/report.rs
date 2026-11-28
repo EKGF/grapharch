@@ -38,6 +38,7 @@ impl Report<'_> {
         let content = std::str::from_utf8(body)?;
         let html = shell::render(plan, header, shell::Page {
             report: true,
+            hidden: super::page_regions::PageRegions::default(),
             panels: &[],
             presentation: &project::Presentation::default(),
             extra_head: "<meta name=\"robots\" content=\"noindex,follow\">",

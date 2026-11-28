@@ -496,5 +496,5 @@ ga:DescriptionContext a owl:NamedIndividual , ga:ReferenceContext ;
 ga:PageRevision a owl:Class ;
     rdfs:label "Page revision"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
-    skos:definition "The newest Git commit at the build commit that changed a collected page source, with dct:modified for its date and schema:author for its author; absent for sources outside a Git work tree."@en ;
-    dct:description "The newest Git commit at the build commit that changed a collected page source, with dct:modified for its date and schema:author for its author; absent for sources outside a Git work tree."@en .
+    skos:definition "The Git history at the build commit of a collected page source: dct:modified and schema:author give the date and author of the newest commit that changed it, dct:created the date of the oldest; absent for sources outside a Git work tree."@en ;
+    dct:description "The Git history at the build commit of a collected page source: dct:modified and schema:author give the date and author of the newest commit that changed it, dct:created the date of the oldest; absent for sources outside a Git work tree."@en .
