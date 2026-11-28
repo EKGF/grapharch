@@ -20,6 +20,8 @@ pub struct MarkdownFile(
     Vec<PathBuf>,
     Option<Arc<BTreeMap<String, NamedNode>>>,
     bool,
+    // The page is the website's home page; its own route stays an alias.
+    bool,
 );
 /// A SPARQL-file collector that documents statements without executing them.
 pub struct SparqlFile(FileInput);
@@ -82,6 +84,7 @@ impl MarkdownFile {
             Vec::new(),
             None,
             false,
+            false,
         )
     }
 
@@ -95,6 +98,7 @@ impl MarkdownFile {
             false,
             Vec::new(),
             None,
+            false,
             false,
         ))
     }
@@ -117,11 +121,19 @@ impl MarkdownFile {
             Vec::new(),
             None,
             false,
+            false,
         ))
     }
 
     pub(crate) fn with_mkdocs_metadata(mut self, enabled: bool) -> Self {
         self.7 = enabled;
+        self
+    }
+
+    /// Publish this page at the website root, keeping its own route as an
+    /// alias.
+    pub(crate) fn with_home_route(mut self) -> Self {
+        self.8 = true;
         self
     }
 
@@ -258,6 +270,16 @@ impl Collector for MarkdownFile {
             }
             frontmatter.title = Some(title.clone());
             frontmatter.page.permalink = Some(route.clone());
+        }
+        if let (true, Some(root)) = (self.8, &self.1) {
+            let own = super::page::route(
+                &super::page::source_path(root, &input.path)?,
+                frontmatter.page.permalink.as_deref(),
+            )?;
+            if !own.is_empty() {
+                frontmatter.page.aliases.push(own);
+            }
+            frontmatter.page.permalink = Some("/".into());
         }
         let mut subject = frontmatter
             .grapharch

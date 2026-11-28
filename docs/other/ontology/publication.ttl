@@ -1931,6 +1931,15 @@ ga:excludeSourcePath a owl:DatatypeProperty ;
     rdfs:domain ga:Project ;
     rdfs:range xsd:string .
 
+ga:homeSourcePath a owl:DatatypeProperty ;
+    rdfs:label "Home source path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Names the authored page, relative to the project documentation root, that a website publishes as its home page."@en ;
+    dct:description "Names the authored page, relative to the project documentation root, that a website publishes as its home page."@en ;
+    rdfs:comment "The page keeps its own route as an alias. Importers set it where the source format gives the first chapter the home page, as mdBook does when a book has no README.md."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:string .
+
 ga:excludeSourcePattern a owl:DatatypeProperty ;
     rdfs:label "Excluded source pattern"@en ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;

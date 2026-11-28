@@ -18,6 +18,7 @@ Begin with [Getting started](getting-started.md), then run one of these workflow
 | Task | Guide |
 |---|---|
 | Import a MkDocs repository without Python | [Import MkDocs sites](mkdocs.md) |
+| Import an mdBook without running mdBook | [Import mdBook books](mdbook.md) |
 | Collect sources and publish from a pinned KG | [Publication pipeline](publication-pipeline.md) |
 | Generate this documentation website | [Self-hosted documentation](self-hosting.md) |
 | Publish a standards-style specification and PDF | [Specification renderer](specification-renderer.md) |

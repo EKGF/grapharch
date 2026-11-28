@@ -382,6 +382,9 @@ ga:NavigationCollectorShape a sh:NodeShape ; sh:targetSubjectsOf ga:navigationPr
 ga:SourceExclusionsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePath ;
     sh:property [ sh:path ga:excludeSourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 64 ] .
 
+ga:HomeSourcePathShape a sh:NodeShape ; sh:targetSubjectsOf ga:homeSourcePath ;
+    sh:property [ sh:path ga:homeSourcePath ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxCount 1 ] .
+
 ga:SourceExclusionPatternsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeSourcePattern ;
     sh:property [ sh:path ga:excludeSourcePattern ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 2048 ; sh:maxCount 64 ;
         sh:pattern "^[^/\\\\]" ] .
