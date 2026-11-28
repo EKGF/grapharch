@@ -411,6 +411,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]
@@ -2377,6 +2378,7 @@ dependencies = [
  "reqwest 0.12.9",
  "roxmltree 0.21.2",
  "scraper",
+ "semver",
  "serde",
  "serde_json",
  "serde_yaml",

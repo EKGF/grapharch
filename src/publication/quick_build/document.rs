@@ -25,7 +25,13 @@ pub(super) async fn title(
     dataset: &Dataset,
     view: &RevisionView,
     inventory: &Inventory,
+    repository: Option<&str>,
+    package: bool,
 ) -> Result<String> {
+    // A manifest's package name is the project's own name for itself.
+    if package && let Some(name) = repository {
+        return Ok(name.to_owned());
+    }
     let mut roots = dataset
         .select(format!(
             "SELECT DISTINCT ?s WHERE {{ {} }} ORDER BY ?s LIMIT 2",
@@ -38,6 +44,9 @@ pub(super) async fn title(
         let Some(label) = label(view, subject).await?
     {
         return Ok(label);
+    }
+    if let Some(name) = repository {
+        return Ok(name.to_owned());
     }
     let mut pages = dataset
         .select(format!(
@@ -97,6 +106,8 @@ pub(super) async fn defaults(
     project: &NamedNode,
     target: &NamedNode,
     title: &str,
+    repository: Option<&url::Url>,
+    policy: crate::publication::reference::LinkPolicy,
 ) -> Result<()> {
     let scope = identity("quick-scope", &[project.as_str()]);
     let profile = identity("quick-profile", &[project.as_str()]);
@@ -127,9 +138,18 @@ pub(super) async fn defaults(
             "destination",
             Literal::new_simple_literal("site"),
         ),
+        quad(project, "linkPolicy", term(policy.term())),
         quad(&scope, "type", term("Scope")),
         quad(&profile, "type", term("Profile")),
-    ] {
+    ]
+    .into_iter()
+    .chain(repository.map(|url| {
+        quad(
+            project,
+            "repository",
+            NamedNode::new_unchecked(url.as_str()),
+        )
+    })) {
         stream.write(q).await?;
     }
     stream.complete().await

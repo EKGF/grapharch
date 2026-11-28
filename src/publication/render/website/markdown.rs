@@ -1,6 +1,9 @@
 use {
     super::catalog::{Catalog, Page},
-    crate::publication::collect::page::slug,
+    crate::publication::{
+        collect::page::slug,
+        reference::{ReferenceClassifier, ReferenceKind},
+    },
     anyhow::{Result, ensure},
     pulldown_cmark::{Event, Parser, Tag, TagEnd},
     std::collections::HashMap,
@@ -65,6 +68,7 @@ pub(super) fn render(
     let headings = index(&events);
     let mut heading_index = 0;
     let mut image_presentations = Vec::new(); // bounded: one capped Markdown page.
+    let mut unlinked = Vec::new(); // bounded: links of one capped Markdown page.
     for (index, event) in events.iter_mut().enumerate() {
         match event {
             Event::Start(Tag::Heading { id, .. }) => {
@@ -80,7 +84,10 @@ pub(super) fn render(
                     )
                     .is_none()
                 {
-                    *dest_url = link(dest_url, page, catalog)?.into();
+                    match link(dest_url, page, catalog)? {
+                        Some(href) => *dest_url = href.into(),
+                        None => unlinked.push(index),
+                    }
                 }
             },
             Event::Start(Tag::Image { dest_url, title, .. }) => {
@@ -92,13 +99,21 @@ pub(super) fn render(
                 let hints =
                     crate::publication::image_hints::ImageHints::parse(title)?;
                 let key = (page.id.as_str().into(), dest_url.to_string());
-                let (_, _, id) =
+                let (_, remote, id) =
                     catalog.references.get(&key).ok_or_else(|| {
                         anyhow::anyhow!(
                             "image is not retained in the publication KG: \
                              {dest_url}"
                         )
                     })?;
+                if id.is_none() &&
+                    url::Url::parse(remote).is_ok_and(|url| {
+                        crate::publication::reference::is_badge(&url)
+                    })
+                {
+                    *dest_url = remote.clone().into();
+                    continue;
+                }
                 let id = id
                     .as_ref()
                     .ok_or_else(|| anyhow::anyhow!("image asset is missing"))?;
@@ -153,6 +168,25 @@ pub(super) fn render(
             },
             Event::Html(_) |
             Event::InlineHtml(_) |
+            Event::Start(Tag::HtmlBlock) |
+            Event::End(TagEnd::HtmlBlock)
+                if catalog.link_policy ==
+                    crate::publication::reference::LinkPolicy::Lenient =>
+            {
+                // Zero configuration publishes what it can: raw HTML is
+                // dropped with a diagnostic; its Markdown content remains.
+                if let Event::Html(html) | Event::InlineHtml(html) = event {
+                    tracing::warn!(
+                        code = "raw-html-dropped",
+                        "{}: raw HTML dropped: {}",
+                        page.source,
+                        html.trim()
+                    );
+                }
+                *event = Event::Text("".into());
+            },
+            Event::Html(_) |
+            Event::InlineHtml(_) |
             Event::Start(Tag::HtmlBlock) => {
                 anyhow::bail!(
                     "{}: raw HTML must be represented by a supported \
@@ -169,6 +203,7 @@ pub(super) fn render(
             _ => {},
         }
     }
+    unlink(&mut events, &unlinked);
     for (index, projection, path, title, scheme) in image_presentations {
         super::interactive_svg::replace(
             &mut events,
@@ -180,7 +215,9 @@ pub(super) fn render(
         )?;
     }
     let events = super::super::class_diagram::resolve(events, |iri| {
-        link(iri, page, catalog)
+        link(iri, page, catalog)?.ok_or_else(|| {
+            anyhow::anyhow!("{}: unresolved diagram link {iri}", page.source)
+        })
     })?;
     let mut html = String::new();
     pulldown_cmark::html::push_html(
@@ -208,172 +245,54 @@ pub(super) fn render(
     );
     Ok(Content { html, headings })
 }
+/// Render broken links as their text: drop each listed link start and its
+/// matching end. Indices are positions of `Event::Start(Tag::Link)`.
+fn unlink(events: &mut Vec<Event<'_>>, starts: &[usize]) {
+    if starts.is_empty() {
+        return;
+    }
+    let mut remove = vec![false; events.len()]; // bounded: one page's events.
+    for &start in starts {
+        remove[start] = true;
+        let mut depth = 0usize;
+        for (offset, event) in events[start + 1..].iter().enumerate() {
+            match event {
+                Event::Start(Tag::Link { .. }) => depth += 1,
+                Event::End(TagEnd::Link) if depth == 0 => {
+                    remove[start + 1 + offset] = true;
+                    break;
+                },
+                Event::End(TagEnd::Link) => depth -= 1,
+                _ => {},
+            }
+        }
+    }
+    let mut index = 0;
+    events.retain(|_| {
+        index += 1;
+        !remove[index - 1]
+    });
+}
+
+/// The href of one reference, decided by the reference classifier; `None`
+/// for a broken reference under the lenient link policy.
 pub(super) fn link(
     value: &str,
     page: &Page,
     catalog: &Catalog,
-) -> Result<String> {
-    if let Some(href) = catalog
-        .targets
-        .resolve(value, &format!("{}index.html", page.route))?
-    {
-        return Ok(href);
-    }
-    // A page IRI links to the page itself.
-    if let Some(target) =
-        catalog.pages.get(value).filter(|target| !target.asset)
-    {
-        return Ok(if target.id == page.id {
-            "#".into()
-        } else {
-            format!(
-                "{}{}",
-                "../".repeat(page.route.matches('/').count()),
-                target.route
-            )
-        });
-    }
-    if let Some((id, anchor)) = catalog.subjects.get(value) {
-        let target = &catalog.pages[id];
-        return Ok(if target.id == page.id {
-            format!("#{anchor}")
-        } else {
-            format!(
-                "{}{}#{anchor}",
-                "../".repeat(page.route.matches('/').count()),
-                target.route
-            )
-        });
-    }
-    if let Some((_, _, Some(asset))) = catalog
-        .references
-        .get(&(page.id.as_str().into(), value.into()))
-    {
-        let target = catalog.pages.get(asset).ok_or_else(|| {
-            anyhow::anyhow!("image link asset is not selected")
-        })?;
-        return Ok(format!(
-            "{}{}",
-            "../".repeat(page.route.matches('/').count()),
-            target.route
-        ));
-    }
-    if let Some((path, url, asset)) = catalog
-        .references
-        .get(&(page.id.as_str().into(), value.into())) &&
-        asset.is_none() &&
-        !catalog.sources.contains_key(path)
-    {
-        return Ok(url.clone());
-    }
-    if let Ok(url) = url::Url::parse(value) {
-        ensure!(
-            matches!(url.scheme(), "https" | "http" | "mailto"),
-            "unsupported website link {value}"
-        );
-        // A link beneath the website's own location stays inside the website.
-        if let Some(local) = catalog.bases.localize(&url) {
-            let prefix = "../".repeat(page.route.matches('/').count());
-            return Ok(if prefix.is_empty() && local.is_empty() {
-                "./".into()
-            } else {
-                format!("{prefix}{local}")
-            });
-        }
-        return Ok(
-            sibling_link(&url, page, catalog).unwrap_or_else(|| value.into())
+) -> Result<Option<String>> {
+    let lookup = super::reference_lookup::PageLookup { page, catalog };
+    let classification = ReferenceClassifier::new(&lookup, catalog.link_policy)
+        .classify(value, &page.source, &page.route, false)?;
+    catalog
+        .recorder
+        .record(&page.source, value, &classification)?;
+    if let ReferenceKind::Broken(reason) = &classification.kind {
+        tracing::warn!(
+            code = "broken-reference",
+            "{}: {reason}",
+            page.source
         );
     }
-    let base = url::Url::parse(&format!(
-        "https://grapharch.invalid/{}",
-        page.source
-    ))?;
-    let url = base.join(value)?;
-    ensure!(
-        url.host_str() == Some("grapharch.invalid") && url.query().is_none(),
-        "unsupported local documentation URL {value}"
-    );
-    let path = url.path().trim_start_matches('/');
-    let target = if value.starts_with('#') || value.is_empty() {
-        page
-    } else if let Some(id) = catalog
-        .sources
-        .get(path)
-        .or_else(|| catalog.routes.get(path))
-        .or_else(|| {
-            catalog
-                .routes
-                .get(&format!("{}/", path.trim_end_matches('/')))
-        })
-    {
-        catalog.pages.get(id).unwrap()
-    } else if let Some(links) = &catalog.source_links {
-        // A repository file that is not a page, such as a configuration file
-        // beside a README, links to the collected commit.
-        return links
-            .href(&page.source, value)
-            .map_err(|error| anyhow::anyhow!("{}: {error:#}", page.source));
-    } else {
-        anyhow::bail!(
-            "{}: unresolved documentation link {value} (source {path}); \
-             declare ga:{} on the project to link repository files that are \
-             not pages",
-            page.source,
-            crate::publication::source_link::SETTING
-        )
-    };
-    let anchor = url.fragment();
-    if let Some(anchor) = anchor.filter(|value| !value.is_empty()) {
-        ensure!(
-            !target.asset && target.headings.contains(anchor),
-            "{}: unresolved heading {value} in {}",
-            page.source,
-            target.source
-        );
-    }
-    if target.id == page.id && value.starts_with('#') {
-        return Ok(value.into());
-    }
-    let prefix = "../".repeat(page.route.matches('/').count());
-    Ok(format!(
-        "{prefix}{}{}",
-        target.route,
-        anchor.map(|a| format!("#{a}")).unwrap_or_default()
-    ))
-}
-
-/// A repository link to a page of a registered website: a sibling site's
-/// page, or a page of this build when the repository is this site's own.
-fn sibling_link(
-    url: &url::Url,
-    page: &Page,
-    catalog: &Catalog,
-) -> Option<String> {
-    match catalog.siblings.destination(url)? {
-        super::site_registry::Destination::Sibling(site) => Some(site.into()),
-        super::site_registry::Destination::Local(source, anchor) => {
-            let target = if source.is_empty() {
-                catalog
-                    .routes
-                    .get("")
-                    .and_then(|id| catalog.pages.get(id))?
-            } else {
-                catalog.pages.get(catalog.sources.get(&source)?)?
-            };
-            if let Some(anchor) = &anchor {
-                target.headings.contains(anchor.as_str()).then_some(())?;
-            }
-            let prefix = "../".repeat(page.route.matches('/').count());
-            let route = format!("{prefix}{}", target.route);
-            let route = if route.is_empty() {
-                "./".to_owned()
-            } else {
-                route
-            };
-            Some(match anchor {
-                Some(anchor) => format!("{route}#{anchor}"),
-                None => route,
-            })
-        },
-    }
+    Ok(classification.href)
 }

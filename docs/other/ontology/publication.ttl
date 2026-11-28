@@ -1956,7 +1956,7 @@ ga:sourceLinkBase a owl:ObjectProperty ;
     dct:description "Identifies the HTTPS browse location of a project's repository, under which links from authored pages to repository files that are not collected as pages resolve at the collected source commit."@en ;
     rdfs:domain ga:Project ;
     rdfs:range rdfs:Resource ;
-    skos:scopeNote "A relative link to an uncollected file renders as <base>/blob/<commit>/<path>, the layout GitHub uses. The path resolves from the linking page and must stay inside the repository. It is separate from ga:repository, which only names the repository for the header source link, so declaring a repository never turns a broken documentation link into an external one. Without this property such a link fails the build."@en .
+    skos:scopeNote "A relative link to an uncollected file renders as <base>/blob/<commit>/<path>, the layout GitHub uses. The path resolves from the linking page and must stay inside the repository. It is separate from ga:repository, which only names the repository for the header source link, so declaring a repository never turns a broken documentation link into an external one. Without it, a discovered forge repository is used, else the link is broken."@en .
 
 ga:SourceCheckout a owl:Class ;
     rdfs:label "Source checkout"@en ;

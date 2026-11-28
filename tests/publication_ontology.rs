@@ -28,6 +28,7 @@ fn ontology() -> Result<Store> {
             .as_slice(),
         include_bytes!("../docs/other/ontology/themes.ttl").as_slice(),
         include_bytes!("../docs/other/ontology/rdf-formats.ttl").as_slice(),
+        include_bytes!("../docs/other/ontology/repository.ttl").as_slice(),
     ] {
         store.load_from_reader(RdfFormat::Turtle, catalogue)?;
     }
@@ -199,7 +200,9 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                  owl:AnnotationProperty ga:Renderer ga:Collector \
                  ga:Documentor ga:ShowcaseRunner ga:PdfStandard ga:Theme \
                  ga:RdfFormat ga:CoverElement ga:DateFormat ga:DocumentType \
-                 ga:ConformanceLanguage }}"
+                 ga:ConformanceLanguage ga:ReferenceKind ga:ReferenceForm \
+                 ga:LinkPolicy ga:PackageEcosystem ga:Forge \
+                 ga:RepositoryVisibility }}"
             ),
         )? {
             missing.push(name);

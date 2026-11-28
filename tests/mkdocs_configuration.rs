@@ -30,8 +30,9 @@ async fn appended_dictionary_resolves_under_snippet_roots_without_becoming_a_pag
     )
     .await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -78,8 +79,9 @@ async fn native_pages_hints_reject_yaml_aliases() -> Result<()> {
     )
     .await?;
     let result = BuildRequest {
-        source: source.path().to_owned(),
-        output: source.path().join("output"),
+        source:  source.path().to_owned(),
+        output:  source.path().join("output"),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await;

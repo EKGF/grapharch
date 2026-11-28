@@ -457,6 +457,8 @@ fn scan_remote_selected(
         discovered,
     ))
 }
+/// Whether `path` names an RDF file that source discovery collects.
+pub(crate) fn rdf_source(path: &Path) -> bool { supported(path) }
 pub(super) fn supported(path: &Path) -> bool {
     path.extension().and_then(|v| v.to_str()).is_some_and(|v| {
         matches!(v, "ttl" | "rdf" | "nt" | "nq" | "trig" | "n3")

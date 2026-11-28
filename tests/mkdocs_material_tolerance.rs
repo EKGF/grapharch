@@ -28,8 +28,9 @@ async fn collects(configuration: &str) -> Result<()> {
     )
     .await?;
     BuildRequest {
-        source: root.to_owned(),
-        output: output.path().to_owned(),
+        source:  root.to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;

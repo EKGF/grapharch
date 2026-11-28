@@ -315,12 +315,103 @@ restricts a pattern to directories: `**/tests/` excludes every directory named
 relative to the documentation root and may not start with `/` or contain `..`.
 Exact paths and patterns share one budget of 64 exclusions.
 
-### Links to repository files that are not pages
+### Repository-aware discovery
 
-A README often links to a file beside it, such as a configuration file or a
-source file. Discovery collects only pages and assets, so by default such a link
-fails the build with an unresolved documentation link. To send it to the file in
-the repository instead, declare the repository's HTTPS browse location:
+Every automatic discovery (the zero-configuration `grapharch build`, website
+pages and ontology families) uses one walker. It honours the ignore files the
+repository already maintains: `.gitignore` at every level,
+`.git/info/exclude`, the global Git excludes file, `.ignore`, and a
+GraphArch-only `.grapharchignore` in the same syntax. They apply whether or not
+a `.git` directory exists, so a `git archive` copy or a CI tarball selects the
+same sources as the clone. Hidden and `_`-prefixed names are skipped and
+symbolic links are never followed.
+
+`.dockerignore`, `.npmignore` and similar files are deliberately not read: they
+describe what to leave out of a container or package, and documentation is
+usually exactly what they leave out. Use `.grapharchignore` for
+documentation-specific exclusions.
+
+Some files are skipped by default because no repository means to publish them:
+agent instructions (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`), planning and status
+notes (`PLAN.md`, `TODO.md`, `*_STATUS.md`), forge templates, test fixtures
+(`tests/`, `test/`, `__tests__/`, `fixtures/`, `testdata/`, `test_data/`,
+`__snapshots__/`, and RDF beneath `spec/`), and dependency or build output (`node_modules/`,
+`target/`, `dist/`, `build/`, `vendor/`). Bring any of them back with a glob:
+
+```turtle
+<urn:project> ga:includeSourcePattern "**/AGENTS.md", "tests/**" .
+```
+
+An inclusion overrides only the defaults; ignore files and authored exclusions
+still apply. Discovery selects at most 16,384 sources. Raise or lower that with
+`ga:maxDiscoveredSources` (`--max-sources` for `grapharch build`); exceeding it
+fails with an error that names the setting.
+
+### Repository metadata
+
+Every zero-configuration build discovers the repository it documents and records
+it in the documentation graph (`documentation.nq`):
+
+- **Git**, read without changing the work tree: the head commit, the default
+  branch (the origin's `HEAD`, else the checked-out branch), the tag with the
+  highest semantic version, whether the work tree is dirty, the first and last
+  commit dates, and the `origin` remote normalized to its forge, owner and
+  repository. Commit authors stay in the existing Git provenance.
+- **The forge** (GitHub or GitLab): description, homepage, topics, SPDX
+  license, visibility, the archived flag, stars, the latest release and whether
+  discussions are enabled. GraphArch asks the API (`GITHUB_API_URL` and
+  `GITHUB_TOKEN`, or `CI_API_V4_URL` and `GITLAB_TOKEN`, when set) with two
+  requests per repository. The answer is recorded per repository and commit in
+  `$XDG_CACHE_HOME/grapharch/forge` (else `~/.cache/grapharch/forge`), so a
+  rebuild of the same commit reads recorded input rather than live data.
+  `--offline` never asks, and pinned showcase builds never do. An unreachable
+  forge or a refused request never fails the build: it falls back to Git and
+  manifest metadata and records a `ga:Diagnostic`.
+- **Package manifests**, parsed and never executed: `Cargo.toml` (with
+  workspace members and inherited `[workspace.package]` fields),
+  `pyproject.toml` (PEP 621, else Poetry), `package.json` (with npm and pnpm
+  workspaces) and `go.mod`. An unparseable manifest is a diagnostic, not a
+  failure.
+
+Without a `.git` directory, as in a `git archive` copy, the manifest's
+`repository` URL identifies the forge.
+
+The model uses DOAP for the software project, its Git repository and releases,
+schema.org for versions, dates, keywords and the discussion URL, and SPDX
+license IRIs; `ga:softwareProject` links the documentation project to it and
+each manifest package is a `ga:CodePackage` (see `repository.ttl`). The site
+takes its title from the package or repository name, its version chip shows
+the package version (the GraphArch build stays in the chip's data attributes),
+and the home page lists the version, license, and links to the repository,
+issues, discussions, latest release, homepage, registry page (crates.io, PyPI,
+npm, pkg.go.dev) and API reference (docs.rs).
+
+### References and links
+
+Every link in an authored page goes through one classifier before rendering.
+It records how the reference was written (`ga:referenceForm`: fragment,
+relative, root-relative, absolute, scheme-relative, contact or other scheme)
+and decides what it points at (`ga:referenceKind`): a page (anchors are checked
+against its headings), an anchor, an asset, a diagram source, a repository file
+that is not a page, a forge issue, pull request, commit, release or discussion,
+a sibling site, an absolute link into this site, a badge, an external location,
+or nothing. Each decision is published as a `ga:Reference` in the site's
+`references.nq`, and a zero-configuration build adds them to `documentation.nq`
+for backlink and broken-link queries.
+
+A relative link to a repository file that is not a page goes to the file on the
+forge at the collected commit, `<repository>/blob/<commit>/<path>`
+(`/-/blob/` on GitLab), or at `HEAD` for a copy without Git. A link that would
+leave the repository is broken. Badge images (shields.io, docs.rs, Codecov and
+similar) are linked, never downloaded, so they can never fail a build.
+
+Zero-configuration builds use `ga:LenientLinks`: a broken reference renders as
+its text and raw HTML in Markdown is dropped, each with a warning. `grapharch
+build --strict`, and every configured publication unless it declares
+`ga:linkPolicy ga:LenientLinks`, keep failing instead.
+
+To link repository files from a configured publication, or to point them at a
+different location, declare the repository's HTTPS browse location:
 
 ```turtle
 <urn:project> ga:sourceLinkBase <https://github.com/example/project> .
@@ -329,12 +420,10 @@ the repository instead, declare the repository's HTTPS browse location:
 A relative link to an uncollected file then renders as
 `https://github.com/example/project/blob/<commit>/<path>`, where `<commit>` is
 the commit the build collected and `<path>` is resolved from the linking page.
-A fragment such as `#L10` is kept. A link that would leave the repository still
-fails. Collection records the commit and the documentation root's directory in
-the repository as a `ga:SourceCheckout`, so rendering needs no access to the
-checkout. The documentation source must therefore be a Git checkout. This is a
-separate setting from `ga:repository`, which only adds the header's source link:
-declaring a repository never turns a mistyped page link into an external link.
+A fragment such as `#L10` is kept. Collection records the commit and the
+documentation root's directory in the repository as a `ga:SourceCheckout`, so
+rendering needs no access to the checkout. This is a separate setting from
+`ga:repository`, which only adds the header's source link.
 
 A repository can keep authored pages in `docs/` and RDF dependencies in `metadata/`. Pass the repository as `--source`, set `ga:contentSource "docs"` on the project, and configure collectors relative to the repository root (for example `ga:source "metadata/model.ttl"`). Page routes stay relative to `docs/`. The directory navigation collector should use `ga:source "docs"` too. Source exclusions remain relative to the content directory.
 

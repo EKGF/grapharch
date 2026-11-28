@@ -74,7 +74,7 @@ impl SourcePattern {
 
     /// Whether `relative`, with `/` separators, or one of its ancestor
     /// directories matches.
-    fn matches(&self, relative: &str, kind: EntryKind) -> bool {
+    pub(crate) fn matches(&self, relative: &str, kind: EntryKind) -> bool {
         let mut end = 0;
         for (index, part) in relative.split('/').enumerate() {
             end += if index == 0 {

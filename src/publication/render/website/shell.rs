@@ -31,6 +31,18 @@ pub(super) fn render(
 ) -> anyhow::Result<String> {
     let active = page.navigation_owner.unwrap_or(page.id);
     let project_title = &header.title;
+    // The chip names the documented package's version when one is known,
+    // not the GraphArch build; the build stays in its data attributes.
+    let package_version = header
+        .software
+        .as_ref()
+        .and_then(super::software::Software::version);
+    let facts = match &header.software {
+        Some(software) if page.prefix.is_empty() && !page.report => {
+            software.facts_html()
+        },
+        _ => String::new(),
+    };
     let repository = &header.repository;
     let Page {
         prefix,
@@ -112,8 +124,17 @@ pub(super) fn render(
         esc(env!("GRAPHARCH_GENERATOR_REVISION")),
         esc(env!("GRAPHARCH_BUILD_NUMBER")),
         esc(env!("GRAPHARCH_BUILD_ATTEMPT")),
-        esc(env!("GRAPHARCH_BUILD_DETAILS")),
-        esc(env!("GRAPHARCH_BUILD_LABEL"))
+        esc(&match package_version {
+            Some(version) =>
+                format!(
+                    "Package version {version}; {}",
+                    env!("GRAPHARCH_BUILD_DETAILS")
+                ),
+            None => env!("GRAPHARCH_BUILD_DETAILS").to_owned(),
+        }),
+        esc(&package_version
+            .map(|version| format!("v{}", version.trim_start_matches('v')))
+            .unwrap_or_else(|| env!("GRAPHARCH_BUILD_LABEL").to_owned()))
     );
     let header_content = if header.theme.project() ||
         (community_row && header.navigation.documentation)
@@ -283,6 +304,17 @@ pub(super) fn render(
         navigation_script = include_str!("nav.js"),
         id = esc(page.id),
         fragment_count = page.fragment_count,
-        body = body,
+        body = with_facts(&body, &facts),
     ))
+}
+
+/// Place the project facts after the page's first heading, else first.
+fn with_facts(body: &str, facts: &str) -> String {
+    if facts.is_empty() {
+        return body.to_owned();
+    }
+    match body.find("</h1>") {
+        Some(at) => format!("{}{facts}{}", &body[..at + 5], &body[at + 5..]),
+        None => format!("{facts}{body}"),
+    }
 }

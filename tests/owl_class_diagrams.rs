@@ -145,8 +145,9 @@ ex:incoming a owl:ObjectProperty ; rdfs:label "delegates control to" ; rdfs:comm
     )
     .await?;
     let request = BuildRequest {
-        source: source.path().into(),
-        output: output.path().join("before"),
+        source:  source.path().into(),
+        output:  output.path().join("before"),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     };
     let (dataset, plan) = request.collect().await?;
     let archive = output.path().join("graph.nq");

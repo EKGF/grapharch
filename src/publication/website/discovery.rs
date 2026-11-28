@@ -1,7 +1,11 @@
 //! Bounded filesystem discovery with source-owned project exclusions.
 use {
-    super::exclusions::{EntryKind, SourceExclusions},
-    crate::publication::{collect::LocalImageFile, view::RevisionView},
+    super::exclusions::SourceExclusions,
+    crate::publication::{
+        collect::LocalImageFile,
+        source_walk::SourceWalk,
+        view::RevisionView,
+    },
     anyhow::{Result, ensure},
     oxrdf::{NamedNode, Term},
     std::path::{Component, Path, PathBuf},
@@ -77,51 +81,17 @@ pub(super) async fn discover(
     view: &RevisionView,
     project: &NamedNode,
 ) -> Result<Vec<PathBuf>> {
-    let exclusions = exclusions(root, view, project).await?;
-    let mut pending = vec![root.to_owned()];
-    let mut files = Vec::new();
-    let mut visited = 0;
-    while let Some(directory) = pending.pop() {
-        let mut entries = tokio::fs::read_dir(directory).await?;
-        while let Some(entry) = entries.next_entry().await? {
-            visited += 1;
-            ensure!(
-                visited <= 4096,
-                "website discovery exceeds 4096-entry budget"
-            );
-            let name = entry.file_name();
-            let name = name.to_str().ok_or_else(|| {
-                anyhow::anyhow!("website filenames must be UTF-8")
-            })?;
-            if name.starts_with('.') || name.starts_with('_') {
-                continue;
-            }
-            let kind = entry.file_type().await?;
-            if exclusions.excludes(&entry.path(), EntryKind::of(kind.is_dir()))
-            {
-                continue;
-            }
-            ensure!(
-                !kind.is_symlink(),
-                "website discovery rejects symlinks: {}",
-                entry.path().display()
-            );
-            if kind.is_dir() {
-                pending.push(entry.path());
-            } else if name == "CNAME" ||
-                entry.path().extension().is_some_and(|ext| {
-                    matches!(ext.to_str(), Some("md" | "ttl" | "txt")) ||
-                        LocalImageFile::supported(&entry.path())
-                })
-            {
-                files.push(entry.path());
-                ensure!(
-                    files.len() <= 256,
-                    "website exceeds 256-source budget"
-                );
-            }
-        }
-    }
-    files.sort();
-    Ok(files)
+    SourceWalk::new(root, website_source)
+        .configured(view, project)
+        .await?
+        .files()
+        .await
+}
+
+fn website_source(path: &Path) -> bool {
+    path.file_name().is_some_and(|name| name == "CNAME") ||
+        path.extension().is_some_and(|ext| {
+            matches!(ext.to_str(), Some("md" | "ttl" | "txt"))
+        }) ||
+        LocalImageFile::supported(path)
 }

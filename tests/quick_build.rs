@@ -121,8 +121,9 @@ async fn shared_rdf_subjects_render_once_and_survive_source_removal()
     tokio::fs::write(source.path().join("pets.ttl"), ONTOLOGY).await?;
     tokio::fs::write(source.path().join("zzduplicate.ttl"), "<https://example.org/pets#Pet> a <http://www.w3.org/2002/07/owl#Class>; <http://www.w3.org/2000/01/rdf-schema#comment> \"Care matters.\" .").await?;
     let request = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().join("initial"),
+        source:  source.path().to_owned(),
+        output:  output.path().join("initial"),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     };
     let (dataset, plan) = request.collect().await?;
     let PublishOutcome::Published(original) = Publisher::new(dataset.clone())

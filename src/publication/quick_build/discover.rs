@@ -1,4 +1,5 @@
 use {
+    crate::publication::source_walk::{SourceBudget, SourceWalk},
     anyhow::{Result, ensure},
     std::path::{Path, PathBuf},
 };
@@ -11,7 +12,11 @@ pub(super) struct Inventory {
     pub mdbook:      Option<PathBuf>,
 }
 impl Inventory {
-    pub async fn read(source: &Path, output: &Path) -> Result<Self> {
+    pub async fn read(
+        source: &Path,
+        output: &Path,
+        budget: SourceBudget,
+    ) -> Result<Self> {
         let kind = tokio::fs::metadata(source).await?;
         if kind.is_file() {
             ensure!(
@@ -111,60 +116,11 @@ impl Inventory {
         } else {
             std::env::current_dir()?.join(output)
         };
-        let mut pending = vec![source.to_owned()]; // bounded: total discovery budget is 4096 entries.
-        let mut files = Vec::new(); // bounded: at most 256 sources.
-        let mut count = 0;
-        while let Some(directory) = pending.pop() {
-            let mut entries = tokio::fs::read_dir(directory).await?;
-            while let Some(entry) = entries.next_entry().await? {
-                count += 1;
-                ensure!(
-                    count <= 4096,
-                    "quick build discovery exceeds 4096 entries; select a \
-                     smaller source directory"
-                );
-                let path = entry.path();
-                let name = entry.file_name();
-                let name = name.to_str().ok_or_else(|| {
-                    anyhow::anyhow!("source names must be UTF-8")
-                })?;
-                if path == excluded ||
-                    name.starts_with('.') ||
-                    name.starts_with('_') ||
-                    matches!(
-                        name,
-                        "node_modules" |
-                            "target" |
-                            "dist" |
-                            "build" |
-                            "output" |
-                            "vendor" |
-                            "venv"
-                    )
-                {
-                    continue;
-                }
-                let kind = entry.file_type().await?;
-                ensure!(
-                    !kind.is_symlink(),
-                    "quick build rejects symlinks: {}",
-                    path.display()
-                );
-                if kind.is_dir() {
-                    pending.push(path);
-                } else if supported(&path) ||
-                    super::super::collect::LocalImageFile::supported(&path)
-                {
-                    ensure!(
-                        files.len() < 256,
-                        "quick build exceeds 256 sources; select a smaller \
-                         directory or configure a publication"
-                    );
-                    files.push(path);
-                }
-            }
-        }
-        files.sort();
+        let files = SourceWalk::new(source, quick_source)
+            .skipping(excluded)
+            .with_budget(budget)
+            .files()
+            .await?;
         ensure!(
             !files.is_empty(),
             "no supported Markdown or RDF sources found in {}",
@@ -188,4 +144,7 @@ pub(super) fn rdf(path: &Path) -> bool {
 }
 fn supported(path: &Path) -> bool {
     rdf(path) || path.extension().is_some_and(|value| value == "md")
+}
+fn quick_source(path: &Path) -> bool {
+    supported(path) || super::super::collect::LocalImageFile::supported(path)
 }

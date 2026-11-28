@@ -52,6 +52,10 @@ pub(super) struct Catalog {
     pub source_links:     Option<crate::publication::source_link::SourceLinks>,
     /// Registered sibling websites that repository links lead to.
     pub siblings:         super::site_registry::SiteRegistry,
+    /// Whether broken references fail the build.
+    pub link_policy:      crate::publication::reference::LinkPolicy,
+    /// Every decided reference, published as RDF.
+    pub recorder:         crate::publication::reference::ReferenceRecorder,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -78,6 +82,12 @@ impl Catalog {
                 .await?,
             siblings:         super::site_registry::SiteRegistry::read(plan)
                 .await?,
+            link_policy:      crate::publication::reference::LinkPolicy::read(
+                &plan.source,
+                &plan.project,
+            )
+            .await?,
+            recorder:         Default::default(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;

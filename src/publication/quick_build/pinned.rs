@@ -5,7 +5,10 @@ use {
         discover::Inventory,
         plain,
     },
-    crate::publication::dataset::Dataset,
+    crate::publication::{
+        dataset::Dataset,
+        repository::{ForgeAccess, RepositoryDiscoverer, RepositoryRecord},
+    },
     anyhow::{Result, ensure},
     std::{path::Path, sync::Arc},
 };
@@ -21,17 +24,33 @@ pub(crate) async fn collect(
     source: &str,
     extra: Vec<Arc<dyn Collector>>,
 ) -> Result<(Dataset, ResolvedPlan)> {
-    let inventory =
-        Inventory::read(root, &root.join(".grapharch-output")).await?;
+    let inventory = Inventory::read(
+        root,
+        &root.join(".grapharch-output"),
+        crate::publication::source_walk::SourceBudget::DEFAULT,
+    )
+    .await?;
     ensure!(
         inventory.definitions.is_none() && inventory.mkdocs.is_none(),
         "a zero-configuration tree cannot contain GraphArch or MkDocs \
          configuration; use the exact-revision or MkDocs runner"
     );
-    plain(
-        &inventory,
-        identity("quick-project", &[source]),
-        extra,
-    )
-    .await
+    // A pinned build never reads live forge data: Git and manifests only.
+    let facts = RepositoryDiscoverer::new(ForgeAccess::Offline)
+        .discover(root)
+        .await;
+    let project = identity("quick-project", &[source]);
+    let repository = super::Repository {
+        name:    facts.name(),
+        package: facts.has_package(),
+        web:     facts.forge.as_ref().map(|forge| forge.web_url()),
+        policy:  crate::publication::reference::LinkPolicy::Lenient,
+    };
+    let mut extra = extra;
+    extra.push(Arc::new(RepositoryRecord::new(
+        project.clone(),
+        source.to_owned(),
+        facts,
+    )));
+    plain(&inventory, project, extra, &repository).await
 }
