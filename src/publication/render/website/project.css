@@ -202,3 +202,6 @@ html[data-color-scheme="dark"] .project-term-accent h3,html[data-color-scheme="d
 .project-hero-introduction .project-container>p{margin-inline:0}
 .project-section:has(.project-card)>.project-container>:not(.project-card){grid-column:1/-1}
 .project-section>.project-container:not(:has(>.project-card~.project-card))>.project-card{grid-column:1/-1}
+/* The footer closes the page on the same column. */
+body.project-website .site-footer{padding-inline:var(--content-gutter)}
+body.project-website .site-footer .site-footer-inner{box-sizing:content-box;max-width:var(--content-width);margin-inline:auto;padding-inline:0}

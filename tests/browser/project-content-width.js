@@ -28,6 +28,8 @@ async (page) => {
       if (navigation) boxes.push({ name: 'section navigation', ...edges(navigation) });
       const header = document.querySelector('.project-website .community-header-row');
       if (header) boxes.push({ name: 'header', ...edges(header) });
+      const footer = document.querySelector('.project-website .site-footer-inner');
+      if (footer) boxes.push({ name: 'footer', ...edges(footer) });
       const halves = [];
       for (const container of document.querySelectorAll('.project-section>.project-container')) {
         const cards = container.querySelectorAll(':scope>.project-card').length;
