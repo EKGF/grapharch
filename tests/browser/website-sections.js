@@ -23,7 +23,7 @@ async (page) => {
       const sidebar = await page.locator('.site-navigation').textContent();
       if (!sidebar.includes('Collectors') || sidebar.includes('Showcase gallery')) throw new Error('Documentation sidebar crosses sections');
     }
-    if (!(await page.locator('.brand-version').isVisible())) throw new Error('Build identity disappeared');
+    if (!(await page.locator('.brand').isVisible())) throw new Error('Project brand disappeared');
   }
   await page.goto(route('/showcases/'));
   for (const width of [1440, 390]) {

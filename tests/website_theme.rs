@@ -68,7 +68,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
                     .await?;
             let report = scraper::Html::parse_document(&report_html);
             for selector in [
-                "header.site-header .brand-version",
+                "header.site-header .brand",
                 ".site-layout .site-navigation nav[aria-label='Documentation']",
                 "a.skip-link[href='#main-content']",
             ] {
@@ -117,7 +117,8 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
         .unwrap();
         let version =
             scraper::Selector::parse(".site-header .brand-version").unwrap();
-        assert!(document.select(&version).next().is_some());
+        // No documented project version: no chip, never the generator's.
+        assert!(document.select(&version).next().is_none());
         if theme.is_some() {
             assert!(
                 document.select(&logo).next().is_some(),
@@ -130,7 +131,7 @@ async fn ekgf_website_theme_is_opt_in_and_survives_source_removal() -> Result<()
             .await?;
             let report = scraper::Html::parse_document(&provenance);
             for selector in [
-                "header.site-header .brand-version",
+                "header.site-header .brand",
                 ".site-layout .site-navigation nav[aria-label='Documentation']",
                 ".site-layout main#main-content article #document-provenance",
                 "a.skip-link[href='#main-content']",

@@ -82,8 +82,9 @@ impl RepositoryFacts {
     }
 
     /// The package version: the primary package's, else one shared by every
-    /// workspace member, else the latest release tag's, else the forge's
-    /// latest release.
+    /// workspace member, else that of the latest release tag at or before
+    /// the checked-out commit. The forge's latest release is not used: it
+    /// may postdate the commit being documented.
     pub(crate) fn version(&self) -> Option<PackageVersion> {
         self.primary()
             .and_then(|package| package.version.clone())
@@ -93,12 +94,6 @@ impl RepositoryFacts {
             .or_else(|| {
                 let tag = self.git.as_ref()?.latest_tag.as_ref()?;
                 PackageVersion::try_new(&tag.version.to_string()).ok()
-            })
-            .or_else(|| {
-                let release =
-                    self.metadata.as_ref()?.latest_release.as_ref()?;
-                PackageVersion::try_new(release.tag.trim_start_matches('v'))
-                    .ok()
             })
     }
 

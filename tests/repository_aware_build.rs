@@ -94,6 +94,11 @@ async fn archive_copies_build_with_manifest_identity_and_no_meta_files()
         chip.text().collect::<String>().contains("v3.1.4"),
         "package version chip"
     );
+    assert_eq!(
+        chip.value().attr("title"),
+        Some("Version 3.1.4"),
+        "the chip's title names the project version, not the generator build"
+    );
     let facts = document
         .select(&scraper::Selector::parse(".project-facts").unwrap())
         .next()
@@ -286,13 +291,12 @@ async fn workspaces_without_one_version_list_their_crates() -> Result<()> {
     let home =
         std::fs::read_to_string(r.join("output/grapharch/site/index.html"))?;
     let document = scraper::Html::parse_document(&home);
-    let chip = document
-        .select(&scraper::Selector::parse(".brand-version").unwrap())
-        .next()
-        .expect("version chip element");
     assert!(
-        chip.value().attr("hidden").is_some(),
-        "no single version: chip hidden"
+        document
+            .select(&scraper::Selector::parse(".brand-version").unwrap())
+            .next()
+            .is_none(),
+        "no single version: no chip, and never the generator's version"
     );
     let facts = document
         .select(&scraper::Selector::parse(".project-facts").unwrap())

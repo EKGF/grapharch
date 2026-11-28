@@ -13,7 +13,7 @@ async (page) => {
     check(geometry.height === (width > 1150 ? 80 : 72), `Incorrect community header height at ${width}: ${JSON.stringify(geometry)}`);
     check(!geometry.overflow, `Page overflow at ${width}`);
     check(await row.locator('.brand-identity').isVisible(), 'Missing EKGF identity');
-    check(await page.locator('header .brand-version').isVisible(), 'Missing project version');
+    check(await page.locator('header .brand').isVisible(), 'Missing project brand');
     if (width > 1150) {
       check(await menu.evaluate(node => node.open), 'Desktop navigation must be open');
       const logo = await row.locator('.brand-identity').boundingBox();

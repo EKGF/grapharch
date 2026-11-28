@@ -146,3 +146,31 @@ async fn an_invalid_manifest_is_a_diagnostic_not_a_failure() {
         DiagnosticCode::ManifestInvalid
     );
 }
+
+#[tokio::test]
+async fn a_release_tag_after_the_checked_out_commit_is_not_its_version() {
+    let root = repository();
+    let r = root.path();
+    git(r, &[
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "three",
+    ]);
+    git(r, &["tag", "v0.11.0"]);
+    git(r, &["checkout", "-q", "v0.10.0"]);
+    let facts = offline().discover(r).await;
+    assert_eq!(
+        facts
+            .git
+            .as_ref()
+            .unwrap()
+            .latest_tag
+            .as_ref()
+            .unwrap()
+            .name
+            .as_str(),
+        "v0.10.0"
+    );
+}

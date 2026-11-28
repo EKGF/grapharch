@@ -222,7 +222,7 @@ async fn sectioned_navigation_scopes_pages_after_source_removal() -> Result<()>
             );
         }
 
-        assert!(html.contains("class=\"brand-version\""));
+        assert!(!html.contains("class=\"brand-version\""));
         assert!(!html.contains(absent));
         assert_eq!(
             doc.select(&scraper::Selector::parse(".site-navigation").unwrap())

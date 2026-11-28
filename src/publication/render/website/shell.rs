@@ -31,20 +31,22 @@ pub(super) fn render(
 ) -> anyhow::Result<String> {
     let active = page.navigation_owner.unwrap_or(page.id);
     let project_title = &header.title;
-    // The chip names the documented package's version when one is known,
-    // not the GraphArch build; the build stays in its data attributes.
-    let package_version = header
+    // The chip names only the documented project's own version. The
+    // generator build is credited in the footer and the provenance page and
+    // never stands in for it: without a project version there is no chip.
+    let version_chip = header
         .software
         .as_ref()
-        .and_then(super::software::Software::version);
-    // A discovered project without one version (a workspace of separately
-    // versioned crates) shows no chip rather than the generator's version.
-    let chip_hidden = if header.software.is_some() && package_version.is_none()
-    {
-        " hidden"
-    } else {
-        ""
-    };
+        .and_then(super::software::Software::version)
+        .map(|version| {
+            let version = version.trim_start_matches('v');
+            format!(
+                "<span class=\"brand-version\" title=\"Version {0}\"><span \
+                 class=\"visually-hidden\">Version </span>v{0}</span>",
+                esc(version)
+            )
+        })
+        .unwrap_or_default();
     let facts = match &header.software {
         Some(software) if page.prefix.is_empty() && !page.report => {
             software.facts_html()
@@ -122,27 +124,9 @@ pub(super) fn render(
         "<span class=\"brand-context\">Documentation</span>"
     };
     let project_brand = format!(
-        "<a class=\"brand\" href=\"{prefix}\">{}<span class=\"brand-version\" \
-         data-build-channel=\"{}\" data-generator-revision=\"{}\" \
-         data-build-number=\"{}\" data-build-attempt=\"{}\" \
-         title=\"{}\"{chip_hidden}><span class=\"visually-hidden\">Version \
-         </span>{}</span>{brand_context}</a>",
+        "<a class=\"brand\" \
+         href=\"{prefix}\">{}{version_chip}{brand_context}</a>",
         esc(project_title),
-        esc(env!("GRAPHARCH_BUILD_CHANNEL")),
-        esc(env!("GRAPHARCH_GENERATOR_REVISION")),
-        esc(env!("GRAPHARCH_BUILD_NUMBER")),
-        esc(env!("GRAPHARCH_BUILD_ATTEMPT")),
-        esc(&match package_version {
-            Some(version) =>
-                format!(
-                    "Package version {version}; {}",
-                    env!("GRAPHARCH_BUILD_DETAILS")
-                ),
-            None => env!("GRAPHARCH_BUILD_DETAILS").to_owned(),
-        }),
-        esc(&package_version
-            .map(|version| format!("v{}", version.trim_start_matches('v')))
-            .unwrap_or_else(|| env!("GRAPHARCH_BUILD_LABEL").to_owned()))
     );
     let header_content = if header.theme.project() ||
         (community_row && header.navigation.documentation)
