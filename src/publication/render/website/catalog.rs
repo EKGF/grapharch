@@ -3,6 +3,7 @@ mod metadata;
 #[cfg(test)]
 mod metadata_tests;
 mod references;
+pub(super) mod revisions;
 mod source_aliases;
 use {
     super::super::{
@@ -61,6 +62,8 @@ pub(super) struct Catalog {
     pub repository_files: HashMap<(String, String), bool>,
     /// The decision for each recorded reference, made before rendering.
     pub decisions:        decisions::Decisions,
+    /// The newest Git change date of each page source, when collected.
+    pub last_updated:     HashMap<String, String>,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -95,6 +98,7 @@ impl Catalog {
             recorder:         Default::default(),
             repository_files: HashMap::new(),
             decisions:        HashMap::new(),
+            last_updated:     HashMap::new(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;
@@ -219,6 +223,7 @@ impl Catalog {
         );
         references::read(plan, &mut catalog).await?;
         decisions::read(plan, &mut catalog).await?;
+        revisions::read(plan, &mut catalog).await?;
         // Keep only compact headings and page metadata after indexing.
         tracing::debug!(
             phase = "website-catalog-references",

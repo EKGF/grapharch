@@ -12,6 +12,7 @@ mod forge_api;
 mod git_facts;
 mod manifest;
 pub(crate) mod package;
+pub(crate) mod page_revisions;
 mod record;
 
 #[cfg(test)]

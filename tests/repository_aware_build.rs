@@ -397,3 +397,63 @@ async fn links_in_rdf_descriptions_are_recorded_references() -> Result<()> {
     assert!(graph.contains("\"https://example.org/care\""));
     Ok(())
 }
+
+#[tokio::test]
+async fn pages_show_their_last_git_change() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let r = root.path();
+    write(
+        r,
+        "README.md",
+        "# Home\n\nSee the [guide](guide.md).\n",
+    );
+    write(r, "guide.md", "# Guide\n");
+    git(r, &["init", "-q", "-b", "main"]);
+    git(r, &["config", "user.name", "Ada"]);
+    git(r, &["config", "user.email", "a@example.org"]);
+    git(r, &["add", "."]);
+    let first = "2024-01-02T03:04:05Z";
+    let second = "2025-06-07T08:09:10Z";
+    let commit = |date: &str, message: &str| {
+        let output = std::process::Command::new("git")
+            .arg("-C")
+            .arg(r)
+            .args(["commit", "-q", "-m", message])
+            .env("GIT_AUTHOR_DATE", date)
+            .env("GIT_COMMITTER_DATE", date)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+    };
+    commit(first, "one");
+    write(r, "guide.md", "# Guide\n\nMore.\n");
+    git(r, &["add", "guide.md"]);
+    commit(second, "two");
+    let result = build(r, &[]).await?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let site = r.join("output/grapharch/site");
+    let home = std::fs::read_to_string(site.join("index.html"))?;
+    let guide = std::fs::read_to_string(site.join("guide/index.html"))?;
+    assert!(
+        home.contains("Last updated <time datetime=\"2024-01-02"),
+        "{home}"
+    );
+    assert!(guide.contains("Last updated <time datetime=\"2025-06-07"));
+    assert!(guide.contains(">7 June 2025</time>"));
+    let graph =
+        std::fs::read_to_string(r.join("output/grapharch/documentation.nq"))?;
+    assert!(graph.contains("<http://purl.org/dc/terms/modified>"));
+
+    // Without .git, no date is shown.
+    std::fs::remove_dir_all(r.join(".git"))?;
+    std::fs::remove_dir_all(r.join("output"))?;
+    let result = build(r, &[]).await?;
+    assert!(result.status.success());
+    let home = std::fs::read_to_string(site.join("index.html"))?;
+    assert!(!home.contains("Last updated"));
+    Ok(())
+}
