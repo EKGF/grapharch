@@ -420,6 +420,12 @@ async fn plain(
             super::collect::http_image_collectors(&dataset, project.as_str())
                 .await?;
         collect_all(images, &writer, 4).await?;
+        let revisions = super::repository::page_revisions::collectors(
+            &dataset,
+            project.as_str(),
+        )
+        .await?;
+        collect_all(revisions, &writer, 4).await?;
         super::website::bind(
             &dataset,
             &writer,

@@ -187,7 +187,20 @@ impl PageWriter<'_> {
                 navigation:       &navigation,
                 breadcrumbs:      &breadcrumbs,
                 heading:          &heading,
-                body:             &content.html,
+                body:             &match self
+                    .catalog
+                    .last_updated
+                    .get(&page.source)
+                {
+                    Some(date) => {
+                        format!(
+                            "{}{}",
+                            content.html,
+                            super::catalog::revisions::footer(date)
+                        )
+                    },
+                    None => content.html.clone(),
+                },
                 gallery:          &gallery.html,
                 previous_next:    &previous_next,
                 outline:          &page_outline,

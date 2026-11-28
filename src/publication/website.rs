@@ -177,6 +177,10 @@ pub(crate) async fn collect_with_configuration(
         )
         .await?;
         collect_all(images, &writer, concurrency).await?;
+        let revisions =
+            super::repository::page_revisions::collectors(&dataset, project)
+                .await?;
+        collect_all(revisions, &writer, concurrency).await?;
 
         super::collect::people::collect(
             &dataset,

@@ -492,3 +492,9 @@ ga:DescriptionContext a owl:NamedIndividual , ga:ReferenceContext ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "A link in a Markdown description held in RDF, such as an annotation markdownDescription; the reference source is the described subject's IRI."@en ;
     dct:description "A link in a Markdown description held in RDF, such as an annotation markdownDescription; the reference source is the described subject's IRI."@en .
+
+ga:PageRevision a owl:Class ;
+    rdfs:label "Page revision"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The newest Git commit at the build commit that changed a collected page source, with dct:modified for its date and schema:author for its author; absent for sources outside a Git work tree."@en ;
+    dct:description "The newest Git commit at the build commit that changed a collected page source, with dct:modified for its date and schema:author for its author; absent for sources outside a Git work tree."@en .
