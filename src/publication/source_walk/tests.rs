@@ -142,3 +142,28 @@ async fn symbolic_links_are_not_followed() {
         .unwrap();
     assert_eq!(names(root.path(), files), ["README.md"]);
 }
+
+#[tokio::test]
+async fn build_output_is_anchored_at_the_root_and_docs_named_build_stay() {
+    let root = tempfile::tempdir().unwrap();
+    write(root.path(), "build/out.md", "# Output");
+    write(root.path(), "target/doc.md", "# Output");
+    write(
+        root.path(),
+        "docs/process/build/index.md",
+        "# Build process",
+    );
+    write(
+        root.path(),
+        "docs/release/target/index.md",
+        "# Targets",
+    );
+    let files = SourceWalk::new(root.path(), markdown)
+        .files()
+        .await
+        .unwrap();
+    assert_eq!(names(root.path(), files), [
+        "docs/process/build/index.md",
+        "docs/release/target/index.md"
+    ]);
+}
