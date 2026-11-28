@@ -386,6 +386,13 @@ ga:SourceExclusionPatternsShape a sh:NodeShape ; sh:targetSubjectsOf ga:excludeS
     sh:property [ sh:path ga:excludeSourcePattern ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 2048 ; sh:maxCount 64 ;
         sh:pattern "^[^/\\\\]" ] .
 
+ga:SourceInclusionPatternsShape a sh:NodeShape ; sh:targetSubjectsOf ga:includeSourcePattern ;
+    sh:property [ sh:path ga:includeSourcePattern ; sh:datatype xsd:string ; sh:minLength 1 ; sh:maxLength 2048 ; sh:maxCount 64 ;
+        sh:pattern "^[^/\\\\]" ] .
+
+ga:SourceBudgetShape a sh:NodeShape ; sh:targetSubjectsOf ga:maxDiscoveredSources ;
+    sh:property [ sh:path ga:maxDiscoveredSources ; sh:datatype xsd:positiveInteger ; sh:maxInclusive 65536 ; sh:maxCount 1 ] .
+
 ga:SourceLinkBaseShape a sh:NodeShape ; sh:targetSubjectsOf ga:sourceLinkBase ;
     sh:property [ sh:path ga:sourceLinkBase ; sh:nodeKind sh:IRI ; sh:pattern "^https://[^/?#@]+/[^?#]*$" ; sh:maxCount 1 ] .
 

@@ -7,6 +7,11 @@
 //! commit the build collected. Collection records that commit and the
 //! documentation root's directory in the repository (a `ga:SourceCheckout`),
 //! so rendering resolves the link from the collected graph alone.
+//!
+//! Without the setting, a zero-configuration build derives the same links
+//! from the discovered repository (`ga:softwareProject`): its forge browse
+//! URL and head commit, or `HEAD` for a copy without Git. The setting is the
+//! override, not a requirement.
 use {
     crate::publication::{
         collect::source_checkout::SourceCheckout,
@@ -38,6 +43,9 @@ impl CommitId {
     }
 
     pub(crate) fn as_str(&self) -> &str { &self.0 }
+
+    /// The symbolic default-branch ref, for a source copy without Git.
+    fn head() -> Self { Self("HEAD".to_owned()) }
 }
 
 /// A normalized `/`-separated path inside a repository; empty for its root.
@@ -132,6 +140,13 @@ impl SourceLinkBase {
         );
         Ok(Self(url))
     }
+
+    /// GitLab prefixes browse paths with `/-/`.
+    fn gitlab(&self) -> bool {
+        self.0.host_str().is_some_and(|host| {
+            host == "gitlab.com" || host.starts_with("gitlab.")
+        })
+    }
 }
 
 /// Everything needed to link to an uncollected file of the build's commit.
@@ -159,7 +174,7 @@ impl SourceLinks {
         project: &NamedNode,
     ) -> Result<Option<Self>> {
         let base = match view.optional(project, SETTING).await? {
-            None => return Ok(None),
+            None => return Self::discovered(view, project).await,
             Some(Term::NamedNode(base)) => {
                 SourceLinkBase::try_new(base.as_str())?
             },
@@ -187,6 +202,49 @@ impl SourceLinks {
         )))
     }
 
+    /// Links derived from the repository discovery recorded for `project`.
+    async fn discovered(
+        view: &RevisionView,
+        project: &NamedNode,
+    ) -> Result<Option<Self>> {
+        let Some(Term::NamedNode(software)) =
+            view.optional(project, "softwareProject").await?
+        else {
+            return Ok(None);
+        };
+        let doap = |local: &str| {
+            NamedNode::new_unchecked(format!(
+                "http://usefulinc.com/ns/doap#{local}"
+            ))
+        };
+        let Some(Term::NamedNode(repository)) =
+            view.optional_by(&software, &doap("repository")).await?
+        else {
+            return Ok(None);
+        };
+        let Some(Term::NamedNode(browse)) =
+            view.optional_by(&repository, &doap("browse")).await?
+        else {
+            return Ok(None);
+        };
+        let commit = match view.optional(&repository, "headCommit").await? {
+            Some(Term::Literal(commit)) => CommitId::try_new(commit.value())?,
+            _ => CommitId::head(),
+        };
+        let content = match view
+            .optional(&SourceCheckout::iri(project), "contentDirectory")
+            .await?
+        {
+            Some(Term::Literal(path)) => RepositoryPath::try_new(path.value())?,
+            _ => RepositoryPath::default(),
+        };
+        Ok(Some(Self::new(
+            SourceLinkBase::try_new(browse.as_str())?,
+            commit,
+            content,
+        )))
+    }
+
     /// The repository URL of the relative `link` written in the page whose
     /// documentation-root-relative source is `page`.
     pub(crate) fn href(&self, page: &str, link: &str) -> Result<String> {
@@ -206,10 +264,11 @@ impl SourceLinks {
             let mut segments = url.path_segments_mut().map_err(|_| {
                 anyhow::anyhow!("ga:{SETTING} must have a hierarchical path")
             })?;
-            segments
-                .pop_if_empty()
-                .push("blob")
-                .push(self.commit.as_str());
+            segments.pop_if_empty();
+            if self.base.gitlab() {
+                segments.push("-");
+            }
+            segments.push("blob").push(self.commit.as_str());
             for part in target.as_str().split('/') {
                 segments.push(part);
             }

@@ -14,10 +14,14 @@ use {
             MarkdownFile,
             RdfFile,
             collect_all,
+            source_checkout::SourceCheckout,
         },
         dataset::{Dataset, identity},
         plan::{ResolvedPlan, TargetPlanner},
+        reference::LinkPolicy,
         render::{PublishOutcome, Publisher},
+        repository::{ForgeAccess, RepositoryDiscoverer, RepositoryRecord},
+        source_link::{CommitId, RepositoryPath},
         view::RevisionView,
         writer::GraphWriter,
     },
@@ -35,10 +39,31 @@ use {
 pub struct BuildRequest {
     /// An RDF/Markdown file or directory (defaults to the current directory).
     #[arg(default_value = ".")]
-    pub source: PathBuf,
+    pub source:  PathBuf,
     /// Parent of the generated site and retained documentation graph.
     #[arg(short, long, default_value = "output/grapharch")]
-    pub output: PathBuf,
+    pub output:  PathBuf,
+    #[command(flatten)]
+    pub options: BuildOptions,
+}
+
+/// How a zero-configuration build treats its repository.
+#[derive(Args, Clone, Debug, Default)]
+pub struct BuildOptions {
+    /// Most sources discovery selects before failing (default 16384).
+    #[arg(long, value_name = "COUNT")]
+    pub max_sources: Option<u64>,
+    /// Never ask the forge API; use Git and package manifests only.
+    #[arg(long)]
+    pub offline:     bool,
+    /// Fail on the first broken link instead of rendering it as text.
+    #[arg(long)]
+    pub strict:      bool,
+}
+
+impl BuildOptions {
+    /// Git and manifests only, lenient links: reproducible and network-free.
+    pub fn offline() -> Self { Self { offline: true, ..Self::default() } }
 }
 
 impl BuildRequest {
@@ -54,7 +79,24 @@ impl BuildRequest {
         else {
             anyhow::bail!("publication was superseded")
         };
-        dataset.export(self.output.join("documentation.nq")).await?;
+        let graph = self.output.join("documentation.nq");
+        dataset.export(graph.clone()).await?;
+        // Reference decisions join the documentation graph in their own named
+        // graph, so links are queryable beside the content they connect.
+        let references =
+            publication.directory.join(super::reference::RECORD_FILE);
+        if tokio::fs::try_exists(&references).await? {
+            let mut file = tokio::fs::OpenOptions::new()
+                .append(true)
+                .open(&graph)
+                .await?;
+            tokio::io::AsyncWriteExt::write_all(
+                &mut file,
+                &tokio::fs::read(&references).await?,
+            )
+            .await?;
+            tokio::io::AsyncWriteExt::flush(&mut file).await?;
+        }
         println!(
             "Open {}",
             tokio::fs::canonicalize(publication.directory.join("index.html"))
@@ -67,8 +109,14 @@ impl BuildRequest {
     /// Retain the complete plan so it can be rendered after source removal.
     pub async fn collect(&self) -> Result<(Dataset, ResolvedPlan)> {
         let source = tokio::fs::canonicalize(&self.source).await?;
+        let budget = self
+            .options
+            .max_sources
+            .map(super::source_walk::SourceBudget::try_new)
+            .transpose()?
+            .unwrap_or_default();
         let inventory =
-            discover::Inventory::read(&source, &self.output).await?;
+            discover::Inventory::read(&source, &self.output, budget).await?;
         if let Some(definitions) = &inventory.definitions {
             return self.configured(&inventory.root, definitions).await;
         }
@@ -98,7 +146,16 @@ impl BuildRequest {
         let origin = url::Url::from_file_path(&source)
             .map_err(|_| anyhow::anyhow!("invalid source path"))?;
         let project = identity("quick-project", &[origin.as_str()]);
-        let mut extra: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: at most the enclosing repository's provenance.
+        let facts = RepositoryDiscoverer::new(
+            if self.options.offline {
+                ForgeAccess::Offline
+            } else {
+                ForgeAccess::Online
+            },
+        )
+        .discover(&inventory.root)
+        .await;
+        let mut extra: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: provenance and repository facts.
         if let Some(repository) = super::collect::git::enclosing_repository(
             &inventory.root,
             project.as_str(),
@@ -107,7 +164,29 @@ impl BuildRequest {
         {
             extra.push(repository.provenance);
         }
-        plain(&inventory, project, extra).await
+        if let Some(git) = &facts.git {
+            extra.push(Arc::new(SourceCheckout::new(
+                project.clone(),
+                CommitId::try_new(git.head.as_str())?,
+                RepositoryPath::within(&git.root, &inventory.root)?,
+            )));
+        }
+        let repository = Repository {
+            name:    facts.name(),
+            package: facts.has_package(),
+            web:     facts.forge.as_ref().map(|forge| forge.web_url()),
+            policy:  if self.options.strict {
+                LinkPolicy::Strict
+            } else {
+                LinkPolicy::Lenient
+            },
+        };
+        extra.push(Arc::new(RepositoryRecord::new(
+            project.clone(),
+            origin.to_string(),
+            facts,
+        )));
+        plain(&inventory, project, extra, &repository).await
     }
 
     async fn configured(
@@ -226,18 +305,27 @@ fn title_quad(subject: &NamedNode, title: &str) -> oxrdf::Quad {
     )
 }
 
+/// What the zero-configuration defaults take from the repository facts.
+struct Repository {
+    name:    Option<String>,
+    package: bool,
+    web:     Option<url::Url>,
+    policy:  LinkPolicy,
+}
+
 /// Collect an unconfigured tree of Markdown, RDF and images as one website.
 async fn plain(
     inventory: &discover::Inventory,
     project: NamedNode,
     extra: Vec<Arc<dyn Collector>>,
+    repository: &Repository,
 ) -> Result<(Dataset, ResolvedPlan)> {
     let target = identity("quick-target", &[project.as_str()]);
     let dataset = Dataset::memory()?;
     let (writer, worker) =
         GraphWriter::spawn(dataset.clone(), 16, 4 * 1024 * 1024)?;
     let result = async {
-        let mut inputs: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: discovery caps sources at 256.
+        let mut inputs: Vec<Arc<dyn Collector>> = Vec::new(); // bounded: the discovery source budget.
         for path in &inventory.files {
             let relative =
                 super::collect::page::source_path(&inventory.root, path)?;
@@ -286,8 +374,23 @@ async fn plain(
              grapharch.ttl/project.ttl; use publication build-family or \
              build-site with explicit identifiers"
         );
-        let title = document::title(&dataset, &view, inventory).await?;
-        document::defaults(&writer, &project, &target, &title).await?;
+        let title = document::title(
+            &dataset,
+            &view,
+            inventory,
+            repository.name.as_deref(),
+            repository.package,
+        )
+        .await?;
+        document::defaults(
+            &writer,
+            &project,
+            &target,
+            &title,
+            repository.web.as_ref(),
+            repository.policy,
+        )
+        .await?;
         document::rdf_pages(&dataset, &writer, &project, inventory).await?;
         document::home(&dataset, &writer, &project, &title).await?;
         let images =

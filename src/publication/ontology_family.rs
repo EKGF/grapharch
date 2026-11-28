@@ -395,46 +395,13 @@ async fn file_collectors(
     Ok(inputs)
 }
 async fn discover(root: &Path) -> Result<Vec<PathBuf>> {
-    let mut pending = vec![root.to_owned()];
-    let mut files = Vec::new();
-    let mut count = 0;
-    while let Some(directory) = pending.pop() {
-        let mut entries = tokio::fs::read_dir(directory).await?;
-        while let Some(entry) = entries.next_entry().await? {
-            count += 1;
-            ensure!(
-                count <= 100_000,
-                "family discovery exceeds entry budget"
-            );
-            let name = entry.file_name();
-            let name = name
-                .to_str()
-                .ok_or_else(|| anyhow::anyhow!("family paths must be UTF-8"))?;
-            if name.starts_with('.') || name.starts_with('_') {
-                continue;
-            }
-            let kind = entry.file_type().await?;
-            ensure!(
-                !kind.is_symlink(),
-                "family discovery rejects symlinks"
-            );
-            if kind.is_dir() {
-                pending.push(entry.path());
-            } else if entry.path().extension().is_some_and(|extension| {
-                matches!(
-                    extension.to_str(),
-                    Some("ttl" | "rdf" | "nt" | "nq" | "trig" | "n3")
-                )
-            }) {
-                files.push(entry.path());
-                ensure!(
-                    files.len() <= 4096,
-                    "family exceeds 4096 RDF-source budget"
-                );
-            }
-        }
-    }
-    files.sort();
+    let files = crate::publication::source_walk::SourceWalk::new(
+        root,
+        super::collect::git::rdf_source,
+    )
+    .with_budget(crate::publication::source_walk::SourceBudget::try_new(4096)?)
+    .files()
+    .await?;
     ensure!(
         !files.is_empty(),
         "family source contains no supported RDF files"

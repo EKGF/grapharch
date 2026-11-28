@@ -142,6 +142,12 @@ pub(super) async fn describe(
             dest_url.len() <= 4096,
             "Markdown image URL exceeds byte budget"
         );
+        if let Some(badge) = super::badge_images::reference(input, &dest_url) {
+            // A badge is a live status image: linked, never fetched, so an
+            // unreachable or unusual badge can never fail the build.
+            metadata.extend(badge);
+            continue;
+        }
         let (asset, url) = match url::Url::parse(&dest_url) {
             Ok(_) => {
                 (

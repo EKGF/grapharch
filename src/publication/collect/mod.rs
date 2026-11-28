@@ -5,6 +5,7 @@ mod abbreviations;
 mod anchors;
 mod authored;
 pub(crate) mod authored_use_cases;
+mod badge_images;
 mod badges;
 mod blank_nodes;
 pub(crate) mod configured;

@@ -109,6 +109,7 @@ pub(in crate::publication::render) async fn write(
         chrome,
         footer: site_chrome::SiteFooter::read(plan, &sources).await?,
         status_band,
+        software: super::software::Software::read(plan).await?,
     };
     header.metadata.indexes(stage, &catalog, &mut files).await?;
     let pages = PageWriter { plan, stage, catalog: &catalog, header: &header };
@@ -222,6 +223,16 @@ pub(in crate::publication::render) async fn write(
     if header.chrome.search() {
         search::write(plan, &catalog, stage, &mut files).await?;
     }
+    tokio::fs::write(
+        stage.join(crate::publication::reference::RECORD_FILE),
+        catalog
+            .recorder
+            .nquads(&crate::publication::reference::graph(
+                &plan.target,
+            ))?,
+    )
+    .await?;
+    files.push(crate::publication::reference::RECORD_FILE.into());
     let before_aliases = files.len();
     redirects::write(plan, stage, &catalog, &mut files).await?;
     artifacts.validate(files.len() - before_aliases, files.len())?;

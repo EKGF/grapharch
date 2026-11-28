@@ -24,8 +24,9 @@ async fn mkdocs_nested_navigation_survives_source_removal() -> Result<()> {
     )
     .await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -99,8 +100,10 @@ async fn mkdocs_rejects_unsupported_execution_and_invalid_paths() -> Result<()>
         )
         .await?;
         let result = BuildRequest {
-            source: source.path().to_owned(),
-            output: source.path().join("output"),
+            source:  source.path().to_owned(),
+            output:  source.path().join("output"),
+            options: grapharch::publication::quick_build::BuildOptions::offline(
+            ),
         }
         .collect()
         .await;
@@ -136,8 +139,9 @@ async fn mkdocs_native_metadata_and_default_directory_navigation() -> Result<()>
     )
     .await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -197,8 +201,9 @@ async fn mkdocs_snippets_and_abbreviation_dictionary_use_explicit_roots()
     )
     .await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -243,8 +248,10 @@ async fn explicit_grapharch_configuration_precedes_mkdocs_even_when_invalid()
         )
         .await?;
         let result = BuildRequest {
-            source: source.path().to_owned(),
-            output: source.path().join("output"),
+            source:  source.path().to_owned(),
+            output:  source.path().join("output"),
+            options: grapharch::publication::quick_build::BuildOptions::offline(
+            ),
         }
         .collect()
         .await;
@@ -276,8 +283,9 @@ async fn mkdocs_navigation_anchors_and_source_boundary_are_checked()
                   Mail: mailto:team@example.org\n";
     tokio::fs::write(source.path().join("mkdocs.yml"), config).await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -296,8 +304,9 @@ async fn mkdocs_navigation_anchors_and_source_boundary_are_checked()
     );
     tokio::fs::write(source.path().join("mkdocs.yaml"), config).await?;
     let error = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await
@@ -329,8 +338,9 @@ async fn mkdocs_reads_native_dot_pages_hints_without_python() -> Result<()> {
     )
     .await?;
     let (dataset, plan) = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
@@ -352,8 +362,9 @@ async fn mkdocs_reads_native_dot_pages_hints_without_python() -> Result<()> {
     )
     .await?;
     let result = BuildRequest {
-        source: source.path().to_owned(),
-        output: output.path().to_owned(),
+        source:  source.path().to_owned(),
+        output:  output.path().to_owned(),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await;

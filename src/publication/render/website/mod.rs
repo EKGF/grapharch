@@ -14,6 +14,7 @@ mod navigation;
 mod page;
 mod project;
 mod redirects;
+mod reference_lookup;
 mod report;
 mod repository;
 mod repository_path;
@@ -24,6 +25,7 @@ mod site_base;
 mod site_chrome;
 mod site_link;
 mod site_registry;
+mod software;
 mod theme;
 
 pub(super) use {budget::MAX_ARTIFACTS, site::write};

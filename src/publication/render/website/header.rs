@@ -12,4 +12,6 @@ pub(super) struct Header {
     pub(super) chrome:      site_chrome::Options,
     pub(super) footer:      Option<site_chrome::SiteFooter>,
     pub(super) status_band: site_chrome::StatusBand,
+    /// The documented software project, when the repository was discovered.
+    pub(super) software:    Option<super::software::Software>,
 }

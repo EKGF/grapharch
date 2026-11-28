@@ -2,11 +2,13 @@
 
 # A Rust crate with Node.js and Python bindings, published with the
 # zero-configuration defaults from one pinned commit. Only the selected user
-# documentation is read; agent instructions and build files are not published.
+# documentation is read; agent instructions are not published. Cargo.toml
+# names and versions the site; it is parsed, never built.
 <urn:grapharch:showcase:dotenvage> a ga:Showcase ;
     ga:gitRepository "https://github.com/legra-ai/dotenvage.git" ;
     ga:gitCommit "f8810672ced3648cfc32db00898abb84a6515eb0" ;
-    ga:materializedPath "README.md", "CONTRIBUTING.md", "npm", "python",
+    ga:materializedPath "README.md", "CONTRIBUTING.md", "Cargo.toml", "npm",
+        "python",
         "LICENSE-MIT", "LICENSE-APACHE" ;
     ga:licensePath "LICENSE-MIT", "LICENSE-APACHE", "npm/LICENSE-MIT",
         "npm/LICENSE-APACHE" .

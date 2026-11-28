@@ -1,0 +1,443 @@
+# Repository awareness and references: discovery of the repository being
+# documented (Git, code forge, package manifests) and the classification of
+# every reference an authored source makes.
+#
+# Model choice: DOAP (http://usefulinc.com/ns/doap#) describes the software
+# project, its Git repository and releases; schema.org supplies dates,
+# keywords, versions and the discussion URL; licenses are SPDX license IRIs
+# (http://spdx.org/licenses/<id>) with the full SPDX expression kept in
+# ga:licenseExpression. GraphArch adds only what those vocabularies lack: the
+# link from a documentation ga:Project to the doap:Project it documents,
+# ga:CodePackage for manifest packages, Git work-tree facts, and the
+# reference classification.
+@prefix ga: <https://ekgf.org/ontology/grapharch#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ga:softwareProject a owl:ObjectProperty ;
+    rdfs:label "Documented software project"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the DOAP software project, discovered from Git, the code forge and package manifests, that a documentation project documents."@en ;
+    dct:description "Identifies the DOAP software project, discovered from Git, the code forge and package manifests, that a documentation project documents."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range <http://usefulinc.com/ns/doap#Project> .
+
+ga:CodePackage a owl:Class ;
+    rdfs:label "Code package"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "One package a repository manifest declares, such as a Cargo crate, a Python distribution, an npm package or a Go module; never executed, only parsed."@en ;
+    dct:description "One package a repository manifest declares, such as a Cargo crate, a Python distribution, an npm package or a Go module; never executed, only parsed."@en .
+
+ga:codePackage a owl:ObjectProperty ;
+    rdfs:label "Code package"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Associates a software project with a package its repository manifests declare."@en ;
+    dct:description "Associates a software project with a package its repository manifests declare."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#Project> ;
+    rdfs:range ga:CodePackage .
+
+ga:primaryPackage a owl:ObjectProperty ;
+    rdfs:label "Primary package"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the package that names the software project: the root manifest package, else the only workspace member."@en ;
+    dct:description "Identifies the package that names the software project: the root manifest package, else the only workspace member."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#Project> ;
+    rdfs:range ga:CodePackage .
+
+ga:PackageEcosystem a owl:Class ;
+    rdfs:label "Package ecosystem"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A package registry together with the manifest conventions that declare packages for it."@en ;
+    dct:description "A package registry together with the manifest conventions that declare packages for it."@en .
+
+ga:CargoEcosystem a owl:NamedIndividual , ga:PackageEcosystem ;
+    rdfs:label "Cargo"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Rust packages declared by Cargo.toml and published to crates.io."@en ;
+    dct:description "Rust packages declared by Cargo.toml and published to crates.io."@en .
+
+ga:PyPIEcosystem a owl:NamedIndividual , ga:PackageEcosystem ;
+    rdfs:label "PyPI"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Python distributions declared by pyproject.toml and published to the Python Package Index."@en ;
+    dct:description "Python distributions declared by pyproject.toml and published to the Python Package Index."@en .
+
+ga:NpmEcosystem a owl:NamedIndividual , ga:PackageEcosystem ;
+    rdfs:label "npm"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "JavaScript and TypeScript packages declared by package.json and published to the npm registry."@en ;
+    dct:description "JavaScript and TypeScript packages declared by package.json and published to the npm registry."@en .
+
+ga:GoEcosystem a owl:NamedIndividual , ga:PackageEcosystem ;
+    rdfs:label "Go modules"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Go modules declared by go.mod and listed on pkg.go.dev."@en ;
+    dct:description "Go modules declared by go.mod and listed on pkg.go.dev."@en .
+
+ga:ecosystem a owl:ObjectProperty ;
+    rdfs:label "Package ecosystem"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the ecosystem whose registry and conventions apply to a code package."@en ;
+    dct:description "Identifies the ecosystem whose registry and conventions apply to a code package."@en ;
+    rdfs:domain ga:CodePackage ;
+    rdfs:range ga:PackageEcosystem .
+
+ga:manifestPath a owl:DatatypeProperty ;
+    rdfs:label "Manifest path"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The slash-separated path, relative to the repository root, of the manifest that declares a code package."@en ;
+    dct:description "The slash-separated path, relative to the repository root, of the manifest that declares a code package."@en ;
+    rdfs:domain ga:CodePackage ;
+    rdfs:range xsd:string .
+
+ga:registryPage a owl:ObjectProperty ;
+    rdfs:label "Registry page"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the page of a published code package on its registry, such as crates.io, PyPI or npm."@en ;
+    dct:description "Identifies the page of a published code package on its registry, such as crates.io, PyPI or npm."@en ;
+    rdfs:domain ga:CodePackage ;
+    rdfs:range rdfs:Resource .
+
+ga:apiReference a owl:ObjectProperty ;
+    rdfs:label "API reference"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the API reference of a code package: its declared documentation URL, else docs.rs for a published crate."@en ;
+    dct:description "Identifies the API reference of a code package: its declared documentation URL, else docs.rs for a published crate."@en ;
+    rdfs:domain ga:CodePackage ;
+    rdfs:range rdfs:Resource .
+
+ga:licenseExpression a owl:DatatypeProperty ;
+    rdfs:label "License expression"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The SPDX license expression a manifest or forge declares; doap:license carries the SPDX license IRI when the expression names one license."@en ;
+    dct:description "The SPDX license expression a manifest or forge declares; doap:license carries the SPDX license IRI when the expression names one license."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+ga:Forge a owl:Class ;
+    rdfs:label "Code forge"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A family of code hosting services with a shared browse and API layout."@en ;
+    dct:description "A family of code hosting services with a shared browse and API layout."@en .
+
+ga:GitHub a owl:NamedIndividual , ga:Forge ;
+    rdfs:label "GitHub"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The GitHub code forge, on github.com."@en ;
+    dct:description "The GitHub code forge, on github.com."@en .
+
+ga:GitLab a owl:NamedIndividual , ga:Forge ;
+    rdfs:label "GitLab"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The GitLab code forge, on gitlab.com or a self-hosted instance."@en ;
+    dct:description "The GitLab code forge, on gitlab.com or a self-hosted instance."@en .
+
+ga:forge a owl:ObjectProperty ;
+    rdfs:label "Forge"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the code forge that hosts a repository."@en ;
+    dct:description "Identifies the code forge that hosts a repository."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range ga:Forge .
+
+ga:headCommit a owl:DatatypeProperty ;
+    rdfs:label "Head commit"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The full Git object id of the commit checked out when the repository was discovered."@en ;
+    dct:description "The full Git object id of the commit checked out when the repository was discovered."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range xsd:string .
+
+ga:defaultBranch a owl:DatatypeProperty ;
+    rdfs:label "Default branch"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The branch the origin remote names as its HEAD, else the checked-out branch."@en ;
+    dct:description "The branch the origin remote names as its HEAD, else the checked-out branch."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range xsd:string .
+
+ga:workingTreeDirty a owl:DatatypeProperty ;
+    rdfs:label "Working tree dirty"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Whether the work tree had uncommitted changes against its head commit when discovered."@en ;
+    dct:description "Whether the work tree had uncommitted changes against its head commit when discovered."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range xsd:boolean .
+
+ga:latestTag a owl:DatatypeProperty ;
+    rdfs:label "Latest release tag"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The repository tag with the highest semantic version, with an optional v prefix."@en ;
+    dct:description "The repository tag with the highest semantic version, with an optional v prefix."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range xsd:string .
+
+ga:RepositoryVisibility a owl:Class ;
+    rdfs:label "Repository visibility"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Who may see a repository, as reported by the code forge that hosts it."@en ;
+    dct:description "Who may see a repository, as reported by the code forge that hosts it."@en .
+
+ga:PublicRepository a owl:NamedIndividual , ga:RepositoryVisibility ;
+    rdfs:label "Public"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Visible to everyone, as the forge reports."@en ;
+    dct:description "Visible to everyone, as the forge reports."@en .
+
+ga:InternalRepository a owl:NamedIndividual , ga:RepositoryVisibility ;
+    rdfs:label "Internal"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Visible to members of the forge instance or enterprise only."@en ;
+    dct:description "Visible to members of the forge instance or enterprise only."@en .
+
+ga:PrivateRepository a owl:NamedIndividual , ga:RepositoryVisibility ;
+    rdfs:label "Private"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Visible only to people granted access to the repository."@en ;
+    dct:description "Visible only to people granted access to the repository."@en .
+
+ga:repositoryVisibility a owl:ObjectProperty ;
+    rdfs:label "Repository visibility"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies who may see a repository, as its forge reports."@en ;
+    dct:description "Identifies who may see a repository, as its forge reports."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range ga:RepositoryVisibility .
+
+ga:archived a owl:DatatypeProperty ;
+    rdfs:label "Archived"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Whether the forge reports the repository as archived and read-only."@en ;
+    dct:description "Whether the forge reports the repository as archived and read-only."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range xsd:boolean .
+
+ga:starCount a owl:DatatypeProperty ;
+    rdfs:label "Star count"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The number of stars the forge reported for the repository when its metadata was recorded."@en ;
+    dct:description "The number of stars the forge reported for the repository when its metadata was recorded."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#GitRepository> ;
+    rdfs:range xsd:nonNegativeInteger .
+
+ga:releaseNotes a owl:ObjectProperty ;
+    rdfs:label "Release notes"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the forge page describing a release."@en ;
+    dct:description "Identifies the forge page describing a release."@en ;
+    rdfs:domain <http://usefulinc.com/ns/doap#Version> ;
+    rdfs:range rdfs:Resource .
+
+ga:includeSourcePattern a owl:DatatypeProperty ;
+    rdfs:label "Included source pattern"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Brings files matching a glob, relative to the project documentation root, back into automatic source discovery although a default exclusion skips them."@en ;
+    dct:description "Brings files matching a glob, relative to the project documentation root, back into automatic source discovery although a default exclusion skips them."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:string ;
+    skos:scopeNote "Default exclusions skip agent instructions (CLAUDE.md, AGENTS.md), planning and status notes (PLAN.md, *_STATUS.md), forge templates, test directories and fixtures (tests/, test/, __tests__/, fixtures/, testdata/, __snapshots__/, RDF beneath spec/) and dependency or build output. An inclusion overrides only these defaults: ignore files and authored exclusions still apply. The glob syntax is that of ga:excludeSourcePattern; at most 64 patterns."@en .
+
+ga:maxDiscoveredSources a owl:DatatypeProperty ;
+    rdfs:label "Maximum discovered sources"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The most source files automatic discovery selects for a project before the build fails with an error naming this setting."@en ;
+    dct:description "The most source files automatic discovery selects for a project before the build fails with an error naming this setting."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range xsd:positiveInteger ;
+    skos:scopeNote "The default is 16384; the accepted range is 1 to 65536. A zero-configuration build takes the same bound from --max-sources."@en .
+
+ga:Reference a owl:Class ;
+    rdfs:label "Reference"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "One reference an authored source makes, such as a Markdown link or image, recorded with its original form, its classified kind and its rendered target."@en ;
+    dct:description "One reference an authored source makes, such as a Markdown link or image, recorded with its original form, its classified kind and its rendered target."@en .
+
+ga:referenceSource a owl:DatatypeProperty ;
+    rdfs:label "Reference source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The documentation-root-relative source path of the page that makes a reference."@en ;
+    dct:description "The documentation-root-relative source path of the page that makes a reference."@en ;
+    rdfs:domain ga:Reference ;
+    rdfs:range xsd:string .
+
+ga:originalReference a owl:DatatypeProperty ;
+    rdfs:label "Original reference"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The reference exactly as it was authored in the referring source."@en ;
+    dct:description "The reference exactly as it was authored in the referring source."@en ;
+    rdfs:domain ga:Reference ;
+    rdfs:range xsd:string .
+
+ga:referenceTarget a owl:DatatypeProperty ;
+    rdfs:label "Reference target"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The href rendered for a reference: relative to the referring page for internal kinds, absolute otherwise; absent for a broken reference."@en ;
+    dct:description "The href rendered for a reference: relative to the referring page for internal kinds, absolute otherwise; absent for a broken reference."@en ;
+    rdfs:domain ga:Reference ;
+    rdfs:range xsd:string .
+
+ga:ReferenceForm a owl:Class ;
+    rdfs:label "Reference form"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "How a reference was written in its source, before anything is resolved."@en ;
+    dct:description "How a reference was written in its source, before anything is resolved."@en .
+
+ga:FragmentForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Fragment only"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A reference to a heading of the same page, such as #install."@en ;
+    dct:description "A reference to a heading of the same page, such as #install."@en .
+
+ga:RelativeForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Relative"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A path relative to the referring source, such as ../src/main.rs."@en ;
+    dct:description "A path relative to the referring source, such as ../src/main.rs."@en .
+
+ga:RootRelativeForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Root-relative"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A path relative to the documentation or site root, such as /guide/."@en ;
+    dct:description "A path relative to the documentation or site root, such as /guide/."@en .
+
+ga:AbsoluteForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Absolute URL"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An absolute HTTP or HTTPS URL with a host."@en ;
+    dct:description "An absolute HTTP or HTTPS URL with a host."@en .
+
+ga:SchemeRelativeForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Scheme-relative URL"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A URL without a scheme, such as //example.org/x, resolved as HTTPS."@en ;
+    dct:description "A URL without a scheme, such as //example.org/x, resolved as HTTPS."@en .
+
+ga:ContactForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Contact"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A mailto: or tel: reference to a contact."@en ;
+    dct:description "A mailto: or tel: reference to a contact."@en .
+
+ga:OtherSchemeForm a owl:NamedIndividual , ga:ReferenceForm ;
+    rdfs:label "Other scheme"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A reference with any other scheme; it is broken in a website."@en ;
+    dct:description "A reference with any other scheme; it is broken in a website."@en .
+
+ga:referenceForm a owl:ObjectProperty ;
+    rdfs:label "Reference form"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies how a reference was written in its source: its original form."@en ;
+    dct:description "Identifies how a reference was written in its source: its original form."@en ;
+    rdfs:domain ga:Reference ;
+    rdfs:range ga:ReferenceForm .
+
+ga:ReferenceKind a owl:Class ;
+    rdfs:label "Reference kind"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "What a reference points at, as decided by the reference classifier before rendering."@en ;
+    dct:description "What a reference points at, as decided by the reference classifier before rendering."@en .
+
+ga:PageLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Page"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A page of this publication; an anchor is validated against its headings."@en ;
+    dct:description "A page of this publication; an anchor is validated against its headings."@en .
+
+ga:AnchorLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Anchor"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A heading of the referring page itself."@en ;
+    dct:description "A heading of the referring page itself."@en .
+
+ga:AssetLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Asset"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A collected asset, such as an image or downloadable file."@en ;
+    dct:description "A collected asset, such as an image or downloadable file."@en .
+
+ga:DiagramSourceLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Diagram source"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The source of a rendered diagram, kept as an asset."@en ;
+    dct:description "The source of a rendered diagram, kept as an asset."@en .
+
+ga:RepositoryFileLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Repository file"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A repository file that is not a page; it links to the file on the forge at the collected commit."@en ;
+    dct:description "A repository file that is not a page; it links to the file on the forge at the collected commit."@en .
+
+ga:ForgeObjectLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Forge object"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An issue, pull or merge request, commit, release or discussion on a code forge."@en ;
+    dct:description "An issue, pull or merge request, commit, release or discussion on a code forge."@en .
+
+ga:SiblingSiteLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Sibling site"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A page of a registered sibling website (ga:siteRegistry)."@en ;
+    dct:description "A page of a registered sibling website (ga:siteRegistry)."@en .
+
+ga:OwnSiteLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Own site"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An absolute URL beneath the website's own location, rewritten to a relative link."@en ;
+    dct:description "An absolute URL beneath the website's own location, rewritten to a relative link."@en .
+
+ga:BadgeLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Badge"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A status badge image; it is linked, never fetched, so it never fails a build."@en ;
+    dct:description "A status badge image; it is linked, never fetched, so it never fails a build."@en .
+
+ga:ExternalLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "External"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Any other external location, linked as written."@en ;
+    dct:description "Any other external location, linked as written."@en .
+
+ga:BrokenLink a owl:NamedIndividual , ga:ReferenceKind ;
+    rdfs:label "Broken"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A reference that resolves to nothing; it fails the build under ga:StrictLinks and renders as text with a diagnostic under ga:LenientLinks."@en ;
+    dct:description "A reference that resolves to nothing; it fails the build under ga:StrictLinks and renders as text with a diagnostic under ga:LenientLinks."@en .
+
+ga:referenceKind a owl:ObjectProperty ;
+    rdfs:label "Reference kind"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the classified kind of a reference."@en ;
+    dct:description "Identifies the classified kind of a reference."@en ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range ga:ReferenceKind .
+
+ga:LinkPolicy a owl:Class ;
+    rdfs:label "Link policy"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Whether a reference that resolves to nothing fails the build of a publication."@en ;
+    dct:description "Whether a reference that resolves to nothing fails the build of a publication."@en .
+
+ga:StrictLinks a owl:NamedIndividual , ga:LinkPolicy ;
+    rdfs:label "Strict"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A broken reference fails the build; the default for configured publications and for grapharch build --strict."@en ;
+    dct:description "A broken reference fails the build; the default for configured publications and for grapharch build --strict."@en .
+
+ga:LenientLinks a owl:NamedIndividual , ga:LinkPolicy ;
+    rdfs:label "Lenient"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A broken reference renders as text and raw HTML in Markdown is dropped, each recorded as a diagnostic; the default for zero-configuration builds."@en ;
+    dct:description "A broken reference renders as text and raw HTML in Markdown is dropped, each recorded as a diagnostic; the default for zero-configuration builds."@en .
+
+ga:linkPolicy a owl:ObjectProperty ;
+    rdfs:label "Link policy"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Selects whether broken references fail the publication of a project."@en ;
+    dct:description "Selects whether broken references fail the publication of a project."@en ;
+    rdfs:domain ga:Project ;
+    rdfs:range ga:LinkPolicy .
+

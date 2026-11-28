@@ -11,7 +11,7 @@ use {
 };
 
 /// The vocabulary, shapes and catalogues that declare GraphArch terms.
-const DECLARATIONS: [&str; 12] = [
+const DECLARATIONS: [&str; 13] = [
     include_str!("../../docs/other/ontology/publication.ttl"),
     include_str!("../../docs/other/ontology/publication.shacl.ttl"),
     include_str!("../../docs/other/ontology/collectors.ttl"),
@@ -21,6 +21,7 @@ const DECLARATIONS: [&str; 12] = [
     include_str!("../../docs/other/ontology/documentation.ttl"),
     include_str!("../../docs/other/ontology/documentors.ttl"),
     include_str!("../../docs/other/ontology/rdf-formats.ttl"),
+    include_str!("../../docs/other/ontology/repository.ttl"),
     include_str!("../../docs/other/ontology/renderers.ttl"),
     include_str!("../../docs/other/ontology/showcase-runners.ttl"),
     include_str!("../../docs/other/ontology/themes.ttl"),

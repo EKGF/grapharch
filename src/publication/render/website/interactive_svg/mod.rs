@@ -62,7 +62,9 @@ pub(super) async fn prepare(
         );
         context.route = "assets/interactive.svg".into();
         let projection = projection::project(&bytes, |value| {
-            super::markdown::link(value, &context, catalog)
+            super::markdown::link(value, &context, catalog)?.ok_or_else(|| {
+                anyhow::anyhow!("unresolved interactive image link {value}")
+            })
         })?;
         let route = format!(
             "assets/interactive-{}.svg",

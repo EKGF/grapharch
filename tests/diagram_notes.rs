@@ -209,8 +209,9 @@ async fn website_has_one_global_note_after_source_removal() -> Result<()> {
     .await?;
     let output = tempfile::tempdir()?;
     let request = grapharch::publication::quick_build::BuildRequest {
-        source: source.path().into(),
-        output: output.path().join("before"),
+        source:  source.path().into(),
+        output:  output.path().join("before"),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     };
     let (dataset, plan) = request.collect().await?;
     let archive = output.path().join("graph.nq");
@@ -295,8 +296,9 @@ async fn publication_without_diagrams_has_no_note_artifact() -> Result<()> {
     .await?;
     let output = tempfile::tempdir()?;
     let (dataset, plan) = grapharch::publication::quick_build::BuildRequest {
-        source: source.path().into(),
-        output: output.path().join("before"),
+        source:  source.path().into(),
+        output:  output.path().join("before"),
+        options: grapharch::publication::quick_build::BuildOptions::offline(),
     }
     .collect()
     .await?;
