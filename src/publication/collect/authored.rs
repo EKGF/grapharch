@@ -416,6 +416,30 @@ impl Collector for MarkdownFile {
             }
             metadata.extend(images);
         }
+        if let Some(root) = &self.1 {
+            // Repository-file existence is observed input: it joins the
+            // revision so a changed tree never reuses stale references.
+            let relative = super::page::source_path(root, &input.path)?;
+            let files = super::reference_facts::RepositoryFiles::open(root);
+            let references = super::reference_facts::describe(
+                &input, root, &relative, body, &files,
+            )?;
+            let digest = references.iter().fold(
+                <sha2::Sha256 as sha2::Digest>::new(),
+                |mut hash, quad| {
+                    sha2::Digest::update(
+                        &mut hash,
+                        quad.to_string().as_bytes(),
+                    );
+                    hash
+                },
+            );
+            revision = format!(
+                "references-v1:{}:{revision}",
+                hex::encode(sha2::Digest::finalize(digest))
+            );
+            metadata.extend(references);
+        }
         let mut quads = input.description(
             body,
             "text/markdown",

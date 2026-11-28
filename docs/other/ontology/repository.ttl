@@ -441,3 +441,48 @@ ga:linkPolicy a owl:ObjectProperty ;
     rdfs:domain ga:Project ;
     rdfs:range ga:LinkPolicy .
 
+ga:repositoryFileExists a owl:DatatypeProperty ;
+    rdfs:label "Repository file exists"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Whether the repository path a relative reference resolves to is tracked in the Git index at the build commit, or exists in a source copy without Git; observed at collection."@en ;
+    dct:description "Whether the repository path a relative reference resolves to is tracked in the Git index at the build commit, or exists in a source copy without Git; observed at collection."@en ;
+    rdfs:domain ga:Reference ;
+    rdfs:range xsd:boolean .
+
+ga:ReferenceContext a owl:Class ;
+    rdfs:label "Reference context"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "The syntax in which an authored source makes a reference: a Markdown link or image, an HTML attribute, or a diagram include."@en ;
+    dct:description "The syntax in which an authored source makes a reference: a Markdown link or image, an HTML attribute, or a diagram include."@en .
+
+ga:referenceContext a owl:ObjectProperty ;
+    rdfs:label "Reference context"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "Identifies the syntax in which an authored source made a reference, recorded when the source is collected."@en ;
+    dct:description "Identifies the syntax in which an authored source made a reference, recorded when the source is collected."@en ;
+    rdfs:domain ga:Reference ;
+    rdfs:range ga:ReferenceContext .
+
+ga:LinkContext a owl:NamedIndividual , ga:ReferenceContext ;
+    rdfs:label "Link"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A Markdown inline or reference-style link."@en ;
+    dct:description "A Markdown inline or reference-style link."@en .
+
+ga:ImageContext a owl:NamedIndividual , ga:ReferenceContext ;
+    rdfs:label "Image"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A Markdown image."@en ;
+    dct:description "A Markdown image."@en .
+
+ga:HtmlContext a owl:NamedIndividual , ga:ReferenceContext ;
+    rdfs:label "HTML attribute"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An href, src, srcset candidate or object data attribute in HTML embedded in Markdown."@en ;
+    dct:description "An href, src, srcset candidate or object data attribute in HTML embedded in Markdown."@en .
+
+ga:DiagramIncludeContext a owl:NamedIndividual , ga:ReferenceContext ;
+    rdfs:label "Diagram include"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "An !include line in a PlantUML, Mermaid or Graphviz fence."@en ;
+    dct:description "An !include line in a PlantUML, Mermaid or Graphviz fence."@en .

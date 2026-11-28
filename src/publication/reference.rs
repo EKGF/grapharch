@@ -11,6 +11,8 @@ mod kind;
 mod record;
 mod tables;
 
+#[cfg(test)]
+use kind::ForgeObject;
 pub(crate) use {
     classifier::{
         LinkPolicy,
@@ -18,14 +20,10 @@ pub(crate) use {
         ReferenceClassifier,
         ReferenceLookup,
     },
-    kind::ReferenceKind,
+    form::ReferenceForm,
+    kind::{Classification, ReferenceKind},
     record::{FILE as RECORD_FILE, ReferenceRecorder, graph},
     tables::badge as is_badge,
-};
-#[cfg(test)]
-use {
-    form::ReferenceForm,
-    kind::{Classification, ForgeObject},
 };
 
 #[cfg(test)]

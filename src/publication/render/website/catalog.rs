@@ -1,3 +1,4 @@
+mod decisions;
 mod metadata;
 #[cfg(test)]
 mod metadata_tests;
@@ -56,6 +57,10 @@ pub(super) struct Catalog {
     pub link_policy:      crate::publication::reference::LinkPolicy,
     /// Every decided reference, published as RDF.
     pub recorder:         crate::publication::reference::ReferenceRecorder,
+    /// Whether each recorded relative reference names a repository file.
+    pub repository_files: HashMap<(String, String), bool>,
+    /// The decision for each recorded reference, made before rendering.
+    pub decisions:        decisions::Decisions,
 }
 impl Catalog {
     pub async fn read(plan: &Plan) -> Result<Self> {
@@ -88,6 +93,8 @@ impl Catalog {
             )
             .await?,
             recorder:         Default::default(),
+            repository_files: HashMap::new(),
+            decisions:        HashMap::new(),
         };
         let mut rows = plan.entries().await?;
         let mut current: Option<NamedNode> = None;
@@ -211,6 +218,7 @@ impl Catalog {
             routes = catalog.pages.len()
         );
         references::read(plan, &mut catalog).await?;
+        decisions::read(plan, &mut catalog).await?;
         // Keep only compact headings and page metadata after indexing.
         tracing::debug!(
             phase = "website-catalog-references",

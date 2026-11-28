@@ -134,6 +134,16 @@ impl ReferenceLookup for PageLookup<'_> {
         page: &str,
         link: &str,
     ) -> Option<Result<String>> {
+        if self
+            .catalog
+            .repository_files
+            .get(&(page.to_owned(), link.to_owned())) ==
+            Some(&false)
+        {
+            return Some(Err(anyhow::anyhow!(
+                "{link} does not exist in the repository at the build commit"
+            )));
+        }
         self.catalog
             .source_links
             .as_ref()

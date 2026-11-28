@@ -202,7 +202,7 @@ fn implementation_terms_are_declared_in_the_public_vocabulary() -> Result<()> {
                  ga:RdfFormat ga:CoverElement ga:DateFormat ga:DocumentType \
                  ga:ConformanceLanguage ga:ReferenceKind ga:ReferenceForm \
                  ga:LinkPolicy ga:PackageEcosystem ga:Forge \
-                 ga:RepositoryVisibility }}"
+                 ga:ReferenceContext ga:RepositoryVisibility }}"
             ),
         )? {
             missing.push(name);
