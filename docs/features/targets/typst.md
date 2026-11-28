@@ -88,7 +88,9 @@ Screen tokens: `ga:accent`, `ga:authorityAccent`, `ga:statusRibbon`,
 `ga:tableRuleColor`, `ga:captionFont`, `ga:captionBold`,
 `ga:tableCaptionAbove`, `ga:figureCaptionAlign`, `ga:codeFont`, `ga:codeFill`,
 `ga:codeRuleColor`, `ga:codeHighlight`, `ga:quoteRuleColor`,
-`ga:tintedCallouts`, `ga:normativeKeywordStyle` and `ga:footerColor`. Colours
+`ga:tintedCallouts`, `ga:normativeKeywordStyle`, `ga:footerColor` and the
+website-only `ga:contentWidth`, the width of the content column every section,
+the section navigation and the header share (default `72rem`). Colours
 may refer to `accent` and `accent-tint` as in PDF. A font names a family the
 reader's browser has; GraphArch does not ship web fonts for theme tokens.
 

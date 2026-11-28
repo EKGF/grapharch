@@ -29,3 +29,7 @@ td{overflow-wrap:break-word;min-width:2.5em}
 .status-band{position:fixed;top:0;bottom:0;left:0;z-index:4;width:26px;writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:flex-end;padding:1.5rem .25rem;background:var(--accent);color:#fff;font-size:.875rem;line-height:1.15;letter-spacing:.03em;user-select:none;-webkit-user-select:none}
 body[data-status-band]{padding-left:26px}
 @media print{.status-band{display:none}body[data-status-band]{padding-left:0}}
+
+/* The main area takes focus from the skip link and from clicks; it is not an
+   interactive control, so it draws no focus outline. */
+main:focus{outline:none}

@@ -4,7 +4,7 @@
 //! PDF class diagrams, and have no website meaning. Every token of the theme
 //! vocabulary is classified exactly once.
 use {
-    super::screen_value::{ScreenColour, align, font, weight},
+    super::screen_value::{ScreenColour, align, font, length, weight},
     crate::publication::theme::boolean,
     anyhow::Result,
     oxrdf::Term,
@@ -15,6 +15,8 @@ use {
 pub(super) enum Effect {
     /// A colour custom property of the skin root.
     Colour { property: &'static str, optional: bool },
+    /// A length custom property of the skin root.
+    Length { property: &'static str },
     /// The font family of the selected elements.
     Font { selector: &'static str, fallback: &'static str },
     /// The font weight of the selected headings.
@@ -175,6 +177,10 @@ pub(super) const SCREEN_TOKENS: &[ScreenToken] = &[
         effect: Effect::KeywordStyle,
     },
     colour("footerColor", "--footer-text"),
+    ScreenToken {
+        name:   "contentWidth",
+        effect: Effect::Length { property: "--content-width" },
+    },
 ];
 
 /// bounded: the fixed print-only token vocabulary, which the classification
@@ -272,6 +278,9 @@ impl ScreenToken {
                     property,
                     ScreenColour::try_new(name, value, optional)?.css().into(),
                 )
+            },
+            Effect::Length { property } => {
+                Declaration::Property(property, length(name, value)?.into())
             },
             Effect::Font { selector, fallback } => {
                 Declaration::Rule(

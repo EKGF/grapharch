@@ -131,6 +131,8 @@ pub(crate) const TOKENS: &[Token] = &[
     required("noticeHeadingSize", Length),
     required("noticeHeadingAlign", Align),
     required("noticeHeadingUppercase", Bool),
+    // Websites: the bound of the content column. PDFs ignore it.
+    optional("contentWidth", Text),
     // Cover.
     required("coverFont", Font),
     required("specificationCover", Bool),
