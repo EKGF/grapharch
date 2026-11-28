@@ -486,3 +486,9 @@ ga:DiagramIncludeContext a owl:NamedIndividual , ga:ReferenceContext ;
     rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
     skos:definition "An !include line in a PlantUML, Mermaid or Graphviz fence."@en ;
     dct:description "An !include line in a PlantUML, Mermaid or Graphviz fence."@en .
+
+ga:DescriptionContext a owl:NamedIndividual , ga:ReferenceContext ;
+    rdfs:label "RDF description"@en ;
+    rdfs:isDefinedBy <https://ekgf.org/ontology/grapharch> ;
+    skos:definition "A link in a Markdown description held in RDF, such as an annotation markdownDescription; the reference source is the described subject's IRI."@en ;
+    dct:description "A link in a Markdown description held in RDF, such as an annotation markdownDescription; the reference source is the described subject's IRI."@en .

@@ -14,6 +14,8 @@ use {
 pub(crate) const INCLUDE_SETTING: &str = "includeSourcePattern";
 /// Most inclusion patterns a project may declare.
 const MAX_INCLUSIONS: usize = 64;
+/// Most navigation entries honoured as explicit inclusions.
+const MAX_NAVIGATED: usize = 4096;
 /// An ignore file in Git syntax that applies only to GraphArch discovery.
 pub(crate) const GRAPHARCH_IGNORE: &str = ".grapharchignore";
 
@@ -34,6 +36,8 @@ pub(crate) struct SourceWalk {
     skip:       Option<PathBuf>,
     authored:   SourceExclusions,
     inclusions: Vec<SourcePattern>, // bounded: MAX_INCLUSIONS.
+    /// Paths an explicit navigation entry names; they win over defaults.
+    navigated:  std::collections::BTreeSet<String>, // bounded: MAX_NAVIGATED.
     budget:     SourceBudget,
 }
 
@@ -45,6 +49,7 @@ impl SourceWalk {
             skip: None,
             authored: SourceExclusions::default(),
             inclusions: Vec::new(),
+            navigated: std::collections::BTreeSet::new(),
             budget: SourceBudget::DEFAULT,
         }
     }
@@ -101,9 +106,21 @@ impl SourceWalk {
             );
             inclusions.push(SourcePattern::parse(value.value())?);
         }
+        let navigated = navigated(view).await?;
         self.with_exclusions(authored)
             .with_budget(budget)
             .with_inclusions(inclusions)
+            .map(|walk| walk.with_navigated(navigated))
+    }
+
+    /// Paths, relative to the root, that explicit navigation (MkDocs `nav`,
+    /// `SUMMARY.md`, `.pages`) names: a default exclusion never drops them.
+    pub(crate) fn with_navigated(
+        mut self,
+        paths: std::collections::BTreeSet<String>,
+    ) -> Self {
+        self.navigated = paths;
+        self
     }
 
     /// The selected files, sorted.
@@ -128,7 +145,8 @@ impl SourceWalk {
         let root = self.root.clone();
         let skip = self.skip.clone();
         let authored = self.authored.clone();
-        let prune_defaults = self.inclusions.is_empty();
+        let prune_defaults =
+            self.inclusions.is_empty() && self.navigated.is_empty();
         let directory_defaults = defaults.clone();
         builder.filter_entry(move |entry| {
             let path = entry.path();
@@ -166,6 +184,7 @@ impl SourceWalk {
                 )
             };
             if defaults.excludes(&relative, EntryKind::File) &&
+                !self.navigated.contains(&relative) &&
                 !self.inclusions.iter().any(|pattern| {
                     pattern.matches(&relative, EntryKind::File)
                 })
@@ -193,4 +212,36 @@ fn relative(root: &Path, path: &Path) -> Option<String> {
         })
         .collect::<Option<Vec<_>>>()?; // bounded: components of one path.
     Some(parts.join("/"))
+}
+
+/// Source paths of the navigation entries already in `view`.
+async fn navigated(
+    view: &RevisionView,
+) -> Result<std::collections::BTreeSet<String>> {
+    let pattern = view.pattern(
+        &format!(
+            "?entry a {} ; {} ?path",
+            crate::publication::term("NavigationEntry"),
+            crate::publication::term("sourcePath")
+        ),
+        0,
+    );
+    let mut rows = view
+        .dataset()
+        .select(format!(
+            "SELECT DISTINCT ?path WHERE {{ {pattern} }}"
+        ))
+        .await?;
+    let mut paths = std::collections::BTreeSet::new(); // bounded: MAX_NAVIGATED.
+    while let Some(row) = rows.next().await? {
+        let Term::Literal(path) = &row["path"] else {
+            bail!("navigation source path must be a literal")
+        };
+        ensure!(
+            paths.len() < MAX_NAVIGATED,
+            "navigation names more than {MAX_NAVIGATED} source paths"
+        );
+        paths.insert(path.value().trim_start_matches("./").to_owned());
+    }
+    Ok(paths)
 }
